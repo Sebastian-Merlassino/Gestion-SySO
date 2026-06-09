@@ -1,5 +1,3 @@
-@"
-
 # Variables de entorno / secretos
 .env
 .env.*
@@ -31,4 +29,3 @@ Thumbs.db
 
 # Antigravity / Agent skills locales
 .agents/skills/
-"@ | Set-Content .gitignore
