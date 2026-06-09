@@ -13,7 +13,7 @@ export default function Button({
 
   // Variant styles
   const variants = {
-    default: 'bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 hover:brightness-110 shadow-lg shadow-orange-500/10',
+    default: 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:brightness-110 shadow-lg shadow-blue-500/15',
     secondary: 'bg-slate-800 text-slate-100 hover:bg-slate-700 border border-slate-700/50',
     outline: 'border border-slate-800 bg-transparent text-slate-300 hover:bg-slate-900 hover:text-slate-100',
     ghost: 'text-slate-400 hover:bg-slate-900 hover:text-slate-100',

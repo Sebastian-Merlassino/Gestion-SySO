@@ -14,7 +14,7 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 24.6 95% 53.1%;
+    --primary: 217 100% 63.7%;
     --primary-foreground: 0 0% 0%;
 
     --secondary: 217.2 32.6% 17.5%;
@@ -31,7 +31,7 @@
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 24.6 95% 53.1%;
+    --ring: 217 100% 63.7%;
 
     --radius: 0.5rem;
   }
@@ -88,5 +88,5 @@
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #f97316;
+  background: #468DFF;
 }

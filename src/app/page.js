@@ -7,18 +7,18 @@ export default function HomePage() {
   return (
     <div className="flex-1 bg-slate-950 text-slate-100 flex flex-col relative overflow-hidden font-sans">
       {/* Background gradients */}
-      <div className="absolute top-[-10%] left-[-20%] w-[600px] h-[600px] rounded-full bg-orange-600/10 blur-[150px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-20%] w-[600px] h-[600px] rounded-full bg-blue-600/10 blur-[150px] pointer-events-none" />
+      <div className="absolute top-[-10%] left-[-20%] w-[600px] h-[600px] rounded-full bg-blue-600/10 blur-[150px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-20%] w-[600px] h-[600px] rounded-full bg-indigo-600/10 blur-[150px] pointer-events-none" />
 
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b border-slate-900 bg-slate-950/80 backdrop-blur-md">
         <div className="container mx-auto max-w-7xl flex h-16 items-center justify-between px-6">
           <div className="flex items-center gap-2">
-            <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center font-bold text-slate-950 text-lg shadow-lg shadow-orange-500/20">
+            <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-white text-lg shadow-lg shadow-blue-500/15">
               S
             </div>
             <span className="font-outfit text-xl font-bold tracking-tight bg-gradient-to-r from-slate-50 to-slate-300 bg-clip-text text-transparent">
-              Gestión <span className="text-orange-500">SySO</span>
+              Gestión <span className="text-blue-500">SySO</span>
             </span>
           </div>
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-400">
@@ -35,7 +35,7 @@ export default function HomePage() {
             </a>
             <a 
               href="/onboarding" 
-              className="text-sm font-semibold bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 px-4 py-2 rounded-md hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-orange-500/20"
+              className="text-sm font-semibold bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-2 rounded-md hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-blue-500/15"
             >
               Probar Demo
             </a>
@@ -45,13 +45,13 @@ export default function HomePage() {
 
       {/* Hero Section */}
       <section className="relative pt-20 pb-16 md:pt-32 md:pb-24 flex flex-col items-center justify-center px-6 text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-orange-500/30 bg-orange-950/20 text-orange-400 text-xs font-semibold mb-6 animate-pulse">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-blue-500/30 bg-blue-950/20 text-blue-400 text-xs font-semibold mb-6 animate-pulse">
           <span>🚀 Setup Inicial SaaS Multi-tenant</span>
         </div>
         
         <h1 className="font-outfit text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight max-w-4xl leading-tight">
           La plataforma inteligente para <br />
-          <span className="bg-gradient-to-r from-orange-500 via-amber-500 to-orange-400 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-blue-400 via-indigo-500 to-blue-600 bg-clip-text text-transparent">
             Seguridad e Higiene Industrial
           </span>
         </h1>
@@ -63,7 +63,7 @@ export default function HomePage() {
         <div className="mt-10 flex flex-wrap justify-center gap-4">
           <a 
             href="#features" 
-            className="px-6 py-3 rounded-lg font-semibold bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 hover:shadow-lg hover:shadow-orange-500/20 transition-all duration-200 active:scale-95"
+            className="px-6 py-3 rounded-lg font-semibold bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:shadow-lg hover:shadow-blue-500/15 transition-all duration-200 active:scale-95"
           >
             Comenzar Exploración
           </a>
@@ -91,7 +91,7 @@ export default function HomePage() {
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
             <div className="absolute bottom-8 left-8 right-8 flex flex-col md:flex-row md:items-end justify-between gap-4 text-left">
               <div>
-                <span className="text-xs font-semibold uppercase tracking-wider text-orange-500">Módulo de Inspecciones</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-blue-400">Módulo de Inspecciones</span>
                 <h3 className="font-outfit text-xl font-bold mt-1">Checklists Digitales y Reportes Automatizados</h3>
                 <p className="text-sm text-slate-400 mt-2 max-w-xl">
                   Acceso optimizado para dispositivos móviles en plantas industriales, obras de construcción y minería.
@@ -120,8 +120,8 @@ export default function HomePage() {
 
           <div className="grid md:grid-cols-3 gap-8">
             {/* Card 1 */}
-            <div className="group rounded-xl border border-slate-800/80 bg-slate-900/30 p-8 hover:border-orange-500/50 hover:bg-slate-900/60 transition-all duration-300">
-              <div className="h-12 w-12 rounded-lg bg-orange-950/50 border border-orange-500/30 flex items-center justify-center text-orange-400 font-bold text-lg mb-6 group-hover:scale-110 transition-transform">
+            <div className="group rounded-xl border border-slate-800/80 bg-slate-900/30 p-8 hover:border-blue-500/50 hover:bg-slate-900/60 transition-all duration-300">
+              <div className="h-12 w-12 rounded-lg bg-blue-950/50 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold text-lg mb-6 group-hover:scale-110 transition-transform">
                 🛡️
               </div>
               <h3 className="font-outfit text-xl font-bold text-slate-100">Seguridad Multi-tenant</h3>
@@ -131,8 +131,8 @@ export default function HomePage() {
             </div>
 
             {/* Card 2 */}
-            <div className="group rounded-xl border border-slate-800/80 bg-slate-900/30 p-8 hover:border-orange-500/50 hover:bg-slate-900/60 transition-all duration-300">
-              <div className="h-12 w-12 rounded-lg bg-orange-950/50 border border-orange-500/30 flex items-center justify-center text-orange-400 font-bold text-lg mb-6 group-hover:scale-110 transition-transform">
+            <div className="group rounded-xl border border-slate-800/80 bg-slate-900/30 p-8 hover:border-blue-500/50 hover:bg-slate-900/60 transition-all duration-300">
+              <div className="h-12 w-12 rounded-lg bg-blue-950/50 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold text-lg mb-6 group-hover:scale-110 transition-transform">
                 📋
               </div>
               <h3 className="font-outfit text-xl font-bold text-slate-100">Checklists Inteligentes</h3>
@@ -142,8 +142,8 @@ export default function HomePage() {
             </div>
 
             {/* Card 3 */}
-            <div className="group rounded-xl border border-slate-800/80 bg-slate-900/30 p-8 hover:border-orange-500/50 hover:bg-slate-900/60 transition-all duration-300">
-              <div className="h-12 w-12 rounded-lg bg-orange-950/50 border border-orange-500/30 flex items-center justify-center text-orange-400 font-bold text-lg mb-6 group-hover:scale-110 transition-transform">
+            <div className="group rounded-xl border border-slate-800/80 bg-slate-900/30 p-8 hover:border-blue-500/50 hover:bg-slate-900/60 transition-all duration-300">
+              <div className="h-12 w-12 rounded-lg bg-blue-950/50 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold text-lg mb-6 group-hover:scale-110 transition-transform">
                 📊
               </div>
               <h3 className="font-outfit text-xl font-bold text-slate-100">Métricas & Planes de Acción</h3>
