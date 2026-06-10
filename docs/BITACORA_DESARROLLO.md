@@ -4,6 +4,50 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 
 ---
 
+## [2026-06-09] Sistema de Login, Registro y Onboarding Completo en Next.js
+
+### Resumen de Cambios
+- Consolidación del flujo de onboarding en una **pantalla única** (eliminando el stepper por pasos previos).
+- Reclasificación de campos obligatorios: **Nombre, Correo (autocompletado), Teléfono, CUIT (11 números) y Geografía (Provincia/Localidad)**. El resto de datos (Matrícula, Firma, Logos, Redes) se configuran como **opcionales**.
+- Inclusión de campos de **Redes Sociales** (LinkedIn, Instagram, Facebook, TikTok, YouTube) y Sitio Web en la base de datos y formulario de empresa.
+- Redirección automática desde la raíz `/` directamente a la pantalla de `/login` para evitar el showcase promocional estático.
+- Cambio de textos de acción: botón principal renombrado a **"Guardar datos"** y adición de la opción interactiva **"Contratar / Subir Plan"** con selector de planes en modal.
+- Creación de la migración incremental de base de datos `20260610000000_add_tenant_social_fields.sql`.
+
+### Decisiones Clave
+- **Políticas RLS en Storage**: Los buckets `signatures`, `documents` (privados) y `logos` (público) se configuran con políticas a nivel de Postgres que restringen la subida/edición basándose en `auth.uid()` o en el `tenant_id` del perfil.
+- **Transición de Entorno**: Actualización del archivo `package.json` agregando dependencias de Next.js y Supabase para permitir el desarrollo frontend unificado.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `next-best-practices`
+- `supabase`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260609000000_add_user_onboarding_fields.sql`
+- `[NEW] src/app/login/page.js`
+- `[NEW] src/app/register/page.js`
+- `[NEW] src/app/onboarding/page.js`
+- `[NEW] src/middleware.js`
+- `[NEW] jsconfig.json`
+- `[MODIFY] package.json`
+- `[MODIFY] src/lib/supabase.js`
+- `[MODIFY] .env`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Instalación de dependencias de npm finalizada con éxito.
+- Compilación y build de validación de Next.js.
+
+### Riesgos Detectados / Remanentes
+- El backend Express existente sigue viviendo en `src/server.js` y debe convivir con el enrutamiento y API de Next.js, coordinando variables de entorno comunes.
+
+### Próximo Paso Recomendado
+- Aplicar la migración SQL de Supabase y proceder con la construcción del Dashboard de la empresa (`/[tenant-slug]/dashboard`).
+
+---
+
 ## [2026-06-08] Setup de Arquitectura y Alineación de Marca
 
 ### Resumen de Cambios
