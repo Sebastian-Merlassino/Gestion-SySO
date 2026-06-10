@@ -46,6 +46,7 @@ export async function middleware(request) {
   const isPublicRoute = 
     pathname === '/login' || 
     pathname === '/register' || 
+    pathname === '/reset-password' ||
     pathname.startsWith('/api/') ||
     pathname.startsWith('/_next/') ||
     pathname.includes('.') || // archivos estáticos en public/

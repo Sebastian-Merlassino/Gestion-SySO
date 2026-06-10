@@ -1,4 +1,4 @@
-// src/app/onboarding/page.js
+// src/app/[tenant-slug]/profile/page.js
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -21,18 +21,25 @@ import {
   Mail,
   Calendar,
   X,
-  CheckCircle
+  CheckCircle,
+  ArrowLeft
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import geodata from '@/data/localidades_agrupado.json';
 
-export default function OnboardingPage() {
+export default function ProfilePage({ params }) {
+  const tenantSlug = params['tenant-slug'];
+  
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
   const [isDevMode, setIsDevMode] = useState(false);
   
-  // Datos del Usuario
+  // Datos de Usuario y Empresa
   const [currentUser, setCurrentUser] = useState(null);
+  const [profileData, setProfileData] = useState(null);
+  const [tenantData, setTenantData] = useState(null);
 
   // Campos Obligatorios
   const [fullName, setFullName] = useState('');
@@ -43,7 +50,7 @@ export default function OnboardingPage() {
   const [provincia, setProvincia] = useState('');
   const [localidad, setLocalidad] = useState('');
   const [localidadesList, setLocalidadesList] = useState([]);
-  const [birthDate, setBirthDate] = useState(''); // Ahora Obligatorio
+  const [birthDate, setBirthDate] = useState('');
 
   // Campos Opcionales - Matrícula Profesional
   const [matriculaInstitucion, setMatriculaInstitucion] = useState('');
@@ -56,7 +63,6 @@ export default function OnboardingPage() {
 
   // Campos Opcionales - Firma e Identidad de Empresa
   const [companyName, setCompanyName] = useState('');
-  const [companySlug, setCompanySlug] = useState('');
   const [fotoFirma, setFotoFirma] = useState(null);
   const [fotoFirmaPreview, setFotoFirmaPreview] = useState('');
   const [logo1, setLogo1] = useState(null);
@@ -72,51 +78,92 @@ export default function OnboardingPage() {
   const [tiktok, setTiktok] = useState('');
   const [youtube, setYoutube] = useState('');
 
-  // Control del modal de contratación de planes
+  // Plan
+  const [selectedPlan, setSelectedPlan] = useState('free');
   const [showPlanModal, setShowPlanModal] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState('free'); // 'free' por defecto
 
   useEffect(() => {
-    // Verificar si las variables de Supabase reales están configuradas
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('placeholder')) {
       setIsDevMode(true);
+      setInitialLoading(false);
     }
 
-    // Obtener sesión y datos del perfil del usuario
-    const fetchUser = async () => {
+    const loadProfileAndTenant = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          setCurrentUser(user);
-          setEmail(user.email || '');
+        if (!user) {
+          window.location.href = '/login';
+          return;
+        }
+        setCurrentUser(user);
 
-          // Consultar el perfil de Supabase para obtener el nombre cargado
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('full_name')
-            .eq('id', user.id)
+        // Cargar Perfil
+        const { data: profile, error: pErr } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (pErr) throw pErr;
+        setProfileData(profile);
+
+        // Pre-cargar inputs de perfil
+        setFullName(profile.full_name || '');
+        setEmail(profile.email || '');
+        setPhone(profile.phone || '');
+        setCuit(profile.cuit || '');
+        setProvincia(profile.provincia || '');
+        setLocalidad(profile.localidad || '');
+        setBirthDate(profile.birth_date || '');
+        setMatriculaInstitucion(profile.matricula_institucion || '');
+        setMatriculaNumero(profile.matricula_numero || '');
+        setMatriculaVencimiento(profile.matricula_vencimiento || '');
+        setFotoFrentePreview(profile.matricula_foto_frente_url || '');
+        setFotoDorsoPreview(profile.matricula_foto_dorso_url || '');
+        setFotoFirmaPreview(profile.signature_url || '');
+
+        // Cargar Tenant
+        if (profile.tenant_id) {
+          const { data: tenant, error: tErr } = await supabase
+            .from('tenants')
+            .select('*')
+            .eq('id', profile.tenant_id)
             .single();
 
-          if (profile?.full_name) {
-            setFullName(profile.full_name);
-          } else {
-            setFullName(user.user_metadata?.full_name || '');
-          }
+          if (tErr) throw tErr;
+          setTenantData(tenant);
+
+          // Pre-cargar inputs de tenant
+          setCompanyName(tenant.name || '');
+          setSelectedPlan(tenant.plan_id || 'free');
+          setLogo1Preview(tenant.logo_1_url || '');
+          setLogo2Preview(tenant.logo_2_url || '');
+          setWebsite(tenant.website || '');
+          setLinkedin(tenant.social_linkedin || '');
+          setInstagram(tenant.social_instagram || '');
+          setFacebook(tenant.social_facebook || '');
+          setTiktok(tenant.social_tiktok || '');
+          setYoutube(tenant.social_youtube || '');
         }
+
+        setInitialLoading(false);
       } catch (e) {
-        console.error('Error al recuperar datos del perfil:', e);
+        console.error('Error al cargar perfil:', e);
+        setInitialLoading(false);
       }
     };
-    fetchUser();
-  }, []);
+
+    if (!isDevMode) {
+      loadProfileAndTenant();
+    }
+  }, [isDevMode]);
 
   // Manejar cambio de provincia para cargar localidades
   useEffect(() => {
     if (!provincia) {
       setLocalidadesList([]);
-      setLocalidad('');
       return;
     }
     
@@ -140,23 +187,8 @@ export default function OnboardingPage() {
     } else {
       setLocalidadesList([]);
     }
-    setLocalidad('');
   }, [provincia]);
 
-  // Autogenerar slug en base al nombre de la empresa
-  useEffect(() => {
-    const baseName = companyName || fullName || 'mi-empresa';
-    const slug = baseName
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '') // Quitar acentos
-      .replace(/[^a-z0-9\s-]/g, '') // Quitar caracteres especiales
-      .trim()
-      .replace(/\s+/g, '-');
-    setCompanySlug(slug);
-  }, [companyName, fullName]);
-
-  // Validar CUIT en tiempo real (solo 11 números enteros)
   const handleCuitChange = (e) => {
     const value = e.target.value;
     const cleaned = value.replace(/[^0-9]/g, '').slice(0, 11);
@@ -169,7 +201,6 @@ export default function OnboardingPage() {
     }
   };
 
-  // Manejar selección y preview de imágenes
   const handleImageChange = (e, setFile, setPreview) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -206,13 +237,13 @@ export default function OnboardingPage() {
     return publicUrl;
   };
 
-  // Enviar el formulario completo (Alta en una sola ventana)
-  const handleSaveData = async (e) => {
+  const handleSaveChanges = async (e) => {
     e.preventDefault();
     setError(null);
+    setSuccess(false);
     setLoading(true);
 
-    // Validar únicamente campos obligatorios (incluyendo Fecha de Nacimiento)
+    // Validar obligatorios
     if (!fullName || !email || !phone || !cuit || !provincia || !localidad || !birthDate) {
       setError('Por favor completa todos los campos obligatorios (*).');
       setLoading(false);
@@ -225,52 +256,30 @@ export default function OnboardingPage() {
       return;
     }
 
-    const userId = currentUser?.id || 'd290f1ee-6c54-4b01-90e6-d701748f0851'; // fallback en dev
-    const finalCompanyName = companyName || `${fullName} Consultora`;
+    const userId = currentUser?.id || 'd290f1ee-6c54-4b01-90e6-d701748f0851';
+    const tenantId = profileData?.tenant_id;
 
     if (isDevMode) {
-      console.log('Simulando guardado de onboarding en modo desarrollo...');
+      console.log('Simulando guardado en desarrollo...');
       setTimeout(() => {
         setLoading(false);
+        setSuccess(true);
         confetti({
-          particleCount: 150,
-          spread: 80,
+          particleCount: 100,
+          spread: 60,
           origin: { y: 0.6 }
         });
-        setTimeout(() => {
-          window.location.href = `/${companySlug}/dashboard`;
-        }, 2500);
-      }, 2500);
+      }, 2000);
       return;
     }
 
     try {
-      // 1. Crear el Tenant (Empresa)
-      const { data: tenant, error: tenantErr } = await supabase
-        .from('tenants')
-        .insert({
-          name: finalCompanyName,
-          slug: companySlug,
-          status: 'active',
-          plan_id: selectedPlan,
-          website: website || null,
-          social_linkedin: linkedin || null,
-          social_instagram: instagram || null,
-          social_facebook: facebook || null,
-          social_tiktok: tiktok || null,
-          social_youtube: youtube || null,
-        })
-        .select()
-        .single();
-
-      if (tenantErr) throw tenantErr;
-
-      // 2. Subida de imágenes opcionales a storage
-      let signatureUrl = null;
-      let frontUrl = null;
-      let backUrl = null;
-      let logo1Url = null;
-      let logo2Url = null;
+      // 1. Subida de imágenes nuevas
+      let signatureUrl = fotoFirmaPreview;
+      let frontUrl = fotoFrentePreview;
+      let backUrl = fotoDorsoPreview;
+      let logo1Url = logo1Preview;
+      let logo2Url = logo2Preview;
 
       const uploadPromises = [];
       const uploadKeys = [];
@@ -293,15 +302,15 @@ export default function OnboardingPage() {
         uploadKeys.push('fotoDorso');
       }
 
-      if (logo1) {
+      if (logo1 && tenantId) {
         const ext = logo1.name.split('.').pop();
-        uploadPromises.push(uploadFileToStorage('logos', `${tenant.id}/logo1_${Date.now()}.${ext}`, logo1));
+        uploadPromises.push(uploadFileToStorage('logos', `${tenantId}/logo1_${Date.now()}.${ext}`, logo1));
         uploadKeys.push('logo1');
       }
 
-      if (logo2) {
+      if (logo2 && tenantId) {
         const ext = logo2.name.split('.').pop();
-        uploadPromises.push(uploadFileToStorage('logos', `${tenant.id}/logo2_${Date.now()}.${ext}`, logo2));
+        uploadPromises.push(uploadFileToStorage('logos', `${tenantId}/logo2_${Date.now()}.${ext}`, logo2));
         uploadKeys.push('logo2');
       }
 
@@ -314,88 +323,99 @@ export default function OnboardingPage() {
           if (key === 'logo1') logo1Url = uploadUrls[idx];
           if (key === 'logo2') logo2Url = uploadUrls[idx];
         });
-
-        // Actualizar Tenant si se subieron logos
-        if (logo1Url || logo2Url) {
-          const { error: logoUpdateErr } = await supabase
-            .from('tenants')
-            .update({
-              logo_1_url: logo1Url,
-              logo_2_url: logo2Url,
-            })
-            .eq('id', tenant.id);
-
-          if (logoUpdateErr) throw logoUpdateErr;
-        }
       }
 
-      // 3. Actualizar Perfil de Usuario
+      // 2. Actualizar Tenant
+      if (tenantId) {
+        const { error: tenantErr } = await supabase
+          .from('tenants')
+          .update({
+            name: companyName || `${fullName} Consultora`,
+            logo_1_url: logo1Url,
+            logo_2_url: logo2Url,
+            plan_id: selectedPlan,
+            website: website || null,
+            social_linkedin: linkedin || null,
+            social_instagram: instagram || null,
+            social_facebook: facebook || null,
+            social_tiktok: tiktok || null,
+            social_youtube: youtube || null,
+          })
+          .eq('id', tenantId);
+
+        if (tenantErr) throw tenantErr;
+      }
+
+      // 3. Actualizar Perfil
       const { error: profileErr } = await supabase
         .from('profiles')
         .update({
-          tenant_id: tenant.id,
           full_name: fullName,
-          email: email,
           phone: phone,
           cuit: cuit,
           provincia: provincia,
           localidad: localidad,
-          birth_date: birthDate, // Guardar fecha de nacimiento obligatoria
+          birth_date: birthDate,
           signature_url: signatureUrl,
           matricula_institucion: matriculaInstitucion || null,
           matricula_numero: matriculaNumero || null,
           matricula_vencimiento: matriculaVencimiento || null,
           matricula_foto_frente_url: frontUrl,
           matricula_foto_dorso_url: backUrl,
-          role: 'owner',
         })
         .eq('id', userId);
 
       if (profileErr) throw profileErr;
 
       setLoading(false);
-
-      // Celebrar onboarding exitoso
+      setSuccess(true);
+      
       confetti({
-        particleCount: 150,
-        spread: 80,
+        particleCount: 100,
+        spread: 60,
         origin: { y: 0.6 }
       });
 
-      // Redirigir al workspace del tenant
-      setTimeout(() => {
-        window.location.href = `/${companySlug}/dashboard`;
-      }, 2500);
-
     } catch (err) {
-      setError(err.message || 'Error al guardar los datos del perfil.');
+      setError(err.message || 'Error al actualizar tus datos.');
       setLoading(false);
     }
   };
 
+  if (initialLoading) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-500 mx-auto" />
+          <p className="text-xs text-slate-400">Cargando datos de perfil...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center relative overflow-hidden font-sans py-12 px-4">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center relative overflow-hidden font-sans py-12 px-4">
       {/* Background gradients */}
       <div className="absolute top-[-10%] left-[-20%] w-[600px] h-[600px] rounded-full bg-blue-600/10 blur-[150px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-20%] w-[600px] h-[600px] rounded-full bg-indigo-600/10 blur-[150px] pointer-events-none" />
 
       <div className="w-full max-w-3xl z-10">
         
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 items-center justify-center font-bold text-white text-2xl shadow-lg shadow-blue-500/20 mb-4">
-            S
-          </div>
-          <h1 className="font-outfit text-3xl font-extrabold tracking-tight bg-gradient-to-r from-slate-50 via-slate-200 to-slate-400 bg-clip-text text-transparent">
-            Completar Perfil y Registro
+        {/* Back Link and Header */}
+        <div className="flex justify-between items-center mb-8">
+          <a
+            href={`/${tenantSlug}/dashboard`}
+            className="flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-slate-200 transition-colors py-2 px-4 rounded-xl border border-slate-900 bg-slate-950/40 backdrop-blur"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Volver al Dashboard
+          </a>
+          <h1 className="font-outfit text-2xl font-extrabold tracking-tight bg-gradient-to-r from-slate-50 to-slate-300 bg-clip-text text-transparent">
+            Mi Perfil Profesional
           </h1>
-          <p className="text-sm text-slate-400 mt-2">
-            Ingresá tus datos para dar de alta tu consultorio o consultora en la plataforma
-          </p>
         </div>
 
-        {/* Form Container */}
-        <form onSubmit={handleSaveData} className="space-y-8">
+        <form onSubmit={handleSaveChanges} className="space-y-8">
           
           {/* SECCIÓN 1: DATOS OBLIGATORIOS */}
           <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-8 backdrop-blur-xl shadow-2xl space-y-6">
@@ -422,7 +442,7 @@ export default function OnboardingPage() {
                   placeholder="Juan Pérez"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl py-3 px-4 text-slate-200 focus:outline-none transition-all"
+                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl py-3 px-4 text-slate-200 focus:outline-none"
                 />
               </div>
 
@@ -437,10 +457,8 @@ export default function OnboardingPage() {
                   <input
                     type="email"
                     required
-                    placeholder="juan.perez@empresa.com"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-slate-950/40 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-slate-400 cursor-not-allowed focus:outline-none"
+                    className="w-full bg-slate-950/40 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-slate-500 cursor-not-allowed focus:outline-none"
                     disabled
                   />
                 </div>
@@ -450,21 +468,16 @@ export default function OnboardingPage() {
             <div className="grid md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  CUIT (11 números enteros) <span className="text-blue-500">*</span>
+                  CUIT <span className="text-blue-500">*</span>
                 </label>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
-                    <Hash className="h-4 w-4" />
-                  </span>
-                  <input
-                    type="text"
-                    required
-                    placeholder="20443332225"
-                    value={cuit}
-                    onChange={handleCuitChange}
-                    className={`w-full bg-slate-950/60 border ${cuitError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-slate-800 focus:border-blue-500 focus:ring-blue-500'} rounded-xl py-3 pl-10 pr-4 text-slate-200 focus:outline-none transition-all`}
-                  />
-                </div>
+                <input
+                  type="text"
+                  required
+                  placeholder="20443332225"
+                  value={cuit}
+                  onChange={handleCuitChange}
+                  className={`w-full bg-slate-950/60 border ${cuitError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-slate-800 focus:border-blue-500 focus:ring-blue-500'} rounded-xl py-3 px-4 text-slate-200 focus:outline-none`}
+                />
                 {cuitError && (
                   <span className="text-[10px] text-red-400 mt-1 block">{cuitError}</span>
                 )}
@@ -474,34 +487,27 @@ export default function OnboardingPage() {
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
                   Teléfono <span className="text-blue-500">*</span>
                 </label>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
-                    <Phone className="h-4 w-4" />
-                  </span>
-                  <input
-                    type="text"
-                    required
-                    placeholder="1165432109"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl py-3 pl-10 pr-4 text-slate-200 focus:outline-none transition-all"
-                  />
-                </div>
+                <input
+                  type="text"
+                  required
+                  placeholder="1165432109"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 rounded-xl py-3 px-4 text-slate-200 focus:outline-none"
+                />
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
                   Fecha de Nacimiento <span className="text-blue-500">*</span>
                 </label>
-                <div className="relative">
-                  <input
-                    type="date"
-                    required
-                    value={birthDate}
-                    onChange={(e) => setBirthDate(e.target.value)}
-                    className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl py-3 px-3 text-slate-200 focus:outline-none text-xs transition-all"
-                  />
-                </div>
+                <input
+                  type="date"
+                  required
+                  value={birthDate}
+                  onChange={(e) => setBirthDate(e.target.value)}
+                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 rounded-xl py-3 px-3 text-slate-200 text-xs focus:outline-none"
+                />
               </div>
             </div>
 
@@ -514,7 +520,7 @@ export default function OnboardingPage() {
                   required
                   value={provincia}
                   onChange={(e) => setProvincia(e.target.value)}
-                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl py-3 px-4 text-slate-200 focus:outline-none transition-all cursor-pointer"
+                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 rounded-xl py-3 px-4 text-slate-200 focus:outline-none cursor-pointer"
                 >
                   <option value="" disabled>Selecciona una provincia</option>
                   {geodata.map((prov) => (
@@ -534,7 +540,7 @@ export default function OnboardingPage() {
                   disabled={!provincia}
                   value={localidad}
                   onChange={(e) => setLocalidad(e.target.value)}
-                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl py-3 px-4 text-slate-200 focus:outline-none transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 rounded-xl py-3 px-4 text-slate-200 focus:outline-none cursor-pointer"
                 >
                   <option value="" disabled>
                     {!provincia ? 'Primero selecciona una provincia' : 'Selecciona una localidad'}
@@ -549,7 +555,7 @@ export default function OnboardingPage() {
             </div>
           </div>
 
-          {/* SECCIÓN 2: EMPRESA Y REDES SOCIALES (OPCIONAL) */}
+          {/* SECCIÓN 2: IDENTIDAD DE EMPRESA Y REDES SOCIALES (OPCIONAL) */}
           <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-8 backdrop-blur-xl shadow-2xl space-y-6">
             <h3 className="text-lg font-bold text-slate-100 border-b border-slate-800/60 pb-3 flex items-center gap-2">
               <span className="flex items-center justify-center h-6 w-6 rounded-md bg-blue-500/10 text-blue-400 text-xs font-bold border border-blue-500/20">2</span>
@@ -563,10 +569,9 @@ export default function OnboardingPage() {
                 </label>
                 <input
                   type="text"
-                  placeholder="Ej: Delta Higiene y Seguridad"
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
-                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl py-3 px-4 text-slate-200 focus:outline-none transition-all"
+                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 rounded-xl py-3 px-4 text-slate-200 focus:outline-none"
                 />
               </div>
 
@@ -574,44 +579,37 @@ export default function OnboardingPage() {
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
                   Página Web de la Empresa
                 </label>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
-                    <Globe className="h-4 w-4" />
-                  </span>
-                  <input
-                    type="url"
-                    placeholder="https://miweb.com"
-                    value={website}
-                    onChange={(e) => setWebsite(e.target.value)}
-                    className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl py-3 pl-10 pr-4 text-slate-200 focus:outline-none transition-all"
-                  />
-                </div>
+                <input
+                  type="url"
+                  placeholder="https://miweb.com"
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 rounded-xl py-3 px-4 text-slate-200 focus:outline-none"
+                />
               </div>
             </div>
 
-            {/* Redes Sociales Grid */}
+            {/* Redes */}
             <div className="space-y-4">
-              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Enlaces a Redes Sociales</h4>
+              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Redes Sociales</h4>
               
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">LinkedIn</label>
                   <input
                     type="url"
-                    placeholder="https://linkedin.com/in/usuario"
                     value={linkedin}
                     onChange={(e) => setLinkedin(e.target.value)}
-                    className="w-full bg-slate-950/40 border border-slate-800/80 focus:border-blue-500 rounded-xl py-2 px-3 text-xs focus:outline-none"
+                    className="w-full bg-slate-950/40 border border-slate-800/80 rounded-xl py-2 px-3 text-xs focus:outline-none"
                   />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Instagram</label>
                   <input
                     type="url"
-                    placeholder="https://instagram.com/usuario"
                     value={instagram}
                     onChange={(e) => setInstagram(e.target.value)}
-                    className="w-full bg-slate-950/40 border border-slate-800/80 focus:border-blue-500 rounded-xl py-2 px-3 text-xs focus:outline-none"
+                    className="w-full bg-slate-950/40 border border-slate-800/80 rounded-xl py-2 px-3 text-xs focus:outline-none"
                   />
                 </div>
               </div>
@@ -621,36 +619,33 @@ export default function OnboardingPage() {
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Facebook</label>
                   <input
                     type="url"
-                    placeholder="https://facebook.com/pagina"
                     value={facebook}
                     onChange={(e) => setFacebook(e.target.value)}
-                    className="w-full bg-slate-950/40 border border-slate-800/80 focus:border-blue-500 rounded-xl py-2 px-3 text-xs focus:outline-none"
+                    className="w-full bg-slate-950/40 border border-slate-800/80 rounded-xl py-2 px-3 text-xs focus:outline-none"
                   />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">TikTok</label>
                   <input
                     type="url"
-                    placeholder="https://tiktok.com/@usuario"
                     value={tiktok}
                     onChange={(e) => setTiktok(e.target.value)}
-                    className="w-full bg-slate-950/40 border border-slate-800/80 focus:border-blue-500 rounded-xl py-2 px-3 text-xs focus:outline-none"
+                    className="w-full bg-slate-950/40 border border-slate-800/80 rounded-xl py-2 px-3 text-xs focus:outline-none"
                   />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">YouTube</label>
                   <input
                     type="url"
-                    placeholder="https://youtube.com/@canal"
                     value={youtube}
                     onChange={(e) => setYoutube(e.target.value)}
-                    className="w-full bg-slate-950/40 border border-slate-800/80 focus:border-blue-500 rounded-xl py-2 px-3 text-xs focus:outline-none"
+                    className="w-full bg-slate-950/40 border border-slate-800/80 rounded-xl py-2 px-3 text-xs focus:outline-none"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Carga de Logos */}
+            {/* Logos */}
             <div className="grid md:grid-cols-2 gap-6 pt-4">
               <div className="space-y-2">
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
@@ -665,13 +660,13 @@ export default function OnboardingPage() {
                         onClick={() => { setLogo1(null); setLogo1Preview(''); }}
                         className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
                       >
-                        Remover
+                        Quitar
                       </button>
                     </div>
                   ) : (
                     <>
                       <ImageIcon className="h-5 w-5 text-slate-500 group-hover:text-blue-400 mb-1" />
-                      <span className="text-[11px] text-slate-400">Subir Logo 1 (JPG/PNG)</span>
+                      <span className="text-[11px] text-slate-400">Subir Logo 1</span>
                       <input
                         type="file"
                         accept=".png, .jpg, .jpeg"
@@ -696,13 +691,13 @@ export default function OnboardingPage() {
                         onClick={() => { setLogo2(null); setLogo2Preview(''); }}
                         className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
                       >
-                        Remover
+                        Quitar
                       </button>
                     </div>
                   ) : (
                     <>
                       <ImageIcon className="h-5 w-5 text-slate-500 group-hover:text-blue-400 mb-1" />
-                      <span className="text-[11px] text-slate-400">Subir Logo 2 (JPG/PNG)</span>
+                      <span className="text-[11px] text-slate-400">Subir Logo 2</span>
                       <input
                         type="file"
                         accept=".png, .jpg, .jpeg"
@@ -730,10 +725,10 @@ export default function OnboardingPage() {
                 </label>
                 <input
                   type="text"
-                  placeholder="COPAIPA, Colegio de Ingenieros, etc."
+                  placeholder="COPAIPA, Colegio de Ingenieros..."
                   value={matriculaInstitucion}
                   onChange={(e) => setMatriculaInstitucion(e.target.value)}
-                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl py-3 px-4 text-slate-200 focus:outline-none transition-all"
+                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 rounded-xl py-3 px-4 text-slate-200"
                 />
               </div>
 
@@ -747,7 +742,7 @@ export default function OnboardingPage() {
                     placeholder="M-7534"
                     value={matriculaNumero}
                     onChange={(e) => setMatriculaNumero(e.target.value)}
-                    className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl py-3 px-4 text-slate-200 focus:outline-none transition-all"
+                    className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 rounded-xl py-3 px-4 text-slate-200"
                   />
                 </div>
                 <div>
@@ -758,18 +753,17 @@ export default function OnboardingPage() {
                     type="date"
                     value={matriculaVencimiento}
                     onChange={(e) => setMatriculaVencimiento(e.target.value)}
-                    className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl py-3 px-2 text-xs text-slate-200 focus:outline-none transition-all"
+                    className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 rounded-xl py-3 px-2 text-xs text-slate-200"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Subida Fotos Matrícula Frente/Dorso y Firma */}
             <div className="grid md:grid-cols-3 gap-6 pt-4">
               {/* Foto Frente */}
               <div className="space-y-2">
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Foto Matrícula (Frente)
+                  Foto Frente Matrícula
                 </label>
                 <div className="relative border border-dashed border-slate-800 hover:border-blue-500/40 rounded-xl p-2 transition-all bg-slate-950/40 flex flex-col items-center justify-center text-center h-32 overflow-hidden group">
                   {fotoFrentePreview ? (
@@ -786,7 +780,7 @@ export default function OnboardingPage() {
                   ) : (
                     <>
                       <Upload className="h-5 w-5 text-slate-500 group-hover:text-blue-400 mb-1" />
-                      <span className="text-[11px] text-slate-400">Frente (JPG/PNG)</span>
+                      <span className="text-[11px] text-slate-400">Subir Frente</span>
                       <input
                         type="file"
                         accept=".png, .jpg, .jpeg"
@@ -801,7 +795,7 @@ export default function OnboardingPage() {
               {/* Foto Dorso */}
               <div className="space-y-2">
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Foto Matrícula (Dorso)
+                  Foto Dorso Matrícula
                 </label>
                 <div className="relative border border-dashed border-slate-800 hover:border-blue-500/40 rounded-xl p-2 transition-all bg-slate-950/40 flex flex-col items-center justify-center text-center h-32 overflow-hidden group">
                   {fotoDorsoPreview ? (
@@ -818,7 +812,7 @@ export default function OnboardingPage() {
                   ) : (
                     <>
                       <Upload className="h-5 w-5 text-slate-500 group-hover:text-blue-400 mb-1" />
-                      <span className="text-[11px] text-slate-400">Dorso (JPG/PNG)</span>
+                      <span className="text-[11px] text-slate-400">Subir Dorso</span>
                       <input
                         type="file"
                         accept=".png, .jpg, .jpeg"
@@ -850,7 +844,7 @@ export default function OnboardingPage() {
                   ) : (
                     <>
                       <FileText className="h-5 w-5 text-slate-500 group-hover:text-blue-400 mb-1" />
-                      <span className="text-[11px] text-slate-400">Subir Firma (JPG/PNG)</span>
+                      <span className="text-[11px] text-slate-400">Subir Firma</span>
                       <input
                         type="file"
                         accept=".png, .jpg, .jpeg"
@@ -864,38 +858,31 @@ export default function OnboardingPage() {
             </div>
           </div>
 
-          {/* SECCIÓN 5: PLAN ADQUIRIDO */}
+          {/* SECCIÓN 4: PLAN */}
           <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-8 backdrop-blur-xl shadow-2xl space-y-6">
             <h3 className="text-lg font-bold text-slate-100 border-b border-slate-800/60 pb-3 flex items-center gap-2">
-              <span className="flex items-center justify-center h-6 w-6 rounded-md bg-blue-500/10 text-blue-400 text-xs font-bold border border-blue-500/20">5</span>
-              Plan Adquirido
+              <span className="flex items-center justify-center h-6 w-6 rounded-md bg-blue-500/10 text-blue-400 text-xs font-bold border border-blue-500/20">4</span>
+              Plan Suscrito
             </h3>
 
             <div className="relative rounded-2xl border border-blue-500/20 bg-gradient-to-br from-blue-950/15 via-slate-900/40 to-indigo-950/10 p-6 overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-blue-500/5 blur-xl pointer-events-none" />
               
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-semibold uppercase tracking-wider">
-                    Suscripción Activa
-                  </span>
-                  {selectedPlan !== 'free' && (
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-semibold uppercase tracking-wider">
-                      Plan Elegido
-                    </span>
-                  )}
-                </div>
+                <span className="px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-semibold uppercase tracking-wider">
+                  Plan Activo
+                </span>
                 <h4 className="font-outfit text-xl font-extrabold text-slate-100">
                   {selectedPlan === 'free' && 'Plan Gratis Permanente'}
                   {selectedPlan === 'basic_5' && 'Plan 5 Empresas'}
                   {selectedPlan === 'standard_25' && 'Plan 25 Empresas'}
                   {selectedPlan === 'libre' && 'Plan Libre (Ilimitado)'}
                 </h4>
-                <p className="text-xs text-slate-400 max-w-md">
-                  {selectedPlan === 'free' && 'Probá la plataforma cargando hasta 1 empresa cliente en tu base de datos, sin límite de tiempo.'}
-                  {selectedPlan === 'basic_5' && 'Gestioná hasta 5 empresas clientes en simultáneo con todas las herramientas de la plataforma.'}
-                  {selectedPlan === 'standard_25' && 'Para consultoras con carteras medianas, hasta 25 empresas clientes activas.'}
-                  {selectedPlan === 'libre' && 'Empresas y clientes ilimitados, con branding y configuraciones de auditoría personalizadas.'}
+                <p className="text-xs text-slate-400">
+                  {selectedPlan === 'free' && 'Límite de hasta 1 empresa cliente en base de datos, sin vencimiento de prueba.'}
+                  {selectedPlan === 'basic_5' && 'Límite de hasta 5 empresas clientes en simultáneo.'}
+                  {selectedPlan === 'standard_25' && 'Límite de hasta 25 empresas clientes en simultáneo.'}
+                  {selectedPlan === 'libre' && 'Soporte ilimitado de empresas, inspectores y marca personal.'}
                 </p>
               </div>
 
@@ -912,17 +899,23 @@ export default function OnboardingPage() {
                 <button
                   type="button"
                   onClick={() => setShowPlanModal(true)}
-                  className="py-2.5 px-4 rounded-xl border border-blue-500/40 hover:bg-blue-500/10 text-blue-400 font-semibold text-xs transition-all flex items-center justify-center gap-2 shadow-sm"
+                  className="py-2.5 px-4 rounded-xl border border-blue-500/40 hover:bg-blue-500/10 text-blue-400 font-semibold text-xs transition-all flex items-center justify-center gap-2"
                 >
                   <Sparkles className="h-3.5 w-3.5" />
-                  Contratar / Subir Plan
+                  Cambiar / Subir Plan
                 </button>
               </div>
             </div>
           </div>
 
           {/* Form Actions */}
-          <div className="flex items-center justify-end pt-4">
+          <div className="flex items-center justify-end pt-4 gap-4">
+            {success && (
+              <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1.5">
+                <CheckCircle className="h-4 w-4" />
+                ¡Cambios guardados con éxito en Supabase!
+              </span>
+            )}
             <button
               type="submit"
               disabled={loading}
@@ -931,12 +924,12 @@ export default function OnboardingPage() {
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Guardando información...
+                  Guardando cambios...
                 </>
               ) : (
                 <>
                   Guardar datos
-                  <CheckCircle className="h-4 w-4 text-blue-100" />
+                  <CheckCircle2 className="h-4 w-4 text-blue-100" />
                 </>
               )}
             </button>
@@ -950,7 +943,6 @@ export default function OnboardingPage() {
       {showPlanModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl p-6 shadow-2xl relative animate-scaleUp">
-            {/* Close Button */}
             <button 
               onClick={() => setShowPlanModal(false)}
               className="absolute top-4 right-4 p-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-slate-100 transition-colors border border-slate-800"
@@ -963,7 +955,7 @@ export default function OnboardingPage() {
                 Suscripciones SaaS
               </span>
               <h3 className="font-outfit text-2xl font-extrabold text-slate-50 mt-2">
-                Seleccioná tu Plan Comercial
+                Modificar tu Plan Comercial
               </h3>
               <p className="text-xs text-slate-400 mt-1">
                 Elegí el plan que mejor se adapte a tus necesidades de seguridad e higiene.

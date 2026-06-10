@@ -4,6 +4,48 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 
 ---
 
+## [2026-06-10] Recuperación de Contraseña, Edición de Perfil, Alertas Modales y Nuevo Modelo Comercial de Planes
+
+### Resumen de Cambios
+- Reemplazo de banners de error de acceso en el Login por **ventanas emergentes modales de notificación** de error.
+- Implementación de modal de **¿La olvidaste?** en el Login para ingreso de correo y envío de enlace de restablecimiento por correo.
+- Creación de la pantalla **/reset-password** para el restablecimiento de contraseñas de manera segura conectada a `supabase.auth.updateUser`.
+- Modificación del Onboarding para **auto-rellenar el Nombre y Correo** del usuario autenticado en la carga de la página.
+- Configuración de la **Fecha de Nacimiento como dato estrictamente obligatorio** en el alta y edición de perfil.
+- Creación de la pantalla de **Edición de Perfil** `/[tenant-slug]/profile` para actualización segura de datos, logos, matrículas y firma.
+- Reestructuración de la base de datos y la interfaz del plan a: **Gratis permanente (1 cliente)**, Plan 5 ($3.500), Plan 25 ($7.500) y Plan Libre ($12.000).
+- Creación de la migración incremental SQL `20260610010000_adjust_plans_constraint.sql` para actualizar la restricción de planes.
+
+### Decisiones Clave
+- **Privacidad y Rutas**: Registro de la ruta `/reset-password` en el middleware de Next.js como pública para que los usuarios puedan reestablecer su clave sin bloqueos de ruteo.
+- **Persistencia Segura**: Habilitación de la edición de perfil bajo la política RLS Postgres `profile_self_update` que garantiza que el usuario solo pueda modificar sus propios datos.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `next-best-practices`
+- `supabase`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260610010000_adjust_plans_constraint.sql`
+- `[NEW] src/app/reset-password/page.js`
+- `[NEW] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] src/app/login/page.js`
+- `[MODIFY] src/app/onboarding/page.js`
+- `[MODIFY] src/middleware.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación y build de verificación de Next.js finalizada con éxito.
+
+### Riesgos Detectados / Remanentes
+- Los enlaces de recuperación locales redirigen a `http://localhost:3000/reset-password` y deberán configurarse en las variables de entorno de Supabase para producción.
+
+### Próximo Paso Recomendado
+- Aplicar la nueva migración SQL incremental en Supabase y continuar con el desarrollo de la pantalla del Dashboard de Clientes para validar el límite del Plan Gratis de 1 cliente.
+
+---
+
 ## [2026-06-09] Sistema de Login, Registro y Onboarding Completo en Next.js
 
 ### Resumen de Cambios
