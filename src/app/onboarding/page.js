@@ -31,8 +31,19 @@ export default function OnboardingPage() {
   const [error, setError] = useState(null);
   const [isDevMode, setIsDevMode] = useState(false);
   
+  // Notificación de tipo Toast
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+  const triggerToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: '', type: 'success' });
+    }, 3500);
+  };
+  
   // Datos del Usuario
   const [currentUser, setCurrentUser] = useState(null);
+  const [initialValues, setInitialValues] = useState(null);
 
   // Campos Obligatorios
   const [fullName, setFullName] = useState('');
@@ -90,8 +101,10 @@ export default function OnboardingPage() {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           setCurrentUser(user);
-          setEmail(user.email || '');
+          const emailVal = user.email || '';
+          setEmail(emailVal);
 
+          let nameVal = '';
           // Consultar el perfil de Supabase para obtener el nombre cargado
           const { data: profile } = await supabase
             .from('profiles')
@@ -100,10 +113,33 @@ export default function OnboardingPage() {
             .single();
 
           if (profile?.full_name) {
-            setFullName(profile.full_name);
+            nameVal = profile.full_name;
+            setFullName(nameVal);
           } else {
-            setFullName(user.user_metadata?.full_name || '');
+            nameVal = user.user_metadata?.full_name || '';
+            setFullName(nameVal);
           }
+
+          setInitialValues({
+            fullName: nameVal,
+            email: emailVal,
+            phone: '',
+            cuit: '',
+            provincia: '',
+            localidad: '',
+            birthDate: '',
+            companyName: '',
+            website: '',
+            linkedin: '',
+            instagram: '',
+            facebook: '',
+            tiktok: '',
+            youtube: '',
+            matriculaInstitucion: '',
+            matriculaNumero: '',
+            matriculaVencimiento: '',
+            planId: 'free'
+          });
         }
       } catch (e) {
         console.error('Error al recuperar datos del perfil:', e);
@@ -214,13 +250,13 @@ export default function OnboardingPage() {
 
     // Validar únicamente campos obligatorios (incluyendo Fecha de Nacimiento)
     if (!fullName || !email || !phone || !cuit || !provincia || !localidad || !birthDate) {
-      setError('Por favor completa todos los campos obligatorios (*).');
+      triggerToast('Por favor completa todos los campos obligatorios (*).', 'error');
       setLoading(false);
       return;
     }
 
     if (cuit.length !== 11) {
-      setError('El CUIT debe contener exactamente 11 números.');
+      triggerToast('El CUIT debe contener exactamente 11 números.', 'error');
       setLoading(false);
       return;
     }
@@ -232,6 +268,7 @@ export default function OnboardingPage() {
       console.log('Simulando guardado de onboarding en modo desarrollo...');
       setTimeout(() => {
         setLoading(false);
+        triggerToast('¡Datos guardados con éxito!', 'success');
         confetti({
           particleCount: 150,
           spread: 80,
@@ -239,8 +276,8 @@ export default function OnboardingPage() {
         });
         setTimeout(() => {
           window.location.href = `/${companySlug}/dashboard`;
-        }, 2500);
-      }, 2500);
+        }, 2000);
+      }, 2000);
       return;
     }
 
@@ -340,7 +377,7 @@ export default function OnboardingPage() {
           cuit: cuit,
           provincia: provincia,
           localidad: localidad,
-          birth_date: birthDate, // Guardar fecha de nacimiento obligatoria
+          birth_date: birthDate,
           signature_url: signatureUrl,
           matricula_institucion: matriculaInstitucion || null,
           matricula_numero: matriculaNumero || null,
@@ -354,6 +391,7 @@ export default function OnboardingPage() {
       if (profileErr) throw profileErr;
 
       setLoading(false);
+      triggerToast('¡Datos de perfil guardados con éxito!', 'success');
 
       // Celebrar onboarding exitoso
       confetti({
@@ -365,10 +403,134 @@ export default function OnboardingPage() {
       // Redirigir al workspace del tenant
       setTimeout(() => {
         window.location.href = `/${companySlug}/dashboard`;
-      }, 2500);
+      }, 2000);
 
     } catch (err) {
-      setError(err.message || 'Error al guardar los datos del perfil.');
+      triggerToast(err.message || 'Error al guardar los datos del perfil.', 'error');
+      setLoading(false);
+    }
+  };
+
+  // Guardar solo campos obligatorios mínimos y redirigir
+  const handleSaveOnlyRequired = async () => {
+    // Validar únicamente campos obligatorios
+    if (!fullName || !email || !phone || !cuit || !provincia || !localidad || !birthDate) {
+      triggerToast('Por favor completa todos los campos obligatorios (*) antes de salir.', 'error');
+      return;
+    }
+
+    if (cuit.length !== 11) {
+      triggerToast('El CUIT debe contener exactamente 11 números.', 'error');
+      return;
+    }
+
+    // Verificar si el formulario tiene algún cambio respecto al inicio
+    const isDirty = 
+      fullName !== (initialValues?.fullName || '') ||
+      email !== (initialValues?.email || '') ||
+      phone !== '' ||
+      cuit !== '' ||
+      provincia !== '' ||
+      localidad !== '' ||
+      birthDate !== '' ||
+      companyName !== '' ||
+      website !== '' ||
+      linkedin !== '' ||
+      instagram !== '' ||
+      facebook !== '' ||
+      tiktok !== '' ||
+      youtube !== '' ||
+      matriculaInstitucion !== '' ||
+      matriculaNumero !== '' ||
+      matriculaVencimiento !== '' ||
+      selectedPlan !== 'free' ||
+      fotoFrente !== null ||
+      fotoDorso !== null ||
+      fotoFirma !== null ||
+      logo1 !== null ||
+      logo2 !== null;
+
+    if (isDirty) {
+      const confirmExit = window.confirm('Tienes cambios sin guardar. ¿Deseas salir sin guardar los cambios?');
+      if (!confirmExit) return;
+    }
+
+    setLoading(true);
+    const userId = currentUser?.id || 'd290f1ee-6c54-4b01-90e6-d701748f0851'; // fallback en dev
+    const finalCompanyName = companyName || `${fullName} Consultora`;
+
+    if (isDevMode) {
+      console.log('Simulando guardado mínimo en modo desarrollo...');
+      setTimeout(() => {
+        setLoading(false);
+        triggerToast('¡Perfil mínimo creado con éxito!', 'success');
+        confetti({
+          particleCount: 100,
+          spread: 60,
+          origin: { y: 0.6 }
+        });
+        setTimeout(() => {
+          window.location.href = `/${companySlug}/dashboard`;
+        }, 1500);
+      }, 1500);
+      return;
+    }
+
+    try {
+      // 1. Crear el Tenant básico (Empresa)
+      const { data: tenant, error: tenantErr } = await supabase
+        .from('tenants')
+        .insert({
+          name: finalCompanyName,
+          slug: companySlug,
+          status: 'active',
+          plan_id: selectedPlan,
+        })
+        .select()
+        .single();
+
+      if (tenantErr) throw tenantErr;
+
+      // 2. Actualizar Perfil de Usuario solo con obligatorios
+      const { error: profileErr } = await supabase
+        .from('profiles')
+        .update({
+          tenant_id: tenant.id,
+          full_name: fullName,
+          email: email,
+          phone: phone,
+          cuit: cuit,
+          provincia: provincia,
+          localidad: localidad,
+          birth_date: birthDate,
+          role: 'owner',
+          signature_url: null,
+          matricula_institucion: null,
+          matricula_numero: null,
+          matricula_vencimiento: null,
+          matricula_foto_frente_url: null,
+          matricula_foto_dorso_url: null,
+        })
+        .eq('id', userId);
+
+      if (profileErr) throw profileErr;
+
+      setLoading(false);
+      triggerToast('¡Perfil mínimo creado con éxito!', 'success');
+
+      confetti({
+        particleCount: 100,
+        spread: 60,
+        origin: { y: 0.6 }
+      });
+
+      // Redirigir al workspace del tenant
+      setTimeout(() => {
+        window.location.href = `/${companySlug}/dashboard`;
+      }, 1500);
+
+    } catch (err) {
+      triggerToast(err.message || 'Error al guardar los datos mínimos del perfil.', 'error');
       setLoading(false);
     }
   };
@@ -383,11 +545,8 @@ export default function OnboardingPage() {
         
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 items-center justify-center font-bold text-white text-2xl shadow-lg shadow-blue-500/20 mb-4">
-            S
-          </div>
           <h1 className="font-outfit text-3xl font-extrabold tracking-tight bg-gradient-to-r from-slate-50 via-slate-200 to-slate-400 bg-clip-text text-transparent">
-            Completar Perfil y Registro
+            Perfil de usuario
           </h1>
           <p className="text-sm text-slate-400 mt-2">
             Ingresá tus datos para dar de alta tu consultorio o consultora en la plataforma
@@ -397,19 +556,12 @@ export default function OnboardingPage() {
         {/* Form Container */}
         <form onSubmit={handleSaveData} className="space-y-8">
           
-          {/* SECCIÓN 1: DATOS OBLIGATORIOS */}
+          {/* SECCIÓN 1: INFORMACIÓN DEL USUARIO */}
           <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-8 backdrop-blur-xl shadow-2xl space-y-6">
             <h3 className="text-lg font-bold text-slate-100 border-b border-slate-800/60 pb-3 flex items-center gap-2">
-              <span className="flex items-center justify-center h-6 w-6 rounded-md bg-blue-500/10 text-blue-400 text-xs font-bold border border-blue-500/20">1</span>
-              Información Obligatoria
+              <User className="text-[#468DFF] h-5 w-5" />
+              Información del usuario
             </h3>
-
-            {error && (
-              <div className="p-3 rounded-lg border border-red-500/20 bg-red-950/20 text-red-400 text-xs flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-                <span>{error}</span>
-              </div>
-            )}
 
             <div className="grid md:grid-cols-2 gap-6">
               <div>
@@ -547,13 +699,161 @@ export default function OnboardingPage() {
                 </select>
               </div>
             </div>
+
+            {/* Matrícula Profesional y Firma */}
+            <div className="pt-4 border-t border-slate-800/60 space-y-6">
+              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Briefcase className="h-4 w-4 text-[#468DFF]" />
+                Matrícula Profesional y Firma (Opcional)
+              </h4>
+              
+              <div className="grid md:grid-cols-3 gap-6">
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                    Colegio o Institución Emisora
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="COPAIPA, Colegio de Ingenieros, etc."
+                    value={matriculaInstitucion}
+                    onChange={(e) => setMatriculaInstitucion(e.target.value)}
+                    className="w-full bg-slate-950/60 border border-slate-800 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-200 focus:outline-none transition-all"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                      Número
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="M-7534"
+                      value={matriculaNumero}
+                      onChange={(e) => setMatriculaNumero(e.target.value)}
+                      className="w-full bg-slate-950/60 border border-slate-800 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-200 focus:outline-none transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                      Vencimiento
+                    </label>
+                    <input
+                      type="date"
+                      value={matriculaVencimiento}
+                      onChange={(e) => setMatriculaVencimiento(e.target.value)}
+                      className="w-full bg-slate-950/60 border border-slate-800 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-2 text-xs text-slate-200 focus:outline-none transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Subida Fotos Matrícula Frente/Dorso y Firma */}
+              <div className="grid md:grid-cols-3 gap-6 pt-4">
+                {/* Foto Frente */}
+                <div className="space-y-2">
+                  <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider text-center">
+                    Foto Matrícula (Frente)
+                  </label>
+                  <div className="relative border border-dashed border-slate-800 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-950/40 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
+                    {fotoFrentePreview ? (
+                      <div className="relative w-full h-full">
+                        <img src={fotoFrentePreview} alt="Frente" className="w-full h-full object-contain" />
+                        <button
+                          type="button"
+                          onClick={() => { setFotoFrente(null); setFotoFrentePreview(''); }}
+                          className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
+                        >
+                          Quitar
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <Upload className="h-5 w-5 text-slate-500 group-hover:text-[#468DFF] mb-1" />
+                        <span className="text-[10px] text-slate-400">Frente (JPG/PNG)</span>
+                        <input
+                          type="file"
+                          accept=".png, .jpg, .jpeg"
+                          onChange={(e) => handleImageChange(e, setFotoFrente, setFotoFrentePreview)}
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                        />
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Foto Dorso */}
+                <div className="space-y-2">
+                  <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider text-center">
+                    Foto Matrícula (Dorso)
+                  </label>
+                  <div className="relative border border-dashed border-slate-800 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-950/40 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
+                    {fotoDorsoPreview ? (
+                      <div className="relative w-full h-full">
+                        <img src={fotoDorsoPreview} alt="Dorso" className="w-full h-full object-contain" />
+                        <button
+                          type="button"
+                          onClick={() => { setFotoDorso(null); setFotoDorsoPreview(''); }}
+                          className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
+                        >
+                          Quitar
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <Upload className="h-5 w-5 text-slate-500 group-hover:text-[#468DFF] mb-1" />
+                        <span className="text-[10px] text-slate-400">Dorso (JPG/PNG)</span>
+                        <input
+                          type="file"
+                          accept=".png, .jpg, .jpeg"
+                          onChange={(e) => handleImageChange(e, setFotoDorso, setFotoDorsoPreview)}
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                        />
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Firma */}
+                <div className="space-y-2">
+                  <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider text-center">
+                    Firma Digital (Imagen)
+                  </label>
+                  <div className="relative border border-dashed border-slate-800 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-950/40 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
+                    {fotoFirmaPreview ? (
+                      <div className="relative w-full h-full">
+                        <img src={fotoFirmaPreview} alt="Firma" className="w-full h-full object-contain" />
+                        <button
+                          type="button"
+                          onClick={() => { setFotoFirma(null); setFotoFirmaPreview(''); }}
+                          className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
+                        >
+                          Quitar
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <FileText className="h-5 w-5 text-slate-500 group-hover:text-[#468DFF] mb-1" />
+                        <span className="text-[10px] text-slate-400">Subir Firma</span>
+                        <input
+                          type="file"
+                          accept=".png, .jpg, .jpeg"
+                          onChange={(e) => handleImageChange(e, setFotoFirma, setFotoFirmaPreview)}
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                        />
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* SECCIÓN 2: EMPRESA Y REDES SOCIALES (OPCIONAL) */}
+          {/* SECCIÓN 2: IDENTIDAD DE LA EMPRESA */}
           <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-8 backdrop-blur-xl shadow-2xl space-y-6">
             <h3 className="text-lg font-bold text-slate-100 border-b border-slate-800/60 pb-3 flex items-center gap-2">
-              <span className="flex items-center justify-center h-6 w-6 rounded-md bg-blue-500/10 text-blue-400 text-xs font-bold border border-blue-500/20">2</span>
-              Identidad de Empresa y Redes Sociales (Opcional)
+              <Building className="text-[#468DFF] h-5 w-5" />
+              Identidad de la empresa
             </h3>
 
             <div className="grid md:grid-cols-2 gap-6">
@@ -716,159 +1016,11 @@ export default function OnboardingPage() {
             </div>
           </div>
 
-          {/* SECCIÓN 3: MATRÍCULA Y FIRMA (OPCIONAL) */}
+          {/* SECCIÓN 3: TIPO DE PLAN */}
           <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-8 backdrop-blur-xl shadow-2xl space-y-6">
             <h3 className="text-lg font-bold text-slate-100 border-b border-slate-800/60 pb-3 flex items-center gap-2">
-              <span className="flex items-center justify-center h-6 w-6 rounded-md bg-blue-500/10 text-blue-400 text-xs font-bold border border-blue-500/20">3</span>
-              Matrícula Profesional y Firma (Opcional)
-            </h3>
-
-            <div className="grid md:grid-cols-3 gap-6">
-              <div className="md:col-span-2">
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Colegio o Institución Emisora
-                </label>
-                <input
-                  type="text"
-                  placeholder="COPAIPA, Colegio de Ingenieros, etc."
-                  value={matriculaInstitucion}
-                  onChange={(e) => setMatriculaInstitucion(e.target.value)}
-                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl py-3 px-4 text-slate-200 focus:outline-none transition-all"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Número
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="M-7534"
-                    value={matriculaNumero}
-                    onChange={(e) => setMatriculaNumero(e.target.value)}
-                    className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl py-3 px-4 text-slate-200 focus:outline-none transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Vencimiento
-                  </label>
-                  <input
-                    type="date"
-                    value={matriculaVencimiento}
-                    onChange={(e) => setMatriculaVencimiento(e.target.value)}
-                    className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl py-3 px-2 text-xs text-slate-200 focus:outline-none transition-all"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Subida Fotos Matrícula Frente/Dorso y Firma */}
-            <div className="grid md:grid-cols-3 gap-6 pt-4">
-              {/* Foto Frente */}
-              <div className="space-y-2">
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Foto Matrícula (Frente)
-                </label>
-                <div className="relative border border-dashed border-slate-800 hover:border-blue-500/40 rounded-xl p-2 transition-all bg-slate-950/40 flex flex-col items-center justify-center text-center h-32 overflow-hidden group">
-                  {fotoFrentePreview ? (
-                    <div className="relative w-full h-full">
-                      <img src={fotoFrentePreview} alt="Frente" className="w-full h-full object-contain" />
-                      <button
-                        type="button"
-                        onClick={() => { setFotoFrente(null); setFotoFrentePreview(''); }}
-                        className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
-                      >
-                        Quitar
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <Upload className="h-5 w-5 text-slate-500 group-hover:text-blue-400 mb-1" />
-                      <span className="text-[11px] text-slate-400">Frente (JPG/PNG)</span>
-                      <input
-                        type="file"
-                        accept=".png, .jpg, .jpeg"
-                        onChange={(e) => handleImageChange(e, setFotoFrente, setFotoFrentePreview)}
-                        className="absolute inset-0 opacity-0 cursor-pointer"
-                      />
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Foto Dorso */}
-              <div className="space-y-2">
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Foto Matrícula (Dorso)
-                </label>
-                <div className="relative border border-dashed border-slate-800 hover:border-blue-500/40 rounded-xl p-2 transition-all bg-slate-950/40 flex flex-col items-center justify-center text-center h-32 overflow-hidden group">
-                  {fotoDorsoPreview ? (
-                    <div className="relative w-full h-full">
-                      <img src={fotoDorsoPreview} alt="Dorso" className="w-full h-full object-contain" />
-                      <button
-                        type="button"
-                        onClick={() => { setFotoDorso(null); setFotoDorsoPreview(''); }}
-                        className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
-                      >
-                        Quitar
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <Upload className="h-5 w-5 text-slate-500 group-hover:text-blue-400 mb-1" />
-                      <span className="text-[11px] text-slate-400">Dorso (JPG/PNG)</span>
-                      <input
-                        type="file"
-                        accept=".png, .jpg, .jpeg"
-                        onChange={(e) => handleImageChange(e, setFotoDorso, setFotoDorsoPreview)}
-                        className="absolute inset-0 opacity-0 cursor-pointer"
-                      />
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Firma */}
-              <div className="space-y-2">
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Firma Digital
-                </label>
-                <div className="relative border border-dashed border-slate-800 hover:border-blue-500/40 rounded-xl p-2 transition-all bg-slate-950/40 flex flex-col items-center justify-center text-center h-32 overflow-hidden group">
-                  {fotoFirmaPreview ? (
-                    <div className="relative w-full h-full">
-                      <img src={fotoFirmaPreview} alt="Firma" className="w-full h-full object-contain" />
-                      <button
-                        type="button"
-                        onClick={() => { setFotoFirma(null); setFotoFirmaPreview(''); }}
-                        className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
-                      >
-                        Quitar
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <FileText className="h-5 w-5 text-slate-500 group-hover:text-blue-400 mb-1" />
-                      <span className="text-[11px] text-slate-400">Subir Firma (JPG/PNG)</span>
-                      <input
-                        type="file"
-                        accept=".png, .jpg, .jpeg"
-                        onChange={(e) => handleImageChange(e, setFotoFirma, setFotoFirmaPreview)}
-                        className="absolute inset-0 opacity-0 cursor-pointer"
-                      />
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* SECCIÓN 5: PLAN ADQUIRIDO */}
-          <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-8 backdrop-blur-xl shadow-2xl space-y-6">
-            <h3 className="text-lg font-bold text-slate-100 border-b border-slate-800/60 pb-3 flex items-center gap-2">
-              <span className="flex items-center justify-center h-6 w-6 rounded-md bg-blue-500/10 text-blue-400 text-xs font-bold border border-blue-500/20">5</span>
-              Plan Adquirido
+              <Award className="text-[#468DFF] h-5 w-5" />
+              Tipo de plan
             </h3>
 
             <div className="relative rounded-2xl border border-blue-500/20 bg-gradient-to-br from-blue-950/15 via-slate-900/40 to-indigo-950/10 p-6 overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -922,20 +1074,29 @@ export default function OnboardingPage() {
           </div>
 
           {/* Form Actions */}
-          <div className="flex items-center justify-end pt-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between pt-4 gap-4 border-t border-slate-900 pt-6">
+            <button
+              type="button"
+              disabled={loading}
+              onClick={handleSaveOnlyRequired}
+              className="py-3 px-6 rounded-xl border border-slate-800 hover:bg-slate-900 text-slate-400 hover:text-slate-100 font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              Salir
+            </button>
+
             <button
               type="submit"
               disabled={loading}
-              className="py-4 px-10 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/15 hover:shadow-blue-500/30 active:scale-[0.98] disabled:opacity-50"
+              className="py-4 px-10 rounded-xl bg-gradient-to-r from-[#468DFF] to-[#0511F2] hover:brightness-110 text-white font-bold text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/10 active:scale-[0.98] disabled:opacity-50"
             >
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Guardando información...
+                  Guardando...
                 </>
               ) : (
                 <>
-                  Guardar datos
+                  Guardar
                   <CheckCircle className="h-4 w-4 text-blue-100" />
                 </>
               )}
@@ -1054,6 +1215,42 @@ export default function OnboardingPage() {
               </div>
 
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* CENTERED MODAL NOTIFICATION (VENTANA EMERGENTE) */}
+      {toast.show && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
+          <div className="w-full max-w-md p-6 rounded-2xl border shadow-2xl text-center bg-slate-900 border-slate-800 animate-scaleUp">
+            <div className="flex justify-center mb-4">
+              {toast.type === 'error' ? (
+                <div className="p-3 rounded-full bg-red-500/10 border border-red-500/20 text-red-400">
+                  <AlertTriangle className="h-8 w-8" />
+                </div>
+              ) : (
+                <div className="p-3 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                  <CheckCircle className="h-8 w-8" />
+                </div>
+              )}
+            </div>
+            <h3 className="font-outfit text-lg font-bold text-slate-100 mb-2">
+              {toast.type === 'error' ? 'Notificación de Error' : 'Operación Exitosa'}
+            </h3>
+            <p className="text-sm text-slate-400 mb-6 leading-relaxed">
+              {toast.message}
+            </p>
+            <button
+              type="button"
+              onClick={() => setToast({ show: false, message: '', type: 'success' })}
+              className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs transition-all active:scale-[0.98] cursor-pointer ${
+                toast.type === 'error'
+                  ? 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-500/10'
+                  : 'bg-gradient-to-r from-[#468DFF] to-[#0511F2] hover:brightness-110 text-white shadow-lg shadow-blue-500/10'
+              }`}
+            >
+              Aceptar
+            </button>
           </div>
         </div>
       )}

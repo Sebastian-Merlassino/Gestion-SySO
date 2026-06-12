@@ -113,9 +113,6 @@ export default function LoginPage() {
       <div className="w-full max-w-md z-10">
         {/* Logo and Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 items-center justify-center font-bold text-white text-2xl shadow-lg shadow-blue-500/20 mb-4">
-            S
-          </div>
           <h2 className="font-outfit text-3xl font-extrabold tracking-tight bg-gradient-to-r from-slate-50 via-slate-200 to-slate-400 bg-clip-text text-transparent">
             Gestión <span className="text-blue-500">SySO</span>
           </h2>

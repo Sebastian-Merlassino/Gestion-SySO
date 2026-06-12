@@ -19,19 +19,45 @@ export async function middleware(request) {
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
-      getAll() {
-        return request.cookies.getAll();
+      get(name) {
+        const val = request.cookies.get(name)?.value;
+        return val ? decodeURIComponent(val) : undefined;
       },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value, options }) =>
-          request.cookies.set(name, value)
-        );
-        response = NextResponse.next({
-          request,
+      set(name, value, options) {
+        request.cookies.set({
+          name,
+          value,
+          ...options,
         });
-        cookiesToSet.forEach(({ name, value, options }) =>
-          response.cookies.set(name, value, options)
-        );
+        response = NextResponse.next({
+          request: {
+            headers: request.headers,
+          },
+        });
+        response.cookies.set({
+          name,
+          value,
+          ...options,
+        });
+      },
+      remove(name, options) {
+        request.cookies.set({
+          name,
+          value: '',
+          ...options,
+          maxAge: -1,
+        });
+        response = NextResponse.next({
+          request: {
+            headers: request.headers,
+          },
+        });
+        response.cookies.set({
+          name,
+          value: '',
+          ...options,
+          maxAge: -1,
+        });
       },
     },
   });

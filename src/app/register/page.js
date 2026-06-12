@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Mail, Lock, User, ShieldAlert, ArrowRight, Loader2, Award } from 'lucide-react';
+import { Mail, Lock, User, ShieldAlert, ArrowRight, Loader2, Award, AlertTriangle, X, CheckCircle } from 'lucide-react';
 
 export default function RegisterPage() {
   const [fullName, setFullName] = useState('');
@@ -11,7 +11,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [modal, setModal] = useState({ show: false, message: '', type: 'success' });
   const [isDevMode, setIsDevMode] = useState(false);
 
   useEffect(() => {
@@ -25,17 +25,17 @@ export default function RegisterPage() {
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
+    setModal({ show: false, message: '', type: 'success' });
 
     // Validaciones básicas
     if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden.');
+      setModal({ show: true, message: 'Las contraseñas no coinciden.', type: 'error' });
       setLoading(false);
       return;
     }
 
     if (password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres.');
+      setModal({ show: true, message: 'La contraseña debe tener al menos 6 caracteres.', type: 'error' });
       setLoading(false);
       return;
     }
@@ -65,12 +65,23 @@ export default function RegisterPage() {
 
       if (signUpError) throw signUpError;
 
+      // Detección de correo duplicado en Supabase Auth
+      if (data.user && data.user.identities && data.user.identities.length === 0) {
+        setLoading(false);
+        setModal({
+          show: true,
+          message: 'El correo electrónico ya está registrado. Por favor, iniciá sesión o utilizá una dirección diferente.',
+          type: 'error'
+        });
+        return;
+      }
+
       if (data.user) {
         // Redirigir directamente al onboarding para completar datos (firma, logos, matricula)
         window.location.href = '/onboarding';
       }
     } catch (err) {
-      setError(err.message || 'Error al registrar la cuenta. Intente nuevamente.');
+      setModal({ show: true, message: err.message || 'Error al registrar la cuenta. Intente nuevamente.', type: 'error' });
       setLoading(false);
     }
   };
@@ -84,9 +95,6 @@ export default function RegisterPage() {
       <div className="w-full max-w-md z-10 my-8">
         {/* Logo and Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 items-center justify-center font-bold text-white text-2xl shadow-lg shadow-blue-500/20 mb-4 animate-bounce">
-            S
-          </div>
           <h2 className="font-outfit text-3xl font-extrabold tracking-tight bg-gradient-to-r from-slate-50 via-slate-200 to-slate-400 bg-clip-text text-transparent">
             Crear Cuenta <span className="text-blue-500">SySO</span>
           </h2>
@@ -105,12 +113,7 @@ export default function RegisterPage() {
             </div>
           )}
 
-          {error && (
-            <div className="mb-6 p-3 rounded-lg border border-red-500/20 bg-red-950/20 text-red-400 text-xs flex items-start gap-2 animate-shake">
-              <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />
-              <span>{error}</span>
-            </div>
-          )}
+
 
           <form onSubmit={handleRegister} className="space-y-5">
             <div>
@@ -217,6 +220,43 @@ export default function RegisterPage() {
           </a>
         </p>
       </div>
+
+      {/* CENTERED MODAL NOTIFICATION (VENTANA EMERGENTE) */}
+      {modal.show && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm animate-fadeIn">
+          <div className="w-full max-w-md p-6 rounded-2xl border shadow-2xl text-center bg-slate-900 border-slate-800 animate-scaleUp">
+            <div className="flex justify-center mb-4">
+              {modal.type === 'error' ? (
+                <div className="p-3 rounded-full bg-red-500/10 border border-red-500/20 text-red-400">
+                  <AlertTriangle className="h-8 w-8" />
+                </div>
+              ) : (
+                <div className="p-3 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                  <CheckCircle className="h-8 w-8" />
+                </div>
+              )}
+            </div>
+            <h3 className="font-outfit text-lg font-bold text-slate-100 mb-2">
+              {modal.type === 'error' ? 'Notificación de Error' : 'Operación Exitosa'}
+            </h3>
+            <p className="text-sm text-slate-400 mb-6 leading-relaxed">
+              {modal.message}
+            </p>
+            <button
+              type="button"
+              onClick={() => setModal({ show: false, message: '', type: 'success' })}
+              className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs transition-all active:scale-[0.98] cursor-pointer ${
+                modal.type === 'error'
+                  ? 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-500/10'
+                  : 'bg-gradient-to-r from-[#468DFF] to-[#0511F2] hover:brightness-110 text-white shadow-lg shadow-blue-500/10'
+              }`}
+            >
+              Aceptar
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

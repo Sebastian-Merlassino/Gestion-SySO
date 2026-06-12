@@ -32,14 +32,16 @@ export default function ProfilePage({ params }) {
   
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
   const [isDevMode, setIsDevMode] = useState(false);
   
   // Datos de Usuario y Empresa
   const [currentUser, setCurrentUser] = useState(null);
   const [profileData, setProfileData] = useState(null);
   const [tenantData, setTenantData] = useState(null);
+  const [initialValues, setInitialValues] = useState(null);
+
+  // Notificación de tipo Toast
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   // Campos Obligatorios
   const [fullName, setFullName] = useState('');
@@ -81,6 +83,14 @@ export default function ProfilePage({ params }) {
   // Plan
   const [selectedPlan, setSelectedPlan] = useState('free');
   const [showPlanModal, setShowPlanModal] = useState(false);
+
+  // Función para mostrar Toast auto-cerrable
+  const triggerToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: '', type: 'success' });
+    }, 3500);
+  };
 
   useEffect(() => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -146,12 +156,55 @@ export default function ProfilePage({ params }) {
           setFacebook(tenant.social_facebook || '');
           setTiktok(tenant.social_tiktok || '');
           setYoutube(tenant.social_youtube || '');
+
+          // Guardar valores iniciales para dirty checking
+          setInitialValues({
+            fullName: profile.full_name || '',
+            phone: profile.phone || '',
+            cuit: profile.cuit || '',
+            provincia: profile.provincia || '',
+            localidad: profile.localidad || '',
+            birthDate: profile.birth_date || '',
+            matriculaInstitucion: profile.matricula_institucion || '',
+            matriculaNumero: profile.matricula_numero || '',
+            matriculaVencimiento: profile.matricula_vencimiento || '',
+            companyName: tenant.name || '',
+            website: tenant.website || '',
+            linkedin: tenant.social_linkedin || '',
+            instagram: tenant.social_instagram || '',
+            facebook: tenant.social_facebook || '',
+            tiktok: tenant.social_tiktok || '',
+            youtube: tenant.social_youtube || '',
+            planId: tenant.plan_id || 'free'
+          });
+        } else {
+          // Si no tiene tenant todavía, guardar iniciales mínimos
+          setInitialValues({
+            fullName: profile.full_name || '',
+            phone: profile.phone || '',
+            cuit: profile.cuit || '',
+            provincia: profile.provincia || '',
+            localidad: profile.localidad || '',
+            birthDate: profile.birth_date || '',
+            matriculaInstitucion: profile.matricula_institucion || '',
+            matriculaNumero: profile.matricula_numero || '',
+            matriculaVencimiento: profile.matricula_vencimiento || '',
+            companyName: '',
+            website: '',
+            linkedin: '',
+            instagram: '',
+            facebook: '',
+            tiktok: '',
+            youtube: '',
+            planId: 'free'
+          });
         }
 
         setInitialLoading(false);
       } catch (e) {
         console.error('Error al cargar perfil:', e);
         setInitialLoading(false);
+        triggerToast('Error al cargar la información del perfil.', 'error');
       }
     };
 
@@ -239,19 +292,17 @@ export default function ProfilePage({ params }) {
 
   const handleSaveChanges = async (e) => {
     e.preventDefault();
-    setError(null);
-    setSuccess(false);
     setLoading(true);
 
     // Validar obligatorios
     if (!fullName || !email || !phone || !cuit || !provincia || !localidad || !birthDate) {
-      setError('Por favor completa todos los campos obligatorios (*).');
+      triggerToast('Por favor completa todos los campos obligatorios (*).', 'error');
       setLoading(false);
       return;
     }
 
     if (cuit.length !== 11) {
-      setError('El CUIT debe contener exactamente 11 números.');
+      triggerToast('El CUIT debe contener exactamente 11 números.', 'error');
       setLoading(false);
       return;
     }
@@ -263,13 +314,16 @@ export default function ProfilePage({ params }) {
       console.log('Simulando guardado en desarrollo...');
       setTimeout(() => {
         setLoading(false);
-        setSuccess(true);
+        triggerToast('¡Datos guardados con éxito en la simulación!', 'success');
         confetti({
           particleCount: 100,
           spread: 60,
           origin: { y: 0.6 }
         });
-      }, 2000);
+        setTimeout(() => {
+          window.location.href = `/${tenantSlug}/dashboard`;
+        }, 1500);
+      }, 1500);
       return;
     }
 
@@ -368,7 +422,7 @@ export default function ProfilePage({ params }) {
       if (profileErr) throw profileErr;
 
       setLoading(false);
-      setSuccess(true);
+      triggerToast('¡Datos guardados con éxito en Supabase!', 'success');
       
       confetti({
         particleCount: 100,
@@ -376,18 +430,64 @@ export default function ProfilePage({ params }) {
         origin: { y: 0.6 }
       });
 
+      // Redirigir al dashboard
+      setTimeout(() => {
+        window.location.href = `/${tenantSlug}/dashboard`;
+      }, 1500);
+
     } catch (err) {
-      setError(err.message || 'Error al actualizar tus datos.');
+      triggerToast(err.message || 'Error al actualizar tus datos.', 'error');
       setLoading(false);
     }
+  };
+
+  const handleExitWithoutSave = () => {
+    // Validar requeridos en local antes de salir para no romper el multi-tenancy
+    if (!fullName || !email || !phone || !cuit || !provincia || !localidad || !birthDate) {
+      triggerToast('No puedes salir sin haber completado los datos obligatorios mínimos.', 'error');
+      return;
+    }
+
+    // Verificar si el formulario está sucio
+    const isDirty = 
+      fullName !== (initialValues?.fullName || '') ||
+      phone !== (initialValues?.phone || '') ||
+      cuit !== (initialValues?.cuit || '') ||
+      provincia !== (initialValues?.provincia || '') ||
+      localidad !== (initialValues?.localidad || '') ||
+      birthDate !== (initialValues?.birthDate || '') ||
+      matriculaInstitucion !== (initialValues?.matriculaInstitucion || '') ||
+      matriculaNumero !== (initialValues?.matriculaNumero || '') ||
+      matriculaVencimiento !== (initialValues?.matriculaVencimiento || '') ||
+      companyName !== (initialValues?.companyName || '') ||
+      website !== (initialValues?.website || '') ||
+      linkedin !== (initialValues?.linkedin || '') ||
+      instagram !== (initialValues?.instagram || '') ||
+      facebook !== (initialValues?.facebook || '') ||
+      tiktok !== (initialValues?.tiktok || '') ||
+      youtube !== (initialValues?.youtube || '') ||
+      selectedPlan !== (initialValues?.planId || 'free') ||
+      fotoFrente !== null ||
+      fotoDorso !== null ||
+      fotoFirma !== null ||
+      logo1 !== null ||
+      logo2 !== null;
+
+    if (isDirty) {
+      const confirmExit = window.confirm('Tienes cambios sin guardar. ¿Deseas salir sin guardar los cambios?');
+      if (!confirmExit) return;
+    }
+
+    // Redirigir de inmediato al dashboard sin guardar cambios nuevos
+    window.location.href = `/${tenantSlug}/dashboard`;
   };
 
   if (initialLoading) {
     return (
       <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">
         <div className="text-center space-y-4">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-500 mx-auto" />
-          <p className="text-xs text-slate-400">Cargando datos de perfil...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-[#468DFF] mx-auto" />
+          <p className="text-xs text-slate-400">Cargando datos del perfil...</p>
         </div>
       </div>
     );
@@ -396,45 +496,39 @@ export default function ProfilePage({ params }) {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center relative overflow-hidden font-sans py-12 px-4">
       {/* Background gradients */}
-      <div className="absolute top-[-10%] left-[-20%] w-[600px] h-[600px] rounded-full bg-blue-600/10 blur-[150px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-20%] w-[600px] h-[600px] rounded-full bg-indigo-600/10 blur-[150px] pointer-events-none" />
+      <div className="absolute top-[-10%] left-[-20%] w-[600px] h-[600px] rounded-full bg-[#468DFF]/5 blur-[150px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-20%] w-[600px] h-[600px] rounded-full bg-[#0511F2]/5 blur-[150px] pointer-events-none" />
 
       <div className="w-full max-w-3xl z-10">
         
         {/* Back Link and Header */}
-        <div className="flex justify-between items-center mb-8">
-          <a
-            href={`/${tenantSlug}/dashboard`}
-            className="flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-slate-200 transition-colors py-2 px-4 rounded-xl border border-slate-900 bg-slate-950/40 backdrop-blur"
+        <div className="flex items-center justify-between mb-8 border-b border-slate-900 pb-5">
+          <button
+            onClick={handleExitWithoutSave}
+            className="flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-slate-200 transition-colors py-2.5 px-4 rounded-xl border border-slate-900 bg-slate-950/40 backdrop-blur"
           >
             <ArrowLeft className="h-4 w-4" />
             Volver al Dashboard
-          </a>
-          <h1 className="font-outfit text-2xl font-extrabold tracking-tight bg-gradient-to-r from-slate-50 to-slate-300 bg-clip-text text-transparent">
-            Mi Perfil Profesional
+          </button>
+          <h1 className="font-outfit text-2xl font-extrabold tracking-tight bg-gradient-to-r from-slate-50 via-slate-200 to-slate-400 bg-clip-text text-transparent">
+            Perfil de usuario
           </h1>
         </div>
 
         <form onSubmit={handleSaveChanges} className="space-y-8">
           
-          {/* SECCIÓN 1: DATOS OBLIGATORIOS */}
+          {/* SECCIÓN 1: INFORMACIÓN DEL USUARIO */}
           <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-8 backdrop-blur-xl shadow-2xl space-y-6">
             <h3 className="text-lg font-bold text-slate-100 border-b border-slate-800/60 pb-3 flex items-center gap-2">
-              <span className="flex items-center justify-center h-6 w-6 rounded-md bg-blue-500/10 text-blue-400 text-xs font-bold border border-blue-500/20">1</span>
-              Información Obligatoria
+              <User className="text-[#468DFF] h-5 w-5" />
+              Información del usuario
             </h3>
 
-            {error && (
-              <div className="p-3 rounded-lg border border-red-500/20 bg-red-950/20 text-red-400 text-xs flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-                <span>{error}</span>
-              </div>
-            )}
-
+            {/* Datos Personales */}
             <div className="grid md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Nombre y Apellido <span className="text-blue-500">*</span>
+                  Nombre y Apellido <span className="text-[#468DFF]">*</span>
                 </label>
                 <input
                   type="text"
@@ -442,13 +536,13 @@ export default function ProfilePage({ params }) {
                   placeholder="Juan Pérez"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl py-3 px-4 text-slate-200 focus:outline-none"
+                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-200 focus:outline-none transition-all"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Correo Electrónico <span className="text-blue-500">*</span>
+                  Correo Electrónico <span className="text-[#468DFF]">*</span>
                 </label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
@@ -468,7 +562,7 @@ export default function ProfilePage({ params }) {
             <div className="grid md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  CUIT <span className="text-blue-500">*</span>
+                  CUIT <span className="text-[#468DFF]">*</span>
                 </label>
                 <input
                   type="text"
@@ -476,7 +570,7 @@ export default function ProfilePage({ params }) {
                   placeholder="20443332225"
                   value={cuit}
                   onChange={handleCuitChange}
-                  className={`w-full bg-slate-950/60 border ${cuitError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-slate-800 focus:border-blue-500 focus:ring-blue-500'} rounded-xl py-3 px-4 text-slate-200 focus:outline-none`}
+                  className={`w-full bg-slate-950/60 border ${cuitError ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500' : 'border-slate-800 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF]'} rounded-xl py-3 px-4 text-slate-200 focus:outline-none transition-all`}
                 />
                 {cuitError && (
                   <span className="text-[10px] text-red-400 mt-1 block">{cuitError}</span>
@@ -485,7 +579,7 @@ export default function ProfilePage({ params }) {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Teléfono <span className="text-blue-500">*</span>
+                  Teléfono <span className="text-[#468DFF]">*</span>
                 </label>
                 <input
                   type="text"
@@ -493,20 +587,20 @@ export default function ProfilePage({ params }) {
                   placeholder="1165432109"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 rounded-xl py-3 px-4 text-slate-200 focus:outline-none"
+                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-200 focus:outline-none transition-all"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Fecha de Nacimiento <span className="text-blue-500">*</span>
+                  Fecha de Nacimiento <span className="text-[#468DFF]">*</span>
                 </label>
                 <input
                   type="date"
                   required
                   value={birthDate}
                   onChange={(e) => setBirthDate(e.target.value)}
-                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 rounded-xl py-3 px-3 text-slate-200 text-xs focus:outline-none"
+                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-3 text-slate-200 text-xs focus:outline-none transition-all"
                 />
               </div>
             </div>
@@ -514,13 +608,13 @@ export default function ProfilePage({ params }) {
             <div className="grid md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Provincia <span className="text-blue-500">*</span>
+                  Provincia <span className="text-[#468DFF]">*</span>
                 </label>
                 <select
                   required
                   value={provincia}
                   onChange={(e) => setProvincia(e.target.value)}
-                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 rounded-xl py-3 px-4 text-slate-200 focus:outline-none cursor-pointer"
+                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-200 focus:outline-none cursor-pointer transition-all"
                 >
                   <option value="" disabled>Selecciona una provincia</option>
                   {geodata.map((prov) => (
@@ -533,14 +627,14 @@ export default function ProfilePage({ params }) {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Localidad <span className="text-blue-500">*</span>
+                  Localidad <span className="text-[#468DFF]">*</span>
                 </label>
                 <select
                   required
                   disabled={!provincia}
                   value={localidad}
                   onChange={(e) => setLocalidad(e.target.value)}
-                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 rounded-xl py-3 px-4 text-slate-200 focus:outline-none cursor-pointer"
+                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-200 focus:outline-none cursor-pointer transition-all disabled:opacity-50"
                 >
                   <option value="" disabled>
                     {!provincia ? 'Primero selecciona una provincia' : 'Selecciona una localidad'}
@@ -553,13 +647,158 @@ export default function ProfilePage({ params }) {
                 </select>
               </div>
             </div>
+
+            {/* Matrícula (Mapeado a sección de Información de usuario) */}
+            <div className="pt-4 border-t border-slate-800/60 space-y-6">
+              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Briefcase className="h-4 w-4 text-[#468DFF]" />
+                Matrícula Profesional y Firma
+              </h4>
+              
+              <div className="grid md:grid-cols-3 gap-6">
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                    Colegio o Institución Emisora
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="COPAIPA, Colegio de Ingenieros..."
+                    value={matriculaInstitucion}
+                    onChange={(e) => setMatriculaInstitucion(e.target.value)}
+                    className="w-full bg-slate-950/60 border border-slate-800 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-200 focus:outline-none transition-all"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                      Número
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="M-7534"
+                      value={matriculaNumero}
+                      onChange={(e) => setMatriculaNumero(e.target.value)}
+                      className="w-full bg-slate-950/60 border border-slate-800 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-200 focus:outline-none transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                      Vencimiento
+                    </label>
+                    <input
+                      type="date"
+                      value={matriculaVencimiento}
+                      onChange={(e) => setMatriculaVencimiento(e.target.value)}
+                      className="w-full bg-slate-950/60 border border-slate-800 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-2 text-xs text-slate-200 focus:outline-none transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Uploads matricula y firma */}
+              <div className="grid md:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider text-center">
+                    Foto Frente Matrícula
+                  </label>
+                  <div className="relative border border-dashed border-slate-800 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-950/40 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
+                    {fotoFrentePreview ? (
+                      <div className="relative w-full h-full">
+                        <img src={fotoFrentePreview} alt="Frente" className="w-full h-full object-contain" />
+                        <button
+                          type="button"
+                          onClick={() => { setFotoFrente(null); setFotoFrentePreview(''); }}
+                          className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
+                        >
+                          Quitar
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <Upload className="h-5 w-5 text-slate-500 group-hover:text-[#468DFF] mb-1" />
+                        <span className="text-[10px] text-slate-400">Frente (JPG/PNG)</span>
+                        <input
+                          type="file"
+                          accept=".png, .jpg, .jpeg"
+                          onChange={(e) => handleImageChange(e, setFotoFrente, setFotoFrentePreview)}
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                        />
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider text-center">
+                    Foto Dorso Matrícula
+                  </label>
+                  <div className="relative border border-dashed border-slate-800 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-950/40 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
+                    {fotoDorsoPreview ? (
+                      <div className="relative w-full h-full">
+                        <img src={fotoDorsoPreview} alt="Dorso" className="w-full h-full object-contain" />
+                        <button
+                          type="button"
+                          onClick={() => { setFotoDorso(null); setFotoDorsoPreview(''); }}
+                          className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
+                        >
+                          Quitar
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <Upload className="h-5 w-5 text-slate-500 group-hover:text-[#468DFF] mb-1" />
+                        <span className="text-[10px] text-slate-400">Dorso (JPG/PNG)</span>
+                        <input
+                          type="file"
+                          accept=".png, .jpg, .jpeg"
+                          onChange={(e) => handleImageChange(e, setFotoDorso, setFotoDorsoPreview)}
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                        />
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider text-center">
+                    Firma Digital (Imagen)
+                  </label>
+                  <div className="relative border border-dashed border-slate-800 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-950/40 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
+                    {fotoFirmaPreview ? (
+                      <div className="relative w-full h-full">
+                        <img src={fotoFirmaPreview} alt="Firma" className="w-full h-full object-contain" />
+                        <button
+                          type="button"
+                          onClick={() => { setFotoFirma(null); setFotoFirmaPreview(''); }}
+                          className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
+                        >
+                          Quitar
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <FileText className="h-5 w-5 text-slate-500 group-hover:text-[#468DFF] mb-1" />
+                        <span className="text-[10px] text-slate-400">Subir Firma</span>
+                        <input
+                          type="file"
+                          accept=".png, .jpg, .jpeg"
+                          onChange={(e) => handleImageChange(e, setFotoFirma, setFotoFirmaPreview)}
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                        />
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* SECCIÓN 2: IDENTIDAD DE EMPRESA Y REDES SOCIALES (OPCIONAL) */}
+          {/* SECCIÓN 2: IDENTIDAD DE LA EMPRESA */}
           <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-8 backdrop-blur-xl shadow-2xl space-y-6">
             <h3 className="text-lg font-bold text-slate-100 border-b border-slate-800/60 pb-3 flex items-center gap-2">
-              <span className="flex items-center justify-center h-6 w-6 rounded-md bg-blue-500/10 text-blue-400 text-xs font-bold border border-blue-500/20">2</span>
-              Identidad de Empresa y Redes Sociales (Opcional)
+              <Building className="text-[#468DFF] h-5 w-5" />
+              Identidad de la empresa
             </h3>
 
             <div className="grid md:grid-cols-2 gap-6">
@@ -571,7 +810,7 @@ export default function ProfilePage({ params }) {
                   type="text"
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
-                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 rounded-xl py-3 px-4 text-slate-200 focus:outline-none"
+                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-200 focus:outline-none transition-all"
                 />
               </div>
 
@@ -584,14 +823,14 @@ export default function ProfilePage({ params }) {
                   placeholder="https://miweb.com"
                   value={website}
                   onChange={(e) => setWebsite(e.target.value)}
-                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 rounded-xl py-3 px-4 text-slate-200 focus:outline-none"
+                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-200 focus:outline-none transition-all"
                 />
               </div>
             </div>
 
             {/* Redes */}
             <div className="space-y-4">
-              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Redes Sociales</h4>
+              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Redes Sociales de la Empresa</h4>
               
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
@@ -600,7 +839,7 @@ export default function ProfilePage({ params }) {
                     type="url"
                     value={linkedin}
                     onChange={(e) => setLinkedin(e.target.value)}
-                    className="w-full bg-slate-950/40 border border-slate-800/80 rounded-xl py-2 px-3 text-xs focus:outline-none"
+                    className="w-full bg-slate-950/40 border border-slate-800/80 focus:border-[#468DFF] rounded-xl py-2 px-3 text-xs focus:outline-none"
                   />
                 </div>
                 <div>
@@ -609,7 +848,7 @@ export default function ProfilePage({ params }) {
                     type="url"
                     value={instagram}
                     onChange={(e) => setInstagram(e.target.value)}
-                    className="w-full bg-slate-950/40 border border-slate-800/80 rounded-xl py-2 px-3 text-xs focus:outline-none"
+                    className="w-full bg-slate-950/40 border border-slate-800/80 focus:border-[#468DFF] rounded-xl py-2 px-3 text-xs focus:outline-none"
                   />
                 </div>
               </div>
@@ -621,7 +860,7 @@ export default function ProfilePage({ params }) {
                     type="url"
                     value={facebook}
                     onChange={(e) => setFacebook(e.target.value)}
-                    className="w-full bg-slate-950/40 border border-slate-800/80 rounded-xl py-2 px-3 text-xs focus:outline-none"
+                    className="w-full bg-slate-950/40 border border-slate-800/80 focus:border-[#468DFF] rounded-xl py-2 px-3 text-xs focus:outline-none"
                   />
                 </div>
                 <div>
@@ -630,7 +869,7 @@ export default function ProfilePage({ params }) {
                     type="url"
                     value={tiktok}
                     onChange={(e) => setTiktok(e.target.value)}
-                    className="w-full bg-slate-950/40 border border-slate-800/80 rounded-xl py-2 px-3 text-xs focus:outline-none"
+                    className="w-full bg-slate-950/40 border border-slate-800/80 focus:border-[#468DFF] rounded-xl py-2 px-3 text-xs focus:outline-none"
                   />
                 </div>
                 <div>
@@ -639,7 +878,7 @@ export default function ProfilePage({ params }) {
                     type="url"
                     value={youtube}
                     onChange={(e) => setYoutube(e.target.value)}
-                    className="w-full bg-slate-950/40 border border-slate-800/80 rounded-xl py-2 px-3 text-xs focus:outline-none"
+                    className="w-full bg-slate-950/40 border border-slate-800/80 focus:border-[#468DFF] rounded-xl py-2 px-3 text-xs focus:outline-none"
                   />
                 </div>
               </div>
@@ -651,7 +890,7 @@ export default function ProfilePage({ params }) {
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
                   Logo Principal (Logo 1)
                 </label>
-                <div className="relative border border-dashed border-slate-800 hover:border-blue-500/40 rounded-xl p-2 transition-all bg-slate-950/40 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
+                <div className="relative border border-dashed border-slate-800 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-950/40 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
                   {logo1Preview ? (
                     <div className="relative w-full h-full">
                       <img src={logo1Preview} alt="Logo 1" className="w-full h-full object-contain" />
@@ -665,7 +904,7 @@ export default function ProfilePage({ params }) {
                     </div>
                   ) : (
                     <>
-                      <ImageIcon className="h-5 w-5 text-slate-500 group-hover:text-blue-400 mb-1" />
+                      <ImageIcon className="h-5 w-5 text-slate-500 group-hover:text-[#468DFF] mb-1" />
                       <span className="text-[11px] text-slate-400">Subir Logo 1</span>
                       <input
                         type="file"
@@ -682,7 +921,7 @@ export default function ProfilePage({ params }) {
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
                   Logo Secundario (Logo 2)
                 </label>
-                <div className="relative border border-dashed border-slate-800 hover:border-blue-500/40 rounded-xl p-2 transition-all bg-slate-950/40 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
+                <div className="relative border border-dashed border-slate-800 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-950/40 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
                   {logo2Preview ? (
                     <div className="relative w-full h-full">
                       <img src={logo2Preview} alt="Logo 2" className="w-full h-full object-contain" />
@@ -696,7 +935,7 @@ export default function ProfilePage({ params }) {
                     </div>
                   ) : (
                     <>
-                      <ImageIcon className="h-5 w-5 text-slate-500 group-hover:text-blue-400 mb-1" />
+                      <ImageIcon className="h-5 w-5 text-slate-500 group-hover:text-[#468DFF] mb-1" />
                       <span className="text-[11px] text-slate-400">Subir Logo 2</span>
                       <input
                         type="file"
@@ -711,157 +950,10 @@ export default function ProfilePage({ params }) {
             </div>
           </div>
 
-          {/* SECCIÓN 3: MATRÍCULA Y FIRMA (OPCIONAL) */}
+          {/* SECCIÓN 3: PLAN */}
           <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-8 backdrop-blur-xl shadow-2xl space-y-6">
             <h3 className="text-lg font-bold text-slate-100 border-b border-slate-800/60 pb-3 flex items-center gap-2">
-              <span className="flex items-center justify-center h-6 w-6 rounded-md bg-blue-500/10 text-blue-400 text-xs font-bold border border-blue-500/20">3</span>
-              Matrícula Profesional y Firma (Opcional)
-            </h3>
-
-            <div className="grid md:grid-cols-3 gap-6">
-              <div className="md:col-span-2">
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Colegio o Institución Emisora
-                </label>
-                <input
-                  type="text"
-                  placeholder="COPAIPA, Colegio de Ingenieros..."
-                  value={matriculaInstitucion}
-                  onChange={(e) => setMatriculaInstitucion(e.target.value)}
-                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 rounded-xl py-3 px-4 text-slate-200"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Número
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="M-7534"
-                    value={matriculaNumero}
-                    onChange={(e) => setMatriculaNumero(e.target.value)}
-                    className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 rounded-xl py-3 px-4 text-slate-200"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Vencimiento
-                  </label>
-                  <input
-                    type="date"
-                    value={matriculaVencimiento}
-                    onChange={(e) => setMatriculaVencimiento(e.target.value)}
-                    className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 rounded-xl py-3 px-2 text-xs text-slate-200"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-6 pt-4">
-              {/* Foto Frente */}
-              <div className="space-y-2">
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Foto Frente Matrícula
-                </label>
-                <div className="relative border border-dashed border-slate-800 hover:border-blue-500/40 rounded-xl p-2 transition-all bg-slate-950/40 flex flex-col items-center justify-center text-center h-32 overflow-hidden group">
-                  {fotoFrentePreview ? (
-                    <div className="relative w-full h-full">
-                      <img src={fotoFrentePreview} alt="Frente" className="w-full h-full object-contain" />
-                      <button
-                        type="button"
-                        onClick={() => { setFotoFrente(null); setFotoFrentePreview(''); }}
-                        className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
-                      >
-                        Quitar
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <Upload className="h-5 w-5 text-slate-500 group-hover:text-blue-400 mb-1" />
-                      <span className="text-[11px] text-slate-400">Subir Frente</span>
-                      <input
-                        type="file"
-                        accept=".png, .jpg, .jpeg"
-                        onChange={(e) => handleImageChange(e, setFotoFrente, setFotoFrentePreview)}
-                        className="absolute inset-0 opacity-0 cursor-pointer"
-                      />
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Foto Dorso */}
-              <div className="space-y-2">
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Foto Dorso Matrícula
-                </label>
-                <div className="relative border border-dashed border-slate-800 hover:border-blue-500/40 rounded-xl p-2 transition-all bg-slate-950/40 flex flex-col items-center justify-center text-center h-32 overflow-hidden group">
-                  {fotoDorsoPreview ? (
-                    <div className="relative w-full h-full">
-                      <img src={fotoDorsoPreview} alt="Dorso" className="w-full h-full object-contain" />
-                      <button
-                        type="button"
-                        onClick={() => { setFotoDorso(null); setFotoDorsoPreview(''); }}
-                        className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
-                      >
-                        Quitar
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <Upload className="h-5 w-5 text-slate-500 group-hover:text-blue-400 mb-1" />
-                      <span className="text-[11px] text-slate-400">Subir Dorso</span>
-                      <input
-                        type="file"
-                        accept=".png, .jpg, .jpeg"
-                        onChange={(e) => handleImageChange(e, setFotoDorso, setFotoDorsoPreview)}
-                        className="absolute inset-0 opacity-0 cursor-pointer"
-                      />
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Firma */}
-              <div className="space-y-2">
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Firma Digital
-                </label>
-                <div className="relative border border-dashed border-slate-800 hover:border-blue-500/40 rounded-xl p-2 transition-all bg-slate-950/40 flex flex-col items-center justify-center text-center h-32 overflow-hidden group">
-                  {fotoFirmaPreview ? (
-                    <div className="relative w-full h-full">
-                      <img src={fotoFirmaPreview} alt="Firma" className="w-full h-full object-contain" />
-                      <button
-                        type="button"
-                        onClick={() => { setFotoFirma(null); setFotoFirmaPreview(''); }}
-                        className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
-                      >
-                        Quitar
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <FileText className="h-5 w-5 text-slate-500 group-hover:text-blue-400 mb-1" />
-                      <span className="text-[11px] text-slate-400">Subir Firma</span>
-                      <input
-                        type="file"
-                        accept=".png, .jpg, .jpeg"
-                        onChange={(e) => handleImageChange(e, setFotoFirma, setFotoFirmaPreview)}
-                        className="absolute inset-0 opacity-0 cursor-pointer"
-                      />
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* SECCIÓN 4: PLAN */}
-          <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-8 backdrop-blur-xl shadow-2xl space-y-6">
-            <h3 className="text-lg font-bold text-slate-100 border-b border-slate-800/60 pb-3 flex items-center gap-2">
-              <span className="flex items-center justify-center h-6 w-6 rounded-md bg-blue-500/10 text-blue-400 text-xs font-bold border border-blue-500/20">4</span>
+              <Award className="text-[#468DFF] h-5 w-5" />
               Plan Suscrito
             </h3>
 
@@ -869,7 +961,7 @@ export default function ProfilePage({ params }) {
               <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-blue-500/5 blur-xl pointer-events-none" />
               
               <div className="space-y-2">
-                <span className="px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-semibold uppercase tracking-wider">
+                <span className="px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-[#468DFF] text-[10px] font-semibold uppercase tracking-wider">
                   Plan Activo
                 </span>
                 <h4 className="font-outfit text-xl font-extrabold text-slate-100">
@@ -889,7 +981,7 @@ export default function ProfilePage({ params }) {
               <div className="flex flex-col items-stretch md:items-end gap-3 shrink-0">
                 <div className="text-right">
                   <span className="text-[10px] text-slate-500 block">Costo mensual</span>
-                  <span className="font-outfit text-2xl font-extrabold text-blue-400">
+                  <span className="font-outfit text-2xl font-extrabold text-[#468DFF]">
                     {selectedPlan === 'free' && '$0'}
                     {selectedPlan === 'basic_5' && '$3.500'}
                     {selectedPlan === 'standard_25' && '$7.500'}
@@ -899,7 +991,7 @@ export default function ProfilePage({ params }) {
                 <button
                   type="button"
                   onClick={() => setShowPlanModal(true)}
-                  className="py-2.5 px-4 rounded-xl border border-blue-500/40 hover:bg-blue-500/10 text-blue-400 font-semibold text-xs transition-all flex items-center justify-center gap-2"
+                  className="py-2.5 px-4 rounded-xl border border-[#468DFF]/40 hover:bg-[#468DFF]/10 text-[#468DFF] font-semibold text-xs transition-all flex items-center justify-center gap-2"
                 >
                   <Sparkles className="h-3.5 w-3.5" />
                   Cambiar / Subir Plan
@@ -909,27 +1001,29 @@ export default function ProfilePage({ params }) {
           </div>
 
           {/* Form Actions */}
-          <div className="flex items-center justify-end pt-4 gap-4">
-            {success && (
-              <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1.5">
-                <CheckCircle className="h-4 w-4" />
-                ¡Cambios guardados con éxito en Supabase!
-              </span>
-            )}
+          <div className="flex flex-col md:flex-row md:items-center justify-between pt-4 gap-4 border-t border-slate-900 pt-6">
+            <button
+              type="button"
+              onClick={handleExitWithoutSave}
+              className="py-3 px-6 rounded-xl border border-slate-800 hover:bg-slate-900 text-slate-400 hover:text-slate-100 font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2"
+            >
+              Salir
+            </button>
+
             <button
               type="submit"
               disabled={loading}
-              className="py-4 px-10 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/15 hover:shadow-blue-500/30 active:scale-[0.98] disabled:opacity-50"
+              className="py-4 px-10 rounded-xl bg-gradient-to-r from-[#468DFF] to-[#0511F2] hover:brightness-110 text-white font-bold text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/10 active:scale-[0.98] disabled:opacity-50"
             >
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Guardando cambios...
+                  Guardando...
                 </>
               ) : (
                 <>
-                  Guardar datos
-                  <CheckCircle2 className="h-4 w-4 text-blue-100" />
+                  Guardar
+                  <CheckCircle className="h-4 w-4 text-blue-100" />
                 </>
               )}
             </button>
@@ -951,7 +1045,7 @@ export default function ProfilePage({ params }) {
             </button>
 
             <div className="text-center mb-6">
-              <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-semibold uppercase tracking-wider">
+              <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-[#468DFF] text-[10px] font-semibold uppercase tracking-wider">
                 Suscripciones SaaS
               </span>
               <h3 className="font-outfit text-2xl font-extrabold text-slate-50 mt-2">
@@ -966,86 +1060,122 @@ export default function ProfilePage({ params }) {
             <div className="grid md:grid-cols-4 gap-4">
               
               {/* Plan Free */}
-              <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all ${selectedPlan === 'free' ? 'border-blue-500 bg-blue-950/10' : 'border-slate-800/80 bg-slate-950/40 hover:border-slate-700'}`}>
+              <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all ${selectedPlan === 'free' ? 'border-[#468DFF] bg-[#468DFF]/5' : 'border-slate-800/80 bg-slate-950/40 hover:border-slate-700'}`}>
                 <div>
                   <h4 className="text-xs font-bold text-slate-100">Plan Gratis</h4>
                   <p className="text-[9px] text-slate-400 mt-1">Ideal para probar la herramienta.</p>
-                  <span className="font-outfit text-base font-extrabold text-blue-400 mt-2 block">$0 <span className="text-[9px] text-slate-500 font-normal">/ permanente</span></span>
+                  <span className="font-outfit text-base font-extrabold text-[#468DFF] mt-2 block">$0 <span className="text-[9px] text-slate-500 font-normal">/ permanente</span></span>
                   <ul className="text-[8px] text-slate-300 mt-3 space-y-1 border-t border-slate-800 pt-2">
-                    <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-blue-400 shrink-0" /> 1 Empresa cliente</li>
-                    <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-blue-400 shrink-0" /> Sin límite tiempo</li>
+                    <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> 1 Empresa cliente</li>
+                    <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> Sin límite tiempo</li>
                   </ul>
                 </div>
                 <button
                   type="button"
                   onClick={() => { setSelectedPlan('free'); setShowPlanModal(false); }}
-                  className={`w-full py-1 rounded-lg mt-3 text-[10px] font-semibold transition-all ${selectedPlan === 'free' ? 'bg-blue-600 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'}`}
+                  className={`w-full py-1 rounded-lg mt-3 text-[10px] font-semibold transition-all ${selectedPlan === 'free' ? 'bg-[#468DFF] text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'}`}
                 >
                   {selectedPlan === 'free' ? 'Seleccionado' : 'Elegir'}
                 </button>
               </div>
 
               {/* Plan 5 */}
-              <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all ${selectedPlan === 'basic_5' ? 'border-blue-500 bg-blue-950/10' : 'border-slate-800/80 bg-slate-950/40 hover:border-slate-700'}`}>
+              <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all ${selectedPlan === 'basic_5' ? 'border-[#468DFF] bg-[#468DFF]/5' : 'border-slate-800/80 bg-slate-950/40 hover:border-slate-700'}`}>
                 <div>
                   <h4 className="text-xs font-bold text-slate-100">Plan 5</h4>
                   <p className="text-[9px] text-slate-400 mt-1">Para profesionales de campo.</p>
-                  <span className="font-outfit text-base font-extrabold text-blue-400 mt-2 block">$3.500 <span className="text-[9px] text-slate-500 font-normal">/ mes</span></span>
+                  <span className="font-outfit text-base font-extrabold text-[#468DFF] mt-2 block">$3.500 <span className="text-[9px] text-slate-500 font-normal">/ mes</span></span>
                   <ul className="text-[8px] text-slate-300 mt-3 space-y-1 border-t border-slate-800 pt-2">
-                    <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-blue-400 shrink-0" /> 5 Empresas clientes</li>
-                    <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-blue-400 shrink-0" /> Todas las funciones</li>
+                    <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> 5 Empresas clientes</li>
+                    <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> Todas las funciones</li>
                   </ul>
                 </div>
                 <button
                   type="button"
                   onClick={() => { setSelectedPlan('basic_5'); setShowPlanModal(false); }}
-                  className={`w-full py-1 rounded-lg mt-3 text-[10px] font-semibold transition-all ${selectedPlan === 'basic_5' ? 'bg-blue-600 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'}`}
+                  className={`w-full py-1 rounded-lg mt-3 text-[10px] font-semibold transition-all ${selectedPlan === 'basic_5' ? 'bg-[#468DFF] text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'}`}
                 >
                   {selectedPlan === 'basic_5' ? 'Seleccionado' : 'Elegir'}
                 </button>
               </div>
 
               {/* Plan 25 */}
-              <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all ${selectedPlan === 'standard_25' ? 'border-blue-500 bg-blue-950/10' : 'border-slate-800/80 bg-slate-950/40 hover:border-slate-700'}`}>
+              <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all ${selectedPlan === 'standard_25' ? 'border-[#468DFF] bg-[#468DFF]/5' : 'border-slate-800/80 bg-slate-950/40 hover:border-slate-700'}`}>
                 <div>
                   <h4 className="text-xs font-bold text-slate-100">Plan 25</h4>
                   <p className="text-[9px] text-slate-400 mt-1">Para consultoras medianas.</p>
-                  <span className="font-outfit text-base font-extrabold text-blue-400 mt-2 block">$7.500 <span className="text-[9px] text-slate-500 font-normal">/ mes</span></span>
+                  <span className="font-outfit text-base font-extrabold text-[#468DFF] mt-2 block">$7.500 <span className="text-[9px] text-slate-500 font-normal">/ mes</span></span>
                   <ul className="text-[8px] text-slate-300 mt-3 space-y-1 border-t border-slate-800 pt-2">
-                    <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-blue-400 shrink-0" /> 25 Empresas clientes</li>
-                    <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-blue-400 shrink-0" /> Soporte priorizado</li>
+                    <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> 25 Empresas clientes</li>
+                    <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> Soporte priorizado</li>
                   </ul>
                 </div>
                 <button
                   type="button"
                   onClick={() => { setSelectedPlan('standard_25'); setShowPlanModal(false); }}
-                  className={`w-full py-1 rounded-lg mt-3 text-[10px] font-semibold transition-all ${selectedPlan === 'standard_25' ? 'bg-blue-600 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'}`}
+                  className={`w-full py-1 rounded-lg mt-3 text-[10px] font-semibold transition-all ${selectedPlan === 'standard_25' ? 'bg-[#468DFF] text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'}`}
                 >
                   {selectedPlan === 'standard_25' ? 'Seleccionado' : 'Elegir'}
                 </button>
               </div>
 
               {/* Plan Libre */}
-              <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all ${selectedPlan === 'libre' ? 'border-blue-500 bg-blue-950/10' : 'border-slate-800/80 bg-slate-950/40 hover:border-slate-700'}`}>
+              <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all ${selectedPlan === 'libre' ? 'border-[#468DFF] bg-[#468DFF]/5' : 'border-slate-800/80 bg-slate-950/40 hover:border-slate-700'}`}>
                 <div>
                   <h4 className="text-xs font-bold text-slate-100">Plan Libre</h4>
                   <p className="text-[9px] text-slate-400 mt-1">Constructoras y corporaciones.</p>
-                  <span className="font-outfit text-base font-extrabold text-blue-400 mt-2 block">$12.000 <span className="text-[9px] text-slate-500 font-normal">/ mes</span></span>
+                  <span className="font-outfit text-base font-extrabold text-[#468DFF] mt-2 block">$12.000 <span className="text-[9px] text-slate-500 font-normal">/ mes</span></span>
                   <ul className="text-[8px] text-slate-300 mt-3 space-y-1 border-t border-slate-800 pt-2">
-                    <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-blue-400 shrink-0" /> Empresas ilimitadas</li>
-                    <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-blue-400 shrink-0" /> Branding completo</li>
+                    <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> Empresas ilimitadas</li>
+                    <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> Branding completo</li>
                   </ul>
                 </div>
                 <button
                   type="button"
                   onClick={() => { setSelectedPlan('libre'); setShowPlanModal(false); }}
-                  className={`w-full py-1 rounded-lg mt-3 text-[10px] font-semibold transition-all ${selectedPlan === 'libre' ? 'bg-blue-600 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'}`}
+                  className={`w-full py-1 rounded-lg mt-3 text-[10px] font-semibold transition-all ${selectedPlan === 'libre' ? 'bg-[#468DFF] text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'}`}
                 >
                   {selectedPlan === 'libre' ? 'Seleccionado' : 'Elegir'}
                 </button>
               </div>
 
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* CENTERED MODAL NOTIFICATION (VENTANA EMERGENTE) */}
+      {toast.show && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
+          <div className="w-full max-w-md p-6 rounded-2xl border shadow-2xl text-center bg-slate-900 border-slate-800 animate-scaleUp">
+            <div className="flex justify-center mb-4">
+              {toast.type === 'error' ? (
+                <div className="p-3 rounded-full bg-red-500/10 border border-red-500/20 text-red-400">
+                  <AlertTriangle className="h-8 w-8" />
+                </div>
+              ) : (
+                <div className="p-3 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                  <CheckCircle className="h-8 w-8" />
+                </div>
+              )}
+            </div>
+            <h3 className="font-outfit text-lg font-bold text-slate-100 mb-2">
+              {toast.type === 'error' ? 'Notificación de Error' : 'Operación Exitosa'}
+            </h3>
+            <p className="text-sm text-slate-400 mb-6 leading-relaxed">
+              {toast.message}
+            </p>
+            <button
+              type="button"
+              onClick={() => setToast({ show: false, message: '', type: 'success' })}
+              className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs transition-all active:scale-[0.98] cursor-pointer ${
+                toast.type === 'error'
+                  ? 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-500/10'
+                  : 'bg-gradient-to-r from-[#468DFF] to-[#0511F2] hover:brightness-110 text-white shadow-lg shadow-blue-500/10'
+              }`}
+            >
+              Aceptar
+            </button>
           </div>
         </div>
       )}
