@@ -11,7 +11,8 @@ Se revisó a fondo el repositorio Git y la configuración de exclusión en `.git
 
 ### Cambios Realizados
 - **Auditoría de Git y `.gitignore`**: Verificamos la exclusión de carpetas del sistema, caché de Next.js (`.next/`), módulos de node (`node_modules/`), credenciales del entorno (`.env`) y directorios locales de agentes (`.agents/`).
-- **Enlace de Repositorio en Vercel**: Vinculamos el repositorio mediante enlace de repositorio nativo (`vercel link --repo`) a la cuenta de Vercel del usuario (`sebastian-merlassino`) y creamos el proyecto `gestion-sy-so`.
+- **Enlace de Repositorio en Vercel**: Vinculamos el repositorio mediante enlace de repositorio nativo (`vercel link --repo`) a la cuenta de Vercel del usuario (`sebastian-merlassino`), creamos el proyecto `gestionsyso` y sincronizamos la configuración local.
+- **Dominios Personalizados**: Agregamos los dominios `gestionsyso.com` y `www.gestionsyso.com` al proyecto en Vercel para posibilitar el acceso directo bajo tu propia marca comercial.
 - **Configuración de Variables de Entorno**: Cargamos las variables críticas en Vercel (entorno `production`) para la conectividad y funcionamiento de la plataforma:
   - `NEXT_PUBLIC_SUPABASE_URL`
   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
@@ -20,8 +21,9 @@ Se revisó a fondo el repositorio Git y la configuración de exclusión en `.git
 - **Despliegue de Producción exitoso**: Ejecutamos el despliegue mediante la CLI (`vercel deploy`), obteniendo el compilado y build de Next.js satisfactoriamente sin errores.
 
 ### Enlaces de Despliegue
-- **Sitio en Producción**: https://gestion-sy-so.vercel.app (o alias secundario https://gestion-sy-3lyd7jk73-sebastians-projects-7c2988fc.vercel.app)
-- **Consola de Vercel**: https://vercel.com/sebastians-projects-7c2988fc/gestion-sy-so
+- **Dominio Propio**: https://gestionsyso.com (y redirección desde https://www.gestionsyso.com) - *Requiere configuración DNS*
+- **Sitio en Producción Alternativo**: https://gestion-sy-so.vercel.app (o alias secundario https://gestion-sy-3lyd7jk73-sebastians-projects-7c2988fc.vercel.app)
+- **Consola de Vercel**: https://vercel.com/sebastians-projects-7c2988fc/gestionsyso
 
 ---
 
