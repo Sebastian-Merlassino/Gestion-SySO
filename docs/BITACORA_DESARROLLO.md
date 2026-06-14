@@ -4,6 +4,27 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 
 ---
 
+## [2026-06-14] Vinculación y Despliegue en Vercel y Auditoría de Repositorio Git
+
+### Resumen Ejecutivo
+Se revisó a fondo el repositorio Git y la configuración de exclusión en `.gitignore` para asegurar la seguridad de los secretos locales (como archivos `.env` y configuraciones de agentes). Se confirmó que todos los cambios locales fueron confirmados y enviados a la rama principal (`main`) en GitHub. Posteriormente, se autenticó e inicializó el proyecto en Vercel, configurando las variables de entorno de producción para conectarse con la base de datos Supabase, y se ejecutó exitosamente el despliegue a producción de la aplicación.
+
+### Cambios Realizados
+- **Auditoría de Git y `.gitignore`**: Verificamos la exclusión de carpetas del sistema, caché de Next.js (`.next/`), módulos de node (`node_modules/`), credenciales del entorno (`.env`) y directorios locales de agentes (`.agents/`).
+- **Enlace de Repositorio en Vercel**: Vinculamos el repositorio mediante enlace de repositorio nativo (`vercel link --repo`) a la cuenta de Vercel del usuario (`sebastian-merlassino`) y creamos el proyecto `gestion-sy-so`.
+- **Configuración de Variables de Entorno**: Cargamos las variables críticas en Vercel (entorno `production`) para la conectividad y funcionamiento de la plataforma:
+  - `NEXT_PUBLIC_SUPABASE_URL`
+  - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+  - `SUPABASE_SECRET_KEY`
+  - `MERCADO_PAGO_ACCESS_TOKEN`
+- **Despliegue de Producción exitoso**: Ejecutamos el despliegue mediante la CLI (`vercel deploy`), obteniendo el compilado y build de Next.js satisfactoriamente sin errores.
+
+### Enlaces de Despliegue
+- **Sitio en Producción**: https://gestion-sy-so.vercel.app (o alias secundario https://gestion-sy-3lyd7jk73-sebastians-projects-7c2988fc.vercel.app)
+- **Consola de Vercel**: https://vercel.com/sebastians-projects-7c2988fc/gestion-sy-so
+
+---
+
 ## [2026-06-13] Implementación de la Sección de Empresas / Clientes y Establecimientos con Cálculo de Decreto 351/79
 
 ### Resumen de Cambios
