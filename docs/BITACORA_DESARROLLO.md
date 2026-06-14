@@ -4,26 +4,40 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 
 ---
 
-## [2026-06-14] Vinculación y Despliegue en Vercel y Auditoría de Repositorio Git
+## [2026-06-14] Despliegue en Vercel, Auditoría Git e Importación de Catálogo del Programa Anual
 
 ### Resumen Ejecutivo
-Se revisó a fondo el repositorio Git y la configuración de exclusión en `.gitignore` para asegurar la seguridad de los secretos locales (como archivos `.env` y configuraciones de agentes). Se confirmó que todos los cambios locales fueron confirmados y enviados a la rama principal (`main`) en GitHub. Posteriormente, se autenticó e inicializó el proyecto en Vercel, configurando las variables de entorno de producción para conectarse con la base de datos Supabase, y se ejecutó exitosamente el despliegue a producción de la aplicación.
+Se verificó y auditó el repositorio Git (actualizando el `.gitignore` para carpetas del sistema y de Vercel), se conectó y configuró la plataforma de Vercel (subdominio `app.gestionsyso.com`) redireccionando para mantener la página principal en Hostinger, y se completó con éxito el despliegue del proyecto. Adicionalmente, se diseñó e implementó la tabla de catálogo `public.programa_anual_catalogo` en Supabase, importando 81 registros de actividades legales con sus correspondientes marcos regulatorios y jurisdicciones nacionales y provinciales.
 
 ### Cambios Realizados
 - **Auditoría de Git y `.gitignore`**: Verificamos la exclusión de carpetas del sistema, caché de Next.js (`.next/`), módulos de node (`node_modules/`), credenciales del entorno (`.env`) y directorios locales de agentes (`.agents/`).
 - **Enlace de Repositorio en Vercel**: Vinculamos el repositorio mediante enlace de repositorio nativo (`vercel link --repo`) a la cuenta de Vercel del usuario (`sebastian-merlassino`), creamos el proyecto `gestionsyso` y sincronizamos la configuración local.
-- **Dominios Personalizados**: Agregamos los dominios `gestionsyso.com` y `www.gestionsyso.com` al proyecto en Vercel para posibilitar el acceso directo bajo tu propia marca comercial.
+- **Dominios Personalizados**: Vinculamos el subdominio `app.gestionsyso.com` al proyecto en Vercel para permitir el acceso directo a la plataforma SaaS sin interrumpir el sitio web principal de presentación que corre sobre `gestionsyso.com` en Hostinger.
 - **Configuración de Variables de Entorno**: Cargamos las variables críticas en Vercel (entorno `production`) para la conectividad y funcionamiento de la plataforma:
   - `NEXT_PUBLIC_SUPABASE_URL`
   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
   - `SUPABASE_SECRET_KEY`
   - `MERCADO_PAGO_ACCESS_TOKEN`
 - **Despliegue de Producción exitoso**: Ejecutamos el despliegue mediante la CLI (`vercel deploy`), obteniendo el compilado y build de Next.js satisfactoriamente sin errores.
+- **Catálogo de Programa Anual**: Diseñamos e implementamos la migración `20260619000000_create_programa_anual_catalogo.sql` para crear la tabla de solo lectura `public.programa_anual_catalogo`. Establecimos RLS y agregamos una política de lectura pública (`Permitir lectura publica de programa_anual_catalogo`) para que la API REST de Supabase pueda listar las actividades.
+- **Procesamiento e Importación de Datos**: Escribimos el script parser `scripts/parse-programa-anual.js` que transformó la tabla provista por el usuario a un comando insert en SQL, y el script cargador `scripts/run-single-migration.js` que ejecutó la migración de forma atómica en Supabase, insertando los 81 registros de manera exitosa.
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260619000000_create_programa_anual_catalogo.sql`
+- `[NEW] scripts/parse-programa-anual.js`
+- `[NEW] scripts/run-single-migration.js`
+- `[NEW] scripts/validate-programa-anual.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
 
 ### Enlaces de Despliegue
-- **Dominio Propio**: https://gestionsyso.com (y redirección desde https://www.gestionsyso.com) - *Requiere configuración DNS*
+- **Subdominio de la App**: https://app.gestionsyso.com - *Requiere configuración DNS en Hostinger*
 - **Sitio en Producción Alternativo**: https://gestion-sy-so.vercel.app (o alias secundario https://gestion-sy-3lyd7jk73-sebastians-projects-7c2988fc.vercel.app)
 - **Consola de Vercel**: https://vercel.com/sebastians-projects-7c2988fc/gestionsyso
+
+### Validaciones Ejecutadas
+- **Git status & log**: Confirmación de que todas las modificaciones locales fueron subidas a la rama `main` en GitHub.
+- **Vercel Inspect**: Inspección en caliente del estado del despliegue indicando `Ready` y validación de generación del bundle Next.js.
+- **Verificación de Catálogo (`validate-programa-anual.js`)**: Desarrollamos y corrimos un validador que consultó la tabla mediante la clave pública `anon` (para validar la seguridad RLS) y constató la presencia de las 81 filas e integridad de datos.
 
 ---
 
