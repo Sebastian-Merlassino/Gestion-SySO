@@ -19,7 +19,7 @@ export default function RootLayout({ children }) {
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
       </head>
-      <body className="min-h-screen bg-slate-950 font-sans text-slate-100 antialiased selection:bg-blue-500/30 selection:text-blue-200">
+      <body className="min-h-screen bg-slate-950 font-sans text-slate-100 antialiased selection:bg-slate-500/30">
         <Providers>
           <div className="relative flex min-h-screen flex-col">
             {children}

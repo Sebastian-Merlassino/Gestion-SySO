@@ -329,8 +329,7 @@ Skills comunitarias recomendadas a buscar e instalar:
 
 Respetar siempre:
 - color principal: `#468DFF`
-- color de resaltado: `#0511F2`
-- secundarios: `#D9D9D9`, `#FFFFFF`, `#000000`
+- secundarios: `#0D0D0D`, `#D9D9D9`, `#FFFFFF`, `#000000`,`#0511F2`
 - una única familia tipográfica definida en `docs/brand/TYPOGRAPHY.md`
 - logos en `public/brand/`
 - referencia estructural en `docs/design/reference/dashboard-reference.jpg`

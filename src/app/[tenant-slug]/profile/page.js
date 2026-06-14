@@ -22,10 +22,37 @@ import {
   Calendar,
   X,
   CheckCircle,
-  ArrowLeft
+  ArrowLeft,
+  PlusCircle,
+  Lock
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import geodata from '@/data/localidades_agrupado.json';
+
+const PROVINCIAS_ARGENTINAS = [
+  'BUENOS AIRES',
+  'CATAMARCA',
+  'CHACO',
+  'CHUBUT',
+  'CORRIENTES',
+  'CÓRDOBA',
+  'ENTRE RÍOS',
+  'FORMOSA',
+  'JUJUY',
+  'LA PAMPA',
+  'LA RIOJA',
+  'MENDOZA',
+  'MISIONES',
+  'NEUQUÉN',
+  'RÍO NEGRO',
+  'SALTA',
+  'SAN JUAN',
+  'SAN LUIS',
+  'SANTA CRUZ',
+  'SANTA FE',
+  'SANTIAGO DEL ESTERO',
+  'TIERRA DEL FUEGO, ANTÁRTIDA E ISLAS DEL ATLÁNTICO SUR',
+  'TUCUMÁN'
+];
 
 export default function ProfilePage({ params }) {
   const tenantSlug = params['tenant-slug'];
@@ -50,18 +77,25 @@ export default function ProfilePage({ params }) {
   const [cuit, setCuit] = useState('');
   const [cuitError, setCuitError] = useState('');
   const [provincia, setProvincia] = useState('');
+const [partido, setPartido] = useState('');
+const [partidosList, setPartidosList] = useState([]);
   const [localidad, setLocalidad] = useState('');
   const [localidadesList, setLocalidadesList] = useState([]);
   const [birthDate, setBirthDate] = useState('');
 
-  // Campos Opcionales - Matrícula Profesional
-  const [matriculaInstitucion, setMatriculaInstitucion] = useState('');
-  const [matriculaNumero, setMatriculaNumero] = useState('');
-  const [matriculaVencimiento, setMatriculaVencimiento] = useState('');
-  const [fotoFrente, setFotoFrente] = useState(null);
-  const [fotoFrentePreview, setFotoFrentePreview] = useState('');
-  const [fotoDorso, setFotoDorso] = useState(null);
-  const [fotoDorsoPreview, setFotoDorsoPreview] = useState('');
+  // Campos Opcionales - Matrículas Profesionales (Múltiples)
+  const [matriculas, setMatriculas] = useState([
+    {
+      id: null,
+      institucion: '',
+      numero: '',
+      vencimiento: '',
+      fotoFrente: null,
+      fotoFrentePreview: '',
+      fotoDorso: null,
+      fotoDorsoPreview: ''
+    }
+  ]);
 
   // Campos Opcionales - Firma e Identidad de Empresa
   const [companyName, setCompanyName] = useState('');
@@ -71,6 +105,11 @@ export default function ProfilePage({ params }) {
   const [logo1Preview, setLogo1Preview] = useState('');
   const [logo2, setLogo2] = useState(null);
   const [logo2Preview, setLogo2Preview] = useState('');
+
+  // Cambio de contraseña
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passLoading, setPassLoading] = useState(false);
 
   // Campos Opcionales - Sitio Web y Redes Sociales de la Empresa
   const [website, setWebsite] = useState('');
@@ -100,6 +139,37 @@ export default function ProfilePage({ params }) {
       setInitialLoading(false);
     }
 
+    const getSignedUrl = async (bucket, pathOrUrl) => {
+      if (!pathOrUrl) return '';
+      if (pathOrUrl.startsWith('data:') || pathOrUrl.startsWith('blob:') || pathOrUrl.startsWith('http://localhost') || pathOrUrl.includes('placeholder')) {
+        return pathOrUrl;
+      }
+      
+      let path = pathOrUrl;
+      if (pathOrUrl.includes('/storage/v1/object/')) {
+        const parts = pathOrUrl.split(`/storage/v1/object/public/${bucket}/`);
+        if (parts.length > 1) {
+          path = parts[1];
+        } else {
+          const partsAuthenticated = pathOrUrl.split(`/storage/v1/object/authenticated/${bucket}/`);
+          if (partsAuthenticated.length > 1) {
+            path = partsAuthenticated[1];
+          }
+        }
+      }
+      
+      try {
+        const { data, error } = await supabase.storage
+          .from(bucket)
+          .createSignedUrl(path, 3600);
+        if (error) throw error;
+        return data.signedUrl;
+      } catch (err) {
+        console.error('Error generating signed URL for:', bucket, path, err);
+        return pathOrUrl;
+      }
+    };
+
     const loadProfileAndTenant = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
@@ -125,14 +195,62 @@ export default function ProfilePage({ params }) {
         setPhone(profile.phone || '');
         setCuit(profile.cuit || '');
         setProvincia(profile.provincia || '');
+        setPartido(profile.departamento_partido || '');
         setLocalidad(profile.localidad || '');
         setBirthDate(profile.birth_date || '');
-        setMatriculaInstitucion(profile.matricula_institucion || '');
-        setMatriculaNumero(profile.matricula_numero || '');
-        setMatriculaVencimiento(profile.matricula_vencimiento || '');
-        setFotoFrentePreview(profile.matricula_foto_frente_url || '');
-        setFotoDorsoPreview(profile.matricula_foto_dorso_url || '');
-        setFotoFirmaPreview(profile.signature_url || '');
+        
+        const signatureSignedUrl = profile.signature_url ? await getSignedUrl('signatures', profile.signature_url) : '';
+        setFotoFirmaPreview(signatureSignedUrl);
+
+        // Cargar Matrículas
+        let initialMatriculas = [];
+        if (isDevMode) {
+          initialMatriculas = [
+            {
+              id: null,
+              institucion: profile.matricula_institucion || '',
+              numero: profile.matricula_numero || '',
+              vencimiento: profile.matricula_vencimiento || '',
+              fotoFrentePreview: profile.matricula_foto_frente_url || '',
+              fotoDorsoPreview: profile.matricula_foto_dorso_url || '',
+              fotoFrente: null,
+              fotoDorso: null
+            }
+          ];
+        } else {
+          const { data: matriculasData, error: mErr } = await supabase
+            .from('matriculas')
+            .select('*')
+            .eq('profile_id', user.id)
+            .order('created_at');
+          
+          if (mErr) throw mErr;
+
+          initialMatriculas = matriculasData && matriculasData.length > 0
+            ? await Promise.all(matriculasData.map(async m => ({
+                id: m.id,
+                institucion: m.institucion || '',
+                numero: m.numero || '',
+                vencimiento: m.vencimiento || '',
+                fotoFrentePreview: m.foto_frente_url ? await getSignedUrl('documents', m.foto_frente_url) : '',
+                fotoDorsoPreview: m.foto_dorso_url ? await getSignedUrl('documents', m.foto_dorso_url) : '',
+                fotoFrente: null,
+                fotoDorso: null
+              })))
+            : [
+                {
+                  id: null,
+                  institucion: '',
+                  numero: '',
+                  vencimiento: '',
+                  fotoFrentePreview: '',
+                  fotoDorsoPreview: '',
+                  fotoFrente: null,
+                  fotoDorso: null
+                }
+              ];
+        }
+        setMatriculas(initialMatriculas);
 
         // Cargar Tenant
         if (profile.tenant_id) {
@@ -163,11 +281,16 @@ export default function ProfilePage({ params }) {
             phone: profile.phone || '',
             cuit: profile.cuit || '',
             provincia: profile.provincia || '',
+            partido: profile.departamento_partido || '',
             localidad: profile.localidad || '',
             birthDate: profile.birth_date || '',
-            matriculaInstitucion: profile.matricula_institucion || '',
-            matriculaNumero: profile.matricula_numero || '',
-            matriculaVencimiento: profile.matricula_vencimiento || '',
+            matriculas: initialMatriculas.map(m => ({
+              institucion: m.institucion,
+              numero: m.numero,
+              vencimiento: m.vencimiento,
+              fotoFrentePreview: m.fotoFrentePreview,
+              fotoDorsoPreview: m.fotoDorsoPreview
+            })),
             companyName: tenant.name || '',
             website: tenant.website || '',
             linkedin: tenant.social_linkedin || '',
@@ -184,11 +307,16 @@ export default function ProfilePage({ params }) {
             phone: profile.phone || '',
             cuit: profile.cuit || '',
             provincia: profile.provincia || '',
+            partido: profile.departamento_partido || '',
             localidad: profile.localidad || '',
             birthDate: profile.birth_date || '',
-            matriculaInstitucion: profile.matricula_institucion || '',
-            matriculaNumero: profile.matricula_numero || '',
-            matriculaVencimiento: profile.matricula_vencimiento || '',
+            matriculas: initialMatriculas.map(m => ({
+              institucion: m.institucion,
+              numero: m.numero,
+              vencimiento: m.vencimiento,
+              fotoFrentePreview: m.fotoFrentePreview,
+              fotoDorsoPreview: m.fotoDorsoPreview
+            })),
             companyName: '',
             website: '',
             linkedin: '',
@@ -213,34 +341,70 @@ export default function ProfilePage({ params }) {
     }
   }, [isDevMode]);
 
-  // Manejar cambio de provincia para cargar localidades
+  // Manejar cambio de provincia para cargar localidades dinámicamente desde Supabase
   useEffect(() => {
     if (!provincia) {
       setLocalidadesList([]);
+      setPartidosList([]);
+      setPartido('');
+      setLocalidad('');
       return;
     }
-    
-    const provMatch = geodata.find(
-      (p) => p.provincia.trim().toUpperCase() === provincia.trim().toUpperCase()
-    );
 
-    if (provMatch && provMatch.departamentos) {
-      const allLocalities = [];
-      provMatch.departamentos.forEach((dept) => {
-        if (dept.localidades_barrios) {
-          dept.localidades_barrios.forEach((loc) => {
-            if (loc && !allLocalities.includes(loc)) {
-              allLocalities.push(loc);
-            }
-          });
+    const loadPartidos = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('geografia')
+          .select('departamento_partido', { count: 'exact', head: false })
+          .eq('provincia', provincia.trim().toUpperCase())
+          .order('departamento_partido');
+        if (error) throw error;
+        const uniquePartidos = Array.from(new Set(data.map(item => item.departamento_partido))).sort();
+        setPartidosList(uniquePartidos);
+      } catch (err) {
+        console.error('Error al cargar partidos:', err);
+        triggerToast('Error al cargar el listado de partidos.', 'error');
+      }
+    };
+
+    const loadLocalidades = async () => {
+      if (!partido) {
+        setLocalidadesList([]);
+        setLocalidad('');
+        return;
+      }
+      if (isDevMode) {
+        // mock localities based on province and partido for dev mode
+        const mockLocalities = provincia === 'BUENOS AIRES'
+          ? ['25 DE MAYO', '9 DE JULIO', 'RIVERA', 'CARHUE']
+          : ['BALVANERA', 'PALERMO'];
+        const sorted = mockLocalities.sort();
+        setLocalidadesList(sorted);
+        setLocalidad(prev => sorted.includes(prev) ? prev : '');
+        return;
+      }
+      try {
+        const { data, error } = await supabase
+          .from('geografia')
+          .select('localidad_barrio')
+          .eq('provincia', provincia.trim().toUpperCase())
+          .eq('departamento_partido', partido)
+          .order('localidad_barrio');
+        if (error) throw error;
+        if (data) {
+          const uniqueLocs = Array.from(new Set(data.map(item => item.localidad_barrio))).sort();
+          setLocalidadesList(uniqueLocs);
+          setLocalidad(prev => uniqueLocs.includes(prev) ? prev : '');
         }
-      });
-      allLocalities.sort();
-      setLocalidadesList(allLocalities);
-    } else {
-      setLocalidadesList([]);
-    }
-  }, [provincia]);
+      } catch (err) {
+        console.error('Error al cargar localidades:', err);
+        triggerToast('Error al cargar el listado de localidades.', 'error');
+      }
+    };
+
+    loadPartidos();
+    loadLocalidades();
+  }, [provincia, partido, isDevMode]);
 
   const handleCuitChange = (e) => {
     const value = e.target.value;
@@ -271,6 +435,59 @@ export default function ProfilePage({ params }) {
     reader.readAsDataURL(file);
   };
 
+  const handleAddMatricula = () => {
+    setMatriculas(prev => [
+      ...prev,
+      {
+        id: null,
+        institucion: '',
+        numero: '',
+        vencimiento: '',
+        fotoFrente: null,
+        fotoFrentePreview: '',
+        fotoDorso: null,
+        fotoDorsoPreview: ''
+      }
+    ]);
+  };
+
+  const handleRemoveMatricula = (index) => {
+    setMatriculas(prev => prev.filter((_, idx) => idx !== index));
+  };
+
+  const handleMatriculaChange = (index, field, value) => {
+    setMatriculas(prev => prev.map((m, idx) => idx === index ? { ...m, [field]: value } : m));
+  };
+
+  const handleMatriculaFileChange = (index, fileField, previewField, e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
+      alert('Por favor, selecciona una imagen en formato JPG o PNG.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setMatriculas(prev => prev.map((m, idx) => idx === index ? { ...m, [fileField]: file, [previewField]: reader.result } : m));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleMatriculaFileClear = (index, type) => {
+    setMatriculas(prev => prev.map((m, idx) => {
+      if (idx === index) {
+        if (type === 'Frente') {
+          return { ...m, fotoFrente: null, fotoFrentePreview: '' };
+        } else {
+          return { ...m, fotoDorso: null, fotoDorsoPreview: '' };
+        }
+      }
+      return m;
+    }));
+  };
+
   const uploadFileToStorage = async (bucket, path, file) => {
     if (isDevMode) return `https://placeholder-storage.com/${bucket}/${path}`;
     
@@ -295,7 +512,7 @@ export default function ProfilePage({ params }) {
     setLoading(true);
 
     // Validar obligatorios
-    if (!fullName || !email || !phone || !cuit || !provincia || !localidad || !birthDate) {
+    if (!fullName || !email || !phone || !cuit || !provincia || !partido || !localidad || !birthDate) {
       triggerToast('Por favor completa todos los campos obligatorios (*).', 'error');
       setLoading(false);
       return;
@@ -315,23 +532,61 @@ export default function ProfilePage({ params }) {
       setTimeout(() => {
         setLoading(false);
         triggerToast('¡Datos guardados con éxito en la simulación!', 'success');
-        confetti({
-          particleCount: 100,
-          spread: 60,
-          origin: { y: 0.6 }
+        setInitialValues({
+          fullName,
+          phone,
+          cuit,
+          provincia,
+          partido,
+          localidad,
+          birthDate,
+          matriculas: matriculas.map(m => ({
+            institucion: m.institucion,
+            numero: m.numero,
+            vencimiento: m.vencimiento,
+            fotoFrentePreview: m.fotoFrentePreview,
+            fotoDorsoPreview: m.fotoDorsoPreview
+          })),
+          companyName,
+          website,
+          linkedin,
+          instagram,
+          facebook,
+          tiktok,
+          youtube,
+          planId: selectedPlan
         });
-        setTimeout(() => {
-          window.location.href = `/${tenantSlug}/dashboard`;
-        }, 1500);
       }, 1500);
       return;
     }
 
     try {
-      // 1. Subida de imágenes nuevas
+      // 1. Subir archivos de matrículas
+      const updatedMatriculas = await Promise.all(
+        matriculas.map(async (m, idx) => {
+          let frenteUrl = m.fotoFrentePreview;
+          let dorsoUrl = m.fotoDorsoPreview;
+
+          if (m.fotoFrente) {
+            const ext = m.fotoFrente.name.split('.').pop();
+            frenteUrl = await uploadFileToStorage('documents', `${userId}/matricula_${idx}_frente_${Date.now()}.${ext}`, m.fotoFrente);
+          }
+
+          if (m.fotoDorso) {
+            const ext = m.fotoDorso.name.split('.').pop();
+            dorsoUrl = await uploadFileToStorage('documents', `${userId}/matricula_${idx}_dorso_${Date.now()}.${ext}`, m.fotoDorso);
+          }
+
+          return {
+            ...m,
+            fotoFrentePreview: frenteUrl,
+            fotoDorsoPreview: dorsoUrl
+          };
+        })
+      );
+
+      // Subir firma y logos
       let signatureUrl = fotoFirmaPreview;
-      let frontUrl = fotoFrentePreview;
-      let backUrl = fotoDorsoPreview;
       let logo1Url = logo1Preview;
       let logo2Url = logo2Preview;
 
@@ -342,18 +597,6 @@ export default function ProfilePage({ params }) {
         const ext = fotoFirma.name.split('.').pop();
         uploadPromises.push(uploadFileToStorage('signatures', `${userId}/firma_${Date.now()}.${ext}`, fotoFirma));
         uploadKeys.push('signature');
-      }
-
-      if (fotoFrente) {
-        const ext = fotoFrente.name.split('.').pop();
-        uploadPromises.push(uploadFileToStorage('documents', `${userId}/matricula_frente_${Date.now()}.${ext}`, fotoFrente));
-        uploadKeys.push('fotoFrente');
-      }
-
-      if (fotoDorso) {
-        const ext = fotoDorso.name.split('.').pop();
-        uploadPromises.push(uploadFileToStorage('documents', `${userId}/matricula_dorso_${Date.now()}.${ext}`, fotoDorso));
-        uploadKeys.push('fotoDorso');
       }
 
       if (logo1 && tenantId) {
@@ -372,8 +615,6 @@ export default function ProfilePage({ params }) {
         const uploadUrls = await Promise.all(uploadPromises);
         uploadKeys.forEach((key, idx) => {
           if (key === 'signature') signatureUrl = uploadUrls[idx];
-          if (key === 'fotoFrente') frontUrl = uploadUrls[idx];
-          if (key === 'fotoDorso') backUrl = uploadUrls[idx];
           if (key === 'logo1') logo1Url = uploadUrls[idx];
           if (key === 'logo2') logo2Url = uploadUrls[idx];
         });
@@ -400,7 +641,8 @@ export default function ProfilePage({ params }) {
         if (tenantErr) throw tenantErr;
       }
 
-      // 3. Actualizar Perfil
+      // 3. Actualizar Perfil (Fallback de la primera matrícula para retrocompatibilidad)
+      const firstMatricula = updatedMatriculas[0] || {};
       const { error: profileErr } = await supabase
         .from('profiles')
         .update({
@@ -408,32 +650,90 @@ export default function ProfilePage({ params }) {
           phone: phone,
           cuit: cuit,
           provincia: provincia,
+          departamento_partido: partido,
           localidad: localidad,
           birth_date: birthDate,
           signature_url: signatureUrl,
-          matricula_institucion: matriculaInstitucion || null,
-          matricula_numero: matriculaNumero || null,
-          matricula_vencimiento: matriculaVencimiento || null,
-          matricula_foto_frente_url: frontUrl,
-          matricula_foto_dorso_url: backUrl,
+          matricula_institucion: firstMatricula.institucion || null,
+          matricula_numero: firstMatricula.numero || null,
+          matricula_vencimiento: firstMatricula.vencimiento || null,
+          matricula_foto_frente_url: firstMatricula.fotoFrentePreview || null,
+          matricula_foto_dorso_url: firstMatricula.fotoDorsoPreview || null,
         })
         .eq('id', userId);
 
       if (profileErr) throw profileErr;
 
+      // 4. Actualizar listado de Matrículas
+      const { error: deleteErr } = await supabase
+        .from('matriculas')
+        .delete()
+        .eq('profile_id', userId);
+
+      if (deleteErr) throw deleteErr;
+
+      const toInsert = updatedMatriculas
+        .filter(m => m.numero.trim() !== '' || m.institucion.trim() !== '')
+        .map(m => ({
+          profile_id: userId,
+          institucion: m.institucion,
+          numero: m.numero,
+          vencimiento: m.vencimiento || null,
+          foto_frente_url: m.fotoFrentePreview || null,
+          foto_dorso_url: m.fotoDorsoPreview || null
+        }));
+
+      if (toInsert.length > 0) {
+        const { error: insertErr } = await supabase
+          .from('matriculas')
+          .insert(toInsert);
+
+        if (insertErr) throw insertErr;
+      }
+
       setLoading(false);
       triggerToast('¡Datos guardados con éxito en Supabase!', 'success');
       
-      confetti({
-        particleCount: 100,
-        spread: 60,
-        origin: { y: 0.6 }
-      });
+      // Reset file states and update previews
+      setMatriculas(updatedMatriculas.map(m => ({
+        ...m,
+        fotoFrente: null,
+        fotoDorso: null
+      })));
+      setFotoFirma(null);
+      setLogo1(null);
+      setLogo2(null);
 
-      // Redirigir al dashboard
-      setTimeout(() => {
-        window.location.href = `/${tenantSlug}/dashboard`;
-      }, 1500);
+      // Sincronizar previews con URLs finales cargadas
+      setFotoFirmaPreview(signatureUrl);
+      setLogo1Preview(logo1Url);
+      setLogo2Preview(logo2Url);
+
+      // Actualizar valores iniciales para evitar falsas advertencias de dirty check
+      setInitialValues({
+        fullName,
+        phone,
+        cuit,
+        provincia,
+        partido,
+        localidad,
+        birthDate,
+        matriculas: updatedMatriculas.map(m => ({
+          institucion: m.institucion,
+          numero: m.numero,
+          vencimiento: m.vencimiento,
+          fotoFrentePreview: m.fotoFrentePreview,
+          fotoDorsoPreview: m.fotoDorsoPreview
+        })),
+        companyName,
+        website,
+        linkedin,
+        instagram,
+        facebook,
+        tiktok,
+        youtube,
+        planId: selectedPlan
+      });
 
     } catch (err) {
       triggerToast(err.message || 'Error al actualizar tus datos.', 'error');
@@ -443,10 +743,25 @@ export default function ProfilePage({ params }) {
 
   const handleExitWithoutSave = () => {
     // Validar requeridos en local antes de salir para no romper el multi-tenancy
-    if (!fullName || !email || !phone || !cuit || !provincia || !localidad || !birthDate) {
+    if (!fullName || !email || !phone || !cuit || !provincia || !partido || !localidad || !birthDate) {
       triggerToast('No puedes salir sin haber completado los datos obligatorios mínimos.', 'error');
       return;
     }
+
+    // Verificar si las matriculas cambiaron
+    const areMatriculasEqual = (a, b) => {
+      if (!a || !b || a.length !== b.length) return false;
+      for (let i = 0; i < a.length; i++) {
+        if (
+          a[i].institucion !== b[i].institucion ||
+          a[i].numero !== b[i].numero ||
+          a[i].vencimiento !== b[i].vencimiento ||
+          a[i].fotoFrentePreview !== b[i].fotoFrentePreview ||
+          a[i].fotoDorsoPreview !== b[i].fotoDorsoPreview
+        ) return false;
+      }
+      return true;
+    };
 
     // Verificar si el formulario está sucio
     const isDirty = 
@@ -454,11 +769,19 @@ export default function ProfilePage({ params }) {
       phone !== (initialValues?.phone || '') ||
       cuit !== (initialValues?.cuit || '') ||
       provincia !== (initialValues?.provincia || '') ||
+      partido !== (initialValues?.partido || '') ||
       localidad !== (initialValues?.localidad || '') ||
       birthDate !== (initialValues?.birthDate || '') ||
-      matriculaInstitucion !== (initialValues?.matriculaInstitucion || '') ||
-      matriculaNumero !== (initialValues?.matriculaNumero || '') ||
-      matriculaVencimiento !== (initialValues?.matriculaVencimiento || '') ||
+      !areMatriculasEqual(
+        matriculas.map(m => ({
+          institucion: m.institucion,
+          numero: m.numero,
+          vencimiento: m.vencimiento,
+          fotoFrentePreview: m.fotoFrentePreview,
+          fotoDorsoPreview: m.fotoDorsoPreview
+        })),
+        initialValues?.matriculas
+      ) ||
       companyName !== (initialValues?.companyName || '') ||
       website !== (initialValues?.website || '') ||
       linkedin !== (initialValues?.linkedin || '') ||
@@ -467,8 +790,7 @@ export default function ProfilePage({ params }) {
       tiktok !== (initialValues?.tiktok || '') ||
       youtube !== (initialValues?.youtube || '') ||
       selectedPlan !== (initialValues?.planId || 'free') ||
-      fotoFrente !== null ||
-      fotoDorso !== null ||
+      matriculas.some(m => m.fotoFrente !== null || m.fotoDorso !== null) ||
       fotoFirma !== null ||
       logo1 !== null ||
       logo2 !== null;
@@ -482,19 +804,51 @@ export default function ProfilePage({ params }) {
     window.location.href = `/${tenantSlug}/dashboard`;
   };
 
+  const handleChangePassword = async () => {
+    if (!newPassword || !confirmPassword) {
+      triggerToast('Por favor completa ambos campos de contraseña.', 'error');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      triggerToast('La contraseña debe tener al menos 6 caracteres.', 'error');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      triggerToast('Las contraseñas no coinciden.', 'error');
+      return;
+    }
+
+    setPassLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      
+      triggerToast('¡Contraseña actualizada con éxito!', 'success');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      console.error('Error al actualizar contraseña:', err);
+      triggerToast(err.message || 'Error al actualizar la contraseña.', 'error');
+    } finally {
+      setPassLoading(false);
+    }
+  };
+
   if (initialLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">
+      <div className="min-h-screen bg-[#D9D9D9] text-slate-700 flex items-center justify-center font-sans">
         <div className="text-center space-y-4">
           <Loader2 className="h-8 w-8 animate-spin text-[#468DFF] mx-auto" />
-          <p className="text-xs text-slate-400">Cargando datos del perfil...</p>
+          <p className="text-xs text-slate-600 font-semibold">Cargando datos del perfil...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center relative overflow-hidden font-sans py-12 px-4">
+    <div className="min-h-screen bg-[#D9D9D9] text-slate-700 flex flex-col items-center relative overflow-hidden font-sans py-12 px-4">
       {/* Background gradients */}
       <div className="absolute top-[-10%] left-[-20%] w-[600px] h-[600px] rounded-full bg-[#468DFF]/5 blur-[150px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-20%] w-[600px] h-[600px] rounded-full bg-[#0511F2]/5 blur-[150px] pointer-events-none" />
@@ -502,15 +856,15 @@ export default function ProfilePage({ params }) {
       <div className="w-full max-w-3xl z-10">
         
         {/* Back Link and Header */}
-        <div className="flex items-center justify-between mb-8 border-b border-slate-900 pb-5">
+        <div className="flex items-center justify-between mb-8 border-b border-slate-300 pb-5">
           <button
             onClick={handleExitWithoutSave}
-            className="flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-slate-200 transition-colors py-2.5 px-4 rounded-xl border border-slate-900 bg-slate-950/40 backdrop-blur"
+            className="flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-slate-800 transition-colors py-2.5 px-4 rounded-xl border border-slate-300 bg-white shadow-sm"
           >
             <ArrowLeft className="h-4 w-4" />
             Volver al Dashboard
           </button>
-          <h1 className="font-outfit text-2xl font-extrabold tracking-tight bg-gradient-to-r from-slate-50 via-slate-200 to-slate-400 bg-clip-text text-transparent">
+          <h1 className="font-outfit text-2xl font-extrabold tracking-tight text-slate-900">
             Perfil de usuario
           </h1>
         </div>
@@ -518,8 +872,8 @@ export default function ProfilePage({ params }) {
         <form onSubmit={handleSaveChanges} className="space-y-8">
           
           {/* SECCIÓN 1: INFORMACIÓN DEL USUARIO */}
-          <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-8 backdrop-blur-xl shadow-2xl space-y-6">
-            <h3 className="text-lg font-bold text-slate-100 border-b border-slate-800/60 pb-3 flex items-center gap-2">
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
+            <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
               <User className="text-[#468DFF] h-5 w-5" />
               Información del usuario
             </h3>
@@ -527,7 +881,7 @@ export default function ProfilePage({ params }) {
             {/* Datos Personales */}
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                   Nombre y Apellido <span className="text-[#468DFF]">*</span>
                 </label>
                 <input
@@ -536,23 +890,23 @@ export default function ProfilePage({ params }) {
                   placeholder="Juan Pérez"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-200 focus:outline-none transition-all"
+                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                   Correo Electrónico <span className="text-[#468DFF]">*</span>
                 </label>
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                     <Mail className="h-4 w-4" />
                   </span>
                   <input
                     type="email"
                     required
                     value={email}
-                    className="w-full bg-slate-950/40 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-slate-500 cursor-not-allowed focus:outline-none"
+                    className="w-full bg-slate-100 border border-slate-200 rounded-xl py-3 pl-10 pr-4 text-slate-500 cursor-not-allowed focus:outline-none"
                     disabled
                   />
                 </div>
@@ -561,7 +915,7 @@ export default function ProfilePage({ params }) {
 
             <div className="grid md:grid-cols-3 gap-6">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                   CUIT <span className="text-[#468DFF]">*</span>
                 </label>
                 <input
@@ -570,15 +924,15 @@ export default function ProfilePage({ params }) {
                   placeholder="20443332225"
                   value={cuit}
                   onChange={handleCuitChange}
-                  className={`w-full bg-slate-950/60 border ${cuitError ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500' : 'border-slate-800 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF]'} rounded-xl py-3 px-4 text-slate-200 focus:outline-none transition-all`}
+                  className={`w-full bg-slate-50 border ${cuitError ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500' : 'border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF]'} rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all`}
                 />
                 {cuitError && (
-                  <span className="text-[10px] text-red-400 mt-1 block">{cuitError}</span>
+                  <span className="text-[10px] text-red-600 mt-1 block font-semibold">{cuitError}</span>
                 )}
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                   Teléfono <span className="text-[#468DFF]">*</span>
                 </label>
                 <input
@@ -587,12 +941,12 @@ export default function ProfilePage({ params }) {
                   placeholder="1165432109"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-200 focus:outline-none transition-all"
+                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                   Fecha de Nacimiento <span className="text-[#468DFF]">*</span>
                 </label>
                 <input
@@ -600,33 +954,60 @@ export default function ProfilePage({ params }) {
                   required
                   value={birthDate}
                   onChange={(e) => setBirthDate(e.target.value)}
-                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-3 text-slate-200 text-xs focus:outline-none transition-all"
+                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-3 text-slate-800 text-xs focus:outline-none transition-all"
                 />
               </div>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-3 gap-6">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                   Provincia <span className="text-[#468DFF]">*</span>
                 </label>
                 <select
                   required
                   value={provincia}
-                  onChange={(e) => setProvincia(e.target.value)}
-                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-200 focus:outline-none cursor-pointer transition-all"
+                  onChange={(e) => {
+                    setProvincia(e.target.value);
+                    setPartido('');
+                    setLocalidad('');
+                  }}
+                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none cursor-pointer transition-all"
                 >
                   <option value="" disabled>Selecciona una provincia</option>
-                  {geodata.map((prov) => (
-                    <option key={prov.provincia} value={prov.provincia}>
-                      {prov.provincia}
+                  {PROVINCIAS_ARGENTINAS.map((prov) => (
+                    <option key={prov} value={prov}>
+                      {prov}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                  Partido <span className="text-[#468DFF]">*</span>
+                </label>
+                <select
+                  required
+                  disabled={!provincia || partidosList.length === 0}
+                  value={partido}
+                  onChange={(e) => {
+                    setPartido(e.target.value);
+                    setLocalidad('');
+                  }}
+                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none cursor-pointer transition-all disabled:opacity-50"
+                >
+                  <option value="" disabled>{!provincia ? 'Primero selecciona una provincia' : 'Selecciona un partido'}</option>
+                  {partidosList.map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                   Localidad <span className="text-[#468DFF]">*</span>
                 </label>
                 <select
@@ -634,7 +1015,7 @@ export default function ProfilePage({ params }) {
                   disabled={!provincia}
                   value={localidad}
                   onChange={(e) => setLocalidad(e.target.value)}
-                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-200 focus:outline-none cursor-pointer transition-all disabled:opacity-50"
+                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none cursor-pointer transition-all disabled:opacity-50"
                 >
                   <option value="" disabled>
                     {!provincia ? 'Primero selecciona una provincia' : 'Selecciona una localidad'}
@@ -648,174 +1029,266 @@ export default function ProfilePage({ params }) {
               </div>
             </div>
 
-            {/* Matrícula (Mapeado a sección de Información de usuario) */}
-            <div className="pt-4 border-t border-slate-800/60 space-y-6">
-              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+            {/* Matrículas Profesionales */}
+            <div className="pt-4 border-t border-slate-200 space-y-6">
+              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
                 <Briefcase className="h-4 w-4 text-[#468DFF]" />
-                Matrícula Profesional y Firma
+                Matrículas Profesionales
               </h4>
-              
-              <div className="grid md:grid-cols-3 gap-6">
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Colegio o Institución Emisora
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="COPAIPA, Colegio de Ingenieros..."
-                    value={matriculaInstitucion}
-                    onChange={(e) => setMatriculaInstitucion(e.target.value)}
-                    className="w-full bg-slate-950/60 border border-slate-800 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-200 focus:outline-none transition-all"
-                  />
-                </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                      Número
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="M-7534"
-                      value={matriculaNumero}
-                      onChange={(e) => setMatriculaNumero(e.target.value)}
-                      className="w-full bg-slate-950/60 border border-slate-800 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-200 focus:outline-none transition-all"
-                    />
+              {matriculas.map((m, index) => (
+                <div key={index} className="p-6 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-6 relative">
+                  {matriculas.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveMatricula(index)}
+                      className="absolute top-4 right-4 text-xs font-bold text-red-600 hover:text-red-800 flex items-center gap-1 bg-red-50 hover:bg-red-100 py-1.5 px-3 rounded-lg border border-red-200 transition-colors"
+                    >
+                      <X className="h-3 w-3" />
+                      Eliminar Matrícula
+                    </button>
+                  )}
+                  
+                  <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    Matrícula #{index + 1}
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                      Vencimiento
-                    </label>
-                    <input
-                      type="date"
-                      value={matriculaVencimiento}
-                      onChange={(e) => setMatriculaVencimiento(e.target.value)}
-                      className="w-full bg-slate-950/60 border border-slate-800 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-2 text-xs text-slate-200 focus:outline-none transition-all"
-                    />
+
+                  <div className="grid md:grid-cols-3 gap-6">
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                        Colegio o Institución Emisora
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="COPIME, CPSH..."
+                        value={m.institucion}
+                        onChange={(e) => handleMatriculaChange(index, 'institucion', e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                          Número
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="L000000"
+                          value={m.numero}
+                          onChange={(e) => handleMatriculaChange(index, 'numero', e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                          Vencimiento
+                        </label>
+                        <input
+                          type="date"
+                          value={m.vencimiento}
+                          onChange={(e) => handleMatriculaChange(index, 'vencimiento', e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-2 text-xs text-slate-800 focus:outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Uploads de la matrícula actual */}
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">
+                        Foto Frente Matrícula #{index + 1}
+                      </label>
+                      <div className="relative border border-dashed border-slate-300 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-50 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
+                        {m.fotoFrentePreview ? (
+                          <div className="relative w-full h-full">
+                            <img src={m.fotoFrentePreview} alt={`Frente matrícula ${index+1}`} className="w-full h-full object-contain" />
+                            <button
+                              type="button"
+                              onClick={() => handleMatriculaFileClear(index, 'Frente')}
+                              className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
+                            >
+                              Quitar
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <Upload className="h-5 w-5 text-slate-400 group-hover:text-[#468DFF] mb-1" />
+                            <span className="text-[10px] text-slate-500 font-medium">Frente (JPG/PNG)</span>
+                            <input
+                              type="file"
+                              accept=".png, .jpg, .jpeg"
+                              onChange={(e) => handleMatriculaFileChange(index, 'fotoFrente', 'fotoFrentePreview', e)}
+                              className="absolute inset-0 opacity-0 cursor-pointer"
+                            />
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">
+                        Foto Dorso Matrícula #{index + 1}
+                      </label>
+                      <div className="relative border border-dashed border-slate-300 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-50 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
+                        {m.fotoDorsoPreview ? (
+                          <div className="relative w-full h-full">
+                            <img src={m.fotoDorsoPreview} alt={`Dorso matrícula ${index+1}`} className="w-full h-full object-contain" />
+                            <button
+                              type="button"
+                              onClick={() => handleMatriculaFileClear(index, 'Dorso')}
+                              className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
+                            >
+                              Quitar
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <Upload className="h-5 w-5 text-slate-400 group-hover:text-[#468DFF] mb-1" />
+                            <span className="text-[10px] text-slate-500 font-medium">Dorso (JPG/PNG)</span>
+                            <input
+                              type="file"
+                              accept=".png, .jpg, .jpeg"
+                              onChange={(e) => handleMatriculaFileChange(index, 'fotoDorso', 'fotoDorsoPreview', e)}
+                              className="absolute inset-0 opacity-0 cursor-pointer"
+                            />
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
+              ))}
+
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={handleAddMatricula}
+                  className="py-2.5 px-4 rounded-xl border border-[#468DFF]/40 hover:bg-[#468DFF] hover:text-white text-[#468DFF] font-bold text-xs transition-all flex items-center gap-2 active:scale-[0.98]"
+                >
+                  <PlusCircle className="h-4 w-4" />
+                  Agregar otra matrícula
+                </button>
               </div>
 
-              {/* Uploads matricula y firma */}
-              <div className="grid md:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                  <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider text-center">
-                    Foto Frente Matrícula
-                  </label>
-                  <div className="relative border border-dashed border-slate-800 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-950/40 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
-                    {fotoFrentePreview ? (
-                      <div className="relative w-full h-full">
-                        <img src={fotoFrentePreview} alt="Frente" className="w-full h-full object-contain" />
-                        <button
-                          type="button"
-                          onClick={() => { setFotoFrente(null); setFotoFrentePreview(''); }}
-                          className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
-                        >
-                          Quitar
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <Upload className="h-5 w-5 text-slate-500 group-hover:text-[#468DFF] mb-1" />
-                        <span className="text-[10px] text-slate-400">Frente (JPG/PNG)</span>
-                        <input
-                          type="file"
-                          accept=".png, .jpg, .jpeg"
-                          onChange={(e) => handleImageChange(e, setFotoFrente, setFotoFrentePreview)}
-                          className="absolute inset-0 opacity-0 cursor-pointer"
-                        />
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider text-center">
-                    Foto Dorso Matrícula
-                  </label>
-                  <div className="relative border border-dashed border-slate-800 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-950/40 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
-                    {fotoDorsoPreview ? (
-                      <div className="relative w-full h-full">
-                        <img src={fotoDorsoPreview} alt="Dorso" className="w-full h-full object-contain" />
-                        <button
-                          type="button"
-                          onClick={() => { setFotoDorso(null); setFotoDorsoPreview(''); }}
-                          className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
-                        >
-                          Quitar
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <Upload className="h-5 w-5 text-slate-500 group-hover:text-[#468DFF] mb-1" />
-                        <span className="text-[10px] text-slate-400">Dorso (JPG/PNG)</span>
-                        <input
-                          type="file"
-                          accept=".png, .jpg, .jpeg"
-                          onChange={(e) => handleImageChange(e, setFotoDorso, setFotoDorsoPreview)}
-                          className="absolute inset-0 opacity-0 cursor-pointer"
-                        />
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider text-center">
-                    Firma Digital (Imagen)
-                  </label>
-                  <div className="relative border border-dashed border-slate-800 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-950/40 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
-                    {fotoFirmaPreview ? (
-                      <div className="relative w-full h-full">
-                        <img src={fotoFirmaPreview} alt="Firma" className="w-full h-full object-contain" />
-                        <button
-                          type="button"
-                          onClick={() => { setFotoFirma(null); setFotoFirmaPreview(''); }}
-                          className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
-                        >
-                          Quitar
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <FileText className="h-5 w-5 text-slate-500 group-hover:text-[#468DFF] mb-1" />
-                        <span className="text-[10px] text-slate-400">Subir Firma</span>
-                        <input
-                          type="file"
-                          accept=".png, .jpg, .jpeg"
-                          onChange={(e) => handleImageChange(e, setFotoFirma, setFotoFirmaPreview)}
-                          className="absolute inset-0 opacity-0 cursor-pointer"
-                        />
-                      </>
-                    )}
+              {/* Firma Digital (Separada de las matrículas en su propia sección) */}
+              <div className="pt-6 border-t border-slate-200 space-y-4">
+                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <FileText className="h-4 w-4 text-[#468DFF]" />
+                  Firma Digital
+                </h4>
+                <div className="grid md:grid-cols-3 gap-6">
+                  <div className="space-y-2 md:col-span-1">
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">
+                      Firma Digital (Imagen)
+                    </label>
+                    <div className="relative border border-dashed border-slate-300 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-50 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
+                      {fotoFirmaPreview ? (
+                        <div className="relative w-full h-full">
+                          <img src={fotoFirmaPreview} alt="Firma" className="w-full h-full object-contain" />
+                          <button
+                            type="button"
+                            onClick={() => { setFotoFirma(null); setFotoFirmaPreview(''); }}
+                            className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
+                          >
+                            Quitar
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <FileText className="h-5 w-5 text-slate-400 group-hover:text-[#468DFF] mb-1" />
+                          <span className="text-[10px] text-slate-500 font-medium">Subir Firma</span>
+                          <input
+                            type="file"
+                            accept=".png, .jpg, .jpeg"
+                            onChange={(e) => handleImageChange(e, setFotoFirma, setFotoFirmaPreview)}
+                            className="absolute inset-0 opacity-0 cursor-pointer"
+                          />
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
+          {/* SECCIÓN: SEGURIDAD (CAMBIAR CONTRASEÑA) */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
+            <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
+              <Lock className="text-[#468DFF] h-5 w-5" />
+              Seguridad (Cambiar Contraseña)
+            </h3>
+            
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                  Nueva Contraseña
+                </label>
+                <input
+                  type="password"
+                  placeholder="Min. 6 caracteres"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                  Confirmar Nueva Contraseña
+                </label>
+                <input
+                  type="password"
+                  placeholder="Repetir contraseña"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={handleChangePassword}
+                disabled={passLoading}
+                className="py-2.5 px-6 rounded-xl border border-[#468DFF] hover:bg-[#468DFF] hover:text-white text-[#468DFF] font-bold text-xs transition-all flex items-center gap-2 active:scale-[0.98] disabled:opacity-50"
+              >
+                {passLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Actualizando...
+                  </>
+                ) : (
+                  'Actualizar Contraseña'
+                )}
+              </button>
+            </div>
+          </div>
+
           {/* SECCIÓN 2: IDENTIDAD DE LA EMPRESA */}
-          <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-8 backdrop-blur-xl shadow-2xl space-y-6">
-            <h3 className="text-lg font-bold text-slate-100 border-b border-slate-800/60 pb-3 flex items-center gap-2">
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
+            <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
               <Building className="text-[#468DFF] h-5 w-5" />
               Identidad de la empresa
             </h3>
 
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                   Nombre de Empresa o Consultora
                 </label>
                 <input
                   type="text"
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
-                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-200 focus:outline-none transition-all"
+                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                   Página Web de la Empresa
                 </label>
                 <input
@@ -823,14 +1296,14 @@ export default function ProfilePage({ params }) {
                   placeholder="https://miweb.com"
                   value={website}
                   onChange={(e) => setWebsite(e.target.value)}
-                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-200 focus:outline-none transition-all"
+                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all"
                 />
               </div>
             </div>
 
             {/* Redes */}
             <div className="space-y-4">
-              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Redes Sociales de la Empresa</h4>
+              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Redes Sociales de la Empresa</h4>
               
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
@@ -839,7 +1312,7 @@ export default function ProfilePage({ params }) {
                     type="url"
                     value={linkedin}
                     onChange={(e) => setLinkedin(e.target.value)}
-                    className="w-full bg-slate-950/40 border border-slate-800/80 focus:border-[#468DFF] rounded-xl py-2 px-3 text-xs focus:outline-none"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none"
                   />
                 </div>
                 <div>
@@ -848,7 +1321,7 @@ export default function ProfilePage({ params }) {
                     type="url"
                     value={instagram}
                     onChange={(e) => setInstagram(e.target.value)}
-                    className="w-full bg-slate-950/40 border border-slate-800/80 focus:border-[#468DFF] rounded-xl py-2 px-3 text-xs focus:outline-none"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none"
                   />
                 </div>
               </div>
@@ -860,7 +1333,7 @@ export default function ProfilePage({ params }) {
                     type="url"
                     value={facebook}
                     onChange={(e) => setFacebook(e.target.value)}
-                    className="w-full bg-slate-950/40 border border-slate-800/80 focus:border-[#468DFF] rounded-xl py-2 px-3 text-xs focus:outline-none"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none"
                   />
                 </div>
                 <div>
@@ -869,7 +1342,7 @@ export default function ProfilePage({ params }) {
                     type="url"
                     value={tiktok}
                     onChange={(e) => setTiktok(e.target.value)}
-                    className="w-full bg-slate-950/40 border border-slate-800/80 focus:border-[#468DFF] rounded-xl py-2 px-3 text-xs focus:outline-none"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none"
                   />
                 </div>
                 <div>
@@ -878,7 +1351,7 @@ export default function ProfilePage({ params }) {
                     type="url"
                     value={youtube}
                     onChange={(e) => setYoutube(e.target.value)}
-                    className="w-full bg-slate-950/40 border border-slate-800/80 focus:border-[#468DFF] rounded-xl py-2 px-3 text-xs focus:outline-none"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none"
                   />
                 </div>
               </div>
@@ -887,10 +1360,10 @@ export default function ProfilePage({ params }) {
             {/* Logos */}
             <div className="grid md:grid-cols-2 gap-6 pt-4">
               <div className="space-y-2">
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
                   Logo Principal (Logo 1)
                 </label>
-                <div className="relative border border-dashed border-slate-800 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-950/40 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
+                <div className="relative border border-dashed border-slate-300 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-50 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
                   {logo1Preview ? (
                     <div className="relative w-full h-full">
                       <img src={logo1Preview} alt="Logo 1" className="w-full h-full object-contain" />
@@ -904,8 +1377,8 @@ export default function ProfilePage({ params }) {
                     </div>
                   ) : (
                     <>
-                      <ImageIcon className="h-5 w-5 text-slate-500 group-hover:text-[#468DFF] mb-1" />
-                      <span className="text-[11px] text-slate-400">Subir Logo 1</span>
+                      <ImageIcon className="h-5 w-5 text-slate-400 group-hover:text-[#468DFF] mb-1" />
+                      <span className="text-[11px] text-slate-500 font-medium">Subir Logo 1</span>
                       <input
                         type="file"
                         accept=".png, .jpg, .jpeg"
@@ -918,10 +1391,10 @@ export default function ProfilePage({ params }) {
               </div>
 
               <div className="space-y-2">
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
                   Logo Secundario (Logo 2)
                 </label>
-                <div className="relative border border-dashed border-slate-800 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-950/40 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
+                <div className="relative border border-dashed border-slate-300 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-50 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
                   {logo2Preview ? (
                     <div className="relative w-full h-full">
                       <img src={logo2Preview} alt="Logo 2" className="w-full h-full object-contain" />
@@ -935,8 +1408,8 @@ export default function ProfilePage({ params }) {
                     </div>
                   ) : (
                     <>
-                      <ImageIcon className="h-5 w-5 text-slate-500 group-hover:text-[#468DFF] mb-1" />
-                      <span className="text-[11px] text-slate-400">Subir Logo 2</span>
+                      <ImageIcon className="h-5 w-5 text-slate-400 group-hover:text-[#468DFF] mb-1" />
+                      <span className="text-[11px] text-slate-500 font-medium">Subir Logo 2</span>
                       <input
                         type="file"
                         accept=".png, .jpg, .jpeg"
@@ -951,26 +1424,26 @@ export default function ProfilePage({ params }) {
           </div>
 
           {/* SECCIÓN 3: PLAN */}
-          <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-8 backdrop-blur-xl shadow-2xl space-y-6">
-            <h3 className="text-lg font-bold text-slate-100 border-b border-slate-800/60 pb-3 flex items-center gap-2">
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
+            <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
               <Award className="text-[#468DFF] h-5 w-5" />
               Plan Suscrito
             </h3>
 
-            <div className="relative rounded-2xl border border-blue-500/20 bg-gradient-to-br from-blue-950/15 via-slate-900/40 to-indigo-950/10 p-6 overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
-              <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-blue-500/5 blur-xl pointer-events-none" />
+            <div className="relative rounded-2xl border border-blue-500/15 bg-gradient-to-br from-blue-50/50 via-slate-50 to-indigo-50/10 p-6 overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-[#468DFF]/5 blur-xl pointer-events-none" />
               
               <div className="space-y-2">
-                <span className="px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-[#468DFF] text-[10px] font-semibold uppercase tracking-wider">
+                <span className="px-2 py-0.5 rounded-full bg-[#468DFF]/10 border border-[#468DFF]/20 text-[#468DFF] text-[10px] font-semibold uppercase tracking-wider">
                   Plan Activo
                 </span>
-                <h4 className="font-outfit text-xl font-extrabold text-slate-100">
+                <h4 className="font-outfit text-xl font-extrabold text-slate-900">
                   {selectedPlan === 'free' && 'Plan Gratis Permanente'}
                   {selectedPlan === 'basic_5' && 'Plan 5 Empresas'}
                   {selectedPlan === 'standard_25' && 'Plan 25 Empresas'}
                   {selectedPlan === 'libre' && 'Plan Libre (Ilimitado)'}
                 </h4>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-600 font-medium leading-relaxed">
                   {selectedPlan === 'free' && 'Límite de hasta 1 empresa cliente en base de datos, sin vencimiento de prueba.'}
                   {selectedPlan === 'basic_5' && 'Límite de hasta 5 empresas clientes en simultáneo.'}
                   {selectedPlan === 'standard_25' && 'Límite de hasta 25 empresas clientes en simultáneo.'}
@@ -991,7 +1464,7 @@ export default function ProfilePage({ params }) {
                 <button
                   type="button"
                   onClick={() => setShowPlanModal(true)}
-                  className="py-2.5 px-4 rounded-xl border border-[#468DFF]/40 hover:bg-[#468DFF]/10 text-[#468DFF] font-semibold text-xs transition-all flex items-center justify-center gap-2"
+                  className="py-2.5 px-4 rounded-xl border border-[#468DFF]/40 hover:bg-[#468DFF]/5 text-[#468DFF] font-semibold text-xs transition-all flex items-center justify-center gap-2"
                 >
                   <Sparkles className="h-3.5 w-3.5" />
                   Cambiar / Subir Plan
@@ -1001,11 +1474,11 @@ export default function ProfilePage({ params }) {
           </div>
 
           {/* Form Actions */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between pt-4 gap-4 border-t border-slate-900 pt-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between pt-4 gap-4 border-t border-slate-300 pt-6">
             <button
               type="button"
               onClick={handleExitWithoutSave}
-              className="py-3 px-6 rounded-xl border border-slate-800 hover:bg-slate-900 text-slate-400 hover:text-slate-100 font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2"
+              className="py-3 px-6 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-800 font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2"
             >
               Salir
             </button>
@@ -1013,7 +1486,7 @@ export default function ProfilePage({ params }) {
             <button
               type="submit"
               disabled={loading}
-              className="py-4 px-10 rounded-xl bg-gradient-to-r from-[#468DFF] to-[#0511F2] hover:brightness-110 text-white font-bold text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/10 active:scale-[0.98] disabled:opacity-50"
+              className="py-4 px-10 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white font-bold text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/10 active:scale-[0.98] disabled:opacity-50"
             >
               {loading ? (
                 <>
@@ -1035,23 +1508,23 @@ export default function ProfilePage({ params }) {
 
       {/* PLAN SELECTION MODAL */}
       {showPlanModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl p-6 shadow-2xl relative animate-scaleUp">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-2xl p-6 shadow-2xl relative animate-scaleUp">
             <button 
               onClick={() => setShowPlanModal(false)}
-              className="absolute top-4 right-4 p-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-slate-100 transition-colors border border-slate-800"
+              className="absolute top-4 right-4 p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors border border-slate-200"
             >
               <X className="h-4 w-4" />
             </button>
 
             <div className="text-center mb-6">
-              <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-[#468DFF] text-[10px] font-semibold uppercase tracking-wider">
+              <span className="px-2 py-0.5 rounded-full bg-[#468DFF]/10 text-[#468DFF] text-[10px] font-semibold uppercase tracking-wider">
                 Suscripciones SaaS
               </span>
-              <h3 className="font-outfit text-2xl font-extrabold text-slate-50 mt-2">
+              <h3 className="font-outfit text-2xl font-extrabold text-slate-900 mt-2">
                 Modificar tu Plan Comercial
               </h3>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-slate-600 mt-1 font-medium">
                 Elegí el plan que mejor se adapte a tus necesidades de seguridad e higiene.
               </p>
             </div>
@@ -1060,12 +1533,12 @@ export default function ProfilePage({ params }) {
             <div className="grid md:grid-cols-4 gap-4">
               
               {/* Plan Free */}
-              <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all ${selectedPlan === 'free' ? 'border-[#468DFF] bg-[#468DFF]/5' : 'border-slate-800/80 bg-slate-950/40 hover:border-slate-700'}`}>
+              <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all ${selectedPlan === 'free' ? 'border-[#468DFF] bg-[#468DFF]/5' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
                 <div>
-                  <h4 className="text-xs font-bold text-slate-100">Plan Gratis</h4>
-                  <p className="text-[9px] text-slate-400 mt-1">Ideal para probar la herramienta.</p>
+                  <h4 className="text-xs font-bold text-slate-900">Plan Gratis</h4>
+                  <p className="text-[9px] text-slate-500 mt-1 font-medium leading-tight">Ideal para probar la herramienta.</p>
                   <span className="font-outfit text-base font-extrabold text-[#468DFF] mt-2 block">$0 <span className="text-[9px] text-slate-500 font-normal">/ permanente</span></span>
-                  <ul className="text-[8px] text-slate-300 mt-3 space-y-1 border-t border-slate-800 pt-2">
+                  <ul className="text-[8px] text-slate-600 mt-3 space-y-1 border-t border-slate-200 pt-2 font-medium">
                     <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> 1 Empresa cliente</li>
                     <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> Sin límite tiempo</li>
                   </ul>
@@ -1073,19 +1546,19 @@ export default function ProfilePage({ params }) {
                 <button
                   type="button"
                   onClick={() => { setSelectedPlan('free'); setShowPlanModal(false); }}
-                  className={`w-full py-1 rounded-lg mt-3 text-[10px] font-semibold transition-all ${selectedPlan === 'free' ? 'bg-[#468DFF] text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'}`}
+                  className={`w-full py-1 rounded-lg mt-3 text-[10px] font-semibold transition-all ${selectedPlan === 'free' ? 'bg-[#468DFF] text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
                 >
                   {selectedPlan === 'free' ? 'Seleccionado' : 'Elegir'}
                 </button>
               </div>
 
               {/* Plan 5 */}
-              <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all ${selectedPlan === 'basic_5' ? 'border-[#468DFF] bg-[#468DFF]/5' : 'border-slate-800/80 bg-slate-950/40 hover:border-slate-700'}`}>
+              <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all ${selectedPlan === 'basic_5' ? 'border-[#468DFF] bg-[#468DFF]/5' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
                 <div>
-                  <h4 className="text-xs font-bold text-slate-100">Plan 5</h4>
-                  <p className="text-[9px] text-slate-400 mt-1">Para profesionales de campo.</p>
+                  <h4 className="text-xs font-bold text-slate-900">Plan 5</h4>
+                  <p className="text-[9px] text-slate-500 mt-1 font-medium leading-tight">Para profesionales de campo.</p>
                   <span className="font-outfit text-base font-extrabold text-[#468DFF] mt-2 block">$3.500 <span className="text-[9px] text-slate-500 font-normal">/ mes</span></span>
-                  <ul className="text-[8px] text-slate-300 mt-3 space-y-1 border-t border-slate-800 pt-2">
+                  <ul className="text-[8px] text-slate-600 mt-3 space-y-1 border-t border-slate-200 pt-2 font-medium">
                     <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> 5 Empresas clientes</li>
                     <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> Todas las funciones</li>
                   </ul>
@@ -1093,19 +1566,19 @@ export default function ProfilePage({ params }) {
                 <button
                   type="button"
                   onClick={() => { setSelectedPlan('basic_5'); setShowPlanModal(false); }}
-                  className={`w-full py-1 rounded-lg mt-3 text-[10px] font-semibold transition-all ${selectedPlan === 'basic_5' ? 'bg-[#468DFF] text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'}`}
+                  className={`w-full py-1 rounded-lg mt-3 text-[10px] font-semibold transition-all ${selectedPlan === 'basic_5' ? 'bg-[#468DFF] text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
                 >
                   {selectedPlan === 'basic_5' ? 'Seleccionado' : 'Elegir'}
                 </button>
               </div>
 
               {/* Plan 25 */}
-              <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all ${selectedPlan === 'standard_25' ? 'border-[#468DFF] bg-[#468DFF]/5' : 'border-slate-800/80 bg-slate-950/40 hover:border-slate-700'}`}>
+              <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all ${selectedPlan === 'standard_25' ? 'border-[#468DFF] bg-[#468DFF]/5' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
                 <div>
-                  <h4 className="text-xs font-bold text-slate-100">Plan 25</h4>
-                  <p className="text-[9px] text-slate-400 mt-1">Para consultoras medianas.</p>
+                  <h4 className="text-xs font-bold text-slate-900">Plan 25</h4>
+                  <p className="text-[9px] text-slate-500 mt-1 font-medium leading-tight">Para consultoras medianas.</p>
                   <span className="font-outfit text-base font-extrabold text-[#468DFF] mt-2 block">$7.500 <span className="text-[9px] text-slate-500 font-normal">/ mes</span></span>
-                  <ul className="text-[8px] text-slate-300 mt-3 space-y-1 border-t border-slate-800 pt-2">
+                  <ul className="text-[8px] text-slate-600 mt-3 space-y-1 border-t border-slate-200 pt-2 font-medium">
                     <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> 25 Empresas clientes</li>
                     <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> Soporte priorizado</li>
                   </ul>
@@ -1113,19 +1586,19 @@ export default function ProfilePage({ params }) {
                 <button
                   type="button"
                   onClick={() => { setSelectedPlan('standard_25'); setShowPlanModal(false); }}
-                  className={`w-full py-1 rounded-lg mt-3 text-[10px] font-semibold transition-all ${selectedPlan === 'standard_25' ? 'bg-[#468DFF] text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'}`}
+                  className={`w-full py-1 rounded-lg mt-3 text-[10px] font-semibold transition-all ${selectedPlan === 'standard_25' ? 'bg-[#468DFF] text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
                 >
                   {selectedPlan === 'standard_25' ? 'Seleccionado' : 'Elegir'}
                 </button>
               </div>
 
               {/* Plan Libre */}
-              <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all ${selectedPlan === 'libre' ? 'border-[#468DFF] bg-[#468DFF]/5' : 'border-slate-800/80 bg-slate-950/40 hover:border-slate-700'}`}>
+              <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all ${selectedPlan === 'libre' ? 'border-[#468DFF] bg-[#468DFF]/5' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
                 <div>
-                  <h4 className="text-xs font-bold text-slate-100">Plan Libre</h4>
-                  <p className="text-[9px] text-slate-400 mt-1">Constructoras y corporaciones.</p>
+                  <h4 className="text-xs font-bold text-slate-900">Plan Libre</h4>
+                  <p className="text-[9px] text-slate-500 mt-1 font-medium leading-tight">Constructoras y corporaciones.</p>
                   <span className="font-outfit text-base font-extrabold text-[#468DFF] mt-2 block">$12.000 <span className="text-[9px] text-slate-500 font-normal">/ mes</span></span>
-                  <ul className="text-[8px] text-slate-300 mt-3 space-y-1 border-t border-slate-800 pt-2">
+                  <ul className="text-[8px] text-slate-600 mt-3 space-y-1 border-t border-slate-200 pt-2 font-medium">
                     <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> Empresas ilimitadas</li>
                     <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> Branding completo</li>
                   </ul>
@@ -1133,7 +1606,7 @@ export default function ProfilePage({ params }) {
                 <button
                   type="button"
                   onClick={() => { setSelectedPlan('libre'); setShowPlanModal(false); }}
-                  className={`w-full py-1 rounded-lg mt-3 text-[10px] font-semibold transition-all ${selectedPlan === 'libre' ? 'bg-[#468DFF] text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'}`}
+                  className={`w-full py-1 rounded-lg mt-3 text-[10px] font-semibold transition-all ${selectedPlan === 'libre' ? 'bg-[#468DFF] text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
                 >
                   {selectedPlan === 'libre' ? 'Seleccionado' : 'Elegir'}
                 </button>
@@ -1146,23 +1619,23 @@ export default function ProfilePage({ params }) {
 
       {/* CENTERED MODAL NOTIFICATION (VENTANA EMERGENTE) */}
       {toast.show && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
-          <div className="w-full max-w-md p-6 rounded-2xl border shadow-2xl text-center bg-slate-900 border-slate-800 animate-scaleUp">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="w-full max-w-md p-6 rounded-2xl border shadow-2xl text-center bg-white border-slate-200 animate-scaleUp">
             <div className="flex justify-center mb-4">
               {toast.type === 'error' ? (
-                <div className="p-3 rounded-full bg-red-500/10 border border-red-500/20 text-red-400">
+                <div className="p-3 rounded-full bg-red-50 border border-red-100 text-red-500">
                   <AlertTriangle className="h-8 w-8" />
                 </div>
               ) : (
-                <div className="p-3 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                <div className="p-3 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-500">
                   <CheckCircle className="h-8 w-8" />
                 </div>
               )}
             </div>
-            <h3 className="font-outfit text-lg font-bold text-slate-100 mb-2">
+            <h3 className="font-outfit text-lg font-bold text-slate-900 mb-2">
               {toast.type === 'error' ? 'Notificación de Error' : 'Operación Exitosa'}
             </h3>
-            <p className="text-sm text-slate-400 mb-6 leading-relaxed">
+            <p className="text-sm text-slate-600 mb-6 leading-relaxed font-medium">
               {toast.message}
             </p>
             <button
@@ -1170,8 +1643,8 @@ export default function ProfilePage({ params }) {
               onClick={() => setToast({ show: false, message: '', type: 'success' })}
               className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs transition-all active:scale-[0.98] cursor-pointer ${
                 toast.type === 'error'
-                  ? 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-500/10'
-                  : 'bg-gradient-to-r from-[#468DFF] to-[#0511F2] hover:brightness-110 text-white shadow-lg shadow-blue-500/10'
+                  ? 'bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-500/10'
+                  : 'bg-[#468DFF] hover:bg-[#0511F2] text-white shadow-lg shadow-blue-500/10'
               }`}
             >
               Aceptar

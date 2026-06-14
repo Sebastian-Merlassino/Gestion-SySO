@@ -87,41 +87,39 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center relative overflow-hidden font-sans px-4">
+    <div className="min-h-screen bg-[#D9D9D9] text-slate-700 flex items-center justify-center relative overflow-hidden font-sans px-4">
       {/* Background gradients */}
-      <div className="absolute top-[-20%] left-[-20%] w-[600px] h-[600px] rounded-full bg-blue-600/10 blur-[180px] pointer-events-none" />
-      <div className="absolute bottom-[-20%] right-[-20%] w-[600px] h-[600px] rounded-full bg-indigo-600/10 blur-[180px] pointer-events-none" />
+      <div className="absolute top-[-20%] left-[-20%] w-[600px] h-[600px] rounded-full bg-[#468DFF]/5 blur-[180px] pointer-events-none" />
+      <div className="absolute bottom-[-20%] right-[-20%] w-[600px] h-[600px] rounded-full bg-[#0511F2]/5 blur-[180px] pointer-events-none" />
 
       <div className="w-full max-w-md z-10 my-8">
         {/* Logo and Header */}
         <div className="text-center mb-8">
-          <h2 className="font-outfit text-3xl font-extrabold tracking-tight bg-gradient-to-r from-slate-50 via-slate-200 to-slate-400 bg-clip-text text-transparent">
-            Crear Cuenta <span className="text-blue-500">SySO</span>
+          <h2 className="font-outfit text-3xl font-extrabold tracking-tight text-slate-900">
+            Crear Cuenta <span className="text-[#468DFF]">SySO</span>
           </h2>
-          <p className="text-sm text-slate-400 mt-2">
+          <p className="text-sm text-slate-600 mt-2 font-medium">
             Registrate para comenzar a gestionar tus obras y auditorías
           </p>
         </div>
 
         {/* Form Card */}
-        <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-8 backdrop-blur-xl shadow-2xl">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-xl">
           {isDevMode && (
-            <div className="mb-6 p-3 rounded-lg border border-yellow-500/20 bg-yellow-950/20 text-yellow-400 text-xs flex items-center gap-2">
+            <div className="mb-6 p-3 rounded-lg border border-amber-500/20 bg-amber-50 text-amber-700 text-xs flex items-center gap-2">
               <span>
                 <strong>Modo Demo / Desarrollo Activo</strong>: Se simulará el registro y se redirigirá a onboarding para pruebas visuales.
               </span>
             </div>
           )}
 
-
-
           <form onSubmit={handleRegister} className="space-y-5">
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                 Nombre y Apellido
               </label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                   <User className="h-5 w-5" />
                 </span>
                 <input
@@ -130,17 +128,17 @@ export default function RegisterPage() {
                   placeholder="Juan Pérez"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl py-3 pl-10 pr-4 text-slate-200 placeholder-slate-600 focus:outline-none transition-all"
+                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-slate-800 placeholder-slate-400 focus:outline-none transition-all"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                 Correo Electrónico
               </label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                   <Mail className="h-5 w-5" />
                 </span>
                 <input
@@ -149,17 +147,17 @@ export default function RegisterPage() {
                   placeholder="juan.perez@empresa.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl py-3 pl-10 pr-4 text-slate-200 placeholder-slate-600 focus:outline-none transition-all"
+                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-slate-800 placeholder-slate-400 focus:outline-none transition-all"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                 Contraseña
               </label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                   <Lock className="h-5 w-5" />
                 </span>
                 <input
@@ -168,17 +166,17 @@ export default function RegisterPage() {
                   placeholder="Mínimo 6 caracteres"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl py-3 pl-10 pr-4 text-slate-200 placeholder-slate-600 focus:outline-none transition-all"
+                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-slate-800 placeholder-slate-400 focus:outline-none transition-all"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                 Confirmar Contraseña
               </label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                   <Lock className="h-5 w-5" />
                 </span>
                 <input
@@ -187,7 +185,7 @@ export default function RegisterPage() {
                   placeholder="Repita la contraseña"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl py-3 pl-10 pr-4 text-slate-200 placeholder-slate-600 focus:outline-none transition-all"
+                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-slate-800 placeholder-slate-400 focus:outline-none transition-all"
                 />
               </div>
             </div>
@@ -195,7 +193,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/10 hover:shadow-blue-500/25 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none mt-2"
+              className="w-full py-3 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/10 hover:shadow-blue-500/25 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none mt-2"
             >
               {loading ? (
                 <>
@@ -213,9 +211,9 @@ export default function RegisterPage() {
         </div>
 
         {/* Footer info */}
-        <p className="text-center text-xs text-slate-500 mt-8">
+        <p className="text-center text-xs text-slate-600 mt-8">
           ¿Ya tenés una cuenta?{' '}
-          <a href="/login" className="text-blue-400 hover:text-blue-300 font-semibold transition-colors">
+          <a href="/login" className="text-[#468DFF] hover:text-[#0511F2] font-bold transition-colors">
             Iniciá sesión
           </a>
         </p>
@@ -223,23 +221,23 @@ export default function RegisterPage() {
 
       {/* CENTERED MODAL NOTIFICATION (VENTANA EMERGENTE) */}
       {modal.show && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm animate-fadeIn">
-          <div className="w-full max-w-md p-6 rounded-2xl border shadow-2xl text-center bg-slate-900 border-slate-800 animate-scaleUp">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+          <div className="w-full max-w-md p-6 rounded-2xl border shadow-2xl text-center bg-white border-slate-200 animate-scaleUp">
             <div className="flex justify-center mb-4">
               {modal.type === 'error' ? (
-                <div className="p-3 rounded-full bg-red-500/10 border border-red-500/20 text-red-400">
+                <div className="p-3 rounded-full bg-red-50 border border-red-100 text-red-500">
                   <AlertTriangle className="h-8 w-8" />
                 </div>
               ) : (
-                <div className="p-3 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                <div className="p-3 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-500">
                   <CheckCircle className="h-8 w-8" />
                 </div>
               )}
             </div>
-            <h3 className="font-outfit text-lg font-bold text-slate-100 mb-2">
+            <h3 className="font-outfit text-lg font-bold text-slate-900 mb-2">
               {modal.type === 'error' ? 'Notificación de Error' : 'Operación Exitosa'}
             </h3>
-            <p className="text-sm text-slate-400 mb-6 leading-relaxed">
+            <p className="text-sm text-slate-600 mb-6 leading-relaxed">
               {modal.message}
             </p>
             <button
@@ -248,7 +246,7 @@ export default function RegisterPage() {
               className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs transition-all active:scale-[0.98] cursor-pointer ${
                 modal.type === 'error'
                   ? 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-500/10'
-                  : 'bg-gradient-to-r from-[#468DFF] to-[#0511F2] hover:brightness-110 text-white shadow-lg shadow-blue-500/10'
+                  : 'bg-[#468DFF] hover:bg-[#0511F2] text-white shadow-lg shadow-blue-500/10'
               }`}
             >
               Aceptar

@@ -4,6 +4,354 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 
 ---
 
+## [2026-06-13] Implementación de la Sección de Empresas / Clientes y Establecimientos con Cálculo de Decreto 351/79
+
+### Resumen de Cambios
+- **Modelo de Datos y RLS (Supabase)**: Diseñamos e implementamos la migración `20260618000000_create_empresas_and_establecimientos.sql` creando las tablas `public.empresas` y `public.establecimientos`. Habilitamos Row Level Security (RLS) en ambas y creamos políticas de aislamiento de tenant (`tenant_id = public.get_current_tenant_id()`). Establecimos restricciones de clave foránea `ON DELETE CASCADE` para eliminar automáticamente los establecimientos cuando su empresa es eliminada.
+- **Enlace y Navegación**: Actualizamos `src/app/[tenant-slug]/dashboard/page.js` y `src/app/[tenant-slug]/empresas/page.js` para renombrar consistentemente "Empresas Clientes" a "Clientes" tanto en la barra lateral (Sidebar) como en los encabezados principales y contadores.
+- **Ficha Comercial Optimizada (`empresas/page.js`)**: Refactorizamos y simplificamos el formulario CRUD reduciéndolo de 5 a 3 pestañas principales de control:
+  1. *Datos Generales*: Formulario de Razón Social, CUIT (con validación de 11 dígitos enteros), y fusión de la **Actividad Económica (CIIU)** (buscador y listado) dentro de la tarjeta de identidad. Incluye también los arreglos dinámicos para teléfonos, correos y facturación (renombrando el botón "+ Agregar Facturación" por "+ Agregar correo").
+  2. *Establecimientos*: Subformulario dinámico con geografía en cascada de 3 niveles. Modificamos la validación para que los campos **Denominación** y **Localidad / Barrio** sean completamente opcionales (removiendo sus asteriscos del cliente y mapeando valores vacíos a strings vacíos `""` al insertar/actualizar para evitar violaciones de constraints no nulas de la base de datos).
+  3. *Plataformas y Credenciales*: Almacenamiento seguro de credenciales de portales. Agregamos propiedades `autoComplete="new-username"` y `autoComplete="new-password"` en los campos de usuario y clave de ART, MiBA y Ambiente para evitar que el navegador auto-complete los campos con las credenciales de inicio de sesión del usuario.
+- **Distribución de Observaciones**: Eliminamos la pestaña independiente de observaciones. En su lugar, agregamos la tarjeta de "Observaciones Generales" al final de cada una de las tres secciones activas (Datos Generales, Establecimientos, Credenciales), sincronizada con el mismo estado React.
+- **Botón Unificado de Guardado**: Renombramos el botón "Guardar Ficha Comercial" a simplemente "Guardar". Mapeamos sus estilos de Tailwind para utilizar el color plano corporativo `#468DFF` con transición activa al color `#0511F2` en hover.
+- **Cálculo Reactivo bajo Decreto 351/79**: Programamos la fórmula legal de trabajadores equivalentes `(administrativos / 2) + productivos` y la matriz de cálculo que determina la Categoría de Riesgo (A, B o C) y las Horas-Profesional mensuales obligatorias en base a los capítulos tildados en el checklist y la dotación.
+- **Control de Límites por Plan**: Implementamos la lógica server/client de control de cuotas que bloquea la creación de empresas en base al plan del Tenant (1 para `free`, 5 para `basic_5`, 25 para `standard_25`, e ilimitado para `libre`).
+
+### Decisiones Clave
+- **ON DELETE CASCADE**: La eliminación en cascada de los establecimientos a nivel de base de datos Postgres garantiza que no queden registros huérfanos al remover un cliente, manteniendo la integridad referencial limpia.
+- **Aislamiento Multi-Tenant Estricto**: Todas las inserciones y búsquedas filtran físicamente por el `tenant_id` extraído del perfil del usuario logueado en la sesión de Supabase, impidiendo vulnerabilidades IDOR.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `supabase`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260618000000_create_empresas_and_establecimientos.sql`
+- `[NEW] src/app/[tenant-slug]/empresas/page.js`
+- `[NEW] scripts/validate-empresas.js`
+- `[NEW] scripts/validate-decreto.js`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- **Prueba de Compilación**: Ejecutamos `npm run build` confirmando que Next.js compila el bundle a producción al 100% de manera optimizada y sin errores de tipos o webpack.
+- **Validación de Estructura de DB (`validate-empresas.js`)**: Comprobamos la existencia de las tablas, RLS activo, políticas de aislamiento y restricciones de borrado en cascada en la base de datos de producción de Supabase.
+- **Validación de Decreto 351/79 (`validate-decreto.js`)**: Ejecutamos un set de pruebas unitarias sobre la lógica de trabajadores equivalentes, categorías y horas de asignación mensual, obteniendo 22/22 tests aprobados de forma exitosa.
+
+---
+
+## [2026-06-13] Importación del Nomenclador de Actividades Económicas (CLAE AFIP)
+
+### Resumen de Cambios
+- **Creación de la Tabla de Actividades Económicas**: Diseñamos e implementamos la tabla `public.actividades_economicas` en la base de datos de Supabase para albergar el catálogo impositivo.
+- **Configuración de RLS y Políticas**: Habilitamos Row Level Security (RLS) en la nueva tabla y añadimos una política de lectura libre (`Permitir lectura publica de actividades`) para permitir que cualquier usuario o el frontend realice consultas a este catálogo compartido de manera directa.
+- **Procesamiento de Datos (Seeding)**: Descargamos el nomenclador oficial desde los Datos Abiertos de Desarrollo Productivo de la Nación Argentina (`clae_agg.csv`) que contiene el catálogo completo sin recortes. Desarrollamos el script `scripts/parse-clae-csv.js` para parsear los datos y generar la migración de base de datos idempotente (`20260617000000_create_actividades_economicas.sql`).
+- **Aplicación y Carga**: Ejecutamos la migración física de forma exitosa insertando el total de 950 registros de actividades de forma atómica en Supabase.
+
+### Decisiones Clave
+- **Catalogación Compartida**: La tabla no incluye `tenant_id` puesto que es un catálogo de lectura general nacional (similar a `geografia`), lo que optimiza el almacenamiento y simplifica las consultas.
+- **Política de Lectura Abierta**: Habilitar SELECT pública (`TO public USING (true)`) asegura que la API REST de Supabase resuelva la lista sin requerir tokens específicos de tenants, alineándose con las políticas de datos geográficos.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `supabase`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260617000000_create_actividades_economicas.sql`
+- `[NEW] scripts/parse-clae-csv.js`
+- `[NEW] scripts/validate-actividades.js`
+- `[NEW] scripts/clae_agg.csv`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Desarrollamos el script `scripts/validate-actividades.js` que consulta la base de datos con la clave pública `anon` (para validar RLS) y verificó la presencia correcta de todos los 950 registros, incluyendo los ejemplos del usuario como "Cultivo de arroz" (11111).
+- Compilación de producción (`npm.cmd run build`) exitosa en todo el proyecto Next.js.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. El catálogo opera de manera de solo lectura y estática.
+
+### Próximo Paso Recomendado
+- Conectar los selectores del frontend (Onboarding y Edición de Perfil) para consumir dinámicamente este catálogo desde Supabase.
+
+---
+
+## [2026-06-13] Soporte para Múltiples Matrículas Profesionales en Perfil y Onboarding
+
+### Resumen de Cambios
+- **Refactorización de Onboarding**: Actualizamos `onboarding/page.js` para reemplazar la carga de matrícula única por un listado dinámico interactivo de matrículas. Permite añadir y remover múltiples bloques de matrícula con sus respectivos campos de Institución, Número (con placeholder `"L000000"`), Fecha de Vencimiento, y subida independiente de fotos de Frente y Dorso.
+- **Soporte de Persistencia Relacional**: Al completar el onboarding, las fotos de cada matrícula se suben en paralelo a Supabase Storage (`documents`) y se insertan como registros individuales en la tabla `public.matriculas`.
+- **Retrocompatibilidad del Perfil**: La primera matrícula del listado se sincroniza automáticamente con las columnas heredadas en la tabla `public.profiles` (`matricula_institucion`, `matricula_numero`, etc.), evitando quiebres en otras áreas heredadas del software.
+- **Robustez en Onboarding Rápido (Salir)**: Adaptamos el dirty check y el botón "Salir" en el onboarding para evaluar diferencias estructurales en el listado de matrículas y permitir el escape guardando únicamente los datos obligatorios.
+- **Resolución de Alertas Falsas en Dirty Check**: Corregimos el bug en `profile/page.js` donde tras un guardado exitoso se seguía mostrando la advertencia de cambios sin guardar. Se implementó el reseteo a `null` de las referencias a los objetos `File` locales (`fotoFirma`, `logo1`, `logo2`, y en cada matrícula `fotoFrente` y `fotoDorso`) y se sincronizaron los `previews` locales con los nuevos valores cargados, garantizando la igualdad estructural con `initialValues`.
+- **Soporte de Buckets Privados mediante Signed URLs**: Identificamos que los buckets `signatures` y `documents` son de acceso privado (`public = false`), por lo que las URLs públicas generadas por `getPublicUrl` no cargaban las imágenes en la interfaz de usuario. Implementamos el helper asíncrono `getSignedUrl` en `profile/page.js` para resolver URLs firmadas temporales para la firma y fotos de matrícula al cargar el perfil de usuario.
+- **Sección de Cambio de Contraseña**: Agregamos una tarjeta dedicada de "Seguridad (Cambiar Contraseña)" en el perfil de usuario conectado directamente al servicio `supabase.auth.updateUser` para que los profesionales puedan actualizar sus credenciales de acceso de forma segura.
+
+### Decisiones Clave
+- **Bulk Insert e Integridad**: Realizar la inserción por lotes en `public.matriculas` después de subir las fotos asegura que la base de datos refleje exactamente el listado del cliente de manera atómica.
+- **Placeholder Unificado**: Establecer el valor `"L000000"` como guía universal para facilitar la entrada estándar de matrículas profesionales en Argentina.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `next-best-practices`
+- `supabase`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/onboarding/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción Next.js (`npm run build`) exitosa, validando que todas las 8 rutas compilan estática y dinámicamente sin fallas.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. El listado de matrículas es opcional; si no se cargan datos, se asume vacío sin romper la inserción.
+
+---
+
+## [2026-06-13] Sincronización y Robustez en Cascada de Geografía, Limpieza de Variables y Setup de Limpieza
+
+### Resumen de Cambios
+- **Rediseño e Integración de Marca en la Barra Lateral (Sidebar)**: Reemplazamos el recuadro azul con la letra "H" de la barra lateral del dashboard por la imagen del logo principal corporativo (`/brand/logo-primary.png`) adaptando su escala y alineación. Simplificamos el bloque de marca removiendo el subtítulo "Plataforma SaaS" para conservar únicamente el título principal "Gestión SySO".
+- **Simplificación y Corrección de Textos en el Menú**: Renombramos la cabecera de la sección de administración en la barra lateral de "Configuraciones" a "Configuración", y redujimos la etiqueta del enlace de "Editar Perfil / Firma" a únicamente "Editar Perfil", logrando un aspecto más limpio y minimalista.
+- **Aplicación de Migraciones y Recarga de Caché en Supabase**: Ejecutamos la migración `20260615000000_add_partido_to_profiles.sql` para añadir la columna `departamento_partido` a la tabla `profiles` e instalamos la dependencia `pg` en `package.json` para poder ejecutar el runner de migraciones (`run-migrations.js`). Adicionalmente, notificamos a la API de Supabase (`NOTIFY pgrst, 'reload schema'`) para refrescar la caché del esquema de base de datos de forma inmediata, solucionando el error de guardado "Could not find column ... in schema cache".
+- **Corrección de Nombres y Acentos de Provincias**: Identificamos que provincias como `CÓRDOBA`, `ENTRE RÍOS`, `NEUQUÉN`, `RÍO NEGRO`, `TUCUMÁN` y `TIERRA DEL FUEGO, ANTÁRTIDA E ISLAS DEL ATLÁNTICO SUR` contenían tildes y nombres completos en la base de datos `geografia` de Supabase (procedentes del JSON original). Al estar hardcodeadas sin tildes en el frontend, las consultas dinámicas a Supabase retornaban 0 filas, impidiendo habilitar los selectores subordinados de Partido y Localidad. Corregimos el listado `PROVINCIAS_ARGENTINAS` tanto en el perfil como en el onboarding.
+- **Corrección de Estado en Cascada de Geografía**: Se implementó una limpieza proactiva de los selectores subordinados (`partido` y `localidad`) en los eventos `onChange` de `profile/page.js`. Esto evita que un usuario cambie de provincia y se queden residuos del partido seleccionado previamente en el estado de React.
+- **Cascada Geográfica de 3 Niveles en Onboarding**: Se rediseñó la geografía del Onboarding (`onboarding/page.js`) incorporando el selector de `Partido` (conectado a la columna `departamento_partido` de la tabla `profiles`), unificando la experiencia y la estructura de datos con la pantalla de Perfil.
+- **Limpieza de variables en `.env`**: Se removieron variables de entorno inactivas correspondientes a Firebase Client/Admin SDK, MongoDB y Express (puerto 5000), conservando únicamente Supabase y Mercado Pago.
+- **Habilitación de Limpieza del Servidor**: Se instaló `rimraf` como `devDependency` en `package.json` para posibilitar el correcto funcionamiento de `npm run clean` en entornos Windows sin dependencias globales obsoletas.
+
+### Decisiones Clave
+- **Validación del Lado del Cliente y Onboarding Unificado**: Mantener Provincia, Partido y Localidad consistentes en ambas pantallas evita que perfiles creados en onboarding posean campos incompletos que invaliden el guardado posterior.
+- **Resets Explícitos en Interacción (Select onChange)**: La limpieza de selectores hijos se vincula al evento `onChange` del usuario en lugar de `useEffect`, previniendo que los datos persistidos leídos de la base de datos se borren durante el renderizado inicial.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `next-best-practices`
+- `supabase`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] src/app/onboarding/page.js`
+- `[MODIFY] package.json`
+- `[MODIFY] .env`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción exitosa mediante `npm run build` (todas las 8 rutas optimizadas y compiladas).
+
+### Riesgos Detectados / Remanentes
+- Ninguno. La cascada opera con mock-data consistente en `isDevMode` y asíncronamente con Supabase en entornos reales.
+
+### Próximo Paso Recomendado
+- Proceder con la validación en el navegador del flujo completo de Onboarding y Perfil bajo el puerto de desarrollo local (3001).
+
+---
+
+## [2026-06-13] Eliminación del Stack Legacy (Firebase, MongoDB, Express) y Corrección de Dropdown de Provincias
+
+### Resumen Ejecutivo
+Se eliminó por completo el backend legacy basado en Express.js (puerto 5000), Firebase Admin SDK y MongoDB/Mongoose, que ya no era utilizado por el frontend Next.js. Todo el proyecto ahora funciona exclusivamente sobre **Supabase** (Auth, PostgreSQL, Storage) y **Next.js** (SSR, middleware, frontend). Adicionalmente, se corrigió la lista de provincias del formulario de perfil y onboarding, eliminando "Ciudad Autónoma de Buenos Aires" que no existía como provincia en la tabla `geografia` de Supabase.
+
+### Cambios Realizados
+
+#### Archivos Eliminados
+- `src/server.js` — Servidor Express legacy (puerto 5000)
+- `src/config/db.js` — Conexión a MongoDB via Mongoose
+- `src/config/firebaseConfig.js` — Configuración de Firebase Client + Admin SDK
+- `src/controllers/userController.js` — Controlador de usuarios (MongoDB)
+- `src/models/User.js` — Modelo Mongoose de usuario con `firebaseUid`
+- `src/routes/userRoutes.js` — Rutas REST Express para `/api/users`
+- `src/services/subscriptionService.js` — Servicio de suscripción (MongoDB)
+- `src/middleware/checkSubscription.js` — Middleware Express de verificación de plan
+- `src/scripts/importarLocalidades.js` — Script de importación geográfica a MongoDB (reemplazado por `scripts/seed-geography.js`)
+- `src/data/` — Directorio vacío (datos estáticos migrados a Supabase)
+
+#### Archivos Conservados
+- `src/config/mpConfig.js` — Configuración de MercadoPago (necesario para billing futuro)
+
+#### Dependencias Eliminadas del `package.json`
+- `firebase` (^12.14.0)
+- `firebase-admin` (^13.10.0)
+- `mongoose` (^9.6.3)
+- `express` (^5.2.1)
+- `cors` (^2.8.6)
+- `dotenv` (^17.4.2)
+- `nodemon` (^3.1.14, devDependency)
+- `pg` (^8.21.0, devDependency)
+
+#### Scripts de `package.json` Simplificados
+- `dev` → `next dev` (antes: `nodemon src/server.js`)
+- `build` → `next build` (antes: `build:next`)
+- `start` → `next start` (antes: `node src/server.js`)
+- `clean` → `rimraf .next` (nuevo, para limpiar cache)
+- Eliminados: `dev:next`, `build:next`, `start:next`, `migrate-geo`
+
+#### Corrección de Dropdown de Provincia
+- Se eliminó `'CIUDAD AUTONOMA DE BUENOS AIRES'` del array `PROVINCIAS_ARGENTINAS` en [profile/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/profile/page.js) y [onboarding/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/onboarding/page.js), ya que no existe como provincia en la tabla `public.geografia` de Supabase.
+
+### Impacto en `node_modules`
+- **308 paquetes eliminados** tras `npm install`, reduciendo significativamente el peso del proyecto.
+
+### Validaciones Ejecutadas
+- `npm run build` exitoso — todas las 8 rutas compilan correctamente.
+- Estructura de `src/` verificada: solo quedan `app/`, `components/`, `config/` (con `mpConfig.js`), `lib/`, y `middleware.js`.
+
+### Riesgos Pendientes
+- Ninguno. El servidor Express en puerto 5000 no era consumido por ninguna parte del frontend Next.js.
+
+### Próximo Paso Recomendado
+- Verificar visualmente en el navegador que la app funciona correctamente sin el backend Express.
+- Considerar eliminar las variables de entorno de Firebase y MongoDB del archivo `.env` si ya no se usan en otros contextos.
+
+---
+
+
+## [2026-06-13] Migración de Datos Geográficos a Supabase y Optimización de Bundles
+
+### Resumen Ejecutivo
+Se migró el catálogo geográfico de provincias y localidades (de Argentina) desde un archivo JSON local estático a la base de datos de Supabase. Esto resolvió el problema de localidades faltantes reportado por el usuario, y optimizó el tamaño de descarga del frontend en Next.js, reduciendo el bundle de cliente de las pantallas de Onboarding y Perfil en aproximadamente 400 KB por página.
+
+### Cambios Realizados
+- **Base de Datos y RLS**: Creamos la tabla `public.geografia` con políticas de lectura libre (`geografia_public_select`) e inserción/modificación restringida.
+- **Carga de Datos (Seed)**: Desarrollamos y ejecutamos un script en Node.js ([seed-geography.js](file:///c:/Users/sebas/./.gemini/antigravity-ide/scratch/Gestion-SySO/scripts/seed-geography.js)) que procesó e insertó los 13.504 registros geográficos en Supabase de forma masiva (en lotes de 1.000) sin duplicar datos.
+- **Búsqueda Dinámica en Onboarding**: Refactorizamos [onboarding/page.js](file:///c:/Users/sebas/./.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/onboarding/page.js) para remover la importación estática de `localidades_agrupado.json`. La lista de provincias se predefine estáticamente en el cliente y las localidades se buscan asíncronamente bajo demanda de Supabase al seleccionar una provincia. Se mantuvo soporte robusto para simulación (`isDevMode === true`).
+- **Búsqueda Dinámica en Perfil de Usuario**: Refactorizamos [profile/page.js](file:///c:/Users/sebas/./.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/profile/page.js) implementando el mismo flujo asíncrono que en onboarding, asegurando preservar el valor actual de localidad precargado de la base de datos durante el renderizado inicial y sólo limpiarlo si la provincia cambia a una que no lo contenga.
+- **Depuración de Archivos Redundantes**: Eliminamos el archivo estático obsoleto `src/data/localidades_agrupado.json` (ahorrando ~400KB de espacio) y el script legacy de migración a Firebase `scripts/migrateGeography.js`.
+
+### Validaciones Ejecutadas
+- **Prueba de Build de Producción**: Ejecutamos exitosamente `npm.cmd run build:next`. El compilador de Next.js optimizó el First Load JS de Onboarding y Perfil a tan solo **164 kB** (antes ~600 kB).
+- **Consistencia en Modo Desarrollo**: Verificamos que las localidades mockeadas en `isDevMode` cargan correctamente para evitar caídas del servidor local si las credenciales de Supabase no están presentes.
+
+### Riesgos Pendientes
+- Ninguno. La optimización del lado del cliente es del 100% y el catálogo ahora reside en base de datos.
+
+---
+
+## [2026-06-12] Creación de Cuenta Admin Global (admin-syso) y Bypass de Restricciones de Plan
+
+### Resumen Ejecutivo
+Se configuró y creó una cuenta de administración global (`admin@gestionsyso.com`) que permite probar de manera irrestricta todas las funcionalidades actuales y futuras de la plataforma SaaS Gestión SySO, eludiendo las limitaciones y expiraciones de los planes comerciales.
+
+### Cambios Realizados
+- **Creación de Credenciales y Perfil**: Registramos el usuario `admin@gestionsyso.com` con rol `admin` en la base de datos de Supabase.
+- **Tenant con Plan Libre**: Creamos un tenant específico para la administración con `slug: "admin-syso"` y le asignamos de manera nativa el plan `libre` (plan ilimitado).
+- **Bypass en Middleware de Suscripción**: Modificamos el archivo [checkSubscription.js](file:///c:/Users/sebas/./.gemini/antigravity-ide/scratch/Gestion-SySO/src/middleware/checkSubscription.js) en el backend Express para exceptuar la validación de fecha de vencimiento y estado del plan a este usuario administrador global (y a la cuenta principal de Sebastian).
+- **Script de Automatización**: Se programó un script automatizado [create-admin-syso.js](file:///c:/Users/sebas/./.gemini/antigravity-ide/scratch/Gestion-SySO/scripts/create-admin-syso.js) para registrar/recrear este usuario administrativo de forma limpia e idempotente.
+- **Corrección de Selección de Texto**: Modificamos el archivo [layout.js](file:///c:/Users/sebas/./.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/layout.js) para cambiar las clases globales de selección de texto. Reemplazamos el color de selección celeste opaco por un gris translúcido (`bg-slate-500/30`) y eliminamos el color de texto fijo para evitar que tape el contenido de los inputs y labels al ser seleccionados.
+
+### Validaciones Ejecutadas
+- Ejecución exitosa del script [create-admin-syso.js](file:///c:/Users/sebas/./.gemini/antigravity-ide/scratch/Gestion-SySO/scripts/create-admin-syso.js), verificando la inserción de los registros en las tablas `public.tenants` y `public.profiles`.
+- Ejecución de inspección con [inspect-db.js](file:///c:/Users/sebas/./.gemini/antigravity-ide/scratch/Gestion-SySO/scripts/inspect-db.js), validando la existencia de la cuenta vinculada al tenant con el plan `libre`.
+- Compilación del frontend y el enrutamiento de Next.js listos y funcionales.
+
+### Riesgos Pendientes
+- Ninguno. Las credenciales de la cuenta son específicas de la administración global.
+
+### Próximo Paso Recomendado
+- El usuario puede iniciar sesión en la URL [http://localhost:3000/login](http://localhost:3000/login) utilizando el email `admin-syso@gestion-syso.com` y la clave `adminPassword123`, y comprobar en [http://localhost:3000/admin-syso/dashboard](http://localhost:3000/admin-syso/dashboard) que posee el "Plan Libre (Ilimitado)" asignado por defecto.
+
+---
+
+## [2026-06-12] Resolución de Error de Módulos Faltantes (@opentelemetry) y Reactivación de Servidor de Desarrollo
+
+### Resumen Ejecutivo
+Se resolvió el error crítico de Next.js `Cannot find module './vendor-chunks/@opentelemetry.js'` que afectaba la carga de la pantalla de inicio `/[tenant-slug]/dashboard` en el puerto 3000. Este error era provocado por una desincronización y corrupción en la caché del directorio `.next` al alternar entre compilaciones de producción y el servidor de desarrollo, agravado por bloqueos de archivos en sistemas Windows.
+
+### Cambios Realizados
+- **Reactivación Limpia del Servidor**: Tras purgar de manera completa la carpeta `.next` en pasos anteriores, se ejecutó una compilación de producción exitosa (`npm run build:next`).
+- **Inicio de Servidor de Desarrollo**: Se levantó de nuevo el servidor Next.js en el entorno de desarrollo local (`npm run dev:next`) bajo el puerto 3000.
+- **Validación de Compilación en Caliente**: Se forzó la compilación dinámica de las rutas críticas (`/login` y `/[tenant-slug]/dashboard`) realizando peticiones de red al servidor local, comprobando que las dependencias de webpack y los chunks pre-empaquetados (como `@opentelemetry.js`) se mapean de forma correcta sin interrupciones.
+
+### Validaciones Ejecutadas
+- Compilación dinámica exitosa en el servidor de desarrollo:
+  - `✓ Compiled /src/middleware`
+  - `✓ Compiled /[tenant-slug]/dashboard`
+  - Respuestas HTTP 200 satisfactorias al acceder a las rutas.
+
+### Riesgos Pendientes
+- **Caché del Navegador**: El navegador web del usuario puede retener en caché los recursos de javascript de la compilación corrupta anterior. Es indispensable realizar un refresco de pantalla completo (**Ctrl + F5**) en el navegador al acceder a `http://localhost:3000/sebastian/dashboard`.
+
+### Próximo Paso Recomendado
+- Solicitar al usuario que pruebe el acceso a `http://localhost:3000/sebastian/dashboard` (o intente iniciar sesión desde `/login`) con refresco de caché (Ctrl + F5).
+
+---
+
+## [2026-06-12] Ajustes de Usabilidad en Perfil de Usuario y Onboarding
+
+### Resumen Ejecutivo
+Se implementaron mejoras de experiencia de usuario (UX) en la pantalla de Perfil de Usuario (`/[tenant-slug]/profile`) y Onboarding (`/onboarding`) modificando la sugerencia (placeholder) de colegios profesionales, removiendo la animación de confeti al guardar y deshabilitando la redirección automática tras un guardado exitoso en el Perfil para permitir la permanencia del usuario en la pantalla de edición.
+
+### Cambios Realizados
+- **Actualización de Sugerencias (Placeholders)**: Se modificó la sugerencia de entrada para la institución emisora de la matrícula profesional a `"COPIME, CPSH..."` en la pantalla de Perfil y a `"COPIME, CPSH, etc."` en el Onboarding, facilitando la identificación de colegios locales.
+- **Eliminación de Confeti y Redirección en Perfil**: Se eliminó la función `confetti` y la redirección diferida a `/dashboard` tras un envío exitoso del formulario de perfil en `src/app/[tenant-slug]/profile/page.js`. Ahora, al guardar los datos, el sistema muestra el modal emergente de éxito y el usuario permanece en la pantalla de edición.
+- **Actualización Dinámica de Dirty Check**: Tras guardar con éxito, se actualizan los valores del estado `initialValues` con los nuevos datos persistidos. Esto previene que el dirty check de escape al presionar "Salir" o "Volver" despliegue falsas advertencias de "cambios sin guardar".
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js exitosa (`npm.cmd run build:next`), comprobando que no existan advertencias ni errores en el perfil y onboarding.
+- Confirmamos que las llamadas a redireccionar en `handleSaveChanges` fueron suprimidas.
+
+### Riesgos Pendientes
+- Ninguno. El flujo es más limpio y centrado en el control manual del usuario.
+
+### Próximo Paso Recomendado
+- El usuario puede verificar en el navegador que al hacer clic en "Guardar" se actualiza el perfil con éxito sin forzar la salida al dashboard, y que los placeholders de la matrícula profesional muestran las nuevas sugerencias.
+
+---
+
+## [2026-06-12] Estandarización y Unificación Visual del Perfil de Usuario, Corrección de Clases CSS, Depuración de Caché y Aplicación de Logo en Login con Estilos Inline Resilientes
+
+### Resumen Ejecutivo
+Se unificó estéticamente la pantalla de Perfil de Usuario (`/[tenant-slug]/profile`), se auditaron y corrigieron clases de Tailwind CSS obsoletas o fuera de rango en Perfil y Onboarding (`/onboarding`), se depuró la caché corrupta de Webpack (`.next`) del servidor de desarrollo para solucionar el error `Cannot find module './682.js'`, y se aplicó con éxito la imagen del logo corporativo negro (`/brand/logo-black.png`) en el Login adaptando su tamaño a través de atributos HTML y estilos inline (`style={{ width: '220px', height: 'auto' }}`) para garantizar que la imagen se renderice siempre correctamente a una escala equivalente a la del texto, protegiendo el diseño en caso de que existan reintentos o bloqueos de caché de la hoja de estilos externa.
+
+### Cambios Realizados
+- **Logo de Marca en Login**: Se reemplazó el texto "Gestión SySO" por el logo `/brand/logo-black.png` con la clase responsiva y atributos nativos de escala de imagen: `width="220" style={{ width: '220px', height: 'auto', display: 'block', margin: '0 auto' }}` en [login/page.js](file:///c:/Users/sebas/./.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/login/page.js). Esto restringe físicamente la imagen y asegura que esté siempre centrada y con una escala perfecta de `220px` por encima de la tarjeta.
+- **Depuración de Caché de Servidor (Webpack)**: Se detuvo el servidor de desarrollo en ejecución, se eliminó por completo el directorio `.next` para purgar la caché corrupta de compilación hot-reload de Next.js, y se reinició el servidor de desarrollo (`npm.cmd run dev:next`).
+- **Corrección de Clases CSS Fuera de Rango**: Se reemplazaron las clases no estándar de Tailwind (e.g. `text-slate-750`, `bg-red-650`, `hover:bg-red-750`, `text-slate-650`, `text-slate-550`) por sus contrapartes válidas de la paleta estándar de Tailwind CSS v3 (`text-slate-700`, `bg-red-600`, `hover:bg-red-700`, `text-slate-600`, `text-slate-500`) en la pantalla de Perfil y Onboarding. Esto asegura un renderizado visual correcto y consistente.
+- **Unificación de Interfaz del Perfil**: Se adecuó por completo el estilo de la página de perfil con tarjetas blancas (`bg-white`), borde de bajo contraste (`border-slate-200/80`), fondos generales grises `#D9D9D9`, y el color principal de acento `#468DFF`.
+
+### Validaciones Ejecutadas
+- Se validó que el servidor de desarrollo local de Next.js inicializó exitosamente de manera limpia y que la compilación del middleware es correcta sin dependencias rotas en caché.
+- Compilación de producción con Next.js exitosa (`npm.cmd run build:next`), comprobando que no existan advertencias ni errores de TypeScript/Linter en la generación de páginas estáticas y dinámicas.
+
+### Riesgos Pendientes
+- Ninguno crítico identificado. Las páginas ahora compilan correctamente de manera estática y dinámica.
+
+### Próximo Paso Recomendado
+- Se recomienda que el usuario pruebe la navegación en el entorno de desarrollo local y proceda al deploy a producción en Vercel si los resultados visuales en la edición de perfil son los esperados.
+
+---
+
+## [2026-06-12] Rediseño Visual y de UX del Dashboard (Tema Claro Premium) y Configuración de Tailwind CSS
+
+### Resumen de Cambios
+- **Instalación y Configuración de Tailwind CSS**: Se detectó que el proyecto no contaba con las dependencias `tailwindcss`, `postcss` ni `autoprefixer`, ni sus correspondientes archivos de configuración (`tailwind.config.js` y `postcss.config.js`). Esto impedía la compilación de estilos, provocando que el navegador viera la aplicación sin estilos CSS. Se instaló `tailwindcss@3` para asegurar compatibilidad con Next.js 14.x y shadcn/ui, y se crearon los archivos de configuración en la raíz del proyecto.
+- **Rediseño del Dashboard**: Migramos la interfaz del dashboard (`src/app/[tenant-slug]/dashboard/page.js`) a una estética de tema claro premium.
+- **Paleta de Colores de Estructura**: Se asignó `#D9D9D9` como fondo de pantalla de la aplicación y `#0D0D0D` como color de fondo de la barra lateral (Sidebar), sin bordes divisorios.
+- **Navegación Interactiva**: Implementamos `#468DFF` como color principal de la marca para acentos. Los elementos de navegación inactivos usan una transición hover a fondo `#468DFF` y texto/icono en blanco. El enlace seleccionado posee este estilo por defecto.
+- **Legibilidad y Contenedores**: Adaptamos la cabecera (Navbar superior) y las tarjetas del dashboard (métricas, accesos rápidos, plan de trabajo) a contenedores blancos limpios (`bg-white` y `shadow-sm`) con bordes grises de bajo contraste, garantizando legibilidad y profesionalismo.
+- **Banner de Bienvenida**: Rediseñamos el banner utilizando un degradado claro de fondo (`from-blue-50 to-indigo-50/30`) y bordes en azul `#468DFF`.
+
+### Decisiones Clave
+- **Adopción de Tailwind v3**: Se instaló explícitamente `tailwindcss@3` debido a que la versión por defecto de Tailwind v4 requiere loaders de PostCSS adicionales (`@tailwindcss/postcss`) no presentes en la versión de Next.js 14.x del proyecto.
+- **Contraste de Accesibilidad**: Se elevó la tipografía y peso tipográfico en las tarjetas claras del dashboard para mantener una lectura óptima y agradable sobre el fondo `#D9D9D9` (gris claro).
+
+### Archivos Modificados / Creados
+- `[NEW] tailwind.config.js`
+- `[NEW] postcss.config.js`
+- `[MODIFY] package.json`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+
+### Validaciones Ejecutadas
+- Ejecución de compilación de producción Next.js (`npm run build:next`) exitosa.
+- Navegación automática en navegador headless, tomando captura de pantalla para verificar el aspecto del nuevo tema visual.
+
+---
+
 ## [2026-06-12] Ajuste de Políticas de RLS, Ventanas Emergentes, Remoción de Logo, Intercepción de Correos Duplicados y Corrección de Middleware
 
 ### Resumen de Cambios

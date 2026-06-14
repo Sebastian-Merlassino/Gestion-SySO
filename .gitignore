@@ -28,4 +28,18 @@ build/
 Thumbs.db
 
 # Antigravity / Agent skills locales
-.agents/skills/
+.agents/
+
+# Vercel
+.vercel/
+
+# IDEs y Editores
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+Thumbs.db
