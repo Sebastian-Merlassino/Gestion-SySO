@@ -702,8 +702,10 @@ export default function EquipoPage({ params }) {
       return;
     }
 
+    const hasLogin = editingId ? !!(miembros.find(m => m.id === editingId)?.profile_id) : false;
+
     if (tieneAcceso) {
-      if (!editingId && !password) {
+      if (!hasLogin && !password) {
         triggerToast('Debes ingresar una contraseña para crear un usuario con acceso.', 'error');
         setSaving(false);
         return;
@@ -956,6 +958,8 @@ export default function EquipoPage({ params }) {
 
     setView('list');
   };
+
+  const hasLogin = editingId ? !!(miembros.find(m => m.id === editingId)?.profile_id) : false;
 
   return (
     <div className="min-h-screen bg-[#D9D9D9] text-slate-700 flex font-sans">
@@ -1459,13 +1463,13 @@ export default function EquipoPage({ params }) {
                       <div className="grid md:grid-cols-2 gap-6 pt-2">
                         <div>
                           <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-                            {editingId ? 'Nueva Contraseña (Opcional)' : 'Contraseña de Acceso'} <span className="text-[#468DFF]">{!editingId && '*'}</span>
+                            {hasLogin ? 'Nueva Contraseña (Opcional)' : 'Contraseña de Acceso'} <span className="text-[#468DFF]">{!hasLogin && '*'}</span>
                           </label>
                           <div className="relative">
                             <input
                               type={showPassword ? 'text' : 'password'}
-                              required={tieneAcceso && !editingId}
-                              placeholder={editingId ? 'Dejar en blanco para mantener' : 'Mínimo 8 caracteres, 1 mayúscula y 1 número'}
+                              required={tieneAcceso && !hasLogin}
+                              placeholder={hasLogin ? 'Dejar en blanco para mantener' : 'Mínimo 8 caracteres, 1 mayúscula y 1 número'}
                               value={password}
                               onChange={(e) => setPassword(e.target.value)}
                               className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-4 pr-12 text-xs text-slate-800 focus:outline-none transition-all"
@@ -1485,13 +1489,13 @@ export default function EquipoPage({ params }) {
  
                         <div>
                           <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-                            {editingId ? 'Confirmar Nueva Contraseña (Opcional)' : 'Confirmar Contraseña'} <span className="text-[#468DFF]">{!editingId && '*'}</span>
+                            {hasLogin ? 'Confirmar Nueva Contraseña (Opcional)' : 'Confirmar Contraseña'} <span className="text-[#468DFF]">{!hasLogin && '*'}</span>
                           </label>
                           <div className="relative">
                             <input
                               type={showConfirmPassword ? 'text' : 'password'}
-                              required={tieneAcceso && !editingId}
-                              placeholder={editingId ? 'Repetir nueva contraseña' : 'Repetir contraseña'}
+                              required={tieneAcceso && !hasLogin}
+                              placeholder={hasLogin ? 'Repetir nueva contraseña' : 'Repetir contraseña'}
                               value={confirmPassword}
                               onChange={(e) => setConfirmPassword(e.target.value)}
                               className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-4 pr-12 text-xs text-slate-800 focus:outline-none transition-all"

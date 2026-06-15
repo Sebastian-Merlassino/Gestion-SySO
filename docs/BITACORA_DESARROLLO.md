@@ -4,6 +4,24 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 
 ---
 
+## [2026-06-15] Verificación de Contraseña Actual en Perfil y Requerimiento de Contraseña en Equipo
+
+### Resumen Ejecutivo
+Se incrementó la seguridad en el panel de cambio de contraseña del perfil de usuario dueño y se corrigió el comportamiento del formulario de equipo de trabajo para exigir de forma obligatoria las credenciales de acceso solo cuando un integrante no tiene cuenta creada.
+
+### Cambios Realizados
+- **Verificación de Contraseña Actual en Perfil (`src/app/[tenant-slug]/profile/page.js`)**:
+  - Incorporamos el campo "Contraseña Actual" en la interfaz de usuario.
+  - Modificamos la lógica de `handleChangePassword` para validar la contraseña actual mediante una autenticación segura con `supabase.auth.signInWithPassword` antes de guardar el nuevo password del usuario dueño.
+- **Ajustes de Requerimiento de Contraseña en Equipo (`src/app/[tenant-slug]/equipo/page.js`)**:
+  - Implementamos la variable de control `hasLogin` que determina de forma dinámica si el miembro seleccionado posee o no credenciales activas en `auth.users`.
+  - Modificamos el validador y los campos de contraseña para que sean opcionales únicamente si `hasLogin === true` (es decir, ya tiene cuenta). Si `hasLogin === false` y se tilda "Habilitar acceso de inicio de sesión", los campos se indican como obligatorios (`*`) y son requeridos por el formulario.
+
+### Validaciones Ejecutadas
+- **Prueba de Compilación de Next.js**: Verificación de build de producción (`npm run build`) completado satisfactoriamente.
+
+---
+
 ## [2026-06-15] Corrección de Paginación de Geografía, Validación Visual de Contraseñas y Diagnóstico de API Key
 
 ### Resumen Ejecutivo

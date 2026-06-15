@@ -110,6 +110,8 @@ const [partidosList, setPartidosList] = useState([]);
   const [logo2Preview, setLogo2Preview] = useState('');
 
   // Cambio de contraseña
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passLoading, setPassLoading] = useState(false);
@@ -836,8 +838,8 @@ const [partidosList, setPartidosList] = useState([]);
   };
 
   const handleChangePassword = async () => {
-    if (!newPassword || !confirmPassword) {
-      triggerToast('Por favor completa ambos campos de contraseña.', 'error');
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      triggerToast('Por favor completa todos los campos de contraseña.', 'error');
       return;
     }
 
@@ -860,10 +862,24 @@ const [partidosList, setPartidosList] = useState([]);
 
     setPassLoading(true);
     try {
+      // Verificar la contraseña actual firmando al usuario de nuevo
+      const { error: signInErr } = await supabase.auth.signInWithPassword({
+        email: email, // El email del usuario actual cargado del perfil
+        password: currentPassword
+      });
+
+      if (signInErr) {
+        triggerToast('La contraseña actual ingresada es incorrecta.', 'error');
+        setPassLoading(false);
+        return;
+      }
+
+      // Proceder a actualizar la contraseña
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
       
       triggerToast('¡Contraseña actualizada con éxito!', 'success');
+      setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (err) {
@@ -1259,7 +1275,28 @@ const [partidosList, setPartidosList] = useState([]);
               Seguridad (Cambiar Contraseña)
             </h3>
             
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                  Contraseña Actual
+                </label>
+                <div className="relative">
+                  <input
+                    type={showCurrentPassword ? 'text' : 'password'}
+                    placeholder="Contraseña actual"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-4 pr-12 text-slate-800 focus:outline-none transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-650"
+                  >
+                    {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                   Nueva Contraseña
