@@ -1140,7 +1140,7 @@ export default function EmpresasClientes({ params }) {
                         {empresas.map((emp) => (
                           <tr key={emp.id} className="hover:bg-slate-50/50 transition-colors">
                             <td className="py-4 px-6">
-                              <span className="font-bold text-slate-850 block">{emp.razon_social}</span>
+                              <span className="font-bold text-slate-800 block">{emp.razon_social}</span>
                               {emp.nombre_comercial && (
                                 <span className="text-[10px] text-slate-400 block mt-0.5">{emp.nombre_comercial}</span>
                               )}
@@ -1330,7 +1330,7 @@ export default function EmpresasClientes({ params }) {
                                   <div key={act.codigo} className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs">
                                     <div className="flex gap-2 items-start min-w-0 pr-2">
                                       <span className="font-bold text-[#468DFF] font-mono shrink-0">{act.codigo}</span>
-                                      <span className="truncate text-slate-750 font-semibold">{act.descripcion}</span>
+                                      <span className="truncate text-slate-700 font-semibold">{act.descripcion}</span>
                                     </div>
                                     <button
                                       type="button"
@@ -1763,7 +1763,7 @@ export default function EmpresasClientes({ params }) {
                               <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wider block">Dotación de trabajadores</span>
                               <div className="grid md:grid-cols-3 gap-4">
                                 <div className="space-y-1">
-                                  <label className="text-[11px] font-bold text-slate-650 block">Trabajadores Administrativos</label>
+                                  <label className="text-[11px] font-bold text-slate-600 block">Trabajadores Administrativos</label>
                                   <input
                                     type="number"
                                     min="0"
@@ -1773,7 +1773,7 @@ export default function EmpresasClientes({ params }) {
                                   />
                                 </div>
                                 <div className="space-y-1">
-                                  <label className="text-[11px] font-bold text-slate-650 block">Trabajadores Productivos</label>
+                                  <label className="text-[11px] font-bold text-slate-600 block">Trabajadores Productivos</label>
                                   <input
                                     type="number"
                                     min="0"
@@ -1905,7 +1905,7 @@ export default function EmpresasClientes({ params }) {
                                       placeholder="Agregar otra..."
                                       value={est[item.customKey] || ''}
                                       onChange={(e) => item.setCustomKey(e.target.value)}
-                                      className="flex-1 text-[10px] bg-white border border-slate-350 rounded-lg px-3 py-1.5 outline-none focus:border-[#468DFF]"
+                                      className="flex-1 text-[10px] bg-white border border-slate-300 rounded-lg px-3 py-1.5 outline-none focus:border-[#468DFF]"
                                     />
                                     <button
                                       type="button"
@@ -2118,7 +2118,7 @@ export default function EmpresasClientes({ params }) {
                 <button
                   type="button"
                   onClick={modalAlert.onConfirm}
-                  className="flex-1 py-2 px-4 rounded-xl bg-red-500 text-white font-bold text-xs hover:bg-red-650 transition-all cursor-pointer shadow-sm shadow-red-500/10"
+                  className="flex-1 py-2 px-4 rounded-xl bg-red-600 text-white font-bold text-xs hover:bg-red-700 transition-all cursor-pointer shadow-md shadow-red-500/10"
                 >
                   Confirmar
                 </button>

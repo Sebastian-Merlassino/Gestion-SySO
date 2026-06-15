@@ -4,6 +4,28 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 
 ---
 
+## [2026-06-15] Importación Masiva de Clientes y Establecimientos a Supabase, Corrección de Botón de Borrado y Estandarización de Colores Tailwind
+
+### Resumen Ejecutivo
+Se ejecutó satisfactoriamente la importación masiva de la base de datos de clientes y establecimientos desde la planilla de Excel oficial, y se corrigieron diversos problemas visuales de los modales de borrado y estados hover en el frontend debido a clases de color no estándar de Tailwind.
+
+### Cambios Realizados
+- **Importación de Clientes y Establecimientos**:
+  - Parseamos la planilla de Excel `G:\Mi unidad\Gestión SySO\app\Clientes.xlsx` mediante un script de extracción que procesó 81 filas y agrupó los datos de contacto en objetos JSON estructurados.
+  - Diseñamos y ejecutamos un script cargador Node.js (`scripts/import-clients.js`) que insertó y actualizó de forma atómica en Supabase Postgres 61 nuevas empresas y 79 establecimientos vinculados bajo el tenant `Recalificart`, realizando automáticamente la dotación de personal equivalente, el checklist de capítulos del Decreto 351/79 y la estimación de horas profesionales mensuales.
+- **Ajustes de Interfaz y Colores Estándar**:
+  - **Botón de Borrado en Clientes (`empresas/page.js`)**: Cambiamos la clase `bg-red-50 text-white hover:bg-red-650` por `bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-500/10` para solucionar la invisibilidad del texto.
+  - **Corrección de Colores No Soportados**:
+    - En `empresas/page.js`: Reemplazamos `text-slate-650` por `text-slate-600` (líneas de trabajadores), `text-slate-750` por `text-slate-700` (actividades seleccionadas), `text-slate-850` por `text-slate-800` (razón social en tabla), y `border-slate-350` por `border-slate-300` (maquinarias personalizadas).
+    - En `equipo/page.js`: Reemplazamos `hover:text-slate-850` y `border-slate-350` por `hover:text-slate-800` and `border-slate-300` (botón volver), y `border-slate-850` por `border-slate-800` (borde de toast).
+    - En `profile/page.js` y `login/page.js`: Reemplazamos `hover:text-slate-650` por `hover:text-slate-700` en los botones de ojo de contraseña.
+
+### Validaciones Ejecutadas
+- **Ejecución del Validador de Estructura**: `validate-empresas.js` comprobó la existencia de las tablas, claves foráneas `ON DELETE CASCADE` y el RLS multi-tenant habilitado.
+- **Compilación de Next.js**: Verificación de build de producción (`npm.cmd run build`) completada con éxito.
+
+---
+
 ## [2026-06-15] Verificación de Contraseña Actual en Perfil y Requerimiento de Contraseña en Equipo
 
 ### Resumen Ejecutivo

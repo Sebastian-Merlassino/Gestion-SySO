@@ -1254,7 +1254,7 @@ export default function EquipoPage({ params }) {
               <div className="flex items-center justify-between border-b border-slate-300/60 pb-5">
                 <button
                   onClick={handleExitWithoutSave}
-                  className="flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-slate-850 transition-colors py-2 px-3.5 rounded-xl border border-slate-350 bg-white shadow-sm cursor-pointer"
+                  className="flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-slate-800 transition-colors py-2 px-3.5 rounded-xl border border-slate-300 bg-white shadow-sm cursor-pointer"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   Volver al listado
@@ -1477,7 +1477,7 @@ export default function EquipoPage({ params }) {
                             <button
                               type="button"
                               onClick={() => setShowPassword(!showPassword)}
-                              className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-650"
+                              className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700"
                             >
                               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                             </button>
@@ -1503,7 +1503,7 @@ export default function EquipoPage({ params }) {
                             <button
                               type="button"
                               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                              className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-650"
+                              className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700"
                             >
                               {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                             </button>
@@ -1738,7 +1738,7 @@ export default function EquipoPage({ params }) {
 
       {/* TOAST NOTIFICATION */}
       {toast.show && (
-        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2.5 bg-slate-900 border border-slate-850 px-4 py-3.5 rounded-xl shadow-2xl animate-fade-in-up">
+        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2.5 bg-slate-900 border border-slate-800 px-4 py-3.5 rounded-xl shadow-2xl animate-fade-in-up">
           {toast.type === 'success' ? (
             <div className="h-5 w-5 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400">
               <Check className="h-3 w-3" />
@@ -1781,7 +1781,7 @@ export default function EquipoPage({ params }) {
               {modalAlert.onConfirm && (
                 <button
                   onClick={modalAlert.onConfirm}
-                  className="py-2.5 px-5 rounded-xl bg-red-650 hover:bg-red-750 text-white text-xs font-bold transition-all cursor-pointer shadow-md"
+                  className="py-2.5 px-5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all cursor-pointer shadow-md"
                 >
                   Confirmar
                 </button>
