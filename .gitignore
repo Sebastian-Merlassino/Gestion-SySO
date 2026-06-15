@@ -30,6 +30,9 @@ Thumbs.db
 # Antigravity / Agent skills locales
 .agents/
 
+# Scripts internos de desarrollo y administración
+scripts/
+
 # Vercel
 .vercel/
 
