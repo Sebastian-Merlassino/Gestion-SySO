@@ -19,7 +19,9 @@ import {
   PlusCircle,
   HelpCircle,
   Loader2,
-  Briefcase
+  Briefcase,
+  Menu,
+  X
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -29,6 +31,7 @@ export default function TenantDashboard({ params }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [tenant, setTenant] = useState(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Estadísticas ficticias/reales
   const [stats, setStats] = useState({
@@ -147,6 +150,91 @@ export default function TenantDashboard({ params }) {
   return (
     <div className="min-h-screen bg-[#D9D9D9] text-slate-700 flex font-sans">
       
+      {/* Mobile Sidebar (Drawer Overlay) */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-40 flex md:hidden">
+          {/* Overlay background */}
+          <div 
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300"
+          />
+
+          {/* Drawer Panel */}
+          <aside className="relative flex-1 flex flex-col max-w-xs w-full bg-[#0D0D0D] p-6 justify-between animate-scaleUp">
+            <div className="absolute top-4 right-4">
+              <button 
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div>
+              {/* Logo Brand */}
+              <div className="flex items-center gap-3 mb-8">
+                <img 
+                  src="/brand/logo-primary.png" 
+                  alt="Logo Gestión SySO" 
+                  className="h-9 w-9 object-contain shrink-0" 
+                />
+                <span className="font-outfit text-base font-extrabold text-white tracking-tight block">Gestión SySO</span>
+              </div>
+
+              {/* Menú de navegación */}
+              <nav className="space-y-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block mb-2">Panel principal</span>
+                <a href="#" className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10">
+                  <Building className="h-4 w-4" />
+                  Dashboard Central
+                </a>
+                <a href={`/${tenantSlug}/empresas`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                  <Users className="h-4 w-4" />
+                  Clientes
+                </a>
+                {(profile?.role === 'owner' || profile?.role === 'admin') && (
+                  <a href={`/${tenantSlug}/equipo`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                    <Briefcase className="h-4 w-4" />
+                    Equipo de Trabajo
+                  </a>
+                )}
+                <a href="#" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                  <FileText className="h-4 w-4" />
+                  Inspecciones y Relevamientos
+                </a>
+                <a href="#" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                  <Calendar className="h-4 w-4" />
+                  Plan de Trabajo
+                </a>
+                
+                <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
+                <a href={`/${tenantSlug}/profile`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                  <Settings className="h-4 w-4" />
+                  Editar Perfil
+                </a>
+              </nav>
+            </div>
+
+            {/* Footer Sidebar */}
+            <div className="pt-4 border-t border-white/10">
+              <div className="flex items-center justify-between rounded-xl bg-black/40 p-3 border border-white/5">
+                <div className="truncate pr-2">
+                  <span className="text-xs font-bold text-white block truncate">{profile?.full_name || 'Usuario'}</span>
+                  <span className="text-[10px] text-white/40 block truncate uppercase tracking-wider">{profile?.role || 'Profesional'}</span>
+                </div>
+                <button 
+                  onClick={handleLogout}
+                  title="Cerrar sesión"
+                  className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-600 hover:text-white transition-all cursor-pointer shrink-0"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      )}
+
       {/* Sidebar - Barra Lateral */}
       <aside className="w-64 bg-[#0D0D0D] flex flex-col justify-between shrink-0 hidden md:flex">
         <div className="p-6">
@@ -217,10 +305,19 @@ export default function TenantDashboard({ params }) {
         
         {/* Navbar */}
         <header className="h-16 border-b border-slate-300/60 flex items-center justify-between px-6 md:px-8 bg-white/80 backdrop-blur-md sticky top-0 z-20">
-          <h2 className="font-outfit text-lg font-bold text-slate-900 flex items-center gap-2">
-            <Building className="h-5 w-5 text-[#468DFF]" />
-            {tenant?.name || 'Mi Consultora'}
-          </h2>
+          <div className="flex items-center gap-3">
+            {/* Hamburger Button (Mobile Only) */}
+            <button 
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 md:hidden cursor-pointer"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <h2 className="font-outfit text-lg font-bold text-slate-900 flex items-center gap-2">
+              <Building className="h-5 w-5 text-[#468DFF]" />
+              {tenant?.name || 'Mi Consultora'}
+            </h2>
+          </div>
           
           <div className="flex items-center gap-4">
             {/* Indicador de plan */}

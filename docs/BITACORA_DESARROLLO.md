@@ -4,6 +4,35 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 
 ---
 
+## [2026-06-15] Implementación de Navegación Lateral Responsive para Dispositivos Móviles
+
+### Resumen de Cambios
+Se corrigió la usabilidad y accesibilidad de la barra lateral de navegación en pantallas móviles (responsive mobile first). Previamente, al visualizar la aplicación en teléfonos, la barra lateral de navegación (`aside`) se ocultaba por completo y el usuario carecía de un mecanismo para navegar entre las secciones clave. Se diseñó e implementó un botón de menú hamburguesa interactivo en la cabecera y una barra de navegación móvil deslizable (drawer overlay) en las pantallas del Dashboard, Clientes y Equipo de Trabajo.
+
+### Cambios Realizados
+- **Botón de Menú Hamburguesa**: Agregamos un botón visible únicamente en pantallas móviles (`md:hidden`) en la cabecera (`header`) de las pantallas de Dashboard, Clientes y Equipo de Trabajo. Al presionarse, activa el estado de visualización del menú.
+- **Barra Lateral Móvil Deslizable (Drawer Overlay)**: Diseñamos una interfaz overlay deslizable (`fixed inset-0 z-40 flex md:hidden`) que expone el logotipo de la marca, enlaces del menú de navegación (Dashboard, Clientes, Equipo, Inspecciones, etc.), perfil del usuario activo y botón de cierre de sesión. Posee un fondo translúcido difuminado (`backdrop-blur-sm`) y un botón de cierre (`X`) para ocultarla de manera interactiva.
+- **Sincronización de Navegación**: Se aplicó este comportamiento de manera uniforme en las tres pantallas principales que poseen la barra lateral, preservando el mismo estilo y colores corporativos (`#0D0D0D` para fondo y `#468DFF` para acentos).
+
+### Decisiones Clave
+- **Estado de Navegación Aislado**: El uso de estados locales `isMobileMenuOpen` evita la necesidad de reestructurar y refactorizar de forma drástica el enrutamiento general, garantizando un acoplamiento mínimo y máxima estabilidad.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- **Verificación de Compilación**: Ejecutamos el compilador de producción (`npm run build`) para verificar la consistencia sintáctica de los componentes reactivos.
+
+---
+
 ## [2026-06-15] Implementación de Medidas de Seguridad y Mitigación de Vulnerabilidades
 
 ### Resumen de Cambios
