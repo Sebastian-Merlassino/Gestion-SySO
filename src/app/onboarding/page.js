@@ -297,6 +297,12 @@ export default function OnboardingPage() {
       return;
     }
 
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+    if (file.size > MAX_FILE_SIZE) {
+      alert('El archivo no debe superar los 5 MB.');
+      return;
+    }
+
     setFile(file);
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -335,6 +341,12 @@ export default function OnboardingPage() {
 
     if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
       alert('Por favor, selecciona una imagen en formato JPG o PNG.');
+      return;
+    }
+
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+    if (file.size > MAX_FILE_SIZE) {
+      alert('El archivo no debe superar los 5 MB.');
       return;
     }
 

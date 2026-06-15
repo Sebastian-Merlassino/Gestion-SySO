@@ -34,8 +34,19 @@ export default function RegisterPage() {
       return;
     }
 
-    if (password.length < 6) {
-      setModal({ show: true, message: 'La contraseña debe tener al menos 6 caracteres.', type: 'error' });
+    const isStrongPassword = (pwd) => {
+      if (pwd.length < 8) return false;
+      if (!/[A-Z]/.test(pwd)) return false;
+      if (!/[0-9]/.test(pwd)) return false;
+      return true;
+    };
+
+    if (!isStrongPassword(password)) {
+      setModal({ 
+        show: true, 
+        message: 'La contraseña debe tener al menos 8 caracteres, incluir al menos una letra mayúscula y al menos un número.', 
+        type: 'error' 
+      });
       setLoading(false);
       return;
     }

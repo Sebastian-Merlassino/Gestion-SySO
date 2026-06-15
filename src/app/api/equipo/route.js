@@ -58,6 +58,11 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 });
     }
 
+    const ALLOWED_ROLES = ['inspector', 'supervisor'];
+    if (role && !ALLOWED_ROLES.includes(role)) {
+      return NextResponse.json({ error: 'Rol no permitido' }, { status: 400 });
+    }
+
     // Initialize Admin client with service role key to write to auth.users
     const adminClient = createClient(supabaseUrl, supabaseSecretKey, {
       auth: {
@@ -102,7 +107,7 @@ export async function POST(request) {
 
   } catch (err) {
     console.error('Error in API equipo POST:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: 'Error interno del servidor. Intente nuevamente.' }, { status: 500 });
   }
 }
 
@@ -198,7 +203,7 @@ export async function DELETE(request) {
 
   } catch (err) {
     console.error('Error in API equipo DELETE:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: 'Error interno del servidor. Intente nuevamente.' }, { status: 500 });
   }
 }
 
@@ -252,6 +257,11 @@ export async function PUT(request) {
 
     if (!userId) {
       return NextResponse.json({ error: 'Falta el parámetro userId' }, { status: 400 });
+    }
+
+    const ALLOWED_ROLES = ['inspector', 'supervisor'];
+    if (role && !ALLOWED_ROLES.includes(role)) {
+      return NextResponse.json({ error: 'Rol no permitido' }, { status: 400 });
     }
 
     // Check if the user to update belongs to the same tenant
@@ -325,6 +335,6 @@ export async function PUT(request) {
 
   } catch (err) {
     console.error('Error in API equipo PUT:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: 'Error interno del servidor. Intente nuevamente.' }, { status: 500 });
   }
 }

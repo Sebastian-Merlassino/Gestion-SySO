@@ -4,6 +4,55 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 
 ---
 
+## [2026-06-15] Implementación de Medidas de Seguridad y Mitigación de Vulnerabilidades
+
+### Resumen de Cambios
+Se implementaron soluciones definitivas para corregir las vulnerabilidades identificadas en la auditoría de seguridad del proyecto Gestión SySO. Esto cubre políticas de inserción de tenants, validación de roles en APIs, límites en uploads, robustez de contraseñas, sanitización de errores internos y mecanismos de prevención de abuso en el inicio de sesión.
+
+### Cambios Realizados
+- **Restricción de Creación de Tenants (`20260621000000_restrict_tenant_insert.sql` y `scripts/run-restrict-migration.js`)**:
+  - Eliminamos la política insegura `tenant_isolation_insert` que permitía inserciones libres a cualquier usuario autenticado.
+  - Implementamos la nueva política `tenant_insert_onboarding` que restringe el `INSERT` en la tabla `public.tenants` a usuarios autenticados cuyo perfil aún posea `tenant_id IS NULL` (flujo legítimo de onboarding).
+- **Validación de Roles en la API de Equipo (`api/equipo/route.js`)**:
+  - Agregamos validación estricta con whitelist de roles (`['inspector', 'supervisor']`) en los métodos `POST` y `PUT` de la API de gestión de personal. Esto evita la inyección de roles no permitidos (ej. auto-escalación a `owner` o `admin`).
+- **Sanitización de Errores Crudos en Consola/API (`api/equipo/route.js`)**:
+  - Reemplazamos los mensajes de error crudos en los catch de `POST`, `PUT` y `DELETE` por un mensaje genérico: `Error interno del servidor. Intente nuevamente.`. Los detalles técnicos completos ahora solo se registran en los logs del servidor para auditoría interna, protegiendo los nombres de tablas, columnas y RLS de posibles escaneos de vulnerabilidad.
+- **Validación de Tamaño en Subida de Archivos (`onboarding/page.js`, `profile/page.js`, `equipo/page.js`)**:
+  - Incorporamos validación en el lado del cliente en todas las funciones `handleImageChange` y `handleMatriculaFileChange` para bloquear subidas de firmas, logos o imágenes de matrícula que superen los **5 MB**.
+- **Hardening en Políticas de Contraseñas (`register/page.js`, `profile/page.js`, `equipo/page.js`)**:
+  - Reemplazamos la validación simple de longitud (< 6 caracteres) por una regla que exige contraseñas robustas de al menos 8 caracteres, al menos una letra mayúscula y al menos un número.
+  - Aplicamos este validador en el formulario de registro, en el panel de cambio de clave del perfil y en la creación/edición de integrantes de equipo.
+- **Rate Limiting y Cooldown en Login (`login/page.js`)**:
+  - Implementamos un cooldown reactivo en el botón de inicio de sesión que se bloquea durante 30 segundos tras registrar 3 intentos fallidos consecutivos de contraseña, mostrando un segundero en reversa.
+  - Mapeamos errores de autenticación comunes de Supabase (`Invalid login credentials`) a mensajes claros en español.
+
+### Decisiones Clave
+- **Control de INSERT a nivel RLS**: Restringir las inserciones por base de datos en base al estado del perfil (`tenant_id IS NULL`) garantiza que el flujo de onboarding sea el único habilitado para crear tenants, impidiendo la manipulación por cliente una vez registrado.
+- **Whitelist de Roles**: Limitar la asignación de roles server-side previene vulnerabilidades de inyección de parámetros (IDOR / Privilege Escalation) sin afectar la experiencia del usuario final.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `supabase`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260621000000_restrict_tenant_insert.sql`
+- `[NEW] scripts/run-restrict-migration.js`
+- `[MODIFY] src/app/api/equipo/route.js`
+- `[MODIFY] src/app/login/page.js`
+- `[MODIFY] src/app/register/page.js`
+- `[MODIFY] src/app/onboarding/page.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- **Ejecución y Verificación de RLS**: Corrimos el script runner aplicando la restricción en la base de datos de producción y constatamos el listado de políticas activas en la tabla `tenants`.
+- **Prueba de Compilación**: Ejecución del compilador de Next.js (`npm run build`) para verificar la integridad del código.
+
+---
+
 ## [2026-06-15] Vinculación y Activación del Dominio Personalizado en Vercel
 
 ### Resumen Ejecutivo

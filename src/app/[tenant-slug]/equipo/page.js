@@ -357,6 +357,12 @@ export default function EquipoPage({ params }) {
       return;
     }
 
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+    if (file.size > MAX_FILE_SIZE) {
+      alert('El archivo no debe superar los 5 MB.');
+      return;
+    }
+
     setFile(file);
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -397,6 +403,12 @@ export default function EquipoPage({ params }) {
 
     if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
       alert('Por favor, selecciona una imagen en formato JPG o PNG.');
+      return;
+    }
+
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+    if (file.size > MAX_FILE_SIZE) {
+      alert('El archivo no debe superar los 5 MB.');
       return;
     }
 
@@ -714,12 +726,20 @@ export default function EquipoPage({ params }) {
         setSaving(false);
         return;
       }
-      if (password && password.length < 6) {
-        triggerToast('La contraseña debe tener al menos 6 caracteres.', 'error');
+
+      const isStrongPassword = (pwd) => {
+        if (pwd.length < 8) return false;
+        if (!/[A-Z]/.test(pwd)) return false;
+        if (!/[0-9]/.test(pwd)) return false;
+        return true;
+      };
+
+      if (password && !isStrongPassword(password)) {
+        triggerToast('La contraseña debe tener al menos 8 caracteres, incluir al menos una letra mayúscula y al menos un número.', 'error');
         setSaving(false);
         return;
       }
-      if (password !== confirmPassword) {
+      if (password && password !== confirmPassword) {
         triggerToast('Las contraseñas no coinciden.', 'error');
         setSaving(false);
         return;

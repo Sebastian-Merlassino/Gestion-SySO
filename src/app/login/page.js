@@ -11,6 +11,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [isDevMode, setIsDevMode] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
 
   // Modales de Notificación y Olvido de Contraseña
   const [showErrorModal, setShowErrorModal] = useState(false);
@@ -21,6 +23,15 @@ export default function LoginPage() {
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotSuccess, setForgotSuccess] = useState(false);
   const [forgotError, setForgotError] = useState(null);
+
+  // Cooldown countdown timer
+  useEffect(() => {
+    if (cooldownSeconds <= 0) return;
+    const timer = setInterval(() => {
+      setCooldownSeconds(prev => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [cooldownSeconds]);
 
   useEffect(() => {
     // Detectar si no están configuradas las variables de Supabase reales
@@ -44,6 +55,13 @@ export default function LoginPage() {
       return;
     }
 
+    if (cooldownSeconds > 0) {
+      setErrorMessage(`Demasiados intentos fallidos. Por favor, espera ${cooldownSeconds} segundos antes de intentar nuevamente.`);
+      setShowErrorModal(true);
+      setLoading(false);
+      return;
+    }
+
     try {
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
@@ -63,14 +81,35 @@ export default function LoginPage() {
         throw profileError;
       }
 
+      setFailedAttempts(0); // Reset attempts on success
+
       if (profile?.tenant_id && profile?.tenants?.slug) {
         window.location.href = `/${profile.tenants.slug}/dashboard`;
       } else {
         window.location.href = '/onboarding';
       }
     } catch (err) {
-      setErrorMessage(err.message || 'Error al iniciar sesión. Verifica tus credenciales.');
-      setShowErrorModal(true);
+      console.error('Login error:', err);
+      let friendlyMessage = 'Error al iniciar sesión. Verifica tus credenciales.';
+      if (err.message === 'Invalid login credentials' || err.status === 400) {
+        friendlyMessage = 'Credenciales de inicio de sesión inválidas. Por favor, verifica tu correo y contraseña.';
+      } else if (err.message === 'Email not confirmed') {
+        friendlyMessage = 'El correo electrónico no ha sido verificado aún.';
+      }
+
+      setFailedAttempts(prev => {
+        const next = prev + 1;
+        if (next >= 3) {
+          setCooldownSeconds(30);
+          setErrorMessage('Demasiados intentos fallidos consecutivos. Tu acceso ha sido temporalmente bloqueado por 30 segundos.');
+          setShowErrorModal(true);
+          return 0; // reset
+        } else {
+          setErrorMessage(friendlyMessage);
+          setShowErrorModal(true);
+          return next;
+        }
+      });
       setLoading(false);
     }
   };
@@ -100,7 +139,8 @@ export default function LoginPage() {
       setForgotLoading(false);
       setForgotSuccess(true);
     } catch (err) {
-      setForgotError(err.message || 'Ocurrió un error al enviar el enlace. Verifica el correo.');
+      console.error('Password reset error:', err);
+      setForgotError('Ocurrió un error al enviar el enlace. Por favor, verifica el correo ingresado.');
       setForgotLoading(false);
     }
   };
@@ -196,13 +236,17 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || cooldownSeconds > 0}
               className="w-full py-3 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/10 hover:shadow-blue-500/25 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
             >
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Iniciando sesión...
+                </>
+              ) : cooldownSeconds > 0 ? (
+                <>
+                  Bloqueado ({cooldownSeconds}s)
                 </>
               ) : (
                 <>
