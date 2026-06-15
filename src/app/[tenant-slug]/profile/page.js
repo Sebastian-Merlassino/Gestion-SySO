@@ -24,7 +24,9 @@ import {
   CheckCircle,
   ArrowLeft,
   PlusCircle,
-  Lock
+  Lock,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -101,6 +103,7 @@ const [partidosList, setPartidosList] = useState([]);
   const [companyName, setCompanyName] = useState('');
   const [fotoFirma, setFotoFirma] = useState(null);
   const [fotoFirmaPreview, setFotoFirmaPreview] = useState('');
+  const [signaturePath, setSignaturePath] = useState('');
   const [logo1, setLogo1] = useState(null);
   const [logo1Preview, setLogo1Preview] = useState('');
   const [logo2, setLogo2] = useState(null);
@@ -110,6 +113,8 @@ const [partidosList, setPartidosList] = useState([]);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passLoading, setPassLoading] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Campos Opcionales - Sitio Web y Redes Sociales de la Empresa
   const [website, setWebsite] = useState('');
@@ -201,6 +206,7 @@ const [partidosList, setPartidosList] = useState([]);
         
         const signatureSignedUrl = profile.signature_url ? await getSignedUrl('signatures', profile.signature_url) : '';
         setFotoFirmaPreview(signatureSignedUrl);
+        setSignaturePath(profile.signature_url || '');
 
         // Cargar Matrículas
         let initialMatriculas = [];
@@ -213,6 +219,8 @@ const [partidosList, setPartidosList] = useState([]);
               vencimiento: profile.matricula_vencimiento || '',
               fotoFrentePreview: profile.matricula_foto_frente_url || '',
               fotoDorsoPreview: profile.matricula_foto_dorso_url || '',
+              fotoFrentePath: profile.matricula_foto_frente_url || '',
+              fotoDorsoPath: profile.matricula_foto_dorso_url || '',
               fotoFrente: null,
               fotoDorso: null
             }
@@ -234,6 +242,8 @@ const [partidosList, setPartidosList] = useState([]);
                 vencimiento: m.vencimiento || '',
                 fotoFrentePreview: m.foto_frente_url ? await getSignedUrl('documents', m.foto_frente_url) : '',
                 fotoDorsoPreview: m.foto_dorso_url ? await getSignedUrl('documents', m.foto_dorso_url) : '',
+                fotoFrentePath: m.foto_frente_url || '',
+                fotoDorsoPath: m.foto_dorso_url || '',
                 fotoFrente: null,
                 fotoDorso: null
               })))
@@ -245,6 +255,8 @@ const [partidosList, setPartidosList] = useState([]);
                   vencimiento: '',
                   fotoFrentePreview: '',
                   fotoDorsoPreview: '',
+                  fotoFrentePath: '',
+                  fotoDorsoPath: '',
                   fotoFrente: null,
                   fotoDorso: null
                 }
@@ -564,8 +576,8 @@ const [partidosList, setPartidosList] = useState([]);
       // 1. Subir archivos de matrículas
       const updatedMatriculas = await Promise.all(
         matriculas.map(async (m, idx) => {
-          let frenteUrl = m.fotoFrentePreview;
-          let dorsoUrl = m.fotoDorsoPreview;
+          let frenteUrl = m.fotoFrentePath || '';
+          let dorsoUrl = m.fotoDorsoPath || '';
 
           if (m.fotoFrente) {
             const ext = m.fotoFrente.name.split('.').pop();
@@ -577,18 +589,24 @@ const [partidosList, setPartidosList] = useState([]);
             dorsoUrl = await uploadFileToStorage('documents', `${userId}/matricula_${idx}_dorso_${Date.now()}.${ext}`, m.fotoDorso);
           }
 
+          // If preview was cleared, empty the path
+          if (!m.fotoFrentePreview) frenteUrl = '';
+          if (!m.fotoDorsoPreview) dorsoUrl = '';
+
           return {
             ...m,
             fotoFrentePreview: frenteUrl,
-            fotoDorsoPreview: dorsoUrl
+            fotoDorsoPreview: dorsoUrl,
+            fotoFrentePath: frenteUrl,
+            fotoDorsoPath: dorsoUrl
           };
         })
       );
 
       // Subir firma y logos
-      let signatureUrl = fotoFirmaPreview;
-      let logo1Url = logo1Preview;
-      let logo2Url = logo2Preview;
+      let signatureUrl = signaturePath || '';
+      let logo1Url = tenantData?.logo_1_url || '';
+      let logo2Url = tenantData?.logo_2_url || '';
 
       const uploadPromises = [];
       const uploadKeys = [];
@@ -620,8 +638,13 @@ const [partidosList, setPartidosList] = useState([]);
         });
       }
 
+      // If preview was cleared, empty the path
+      if (!fotoFirmaPreview) signatureUrl = '';
+      if (!logo1Preview) logo1Url = '';
+      if (!logo2Preview) logo2Url = '';
+
       // 2. Actualizar Tenant
-      if (tenantId) {
+      if (tenantId && profileData?.role === 'owner') {
         const { error: tenantErr } = await supabase
           .from('tenants')
           .update({
@@ -694,18 +717,25 @@ const [partidosList, setPartidosList] = useState([]);
       setLoading(false);
       triggerToast('¡Datos guardados con éxito en Supabase!', 'success');
       
-      // Reset file states and update previews
-      setMatriculas(updatedMatriculas.map(m => ({
+      // Resolve signed URLs for updated paths
+      const signedSignature = signatureUrl ? await getSignedUrl('signatures', signatureUrl) : '';
+      setFotoFirmaPreview(signedSignature);
+      setSignaturePath(signatureUrl);
+
+      const finalMatriculas = await Promise.all(updatedMatriculas.map(async m => ({
         ...m,
         fotoFrente: null,
-        fotoDorso: null
+        fotoDorso: null,
+        fotoFrentePreview: m.fotoFrentePath ? await getSignedUrl('documents', m.fotoFrentePath) : '',
+        fotoDorsoPreview: m.fotoDorsoPath ? await getSignedUrl('documents', m.fotoDorsoPath) : '',
       })));
+      setMatriculas(finalMatriculas);
+
       setFotoFirma(null);
       setLogo1(null);
       setLogo2(null);
 
       // Sincronizar previews con URLs finales cargadas
-      setFotoFirmaPreview(signatureUrl);
       setLogo1Preview(logo1Url);
       setLogo2Preview(logo2Url);
 
@@ -718,7 +748,7 @@ const [partidosList, setPartidosList] = useState([]);
         partido,
         localidad,
         birthDate,
-        matriculas: updatedMatriculas.map(m => ({
+        matriculas: finalMatriculas.map(m => ({
           institucion: m.institucion,
           numero: m.numero,
           vencimiento: m.vencimiento,
@@ -1226,25 +1256,43 @@ const [partidosList, setPartidosList] = useState([]);
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                   Nueva Contraseña
                 </label>
-                <input
-                  type="password"
-                  placeholder="Min. 6 caracteres"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all"
-                />
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? 'text' : 'password'}
+                    placeholder="Min. 6 caracteres"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-4 pr-12 text-slate-800 focus:outline-none transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-650"
+                  >
+                    {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                   Confirmar Nueva Contraseña
                 </label>
-                <input
-                  type="password"
-                  placeholder="Repetir contraseña"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all"
-                />
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder="Repetir contraseña"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-4 pr-12 text-slate-800 focus:outline-none transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-650"
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -1267,8 +1315,10 @@ const [partidosList, setPartidosList] = useState([]);
             </div>
           </div>
 
-          {/* SECCIÓN 2: IDENTIDAD DE LA EMPRESA */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
+          {profileData?.role === 'owner' && (
+            <>
+              {/* SECCIÓN 2: IDENTIDAD DE LA EMPRESA */}
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
             <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
               <Building className="text-[#468DFF] h-5 w-5" />
               Identidad de la empresa
@@ -1472,6 +1522,8 @@ const [partidosList, setPartidosList] = useState([]);
               </div>
             </div>
           </div>
+        </>
+      )}
 
           {/* Form Actions */}
           <div className="flex flex-col md:flex-row md:items-center justify-between pt-4 gap-4 border-t border-slate-300 pt-6">

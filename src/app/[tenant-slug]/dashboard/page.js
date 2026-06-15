@@ -18,7 +18,8 @@ import {
   TrendingUp,
   PlusCircle,
   HelpCircle,
-  Loader2
+  Loader2,
+  Briefcase
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -170,6 +171,12 @@ export default function TenantDashboard({ params }) {
               <Users className="h-4 w-4" />
               Clientes
             </a>
+            {(profile?.role === 'owner' || profile?.role === 'admin') && (
+              <a href={`/${tenantSlug}/equipo`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                <Briefcase className="h-4 w-4" />
+                Equipo de Trabajo
+              </a>
+            )}
             <a href="#" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
               <FileText className="h-4 w-4" />
               Inspecciones y Relevamientos

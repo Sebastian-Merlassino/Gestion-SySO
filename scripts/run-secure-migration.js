@@ -1,4 +1,4 @@
-// scripts/run-single-migration.js
+// scripts/run-secure-migration.js
 const { Client } = require('pg');
 const fs = require('fs');
 const path = require('path');
@@ -18,7 +18,7 @@ async function run() {
     await client.connect();
     console.log('Successfully connected!');
 
-    const filePath = path.join(__dirname, '../supabase/migrations/20260620000000_create_equipo_trabajo.sql');
+    const filePath = path.join(__dirname, '../supabase/migrations/20260620030000_secure_equipo_policies.sql');
     console.log(`Reading migration file: ${filePath}`);
     const sql = fs.readFileSync(filePath, 'utf8');
 

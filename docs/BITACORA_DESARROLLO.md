@@ -4,6 +4,130 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 
 ---
 
+## [2026-06-15] Vinculación y Activación del Dominio Personalizado en Vercel
+
+### Resumen Ejecutivo
+Se resolvió la inaccesibilidad de la plataforma en la URL `https://app.gestionsyso.com/`. Se diagnosticó que, aunque el registro DNS (CNAME apuntando a `cname.vercel-dns.com`) ya estaba configurado correctamente en el proveedor (Hostinger), el dominio no se encontraba asociado al proyecto de Vercel (`gestionsyso`) bajo la cuenta del equipo. Se realizó la vinculación exitosa a través de la CLI de Vercel y se validó la respuesta del servidor en producción.
+
+### Cambios Realizados
+- **Vinculación de Dominio en Vercel**: Se añadió el dominio `app.gestionsyso.com` al proyecto `gestionsyso` bajo el scope del equipo `team_bo9MH9XwujXwoUo0UFGbS8lg` (`sebastians-projects-7c2988fc`).
+- **Verificación de Enrutamiento y Certificado SSL**: Al estar el registro CNAME ya propagado y apuntando a los servidores de Vercel, la plataforma generó el certificado SSL automáticamente y comenzó a servir la aplicación de forma inmediata en la dirección indicada.
+
+### Validaciones Ejecutadas
+- **Inspección de Dominio**: Ejecución de `vercel domains inspect` confirmando la vinculación y asignación del dominio a la última compilación de producción.
+- **Resolución de DNS**: Ejecución de `nslookup` local constatando que el dominio apunta correctamente a `cname.vercel-dns.com`.
+- **Prueba de Petición HTTP (Producción)**: Ejecución de consulta programática fetch constatando respuesta `200 OK` y cabeceras de enrutamiento válidas de la red de Vercel (`x-vercel-id` activa).
+
+---
+
+## [2026-06-15] Restricción de Acceso a Equipo, Solución de RLS en Perfil de Integrante y Conservación de Paths Relativos
+
+### Resumen Ejecutivo
+Se resolvieron los problemas de permisos ("no tiene permiso" o violación de RLS) para los integrantes del equipo con sesión iniciada al guardar su propio perfil profesional en la base de datos y matrículas. Se implementó el bloqueo y redirección de roles no autorizados (`inspector`, `supervisor`) en la sección de Equipo de Trabajo y se ocultó su acceso en la barra lateral. Adicionalmente, se corrigió un problema crítico que guardaba URLs firmadas temporales en los campos de firma y fotos de matrículas en lugar de conservar los paths relativos de almacenamiento.
+
+### Cambios Realizados
+- **Políticas RLS en DB (`20260620030000_secure_equipo_policies.sql`)**:
+  - Diseñamos y aplicamos una función helper `public.is_owner_or_admin` para validar si el rol del usuario logueado en su perfil es `owner` o `admin`.
+  - Refinamos las políticas de RLS en la tabla `public.miembros_equipo` para permitir SELECT a cualquier usuario del mismo tenant, pero restringir INSERT, UPDATE y DELETE únicamente a dueños y administradores del tenant.
+  - Refinamos las políticas de RLS en `public.matriculas` para permitir la inserción, actualización y borrado si las matrículas pertenecen al usuario logueado (`profile_id = auth.uid()`) O si las modifica un dueño/administrador para un miembro de su tenant.
+- **Bloqueo y Redirección en Pantalla de Equipo (`equipo/page.js`)**:
+  - Añadimos validación de rol en `loadRealData` que verifica si el perfil tiene rol `owner` o `admin`.
+  - Si el usuario logueado tiene otro rol (ej. `inspector`), se le bloquea el acceso redirigiéndolo de inmediato al Dashboard central.
+- **Enlace Sidebar Conditional (`dashboard/page.js`, `empresas/page.js`, `equipo/page.js`)**:
+  - Ocultamos el elemento de navegación "Equipo de Trabajo" en la barra lateral mediante una condición reactiva `(profile?.role === 'owner' || profile?.role === 'admin')`, evitando la exposición de la sección a inspectores y supervisores.
+- **Conservación de Paths Relativos de Almacenamiento (`profile/page.js`, `equipo/page.js`)**:
+  - Corregimos el bug por el cual las URLs de previsualización firmadas se guardaban en la base de datos cuando no se cargaba un nuevo archivo de firma o foto de matrícula.
+  - Almacenamos el path original de la base de datos en un estado de referencia y lo enviamos de vuelta en el update si no hay cambios en el archivo correspondiente, garantizando que no expiren las firmas ni documentos guardados.
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260620030000_secure_equipo_policies.sql`
+- `[NEW] scripts/run-secure-migration.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- **Pruebas de RLS con Inspectores**: Verificamos mediante scripts que un inspector puede guardar su perfil y matrículas sin errores, y que tiene bloqueadas las inserciones y actualizaciones en la tabla `miembros_equipo`.
+- **Compilación de Producción Next.js**: Build de Next.js completado exitosamente sin errores de compilación ni dependencias.
+
+---
+
+## [2026-06-15] Corrección de RLS de Almacenamiento, Desactivación de Acceso de Login y Consistencia de Triggers
+
+### Resumen Ejecutivo
+Se resolvieron problemas críticos de permisos de almacenamiento (RLS) que impedían la subida de matrículas y firmas de integrantes del equipo por parte del usuario dueño. Asimismo, se habilitó la posibilidad de desactivar/remover el acceso de inicio de sesión de un miembro de equipo existente eliminando su cuenta de autenticación de forma segura y conservando sus datos de registro. También se solucionó el desbordamiento de pila (Stack Limit Exceeded) provocado por triggers cíclicos y se implementó la edición y sincronización completa del correo electrónico del staff.
+
+### Cambios Realizados
+- **Políticas RLS de Almacenamiento (`20260620020000_adjust_storage_policies.sql`)**:
+  - Diseñamos y aplicamos una nueva función de base de datos `public.can_access_member_asset` que evalúa dinámicamente si el creador de la solicitud de subida y el miembro de destino pertenecen al mismo `tenant_id`.
+  - Reemplazamos las políticas restrictivas de los buckets `signatures` y `documents` para permitir que el dueño de la cuenta principal administre libremente los recursos de su equipo.
+- **Ojito de Visibilidad en Login (`login/page.js`)**:
+  - Importamos `Eye` y `EyeOff` de `lucide-react` y añadimos un estado local `showPassword` en la pantalla de inicio de sesión.
+  - Colocamos el botón absoluto con el icono de ojo sobre el input de contraseña para permitir a los usuarios revelar u ocultar la contraseña antes de enviar el formulario.
+- **Desactivación de Acceso de Login (`equipo/page.js`)**:
+  - Liberamos la restricción `disabled` sobre el checkbox "Habilitar acceso de inicio de sesión (Login)", permitiendo desmarcarlo para integrantes existentes.
+  - Añadimos advertencias visuales en rojo ante la desactivación del acceso y configuramos `handleSave` para que ejecute una llamada `DELETE /api/equipo` si se desmarca, eliminando las credenciales en Auth y manteniendo la fila del integrante intacta (con `profile_id: null`).
+- **Habilitación de Edición de Correo (`equipo/page.js`)**:
+  - Removimos la restricción `disabled` sobre el campo de correo electrónico, permitiendo que el dueño actualice el correo en cualquier momento.
+  - Modificamos la llamada en `handleSave` para que al editar un integrante se ejecute siempre la petición `PUT` enviando el correo actual del formulario (incluso sin cambio de contraseña), asegurando la propagación de datos.
+  - Agregamos una nota aclaratoria en la interfaz para informar que la modificación del correo también actualizará las credenciales de inicio de sesión del usuario.
+- **Backend API de Actualización (`api/equipo/route.js`)**:
+  - Modificamos el endpoint `PUT /api/equipo` para que, en caso de recibir un nuevo email, actualice tanto la dirección de acceso en `auth.users` (usando el cliente de administración con `email_confirm: true` para autoconfirmar el cambio de inmediato) como la columna `email` en la tabla relacional `public.profiles`.
+- **Sincronización de Correo en Triggers de Base de Datos (`20260620010000_fix_triggers_partido.sql`)**:
+  - Incorporamos la columna `email` en las funciones de trigger `sync_miembro_to_profile` y `sync_profile_to_miembro` para asegurar la coherencia bidireccional entre las tablas ante cualquier cambio en el perfil o en el miembro de equipo.
+  - Implementamos comprobaciones de cambio real (`IS DISTINCT FROM`) en los triggers de sincronización bidireccional entre `miembros_equipo` y `profiles`. Esto interrumpe inmediatamente el ciclo de actualizaciones redundantes y detiene la recursión en la primera iteración.
+  - Ejecutamos de forma segura la migración modificada a través de `scripts/run-fix-migration.js`, y actualizamos la caché del esquema de PostgREST en caliente.
+- **Herramienta de Limpieza de Huérfanos (`scripts/cleanup-orphans.js`)**:
+  - Desarrollamos y ejecutamos un script que detecta perfiles de usuario con rol `inspector` que no tienen un registro asociado en la tabla `miembros_equipo` (resultado de transacciones a medias por el desbordamiento de pila previo).
+  - Eliminamos de `auth.users` al usuario huérfano de prueba `natalia.alvarez@recalificart.org.ar` para permitir su re-registro.
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260620020000_adjust_storage_policies.sql`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/api/equipo/route.js`
+- `[MODIFY] supabase/migrations/20260620010000_fix_triggers_partido.sql`
+- `[NEW] scripts/cleanup-orphans.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- **Ejecución de Migraciones**: Aplicadas sin errores, actualizando RLS de storage y triggers de perfiles.
+- **Compilación de Producción Next.js**: Verificación del build del proyecto para certificar que el bundle final está optimizado y libre de errores de enrutamiento o compilación.
+- **Limpieza de Carpeta de Compilación (.next)**: Apagamos el dev server, limpiamos la caché corrupta y reiniciamos el dev server en limpio para resolver el error `Cannot find module './vendor-chunks/@opentelemetry.js'`.
+
+---
+
+## [2026-06-14] Implementación de la Sección de Equipo de Trabajo y Restricciones de Acceso
+
+### Resumen Ejecutivo
+Se completó el desarrollo del módulo **Equipo de Trabajo** que permite a los dueños de consultoras gestionar su staff técnico bajo dos modalidades de acceso: con acceso de login (usuarios activos con credenciales creadas de manera segura mediante una API de administración que evita cerrar la sesión del administrador) y sin acceso de login (personal estático para asignación en planes de trabajo). Adicionalmente, se integró el enlace en la barra lateral del Dashboard y Clientes, y se implementaron restricciones de seguridad en el perfil de usuario para ocultar la identidad empresarial y plan de suscripción a todos los roles que no sean `owner`.
+
+### Cambios Realizados
+- **Pantalla de Gestión de Equipo (`equipo/page.js`)**:
+  - **Listado principal**: Tabla interactiva premium que expone el nombre, correo, CUIT, teléfono, estado de acceso y ubicación geográfica de cada miembro de equipo, con controles rápidos para editar y eliminar.
+  - **Formulario de Carga (CRUD)**: Formulario reactivo unificado que implementa validación de 11 dígitos en el CUIT, selector geográfico en cascada de 3 niveles conectado a la base de datos `public.geografia`, carga dinámica y remoción individual de múltiples matrículas profesionales (con fotos de frente y dorso y sugerencia de colegios), carga de firma digital digitalizada y sección para contraseña de login.
+  - **Creación Segura de Usuarios**: Si se tilda "Habilitar acceso", el formulario realiza una llamada POST a la API `/api/equipo`, la cual crea el usuario en `auth.users` mediante la service_role key, autoconfirmando el email y asignándole el mismo `tenant_id` y el rol `inspector` de forma segura. Si el miembro ya existía sin acceso, se le asigna el `profile_id` resultante.
+  - **Políticas RLS e Integridad de DB**: El guardado de las licencias se realiza directamente en la tabla `public.matriculas` enlazando el `miembro_id`. El trigger `sync_matriculas_ids` a nivel de base de datos se encarga de rellenar el `profile_id` de forma automática si tiene acceso habilitado, y las políticas de RLS en matrículas y miembros de equipo garantizan aislamiento multi-tenant estricto.
+- **Bypass de Privilegios en Perfil (`profile/page.js`)**:
+  - Enmascaramos y ocultamos por completo las tarjetas de "Identidad de la empresa" (Logos, redes, web) y "Plan Suscrito" (modificación de planes comerciales) cuando el usuario autenticado tiene un rol distinto a `owner` (ej. técnicos o inspectores del equipo).
+  - Condicionamos la petición de guardado a Supabase del Tenant para que solo se ejecute si `profileData.role === 'owner'`.
+- **Integración de Enlaces de Barra Lateral (Sidebar)**:
+  - Añadimos de manera coherente el enlace y el icono `Briefcase` (Maletín) de "Equipo de Trabajo" en las barras laterales de las pantallas de `dashboard/page.js` y `empresas/page.js`.
+
+### Archivos Modificados / Creados
+- `[NEW] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- **Pruebas de Base de Datos y Triggers (`validate-equipo.js`)**: Ejecutamos el script de validación que constató la correcta creación de la tabla `miembros_equipo`, la adición de la columna `miembro_id` en `matriculas` y la correcta habilitación de las políticas RLS.
+- **Compilación de Producción Next.js**: Corrimos `npm run build` obteniendo una compilación exitosa sin errores ni advertencias en las 9 rutas. La nueva pantalla de equipo compila a un First Load JS optimizado de **162 kB**.
+
+---
+
 ## [2026-06-14] Despliegue en Vercel, Auditoría Git e Importación de Catálogo del Programa Anual
 
 ### Resumen Ejecutivo
