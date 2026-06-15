@@ -4,6 +4,26 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 
 ---
 
+## [2026-06-15] Corrección de Paginación de Geografía, Validación Visual de Contraseñas y Diagnóstico de API Key
+
+### Resumen Ejecutivo
+Se resolvieron problemas relacionados con la carga parcial de partidos y localidades en los selectores geográficos del onboarding, empresas clientes, perfiles de integrantes y del dueño de la consultora. También se incorporaron textos instructivos claros para la robustez de las contraseñas en los formularios correspondientes y se diagnosticó la causa raíz del error "Unregistered API key" al crear miembros de equipo.
+
+### Cambios Realizados
+- **Helper de Paginación Geográfica (`src/lib/supabase.js`)**:
+  - Implementamos una función helper asíncrona `fetchAllGeography(provincia, partido)` que utiliza un bucle de paginación con `.range(from, from + 999)` para descargar todas las filas de la base de datos de geografía de Supabase, superando el límite predeterminado de 1000 filas de PostgREST.
+- **Selectores de Geografía**:
+  - Refactorizamos `src/app/onboarding/page.js`, `src/app/[tenant-slug]/profile/page.js`, `src/app/[tenant-slug]/equipo/page.js` y `src/app/[tenant-slug]/empresas/page.js` para consumir el helper `fetchAllGeography`, permitiendo la carga completa y correcta de partidos (ej. que en Buenos Aires no se trunque alfabéticamente en General Pinto) y de sus respectivas localidades dependientes.
+- **Instructivos de Contraseña Robustas**:
+  - Actualizamos los placeholders e incorporamos textos de ayuda visibles debajo de los campos de contraseña en el formulario de creación/edición de integrantes de equipo (`equipo/page.js`) y en la tarjeta de seguridad del perfil del dueño (`profile/page.js`). El texto indica explícitamente el requisito: `Debe tener al menos 8 caracteres, incluir al menos una letra mayúscula y al menos un número.`
+- **Diagnóstico del Error "Unregistered API key"**:
+  - Identificamos que el error en el endpoint `POST /api/equipo` se debe a la configuración en `.env` de la variable `SUPABASE_SECRET_KEY` con una clave de gestión de Supabase (`sb_secret_...`) en lugar de la clave JWT `service_role` del proyecto. Documentamos y explicamos en el plan de implementación los pasos detallados para que el usuario actualice esta clave.
+
+### Validaciones Ejecutadas
+- **Prueba de Compilación de Next.js**: Ejecutamos exitosamente `npm run build` en limpio, obteniendo la compilación correcta de todas las rutas y bundles estáticos/dinámicos sin fallas sintácticas ni de TypeScript.
+
+---
+
 ## [2026-06-15] Implementación del Programa de Gestión Anual con Calendario Interactivos, Tabla de Control y Panel de Vencimientos en Dashboard
 
 ### Resumen Ejecutivo

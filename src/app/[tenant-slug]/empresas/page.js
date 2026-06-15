@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, fetchAllGeography } from '@/lib/supabase';
 import { 
   Building, 
   Users, 
@@ -467,20 +467,11 @@ export default function EmpresasClientes({ params }) {
         let localidadesList = [];
         try {
           if (est.provincia) {
-            const { data: parts } = await supabase
-              .from('geografia')
-              .select('departamento_partido')
-              .eq('provincia', est.provincia.trim().toUpperCase())
-              .order('departamento_partido');
+            const parts = await fetchAllGeography(est.provincia);
             partidosList = Array.from(new Set((parts || []).map(p => p.departamento_partido))).sort();
           }
           if (est.provincia && est.partido) {
-            const { data: locs } = await supabase
-              .from('geografia')
-              .select('localidad_barrio')
-              .eq('provincia', est.provincia.trim().toUpperCase())
-              .eq('departamento_partido', est.partido)
-              .order('localidad_barrio');
+            const locs = await fetchAllGeography(est.provincia, est.partido);
             localidadesList = Array.from(new Set((locs || []).map(l => l.localidad_barrio))).sort();
           }
         } catch (gErr) {
@@ -668,12 +659,7 @@ export default function EmpresasClientes({ params }) {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('geografia')
-        .select('departamento_partido')
-        .eq('provincia', provValue.trim().toUpperCase())
-        .order('departamento_partido');
-      if (error) throw error;
+      const data = await fetchAllGeography(provValue);
       const uniqueParts = Array.from(new Set(data.map(p => p.departamento_partido))).sort();
       updated[estIndex].partidosList = uniqueParts;
       setEstablecimientos(updated);
@@ -702,13 +688,7 @@ export default function EmpresasClientes({ params }) {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('geografia')
-        .select('localidad_barrio')
-        .eq('provincia', updated[estIndex].provincia.trim().toUpperCase())
-        .eq('departamento_partido', partValue)
-        .order('localidad_barrio');
-      if (error) throw error;
+      const data = await fetchAllGeography(updated[estIndex].provincia, partValue);
       const uniqueLocs = Array.from(new Set(data.map(l => l.localidad_barrio))).sort();
       updated[estIndex].localidadesList = uniqueLocs;
       setEstablecimientos(updated);

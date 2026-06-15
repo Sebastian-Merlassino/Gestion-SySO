@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, fetchAllGeography } from '@/lib/supabase';
 import { 
   User, 
   Briefcase, 
@@ -365,12 +365,7 @@ const [partidosList, setPartidosList] = useState([]);
 
     const loadPartidos = async () => {
       try {
-        const { data, error } = await supabase
-          .from('geografia')
-          .select('departamento_partido', { count: 'exact', head: false })
-          .eq('provincia', provincia.trim().toUpperCase())
-          .order('departamento_partido');
-        if (error) throw error;
+        const data = await fetchAllGeography(provincia);
         const uniquePartidos = Array.from(new Set(data.map(item => item.departamento_partido))).sort();
         setPartidosList(uniquePartidos);
       } catch (err) {
@@ -396,13 +391,7 @@ const [partidosList, setPartidosList] = useState([]);
         return;
       }
       try {
-        const { data, error } = await supabase
-          .from('geografia')
-          .select('localidad_barrio')
-          .eq('provincia', provincia.trim().toUpperCase())
-          .eq('departamento_partido', partido)
-          .order('localidad_barrio');
-        if (error) throw error;
+        const data = await fetchAllGeography(provincia, partido);
         if (data) {
           const uniqueLocs = Array.from(new Set(data.map(item => item.localidad_barrio))).sort();
           setLocalidadesList(uniqueLocs);
@@ -1278,7 +1267,7 @@ const [partidosList, setPartidosList] = useState([]);
                 <div className="relative">
                   <input
                     type={showNewPassword ? 'text' : 'password'}
-                    placeholder="Min. 6 caracteres"
+                    placeholder="Mínimo 8 caracteres, 1 mayúscula y 1 número"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-4 pr-12 text-slate-800 focus:outline-none transition-all"
@@ -1291,6 +1280,9 @@ const [partidosList, setPartidosList] = useState([]);
                     {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Debe tener al menos 8 caracteres, incluir al menos una letra mayúscula y al menos un número.
+                </p>
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
@@ -1312,6 +1304,9 @@ const [partidosList, setPartidosList] = useState([]);
                     {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Debe tener al menos 8 caracteres, incluir al menos una letra mayúscula y al menos un número.
+                </p>
               </div>
             </div>
 

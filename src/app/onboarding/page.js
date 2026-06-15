@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, fetchAllGeography } from '@/lib/supabase';
 import { 
   User, 
   Briefcase, 
@@ -208,12 +208,7 @@ export default function OnboardingPage() {
         return;
       }
       try {
-        const { data, error } = await supabase
-          .from('geografia')
-          .select('departamento_partido')
-          .eq('provincia', provincia.trim().toUpperCase())
-          .order('departamento_partido');
-        if (error) throw error;
+        const data = await fetchAllGeography(provincia);
         const uniquePartidos = Array.from(new Set(data.map(item => item.departamento_partido))).sort();
         setPartidosList(uniquePartidos);
       } catch (err) {
@@ -239,13 +234,7 @@ export default function OnboardingPage() {
         return;
       }
       try {
-        const { data, error } = await supabase
-          .from('geografia')
-          .select('localidad_barrio')
-          .eq('provincia', provincia.trim().toUpperCase())
-          .eq('departamento_partido', partido)
-          .order('localidad_barrio');
-        if (error) throw error;
+        const data = await fetchAllGeography(provincia, partido);
         if (data) {
           const uniqueLocs = Array.from(new Set(data.map(item => item.localidad_barrio))).sort();
           setLocalidadesList(uniqueLocs);

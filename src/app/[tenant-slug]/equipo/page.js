@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, fetchAllGeography } from '@/lib/supabase';
 import { 
   Users, 
   Building,
@@ -301,12 +301,7 @@ export default function EquipoPage({ params }) {
         return;
       }
       try {
-        const { data, error } = await supabase
-          .from('geografia')
-          .select('departamento_partido')
-          .eq('provincia', provincia.trim().toUpperCase())
-          .order('departamento_partido');
-        if (error) throw error;
+        const data = await fetchAllGeography(provincia);
         const uniquePartidos = Array.from(new Set(data.map(item => item.departamento_partido))).sort();
         setPartidosList(uniquePartidos);
       } catch (err) {
@@ -331,13 +326,7 @@ export default function EquipoPage({ params }) {
         return;
       }
       try {
-        const { data, error } = await supabase
-          .from('geografia')
-          .select('localidad_barrio')
-          .eq('provincia', provincia.trim().toUpperCase())
-          .eq('departamento_partido', partido.trim().toUpperCase())
-          .order('localidad_barrio');
-        if (error) throw error;
+        const data = await fetchAllGeography(provincia, partido);
         const uniqueLocs = Array.from(new Set(data.map(item => item.localidad_barrio))).sort();
         setLocalidadesList(uniqueLocs);
       } catch (err) {
@@ -559,21 +548,12 @@ export default function EquipoPage({ params }) {
       setPartido(member.partido);
       
       // Load cascade geography data
-      const { data: partsData } = await supabase
-        .from('geografia')
-        .select('departamento_partido')
-        .eq('provincia', member.provincia.trim().toUpperCase())
-        .order('departamento_partido');
+      const partsData = await fetchAllGeography(member.provincia);
       const uniquePartidos = Array.from(new Set((partsData || []).map(p => p.departamento_partido))).sort();
       setPartidosList(uniquePartidos);
       setPartido(member.partido);
 
-      const { data: locsData } = await supabase
-        .from('geografia')
-        .select('localidad_barrio')
-        .eq('provincia', member.provincia.trim().toUpperCase())
-        .eq('departamento_partido', member.partido.trim().toUpperCase())
-        .order('localidad_barrio');
+      const locsData = await fetchAllGeography(member.provincia, member.partido);
       const uniqueLocs = Array.from(new Set((locsData || []).map(l => l.localidad_barrio))).sort();
       setLocalidadesList(uniqueLocs);
       setLocalidad(member.localidad || '');
@@ -1485,7 +1465,7 @@ export default function EquipoPage({ params }) {
                             <input
                               type={showPassword ? 'text' : 'password'}
                               required={tieneAcceso && !editingId}
-                              placeholder={editingId ? 'Dejar en blanco para mantener' : 'Mínimo 6 caracteres'}
+                              placeholder={editingId ? 'Dejar en blanco para mantener' : 'Mínimo 8 caracteres, 1 mayúscula y 1 número'}
                               value={password}
                               onChange={(e) => setPassword(e.target.value)}
                               className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-4 pr-12 text-xs text-slate-800 focus:outline-none transition-all"
@@ -1498,8 +1478,11 @@ export default function EquipoPage({ params }) {
                               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                             </button>
                           </div>
+                          <p className="text-[10px] text-slate-400 mt-1">
+                            Debe tener al menos 8 caracteres, incluir al menos una letra mayúscula y al menos un número.
+                          </p>
                         </div>
-
+ 
                         <div>
                           <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
                             {editingId ? 'Confirmar Nueva Contraseña (Opcional)' : 'Confirmar Contraseña'} <span className="text-[#468DFF]">{!editingId && '*'}</span>
@@ -1521,6 +1504,9 @@ export default function EquipoPage({ params }) {
                               {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                             </button>
                           </div>
+                          <p className="text-[10px] text-slate-400 mt-1">
+                            Debe tener al menos 8 caracteres, incluir al menos una letra mayúscula y al menos un número.
+                          </p>
                         </div>
                       </div>
                     )}
