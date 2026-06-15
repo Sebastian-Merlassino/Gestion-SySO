@@ -33,6 +33,12 @@ export default function TenantDashboard({ params }) {
   const [tenant, setTenant] = useState(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // Colecciones cargadas para el Programa
+  const [empresas, setEmpresas] = useState([]);
+  const [establecimientos, setEstablecimientos] = useState([]);
+  const [miembros, setMiembros] = useState([]);
+  const [actividades, setActividades] = useState([]);
+
   // Estadísticas ficticias/reales
   const [stats, setStats] = useState({
     clientsCount: 0,
@@ -83,11 +89,42 @@ export default function TenantDashboard({ params }) {
             clientCountReal = count;
           }
 
+          // Cargar Empresas del Tenant
+          const { data: emps } = await supabase
+            .from('empresas')
+            .select('id, razon_social')
+            .eq('tenant_id', ten.id);
+          setEmpresas(emps || []);
+
+          // Cargar Establecimientos del Tenant
+          const { data: ests } = await supabase
+            .from('establecimientos')
+            .select('id, denominacion')
+            .eq('tenant_id', ten.id);
+          setEstablecimientos(ests || []);
+
+          // Cargar Miembros del Equipo
+          const { data: mems } = await supabase
+            .from('miembros_equipo')
+            .select('id, full_name')
+            .eq('tenant_id', ten.id);
+          setMiembros(mems || []);
+
+          // Cargar Actividades de programa_anual
+          const { data: progs } = await supabase
+            .from('programa_anual')
+            .select('*')
+            .eq('tenant_id', ten.id);
+          setActividades(progs || []);
+
+          // Calcular cantidad de visitas pendientes
+          const pendingCount = (progs || []).filter(a => !a.fecha_realizacion).length;
+
           setStats({
             clientsCount: clientCountReal,
             inspectionsCount: 4, // Mock
             complianceRate: 85, // Mock
-            pendingVisits: 2 // Mock
+            pendingVisits: pendingCount
           });
         }
         setLoading(false);
@@ -106,8 +143,47 @@ export default function TenantDashboard({ params }) {
         clientsCount: 1,
         inspectionsCount: 12,
         complianceRate: 92,
-        pendingVisits: 3
+        pendingVisits: 2
       });
+
+      const mockEmps = [
+        { id: 'mock-emp-1', razon_social: 'Acme Argentina S.A.' },
+        { id: 'mock-emp-2', razon_social: 'Constructora del Sur' }
+      ];
+      const mockEsts = [
+        { id: 'mock-est-1', denominacion: 'Planta Munro' },
+        { id: 'mock-est-2', denominacion: 'Obra Autopista' }
+      ];
+      const mockMems = [
+        { id: 'mock-mem-1', full_name: 'Carlos Gómez' }
+      ];
+      const mockProgs = [
+        {
+          id: '1',
+          empresa_id: 'mock-emp-1',
+          establecimiento_id: 'mock-est-1',
+          descripcion: 'Análisis bacteriológico de agua de consumo humano (Semestral)',
+          fecha_planificada: new Date().toISOString().split('T')[0], // hoy
+          fecha_realizacion: null,
+          responsable_id: 'mock-mem-1',
+          progreso: 50
+        },
+        {
+          id: '2',
+          empresa_id: 'mock-emp-2',
+          establecimiento_id: 'mock-est-2',
+          descripcion: 'Control de Extintores (Trimestral)',
+          fecha_planificada: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 5).toISOString().split('T')[0], // proximo mes
+          fecha_realizacion: '2026-07-05',
+          responsable_id: 'mock-mem-1',
+          progreso: 100
+        }
+      ];
+
+      setEmpresas(mockEmps);
+      setEstablecimientos(mockEsts);
+      setMiembros(mockMems);
+      setActividades(mockProgs);
       setLoading(false);
     };
 
@@ -128,6 +204,57 @@ export default function TenantDashboard({ params }) {
       window.location.href = '/login';
     }
   };
+
+  const getItemStatusAndColor = (item) => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const today = new Date(todayStr);
+    const planDate = new Date(item.fecha_planificada);
+    
+    const hasRealization = !!item.fecha_realizacion;
+    
+    let estadoText = 'Vigente';
+    let estadoColor = '#0b8043'; // Verde
+    
+    if (!hasRealization && today >= planDate) {
+      estadoText = 'Vencido';
+      estadoColor = '#fa050b'; // Rojo
+    }
+    
+    let dateAlertColor = '';
+    if (!hasRealization) {
+      const timeDiff = planDate.getTime() - today.getTime();
+      const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+      
+      if (daysDiff < 0) {
+        dateAlertColor = 'red';
+      } else if (daysDiff <= 15) {
+        dateAlertColor = 'yellow';
+      }
+    }
+
+    return {
+      estadoText,
+      estadoColor,
+      dateAlertColor
+    };
+  };
+
+  const getFilteredVencimientos = () => {
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth();
+
+    const startOfCurrentMonth = new Date(currentYear, currentMonth, 1);
+    const endOfNextMonth = new Date(currentYear, currentMonth + 2, 0, 23, 59, 59);
+
+    return actividades.filter(act => {
+      if (!act.fecha_planificada) return false;
+      const planDate = new Date(act.fecha_planificada + 'T00:00:00');
+      return planDate >= startOfCurrentMonth && planDate <= endOfNextMonth;
+    }).sort((a, b) => new Date(a.fecha_planificada).getTime() - new Date(b.fecha_planificada).getTime());
+  };
+
+  const filteredVencimientos = getFilteredVencimientos();
 
   if (loading) {
     return (
@@ -198,13 +325,9 @@ export default function TenantDashboard({ params }) {
                     Equipo de Trabajo
                   </a>
                 )}
-                <a href="#" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-                  <FileText className="h-4 w-4" />
-                  Inspecciones y Relevamientos
-                </a>
-                <a href="#" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                <a href={`/${tenantSlug}/programa`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <Calendar className="h-4 w-4" />
-                  Plan de Trabajo
+                  Programa de Gestión Anual
                 </a>
                 
                 <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
@@ -265,13 +388,9 @@ export default function TenantDashboard({ params }) {
                 Equipo de Trabajo
               </a>
             )}
-            <a href="#" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-              <FileText className="h-4 w-4" />
-              Inspecciones y Relevamientos
-            </a>
-            <a href="#" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+            <a href={`/${tenantSlug}/programa`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
               <Calendar className="h-4 w-4" />
-              Plan de Trabajo
+              Programa de Gestión Anual
             </a>
             
             <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
@@ -336,35 +455,82 @@ export default function TenantDashboard({ params }) {
         {/* Dashboard Grid */}
         <div className="p-6 md:p-8 space-y-8 max-w-5xl">
           
-          {/* Welcome Banner */}
-          <div className="relative rounded-2xl border border-blue-500/15 bg-gradient-to-br from-blue-50 to-indigo-50/30 p-6 md:p-8 overflow-hidden shadow-sm">
-            <div className="absolute top-[-20%] right-[-10%] w-[300px] h-[300px] rounded-full bg-[#468DFF]/10 blur-3xl pointer-events-none" />
-            
-            <div className="max-w-xl space-y-3 relative z-10">
-              <span className="px-2 py-0.5 rounded-full bg-[#468DFF]/10 border border-[#468DFF]/20 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider">
-                Bienvenido al Sistema
+          {/* Próximos Vencimientos del Programa */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <h3 className="font-outfit text-base font-extrabold text-slate-900 flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-[#468DFF]" />
+                Vencimientos del Mes en Curso y Próximo Mes
+              </h3>
+              <span className="px-2.5 py-0.5 rounded-full bg-blue-500/10 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider">
+                Programa de Gestión
               </span>
-              <h1 className="font-outfit text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
-                ¡Hola, {profile?.full_name || 'Profesional'}!
-              </h1>
-              <p className="text-xs md:text-sm text-slate-600 leading-relaxed font-normal">
-                Desde este panel central de la plataforma **SaaS de Gestión SySO** podrás gestionar la higiene y seguridad de tus empresas clientes, llevar checklists de inspecciones, cargar actas digitales con tu firma e institucionalizar tu marca.
-              </p>
-              <div className="pt-2 flex flex-wrap gap-3">
-                <a 
-                  href={`/${tenantSlug}/profile`}
-                  className="py-2 px-4 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold transition-all flex items-center gap-2 shadow-lg shadow-blue-500/10 active:scale-[0.98]"
-                >
-                  Configurar Firma y Matrícula
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </a>
-                <button
-                  onClick={() => confetti()}
-                  className="py-2 px-4 rounded-xl border border-slate-300/80 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 text-xs font-bold transition-all shadow-sm"
-                >
-                  Celebrar Inicio
-                </button>
-              </div>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-left text-xs">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    <th className="px-4 py-3">Cliente / Razón Social</th>
+                    <th className="px-4 py-3">Establecimiento</th>
+                    <th className="px-4 py-3">Descripción / Actividad</th>
+                    <th className="px-4 py-3">F. Planificada</th>
+                    <th className="px-4 py-3">F. Realización</th>
+                    <th className="px-4 py-3">Estado</th>
+                    <th className="px-4 py-3">Responsable</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredVencimientos.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" className="px-4 py-6 text-center text-slate-400 font-semibold italic">
+                        No hay vencimientos programados para este mes ni el próximo.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredVencimientos.map(act => {
+                      const emp = empresas.find(e => e.id === act.empresa_id);
+                      const est = establecimientos.find(e => e.id === act.establecimiento_id);
+                      const resp = miembros.find(m => m.id === act.responsable_id);
+                      
+                      const statusInfo = getItemStatusAndColor(act);
+                      
+                      return (
+                        <tr key={act.id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="px-4 py-3 font-extrabold text-slate-800">
+                            {emp?.razon_social || 'Cliente desconocido'}
+                          </td>
+                          <td className="px-4 py-3 text-slate-600 font-medium">
+                            {est?.denominacion || 'Sin establecimiento'}
+                          </td>
+                          <td className="px-4 py-3 font-semibold text-slate-700 truncate max-w-[200px]" title={act.descripcion}>
+                            {act.descripcion}
+                          </td>
+                          <td className="px-4 py-3 font-mono font-bold">
+                            <span className={statusInfo.dateAlertColor === 'red' ? 'text-[#fa050b] bg-red-500/10 px-1.5 py-0.5 rounded' : statusInfo.dateAlertColor === 'yellow' ? 'text-amber-600 bg-amber-500/10 px-1.5 py-0.5 rounded' : 'text-slate-700'}>
+                              {act.fecha_planificada}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 font-mono text-slate-500">
+                            {act.fecha_realizacion || 'Pendiente'}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span 
+                              className="px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white uppercase tracking-wider"
+                              style={{ backgroundColor: statusInfo.estadoColor }}
+                            >
+                              {statusInfo.estadoText}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-slate-600 font-medium">
+                            {resp?.full_name || 'Sin asignar'}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
 

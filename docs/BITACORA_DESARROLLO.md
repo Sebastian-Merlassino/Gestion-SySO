@@ -4,6 +4,36 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 
 ---
 
+## [2026-06-15] Implementación del Programa de Gestión Anual con Calendario Interactivos, Tabla de Control y Panel de Vencimientos en Dashboard
+
+### Resumen Ejecutivo
+Se diseñó e implementó el módulo **Programa de Gestión Anual** bajo la sección del mismo nombre en el menú de navegación de la consultora. Este módulo permite a los profesionales e integrantes autorizados del equipo crear, listar, editar y eliminar actividades de higiene y seguridad de forma mensual en una vista de calendario interactivo y en una tabla de control. Además, incluye la posibilidad de adjuntar documentos de respaldo en PDF que se almacenan de forma segura y privada en Supabase Storage, y calcula de forma automática estados, progresos y alertas de vencimientos. Asimismo, se integró en el Dashboard central un panel dinámico con los vencimientos del mes en curso y del mes próximo, reemplazando el saludo de bienvenida e integrando la navegación lateral de forma consistente eliminando accesos obsoletos.
+
+### Cambios Realizados
+- **Base de Datos y RLS (`20260621010000_create_programa_anual.sql` y `scripts/run-program-migration.js`)**:
+  - Diseñamos y creamos la tabla `public.programa_anual` vinculada a `tenants`, `empresas`, `establecimientos`, `programa_anual_catalogo` y `miembros_equipo`.
+  - Habilitamos Row Level Security (RLS) y aplicamos una política de aislamiento multi-tenant `programa_anual_tenant_isolation` que restringe el acceso total únicamente a los usuarios autenticados pertenecientes al mismo tenant.
+- **Pantalla de Programa de Gestión (`src/app/[tenant-slug]/programa/page.js`)**:
+  - **Calendario Mensual**: Grilla de días interactiva con soporte de cambio de mes/año y adición/edición directa haciendo clic.
+  - **Tabla de Control**: Visualización tabular del programa con buscador de texto libre y filtros avanzados por Cliente, Establecimiento, Responsable y Estado.
+  - **Estados y Alertas Dinámicas**:
+    - Las celdas de fechas planificadas se colorean de **amarillo** si restan 15 días o menos para llegar a la fecha planificada y de **rojo** si ya vencieron, siempre que no tengan fecha de realización cargada.
+    - El estado se calcula automáticamente: `Vigente` (verde `#0b8043`) antes de la fecha o si está completada, y `Vencido` (rojo `#fa050b`) si ya se alcanzó/pasó la fecha sin completarse.
+    - El progreso se fija automáticamente al `100%` al ingresar la fecha de realización.
+  - **Almacenamiento Seguro de PDFs**: Posibilidad de subir un archivo PDF (hasta 10 MB). El archivo se almacena en el bucket privado `documents` en la ruta `${profile.id}/programa_${id}.pdf`. Al visualizar el documento, se genera dinámicamente una URL firmada de corta duración de Supabase para mayor seguridad.
+- **Hardening y Reestructuración en Panel de Dashboard (`dashboard/page.js`)**:
+  - **Eliminación de Saludo**: Removimos por completo el recuadro estático de bienvenida del dashboard.
+  - **Panel de Vencimientos**: Agregamos un listado completo y dinámico que recopila las actividades programadas del programa de gestión del mes en curso y del mes próximo. Muestra de forma integrada la Razón Social del cliente, el Establecimiento asignado, la descripción del catálogo, fechas (planificación con alertas de color y realización), estado calculado y responsable técnico.
+- **Refactorización de Barra Lateral de Navegación (Sidebar)**:
+  - Cambiamos el nombre de la opción "Plan de Trabajo" a "Programa de Gestión Anual" en la barra lateral (tanto móvil como escritorio) de todos los módulos del proyecto.
+  - Eliminamos por completo la opción obsoleta "Inspecciones y Relevamientos" del menú lateral de la aplicación para simplificar la navegación principal.
+
+### Decisiones de Arquitectura
+- **Aislamiento a Nivel Tenant**: La política RLS garantiza que inspectores, supervisores y administradores del mismo tenant puedan editar el plan sin violaciones cruzadas cross-tenant.
+- **Cálculo de Tiempos en Cliente**: Los estados y colores de alerta temporales se evalúan bajo demanda en React frente a la hora del cliente, evitando la desincronización de un valor estático en base de datos.
+
+---
+
 ## [2026-06-15] Implementación de Navegación Lateral Responsive para Dispositivos Móviles
 
 ### Resumen de Cambios
