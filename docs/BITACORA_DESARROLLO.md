@@ -4,6 +4,30 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 
 ---
 
+## [2026-06-16] Reorganización de Dashboard con Calendario Compacto, Vista de Programa Anual por Defecto y Botones de Cámara
+
+### Resumen Ejecutivo
+Se reorganizó el panel principal (Dashboard) para adaptarlo a las funcionalidades reales (reemplazando mocks de estadísticas, eliminando accesos directos obsoletos e integrando un calendario mensual compacto e interactivo conectado al programa de gestión). Asimismo, en la sección de Programa de Gestión Anual se definió la vista de listado por defecto y se renombró el selector de visualización, y en la sección de Acciones Correctivas se separó la carga de evidencia fotográfica en dos botones independientes: selección de archivos y captura directa de cámara.
+
+### Cambios Realizados
+- **Dashboard Principal (`src/app/[tenant-slug]/dashboard/page.js`)**:
+  - **Métricas Reales**: Cambiamos la métrica "Inspecciones" (mock) por "Acciones Correctivas" dinámicas, conectadas mediante conteo real a la base de datos de Supabase. Calculamos el porcentaje de cumplimiento real del programa anual en base a las actividades ya completadas.
+  - **Calendario Compacto Interactivo**: Creamos un componente de calendario mensual integrado en una grilla junto con la tabla de vencimientos del mes. Permite navegar los meses del año y visualizar un listado de actividades del día que el usuario seleccione haciendo clic. Los días con tareas planificadas muestran indicadores de color reactivos según su estado.
+  - **Limpieza de Accesos Rápidos**: Eliminamos los enlaces obsoletos ("Nueva Auditoría" y "Centro de Soporte") y los reemplazamos por accesos a las secciones de "Programa de Gestión" y "Nueva Acción Correctiva" (que abre automáticamente el formulario de alta).
+- **Programa de Gestión Anual (`src/app/[tenant-slug]/programa/page.js`)**:
+  - **Visualización por Defecto**: Definimos el estado de vista inicial `view` como `'list'` para que al ingresar se exponga directamente el Programa Anual en formato tabla.
+  - **Renombrado**: Cambiamos el texto del botón selector "Tabla de control" a "Programa anual".
+- **Acciones Correctivas (`src/app/[tenant-slug]/correctivas/page.js`)**:
+  - **Detección de Parámetro**: Añadimos lógica en el cargador inicial para abrir directamente el formulario de registro si detecta el parámetro `?new=true` en la URL.
+  - **Botones de Carga de Evidencia**: Reemplazamos la etiqueta unificada por dos botones de control específicos:
+    1. *Seleccionar imagen*: Abre el selector de archivos del dispositivo.
+    2. *Sacar foto (Cámara)*: Utiliza la propiedad estándar `capture="environment"` que activa automáticamente la cámara trasera en dispositivos móviles.
+
+### Validaciones Ejecutadas
+- **Prueba de Compilación de Next.js**: Verificamos que el build de producción finaliza satisfactoriamente (`npm.cmd run build`), generando los bundles optimizados sin errores de JSX o de imports.
+
+---
+
 ## [2026-06-16] Ajuste de CSS y Contenedores para Centrado y Ancho Ampliado al 85%
 
 ### Resumen Ejecutivo

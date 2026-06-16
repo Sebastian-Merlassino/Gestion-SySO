@@ -43,7 +43,7 @@ export default function ProgramaGestion({ params }) {
   const tenantSlug = params['tenant-slug'];
   
   // Vistas y Cargas
-  const [view, setView] = useState('calendar'); // 'calendar' o 'list'
+  const [view, setView] = useState('list'); // 'list' o 'calendar'
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isDevMode, setIsDevMode] = useState(false);
@@ -764,7 +764,7 @@ export default function ProgramaGestion({ params }) {
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${view === 'list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
                 >
                   <List className="h-4 w-4" />
-                  Tabla de Control
+                  Programa anual
                 </button>
               </div>
 

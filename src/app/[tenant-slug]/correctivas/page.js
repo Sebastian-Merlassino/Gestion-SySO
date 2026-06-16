@@ -24,7 +24,9 @@ import {
   Image as ImageIcon,
   MapPin,
   Eye,
-  ArrowLeft
+  ArrowLeft,
+  Camera,
+  Upload
 } from 'lucide-react';
 
 const FUENTE_OPTIONS = [
@@ -175,6 +177,14 @@ export default function AccionesCorrectivasPage({ params }) {
         loadMockData();
       } else {
         await loadRealData();
+      }
+
+      // Detectar si se solicita abrir el formulario de alta
+      if (typeof window !== 'undefined') {
+        const searchParams = new URLSearchParams(window.location.search);
+        if (searchParams.get('new') === 'true') {
+          setIsFormOpen(true);
+        }
       }
     };
     checkEnvAndLoad();
@@ -984,9 +994,10 @@ export default function AccionesCorrectivasPage({ params }) {
                           </div>
                         )}
 
-                        <div className="space-y-1.5 flex-1">
-                          <label className="inline-block py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer">
-                            Subir archivo / Sacar foto
+                        <div className="flex flex-wrap items-center gap-3 flex-1">
+                          <label className="inline-flex items-center gap-2 py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer">
+                            <Upload className="h-4 w-4 text-slate-500" />
+                            Seleccionar imagen
                             <input
                               type="file"
                               accept="image/*"
@@ -994,7 +1005,20 @@ export default function AccionesCorrectivasPage({ params }) {
                               className="hidden"
                             />
                           </label>
-                          <p className="text-[9px] text-slate-400">
+
+                          <label className="inline-flex items-center gap-2 py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer">
+                            <Camera className="h-4 w-4 text-slate-500" />
+                            Sacar foto (Cámara)
+                            <input
+                              type="file"
+                              accept="image/*"
+                              capture="environment"
+                              onChange={handleImagenChange}
+                              className="hidden"
+                            />
+                          </label>
+
+                          <p className="text-[9px] text-slate-400 w-full mt-1">
                             Formatos soportados: JPG, PNG, GIF, WEBP. Tamaño máximo recomendado: 5 MB.
                           </p>
                         </div>

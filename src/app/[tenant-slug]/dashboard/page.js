@@ -22,7 +22,9 @@ import {
   Briefcase,
   Menu,
   X,
-  ClipboardList
+  ClipboardList,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -33,6 +35,10 @@ export default function TenantDashboard({ params }) {
   const [profile, setProfile] = useState(null);
   const [tenant, setTenant] = useState(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Estados para el calendario compacto del dashboard
+  const [calendarMonth, setCalendarMonth] = useState(new Date());
+  const [selectedDateStr, setSelectedDateStr] = useState(new Date().toISOString().split('T')[0]);
 
   // Colecciones cargadas para el Programa
   const [empresas, setEmpresas] = useState([]);
@@ -118,13 +124,26 @@ export default function TenantDashboard({ params }) {
             .eq('tenant_id', ten.id);
           setActividades(progs || []);
 
+          // Cargar cantidad real de acciones correctivas del tenant
+          const { count: correctivasCount, error: cErr } = await supabase
+            .from('acciones_correctivas')
+            .select('*', { count: 'exact', head: true })
+            .eq('tenant_id', ten.id);
+          const realCorrectivasCount = !cErr && correctivasCount !== null ? correctivasCount : 0;
+
           // Calcular cantidad de visitas pendientes
           const pendingCount = (progs || []).filter(a => !a.fecha_realizacion).length;
 
+          // Calcular tasa de cumplimiento real del programa
+          const completedCount = (progs || []).filter(a => !!a.fecha_realizacion).length;
+          const complianceRateReal = (progs || []).length > 0
+            ? Math.round((completedCount / progs.length) * 100)
+            : 100;
+
           setStats({
             clientsCount: clientCountReal,
-            inspectionsCount: 4, // Mock
-            complianceRate: 85, // Mock
+            inspectionsCount: realCorrectivasCount,
+            complianceRate: complianceRateReal,
             pendingVisits: pendingCount
           });
         }
@@ -238,6 +257,39 @@ export default function TenantDashboard({ params }) {
       estadoColor,
       dateAlertColor
     };
+  };
+
+  // Funciones para el calendario compacto del dashboard
+  const MONTHS_SPANISH = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ];
+
+  const DAYS_OF_WEEK = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+
+  const getDaysInMonth = (date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    const totalDays = new Date(year, month + 1, 0).getDate();
+    
+    const days = [];
+    for (let i = 0; i < firstDayIndex; i++) {
+      days.push(null);
+    }
+    for (let i = 1; i <= totalDays; i++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+      days.push({ day: i, dateStr });
+    }
+    return days;
+  };
+
+  const handlePrevMonth = () => {
+    setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1));
   };
 
   const getFilteredVencimientos = () => {
@@ -461,85 +513,182 @@ export default function TenantDashboard({ params }) {
           </div>
         </header>
 
-        {/* Dashboard Grid */}
         <div className="p-6 md:p-8 space-y-8 max-w-[85%] mx-auto w-full">
-          
-          {/* Próximos Vencimientos del Programa */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-              <h3 className="font-outfit text-base font-extrabold text-slate-900 flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-[#468DFF]" />
-                Vencimientos del Mes en Curso y Próximo Mes
-              </h3>
-              <span className="px-2.5 py-0.5 rounded-full bg-blue-500/10 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider">
-                Programa de Gestión
-              </span>
-            </div>
+          {/* Fila del Programa de Gestión (Vencimientos + Calendario Compacto) */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-left text-xs">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    <th className="px-4 py-3">Cliente / Razón Social</th>
-                    <th className="px-4 py-3">Establecimiento</th>
-                    <th className="px-4 py-3">Descripción / Actividad</th>
-                    <th className="px-4 py-3">F. Planificada</th>
-                    <th className="px-4 py-3">F. Realización</th>
-                    <th className="px-4 py-3">Estado</th>
-                    <th className="px-4 py-3">Responsable</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredVencimientos.length === 0 ? (
-                    <tr>
-                      <td colSpan="7" className="px-4 py-6 text-center text-slate-400 font-semibold italic">
-                        No hay vencimientos programados para este mes ni el próximo.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredVencimientos.map(act => {
-                      const emp = empresas.find(e => e.id === act.empresa_id);
-                      const est = establecimientos.find(e => e.id === act.establecimiento_id);
-                      const resp = miembros.find(m => m.id === act.responsable_id);
-                      
-                      const statusInfo = getItemStatusAndColor(act);
-                      
-                      return (
-                        <tr key={act.id} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="px-4 py-3 font-extrabold text-slate-800">
-                            {emp?.razon_social || 'Cliente desconocido'}
-                          </td>
-                          <td className="px-4 py-3 text-slate-600 font-medium">
-                            {est?.denominacion || 'Sin establecimiento'}
-                          </td>
-                          <td className="px-4 py-3 font-semibold text-slate-700 truncate max-w-[200px]" title={act.descripcion}>
-                            {act.descripcion}
-                          </td>
-                          <td className="px-4 py-3 font-mono font-bold">
-                            <span className={statusInfo.dateAlertColor === 'red' ? 'text-[#fa050b] bg-red-500/10 px-1.5 py-0.5 rounded' : statusInfo.dateAlertColor === 'yellow' ? 'text-amber-600 bg-amber-500/10 px-1.5 py-0.5 rounded' : 'text-slate-700'}>
-                              {act.fecha_planificada}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 font-mono text-slate-500">
-                            {act.fecha_realizacion || 'Pendiente'}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span 
-                              className="px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white uppercase tracking-wider"
-                              style={{ backgroundColor: statusInfo.estadoColor }}
-                            >
-                              {statusInfo.estadoText}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-slate-600 font-medium">
-                            {resp?.full_name || 'Sin asignar'}
+            {/* Próximos Vencimientos */}
+            <div className="lg:col-span-2 bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
+                  <h3 className="font-outfit text-base font-extrabold text-slate-900 flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-[#468DFF]" />
+                    Vencimientos del Mes en Curso y Próximo Mes
+                  </h3>
+                  <span className="px-2.5 py-0.5 rounded-full bg-blue-500/10 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider">
+                    Programa de Gestión
+                  </span>
+                </div>
+                
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse text-left text-xs">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        <th className="px-4 py-3">Cliente / Razón Social</th>
+                        <th className="px-4 py-3">Establecimiento</th>
+                        <th className="px-4 py-3">Actividad</th>
+                        <th className="px-4 py-3">F. Planificada</th>
+                        <th className="px-4 py-3">Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {filteredVencimientos.length === 0 ? (
+                        <tr>
+                          <td colSpan="5" className="px-4 py-6 text-center text-slate-400 font-semibold italic">
+                            No hay vencimientos programados para este mes ni el próximo.
                           </td>
                         </tr>
+                      ) : (
+                        filteredVencimientos.slice(0, 5).map(act => {
+                          const emp = empresas.find(e => e.id === act.empresa_id);
+                          const est = establecimientos.find(e => e.id === act.establecimiento_id);
+                          
+                          const statusInfo = getItemStatusAndColor(act);
+                          
+                          return (
+                            <tr key={act.id} className="hover:bg-slate-50/50 transition-colors">
+                              <td className="px-4 py-3 font-extrabold text-slate-800">
+                                {emp?.razon_social || 'Cliente desconocido'}
+                              </td>
+                              <td className="px-4 py-3 text-slate-600 font-medium">
+                                {est?.denominacion || 'Sin establecimiento'}
+                              </td>
+                              <td className="px-4 py-3 font-semibold text-slate-700 truncate max-w-[150px]" title={act.descripcion}>
+                                {act.descripcion}
+                              </td>
+                              <td className="px-4 py-3 font-mono font-bold">
+                                <span className={statusInfo.dateAlertColor === 'red' ? 'text-[#fa050b] bg-red-500/10 px-1.5 py-0.5 rounded' : statusInfo.dateAlertColor === 'yellow' ? 'text-amber-600 bg-amber-500/10 px-1.5 py-0.5 rounded' : 'text-slate-700'}>
+                                  {act.fecha_planificada}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <span 
+                                  className="px-2 py-0.5 rounded-full text-[9px] font-bold text-white uppercase tracking-wider inline-block text-center"
+                                  style={{ backgroundColor: statusInfo.estadoColor }}
+                                >
+                                  {statusInfo.estadoText}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              
+              {filteredVencimientos.length > 5 && (
+                <div className="text-right pt-2">
+                  <a href={`/${tenantSlug}/programa`} className="text-xs font-bold text-[#468DFF] hover:text-[#0511F2] transition-colors inline-flex items-center gap-1">
+                    Ver todos los vencimientos ({filteredVencimientos.length})
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* Calendario Compacto Vinculado */}
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm flex flex-col justify-between space-y-4">
+              <div>
+                <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
+                  <h3 className="font-outfit text-base font-extrabold text-slate-900 flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-[#468DFF]" />
+                    Calendario Mensual
+                  </h3>
+                  <div className="flex items-center gap-1">
+                    <button onClick={handlePrevMonth} className="p-1 rounded hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer">
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <span className="text-[10px] font-bold text-slate-800 min-w-[70px] text-center">
+                      {MONTHS_SPANISH[calendarMonth.getMonth()]} {calendarMonth.getFullYear()}
+                    </span>
+                    <button onClick={handleNextMonth} className="p-1 rounded hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer">
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-400 mb-2">
+                  {DAYS_OF_WEEK.map(d => <div key={d}>{d}</div>)}
+                </div>
+                
+                <div className="grid grid-cols-7 gap-1">
+                  {getDaysInMonth(calendarMonth).map((d, index) => {
+                    if (!d) return <div key={`empty-${index}`} className="aspect-square" />;
+                    
+                    const isSelected = d.dateStr === selectedDateStr;
+                    const dayActs = actividades.filter(a => a.fecha_planificada === d.dateStr);
+                    const hasActs = dayActs.length > 0;
+                    
+                    let dotColor = '';
+                    if (hasActs) {
+                      const allDone = dayActs.every(a => a.fecha_realizacion);
+                      const anyOverdue = dayActs.some(a => {
+                        if (a.fecha_realizacion) return false;
+                        const todayStr = new Date().toISOString().split('T')[0];
+                        return todayStr > a.fecha_planificada;
+                      });
+                      dotColor = allDone ? 'bg-[#00b050]' : (anyOverdue ? 'bg-red-500' : 'bg-amber-500');
+                    }
+                    
+                    return (
+                      <button
+                        key={d.dateStr}
+                        onClick={() => setSelectedDateStr(d.dateStr)}
+                        className={`aspect-square rounded-lg text-xs font-bold flex flex-col items-center justify-center relative transition-all cursor-pointer ${
+                          isSelected 
+                            ? 'bg-[#468DFF] text-white shadow-sm font-extrabold' 
+                            : 'text-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        <span>{d.day}</span>
+                        {hasActs && (
+                          <span className={`h-1.5 w-1.5 rounded-full absolute bottom-1 ${dotColor}`} />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Listado de Actividades del Día Seleccionado */}
+              <div className="border-t border-slate-100 pt-3 flex-1 flex flex-col min-h-0 justify-end">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-2">
+                  Actividades ({selectedDateStr.split('-').reverse().slice(0,2).join('/')}):
+                </span>
+                <div className="space-y-2 overflow-y-auto max-h-[120px] pr-1 flex-1">
+                  {actividades.filter(a => a.fecha_planificada === selectedDateStr).length === 0 ? (
+                    <p className="text-[11px] text-slate-400 italic">No hay actividades para este día.</p>
+                  ) : (
+                    actividades.filter(a => a.fecha_planificada === selectedDateStr).map(act => {
+                      const emp = empresas.find(e => e.id === act.empresa_id);
+                      const done = !!act.fecha_realizacion;
+                      return (
+                        <div key={act.id} className="p-2 rounded-lg bg-slate-50 border border-slate-100 flex items-start justify-between gap-2 text-[11px]">
+                          <div className="min-w-0 flex-1">
+                            <span className="font-bold text-slate-800 block truncate" title={act.descripcion}>{act.descripcion}</span>
+                            <span className="text-[9px] text-slate-400 block truncate">{emp?.razon_social || 'Cliente'}</span>
+                          </div>
+                          <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold text-white shrink-0 ${done ? 'bg-[#00b050]' : 'bg-amber-500'}`}>
+                            {done ? 'Hecho' : 'Pendiente'}
+                          </span>
+                        </div>
                       );
                     })
                   )}
-                </tbody>
-              </table>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -559,11 +708,11 @@ export default function TenantDashboard({ params }) {
 
             <div className="bg-white border border-slate-200/85 rounded-xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
               <div className="text-slate-400 group-hover:text-[#468DFF] transition-colors mb-3">
-                <FileText className="h-6 w-6" />
+                <ClipboardList className="h-6 w-6" />
               </div>
-              <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-bold">Inspecciones</span>
+              <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-bold">Acciones Correctivas</span>
               <span className="font-outfit text-3xl font-extrabold text-slate-900 block mt-1">{stats.inspectionsCount}</span>
-              <span className="text-[10px] text-slate-400 block mt-2">Relevamientos generados</span>
+              <span className="text-[10px] text-slate-400 block mt-2">Hallazgos registrados</span>
             </div>
 
             <div className="bg-white border border-slate-200/85 rounded-xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
@@ -603,18 +752,28 @@ export default function TenantDashboard({ params }) {
                     <PlusCircle className="h-4 w-4" />
                   </div>
                   <div>
-                    <span className="text-xs font-bold text-slate-800 block group-hover:text-[#468DFF] transition-colors">Nueva Empresa</span>
-                    <span className="text-[10px] text-slate-500 block mt-1">Registrar una empresa cliente en tu base.</span>
+                    <span className="text-xs font-bold text-slate-800 block group-hover:text-[#468DFF] transition-colors">Nuevo Cliente</span>
+                    <span className="text-[10px] text-slate-500 block mt-1">Registrar una empresa cliente en tu base de datos.</span>
                   </div>
                 </a>
 
-                <a href="#" className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-[#468DFF]/5 hover:border-[#468DFF]/30 transition-all flex items-start gap-3 group">
+                <a href={`/${tenantSlug}/programa`} className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-[#468DFF]/5 hover:border-[#468DFF]/30 transition-all flex items-start gap-3 group">
                   <div className="p-2 rounded-lg bg-blue-500/10 text-[#468DFF] shrink-0 mt-0.5">
-                    <FileText className="h-4 w-4" />
+                    <Calendar className="h-4 w-4" />
                   </div>
                   <div>
-                    <span className="text-xs font-bold text-slate-800 block group-hover:text-[#468DFF] transition-colors">Nueva Auditoría</span>
-                    <span className="text-[10px] text-slate-500 block mt-1">Completar un informe de relevamiento general.</span>
+                    <span className="text-xs font-bold text-slate-800 block group-hover:text-[#468DFF] transition-colors">Programa de Gestión</span>
+                    <span className="text-[10px] text-slate-500 block mt-1">Planificar y realizar seguimiento de actividades anuales.</span>
+                  </div>
+                </a>
+
+                <a href={`/${tenantSlug}/correctivas?new=true`} className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-[#468DFF]/5 hover:border-[#468DFF]/30 transition-all flex items-start gap-3 group">
+                  <div className="p-2 rounded-lg bg-blue-500/10 text-[#468DFF] shrink-0 mt-0.5">
+                    <ClipboardList className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-slate-800 block group-hover:text-[#468DFF] transition-colors">Nueva Acción Correctiva</span>
+                    <span className="text-[10px] text-slate-500 block mt-1">Registrar hallazgos, cargar evidencias y plazos.</span>
                   </div>
                 </a>
 
@@ -624,17 +783,7 @@ export default function TenantDashboard({ params }) {
                   </div>
                   <div>
                     <span className="text-xs font-bold text-slate-800 block group-hover:text-[#468DFF] transition-colors">Mi Perfil Profesional</span>
-                    <span className="text-[10px] text-slate-500 block mt-1">Configurar tu matrícula, firma digital y logos.</span>
-                  </div>
-                </a>
-
-                <a href="#" className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-[#468DFF]/5 hover:border-[#468DFF]/30 transition-all flex items-start gap-3 group">
-                  <div className="p-2 rounded-lg bg-blue-500/10 text-[#468DFF] shrink-0 mt-0.5">
-                    <HelpCircle className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <span className="text-xs font-bold text-slate-800 block group-hover:text-[#468DFF] transition-colors">Centro de Soporte</span>
-                    <span className="text-[10px] text-slate-500 block mt-1">Acceder a preguntas y ayuda técnica.</span>
+                    <span className="text-[10px] text-slate-500 block mt-1">Configurar tu matrícula, firma digital y branding.</span>
                   </div>
                 </a>
 
