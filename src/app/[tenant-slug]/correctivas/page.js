@@ -1176,21 +1176,20 @@ export default function AccionesCorrectivasPage({ params }) {
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Filtrar por Establecimiento</label>
                       <select
+                        disabled={!filterEmpresa}
                         value={filterEstablecimiento}
                         onChange={(e) => setFilterEstablecimiento(e.target.value)}
-                        className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 outline-none focus:border-[#468DFF] cursor-pointer"
+                        className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 outline-none focus:border-[#468DFF] cursor-pointer disabled:opacity-50"
                       >
-                        <option value="">Todos los establecimientos</option>
-                        {(filterEmpresa 
-                          ? allEstablecimientos.filter(est => est.empresa_id === filterEmpresa)
-                          : allEstablecimientos
-                        ).map((est) => {
-                          const emp = empresas.find(e => e.id === est.empresa_id);
-                          const label = filterEmpresa ? est.denominacion : `${est.denominacion} (${emp?.razon_social || ''})`;
-                          return (
-                            <option key={est.id} value={est.id}>{label}</option>
-                          );
-                        })}
+                        <option value="">
+                          {!filterEmpresa ? 'Selecciona un cliente primero' : 'Todos los establecimientos'}
+                        </option>
+                        {allEstablecimientos
+                          .filter(est => est.empresa_id === filterEmpresa)
+                          .map((est) => (
+                            <option key={est.id} value={est.id}>{est.denominacion}</option>
+                          ))
+                        }
                       </select>
                     </div>
 

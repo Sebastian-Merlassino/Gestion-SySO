@@ -13,7 +13,7 @@ Se implementó el filtro por establecimiento en la sección de Seguimiento de Ac
 - **Pantalla de Seguimiento (`src/app/[tenant-slug]/correctivas/page.js`)**:
   - **Estado y Lógica**: Añadimos el estado local `filterEstablecimiento` y su limpieza automática al alternar o limpiar el filtro por Cliente (`filterEmpresa`).
   - **Grid de Filtros**: Ajustamos el contenedor de filtros a un grid responsivo de 4 columnas (`grid-cols-1 sm:grid-cols-2 lg:grid-cols-4`).
-  - **Selector de Establecimiento**: Incorporamos un selector dinámico que se limita a los establecimientos del cliente seleccionado o muestra todos los establecimientos de la consultora (sufijados con la razón social del cliente entre paréntesis) si no hay ningún cliente seleccionado en el filtro principal.
+  - **Selector de Establecimiento (Dependiente)**: Incorporamos un selector dinámico que permanece deshabilitado (mostrando "Selecciona un cliente primero") si no hay ningún cliente seleccionado en el filtro principal, y se habilita automáticamente mostrando solo los establecimientos asociados cuando se elige una Razón Social.
   - **Lógica de Filtro**: Actualizamos la condición en la lista calculada `filteredAcciones` para aplicar el filtro por `establecimiento_id`.
 
 ### Validaciones Ejecutadas
