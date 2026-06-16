@@ -156,6 +156,7 @@ export default function AccionesCorrectivasPage({ params }) {
   // Filtros
   const [filterText, setFilterText] = useState('');
   const [filterEmpresa, setFilterEmpresa] = useState('');
+  const [filterEstablecimiento, setFilterEstablecimiento] = useState('');
   const [filterRiesgo, setFilterRiesgo] = useState('');
   const [filterEstado, setFilterEstado] = useState('');
 
@@ -591,6 +592,9 @@ export default function AccionesCorrectivasPage({ params }) {
 
     // Filtrar por Cliente
     if (filterEmpresa && acc.empresa_id !== filterEmpresa) return false;
+
+    // Filtrar por Establecimiento
+    if (filterEstablecimiento && acc.establecimiento_id !== filterEstablecimiento) return false;
 
     // Filtrar por Nivel de Riesgo
     if (filterRiesgo && acc.nivel_riesgo !== filterRiesgo) return false;
@@ -1151,18 +1155,42 @@ export default function AccionesCorrectivasPage({ params }) {
                   </div>
 
                   {/* Selectores de Filtrado */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-slate-100">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2 border-t border-slate-100">
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Filtrar por Cliente</label>
                       <select
                         value={filterEmpresa}
-                        onChange={(e) => setFilterEmpresa(e.target.value)}
+                        onChange={(e) => {
+                          setFilterEmpresa(e.target.value);
+                          setFilterEstablecimiento('');
+                        }}
                         className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 outline-none focus:border-[#468DFF] cursor-pointer"
                       >
                         <option value="">Todos los clientes</option>
                         {empresas.map((emp) => (
                           <option key={emp.id} value={emp.id}>{emp.razon_social}</option>
                         ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Filtrar por Establecimiento</label>
+                      <select
+                        value={filterEstablecimiento}
+                        onChange={(e) => setFilterEstablecimiento(e.target.value)}
+                        className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 outline-none focus:border-[#468DFF] cursor-pointer"
+                      >
+                        <option value="">Todos los establecimientos</option>
+                        {(filterEmpresa 
+                          ? allEstablecimientos.filter(est => est.empresa_id === filterEmpresa)
+                          : allEstablecimientos
+                        ).map((est) => {
+                          const emp = empresas.find(e => e.id === est.empresa_id);
+                          const label = filterEmpresa ? est.denominacion : `${est.denominacion} (${emp?.razon_social || ''})`;
+                          return (
+                            <option key={est.id} value={est.id}>{label}</option>
+                          );
+                        })}
                       </select>
                     </div>
 

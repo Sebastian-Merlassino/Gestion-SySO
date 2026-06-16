@@ -4,6 +4,23 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 
 ---
 
+## [2026-06-16] Implementación de Filtro por Establecimiento en Seguimiento de Acciones Correctivas
+
+### Resumen Ejecutivo
+Se implementó el filtro por establecimiento en la sección de Seguimiento de Acciones Correctivas, completando los requisitos de filtrado de datos solicitados por el usuario (Cliente, Establecimiento, Nivel de Riesgo y Estado).
+
+### Cambios Realizados
+- **Pantalla de Seguimiento (`src/app/[tenant-slug]/correctivas/page.js`)**:
+  - **Estado y Lógica**: Añadimos el estado local `filterEstablecimiento` y su limpieza automática al alternar o limpiar el filtro por Cliente (`filterEmpresa`).
+  - **Grid de Filtros**: Ajustamos el contenedor de filtros a un grid responsivo de 4 columnas (`grid-cols-1 sm:grid-cols-2 lg:grid-cols-4`).
+  - **Selector de Establecimiento**: Incorporamos un selector dinámico que se limita a los establecimientos del cliente seleccionado o muestra todos los establecimientos de la consultora (sufijados con la razón social del cliente entre paréntesis) si no hay ningún cliente seleccionado en el filtro principal.
+  - **Lógica de Filtro**: Actualizamos la condición en la lista calculada `filteredAcciones` para aplicar el filtro por `establecimiento_id`.
+
+### Validaciones Ejecutadas
+- **Prueba de Compilación de Next.js**: Verificamos que el build de producción finaliza satisfactoriamente (`npm.cmd run build`) con todos los bundles optimizados.
+
+---
+
 ## [2026-06-16] Implementación del Módulo de Seguimiento de Acciones Correctivas con Estados Reactivos y Evidencia Fotográfica
 
 ### Resumen Ejecutivo
