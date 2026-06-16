@@ -21,7 +21,8 @@ import {
   Loader2,
   Briefcase,
   Menu,
-  X
+  X,
+  ClipboardList
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -325,9 +326,13 @@ export default function TenantDashboard({ params }) {
                     Equipo de Trabajo
                   </a>
                 )}
-                <a href={`/${tenantSlug}/programa`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                 <a href={`/${tenantSlug}/programa`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <Calendar className="h-4 w-4" />
                   Programa de Gestión Anual
+                </a>
+                <a href={`/${tenantSlug}/correctivas`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                  <ClipboardList className="h-4 w-4" />
+                  Acciones Correctivas
                 </a>
                 
                 <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
@@ -388,9 +393,13 @@ export default function TenantDashboard({ params }) {
                 Equipo de Trabajo
               </a>
             )}
-            <a href={`/${tenantSlug}/programa`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+             <a href={`/${tenantSlug}/programa`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
               <Calendar className="h-4 w-4" />
               Programa de Gestión Anual
+            </a>
+            <a href={`/${tenantSlug}/correctivas`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+              <ClipboardList className="h-4 w-4" />
+              Acciones Correctivas
             </a>
             
             <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>

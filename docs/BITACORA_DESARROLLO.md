@@ -4,6 +4,33 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 
 ---
 
+## [2026-06-16] Implementación del Módulo de Seguimiento de Acciones Correctivas con Estados Reactivos y Evidencia Fotográfica
+
+### Resumen Ejecutivo
+Se diseñó e implementó la nueva sección **Seguimiento de Acciones Correctivas** (Corrective Actions Tracking) en el sistema. Este módulo permite registrar, editar y listar hallazgos con un análisis técnico detallado, plazos y subida de imágenes de respaldo a storage. Además, se integró el acceso dinámico en el menú de navegación lateral de todas las vistas del dashboard, clientes, equipo de trabajo y programa de gestión.
+
+### Cambios Realizados
+- **Base de Datos y RLS (`20260622000000_create_acciones_correctivas.sql`)**:
+  - Creamos la tabla `public.acciones_correctivas` enlazada a las tablas `tenants`, `empresas` y `establecimientos`.
+  - Habilitamos Row Level Security (RLS) y aplicamos una política de aislamiento multi-tenant `acciones_correctivas_tenant_isolation` para restringir el acceso total al personal autenticado del mismo tenant.
+- **Pantalla de Seguimiento (`src/app/[tenant-slug]/correctivas/page.js`)**:
+  - **Tabla de Hallazgos**: Visualización tabular de los campos críticos (Cliente, Establecimiento, Fuente, Fecha, Hallazgo, Nivel de riesgo, Estado, Responsable y Evidencia).
+  - **Filtros Avanzados**: Búsqueda por texto libre y filtrado dinámico en caliente por Cliente, Nivel de Riesgo y Estado.
+  - **Formulario de Registro**: Formulario con selectores dependientes de establecimientos y opciones de valor personalizado ("Otra" / "Otro") para los campos de Fuente y Tipo de Hallazgo.
+  - **Gestión de Evidencias**: Carga de imágenes JPG/PNG (hasta 5 MB) almacenadas de forma segura y privada en el bucket `documents` de Supabase Storage en la ruta `${userId}/corrective_${Date.now()}.${ext}`, con visualización a través de URLs firmadas temporales.
+  - **Cálculo Reactivo de Estados**:
+    - `En análisis`: si no tiene fecha planificada.
+    - `En tiempo`: si tiene fecha planificada >= hoy y no hay fecha de implementación.
+    - `Vencido`: si tiene fecha planificada < hoy y no hay fecha de implementación (badge rojo).
+    - `Cerrada`: si tiene fecha de implementación (badge verde `#00b050`).
+- **Navegación Lateral (Sidebar)**:
+  - Agregamos la opción "Acciones Correctivas" con el icono `ClipboardList` en los sidebars móviles y de escritorio en `dashboard/page.js`, `empresas/page.js`, `equipo/page.js` y `programa/page.js`.
+
+### Validaciones Ejecutadas
+- **Prueba de Compilación de Next.js**: Build de producción completado de forma satisfactoria (`npm.cmd run build`), generando el bundle estático y dinámico sin errores.
+
+---
+
 ## [2026-06-15] Importación Masiva de Clientes y Establecimientos a Supabase, Corrección de Botón de Borrado y Estandarización de Colores Tailwind
 
 ### Resumen Ejecutivo

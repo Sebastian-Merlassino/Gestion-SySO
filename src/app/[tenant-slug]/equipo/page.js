@@ -31,7 +31,8 @@ import {
   LogOut,
   Eye,
   EyeOff,
-  Menu
+  Menu,
+  ClipboardList
 } from 'lucide-react';
 
 const PROVINCIAS_ARGENTINAS = [
@@ -1016,6 +1017,10 @@ export default function EquipoPage({ params }) {
                   <Calendar className="h-4 w-4" />
                   Programa de Gestión Anual
                 </a>
+                <a href={`/${tenantSlug}/correctivas`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                  <ClipboardList className="h-4 w-4" />
+                  Acciones Correctivas
+                </a>
                 
                 <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
                 <a href={`/${tenantSlug}/profile`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
@@ -1076,6 +1081,10 @@ export default function EquipoPage({ params }) {
             <a href={`/${tenantSlug}/programa`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
               <Calendar className="h-4 w-4" />
               Programa de Gestión Anual
+            </a>
+            <a href={`/${tenantSlug}/correctivas`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+              <ClipboardList className="h-4 w-4" />
+              Acciones Correctivas
             </a>
             
             <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
