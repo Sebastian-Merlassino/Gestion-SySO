@@ -462,7 +462,7 @@ export default function TenantDashboard({ params }) {
         </header>
 
         {/* Dashboard Grid */}
-        <div className="p-6 md:p-8 space-y-8 max-w-5xl">
+        <div className="p-6 md:p-8 space-y-8 max-w-[85%] mx-auto w-full">
           
           {/* Próximos Vencimientos del Programa */}
           <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">

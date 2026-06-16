@@ -747,7 +747,7 @@ export default function ProgramaGestion({ params }) {
             </div>
           </div>
         ) : (
-          <div className="p-6 md:p-8 space-y-6 max-w-6xl mx-auto w-full">
+          <div className="p-6 md:p-8 space-y-6 max-w-[85%] mx-auto w-full">
             
             {/* Toolbar superior */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 border border-slate-200/80 rounded-2xl shadow-sm">

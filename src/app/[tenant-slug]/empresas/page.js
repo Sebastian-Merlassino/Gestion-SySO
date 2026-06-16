@@ -1089,7 +1089,7 @@ export default function EmpresasClientes({ params }) {
           </div>
         </header>
 
-        <div className="p-6 md:p-8 space-y-8 max-w-5xl">
+        <div className="p-6 md:p-8 space-y-8 max-w-[85%] mx-auto w-full">
           
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 space-y-4">

@@ -757,7 +757,7 @@ export default function AccionesCorrectivasPage({ params }) {
             </div>
           </div>
         ) : (
-          <div className="p-6 md:p-8 space-y-6 max-w-6xl mx-auto w-full">
+          <div className="p-6 md:p-8 space-y-6 max-w-[85%] mx-auto w-full">
             
             {/* VISTA FORMULARIO O TABLA */}
             {isFormOpen ? (

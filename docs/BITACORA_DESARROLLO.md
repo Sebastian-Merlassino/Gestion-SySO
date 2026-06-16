@@ -4,6 +4,22 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 
 ---
 
+## [2026-06-16] Ajuste de CSS y Contenedores para Centrado y Ancho Ampliado al 85%
+
+### Resumen Ejecutivo
+Se modificaron los estilos de contenedor de todas las pantallas y sus formularios de carga para que ocupen al menos el 85% del ancho de pantalla disponible y queden perfectamente centrados en resoluciones de escritorio.
+
+### Cambios Realizados
+- **Modificación de Clases de Contenedor**:
+  - En `dashboard/page.js`, `empresas/page.js` y `equipo/page.js`: Cambiamos la clase `max-w-5xl` (alineado a la izquierda por defecto) a `max-w-[85%] mx-auto w-full` para centrar el dashboard, los listados de clientes y equipo de trabajo, así como sus respectivos formularios de creación/edición.
+  - En `programa/page.js` y `correctivas/page.js`: Cambiamos la clase `max-w-6xl mx-auto w-full` a `max-w-[85%] mx-auto w-full` para que los calendarios, tablas de control y seguimiento utilicen el mismo ancho ampliado.
+  - En `profile/page.js`: Modificamos la clase `max-w-3xl` a `max-w-[85%]` en el contenedor del formulario para aprovechar el mismo espacio de visualización en pantallas anchas.
+
+### Validaciones Ejecutadas
+- **Prueba de Compilación de Next.js**: Build de producción completado con éxito (`npm.cmd run build`), verificando que no hay errores sintácticos.
+
+---
+
 ## [2026-06-16] Implementación de Filtro por Establecimiento en Seguimiento de Acciones Correctivas
 
 ### Resumen Ejecutivo

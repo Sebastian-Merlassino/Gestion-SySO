@@ -907,7 +907,7 @@ const [partidosList, setPartidosList] = useState([]);
       <div className="absolute top-[-10%] left-[-20%] w-[600px] h-[600px] rounded-full bg-[#468DFF]/5 blur-[150px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-20%] w-[600px] h-[600px] rounded-full bg-[#0511F2]/5 blur-[150px] pointer-events-none" />
 
-      <div className="w-full max-w-3xl z-10">
+      <div className="w-full max-w-[85%] z-10">
         
         {/* Back Link and Header */}
         <div className="flex items-center justify-between mb-8 border-b border-slate-300 pb-5">
