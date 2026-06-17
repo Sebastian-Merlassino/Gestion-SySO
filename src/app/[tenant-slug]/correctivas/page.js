@@ -26,7 +26,9 @@ import {
   Eye,
   ArrowLeft,
   Camera,
-  Upload
+  Upload,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 const FUENTE_OPTIONS = [
@@ -120,6 +122,20 @@ export default function AccionesCorrectivasPage({ params }) {
   const [loading, setLoading] = useState(true);
   const [isDevMode, setIsDevMode] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    const collapsed = localStorage.getItem('sidebar-collapsed');
+    if (collapsed === 'true') {
+      setIsSidebarCollapsed(true);
+    }
+  }, []);
+
+  const toggleSidebar = () => {
+    const newVal = !isSidebarCollapsed;
+    setIsSidebarCollapsed(newVal);
+    localStorage.setItem('sidebar-collapsed', String(newVal));
+  };
 
   // Datos principales de acciones
   const [acciones, setAcciones] = useState([]);
@@ -161,6 +177,10 @@ export default function AccionesCorrectivasPage({ params }) {
   const [filterEstablecimiento, setFilterEstablecimiento] = useState('');
   const [filterRiesgo, setFilterRiesgo] = useState('');
   const [filterEstado, setFilterEstado] = useState('');
+
+  // Ordenamiento
+  const [sortField, setSortField] = useState('fecha');
+  const [sortOrder, setSortOrder] = useState('desc');
 
   // Modales y Feedback
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
@@ -586,6 +606,15 @@ export default function AccionesCorrectivasPage({ params }) {
     setObservaciones('');
   };
 
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
   // Filtrar el listado principal de hallazgos
   const filteredAcciones = acciones.filter((acc) => {
     // Buscar por texto
@@ -616,6 +645,47 @@ export default function AccionesCorrectivasPage({ params }) {
     }
 
     return true;
+  });
+
+  const sortedAcciones = [...filteredAcciones].sort((a, b) => {
+    if (!sortField) return 0;
+    
+    let valA = '';
+    let valB = '';
+    
+    if (sortField === 'cliente') {
+      const empA = empresas.find(e => e.id === a.empresa_id);
+      const empB = empresas.find(e => e.id === b.empresa_id);
+      valA = empA ? empA.razon_social.toLowerCase() : '';
+      valB = empB ? empB.razon_social.toLowerCase() : '';
+    } else if (sortField === 'fuente') {
+      valA = (a.fuente || '').toLowerCase();
+      valB = (b.fuente || '').toLowerCase();
+    } else if (sortField === 'hallazgo') {
+      valA = (a.descripcion_hallazgo || '').toLowerCase();
+      valB = (b.descripcion_hallazgo || '').toLowerCase();
+    } else if (sortField === 'nivel_riesgo') {
+      valA = (a.nivel_riesgo || '').toLowerCase();
+      valB = (b.nivel_riesgo || '').toLowerCase();
+    } else if (sortField === 'estado') {
+      const statusA = getCalculatedStatus(a.fecha_planificada, a.fecha_implementacion).text;
+      const statusB = getCalculatedStatus(b.fecha_planificada, b.fecha_implementacion).text;
+      valA = statusA.toLowerCase();
+      valB = statusB.toLowerCase();
+    } else if (sortField === 'fecha') {
+      valA = a.fecha || '';
+      valB = b.fecha || '';
+    } else if (sortField === 'responsable') {
+      valA = (a.responsable || '').toLowerCase();
+      valB = (b.responsable || '').toLowerCase();
+    } else {
+      valA = a[sortField] || '';
+      valB = b[sortField] || '';
+    }
+    
+    if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+    if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+    return 0;
   });
 
   return (
@@ -687,52 +757,102 @@ export default function AccionesCorrectivasPage({ params }) {
       )}
 
       {/* Desktop Sidebar */}
-      <aside className="w-64 bg-[#0D0D0D] flex flex-col justify-between shrink-0 hidden md:flex">
+      <aside className={`bg-[#0D0D0D] flex flex-col justify-between shrink-0 hidden md:flex transition-all duration-300 ${isSidebarCollapsed ? 'w-20' : 'w-64'}`}>
         <div className="p-6">
-          <div className="flex items-center gap-3 mb-8">
-            <img src="/brand/logo-primary.png" alt="Logo" className="h-9 w-9 object-contain shrink-0" />
-            <span className="font-outfit text-base font-extrabold text-white tracking-tight">Gestión SySO</span>
+          {/* Logo Brand */}
+          <div className={`flex items-center justify-between gap-3 mb-8 ${isSidebarCollapsed ? 'flex-col' : ''}`}>
+            <div className="flex items-center gap-3">
+              <img src="/brand/logo-primary.png" alt="Logo" className="h-9 w-9 object-contain shrink-0" />
+              {!isSidebarCollapsed && (
+                <span className="font-outfit text-base font-extrabold text-white tracking-tight block animate-fade-in">Gestión SySO</span>
+              )}
+            </div>
+            <button
+              onClick={toggleSidebar}
+              title={isSidebarCollapsed ? 'Expandir barra lateral' : 'Contraer barra lateral'}
+              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all cursor-pointer"
+            >
+              {isSidebarCollapsed ? (
+                <ChevronRight className="h-4 w-4" />
+              ) : (
+                <ChevronLeft className="h-4 w-4" />
+              )}
+            </button>
           </div>
 
           <nav className="space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block mb-2">Panel principal</span>
-            <a href={`/${tenantSlug}/dashboard`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-              <Building className="h-4 w-4" />
-              Dashboard
+            {!isSidebarCollapsed ? (
+              <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block mb-2">Panel principal</span>
+            ) : (
+              <div className="h-px bg-white/10 my-3" />
+            )}
+            <a 
+              href={`/${tenantSlug}/dashboard`} 
+              title="Dashboard"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <Building className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Dashboard</span>}
             </a>
-            <a href={`/${tenantSlug}/empresas`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-              <Users className="h-4 w-4" />
-              Clientes
+            <a 
+              href={`/${tenantSlug}/empresas`} 
+              title="Clientes"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <Users className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
             </a>
             {(profile?.role === 'owner' || profile?.role === 'admin') && (
-              <a href={`/${tenantSlug}/equipo`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-                <Briefcase className="h-4 w-4" />
-                Equipo de Trabajo
+              <a 
+                href={`/${tenantSlug}/equipo`} 
+                title="Equipo de Trabajo"
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+              >
+                <Briefcase className="h-4 w-4 shrink-0" />
+                {!isSidebarCollapsed && <span className="animate-fade-in">Equipo de Trabajo</span>}
               </a>
             )}
-            <a href={`/${tenantSlug}/programa`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-              <Calendar className="h-4 w-4" />
-              Programa de Gestión Anual
+            <a 
+              href={`/${tenantSlug}/programa`} 
+              title="Programa de Gestión Anual"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <Calendar className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Programa de Gestión Anual</span>}
             </a>
-            <a href={`/${tenantSlug}/correctivas`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10">
-              <ClipboardList className="h-4 w-4" />
-              Acciones Correctivas
+            <a 
+              href={`/${tenantSlug}/correctivas`} 
+              title="Acciones Correctivas"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10 ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <ClipboardList className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Acciones Correctivas</span>}
             </a>
 
-            <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
-            <a href={`/${tenantSlug}/profile`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-              <Settings className="h-4 w-4" />
-              Editar Perfil
+            {!isSidebarCollapsed ? (
+              <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
+            ) : (
+              <div className="h-px bg-white/10 my-6" />
+            )}
+            <a 
+              href={`/${tenantSlug}/profile`} 
+              title="Editar Perfil"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <Settings className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Editar Perfil</span>}
             </a>
           </nav>
         </div>
 
         <div className="p-4 border-t border-white/10">
-          <div className="flex items-center justify-between rounded-xl bg-black/40 p-3 border border-white/5">
-            <div className="truncate pr-2">
-              <span className="text-xs font-bold text-white block truncate">{profile?.full_name || 'Usuario'}</span>
-              <span className="text-[10px] text-white/40 block truncate uppercase tracking-wider">{profile?.role || 'Profesional'}</span>
-            </div>
+          <div className={`flex items-center justify-between rounded-xl bg-black/40 p-3 border border-white/5 ${isSidebarCollapsed ? 'flex-col gap-2' : ''}`}>
+            {!isSidebarCollapsed && (
+              <div className="truncate pr-2">
+                <span className="text-xs font-bold text-white block truncate">{profile?.full_name || 'Usuario'}</span>
+                <span className="text-[10px] text-white/40 block truncate uppercase tracking-wider">{profile?.role || 'Profesional'}</span>
+              </div>
+            )}
             <button onClick={handleLogout} className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-600 hover:text-white transition-all cursor-pointer shrink-0">
               <LogOut className="h-4 w-4" />
             </button>
@@ -1252,26 +1372,56 @@ export default function AccionesCorrectivasPage({ params }) {
                 <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="bg-slate-50/70 border-b border-slate-200 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                          <th className="py-4 px-6">Cliente / Establecimiento</th>
-                          <th className="py-4 px-4">Fuente / Fecha</th>
-                          <th className="py-4 px-4">Hallazgo / Tipo</th>
-                          <th className="py-4 px-4 text-center">Nivel Riesgo</th>
-                          <th className="py-4 px-4 text-center">Estado</th>
-                          <th className="py-4 px-4">Responsable</th>
+                      <thead className="sticky top-16 z-10 bg-slate-50 border-b border-slate-200 shadow-sm">
+                        <tr className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                          <th className="py-4 px-6 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('cliente')}>
+                            <div className="flex items-center gap-1">
+                              Cliente / Establecimiento
+                              {sortField === 'cliente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                            </div>
+                          </th>
+                          <th className="py-4 px-4 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('fuente')}>
+                            <div className="flex items-center gap-1">
+                              Fuente / Fecha
+                              {sortField === 'fuente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                            </div>
+                          </th>
+                          <th className="py-4 px-4 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('hallazgo')}>
+                            <div className="flex items-center gap-1">
+                              Hallazgo / Tipo
+                              {sortField === 'hallazgo' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                            </div>
+                          </th>
+                          <th className="py-4 px-4 text-center cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('nivel_riesgo')}>
+                            <div className="flex items-center justify-center gap-1">
+                              Nivel Riesgo
+                              {sortField === 'nivel_riesgo' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                            </div>
+                          </th>
+                          <th className="py-4 px-4 text-center cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('estado')}>
+                            <div className="flex items-center justify-center gap-1">
+                              Estado
+                              {sortField === 'estado' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                            </div>
+                          </th>
+                          <th className="py-4 px-4 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('responsable')}>
+                            <div className="flex items-center gap-1">
+                              Responsable
+                              {sortField === 'responsable' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                            </div>
+                          </th>
                           <th className="py-4 px-6 text-right">Acciones</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-xs font-normal text-slate-700">
-                        {filteredAcciones.length === 0 ? (
+                        {sortedAcciones.length === 0 ? (
                           <tr>
                             <td colSpan="7" className="py-12 px-6 text-center text-slate-400 italic">
                               No se encontraron registros de acciones correctivas.
                             </td>
                           </tr>
                         ) : (
-                          filteredAcciones.map((acc) => {
+                          sortedAcciones.map((acc) => {
                             const emp = empresas.find(e => e.id === acc.empresa_id);
                             const est = allEstablecimientos.find(t => t.id === acc.establecimiento_id);
                             const status = getCalculatedStatus(acc.fecha_planificada, acc.fecha_implementacion);
@@ -1285,7 +1435,11 @@ export default function AccionesCorrectivasPage({ params }) {
                             else if (acc.nivel_riesgo === 'Riesgo intolerable') riskBadge = 'bg-red-500/10 text-red-600 border-red-500/20';
 
                             return (
-                              <tr key={acc.id} className="hover:bg-slate-50/50 transition-colors">
+                              <tr 
+                                key={acc.id} 
+                                onClick={() => handleEditClick(acc)}
+                                className="hover:bg-slate-50 transition-colors cursor-pointer"
+                              >
                                 <td className="py-4 px-6">
                                   <span className="font-bold text-slate-800 block">{emp?.razon_social || 'Desconocido'}</span>
                                   <span className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
@@ -1316,7 +1470,7 @@ export default function AccionesCorrectivasPage({ params }) {
                                 <td className="py-4 px-4 font-medium text-slate-600">
                                   {acc.responsable || 'No asignado'}
                                 </td>
-                                <td className="py-4 px-6 text-right space-x-1 shrink-0">
+                                <td className="py-4 px-6 text-right space-x-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                                   {acc.imagen_preview_url && (
                                     <a 
                                       href={acc.imagen_preview_url}
@@ -1324,19 +1478,20 @@ export default function AccionesCorrectivasPage({ params }) {
                                       rel="noopener noreferrer"
                                       title="Ver Evidencia"
                                       className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-700 transition-colors inline-block cursor-pointer"
+                                      onClick={(e) => e.stopPropagation()}
                                     >
                                       <Eye className="h-3.5 w-3.5" />
                                     </a>
                                   )}
                                   <button
-                                    onClick={() => handleEditClick(acc)}
+                                    onClick={(e) => { e.stopPropagation(); handleEditClick(acc); }}
                                     title="Editar"
                                     className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 hover:text-blue-600 transition-colors inline-block cursor-pointer"
                                   >
                                     <Edit className="h-3.5 w-3.5" />
                                   </button>
                                   <button
-                                    onClick={() => handleDeleteClick(acc.id)}
+                                    onClick={(e) => { e.stopPropagation(); handleDeleteClick(acc.id); }}
                                     title="Eliminar"
                                     className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 hover:text-red-600 transition-colors inline-block cursor-pointer"
                                   >

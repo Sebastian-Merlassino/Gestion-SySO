@@ -32,7 +32,9 @@ import {
   Eye,
   EyeOff,
   Menu,
-  ClipboardList
+  ClipboardList,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 const PROVINCIAS_ARGENTINAS = [
@@ -73,6 +75,20 @@ export default function EquipoPage({ params }) {
   // Tenant and Profile data
   const [profile, setProfile] = useState(null);
   const [tenant, setTenant] = useState(null);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    const collapsed = localStorage.getItem('sidebar-collapsed');
+    if (collapsed === 'true') {
+      setIsSidebarCollapsed(true);
+    }
+  }, []);
+
+  const toggleSidebar = () => {
+    const newVal = !isSidebarCollapsed;
+    setIsSidebarCollapsed(newVal);
+    localStorage.setItem('sidebar-collapsed', String(newVal));
+  };
 
   // List of members
   const [miembros, setMiembros] = useState([]);
@@ -691,7 +707,7 @@ export default function EquipoPage({ params }) {
     setSaving(true);
 
     // General Validations
-    if (!fullName || !email || !phone || !cuit || !provincia || !partido || !birthDate) {
+    if (!fullName || !email || !phone || !cuit || !provincia || !partido) {
       triggerToast('Por favor completa todos los campos obligatorios (*).', 'error');
       setSaving(false);
       return;
@@ -808,7 +824,7 @@ export default function EquipoPage({ params }) {
         email,
         cuit,
         phone,
-        birth_date: birthDate,
+        birth_date: birthDate || null,
         provincia,
         partido,
         localidad: localidad || null,
@@ -1051,56 +1067,106 @@ export default function EquipoPage({ params }) {
       )}
 
       {/* Sidebar - Barra Lateral (Idéntica al Dashboard para consistencia) */}
-      <aside className="w-64 bg-[#0D0D0D] flex flex-col justify-between shrink-0 hidden md:flex">
+      <aside className={`bg-[#0D0D0D] flex flex-col justify-between shrink-0 hidden md:flex transition-all duration-300 ${isSidebarCollapsed ? 'w-20' : 'w-64'}`}>
         <div className="p-6">
-          <div className="flex items-center gap-3 mb-8">
-            <img 
-              src="/brand/logo-primary.png" 
-              alt="Logo Gestión SySO" 
-              className="h-9 w-9 object-contain shrink-0" 
-            />
-            <span className="font-outfit text-base font-extrabold text-white tracking-tight block">Gestión SySO</span>
+          {/* Logo Brand */}
+          <div className={`flex items-center justify-between gap-3 mb-8 ${isSidebarCollapsed ? 'flex-col' : ''}`}>
+            <div className="flex items-center gap-3">
+              <img 
+                src="/brand/logo-primary.png" 
+                alt="Logo" 
+                className="h-9 w-9 object-contain shrink-0" 
+              />
+              {!isSidebarCollapsed && (
+                <span className="font-outfit text-base font-extrabold text-white tracking-tight block animate-fade-in">Gestión SySO</span>
+              )}
+            </div>
+            <button
+              onClick={toggleSidebar}
+              title={isSidebarCollapsed ? 'Expandir barra lateral' : 'Contraer barra lateral'}
+              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all cursor-pointer"
+            >
+              {isSidebarCollapsed ? (
+                <ChevronRight className="h-4 w-4" />
+              ) : (
+                <ChevronLeft className="h-4 w-4" />
+              )}
+            </button>
           </div>
 
           <nav className="space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block mb-2">Panel principal</span>
-            <a href={`/${tenantSlug}/dashboard`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-              <Building className="h-4 w-4" />
-              Dashboard
+            {!isSidebarCollapsed ? (
+              <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block mb-2">Panel principal</span>
+            ) : (
+              <div className="h-px bg-white/10 my-3" />
+            )}
+            <a 
+              href={`/${tenantSlug}/dashboard`} 
+              title="Dashboard"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <Building className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Dashboard</span>}
             </a>
-            <a href={`/${tenantSlug}/empresas`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-              <Users className="h-4 w-4" />
-              Clientes
+            <a 
+              href={`/${tenantSlug}/empresas`} 
+              title="Clientes"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <Users className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
             </a>
             {(profile?.role === 'owner' || profile?.role === 'admin') && (
-              <a href="#" className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10">
-                <Briefcase className="h-4 w-4" />
-                Equipo de Trabajo
+              <a 
+                href="#" 
+                title="Equipo de Trabajo"
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10 ${isSidebarCollapsed ? 'justify-center' : ''}`}
+              >
+                <Briefcase className="h-4 w-4 shrink-0" />
+                {!isSidebarCollapsed && <span className="animate-fade-in">Equipo de Trabajo</span>}
               </a>
             )}
-            <a href={`/${tenantSlug}/programa`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-              <Calendar className="h-4 w-4" />
-              Programa de Gestión Anual
+            <a 
+              href={`/${tenantSlug}/programa`} 
+              title="Programa de Gestión Anual"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <Calendar className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Programa de Gestión Anual</span>}
             </a>
-            <a href={`/${tenantSlug}/correctivas`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-              <ClipboardList className="h-4 w-4" />
-              Acciones Correctivas
+            <a 
+              href={`/${tenantSlug}/correctivas`} 
+              title="Acciones Correctivas"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <ClipboardList className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Acciones Correctivas</span>}
             </a>
             
-            <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
-            <a href={`/${tenantSlug}/profile`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-              <Settings className="h-4 w-4" />
-              Editar Perfil
+            {!isSidebarCollapsed ? (
+              <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
+            ) : (
+              <div className="h-px bg-white/10 my-6" />
+            )}
+            <a 
+              href={`/${tenantSlug}/profile`} 
+              title="Editar Perfil"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <Settings className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Editar Perfil</span>}
             </a>
           </nav>
         </div>
 
         <div className="p-4 border-t border-white/10">
-          <div className="flex items-center justify-between rounded-xl bg-black/40 p-3 border border-white/5">
-            <div className="truncate pr-2">
-              <span className="text-xs font-bold text-white block truncate">{profile?.full_name || 'Usuario'}</span>
-              <span className="text-[10px] text-white/40 block truncate uppercase tracking-wider">{profile?.role || 'Profesional'}</span>
-            </div>
+          <div className={`flex items-center justify-between rounded-xl bg-black/40 p-3 border border-white/5 ${isSidebarCollapsed ? 'flex-col gap-2' : ''}`}>
+            {!isSidebarCollapsed && (
+              <div className="truncate pr-2">
+                <span className="text-xs font-bold text-white block truncate">{profile?.full_name || 'Usuario'}</span>
+                <span className="text-[10px] text-white/40 block truncate uppercase tracking-wider">{profile?.role || 'Profesional'}</span>
+              </div>
+            )}
             <button 
               onClick={handleLogout}
               title="Cerrar sesión"
@@ -1356,11 +1422,10 @@ export default function EquipoPage({ params }) {
 
                     <div>
                       <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-                        Fecha de Nacimiento <span className="text-[#468DFF]">*</span>
+                        Fecha de Nacimiento
                       </label>
                       <input
                         type="date"
-                        required
                         value={birthDate}
                         onChange={(e) => setBirthDate(e.target.value)}
                         className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-3 text-xs text-slate-800 focus:outline-none transition-all"

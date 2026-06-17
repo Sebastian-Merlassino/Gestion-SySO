@@ -66,9 +66,28 @@ export default function ProgramaGestion({ params }) {
   // Filtros
   const [filterEmpresa, setFilterEmpresa] = useState('');
   const [filterEstablecimiento, setFilterEstablecimiento] = useState('');
-  const [filterResponsable, setFilterResponsable] = useState('');
+  const [filterMonth, setFilterMonth] = useState('');
+  const [filterYear, setFilterYear] = useState('');
   const [filterEstado, setFilterEstado] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Ordenamiento
+  const [sortField, setSortField] = useState('fecha_planificada');
+  const [sortOrder, setSortOrder] = useState('asc');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    const collapsed = localStorage.getItem('sidebar-collapsed');
+    if (collapsed === 'true') {
+      setIsSidebarCollapsed(true);
+    }
+  }, []);
+
+  const toggleSidebar = () => {
+    const newVal = !isSidebarCollapsed;
+    setIsSidebarCollapsed(newVal);
+    localStorage.setItem('sidebar-collapsed', String(newVal));
+  };
 
   // Formulario Slide-over
   const [showForm, setShowForm] = useState(false);
@@ -315,6 +334,15 @@ export default function ProgramaGestion({ params }) {
     };
   };
 
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
   // 3. Filtrar actividades
   const filteredActividades = actividades.filter(act => {
     // Buscar correspondencia en la Razón Social de la empresa
@@ -331,12 +359,56 @@ export default function ProgramaGestion({ params }) {
 
     const matchesEmpresa = !filterEmpresa || act.empresa_id === filterEmpresa;
     const matchesEstablecimiento = !filterEstablecimiento || act.establecimiento_id === filterEstablecimiento;
-    const matchesResponsable = !filterResponsable || act.responsable_id === filterResponsable;
+    
+    // Filtro por mes y año
+    const planDateStr = act.fecha_planificada || '';
+    const planYear = planDateStr.split('-')[0] || '';
+    const planMonth = planDateStr.split('-')[1] || '';
+    const matchesMonth = !filterMonth || planMonth === filterMonth;
+    const matchesYear = !filterYear || planYear === filterYear;
     
     const statusData = getItemStatusAndColor(act);
     const matchesEstado = !filterEstado || statusData.estadoText === filterEstado;
 
-    return matchesSearch && matchesEmpresa && matchesEstablecimiento && matchesResponsable && matchesEstado;
+    return matchesSearch && matchesEmpresa && matchesEstablecimiento && matchesMonth && matchesYear && matchesEstado;
+  });
+
+  const sortedActividades = [...filteredActividades].sort((a, b) => {
+    if (!sortField) return 0;
+    
+    let valA = '';
+    let valB = '';
+    
+    if (sortField === 'cliente') {
+      const empA = empresas.find(e => e.id === a.empresa_id);
+      const empB = empresas.find(e => e.id === b.empresa_id);
+      valA = empA ? empA.razon_social.toLowerCase() : '';
+      valB = empB ? empB.razon_social.toLowerCase() : '';
+    } else if (sortField === 'actividad') {
+      valA = (a.descripcion || '').toLowerCase();
+      valB = (b.descripcion || '').toLowerCase();
+    } else if (sortField === 'responsable') {
+      const respA = miembros.find(m => m.id === a.responsable_id);
+      const respB = miembros.find(m => m.id === b.responsable_id);
+      valA = respA ? respA.full_name.toLowerCase() : '';
+      valB = respB ? respB.full_name.toLowerCase() : '';
+    } else if (sortField === 'fecha_planificada') {
+      valA = a.fecha_planificada || '';
+      valB = b.fecha_planificada || '';
+    } else if (sortField === 'fecha_realizacion') {
+      valA = a.fecha_realizacion || '';
+      valB = b.fecha_realizacion || '';
+    } else if (sortField === 'estado') {
+      valA = getItemStatusAndColor(a).estadoText || '';
+      valB = getItemStatusAndColor(b).estadoText || '';
+    } else {
+      valA = a[sortField] || '';
+      valB = b[sortField] || '';
+    }
+    
+    if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+    if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+    return 0;
   });
 
   // 4. Manejar cambios en el Formulario
@@ -670,49 +742,100 @@ export default function ProgramaGestion({ params }) {
       )}
 
       {/* Desktop Sidebar */}
-      <aside className="w-64 bg-[#0D0D0D] flex flex-col justify-between shrink-0 hidden md:flex">
+      <aside className={`bg-[#0D0D0D] flex flex-col justify-between shrink-0 hidden md:flex transition-all duration-300 ${isSidebarCollapsed ? 'w-20' : 'w-64'}`}>
         <div className="p-6">
-          <div className="flex items-center gap-3 mb-8">
-            <img src="/brand/logo-primary.png" alt="Logo" className="h-9 w-9 object-contain shrink-0" />
-            <span className="font-outfit text-base font-extrabold text-white tracking-tight">Gestión SySO</span>
+          {/* Logo Brand */}
+          <div className={`flex items-center justify-between gap-3 mb-8 ${isSidebarCollapsed ? 'flex-col' : ''}`}>
+            <div className="flex items-center gap-3">
+              <img src="/brand/logo-primary.png" alt="Logo" className="h-9 w-9 object-contain shrink-0" />
+              {!isSidebarCollapsed && (
+                <span className="font-outfit text-base font-extrabold text-white tracking-tight block animate-fade-in">Gestión SySO</span>
+              )}
+            </div>
+            <button
+              onClick={toggleSidebar}
+              title={isSidebarCollapsed ? 'Expandir barra lateral' : 'Contraer barra lateral'}
+              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all cursor-pointer"
+            >
+              {isSidebarCollapsed ? (
+                <ChevronRight className="h-4 w-4" />
+              ) : (
+                <ChevronLeft className="h-4 w-4" />
+              )}
+            </button>
           </div>
           <nav className="space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block mb-2">Panel principal</span>
-            <a href={`/${tenantSlug}/dashboard`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-              <Building className="h-4 w-4" />
-              Dashboard
+            {!isSidebarCollapsed ? (
+              <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block mb-2">Panel principal</span>
+            ) : (
+              <div className="h-px bg-white/10 my-3" />
+            )}
+            <a 
+              href={`/${tenantSlug}/dashboard`} 
+              title="Dashboard"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <Building className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Dashboard</span>}
             </a>
-            <a href={`/${tenantSlug}/empresas`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-              <Users className="h-4 w-4" />
-              Clientes
+            <a 
+              href={`/${tenantSlug}/empresas`} 
+              title="Clientes"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <Users className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
             </a>
             {(profile?.role === 'owner' || profile?.role === 'admin') && (
-              <a href={`/${tenantSlug}/equipo`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-                <Briefcase className="h-4 w-4" />
-                Equipo de Trabajo
+              <a 
+                href={`/${tenantSlug}/equipo`} 
+                title="Equipo de Trabajo"
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+              >
+                <Briefcase className="h-4 w-4 shrink-0" />
+                {!isSidebarCollapsed && <span className="animate-fade-in">Equipo de Trabajo</span>}
               </a>
             )}
-            <a href={`/${tenantSlug}/programa`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10">
-              <Calendar className="h-4 w-4" />
-              Programa de Gestión Anual
+            <a 
+              href={`/${tenantSlug}/programa`} 
+              title="Programa de Gestión Anual"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10 ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <Calendar className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Programa de Gestión Anual</span>}
             </a>
-            <a href={`/${tenantSlug}/correctivas`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-              <ClipboardList className="h-4 w-4" />
-              Acciones Correctivas
+            <a 
+              href={`/${tenantSlug}/correctivas`} 
+              title="Acciones Correctivas"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <ClipboardList className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Acciones Correctivas</span>}
             </a>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
-            <a href={`/${tenantSlug}/profile`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-              <Settings className="h-4 w-4" />
-              Editar Perfil
+            
+            {!isSidebarCollapsed ? (
+              <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
+            ) : (
+              <div className="h-px bg-white/10 my-6" />
+            )}
+            <a 
+              href={`/${tenantSlug}/profile`} 
+              title="Editar Perfil"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <Settings className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Editar Perfil</span>}
             </a>
           </nav>
         </div>
         <div className="p-4 border-t border-white/10">
-          <div className="flex items-center justify-between rounded-xl bg-black/40 p-3 border border-white/5">
-            <div className="truncate pr-2">
-              <span className="text-xs font-bold text-white block truncate">{profile?.full_name || 'Usuario'}</span>
-              <span className="text-[10px] text-white/40 block truncate uppercase tracking-wider">{profile?.role || 'Profesional'}</span>
-            </div>
+          <div className={`flex items-center justify-between rounded-xl bg-black/40 p-3 border border-white/5 ${isSidebarCollapsed ? 'flex-col gap-2' : ''}`}>
+            {!isSidebarCollapsed && (
+              <div className="truncate pr-2">
+                <span className="text-xs font-bold text-white block truncate">{profile?.full_name || 'Usuario'}</span>
+                <span className="text-[10px] text-white/40 block truncate uppercase tracking-wider">{profile?.role || 'Profesional'}</span>
+              </div>
+            )}
             <button onClick={handleLogout} className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-600 hover:text-white transition-all cursor-pointer shrink-0">
               <LogOut className="h-4 w-4" />
             </button>
@@ -799,7 +922,7 @@ export default function ProgramaGestion({ params }) {
                 <Settings className="h-3.5 w-3.5 text-slate-500" />
                 Filtros del Programa
               </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Cliente</label>
                   <select
@@ -830,16 +953,43 @@ export default function ProgramaGestion({ params }) {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Responsable</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Mes</label>
                   <select
-                    value={filterResponsable}
-                    onChange={(e) => setFilterResponsable(e.target.value)}
+                    value={filterMonth}
+                    onChange={(e) => setFilterMonth(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF]"
                   >
-                    <option value="">Todos los responsables</option>
-                    {miembros.map(m => (
-                      <option key={m.id} value={m.id}>{m.full_name}</option>
-                    ))}
+                    <option value="">Todos los meses</option>
+                    <option value="01">Enero</option>
+                    <option value="02">Febrero</option>
+                    <option value="03">Marzo</option>
+                    <option value="04">Abril</option>
+                    <option value="05">Mayo</option>
+                    <option value="06">Junio</option>
+                    <option value="07">Julio</option>
+                    <option value="08">Agosto</option>
+                    <option value="09">Septiembre</option>
+                    <option value="10">Octubre</option>
+                    <option value="11">Noviembre</option>
+                    <option value="12">Diciembre</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Año</label>
+                  <select
+                    value={filterYear}
+                    onChange={(e) => setFilterYear(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF]"
+                  >
+                    <option value="">Todos los años</option>
+                    <option value="2024">2024</option>
+                    <option value="2025">2025</option>
+                    <option value="2026">2026</option>
+                    <option value="2027">2027</option>
+                    <option value="2028">2028</option>
+                    <option value="2029">2029</option>
+                    <option value="2030">2030</option>
                   </select>
                 </div>
 
@@ -972,28 +1122,58 @@ export default function ProgramaGestion({ params }) {
               <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse text-left">
-                    <thead>
-                      <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                        <th className="px-6 py-4">Cliente / Establecimiento</th>
-                        <th className="px-6 py-4">Actividad / Legal</th>
-                        <th className="px-6 py-4">Responsable</th>
-                        <th className="px-6 py-4">F. Planificada</th>
-                        <th className="px-6 py-4">F. Realización</th>
+                    <thead className="sticky top-16 z-10 bg-slate-50 border-b border-slate-200">
+                      <tr className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                        <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('cliente')}>
+                          <div className="flex items-center gap-1">
+                            Cliente / Establecimiento
+                            {sortField === 'cliente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                          </div>
+                        </th>
+                        <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('actividad')}>
+                          <div className="flex items-center gap-1">
+                            Actividad / Legal
+                            {sortField === 'actividad' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                          </div>
+                        </th>
+                        <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('responsable')}>
+                          <div className="flex items-center gap-1">
+                            Responsable
+                            {sortField === 'responsable' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                          </div>
+                        </th>
+                        <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('fecha_planificada')}>
+                          <div className="flex items-center gap-1">
+                            F. Planificada
+                            {sortField === 'fecha_planificada' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                          </div>
+                        </th>
+                        <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('fecha_realizacion')}>
+                          <div className="flex items-center gap-1">
+                            F. Realización
+                            {sortField === 'fecha_realizacion' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                          </div>
+                        </th>
                         <th className="px-6 py-4">Progreso</th>
-                        <th className="px-6 py-4">Estado</th>
+                        <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('estado')}>
+                          <div className="flex items-center gap-1">
+                            Estado
+                            {sortField === 'estado' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                          </div>
+                        </th>
                         <th className="px-6 py-4 text-center">Doc</th>
                         <th className="px-6 py-4 text-right">Acciones</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-xs">
-                      {filteredActividades.length === 0 ? (
+                      {sortedActividades.length === 0 ? (
                         <tr>
                           <td colSpan="9" className="px-6 py-10 text-center text-slate-400 font-semibold">
                             No se encontraron actividades de gestión anual.
                           </td>
                         </tr>
                       ) : (
-                        filteredActividades.map(act => {
+                        sortedActividades.map(act => {
                           const emp = empresas.find(e => e.id === act.empresa_id);
                           const est = allEstablecimientos.find(e => e.id === act.establecimiento_id);
                           const resp = miembros.find(m => m.id === act.responsable_id);
@@ -1009,7 +1189,11 @@ export default function ProgramaGestion({ params }) {
                           }
 
                           return (
-                            <tr key={act.id} className="hover:bg-slate-50/50 transition-colors">
+                            <tr 
+                              key={act.id} 
+                              onClick={() => handleEdit(act)}
+                              className="hover:bg-slate-50 transition-colors cursor-pointer"
+                            >
                               <td className="px-6 py-4">
                                 <span className="font-extrabold text-slate-800 block truncate max-w-[160px]">
                                   {emp?.razon_social || 'Cliente desconocido'}
@@ -1068,7 +1252,7 @@ export default function ProgramaGestion({ params }) {
                               <td className="px-6 py-4 text-center">
                                 {act.documento_url ? (
                                   <button
-                                    onClick={() => handleViewPdf(act.documento_url)}
+                                    onClick={(e) => { e.stopPropagation(); handleViewPdf(act.documento_url); }}
                                     className="p-1.5 rounded-lg bg-slate-100 hover:bg-[#468DFF] text-slate-500 hover:text-white transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                                     title="Descargar o Ver Documento PDF"
                                   >
@@ -1079,17 +1263,17 @@ export default function ProgramaGestion({ params }) {
                                 )}
                               </td>
 
-                              <td className="px-6 py-4 text-right">
+                              <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                                 <div className="flex items-center justify-end gap-1.5">
                                   <button
-                                    onClick={() => handleEdit(act)}
+                                    onClick={(e) => { e.stopPropagation(); handleEdit(act); }}
                                     className="p-1.5 border border-slate-200 rounded-lg bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-800 cursor-pointer transition-all shadow-sm"
                                     title="Editar actividad"
                                   >
                                     <Edit className="h-3.5 w-3.5" />
                                   </button>
                                   <button
-                                    onClick={() => handleDelete(act.id)}
+                                    onClick={(e) => { e.stopPropagation(); handleDelete(act.id); }}
                                     className="p-1.5 border border-red-200 rounded-lg bg-white hover:bg-red-50 text-red-400 hover:text-red-600 cursor-pointer transition-all shadow-sm"
                                     title="Eliminar actividad"
                                   >

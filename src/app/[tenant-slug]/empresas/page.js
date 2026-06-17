@@ -26,7 +26,9 @@ import {
   Info,
   Menu,
   X,
-  ClipboardList
+  ClipboardList,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 const PROVINCIAS_ARGENTINAS = [
@@ -91,6 +93,20 @@ export default function EmpresasClientes({ params }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isDevMode, setIsDevMode] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    const collapsed = localStorage.getItem('sidebar-collapsed');
+    if (collapsed === 'true') {
+      setIsSidebarCollapsed(true);
+    }
+  }, []);
+
+  const toggleSidebar = () => {
+    const newVal = !isSidebarCollapsed;
+    setIsSidebarCollapsed(newVal);
+    localStorage.setItem('sidebar-collapsed', String(newVal));
+  };
 
   // Datos del Tenant y Perfil
   const [profile, setProfile] = useState(null);
@@ -861,50 +877,66 @@ export default function EmpresasClientes({ params }) {
       }
 
       // Guardar establecimientos asociados
-      // Primero, remover todos los establecimientos anteriores si estamos editando
       if (editingId) {
-        const { error: delErr } = await supabase
+        // Encontrar los IDs de los establecimientos que quedan en la UI
+        const currentEstIds = establecimientos.map(est => est.id).filter(Boolean);
+        
+        // Eliminar de Supabase únicamente los establecimientos que fueron removidos en la UI
+        let query = supabase
           .from('establecimientos')
           .delete()
           .eq('empresa_id', editingId);
+          
+        if (currentEstIds.length > 0) {
+          query = query.not('id', 'in', `(${currentEstIds.join(',')})`);
+        }
+        
+        const { error: delErr } = await query;
         if (delErr) throw delErr;
       }
 
       if (establecimientos.length > 0) {
-        const payloadEsts = establecimientos.map(est => ({
-          empresa_id: empresaId,
-          tenant_id: tenant.id,
-          denominacion: (est.denominacion || '').trim(),
-          direccion: (est.direccion || '').trim(),
-          provincia: est.provincia,
-          partido: est.partido,
-          localidad_barrio: (est.localidad_barrio || '').trim(),
-          cp: (est.cp || '').trim() || null,
-          superficie_total: est.superficie_total.trim() || null,
-          superficie_cubierta: est.superficie_cubierta.trim() || null,
-          superficie_piso: est.superficie_piso.trim() || null,
-          cantidad_plantas: est.cantidad_plantas.trim() || null,
-          horario_funcionamiento: est.horario_funcionamiento.trim() || null,
-          trabajadores_administrativos: est.trabajadores_administrativos,
-          trabajadores_productivos: est.trabajadores_productivos,
-          trabajadores_equivalentes: est.trabajadores_equivalentes,
-          capitulos_decreto: est.capitulos_decreto,
-          horas_profesional: est.horas_profesional,
-          maquinas_fijas: est.maquinas_fijas,
-          maquinas_moviles: est.maquinas_moviles,
-          herramientas_electricas: est.herramientas_electricas,
-          aparatos_presion: est.aparatos_presion,
-          equipos_termicos: est.equipos_termicos,
-          equipos_elevacion: est.equipos_elevacion,
-          equipos_izaje: est.equipos_izaje,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }));
+        const payloadEsts = establecimientos.map(est => {
+          const item = {
+            empresa_id: empresaId,
+            tenant_id: tenant.id,
+            denominacion: (est.denominacion || '').trim(),
+            direccion: (est.direccion || '').trim(),
+            provincia: est.provincia,
+            partido: est.partido,
+            localidad_barrio: (est.localidad_barrio || '').trim(),
+            cp: (est.cp || '').trim() || null,
+            superficie_total: (est.superficie_total || '').trim() || null,
+            superficie_cubierta: (est.superficie_cubierta || '').trim() || null,
+            superficie_piso: (est.superficie_piso || '').trim() || null,
+            cantidad_plantas: (est.cantidad_plantas || '').trim() || null,
+            horario_funcionamiento: (est.horario_funcionamiento || '').trim() || null,
+            trabajadores_administrativos: est.trabajadores_administrativos,
+            trabajadores_productivos: est.trabajadores_productivos,
+            trabajadores_equivalentes: est.trabajadores_equivalentes,
+            capitulos_decreto: est.capitulos_decreto,
+            horas_profesional: est.horas_profesional,
+            maquinas_fijas: est.maquinas_fijas,
+            maquinas_moviles: est.maquinas_moviles,
+            herramientas_electricas: est.herramientas_electricas,
+            aparatos_presion: est.aparatos_presion,
+            equipos_termicos: est.equipos_termicos,
+            equipos_elevacion: est.equipos_elevacion,
+            equipos_izaje: est.equipos_izaje,
+            updated_at: new Date().toISOString()
+          };
+          if (est.id) {
+            item.id = est.id; // Preservar ID para actualización
+          } else {
+            item.created_at = new Date().toISOString();
+          }
+          return item;
+        });
 
-        const { error: insEstsErr } = await supabase
+        const { error: upsertEstsErr } = await supabase
           .from('establecimientos')
-          .insert(payloadEsts);
-        if (insEstsErr) throw insEstsErr;
+          .upsert(payloadEsts, { onConflict: 'id' });
+        if (upsertEstsErr) throw upsertEstsErr;
       }
 
       triggerToast('Los datos de la empresa y establecimientos se guardaron con éxito.');
@@ -1007,56 +1039,106 @@ export default function EmpresasClientes({ params }) {
       )}
 
       {/* Sidebar - Barra Lateral (Idéntica al Dashboard para consistencia) */}
-      <aside className="w-64 bg-[#0D0D0D] flex flex-col justify-between shrink-0 hidden md:flex">
+      <aside className={`bg-[#0D0D0D] flex flex-col justify-between shrink-0 hidden md:flex transition-all duration-300 ${isSidebarCollapsed ? 'w-20' : 'w-64'}`}>
         <div className="p-6">
-          <div className="flex items-center gap-3 mb-8">
-            <img 
-              src="/brand/logo-primary.png" 
-              alt="Logo Gestión SySO" 
-              className="h-9 w-9 object-contain shrink-0" 
-            />
-            <span className="font-outfit text-base font-extrabold text-white tracking-tight block">Gestión SySO</span>
+          {/* Logo Brand */}
+          <div className={`flex items-center justify-between gap-3 mb-8 ${isSidebarCollapsed ? 'flex-col' : ''}`}>
+            <div className="flex items-center gap-3">
+              <img 
+                src="/brand/logo-primary.png" 
+                alt="Logo" 
+                className="h-9 w-9 object-contain shrink-0" 
+              />
+              {!isSidebarCollapsed && (
+                <span className="font-outfit text-base font-extrabold text-white tracking-tight block animate-fade-in">Gestión SySO</span>
+              )}
+            </div>
+            <button
+              onClick={toggleSidebar}
+              title={isSidebarCollapsed ? 'Expandir barra lateral' : 'Contraer barra lateral'}
+              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all cursor-pointer"
+            >
+              {isSidebarCollapsed ? (
+                <ChevronRight className="h-4 w-4" />
+              ) : (
+                <ChevronLeft className="h-4 w-4" />
+              )}
+            </button>
           </div>
 
           <nav className="space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block mb-2">Panel principal</span>
-            <a href={`/${tenantSlug}/dashboard`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-              <Building className="h-4 w-4" />
-              Dashboard
+            {!isSidebarCollapsed ? (
+              <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block mb-2">Panel principal</span>
+            ) : (
+              <div className="h-px bg-white/10 my-3" />
+            )}
+            <a 
+              href={`/${tenantSlug}/dashboard`} 
+              title="Dashboard"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <Building className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Dashboard</span>}
             </a>
-            <a href="#" className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10">
-              <Users className="h-4 w-4" />
-              Clientes
+            <a 
+              href="#" 
+              title="Clientes"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10 ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <Users className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
             </a>
             {(profile?.role === 'owner' || profile?.role === 'admin') && (
-              <a href={`/${tenantSlug}/equipo`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-                <Briefcase className="h-4 w-4" />
-                Equipo de Trabajo
+              <a 
+                href={`/${tenantSlug}/equipo`} 
+                title="Equipo de Trabajo"
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+              >
+                <Briefcase className="h-4 w-4 shrink-0" />
+                {!isSidebarCollapsed && <span className="animate-fade-in">Equipo de Trabajo</span>}
               </a>
             )}
-            <a href={`/${tenantSlug}/programa`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-              <Calendar className="h-4 w-4" />
-              Programa de Gestión Anual
+            <a 
+              href={`/${tenantSlug}/programa`} 
+              title="Programa de Gestión Anual"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <Calendar className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Programa de Gestión Anual</span>}
             </a>
-            <a href={`/${tenantSlug}/correctivas`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-              <ClipboardList className="h-4 w-4" />
-              Acciones Correctivas
+            <a 
+              href={`/${tenantSlug}/correctivas`} 
+              title="Acciones Correctivas"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <ClipboardList className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Acciones Correctivas</span>}
             </a>
             
-            <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
-            <a href={`/${tenantSlug}/profile`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-              <Settings className="h-4 w-4" />
-              Editar Perfil
+            {!isSidebarCollapsed ? (
+              <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
+            ) : (
+              <div className="h-px bg-white/10 my-6" />
+            )}
+            <a 
+              href={`/${tenantSlug}/profile`} 
+              title="Editar Perfil"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <Settings className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Editar Perfil</span>}
             </a>
           </nav>
         </div>
 
         <div className="p-4 border-t border-white/10">
-          <div className="flex items-center justify-between rounded-xl bg-black/40 p-3 border border-white/5">
-            <div className="truncate pr-2">
-              <span className="text-xs font-bold text-white block truncate">{profile?.full_name || 'Usuario'}</span>
-              <span className="text-[10px] text-white/40 block truncate uppercase tracking-wider">{profile?.role || 'Profesional'}</span>
-            </div>
+          <div className={`flex items-center justify-between rounded-xl bg-black/40 p-3 border border-white/5 ${isSidebarCollapsed ? 'flex-col gap-2' : ''}`}>
+            {!isSidebarCollapsed && (
+              <div className="truncate pr-2">
+                <span className="text-xs font-bold text-white block truncate">{profile?.full_name || 'Usuario'}</span>
+                <span className="text-[10px] text-white/40 block truncate uppercase tracking-wider">{profile?.role || 'Profesional'}</span>
+              </div>
+            )}
             <button 
               onClick={handleLogout}
               title="Cerrar sesión"

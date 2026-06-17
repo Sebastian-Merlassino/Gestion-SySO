@@ -4,6 +4,34 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 
 ---
 
+## [2026-06-16] Implementación de Barra Lateral Colapsable, Ordenamiento y Filtros Avanzados, Filas Clickeables y Correcciones de Base de Datos
+
+### Resumen Ejecutivo
+Se implementaron mejoras clave de usabilidad y estabilidad. Se añadió soporte para una barra lateral colapsable (que reduce su ancho de `w-64` a `w-20` para maximizar el área útil del dashboard, clientes, equipo, programa de gestión y acciones correctivas). En las tablas de programa de gestión y acciones correctivas se incorporó el ordenamiento interactivo de columnas, cabeceras sticky y clics de fila para abrir formularios, deteniendo la propagación de eventos en botones internos. Asimismo, se optimizó el guardado de empresas clientes con establecimientos eliminados (previniendo errores de restricción de clave foránea en Supabase) y se eliminó la obligatoriedad del campo de fecha de nacimiento en equipo de trabajo.
+
+### Cambios Realizados
+- **Barra Lateral Colapsable (Desktop Sidebar)**:
+  - Implementamos la variable de estado `isSidebarCollapsed` con persistencia en `localStorage` en `dashboard`, `empresas`, `equipo`, `programa` y `correctivas`.
+  - Agregamos un botón de alternancia (`ChevronLeft` / `ChevronRight`) en la cabecera del sidebar.
+  - Ajustamos los anchos de `w-64` a `w-20` con transición suave (`transition-all duration-300`). Ocultamos etiquetas de navegación y perfiles en modo colapsado, mostrando únicamente los iconos alineados de forma centrada.
+- **Filtros por Fecha en Programa de Gestión**:
+  - Reemplazamos el filtro de "Responsable" por selectores de **Mes** (Enero a Diciembre) y **Año** (2024 a 2030) aplicados sobre `fecha_planificada`.
+- **Cabeceras Fijas (Sticky) y Ordenamiento**:
+  - En `programa/page.js` y `correctivas/page.js`: Añadimos `sticky top-16 bg-slate-50 z-10 shadow-sm border-b` a la cabecera `<thead>` para mantenerse fija debajo de la barra de navegación del sistema.
+  - Añadimos los estados `sortField` y `sortOrder`. Al hacer clic sobre las columnas del encabezado (`<th>`), se ordena la tabla en caliente con flechas visuales indicadoras (`▲` y `▼`).
+- **Filas Clickeables**:
+  - En ambas vistas de listado de tablas, configuramos `onClick={() => ...}` en el `<tr>` para abrir directamente la ficha de edición/detalle al hacer clic en cualquier parte de la fila.
+  - Agregamos `e.stopPropagation()` en los botones internos de PDF, editar, ver evidencia o eliminar para evitar clics duplicados o erráticos.
+- **Corrección en Eliminación de Establecimiento (`empresas/page.js`)**:
+  - Sustituimos la eliminación total y reinserción de establecimientos (que fallaba ante claves foráneas referenciadas por actividades/correctivas activas) por un borrado dirigido: se detectan únicamente los establecimientos borrados en la UI y se eliminan de la DB, mientras que los restantes se actualizan o insertan usando `.upsert()`.
+- **Opcionalidad de Fecha de Nacimiento (`equipo/page.js`)**:
+  - Eliminamos la validación `!birthDate` en la función de guardado y los atributos `required` y asteriscos del formulario en la interfaz. El payload ahora mapea `birthDate || null` para registrar valores vacíos correctamente como `NULL` en la base de datos de Supabase.
+
+### Validaciones Ejecutadas
+- Compilación y optimización final de producción de Next.js finalizada de forma exitosa (`npm run build`).
+
+---
+
 ## [2026-06-16] Reorganización de Dashboard con Calendario Compacto, Vista de Programa Anual por Defecto y Botones de Cámara
 
 ### Resumen Ejecutivo
