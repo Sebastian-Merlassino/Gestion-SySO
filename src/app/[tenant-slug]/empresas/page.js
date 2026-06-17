@@ -881,18 +881,22 @@ export default function EmpresasClientes({ params }) {
         // Encontrar los IDs de los establecimientos que quedan en la UI
         const currentEstIds = establecimientos.map(est => est.id).filter(Boolean);
         
-        // Eliminar de Supabase únicamente los establecimientos que fueron removidos en la UI
-        let query = supabase
-          .from('establecimientos')
-          .delete()
-          .eq('empresa_id', editingId);
-          
-        if (currentEstIds.length > 0) {
-          query = query.not('id', 'in', `(${currentEstIds.join(',')})`);
+        if (currentEstIds.length === 0) {
+          // Eliminar TODOS los establecimientos de esta empresa
+          const { error: delErr } = await supabase
+            .from('establecimientos')
+            .delete()
+            .eq('empresa_id', editingId);
+          if (delErr) throw delErr;
+        } else {
+          // Eliminar sólo los que fueron removidos en la UI (los que no están en la lista actual)
+          const { error: delErr } = await supabase
+            .from('establecimientos')
+            .delete()
+            .eq('empresa_id', editingId)
+            .not('id', 'in', `(${currentEstIds.join(',')})`);
+          if (delErr) throw delErr;
         }
-        
-        const { error: delErr } = await query;
-        if (delErr) throw delErr;
       }
 
       if (establecimientos.length > 0) {

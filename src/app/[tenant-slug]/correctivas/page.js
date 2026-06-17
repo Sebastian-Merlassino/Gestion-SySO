@@ -1370,9 +1370,9 @@ export default function AccionesCorrectivasPage({ params }) {
 
                 {/* Listado / Tabla */}
                 <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                  <div className="overflow-x-auto">
+                  <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 320px)' }}>
                     <table className="w-full text-left border-collapse">
-                      <thead className="sticky top-16 z-10 bg-slate-50 border-b border-slate-200 shadow-sm">
+                      <thead className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 shadow-sm">
                         <tr className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
                           <th className="py-4 px-6 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('cliente')}>
                             <div className="flex items-center gap-1">

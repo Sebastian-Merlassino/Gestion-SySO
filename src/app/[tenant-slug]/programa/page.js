@@ -1120,9 +1120,9 @@ export default function ProgramaGestion({ params }) {
             {/* VISTA DE TABLA / LISTADO */}
             {view === 'list' && (
               <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
+                <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
                   <table className="w-full border-collapse text-left">
-                    <thead className="sticky top-16 z-10 bg-slate-50 border-b border-slate-200">
+                    <thead className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200">
                       <tr className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                         <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('cliente')}>
                           <div className="flex items-center gap-1">
