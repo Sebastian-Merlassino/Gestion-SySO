@@ -299,13 +299,31 @@ export default function ProgramaGestion({ params }) {
     }
   };
 
+  // Helper: formatear fecha YYYY-MM-DD → DD/MM/YYYY
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return dateStr;
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  };
+
   // 2. Lógica de cálculo dinámico de estados y alertas
   const getItemStatusAndColor = (item) => {
+    const hasRealization = !!item.fecha_realizacion;
+    const hasPlanDate = !!item.fecha_planificada;
+
+    // Sin ninguna fecha: En análisis
+    if (!hasRealization && !hasPlanDate) {
+      return {
+        estadoText: 'En análisis',
+        estadoColor: '#64748b', // Slate
+        dateAlertColor: ''
+      };
+    }
+
     const todayStr = new Date().toISOString().split('T')[0];
     const today = new Date(todayStr);
     const planDate = new Date(item.fecha_planificada);
-    
-    const hasRealization = !!item.fecha_realizacion;
     
     let estadoText = 'Vigente';
     let estadoColor = '#0b8043'; // Verde
@@ -316,7 +334,7 @@ export default function ProgramaGestion({ params }) {
     }
     
     let dateAlertColor = ''; // Sin alerta
-    if (!hasRealization) {
+    if (!hasRealization && hasPlanDate) {
       const timeDiff = planDate.getTime() - today.getTime();
       const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
       
@@ -419,13 +437,19 @@ export default function ProgramaGestion({ params }) {
 
   const handleDescripcionChange = (val) => {
     setCatalogoId(val);
-    const catalogItem = catalogo.find(c => c.id === val);
-    if (catalogItem) {
-      setDescripcion(catalogItem.descripcion);
-      setMarcoLegal(catalogItem.marco_legal);
-    } else {
+    if (val === '__custom__') {
+      // Opción manual: limpiar solo si venía de un catálogo, dejar editar libremente
       setDescripcion('');
       setMarcoLegal('');
+    } else {
+      const catalogItem = catalogo.find(c => c.id === val);
+      if (catalogItem) {
+        setDescripcion(catalogItem.descripcion);
+        setMarcoLegal(catalogItem.marco_legal || '');
+      } else {
+        setDescripcion('');
+        setMarcoLegal('');
+      }
     }
   };
 
@@ -441,7 +465,9 @@ export default function ProgramaGestion({ params }) {
     setEditingId(item.id);
     setEmpresaId(item.empresa_id || '');
     setEstablecimientoId(item.establecimiento_id || '');
-    setCatalogoId(item.catalogo_id || '');
+    // Si el catalogo_id ya no está en el catálogo (o no existía), tratar como entrada manual
+    const inCatalog = catalogo.some(c => c.id === item.catalogo_id);
+    setCatalogoId(inCatalog ? (item.catalogo_id || '') : '__custom__');
     setDescripcion(item.descripcion || '');
     setMarcoLegal(item.marco_legal || '');
     setResponsableId(item.responsable_id || '');
@@ -481,8 +507,8 @@ export default function ProgramaGestion({ params }) {
     // Validar formulario
     const errors = {};
     if (!empresaId) errors.empresaId = 'La razón social es obligatoria.';
+    if (!establecimientoId) errors.establecimientoId = 'El establecimiento es obligatorio.';
     if (!descripcion) errors.descripcion = 'La descripción/actividad es obligatoria.';
-    if (!fechaPlanificada) errors.fechaPlanificada = 'La fecha planificada es obligatoria.';
     
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
@@ -876,18 +902,18 @@ export default function ProgramaGestion({ params }) {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 border border-slate-200/80 rounded-2xl shadow-sm">
               <div className="flex items-center gap-2 rounded-xl bg-slate-100 p-1 border border-slate-200/80 self-start">
                 <button
-                  onClick={() => setView('calendar')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${view === 'calendar' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
-                >
-                  <CalendarDays className="h-4 w-4" />
-                  Calendario
-                </button>
-                <button
                   onClick={() => setView('list')}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${view === 'list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
                 >
                   <List className="h-4 w-4" />
                   Programa anual
+                </button>
+                <button
+                  onClick={() => setView('calendar')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${view === 'calendar' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                >
+                  <CalendarDays className="h-4 w-4" />
+                  Calendario
                 </button>
               </div>
 
@@ -1181,11 +1207,11 @@ export default function ProgramaGestion({ params }) {
                           const statusInfo = getItemStatusAndColor(act);
                           
                           // Alerta visual de fecha planificada
-                          let dateColorClass = 'text-slate-700';
+                          let dateColorClass = 'text-slate-700 font-mono';
                           if (statusInfo.dateAlertColor === 'red') {
-                            dateColorClass = 'text-[#fa050b] bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-lg font-bold';
+                            dateColorClass = 'text-[#fa050b] bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-lg font-bold font-mono';
                           } else if (statusInfo.dateAlertColor === 'yellow') {
-                            dateColorClass = 'text-amber-600 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-lg font-bold';
+                            dateColorClass = 'text-amber-600 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-lg font-bold font-mono';
                           }
 
                           return (
@@ -1216,14 +1242,18 @@ export default function ProgramaGestion({ params }) {
                                 {resp?.full_name || 'Sin asignar'}
                               </td>
 
-                              <td className="px-6 py-4 font-mono font-medium">
-                                <span className={dateColorClass}>
-                                  {act.fecha_planificada}
-                                </span>
+                              <td className="px-6 py-4">
+                                {act.fecha_planificada ? (
+                                  <span className={dateColorClass}>
+                                    {formatDate(act.fecha_planificada)}
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] text-slate-400 font-semibold italic">Pendiente</span>
+                                )}
                               </td>
 
                               <td className="px-6 py-4 font-mono text-slate-500">
-                                {act.fecha_realizacion || 'Pendiente'}
+                                {act.fecha_realizacion ? formatDate(act.fecha_realizacion) : <span className="text-[10px] text-slate-400 italic">Pendiente</span>}
                               </td>
 
                               <td className="px-6 py-4">
@@ -1344,7 +1374,7 @@ export default function ProgramaGestion({ params }) {
                 {/* 2. Establecimiento */}
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                    Establecimiento
+                    Establecimiento <span className="text-[#468DFF]">*</span>
                   </label>
                   <select
                     value={establecimientoId}
@@ -1358,9 +1388,10 @@ export default function ProgramaGestion({ params }) {
                     ))}
                   </select>
                   {!empresaId && <p className="text-[9px] text-slate-400 mt-1 italic">Debes seleccionar una Razón Social primero.</p>}
+                  {formErrors.establecimientoId && <p className="text-[10px] text-red-500 font-bold mt-1">{formErrors.establecimientoId}</p>}
                 </div>
 
-                {/* 3. Descripción (Catálogo o texto manual si no coincide) */}
+                {/* 3. Descripción (Catálogo o texto manual) */}
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
                     Descripción / Actividad <span className="text-[#468DFF]">*</span>
@@ -1374,9 +1405,10 @@ export default function ProgramaGestion({ params }) {
                     {catalogo.map(c => (
                       <option key={c.id} value={c.id}>{c.descripcion}</option>
                     ))}
+                    <option value="__custom__">Otra actividad (cargar manualmente)...</option>
                   </select>
                   
-                  {/* Input manual en caso de requerir detalles o escribir libremente */}
+                  {/* Textarea: siempre visible; pre-cargada desde catálogo o editable manualmente */}
                   <textarea
                     required
                     placeholder="Detalla la actividad a realizar..."
@@ -1390,16 +1422,23 @@ export default function ProgramaGestion({ params }) {
                 {/* 4. Marco Legal */}
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                    Marco Legal (Automático)
+                    Marco Legal / Requisito Legal Aplicable
                   </label>
                   <input
                     type="text"
-                    placeholder="Completado automáticamente..."
+                    placeholder={catalogoId && catalogoId !== '__custom__' ? 'Completado automáticamente desde catálogo...' : 'Ingresá el requisito legal aplicable...'}
                     value={marcoLegal}
                     onChange={(e) => setMarcoLegal(e.target.value)}
-                    className="w-full bg-slate-100 border border-slate-200 rounded-xl py-3 px-4 text-xs text-slate-500 focus:outline-none cursor-default"
-                    readOnly
+                    className={`w-full border rounded-xl py-3 px-4 text-xs focus:outline-none transition-all ${
+                      catalogoId && catalogoId !== '__custom__'
+                        ? 'bg-slate-100 border-slate-200 text-slate-500 cursor-default'
+                        : 'bg-slate-50 border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] text-slate-800'
+                    }`}
+                    readOnly={!!(catalogoId && catalogoId !== '__custom__')}
                   />
+                  {(!catalogoId || catalogoId === '__custom__') && (
+                    <p className="text-[9px] text-slate-400 mt-1 italic">Podés ingresar la norma o resolución aplicable (ej: Dec. 351/79, Res. 905/15...)</p>
+                  )}
                 </div>
 
                 {/* 5. Responsable */}
@@ -1423,16 +1462,15 @@ export default function ProgramaGestion({ params }) {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                      F. Planificada <span className="text-[#468DFF]">*</span>
+                      F. Planificada
                     </label>
                     <input
                       type="date"
-                      required
                       value={fechaPlanificada}
                       onChange={(e) => setFechaPlanificada(e.target.value)}
                       className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none transition-all font-mono"
                     />
-                    {formErrors.fechaPlanificada && <p className="text-[10px] text-red-500 font-bold mt-1">{formErrors.fechaPlanificada}</p>}
+                    <p className="text-[9px] text-slate-400 mt-1 italic">Opcional. Si no se carga, el estado será "En análisis".</p>
                   </div>
 
                   <div>
