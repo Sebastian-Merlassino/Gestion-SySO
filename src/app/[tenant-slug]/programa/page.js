@@ -944,10 +944,28 @@ export default function ProgramaGestion({ params }) {
 
             {/* Panel de Filtros rápidos */}
             <div className="bg-white p-5 border border-slate-200/80 rounded-2xl shadow-sm space-y-4">
-              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                <Settings className="h-3.5 w-3.5 text-slate-500" />
-                Filtros del Programa
-              </h4>
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <Settings className="h-3.5 w-3.5 text-slate-500" />
+                  Filtros del Programa
+                </h4>
+                {(filterEmpresa || filterEstablecimiento || filterMonth || filterYear || filterEstado || searchQuery) && (
+                  <button
+                    onClick={() => {
+                      setFilterEmpresa('');
+                      setFilterEstablecimiento('');
+                      setFilterMonth('');
+                      setFilterYear('');
+                      setFilterEstado('');
+                      setSearchQuery('');
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-200 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer"
+                  >
+                    <X className="h-3 w-3" />
+                    Limpiar filtros
+                  </button>
+                )}
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Cliente</label>
@@ -1029,6 +1047,7 @@ export default function ProgramaGestion({ params }) {
                     <option value="">Todos los estados</option>
                     <option value="Vigente">Vigente (verde)</option>
                     <option value="Vencido">Vencido (rojo)</option>
+                    <option value="En análisis">En análisis</option>
                   </select>
                 </div>
               </div>

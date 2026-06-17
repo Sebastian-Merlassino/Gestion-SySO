@@ -1299,71 +1299,91 @@ export default function AccionesCorrectivasPage({ params }) {
                   </div>
 
                   {/* Selectores de Filtrado */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2 border-t border-slate-100">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Filtrar por Cliente</label>
-                      <select
-                        value={filterEmpresa}
-                        onChange={(e) => {
-                          setFilterEmpresa(e.target.value);
-                          setFilterEstablecimiento('');
-                        }}
-                        className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 outline-none focus:border-[#468DFF] cursor-pointer"
-                      >
-                        <option value="">Todos los clientes</option>
-                        {empresas.map((emp) => (
-                          <option key={emp.id} value={emp.id}>{emp.razon_social}</option>
-                        ))}
-                      </select>
+                  <div className="pt-2 border-t border-slate-100 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Filtros</span>
+                      {(filterEmpresa || filterEstablecimiento || filterRiesgo || filterEstado || filterText) && (
+                        <button
+                          onClick={() => {
+                            setFilterEmpresa('');
+                            setFilterEstablecimiento('');
+                            setFilterRiesgo('');
+                            setFilterEstado('');
+                            setFilterText('');
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-200 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer"
+                        >
+                          <X className="h-3 w-3" />
+                          Limpiar filtros
+                        </button>
+                      )}
                     </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Filtrar por Cliente</label>
+                        <select
+                          value={filterEmpresa}
+                          onChange={(e) => {
+                            setFilterEmpresa(e.target.value);
+                            setFilterEstablecimiento('');
+                          }}
+                          className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 outline-none focus:border-[#468DFF] cursor-pointer"
+                        >
+                          <option value="">Todos los clientes</option>
+                          {empresas.map((emp) => (
+                            <option key={emp.id} value={emp.id}>{emp.razon_social}</option>
+                          ))}
+                        </select>
+                      </div>
 
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Filtrar por Establecimiento</label>
-                      <select
-                        disabled={!filterEmpresa}
-                        value={filterEstablecimiento}
-                        onChange={(e) => setFilterEstablecimiento(e.target.value)}
-                        className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 outline-none focus:border-[#468DFF] cursor-pointer disabled:opacity-50"
-                      >
-                        <option value="">
-                          {!filterEmpresa ? 'Selecciona un cliente primero' : 'Todos los establecimientos'}
-                        </option>
-                        {allEstablecimientos
-                          .filter(est => est.empresa_id === filterEmpresa)
-                          .map((est) => (
-                            <option key={est.id} value={est.id}>{est.denominacion}</option>
-                          ))
-                        }
-                      </select>
-                    </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Filtrar por Establecimiento</label>
+                        <select
+                          disabled={!filterEmpresa}
+                          value={filterEstablecimiento}
+                          onChange={(e) => setFilterEstablecimiento(e.target.value)}
+                          className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 outline-none focus:border-[#468DFF] cursor-pointer disabled:opacity-50"
+                        >
+                          <option value="">
+                            {!filterEmpresa ? 'Selecciona un cliente primero' : 'Todos los establecimientos'}
+                          </option>
+                          {allEstablecimientos
+                            .filter(est => est.empresa_id === filterEmpresa)
+                            .map((est) => (
+                              <option key={est.id} value={est.id}>{est.denominacion}</option>
+                            ))
+                          }
+                        </select>
+                      </div>
 
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Filtrar por Nivel de Riesgo</label>
-                      <select
-                        value={filterRiesgo}
-                        onChange={(e) => setFilterRiesgo(e.target.value)}
-                        className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 outline-none focus:border-[#468DFF] cursor-pointer"
-                      >
-                        <option value="">Todos los riesgos</option>
-                        {NIVEL_RIESGO_OPTIONS.map((opt) => (
-                          <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                      </select>
-                    </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Filtrar por Nivel de Riesgo</label>
+                        <select
+                          value={filterRiesgo}
+                          onChange={(e) => setFilterRiesgo(e.target.value)}
+                          className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 outline-none focus:border-[#468DFF] cursor-pointer"
+                        >
+                          <option value="">Todos los riesgos</option>
+                          {NIVEL_RIESGO_OPTIONS.map((opt) => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                      </div>
 
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Filtrar por Estado</label>
-                      <select
-                        value={filterEstado}
-                        onChange={(e) => setFilterEstado(e.target.value)}
-                        className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 outline-none focus:border-[#468DFF] cursor-pointer"
-                      >
-                        <option value="">Todos los estados</option>
-                        <option value="En análisis">En análisis</option>
-                        <option value="En tiempo">En tiempo</option>
-                        <option value="Vencido">Vencido</option>
-                        <option value="Cerrada">Cerrada</option>
-                      </select>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Filtrar por Estado</label>
+                        <select
+                          value={filterEstado}
+                          onChange={(e) => setFilterEstado(e.target.value)}
+                          className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 outline-none focus:border-[#468DFF] cursor-pointer"
+                        >
+                          <option value="">Todos los estados</option>
+                          <option value="En análisis">En análisis</option>
+                          <option value="En tiempo">En tiempo</option>
+                          <option value="Vencido">Vencido</option>
+                          <option value="Cerrada">Cerrada</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
                 </div>
