@@ -86,6 +86,7 @@ export default function LoginPage() {
       if (profile?.tenant_id && profile?.tenants?.slug) {
         window.location.href = `/${profile.tenants.slug}/dashboard`;
       } else {
+        localStorage.setItem('onboarding_email', email);
         window.location.href = '/onboarding';
       }
     } catch (err) {
@@ -152,15 +153,8 @@ export default function LoginPage() {
       <div className="absolute bottom-[-20%] right-[-20%] w-[600px] h-[600px] rounded-full bg-[#0511F2]/5 blur-[180px] pointer-events-none" />
 
       <div className="w-full max-w-md z-10">
-        {/* Logo and Header */}
+        {/* Header */}
         <div className="text-center mb-6">
-          <img
-            src="/brand/logo-black.png"
-            alt="Logo Gestión SySO"
-            width="220"
-            style={{ width: '220px', height: 'auto', display: 'block', margin: '0 auto' }}
-            className="mx-auto object-contain mb-3"
-          />
           <p className="text-sm text-slate-600 mt-2 font-medium">
             Ingresá a tu panel de seguridad e higiene laboral
           </p>
@@ -168,6 +162,14 @@ export default function LoginPage() {
 
         {/* Form Card */}
         <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-xl">
+          <img
+            src="/brand/logo-black.png"
+            alt="Logo Gestión SySO"
+            width="220"
+            style={{ width: '220px', height: 'auto', display: 'block', margin: '0 auto' }}
+            className="mx-auto object-contain mb-6"
+          />
+
           {isDevMode && (
             <div className="mb-6 p-3 rounded-lg border border-amber-500/20 bg-amber-50 text-amber-700 text-xs">
               <strong>Modo Demo / Desarrollo Activo</strong>: Se simulará el login para permitir pruebas visuales sin base de datos activa.

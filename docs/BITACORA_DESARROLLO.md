@@ -4,6 +4,33 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 
 ---
 
+## [2026-06-17] Correcciones y Mejoras de Seguridad, UI, Onboarding y Credenciales
+
+### Resumen Ejecutivo
+Se implementaron una serie de mejoras y correcciones a través del login, onboarding, perfiles de usuario, gestión de empresas y programa de gestión, resolviendo problemas de duplicados de tenants, tags JSX mal formados, y añadiendo usabilidad con toggles de visibilidad y layout estándar en el perfil.
+
+### Cambios Realizados
+- **Registro & Login (`register/page.js`, `login/page.js`):**
+  - Añadido helper de robustez de clave debajo de la contraseña.
+  - Implementado caché de `email` y `fullName` en `localStorage` al registrar e iniciar sesión.
+  - Movido el logotipo de marca dentro del recuadro blanco del formulario de login.
+- **Onboarding (`onboarding/page.js`):**
+  - Pre-llenado automático de email y nombre utilizando caché.
+  - Confirmación e inicio de cierre de sesión al pulsar "Salir".
+  - Verificación y mitigación de errores de duplicado de slug de tenant al claimear o sufijar slugs colisionados.
+  - Eliminado bloque duplicado de código JSX que rompía el build.
+- **Perfil de Usuario (`profile/page.js`):**
+  - Integrados los componentes colapsables Desktop Sidebar, Mobile Sidebar y Navbar en el perfil para conservar consistencia de layout con el dashboard.
+- **Gestión de Empresas (`empresas/page.js`):**
+  - Refactorizada la eliminación de establecimientos eliminados en la UI mediante diferencia de IDs directos en base de datos.
+  - Añadidos botones de ojo (`Eye` / `EyeOff`) para revelar/ocultar contraseñas de plataformas externas (ART, MiBA y Ambiente PBA).
+  - Configurado el enlace de la ART para ser clickeable y abrirse en pestaña nueva.
+- **Programa de Gestión (`programa/page.js`):**
+  - Unificados los controles de vista, buscador de actividades, botón de alta y panel de filtros rápidos en un único componente de tarjeta unificada de Rich Aesthetics.
+
+### Validaciones Ejecutadas
+- Compilación completa de producción de Next.js finalizada de forma exitosa (`npm run build`).
+
 ## [2026-06-16] Implementación de Barra Lateral Colapsable, Ordenamiento y Filtros Avanzados, Filas Clickeables y Correcciones de Base de Datos
 
 ### Resumen Ejecutivo

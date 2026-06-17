@@ -28,7 +28,9 @@ import {
   X,
   ClipboardList,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 const PROVINCIAS_ARGENTINAS = [
@@ -155,6 +157,11 @@ export default function EmpresasClientes({ params }) {
   // Tab activo en el formulario
   const [activeTab, setActiveTab] = useState('general');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Estados para visibilidad de contraseñas de portales
+  const [showArtClave, setShowArtClave] = useState(false);
+  const [showMibaClave, setShowMibaClave] = useState(false);
+  const [showAmbienteClave, setShowAmbienteClave] = useState(false);
 
   // Diálogo modal de alerta / confirmación
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', type: 'info', onConfirm: null });
@@ -878,24 +885,28 @@ export default function EmpresasClientes({ params }) {
 
       // Guardar establecimientos asociados
       if (editingId) {
-        // Encontrar los IDs de los establecimientos que quedan en la UI
-        const currentEstIds = establecimientos.map(est => est.id).filter(Boolean);
+        // Obtener todos los establecimientos que ya existen en la base de datos para esta empresa
+        const { data: dbEsts, error: fetchEstsErr } = await supabase
+          .from('establecimientos')
+          .select('id')
+          .eq('empresa_id', editingId);
         
-        if (currentEstIds.length === 0) {
-          // Eliminar TODOS los establecimientos de esta empresa
-          const { error: delErr } = await supabase
-            .from('establecimientos')
-            .delete()
-            .eq('empresa_id', editingId);
-          if (delErr) throw delErr;
-        } else {
-          // Eliminar sólo los que fueron removidos en la UI (los que no están en la lista actual)
-          const { error: delErr } = await supabase
-            .from('establecimientos')
-            .delete()
-            .eq('empresa_id', editingId)
-            .not('id', 'in', `(${currentEstIds.join(',')})`);
-          if (delErr) throw delErr;
+        if (fetchEstsErr) throw fetchEstsErr;
+
+        if (dbEsts && dbEsts.length > 0) {
+          const currentEstIds = establecimientos.map(est => est.id).filter(Boolean);
+          // Los establecimientos a borrar son los que están en la base de datos pero NO en la UI
+          const idsToDelete = dbEsts
+            .map(dbEst => dbEst.id)
+            .filter(dbId => !currentEstIds.includes(dbId));
+
+          if (idsToDelete.length > 0) {
+            const { error: delErr } = await supabase
+              .from('establecimientos')
+              .delete()
+              .in('id', idsToDelete);
+            if (delErr) throw delErr;
+          }
         }
       }
 
@@ -2045,7 +2056,19 @@ export default function EmpresasClientes({ params }) {
                       
                       <div className="grid md:grid-cols-3 gap-4">
                         <div className="space-y-1 md:col-span-3">
-                          <label className="text-xs font-bold text-slate-600 block">Web de la ART</label>
+                          <div className="flex justify-between items-center">
+                            <label className="text-xs font-bold text-slate-600 block">Web de la ART</label>
+                            {artWeb && (
+                              <a 
+                                href={artWeb.startsWith('http') ? artWeb : `https://${artWeb}`} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="text-[10px] text-[#468DFF] hover:underline font-bold"
+                              >
+                                Visitar sitio web del portal
+                              </a>
+                            )}
+                          </div>
                           <input
                             type="text"
                             value={artWeb}
@@ -2069,14 +2092,23 @@ export default function EmpresasClientes({ params }) {
 
                         <div className="space-y-1 md:col-span-2">
                           <label className="text-xs font-bold text-slate-600 block">Clave de Acceso</label>
-                          <input
-                            type="password"
-                            value={artClave}
-                            onChange={(e) => setArtClave(e.target.value)}
-                            placeholder="Clave"
-                            autoComplete="new-password"
-                            className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 outline-none focus:border-[#468DFF] focus:bg-white text-slate-700 transition-all"
-                          />
+                          <div className="relative">
+                            <input
+                              type={showArtClave ? 'text' : 'password'}
+                              value={artClave}
+                              onChange={(e) => setArtClave(e.target.value)}
+                              placeholder="Clave"
+                              autoComplete="new-password"
+                              className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 pr-10 outline-none focus:border-[#468DFF] focus:bg-white text-slate-700 transition-all"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowArtClave(!showArtClave)}
+                              className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700"
+                            >
+                              {showArtClave ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -2099,14 +2131,23 @@ export default function EmpresasClientes({ params }) {
 
                         <div className="space-y-1 md:col-span-2">
                           <label className="text-xs font-bold text-slate-600 block">Clave de Acceso</label>
-                          <input
-                            type="password"
-                            value={mibaClave}
-                            onChange={(e) => setMibaClave(e.target.value)}
-                            placeholder="Clave"
-                            autoComplete="new-password"
-                            className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 outline-none focus:border-[#468DFF] focus:bg-white text-slate-700 transition-all"
-                          />
+                          <div className="relative">
+                            <input
+                              type={showMibaClave ? 'text' : 'password'}
+                              value={mibaClave}
+                              onChange={(e) => setMibaClave(e.target.value)}
+                              placeholder="Clave"
+                              autoComplete="new-password"
+                              className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 pr-10 outline-none focus:border-[#468DFF] focus:bg-white text-slate-700 transition-all"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowMibaClave(!showMibaClave)}
+                              className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700"
+                            >
+                              {showMibaClave ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -2129,14 +2170,23 @@ export default function EmpresasClientes({ params }) {
 
                         <div className="space-y-1 md:col-span-2">
                           <label className="text-xs font-bold text-slate-600 block">Clave de Acceso</label>
-                          <input
-                            type="password"
-                            value={ambienteClave}
-                            onChange={(e) => setAmbienteClave(e.target.value)}
-                            placeholder="Clave"
-                            autoComplete="new-password"
-                            className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 outline-none focus:border-[#468DFF] focus:bg-white text-slate-700 transition-all"
-                          />
+                          <div className="relative">
+                            <input
+                              type={showAmbienteClave ? 'text' : 'password'}
+                              value={ambienteClave}
+                              onChange={(e) => setAmbienteClave(e.target.value)}
+                              placeholder="Clave"
+                              autoComplete="new-password"
+                              className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 pr-10 outline-none focus:border-[#468DFF] focus:bg-white text-slate-700 transition-all"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowAmbienteClave(!showAmbienteClave)}
+                              className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700"
+                            >
+                              {showAmbienteClave ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>

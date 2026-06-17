@@ -898,157 +898,164 @@ export default function ProgramaGestion({ params }) {
         ) : (
           <div className="p-6 md:p-8 space-y-6 max-w-[85%] mx-auto w-full">
             
-            {/* Toolbar superior */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 border border-slate-200/80 rounded-2xl shadow-sm">
-              <div className="flex items-center gap-2 rounded-xl bg-slate-100 p-1 border border-slate-200/80 self-start">
-                <button
-                  onClick={() => setView('list')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${view === 'list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
-                >
-                  <List className="h-4 w-4" />
-                  Programa anual
-                </button>
-                <button
-                  onClick={() => setView('calendar')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${view === 'calendar' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
-                >
-                  <CalendarDays className="h-4 w-4" />
-                  Calendario
-                </button>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-3">
-                {/* Buscador */}
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                    <Search className="h-4 w-4" />
-                  </span>
-                  <input
-                    type="text"
-                    placeholder="Buscar actividad, cliente, obs..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full sm:w-60 bg-slate-50 border border-slate-300 focus:border-[#468DFF] rounded-xl py-2 pl-9 pr-4 text-xs text-slate-800 focus:outline-none transition-all"
-                  />
-                </div>
-
-                <button
-                  onClick={() => handleAddNew()}
-                  className="flex items-center gap-2 px-4 py-2 bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-[#468DFF]/15 cursor-pointer"
-                >
-                  <Plus className="h-4 w-4" />
-                  Nueva Actividad
-                </button>
-              </div>
-            </div>
-
-            {/* Panel de Filtros rápidos */}
-            <div className="bg-white p-5 border border-slate-200/80 rounded-2xl shadow-sm space-y-4">
-              <div className="flex items-center justify-between">
-                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                  <Settings className="h-3.5 w-3.5 text-slate-500" />
-                  Filtros del Programa
-                </h4>
-                {(filterEmpresa || filterEstablecimiento || filterMonth || filterYear || filterEstado || searchQuery) && (
+            {/* Toolbar y Filtros Unificados */}
+            <div className="bg-white p-5 border border-slate-200/80 rounded-2xl shadow-sm space-y-6">
+              
+              {/* Fila Superior: Controles de Vista, Buscador y Botón Nuevo */}
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                
+                {/* Selector de Vista */}
+                <div className="flex items-center gap-2 rounded-xl bg-slate-100 p-1 border border-slate-200/80 self-start">
                   <button
-                    onClick={() => {
-                      setFilterEmpresa('');
-                      setFilterEstablecimiento('');
-                      setFilterMonth('');
-                      setFilterYear('');
-                      setFilterEstado('');
-                      setSearchQuery('');
-                    }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-200 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer"
+                    onClick={() => setView('list')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${view === 'list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
                   >
-                    <X className="h-3 w-3" />
-                    Limpiar filtros
+                    <List className="h-4 w-4" />
+                    Programa anual
                   </button>
-                )}
+                  <button
+                    onClick={() => setView('calendar')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${view === 'calendar' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                  >
+                    <CalendarDays className="h-4 w-4" />
+                    Calendario
+                  </button>
+                </div>
+
+                {/* Buscador y Nueva Actividad */}
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                      <Search className="h-4 w-4" />
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="Buscar actividad, cliente, obs..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full sm:w-60 bg-slate-50 border border-slate-300 focus:border-[#468DFF] rounded-xl py-2 pl-9 pr-4 text-xs text-slate-800 focus:outline-none transition-all"
+                    />
+                  </div>
+
+                  <button
+                    onClick={() => handleAddNew()}
+                    className="flex items-center gap-2 px-4 py-2 bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-[#468DFF]/15 cursor-pointer"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Nueva Actividad
+                  </button>
+                </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Cliente</label>
-                  <select
-                    value={filterEmpresa}
-                    onChange={(e) => { setFilterEmpresa(e.target.value); setFilterEstablecimiento(''); }}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF]"
-                  >
-                    <option value="">Todos los clientes</option>
-                    {empresas.map(e => (
-                      <option key={e.id} value={e.id}>{e.razon_social}</option>
-                    ))}
-                  </select>
+
+              {/* Fila Inferior: Filtros rápidos */}
+              <div className="border-t border-slate-100 pt-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <Settings className="h-3.5 w-3.5 text-slate-500" />
+                    Filtros del Programa
+                  </h4>
+                  {(filterEmpresa || filterEstablecimiento || filterMonth || filterYear || filterEstado || searchQuery) && (
+                    <button
+                      onClick={() => {
+                        setFilterEmpresa('');
+                        setFilterEstablecimiento('');
+                        setFilterMonth('');
+                        setFilterYear('');
+                        setFilterEstado('');
+                        setSearchQuery('');
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-200 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer"
+                    >
+                      <X className="h-3 w-3" />
+                      Limpiar filtros
+                    </button>
+                  )}
                 </div>
 
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Establecimiento</label>
-                  <select
-                    value={filterEstablecimiento}
-                    onChange={(e) => setFilterEstablecimiento(e.target.value)}
-                    disabled={!filterEmpresa}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF] disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <option value="">Todos los establecimientos</option>
-                    {allEstablecimientos.filter(est => est.empresa_id === filterEmpresa).map(e => (
-                      <option key={e.id} value={e.id}>{e.denominacion}</option>
-                    ))}
-                  </select>
-                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Cliente</label>
+                    <select
+                      value={filterEmpresa}
+                      onChange={(e) => { setFilterEmpresa(e.target.value); setFilterEstablecimiento(''); }}
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF]"
+                    >
+                      <option value="">Todos los clientes</option>
+                      {empresas.map(e => (
+                        <option key={e.id} value={e.id}>{e.razon_social}</option>
+                      ))}
+                    </select>
+                  </div>
 
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Mes</label>
-                  <select
-                    value={filterMonth}
-                    onChange={(e) => setFilterMonth(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF]"
-                  >
-                    <option value="">Todos los meses</option>
-                    <option value="01">Enero</option>
-                    <option value="02">Febrero</option>
-                    <option value="03">Marzo</option>
-                    <option value="04">Abril</option>
-                    <option value="05">Mayo</option>
-                    <option value="06">Junio</option>
-                    <option value="07">Julio</option>
-                    <option value="08">Agosto</option>
-                    <option value="09">Septiembre</option>
-                    <option value="10">Octubre</option>
-                    <option value="11">Noviembre</option>
-                    <option value="12">Diciembre</option>
-                  </select>
-                </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Establecimiento</label>
+                    <select
+                      value={filterEstablecimiento}
+                      onChange={(e) => setFilterEstablecimiento(e.target.value)}
+                      disabled={!filterEmpresa}
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF] disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <option value="">Todos los establecimientos</option>
+                      {allEstablecimientos.filter(est => est.empresa_id === filterEmpresa).map(e => (
+                        <option key={e.id} value={e.id}>{e.denominacion}</option>
+                      ))}
+                    </select>
+                  </div>
 
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Año</label>
-                  <select
-                    value={filterYear}
-                    onChange={(e) => setFilterYear(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF]"
-                  >
-                    <option value="">Todos los años</option>
-                    <option value="2024">2024</option>
-                    <option value="2025">2025</option>
-                    <option value="2026">2026</option>
-                    <option value="2027">2027</option>
-                    <option value="2028">2028</option>
-                    <option value="2029">2029</option>
-                    <option value="2030">2030</option>
-                  </select>
-                </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Mes</label>
+                    <select
+                      value={filterMonth}
+                      onChange={(e) => setFilterMonth(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF]"
+                    >
+                      <option value="">Todos los meses</option>
+                      <option value="01">Enero</option>
+                      <option value="02">Febrero</option>
+                      <option value="03">Marzo</option>
+                      <option value="04">Abril</option>
+                      <option value="05">Mayo</option>
+                      <option value="06">Junio</option>
+                      <option value="07">Julio</option>
+                      <option value="08">Agosto</option>
+                      <option value="09">Septiembre</option>
+                      <option value="10">Octubre</option>
+                      <option value="11">Noviembre</option>
+                      <option value="12">Diciembre</option>
+                    </select>
+                  </div>
 
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Estado</label>
-                  <select
-                    value={filterEstado}
-                    onChange={(e) => setFilterEstado(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF]"
-                  >
-                    <option value="">Todos los estados</option>
-                    <option value="Vigente">Vigente (verde)</option>
-                    <option value="Vencido">Vencido (rojo)</option>
-                    <option value="En análisis">En análisis</option>
-                  </select>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Año</label>
+                    <select
+                      value={filterYear}
+                      onChange={(e) => setFilterYear(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF]"
+                    >
+                      <option value="">Todos los años</option>
+                      <option value="2024">2024</option>
+                      <option value="2025">2025</option>
+                      <option value="2026">2026</option>
+                      <option value="2027">2027</option>
+                      <option value="2028">2028</option>
+                      <option value="2029">2029</option>
+                      <option value="2030">2030</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Estado</label>
+                    <select
+                      value={filterEstado}
+                      onChange={(e) => setFilterEstado(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF]"
+                    >
+                      <option value="">Todos los estados</option>
+                      <option value="Vigente">Vigente (verde)</option>
+                      <option value="Vencido">Vencido (rojo)</option>
+                      <option value="En análisis">En análisis</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>

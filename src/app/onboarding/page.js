@@ -131,10 +131,15 @@ export default function OnboardingPage() {
     // Obtener sesión y datos del perfil del usuario
     const fetchUser = async () => {
       try {
+        const cachedEmail = localStorage.getItem('onboarding_email') || '';
+        const cachedName = localStorage.getItem('onboarding_full_name') || '';
+        if (cachedEmail) setEmail(cachedEmail);
+        if (cachedName) setFullName(cachedName);
+
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           setCurrentUser(user);
-          const emailVal = user.email || '';
+          const emailVal = user.email || cachedEmail || '';
           setEmail(emailVal);
 
           let nameVal = '';
@@ -149,7 +154,7 @@ export default function OnboardingPage() {
             nameVal = profile.full_name;
             setFullName(nameVal);
           } else {
-            nameVal = user.user_metadata?.full_name || '';
+            nameVal = user.user_metadata?.full_name || cachedName || '';
             setFullName(nameVal);
           }
 
@@ -418,25 +423,89 @@ export default function OnboardingPage() {
     }
 
     try {
-      // 1. Crear el Tenant (Empresa)
-      const { data: tenant, error: tenantErr } = await supabase
+      // 1. Crear o Reutilizar el Tenant (Empresa)
+      let tenant = null;
+      const { data: existingTenant } = await supabase
         .from('tenants')
-        .insert({
-          name: finalCompanyName,
-          slug: companySlug,
-          status: 'active',
-          plan_id: selectedPlan,
-          website: website || null,
-          social_linkedin: linkedin || null,
-          social_instagram: instagram || null,
-          social_facebook: facebook || null,
-          social_tiktok: tiktok || null,
-          social_youtube: youtube || null,
-        })
-        .select()
-        .single();
+        .select('*')
+        .eq('slug', companySlug)
+        .maybeSingle();
 
-      if (tenantErr) throw tenantErr;
+      if (existingTenant) {
+        // Verificar si hay perfiles asociados a este tenant
+        const { data: assocProfiles } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('tenant_id', existingTenant.id);
+
+        const isOrphaned = !assocProfiles || assocProfiles.length === 0;
+        const belongsToMe = assocProfiles && assocProfiles.some(p => p.id === userId);
+
+        if (isOrphaned || belongsToMe) {
+          // Reutilizar el tenant existente y actualizar sus datos
+          const { data: updatedTenant, error: tenantUpdateErr } = await supabase
+            .from('tenants')
+            .update({
+              name: finalCompanyName,
+              plan_id: selectedPlan,
+              website: website || null,
+              social_linkedin: linkedin || null,
+              social_instagram: instagram || null,
+              social_facebook: facebook || null,
+              social_tiktok: tiktok || null,
+              social_youtube: youtube || null,
+            })
+            .eq('id', existingTenant.id)
+            .select()
+            .single();
+
+          if (tenantUpdateErr) throw tenantUpdateErr;
+          tenant = updatedTenant;
+        } else {
+          // Si está ocupado por otra persona, generamos un slug único
+          const newSlug = `${companySlug}-${Math.random().toString(36).substring(2, 6)}`;
+          const { data: newTenant, error: tenantErr } = await supabase
+            .from('tenants')
+            .insert({
+              name: finalCompanyName,
+              slug: newSlug,
+              status: 'active',
+              plan_id: selectedPlan,
+              website: website || null,
+              social_linkedin: linkedin || null,
+              social_instagram: instagram || null,
+              social_facebook: facebook || null,
+              social_tiktok: tiktok || null,
+              social_youtube: youtube || null,
+            })
+            .select()
+            .single();
+
+          if (tenantErr) throw tenantErr;
+          tenant = newTenant;
+        }
+      } else {
+        // No existe, crear uno nuevo
+        const { data: newTenant, error: tenantErr } = await supabase
+          .from('tenants')
+          .insert({
+            name: finalCompanyName,
+            slug: companySlug,
+            status: 'active',
+            plan_id: selectedPlan,
+            website: website || null,
+            social_linkedin: linkedin || null,
+            social_instagram: instagram || null,
+            social_facebook: facebook || null,
+            social_tiktok: tiktok || null,
+            social_youtube: youtube || null,
+          })
+          .select()
+          .single();
+
+        if (tenantErr) throw tenantErr;
+        tenant = newTenant;
+      }
 
       // 2. Subir archivos de las matrículas
       const updatedMatriculas = await Promise.all(
@@ -664,19 +733,71 @@ export default function OnboardingPage() {
     }
 
     try {
-      // 1. Crear el Tenant básico (Empresa)
-      const { data: tenant, error: tenantErr } = await supabase
+      // 1. Crear o Reutilizar el Tenant básico (Empresa)
+      let tenant = null;
+      const { data: existingTenant } = await supabase
         .from('tenants')
-        .insert({
-          name: finalCompanyName,
-          slug: companySlug,
-          status: 'active',
-          plan_id: selectedPlan,
-        })
-        .select()
-        .single();
+        .select('*')
+        .eq('slug', companySlug)
+        .maybeSingle();
 
-      if (tenantErr) throw tenantErr;
+      if (existingTenant) {
+        // Verificar si hay perfiles asociados a este tenant
+        const { data: assocProfiles } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('tenant_id', existingTenant.id);
+
+        const isOrphaned = !assocProfiles || assocProfiles.length === 0;
+        const belongsToMe = assocProfiles && assocProfiles.some(p => p.id === userId);
+
+        if (isOrphaned || belongsToMe) {
+          // Reutilizar el tenant existente y actualizar sus datos
+          const { data: updatedTenant, error: tenantUpdateErr } = await supabase
+            .from('tenants')
+            .update({
+              name: finalCompanyName,
+              plan_id: selectedPlan,
+            })
+            .eq('id', existingTenant.id)
+            .select()
+            .single();
+
+          if (tenantUpdateErr) throw tenantUpdateErr;
+          tenant = updatedTenant;
+        } else {
+          // Generar slug único
+          const newSlug = `${companySlug}-${Math.random().toString(36).substring(2, 6)}`;
+          const { data: newTenant, error: tenantErr } = await supabase
+            .from('tenants')
+            .insert({
+              name: finalCompanyName,
+              slug: newSlug,
+              status: 'active',
+              plan_id: selectedPlan,
+            })
+            .select()
+            .single();
+
+          if (tenantErr) throw tenantErr;
+          tenant = newTenant;
+        }
+      } else {
+        // Crear uno nuevo
+        const { data: newTenant, error: tenantErr } = await supabase
+          .from('tenants')
+          .insert({
+            name: finalCompanyName,
+            slug: companySlug,
+            status: 'active',
+            plan_id: selectedPlan,
+          })
+          .select()
+          .single();
+
+        if (tenantErr) throw tenantErr;
+        tenant = newTenant;
+      }
 
       // 2. Actualizar Perfil de Usuario solo con obligatorios
       const { error: profileErr } = await supabase
@@ -720,6 +841,16 @@ export default function OnboardingPage() {
     } catch (err) {
       triggerToast(err.message || 'Error al guardar los datos mínimos del perfil.', 'error');
       setLoading(false);
+    }
+  };
+
+  const handleExitWithoutSaving = async () => {
+    const confirmExit = window.confirm('¿Estás seguro de que deseas salir? Perderás todos los datos cargados.');
+    if (confirmExit) {
+      localStorage.removeItem('onboarding_email');
+      localStorage.removeItem('onboarding_full_name');
+      await supabase.auth.signOut();
+      window.location.href = '/login';
     }
   };
 
@@ -799,31 +930,29 @@ export default function OnboardingPage() {
                   <input
                     type="text"
                     required
-                    placeholder="20443332225"
+                    placeholder="20123456789"
                     value={cuit}
                     onChange={handleCuitChange}
-                    className={`w-full bg-slate-50 border ${cuitError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-slate-300 focus:border-[#468DFF] focus:ring-[#468DFF]'} rounded-xl py-3 pl-10 pr-4 text-slate-800 focus:outline-none transition-all`}
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-slate-800 focus:outline-none transition-all"
                   />
                 </div>
-                {cuitError && (
-                  <span className="text-[10px] text-red-600 mt-1 block font-semibold">{cuitError}</span>
-                )}
+                {cuitError && <p className="text-[10px] text-red-500 font-bold mt-1.5">{cuitError}</p>}
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                  Teléfono <span className="text-[#468DFF]">*</span>
+                  Teléfono Móvil <span className="text-[#468DFF]">*</span>
                 </label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                     <Phone className="h-4 w-4" />
                   </span>
                   <input
-                    type="text"
+                    type="tel"
                     required
-                    placeholder="1165432109"
+                    placeholder="1123456789"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
                     className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-slate-800 focus:outline-none transition-all"
                   />
                 </div>
@@ -834,12 +963,15 @@ export default function OnboardingPage() {
                   Fecha de Nacimiento <span className="text-[#468DFF]">*</span>
                 </label>
                 <div className="relative">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                    <Calendar className="h-4 w-4" />
+                  </span>
                   <input
                     type="date"
                     required
                     value={birthDate}
                     onChange={(e) => setBirthDate(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-3 text-slate-800 focus:outline-none text-xs transition-all"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-slate-800 focus:outline-none transition-all"
                   />
                 </div>
               </div>
@@ -858,13 +990,11 @@ export default function OnboardingPage() {
                     setPartido('');
                     setLocalidad('');
                   }}
-                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all cursor-pointer"
+                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all"
                 >
                   <option value="" disabled>Selecciona una provincia</option>
                   {PROVINCIAS_ARGENTINAS.map((prov) => (
-                    <option key={prov} value={prov}>
-                      {prov}
-                    </option>
+                    <option key={prov} value={prov}>{prov}</option>
                   ))}
                 </select>
               </div>
@@ -875,19 +1005,19 @@ export default function OnboardingPage() {
                 </label>
                 <select
                   required
-                  disabled={!provincia || partidosList.length === 0}
+                  disabled={!provincia}
                   value={partido}
                   onChange={(e) => {
                     setPartido(e.target.value);
                     setLocalidad('');
                   }}
-                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all disabled:opacity-50"
                 >
-                  <option value="" disabled>{!provincia ? 'Primero selecciona una provincia' : 'Selecciona un partido'}</option>
-                  {partidosList.map((p) => (
-                    <option key={p} value={p}>
-                      {p}
-                    </option>
+                  <option value="" disabled>
+                    {!provincia ? 'Selecciona una provincia primero' : 'Selecciona un partido'}
+                  </option>
+                  {partidosList.map((part) => (
+                    <option key={part} value={part}>{part}</option>
                   ))}
                 </select>
               </div>
@@ -898,253 +1028,242 @@ export default function OnboardingPage() {
                 </label>
                 <select
                   required
-                  disabled={!provincia || !partido}
+                  disabled={!partido}
                   value={localidad}
                   onChange={(e) => setLocalidad(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all disabled:opacity-50"
                 >
                   <option value="" disabled>
-                    {!provincia ? 'Primero selecciona una provincia' : !partido ? 'Primero selecciona un partido' : 'Selecciona una localidad'}
+                    {!partido ? 'Selecciona un partido primero' : 'Selecciona una localidad'}
                   </option>
                   {localidadesList.map((loc) => (
-                    <option key={loc} value={loc}>
-                      {loc}
-                    </option>
+                    <option key={loc} value={loc}>{loc}</option>
                   ))}
                 </select>
               </div>
             </div>
+          </div>
 
-            {/* Matrículas Profesionales */}
-            <div className="pt-4 border-t border-slate-200 space-y-6">
-              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                <Briefcase className="h-4 w-4 text-[#468DFF]" />
-                Matrículas Profesionales (Opcional)
-              </h4>
+          {/* SECCIÓN 2: MATRÍCULAS PROFESIONALES (OPCIONAL) */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
+            <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <Briefcase className="text-[#468DFF] h-5 w-5" />
+                Matrículas profesionales (opcional)
+              </h3>
+              <button
+                type="button"
+                onClick={handleAddMatricula}
+                className="py-1.5 px-3 rounded-lg border border-[#468DFF]/40 hover:bg-[#468DFF]/10 text-[#468DFF] font-semibold text-xs transition-all flex items-center gap-1.5 shadow-sm"
+              >
+                <PlusCircle className="h-3.5 w-3.5" />
+                Agregar Matrícula
+              </button>
+            </div>
 
-              {matriculas.map((m, index) => (
-                <div key={index} className="p-6 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-6 relative">
-                  {matriculas.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveMatricula(index)}
-                      className="absolute top-4 right-4 text-xs font-bold text-red-600 hover:text-red-800 flex items-center gap-1 bg-red-50 hover:bg-red-100 py-1.5 px-3 rounded-lg border border-red-200 transition-colors"
-                    >
-                      <X className="h-3 w-3" />
-                      Eliminar Matrícula
-                    </button>
-                  )}
-                  
-                  <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    Matrícula #{index + 1}
-                  </div>
-
-                  <div className="grid md:grid-cols-3 gap-6">
-                    <div className="md:col-span-2">
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                        Colegio o Institución Emisora
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="COPIME, CPSH, etc."
-                        value={m.institucion}
-                        onChange={(e) => handleMatriculaChange(index, 'institucion', e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all"
-                      />
+            {matriculas.length === 0 ? (
+              <p className="text-xs text-slate-400 italic">No has agregado ninguna matrícula aún.</p>
+            ) : (
+              <div className="space-y-8">
+                {matriculas.map((mat, idx) => (
+                  <div key={idx} className="p-6 border border-slate-200/80 rounded-xl bg-slate-50/50 space-y-6 relative hover:border-[#468DFF]/25 transition-all">
+                    <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+                      <span className="text-xs font-bold text-[#468DFF] bg-[#468DFF]/10 px-2 py-0.5 rounded">
+                        Matrícula #{idx + 1}
+                      </span>
+                      {matriculas.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveMatricula(idx)}
+                          className="text-xs font-bold text-red-500 hover:text-red-700 flex items-center gap-1"
+                        >
+                          <X className="h-3.5 w-3.5" /> Quitar
+                        </button>
+                      )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
+                    <div className="grid md:grid-cols-3 gap-6">
+                      <div className="md:col-span-2">
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                          Número
+                          Colegio o Institución Emisora
                         </label>
                         <input
                           type="text"
-                          placeholder="L000000"
-                          value={m.numero}
-                          onChange={(e) => handleMatriculaChange(index, 'numero', e.target.value)}
-                          className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all"
+                          placeholder="Ej: COPIME, CIPBA, Colegio de Ingenieros"
+                          value={mat.institucion}
+                          onChange={(e) => handleMatriculaChange(idx, 'institucion', e.target.value)}
+                          className="w-full bg-white border border-slate-300 focus:border-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none"
                         />
                       </div>
+
                       <div>
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                          Vencimiento
+                          Número de Matrícula
                         </label>
                         <input
-                          type="date"
-                          value={m.vencimiento}
-                          onChange={(e) => handleMatriculaChange(index, 'vencimiento', e.target.value)}
-                          className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-2 text-xs text-slate-800 focus:outline-none transition-all"
+                          type="text"
+                          placeholder="Ej: 12345"
+                          value={mat.numero}
+                          onChange={(e) => handleMatriculaChange(idx, 'numero', e.target.value)}
+                          className="w-full bg-white border border-slate-300 focus:border-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none"
                         />
                       </div>
                     </div>
-                  </div>
 
-                  {/* Uploads de la matrícula actual */}
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">
-                        Foto Frente Matrícula #{index + 1}
-                      </label>
-                      <div className="relative border border-dashed border-slate-300 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-50 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
-                        {m.fotoFrentePreview ? (
-                          <div className="relative w-full h-full">
-                            <img src={m.fotoFrentePreview} alt={`Frente matrícula ${index+1}`} className="w-full h-full object-contain" />
-                            <button
-                              type="button"
-                              onClick={() => handleMatriculaFileClear(index, 'Frente')}
-                              className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
-                            >
-                              Quitar
-                            </button>
-                          </div>
-                        ) : (
-                          <>
-                            <Upload className="h-5 w-5 text-slate-400 group-hover:text-[#468DFF] mb-1" />
-                            <span className="text-[10px] text-slate-500 font-medium">Frente (JPG/PNG)</span>
-                            <input
-                              type="file"
-                              accept=".png, .jpg, .jpeg"
-                              onChange={(e) => handleMatriculaFileChange(index, 'fotoFrente', 'fotoFrentePreview', e)}
-                              className="absolute inset-0 opacity-0 cursor-pointer"
-                            />
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">
-                        Foto Dorso Matrícula #{index + 1}
-                      </label>
-                      <div className="relative border border-dashed border-slate-300 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-50 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
-                        {m.fotoDorsoPreview ? (
-                          <div className="relative w-full h-full">
-                            <img src={m.fotoDorsoPreview} alt={`Dorso matrícula ${index+1}`} className="w-full h-full object-contain" />
-                            <button
-                              type="button"
-                              onClick={() => handleMatriculaFileClear(index, 'Dorso')}
-                              className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
-                            >
-                              Quitar
-                            </button>
-                          </div>
-                        ) : (
-                          <>
-                            <Upload className="h-5 w-5 text-slate-400 group-hover:text-[#468DFF] mb-1" />
-                            <span className="text-[10px] text-slate-500 font-medium">Dorso (JPG/PNG)</span>
-                            <input
-                              type="file"
-                              accept=".png, .jpg, .jpeg"
-                              onChange={(e) => handleMatriculaFileChange(index, 'fotoDorso', 'fotoDorsoPreview', e)}
-                              className="absolute inset-0 opacity-0 cursor-pointer"
-                            />
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={handleAddMatricula}
-                  className="py-2.5 px-4 rounded-xl border border-[#468DFF]/40 hover:bg-[#468DFF] hover:text-white text-[#468DFF] font-bold text-xs transition-all flex items-center gap-2 active:scale-[0.98]"
-                >
-                  <PlusCircle className="h-4 w-4" />
-                  Agregar otra matrícula
-                </button>
-              </div>
-
-              {/* Firma Digital (Separada de las matrículas en su propia sección) */}
-              <div className="pt-6 border-t border-slate-200 space-y-4">
-                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                  <FileText className="h-4 w-4 text-[#468DFF]" />
-                  Firma Digital
-                </h4>
-                <div className="grid md:grid-cols-3 gap-6">
-                  <div className="space-y-2 md:col-span-1">
-                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">
-                      Firma Digital (Imagen)
-                    </label>
-                    <div className="relative border border-dashed border-slate-300 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-50 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
-                      {fotoFirmaPreview ? (
-                        <div className="relative w-full h-full">
-                          <img src={fotoFirmaPreview} alt="Firma" className="w-full h-full object-contain" />
-                          <button
-                            type="button"
-                            onClick={() => { setFotoFirma(null); setFotoFirmaPreview(''); }}
-                            className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
-                          >
-                            Quitar
-                          </button>
-                        </div>
-                      ) : (
-                        <>
-                          <FileText className="h-5 w-5 text-slate-400 group-hover:text-[#468DFF] mb-1" />
-                          <span className="text-[10px] text-slate-500 font-medium">Subir Firma</span>
+                    <div className="grid md:grid-cols-3 gap-6">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                          Fecha de Vencimiento
+                        </label>
+                        <div className="relative">
+                          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                            <Calendar className="h-4 w-4" />
+                          </span>
                           <input
-                            type="file"
-                            accept=".png, .jpg, .jpeg"
-                            onChange={(e) => handleImageChange(e, setFotoFirma, setFotoFirmaPreview)}
-                            className="absolute inset-0 opacity-0 cursor-pointer"
+                            type="date"
+                            value={mat.vencimiento}
+                            onChange={(e) => handleMatriculaChange(idx, 'vencimiento', e.target.value)}
+                            className="w-full bg-white border border-slate-300 focus:border-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-slate-800 focus:outline-none"
                           />
-                        </>
-                      )}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
+                          Foto Matrícula (Frente)
+                        </label>
+                        <div className="relative border border-dashed border-slate-300 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-white flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
+                          {mat.fotoFrentePreview ? (
+                            <div className="relative w-full h-full">
+                              <img src={mat.fotoFrentePreview} alt="Frente" className="w-full h-full object-contain" />
+                              <button
+                                type="button"
+                                onClick={() => handleMatriculaFileClear(idx, 'Frente')}
+                                className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
+                              >
+                                Remover
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <ImageIcon className="h-5 w-5 text-slate-400 group-hover:text-[#468DFF] mb-1" />
+                              <span className="text-[11px] text-slate-500 font-medium">Subir Frente (JPG/PNG)</span>
+                              <input
+                                type="file"
+                                accept=".png, .jpg, .jpeg"
+                                onChange={(e) => handleMatriculaFileChange(idx, 'fotoFrente', 'fotoFrentePreview', e)}
+                                className="absolute inset-0 opacity-0 cursor-pointer"
+                              />
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
+                          Foto Matrícula (Dorso)
+                        </label>
+                        <div className="relative border border-dashed border-slate-300 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-white flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
+                          {mat.fotoDorsoPreview ? (
+                            <div className="relative w-full h-full">
+                              <img src={mat.fotoDorsoPreview} alt="Dorso" className="w-full h-full object-contain" />
+                              <button
+                                type="button"
+                                onClick={() => handleMatriculaFileClear(idx, 'Dorso')}
+                                className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
+                              >
+                                Remover
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <ImageIcon className="h-5 w-5 text-slate-400 group-hover:text-[#468DFF] mb-1" />
+                              <span className="text-[11px] text-slate-500 font-medium">Subir Dorso (JPG/PNG)</span>
+                              <input
+                                type="file"
+                                accept=".png, .jpg, .jpeg"
+                                onChange={(e) => handleMatriculaFileChange(idx, 'fotoDorso', 'fotoDorsoPreview', e)}
+                                className="absolute inset-0 opacity-0 cursor-pointer"
+                              />
+                            </>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
+                ))}
               </div>
-            </div>
+            )}
           </div>
 
-          {/* SECCIÓN 2: IDENTIDAD DE LA EMPRESA */}
+          {/* SECCIÓN 3: FIRMA DIGITAL & IDENTIDAD EMPRESA (OPCIONAL) */}
           <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
             <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
-              <Building className="text-[#468DFF] h-5 w-5" />
-              Identidad de la empresa
+              <Globe className="text-[#468DFF] h-5 w-5" />
+              Identidad de marca y firma (opcional)
             </h3>
 
             <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                  Nombre de Empresa o Consultora
-                </label>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-600 block mb-1">Nombre Comercial de la Consultora</label>
                 <input
                   type="text"
-                  placeholder="Ej: Delta Higiene y Seguridad"
+                  placeholder="Ej: Consultora Integral de SySO"
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all"
+                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all text-xs"
                 />
+                <p className="text-[10px] text-slate-400 font-medium mt-1 leading-relaxed">
+                  Generará tu espacio de trabajo en: <strong>app.gestionsyso.com/{companySlug}</strong>
+                </p>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                  Página Web de la Empresa
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Firma Digitalizada (para reportes en PDF)
                 </label>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                    <Globe className="h-4 w-4" />
-                  </span>
-                  <input
-                    type="url"
-                    placeholder="https://miweb.com"
-                    value={website}
-                    onChange={(e) => setWebsite(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-slate-800 focus:outline-none transition-all"
-                  />
+                <div className="relative border border-dashed border-slate-300 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-50 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
+                  {fotoFirmaPreview ? (
+                    <div className="relative w-full h-full">
+                      <img src={fotoFirmaPreview} alt="Firma" className="w-full h-full object-contain" />
+                      <button
+                        type="button"
+                        onClick={() => { setFotoFirma(null); setFotoFirmaPreview(''); }}
+                        className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
+                      >
+                        Remover
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <Upload className="h-5 w-5 text-slate-400 group-hover:text-[#468DFF] mb-1" />
+                      <span className="text-[11px] text-slate-500 font-medium">Subir firma escaneada (JPG/PNG)</span>
+                      <input
+                        type="file"
+                        accept=".png, .jpg, .jpeg"
+                        onChange={(e) => handleImageChange(e, setFotoFirma, setFotoFirmaPreview)}
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                      />
+                    </>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Redes Sociales Grid */}
-            <div className="space-y-4">
-              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Enlaces a Redes Sociales</h4>
-              
-              <div className="grid md:grid-cols-2 gap-4">
+            {/* Redes Sociales y Sitio Web */}
+            <div className="space-y-4 pt-4 border-t border-slate-100">
+              <span className="text-xs font-bold text-slate-800 block">Sitio Web y Redes Sociales</span>
+              <div className="grid md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Sitio Web</label>
+                  <input
+                    type="url"
+                    placeholder="https://consultora.com"
+                    value={website}
+                    onChange={(e) => setWebsite(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none"
+                  />
+                </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">LinkedIn</label>
                   <input
@@ -1165,14 +1284,11 @@ export default function OnboardingPage() {
                     className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none"
                   />
                 </div>
-              </div>
-
-              <div className="grid md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Facebook</label>
                   <input
                     type="url"
-                    placeholder="https://facebook.com/pagina"
+                    placeholder="https://facebook.com/usuario"
                     value={facebook}
                     onChange={(e) => setFacebook(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none"
@@ -1329,7 +1445,7 @@ export default function OnboardingPage() {
             <button
               type="button"
               disabled={loading}
-              onClick={handleSaveOnlyRequired}
+              onClick={handleExitWithoutSaving}
               className="py-3 px-6 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-800 font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50"
             >
               Salir

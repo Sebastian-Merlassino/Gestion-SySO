@@ -53,6 +53,8 @@ export default function RegisterPage() {
 
     if (isDevMode) {
       console.log('Simulando registro con:', { fullName, email });
+      localStorage.setItem('onboarding_email', email);
+      localStorage.setItem('onboarding_full_name', fullName);
       setTimeout(() => {
         setLoading(false);
         // Redirigir a onboarding
@@ -88,6 +90,8 @@ export default function RegisterPage() {
       }
 
       if (data.user) {
+        localStorage.setItem('onboarding_email', email);
+        localStorage.setItem('onboarding_full_name', fullName);
         // Redirigir directamente al onboarding para completar datos (firma, logos, matricula)
         window.location.href = '/onboarding';
       }
@@ -174,12 +178,15 @@ export default function RegisterPage() {
                 <input
                   type="password"
                   required
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder="Mínimo 8 caracteres"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-slate-800 placeholder-slate-400 focus:outline-none transition-all"
                 />
               </div>
+              <p className="text-[10px] text-slate-500 mt-1.5 font-medium leading-relaxed">
+                Debe tener al menos 8 caracteres, incluir al menos una letra mayúscula y al menos un número.
+              </p>
             </div>
 
             <div>

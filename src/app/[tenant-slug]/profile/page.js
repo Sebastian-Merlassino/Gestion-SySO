@@ -26,7 +26,14 @@ import {
   PlusCircle,
   Lock,
   Eye,
-  EyeOff
+  EyeOff,
+  Menu,
+  ClipboardList,
+  ChevronLeft,
+  ChevronRight,
+  Users,
+  Settings,
+  LogOut
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -59,6 +66,31 @@ const PROVINCIAS_ARGENTINAS = [
 export default function ProfilePage({ params }) {
   const tenantSlug = params['tenant-slug'];
   
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const collapsed = localStorage.getItem('sidebar-collapsed');
+    if (collapsed === 'true') {
+      setIsSidebarCollapsed(true);
+    }
+  }, []);
+
+  const toggleSidebar = () => {
+    const newVal = !isSidebarCollapsed;
+    setIsSidebarCollapsed(newVal);
+    localStorage.setItem('sidebar-collapsed', String(newVal));
+  };
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      window.location.href = '/login';
+    } catch (err) {
+      window.location.href = '/login';
+    }
+  };
+
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [isDevMode, setIsDevMode] = useState(false);
@@ -902,12 +934,238 @@ const [partidosList, setPartidosList] = useState([]);
   }
 
   return (
-    <div className="min-h-screen bg-[#D9D9D9] text-slate-700 flex flex-col items-center relative overflow-hidden font-sans py-12 px-4">
-      {/* Background gradients */}
-      <div className="absolute top-[-10%] left-[-20%] w-[600px] h-[600px] rounded-full bg-[#468DFF]/5 blur-[150px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-20%] w-[600px] h-[600px] rounded-full bg-[#0511F2]/5 blur-[150px] pointer-events-none" />
+    <div className="min-h-screen bg-[#D9D9D9] text-slate-700 flex font-sans">
+      
+      {/* Mobile Sidebar (Drawer Overlay) */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-40 flex md:hidden">
+          {/* Overlay background */}
+          <div 
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300"
+          />
 
-      <div className="w-full max-w-[85%] z-10">
+          {/* Drawer Panel */}
+          <aside className="relative flex-1 flex flex-col max-w-xs w-full bg-[#0D0D0D] p-6 justify-between animate-scaleUp">
+            <div className="absolute top-4 right-4">
+              <button 
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div>
+              {/* Logo Brand */}
+              <div className="flex items-center gap-3 mb-8">
+                <img 
+                  src="/brand/logo-primary.png" 
+                  alt="Logo Gestión SySO" 
+                  className="h-9 w-9 object-contain shrink-0" 
+                />
+                <span className="font-outfit text-base font-extrabold text-white tracking-tight block">Gestión SySO</span>
+              </div>
+
+              {/* Menú de navegación */}
+              <nav className="space-y-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block mb-2">Panel principal</span>
+                <a href={`/${tenantSlug}/dashboard`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                  <Building className="h-4 w-4" />
+                  Dashboard
+                </a>
+                <a href={`/${tenantSlug}/empresas`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                  <Users className="h-4 w-4" />
+                  Clientes
+                </a>
+                {(profileData?.role === 'owner' || profileData?.role === 'admin') && (
+                  <a href={`/${tenantSlug}/equipo`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                    <Briefcase className="h-4 w-4" />
+                    Equipo de Trabajo
+                  </a>
+                )}
+                 <a href={`/${tenantSlug}/programa`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                  <Calendar className="h-4 w-4" />
+                  Programa de Gestión Anual
+                </a>
+                <a href={`/${tenantSlug}/correctivas`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                  <ClipboardList className="h-4 w-4" />
+                  Acciones Correctivas
+                </a>
+                
+                <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
+                <a href={`/${tenantSlug}/profile`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10">
+                  <Settings className="h-4 w-4" />
+                  Editar Perfil
+                </a>
+              </nav>
+            </div>
+
+            {/* Footer Sidebar */}
+            <div className="pt-4 border-t border-white/10">
+              <div className="flex items-center justify-between rounded-xl bg-black/40 p-3 border border-white/5">
+                <div className="truncate pr-2">
+                  <span className="text-xs font-bold text-white block truncate">{profileData?.full_name || 'Usuario'}</span>
+                  <span className="text-[10px] text-white/40 block truncate uppercase tracking-wider">{profileData?.role || 'Profesional'}</span>
+                </div>
+                <button 
+                  onClick={handleLogout}
+                  title="Cerrar sesión"
+                  className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-600 hover:text-white transition-all cursor-pointer shrink-0"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {/* Sidebar - Barra Lateral */}
+      <aside className={`bg-[#0D0D0D] flex flex-col justify-between shrink-0 hidden md:flex transition-all duration-300 ${isSidebarCollapsed ? 'w-20' : 'w-64'}`}>
+        <div className="p-6">
+          {/* Logo Brand */}
+          <div className={`flex items-center justify-between gap-3 mb-8 ${isSidebarCollapsed ? 'flex-col' : ''}`}>
+            <div className="flex items-center gap-3">
+              <img 
+                src="/brand/logo-primary.png" 
+                alt="Logo" 
+                className="h-9 w-9 object-contain shrink-0" 
+              />
+              {!isSidebarCollapsed && (
+                <span className="font-outfit text-base font-extrabold text-white tracking-tight block animate-fade-in">Gestión SySO</span>
+              )}
+            </div>
+            <button
+              onClick={toggleSidebar}
+              title={isSidebarCollapsed ? 'Expandir barra lateral' : 'Contraer barra lateral'}
+              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all cursor-pointer"
+            >
+              {isSidebarCollapsed ? (
+                <ChevronRight className="h-4 w-4" />
+              ) : (
+                <ChevronLeft className="h-4 w-4" />
+              )}
+            </button>
+          </div>
+
+          {/* Menú de navegación */}
+          <nav className="space-y-1.5">
+            {!isSidebarCollapsed ? (
+              <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block mb-2">Panel principal</span>
+            ) : (
+              <div className="h-px bg-white/10 my-3" />
+            )}
+            <a 
+              href={`/${tenantSlug}/dashboard`}
+              title="Dashboard"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <Building className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Dashboard</span>}
+            </a>
+            <a 
+              href={`/${tenantSlug}/empresas`} 
+              title="Clientes"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <Users className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
+            </a>
+            {(profileData?.role === 'owner' || profileData?.role === 'admin') && (
+              <a 
+                href={`/${tenantSlug}/equipo`} 
+                title="Equipo de Trabajo"
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+              >
+                <Briefcase className="h-4 w-4 shrink-0" />
+                {!isSidebarCollapsed && <span className="animate-fade-in">Equipo de Trabajo</span>}
+              </a>
+            )}
+            <a 
+              href={`/${tenantSlug}/programa`} 
+              title="Programa de Gestión Anual"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <Calendar className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Programa de Gestión Anual</span>}
+            </a>
+            <a 
+              href={`/${tenantSlug}/correctivas`} 
+              title="Acciones Correctivas"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <ClipboardList className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Acciones Correctivas</span>}
+            </a>
+            
+            {!isSidebarCollapsed ? (
+              <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
+            ) : (
+              <div className="h-px bg-white/10 my-6" />
+            )}
+            <a 
+              href={`/${tenantSlug}/profile`} 
+              title="Editar Perfil"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10 ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <Settings className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Editar Perfil</span>}
+            </a>
+          </nav>
+        </div>
+
+        {/* Footer Sidebar */}
+        <div className="p-4 border-t border-white/10">
+          <div className={`flex items-center justify-between rounded-xl bg-black/40 p-3 border border-white/5 ${isSidebarCollapsed ? 'flex-col gap-2' : ''}`}>
+            {!isSidebarCollapsed && (
+              <div className="truncate pr-2">
+                <span className="text-xs font-bold text-white block truncate">{profileData?.full_name || 'Usuario'}</span>
+                <span className="text-[10px] text-white/40 block truncate uppercase tracking-wider">{profileData?.role || 'Profesional'}</span>
+              </div>
+            )}
+            <button 
+              onClick={handleLogout}
+              title="Cerrar sesión"
+              className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-600 hover:text-white transition-all cursor-pointer shrink-0"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto relative py-0 px-0">
+        {/* Background gradients */}
+        <div className="absolute top-[-10%] left-[-20%] w-[600px] h-[600px] rounded-full bg-[#468DFF]/5 blur-[150px] pointer-events-none" />
+        <div className="absolute bottom-[-10%] right-[-20%] w-[600px] h-[600px] rounded-full bg-[#0511F2]/5 blur-[150px] pointer-events-none" />
+
+        {/* Navbar */}
+        <header className="h-16 border-b border-slate-300/60 flex items-center justify-between px-6 md:px-8 bg-white/80 backdrop-blur-md sticky top-0 z-20 shrink-0">
+          <div className="flex items-center gap-3">
+            {/* Hamburger Button (Mobile Only) */}
+            <button 
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 md:hidden cursor-pointer"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <h2 className="font-outfit text-lg font-bold text-slate-900 flex items-center gap-2">
+              <Building className="h-5 w-5 text-[#468DFF]" />
+              {tenantData?.name || 'Mi Consultora'}
+            </h2>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            {/* Indicador de plan */}
+            <span className="px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/25 text-[#468DFF] text-[10px] font-semibold uppercase tracking-wider hidden sm:inline-block">
+              {tenantData?.plan_id === 'libre' ? 'Plan Libre (Ilimitado)' : tenantData?.plan_id === 'standard_25' ? 'Plan 25 Empresas' : tenantData?.plan_id === 'basic_5' ? 'Plan 5 Empresas' : 'Plan Gratis Permanente'}
+            </span>
+          </div>
+        </header>
+
+        <div className="p-6 md:p-8 space-y-8 max-w-[85%] mx-auto w-full z-10">
         
         {/* Back Link and Header */}
         <div className="flex items-center justify-between mb-8 border-b border-slate-300 pb-5">
@@ -1608,6 +1866,7 @@ const [partidosList, setPartidosList] = useState([]);
         </form>
 
       </div>
+    </main>
 
       {/* PLAN SELECTION MODAL */}
       {showPlanModal && (
