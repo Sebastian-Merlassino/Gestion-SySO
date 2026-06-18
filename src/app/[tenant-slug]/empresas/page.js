@@ -29,6 +29,8 @@ import {
   ClipboardList,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Eye,
   EyeOff
 } from 'lucide-react';
@@ -528,7 +530,8 @@ export default function EmpresasClientes({ params }) {
           equipos_elevacion: est.equipos_elevacion || [],
           equipos_izaje: est.equipos_izaje || [],
           partidosList,
-          localidadesList
+          localidadesList,
+          isCollapsed: true
         };
       }));
 
@@ -788,19 +791,32 @@ export default function EmpresasClientes({ params }) {
       customPresion: '',
       customTermicos: '',
       customElevacion: '',
-      customIzaje: ''
+      customIzaje: '',
+      isCollapsed: false
     };
     setEstablecimientos(prev => [...prev, emptyEst]);
+  };
+
+  const handleExitForm = () => {
+    showAlert(
+      'Salir sin guardar',
+      '¿Estás seguro de que deseas salir del formulario? Perderás todos los cambios cargados que no se hayan guardado.',
+      'warning',
+      () => {
+        closeAlert();
+        setView('list');
+      }
+    );
   };
 
   // Guardar todo en Supabase
   const handleSaveAll = async (e) => {
     e.preventDefault();
-    if (!razonSocial.trim()) {
+    if (!(razonSocial || '').trim()) {
       triggerToast('La Razón Social es requerida.', 'error');
       return;
     }
-    if (!cuit.trim() || cuit.length !== 11) {
+    if (!(cuit || '').trim() || cuit.length !== 11) {
       triggerToast('CUIT inválido. Debe poseer exactamente 11 números enteros.', 'error');
       return;
     }
@@ -808,7 +824,7 @@ export default function EmpresasClientes({ params }) {
     // Verificar si algún establecimiento tiene campos requeridos vacíos
     for (let i = 0; i < establecimientos.length; i++) {
       const est = establecimientos[i];
-      if (!est.direccion.trim() || !est.provincia || !est.partido) {
+      if (!(est.direccion || '').trim() || !est.provincia || !est.partido) {
         triggerToast(`El establecimiento #${i + 1} tiene campos requeridos incompletos (Dirección, Geografía).`, 'error');
         setActiveTab('establecimientos');
         return;
@@ -845,21 +861,21 @@ export default function EmpresasClientes({ params }) {
 
       const payloadEmpresa = {
         tenant_id: tenant.id,
-        razon_social: razonSocial.trim(),
-        nombre_comercial: nombreComercial.trim() || null,
+        razon_social: (razonSocial || '').trim(),
+        nombre_comercial: (nombreComercial || '').trim() || null,
         cuit: cuit,
         actividades_ciiu: activitiesCodes,
-        contactos_telefonos: telefonos.filter(t => t.valor.trim() !== ''),
-        contactos_correos: correos.filter(c => c.valor.trim() !== ''),
-        contactos_facturacion: facturacion.filter(f => f.valor.trim() !== ''),
-        art_web: artWeb.trim() || null,
-        art_usuario: artUsuario.trim() || null,
-        art_clave: artClave.trim() || null,
-        miba_usuario: mibaUsuario.trim() || null,
-        miba_clave: mibaClave.trim() || null,
-        ambiente_usuario: ambienteUsuario.trim() || null,
-        ambiente_clave: ambienteClave.trim() || null,
-        observaciones: observaciones.trim() || null,
+        contactos_telefonos: telefonos.filter(t => (t.valor || '').trim() !== ''),
+        contactos_correos: correos.filter(c => (c.valor || '').trim() !== ''),
+        contactos_facturacion: facturacion.filter(f => (f.valor || '').trim() !== ''),
+        art_web: (artWeb || '').trim() || null,
+        art_usuario: (artUsuario || '').trim() || null,
+        art_clave: (artClave || '').trim() || null,
+        miba_usuario: (mibaUsuario || '').trim() || null,
+        miba_clave: (mibaClave || '').trim() || null,
+        ambiente_usuario: (ambienteUsuario || '').trim() || null,
+        ambiente_clave: (ambienteClave || '').trim() || null,
+        observaciones: (observaciones || '').trim() || null,
         updated_at: new Date().toISOString()
       };
 
@@ -979,7 +995,7 @@ export default function EmpresasClientes({ params }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#D9D9D9] text-slate-700 flex font-sans">
+    <div className="h-screen overflow-hidden bg-[#D9D9D9] text-slate-700 flex font-sans">
       
       {/* Mobile Sidebar (Drawer Overlay) */}
       {isMobileMenuOpen && (
@@ -1692,17 +1708,41 @@ export default function EmpresasClientes({ params }) {
                           <div key={idx} className="bg-white border border-slate-200/85 rounded-2xl p-6 shadow-sm space-y-6 relative hover:border-[#468DFF]/20 transition-all">
                             
                             {/* Header Establecimiento */}
-                            <div className="flex justify-between items-start border-b border-slate-100 pb-3">
+                            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
                               <span className="text-[10px] font-bold text-[#468DFF] bg-[#468DFF]/10 border border-[#468DFF]/15 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
                                 Establecimiento #{idx + 1}
                               </span>
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveEstablecimiento(idx)}
-                                className="text-[10px] text-red-500 hover:text-white hover:bg-red-600 font-bold px-2 py-1 rounded-lg border border-red-200 hover:border-red-600 transition-all cursor-pointer flex items-center gap-1"
-                              >
-                                <Trash2 className="h-3 w-3" /> Quitar
-                              </button>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const copy = [...establecimientos];
+                                    copy[idx].isCollapsed = !copy[idx].isCollapsed;
+                                    setEstablecimientos(copy);
+                                  }}
+                                  className="text-[10px] text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 font-bold px-2.5 py-1 rounded-lg border border-slate-250 transition-all cursor-pointer flex items-center gap-1 shadow-sm"
+                                  title={est.isCollapsed ? "Expandir todos los campos" : "Contraer detalles"}
+                                >
+                                  {est.isCollapsed ? (
+                                    <>
+                                      <ChevronDown className="h-3 w-3" />
+                                      Expandir
+                                    </>
+                                  ) : (
+                                    <>
+                                      <ChevronUp className="h-3 w-3" />
+                                      Contraer
+                                    </>
+                                  )}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveEstablecimiento(idx)}
+                                  className="text-[10px] text-red-500 hover:text-white hover:bg-red-650 font-bold px-2.5 py-1 rounded-lg border border-red-200 hover:border-red-650 transition-all cursor-pointer flex items-center gap-1 shadow-sm"
+                                >
+                                  <Trash2 className="h-3 w-3" /> Quitar
+                                </button>
+                              </div>
                             </div>
 
                             {/* Datos Básicos y Geografía */}
@@ -1736,6 +1776,11 @@ export default function EmpresasClientes({ params }) {
                                   className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 outline-none focus:border-[#468DFF] focus:bg-white text-slate-700"
                                 />
                               </div>
+                            </div>
+
+                            {!est.isCollapsed && (
+                              <>
+                                <div className="grid md:grid-cols-3 gap-4">
 
                               {/* Geografía en cascada */}
                               <div className="space-y-1">
@@ -2038,6 +2083,9 @@ export default function EmpresasClientes({ params }) {
                               ))}
                             </div>
 
+                            </>
+                          )}
+
                           </div>
                         ))}
                       </div>
@@ -2226,8 +2274,15 @@ export default function EmpresasClientes({ params }) {
 
               </div>
 
-              {/* Botón de Guardado */}
-              <div className="flex justify-end pt-4 border-t border-slate-300/40">
+              {/* Botones de Acción */}
+              <div className="flex justify-between items-center pt-4 border-t border-slate-300/40">
+                <button
+                  type="button"
+                  onClick={handleExitForm}
+                  className="py-3 px-6 rounded-xl border border-red-200 bg-red-50/20 text-red-600 hover:bg-red-600 hover:text-white text-xs font-bold transition-all active:scale-[0.98] cursor-pointer flex items-center gap-2 shadow-sm"
+                >
+                  Salir sin guardar
+                </button>
                 <button
                   type="submit"
                   disabled={saving}

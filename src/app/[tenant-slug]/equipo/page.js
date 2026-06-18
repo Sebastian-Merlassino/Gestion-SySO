@@ -979,7 +979,7 @@ export default function EquipoPage({ params }) {
   const hasLogin = editingId ? !!(miembros.find(m => m.id === editingId)?.profile_id) : false;
 
   return (
-    <div className="min-h-screen bg-[#D9D9D9] text-slate-700 flex font-sans">
+    <div className="h-screen overflow-hidden bg-[#D9D9D9] text-slate-700 flex font-sans">
       
       {/* Mobile Sidebar (Drawer Overlay) */}
       {isMobileMenuOpen && (

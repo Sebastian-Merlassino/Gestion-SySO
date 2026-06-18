@@ -689,7 +689,7 @@ export default function AccionesCorrectivasPage({ params }) {
   });
 
   return (
-    <div className="min-h-screen bg-[#D9D9D9] text-slate-700 flex flex-col md:flex-row relative font-sans">
+    <div className="h-screen overflow-hidden bg-[#D9D9D9] text-slate-700 flex flex-col md:flex-row relative font-sans">
       
       {/* Menu Hamburguesa Mobile Drawer Overlay */}
       {isMobileMenuOpen && (

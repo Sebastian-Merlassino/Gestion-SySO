@@ -25,10 +25,16 @@ Se implementaron una serie de mejoras y correcciones a través del login, onboar
   - Refactorizada la eliminación de establecimientos eliminados en la UI mediante diferencia de IDs directos en base de datos.
   - Separada la inserción y actualización de establecimientos en llamadas batch independientes de `insert` y `upsert` para evitar que PostgREST asigne valores `null` a las claves primarias por defecto (`id`) en los nuevos registros durante guardados incrementales.
   - Agregado el mensaje de error explícito de la base de datos en los toasts del formulario de empresas.
+  - Asegurada toda llamada a `.trim()` en `handleSaveAll` para prevenir excepciones de tipo `Cannot read properties of undefined (reading 'trim')` ante variables no inicializadas o nulas de la DB.
+  - Implementada interfaz de acordeón colapsable en los establecimientos: por defecto se muestran colapsados exponiendo solo su Denominación y Dirección, con un botón "Expandir/Contraer" para ver/editar el resto de campos.
+  - Incorporado botón de "Salir sin guardar" en la sección inferior del formulario que advierte al usuario sobre la pérdida de datos antes de limpiar estados y volver al listado.
   - Añadidos botones de ojo (`Eye` / `EyeOff`) para revelar/ocultar contraseñas de plataformas externas (ART, MiBA y Ambiente PBA).
   - Configurado el enlace de la ART para ser clickeable y abrirse en pestaña nueva.
 - **Programa de Gestión (`programa/page.js`):**
   - Unificados los controles de vista, buscador de actividades, botón de alta y panel de filtros rápidos en un único componente de tarjeta unificada de Rich Aesthetics.
+- **Estructura y Estilos Globales (`globals.css`, layouts):**
+  - Reemplazado el contenedor general `min-h-screen` por `h-screen overflow-hidden` en las pantallas de Dashboard, Clientes, Equipo, Programa, Correctivas y Perfil, permitiendo que la barra lateral izquierda del menú permanezca estática y el contenido central tenga scroll vertical independiente.
+  - Rediseñada la barra de desplazamiento vertical de la ventana a un ancho estándar de `12px` con un color neutro amigable para mejorar la usabilidad en pantallas claras.
 
 ### Validaciones Ejecutadas
 - Compilación completa de producción de Next.js finalizada de forma exitosa (`npm run build`).

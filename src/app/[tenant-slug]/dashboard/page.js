@@ -343,7 +343,7 @@ export default function TenantDashboard({ params }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#D9D9D9] text-slate-700 flex font-sans">
+    <div className="h-screen overflow-hidden bg-[#D9D9D9] text-slate-700 flex font-sans">
       
       {/* Mobile Sidebar (Drawer Overlay) */}
       {isMobileMenuOpen && (

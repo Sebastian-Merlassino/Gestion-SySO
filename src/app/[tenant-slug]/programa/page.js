@@ -698,7 +698,7 @@ export default function ProgramaGestion({ params }) {
   const filteredEstablecimientos = allEstablecimientos.filter(e => e.empresa_id === empresaId);
 
   return (
-    <div className="min-h-screen bg-[#D9D9D9] text-slate-700 flex font-sans">
+    <div className="h-screen overflow-hidden bg-[#D9D9D9] text-slate-700 flex font-sans">
       
       {/* Mobile Sidebar (Drawer Overlay) */}
       {isMobileMenuOpen && (
