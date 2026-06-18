@@ -4,7 +4,7 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 
 ---
 
-## [2026-06-18] Estandarización de Encabezados e Importación de Temas de Capacitación
+## [2026-06-18] Estandarización de Headers, Tabla de Capacitaciones y Migración de Archivos de Drive/AppSheet
 
 ### Resumen de Cambios
 - **Estandarización de Altura y Diseño:** Unificada la altura de la barra de navegación superior (`header`) a exactamente `h-16` en todos los archivos de sección.
@@ -13,10 +13,12 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 - **Estructura Izquierda/Derecha Unificada:** Configurado el lado izquierdo para contener el título y el icono representativo de la sección, y el lado derecho para mostrar de manera consistente el nombre de la consultora activa en una tarjeta neutra y la insignia/badge correspondiente a su plan comercial.
 - **Creación de la Tabla `temas_capacitacion` en Supabase:** Diseñada y creada la tabla `public.temas_capacitacion` para almacenar temas y contenidos de capacitaciones en Higiene, Seguridad y Medio Ambiente.
 - **Importación de Datos Semilla:** Cargados los 31 temas de capacitación legalmente vigentes junto con su desglose de contenidos en la base de datos de producción de Supabase.
+- **Migración Automatizada de Archivos y Medios:** Creado y ejecutado el script `scripts/migrate-files.js` que identificó los enlaces externos (Drive y AppSheet) en `programa_anual.documento_url` y `acciones_correctivas.imagen_url`, descargó los binarios respectivos (traduciendo enlaces de Drive a enlaces directos de descarga), los subió a Supabase Storage (`documents` bucket) en rutas compatibles con RLS bajo el UUID del perfil dueño del tenant, y actualizó los registros de base de datos a sus nuevas rutas relativas.
 
 ### Decisiones Clave
 - **Coherencia Visual:** Mantener la barra superior como elemento estático-adhesivo (`sticky top-0 z-20`) con desenfoque de fondo (`backdrop-blur-md bg-white/80`) para asegurar la legibilidad del contenido central durante el scroll independiente.
 - **Estructura del Catálogo de Capacitación:** Registrar los temas como un catálogo de sólo lectura a nivel de base de datos (`public.temas_capacitacion`) con Row Level Security (RLS) habilitado y política de acceso público de selección, similar a `programa_anual_catalogo`.
+- **Rutas RLS-Compatibles en Storage:** Para satisfacer las estrictas políticas RLS del bucket `documents` (que validan que el primer directorio de la ruta del archivo pertenezca a un perfil UUID o miembro UUID del mismo tenant del usuario solicitante), el script de migración asocia dinámicamente cada recurso al UUID del perfil dueño/administrador de su respectivo `tenant_id`. Así, las rutas resultantes (ej: `${profileId}/programa_${id}.pdf`) se generan y consumen con total transparencia en la aplicación de producción mediante URLs firmadas sin violar el aislamiento multi-tenant.
 
 ### Skills Utilizadas
 - `gestion-syso-bitacora`
@@ -32,17 +34,19 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 - `[MODIFY] src/app/[tenant-slug]/profile/page.js`
 - `[MODIFY] src/app/[tenant-slug]/programa/page.js`
 - `[NEW] supabase/migrations/20260623000000_create_temas_capacitacion.sql`
+- `[NEW] scripts/migrate-files.js`
 - `[MODIFY] docs/BITACORA_DESARROLLO.md`
 
 ### Validaciones Ejecutadas
 - Compilación de producción de Next.js (`npm run build`) ejecutada localmente a través del símbolo del sistema (`cmd.exe`), verificando el empaquetado exitoso sin errores sintácticos o de types en las 9 páginas estáticas y dinámicas.
 - Ejecución de la migración SQL (`scripts/run-temas-migration.js`) en la base de datos de producción de Supabase, confirmando la creación y carga completa e íntegra de las filas.
+- Ejecución del script `scripts/migrate-files.js` completada de forma satisfactoria en producción, logrando la descarga directa de imágenes de AppSheet y PDFs de Drive, su almacenamiento en Supabase Storage, y la actualización de las rutas relativas en la base de datos para habilitar la visualización en la UI.
 
 ### Riesgos Detectados / Remanentes
 - Ninguno detectado. La homogeneidad de los headers mejora sustancialmente la experiencia visual y estructural del usuario sin introducir lógica colateral.
 
 ### Próximo Paso Recomendado
-- Proceder con la integración o consumo del catálogo de capacitaciones en los componentes de formularios que requieran planificar o documentar cursos (ej. en el programa de capacitación anual).
+- Monitorear el correcto funcionamiento de las descargas en los flujos cotidianos de la plataforma por parte de los inspectores en producción.
 
 ---
 
