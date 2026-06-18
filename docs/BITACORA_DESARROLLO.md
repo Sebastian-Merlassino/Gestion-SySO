@@ -4,21 +4,25 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 
 ---
 
-## [2026-06-18] Estandarización y Unificación de Encabezados de Sección
+## [2026-06-18] Estandarización de Encabezados e Importación de Temas de Capacitación
 
 ### Resumen de Cambios
 - **Estandarización de Altura y Diseño:** Unificada la altura de la barra de navegación superior (`header`) a exactamente `h-16` en todos los archivos de sección.
 - **Coherencia en Tipografía:** Homogeneizados los textos de los títulos de sección con la tipografía uniforme de marca (`font-outfit text-lg font-bold text-slate-900`) y alineados con sus respectivos iconos de Lucide.
 - **Resolución de Error Sintáctico:** Corregida una etiqueta `div` huérfana en `equipo/page.js` que impedía la compilación y ejecución exitosa de Next.js.
 - **Estructura Izquierda/Derecha Unificada:** Configurado el lado izquierdo para contener el título y el icono representativo de la sección, y el lado derecho para mostrar de manera consistente el nombre de la consultora activa en una tarjeta neutra y la insignia/badge correspondiente a su plan comercial.
+- **Creación de la Tabla `temas_capacitacion` en Supabase:** Diseñada y creada la tabla `public.temas_capacitacion` para almacenar temas y contenidos de capacitaciones en Higiene, Seguridad y Medio Ambiente.
+- **Importación de Datos Semilla:** Cargados los 31 temas de capacitación legalmente vigentes junto con su desglose de contenidos en la base de datos de producción de Supabase.
 
 ### Decisiones Clave
 - **Coherencia Visual:** Mantener la barra superior como elemento estático-adhesivo (`sticky top-0 z-20`) con desenfoque de fondo (`backdrop-blur-md bg-white/80`) para asegurar la legibilidad del contenido central durante el scroll independiente.
+- **Estructura del Catálogo de Capacitación:** Registrar los temas como un catálogo de sólo lectura a nivel de base de datos (`public.temas_capacitacion`) con Row Level Security (RLS) habilitado y política de acceso público de selección, similar a `programa_anual_catalogo`.
 
 ### Skills Utilizadas
 - `gestion-syso-bitacora`
 - `gestion-syso-brand-guidelines`
 - `next-best-practices`
+- `supabase`
 
 ### Archivos Modificados / Creados
 - `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
@@ -27,16 +31,18 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 - `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
 - `[MODIFY] src/app/[tenant-slug]/profile/page.js`
 - `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[NEW] supabase/migrations/20260623000000_create_temas_capacitacion.sql`
 - `[MODIFY] docs/BITACORA_DESARROLLO.md`
 
 ### Validaciones Ejecutadas
 - Compilación de producción de Next.js (`npm run build`) ejecutada localmente a través del símbolo del sistema (`cmd.exe`), verificando el empaquetado exitoso sin errores sintácticos o de types en las 9 páginas estáticas y dinámicas.
+- Ejecución de la migración SQL (`scripts/run-temas-migration.js`) en la base de datos de producción de Supabase, confirmando la creación y carga completa e íntegra de las filas.
 
 ### Riesgos Detectados / Remanentes
 - Ninguno detectado. La homogeneidad de los headers mejora sustancialmente la experiencia visual y estructural del usuario sin introducir lógica colateral.
 
 ### Próximo Paso Recomendado
-- Proceder con el commit y push de las modificaciones a la rama principal de producción.
+- Proceder con la integración o consumo del catálogo de capacitaciones en los componentes de formularios que requieran planificar o documentar cursos (ej. en el programa de capacitación anual).
 
 ---
 
