@@ -948,10 +948,23 @@ export default function EmpresasClientes({ params }) {
           return item;
         });
 
-        const { error: upsertEstsErr } = await supabase
-          .from('establecimientos')
-          .upsert(payloadEsts, { onConflict: 'id' });
-        if (upsertEstsErr) throw upsertEstsErr;
+        // Separar inserciones de actualizaciones para evitar errores de claves nulas/por defecto en PostgREST
+        const toUpdate = payloadEsts.filter(item => item.id);
+        const toInsert = payloadEsts.filter(item => !item.id);
+
+        if (toUpdate.length > 0) {
+          const { error: upsertEstsErr } = await supabase
+            .from('establecimientos')
+            .upsert(toUpdate, { onConflict: 'id' });
+          if (upsertEstsErr) throw upsertEstsErr;
+        }
+
+        if (toInsert.length > 0) {
+          const { error: insertEstsErr } = await supabase
+            .from('establecimientos')
+            .insert(toInsert);
+          if (insertEstsErr) throw insertEstsErr;
+        }
       }
 
       triggerToast('Los datos de la empresa y establecimientos se guardaron con éxito.');
@@ -959,7 +972,7 @@ export default function EmpresasClientes({ params }) {
       setView('list');
     } catch (err) {
       console.error('Error al guardar datos:', err);
-      triggerToast('Error al guardar la empresa cliente.', 'error');
+      triggerToast(err.message || 'Error al guardar la empresa cliente.', 'error');
     } finally {
       setSaving(false);
     }

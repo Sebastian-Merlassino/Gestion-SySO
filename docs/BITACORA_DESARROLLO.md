@@ -23,6 +23,8 @@ Se implementaron una serie de mejoras y correcciones a través del login, onboar
   - Integrados los componentes colapsables Desktop Sidebar, Mobile Sidebar y Navbar en el perfil para conservar consistencia de layout con el dashboard.
 - **Gestión de Empresas (`empresas/page.js`):**
   - Refactorizada la eliminación de establecimientos eliminados en la UI mediante diferencia de IDs directos en base de datos.
+  - Separada la inserción y actualización de establecimientos en llamadas batch independientes de `insert` y `upsert` para evitar que PostgREST asigne valores `null` a las claves primarias por defecto (`id`) en los nuevos registros durante guardados incrementales.
+  - Agregado el mensaje de error explícito de la base de datos en los toasts del formulario de empresas.
   - Añadidos botones de ojo (`Eye` / `EyeOff`) para revelar/ocultar contraseñas de plataformas externas (ART, MiBA y Ambiente PBA).
   - Configurado el enlace de la ART para ser clickeable y abrirse en pestaña nueva.
 - **Programa de Gestión (`programa/page.js`):**
