@@ -1310,7 +1310,7 @@ export default function ProgramaGestion({ params }) {
                                 </span>
                               </td>
 
-                              <td className="px-6 py-4 text-center">
+                              <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
                                 {act.documento_url ? (
                                   <button
                                     onClick={(e) => { e.stopPropagation(); handleViewPdf(act.documento_url); }}
