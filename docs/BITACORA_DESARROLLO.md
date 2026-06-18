@@ -4,6 +4,42 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 
 ---
 
+## [2026-06-18] Estandarización y Unificación de Encabezados de Sección
+
+### Resumen de Cambios
+- **Estandarización de Altura y Diseño:** Unificada la altura de la barra de navegación superior (`header`) a exactamente `h-16` en todos los archivos de sección.
+- **Coherencia en Tipografía:** Homogeneizados los textos de los títulos de sección con la tipografía uniforme de marca (`font-outfit text-lg font-bold text-slate-900`) y alineados con sus respectivos iconos de Lucide.
+- **Resolución de Error Sintáctico:** Corregida una etiqueta `div` huérfana en `equipo/page.js` que impedía la compilación y ejecución exitosa de Next.js.
+- **Estructura Izquierda/Derecha Unificada:** Configurado el lado izquierdo para contener el título y el icono representativo de la sección, y el lado derecho para mostrar de manera consistente el nombre de la consultora activa en una tarjeta neutra y la insignia/badge correspondiente a su plan comercial.
+
+### Decisiones Clave
+- **Coherencia Visual:** Mantener la barra superior como elemento estático-adhesivo (`sticky top-0 z-20`) con desenfoque de fondo (`backdrop-blur-md bg-white/80`) para asegurar la legibilidad del contenido central durante el scroll independiente.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción de Next.js (`npm run build`) ejecutada localmente a través del símbolo del sistema (`cmd.exe`), verificando el empaquetado exitoso sin errores sintácticos o de types en las 9 páginas estáticas y dinámicas.
+
+### Riesgos Detectados / Remanentes
+- Ninguno detectado. La homogeneidad de los headers mejora sustancialmente la experiencia visual y estructural del usuario sin introducir lógica colateral.
+
+### Próximo Paso Recomendado
+- Proceder con el commit y push de las modificaciones a la rama principal de producción.
+
+---
+
 ## [2026-06-17] Correcciones y Mejoras de Seguridad, UI, Onboarding y Credenciales
 
 ### Resumen Ejecutivo

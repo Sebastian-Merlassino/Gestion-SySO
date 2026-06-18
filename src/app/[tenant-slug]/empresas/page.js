@@ -1210,8 +1210,15 @@ export default function EmpresasClientes({ params }) {
               Clientes
             </h2>
           </div>
-          <div className="text-xs font-semibold text-slate-500 bg-slate-100 py-1.5 px-3 rounded-lg border border-slate-200">
-            {tenant?.name || 'Mi Consultora'}
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-semibold text-slate-500 bg-slate-100 py-1.5 px-3 rounded-lg border border-slate-200">
+              {tenant?.name || 'Mi Consultora'}
+            </span>
+            {tenant?.plan_id && (
+              <span className="px-2.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/25 text-[#468DFF] text-[10px] font-semibold uppercase tracking-wider hidden sm:inline-block">
+                {tenant.plan_id === 'libre' ? 'Plan Libre' : tenant.plan_id === 'standard_25' ? 'Plan 25' : tenant.plan_id === 'basic_5' ? 'Plan 5' : 'Plan Gratis'}
+              </span>
+            )}
           </div>
         </header>
 
