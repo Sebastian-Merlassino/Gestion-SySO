@@ -34,7 +34,8 @@ import {
   Menu,
   ClipboardList,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  GraduationCap
 } from 'lucide-react';
 
 const PROVINCIAS_ARGENTINAS = [
@@ -1033,6 +1034,10 @@ export default function EquipoPage({ params }) {
                   <Calendar className="h-4 w-4" />
                   Programa de Gestión Anual
                 </a>
+                <a href={`/${tenantSlug}/capacitacion`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                  <GraduationCap className="h-4 w-4" />
+                  Programa de Capacitación
+                </a>
                 <a href={`/${tenantSlug}/correctivas`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <ClipboardList className="h-4 w-4" />
                   Acciones Correctivas
@@ -1135,6 +1140,14 @@ export default function EquipoPage({ params }) {
               {!isSidebarCollapsed && <span className="animate-fade-in">Programa de Gestión Anual</span>}
             </a>
             <a 
+              href={`/${tenantSlug}/capacitacion`} 
+              title="Programa de Capacitación"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <GraduationCap className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Programa de Capacitación</span>}
+            </a>
+            <a 
               href={`/${tenantSlug}/correctivas`} 
               title="Acciones Correctivas"
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
@@ -1206,7 +1219,7 @@ export default function EquipoPage({ params }) {
           </div>
         </header>
 
-        <div className="p-6 md:p-8 space-y-8 max-w-[85%] mx-auto w-full">
+        <div className="p-6 md:p-8 space-y-8 max-w-[95%] mx-auto w-full">
           
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 space-y-4">

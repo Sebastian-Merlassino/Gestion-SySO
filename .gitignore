@@ -48,3 +48,4 @@ scripts/
 Thumbs.db
 
 .vercel
+temp/

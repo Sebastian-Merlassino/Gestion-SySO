@@ -33,7 +33,8 @@ import {
   ChevronRight,
   Users,
   Settings,
-  LogOut
+  LogOut,
+  GraduationCap
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -988,6 +989,10 @@ const [partidosList, setPartidosList] = useState([]);
                   <Calendar className="h-4 w-4" />
                   Programa de Gestión Anual
                 </a>
+                <a href={`/${tenantSlug}/capacitacion`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                  <GraduationCap className="h-4 w-4" />
+                  Programa de Capacitación
+                </a>
                 <a href={`/${tenantSlug}/correctivas`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <ClipboardList className="h-4 w-4" />
                   Acciones Correctivas
@@ -1091,6 +1096,14 @@ const [partidosList, setPartidosList] = useState([]);
               {!isSidebarCollapsed && <span className="animate-fade-in">Programa de Gestión Anual</span>}
             </a>
             <a 
+              href={`/${tenantSlug}/capacitacion`} 
+              title="Programa de Capacitación"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <GraduationCap className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Programa de Capacitación</span>}
+            </a>
+            <a 
               href={`/${tenantSlug}/correctivas`} 
               title="Acciones Correctivas"
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
@@ -1169,7 +1182,7 @@ const [partidosList, setPartidosList] = useState([]);
           </div>
         </header>
 
-        <div className="p-6 md:p-8 space-y-8 max-w-[85%] mx-auto w-full z-10">
+        <div className="p-6 md:p-8 space-y-8 max-w-[95%] mx-auto w-full z-10">
         
         {/* Back Link and Header */}
         <div className="flex items-center justify-between mb-8 border-b border-slate-300 pb-5">

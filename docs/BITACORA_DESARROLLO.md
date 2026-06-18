@@ -2,6 +2,60 @@
 
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
+## [2026-06-18] Ajustes de Layout (Ancho al 95%), Corrección de Porcentajes y Mejoras de Usabilidad en Clientes
+
+### Resumen Ejecutivo
+Se unificaron y optimizaron los layouts de todas las secciones principales para aprovechar mejor las pantallas de escritorio incrementando el ancho útil al 95%. Se corrigió un problema de visualización de porcentajes en la tabla del programa de gestión y se rediseñó la cabecera de la sección de Clientes, removiendo títulos repetitivos y agregando buscador de texto libre, filtrado, limpieza y ordenamiento interactivo de columnas. Además, se simplificó el botón de salida en el formulario de clientes a "Salir".
+
+### Cambios Realizados
+- **Ancho de Contenedores al 95%:** Modificadas las clases de contenedor principal de `max-w-[85%]` a `max-w-[95%]` en:
+  - Dashboard (`src/app/[tenant-slug]/dashboard/page.js`)
+  - Clientes (`src/app/[tenant-slug]/empresas/page.js`)
+  - Equipo de Trabajo (`src/app/[tenant-slug]/equipo/page.js`)
+  - Programa de Capacitación (`src/app/[tenant-slug]/capacitacion/page.js`)
+  - Acciones Correctivas (`src/app/[tenant-slug]/correctivas/page.js`)
+  - Perfil de Usuario (`src/app/[tenant-slug]/profile/page.js`)
+- **Corrección de Porcentaje en Programa Anual:** Corregidas filas en la base de datos de Supabase que presentaban un progreso de `1` (importado erróneamente en el script inicial a partir de valores decimales `1.0` de Excel) cambiándolas a `100` mediante un script de mantenimiento.
+- **Sección de Clientes (`empresas/page.js`):**
+  - Removido el encabezado estático de título y subtítulo por encima de la tabla para homogeneizar la vista con el resto del sistema.
+  - Implementada barra de herramientas con input de búsqueda reactiva (Razón Social, Nombre Comercial y CUIT), dropdown de filtro rápido de empresa y botón para limpiar los filtros activos.
+  - Habilitado el ordenamiento alfabético interactivo pulsando en la cabecera "Razón Social" y "C.U.I.T.".
+  - Configurado el encabezado de la tabla como fijo (`sticky top-0 z-10`) con scroll independiente.
+  - Renombrado el botón del formulario de "Salir sin guardar" a simplemente "Salir".
+
+### Validaciones Ejecutadas
+- Compilación de producción de Next.js (`npm run build`) ejecutada mediante `cmd.exe` de forma satisfactoria sin advertencias ni errores en ninguno de los bundles.
+- Script de base de datos verificado y ejecutado, actualizando 196 registros de `progreso = 1` a `progreso = 100` con éxito.
+
+### Próximo Paso Recomendado
+- Validar el enrutamiento general y flujos diarios de carga de clientes por parte de los administradores.
+
+---
+
+## [2026-06-18] Implementación del Programa de Capacitación Anual
+
+### Resumen de Cambios
+- **Módulo de Capacitación Anual:** Creada la página `src/app/[tenant-slug]/capacitacion/page.js` que contiene el listado interactivo de capacitaciones, búsqueda, filtrado por cliente, establecimiento y estado, así como el formulario completo (CRUD) dinámico.
+- **Campos y Dependencias:** Implementado selector dinámico de Razón Social y Establecimientos dependientes, selección de Temas de Capacitación predefinidos (con auto-rellenado de contenidos y soporte de edición) y Capacitadores predefinidos, además de entradas de texto libre ("Otro tema..." y "Otro capacitador..."). Soportados inputs de Puesto/Sector, Progreso (slider + número), Cronograma de inicio/fin y Observaciones.
+- **Navegación Lateral Unificada:** Añadido el enlace al "Programa de Capacitación" con el icono `GraduationCap` de Lucide en los sidebars móviles y de escritorio en Dashboard, Clientes, Equipo de Trabajo, Programa de Gestión Anual, Acciones Correctivas y Editar Perfil.
+- **Validación de Salida:** Añadido un botón normal de "Salir sin guardar" que despliega una advertencia modal centrado para evitar pérdida involuntaria de cambios.
+
+### Decisiones de Arquitectura
+- **Aislamiento Multi-tenant en Base de Datos:** La tabla `programa_capacitacion` restringe todas las operaciones al tenant del usuario activo mediante RLS (`programa_capacitacion_tenant_isolation`).
+- **Campos Opcionales en Custom:** Los campos `tema_id` y `capacitador_id` son configurados como opcionales (`ON DELETE SET NULL`) para admitir ingresos personalizados directamente sobre las columnas de texto `tema` y `capacitador`.
+
+### Archivos Modificados / Creados
+- `[NEW] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción de Next.js (`npm run build`) ejecutada mediante `cmd.exe`, comprobando que todas las 10 rutas compilan con éxito sin advertencias ni errores.
+
 ---
 
 ## [2026-06-18] Estandarización de Headers, Tabla de Capacitaciones y Migración de Archivos de Drive/AppSheet
