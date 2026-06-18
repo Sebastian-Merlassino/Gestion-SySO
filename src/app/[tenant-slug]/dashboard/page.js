@@ -400,7 +400,7 @@ export default function TenantDashboard({ params }) {
                 </a>
                 <a href={`/${tenantSlug}/capacitacion`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <GraduationCap className="h-4 w-4" />
-                  Programa de Capacitación
+                  Programa de Capacitación Anual
                 </a>
                 <a href={`/${tenantSlug}/correctivas`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <ClipboardList className="h-4 w-4" />
@@ -506,11 +506,11 @@ export default function TenantDashboard({ params }) {
             </a>
             <a 
               href={`/${tenantSlug}/capacitacion`} 
-              title="Programa de Capacitación"
+              title="Programa de Capacitación Anual"
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
             >
               <GraduationCap className="h-4 w-4 shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fade-in">Programa de Capacitación</span>}
+              {!isSidebarCollapsed && <span className="animate-fade-in">Programa de Capacitación Anual</span>}
             </a>
             <a 
               href={`/${tenantSlug}/correctivas`} 

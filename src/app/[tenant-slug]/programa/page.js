@@ -568,7 +568,10 @@ export default function ProgramaGestion({ params }) {
 
           const { error: uploadErr } = await supabase.storage
             .from('documents')
-            .upload(filePath, documentoFile, { upsert: true });
+            .upload(filePath, documentoFile, { 
+              upsert: true,
+              contentType: 'application/pdf'
+            });
 
           if (uploadErr) throw uploadErr;
           finalDocUrl = filePath;
@@ -680,7 +683,7 @@ export default function ProgramaGestion({ params }) {
     try {
       const { data, error } = await supabase.storage
         .from('documents')
-        .createSignedUrl(path, 3600);
+        .createSignedUrl(path, 3600, { download: false });
       
       if (error) throw error;
       if (data?.signedUrl) {
@@ -771,7 +774,7 @@ export default function ProgramaGestion({ params }) {
                 </a>
                 <a href={`/${tenantSlug}/capacitacion`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <GraduationCap className="h-4 w-4" />
-                  Programa de Capacitación
+                  Programa de Capacitación Anual
                 </a>
                 <a href={`/${tenantSlug}/correctivas`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <ClipboardList className="h-4 w-4" />
@@ -864,11 +867,11 @@ export default function ProgramaGestion({ params }) {
             </a>
             <a 
               href={`/${tenantSlug}/capacitacion`} 
-              title="Programa de Capacitación"
+              title="Programa de Capacitación Anual"
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
             >
               <GraduationCap className="h-4 w-4 shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fade-in">Programa de Capacitación</span>}
+              {!isSidebarCollapsed && <span className="animate-fade-in">Programa de Capacitación Anual</span>}
             </a>
             <a 
               href={`/${tenantSlug}/correctivas`} 
