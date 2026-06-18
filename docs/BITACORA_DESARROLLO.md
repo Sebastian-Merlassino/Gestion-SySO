@@ -15,12 +15,15 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 - **Importación de Datos Semilla:** Cargados los 31 temas de capacitación legalmente vigentes junto con su desglose de contenidos en la base de datos de producción de Supabase.
 - **Migración Automatizada de Archivos y Medios:** Creado y ejecutado el script `scripts/migrate-files.js` que identificó los enlaces externos (Drive y AppSheet) en `programa_anual.documento_url` and `acciones_correctivas.imagen_url`, descargó los binarios respectivos (traduciendo enlaces de Drive a enlaces directos de descarga), los subió a Supabase Storage (`documents` bucket) en rutas compatibles con RLS bajo el UUID del perfil dueño del tenant, y actualizó los registros de base de datos a sus nuevas rutas relativas.
 - **Prevención de Propagación de Clics en Programa Anual:** Añadido `onClick={(e) => e.stopPropagation()}` a la celda `td` de la columna de documentos en [programa/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/programa/page.js). Esto previene que al pulsar el icono del PDF o sus bordes se propague el evento al contenedor de la fila `tr` (que dispara la apertura del formulario de edición/detalle), asegurando que el documento cargado se abra limpiamente al tocar el icono.
+- **Carga de Archivos desde Enlace de Google Drive:** Añadida una nueva pestaña/opción de carga en el formulario del programa de gestión que permite al usuario ingresar una URL compartida de Google Drive en lugar de seleccionar un archivo local de su dispositivo.
+- **API Server-Side de Descarga e Importación:** Creado el endpoint de API `POST /api/upload-from-url` que se ejecuta en el servidor (evitando limitaciones de CORS del navegador), descarga el archivo desde el enlace provisto por el usuario (traduciendo URLs de Drive a descargas directas) y lo sube directamente al bucket de storage de Supabase, devolviendo la ruta correspondiente de forma segura y automática.
 
 ### Decisiones Clave
 - **Coherencia Visual:** Mantener la barra superior como elemento estático-adhesivo (`sticky top-0 z-20`) con desenfoque de fondo (`backdrop-blur-md bg-white/80`) para asegurar la legibilidad del contenido central durante el scroll independiente.
 - **Estructura del Catálogo de Capacitación:** Registrar los temas como un catálogo de sólo lectura a nivel de base de datos (`public.temas_capacitacion`) con Row Level Security (RLS) habilitado y política de acceso público de selección, similar a `programa_anual_catalogo`.
-- **Rutas RLS-Compatibles en Storage:** Para satisfacer las estrictas políticas RLS del bucket `documents` (que validan que el primer directorio de la ruta del archivo pertenezca a un perfil UUID o miembro UUID del mismo tenant del usuario solicitante), el script de migración asocia dinámicamente cada recurso al UUID del perfil dueño/administrador de su respectivo `tenant_id`. Así, las rutas resultantes (ej: `${profileId}/programa_${id}.pdf`) se generan y consumen con total transparencia en la aplicación de producción mediante URLs firmadas sin violar el aislamiento multi-tenant.
+- **Rutas RLS-Compatibles en Storage:** Para satisfacer las estrictas políticas RLS del bucket `documents` (que validan que el primer directorio de la ruta del archivo pertenezca a un perfil UUID o miembro UUID del mismo tenant del usuario solicitante), el script de migración y la API de importación asocian dinámicamente cada recurso al UUID del perfil dueño/administrador de su respectivo `tenant_id`. Así, las rutas resultantes (ej: `${profileId}/programa_${id}.pdf`) se generan y consumen con total transparencia en la aplicación de producción mediante URLs firmadas sin violar el aislamiento multi-tenant.
 - **Aislamiento de Clics de Celdas Interactivas:** Toda celda de tabla con botones o enlaces interactivos independientes (`documentos`, `acciones`) debe capturar y detener la propagación del evento click en su nodo contenedor `td`, impidiendo efectos colaterales de selección de fila.
+- **Evitar Limitaciones CORS del Cliente:** Al realizar la descarga de archivos compartidos de Drive en el servidor (a través de `/api/upload-from-url`) en lugar de en el navegador del cliente, se esquivan las restricciones CORS impuestas por los servidores de Google, garantizando un flujo de importación confiable.
 
 ### Skills Utilizadas
 - `gestion-syso-bitacora`
@@ -37,6 +40,7 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 - `[MODIFY] src/app/[tenant-slug]/programa/page.js`
 - `[NEW] supabase/migrations/20260623000000_create_temas_capacitacion.sql`
 - `[NEW] scripts/migrate-files.js`
+- `[NEW] src/app/api/upload-from-url/route.js`
 - `[MODIFY] docs/BITACORA_DESARROLLO.md`
 
 ### Validaciones Ejecutadas

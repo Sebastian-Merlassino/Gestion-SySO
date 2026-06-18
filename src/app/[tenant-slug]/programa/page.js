@@ -105,6 +105,8 @@ export default function ProgramaGestion({ params }) {
   const [documentoUrl, setDocumentoUrl] = useState('');
   const [observaciones, setObservaciones] = useState('');
   const [formErrors, setFormErrors] = useState({});
+  const [uploadType, setUploadType] = useState('local'); // 'local' or 'drive'
+  const [driveLink, setDriveLink] = useState('');
 
   // Modales y Toasts
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
@@ -476,6 +478,8 @@ export default function ProgramaGestion({ params }) {
     setFechaRealizacion(item.fecha_realizacion || '');
     setDocumentoUrl(item.documento_url || '');
     setDocumentoFile(null);
+    setUploadType('local');
+    setDriveLink('');
     setObservaciones(item.observaciones || '');
     setFormErrors({});
     setShowForm(true);
@@ -495,6 +499,8 @@ export default function ProgramaGestion({ params }) {
     setFechaRealizacion('');
     setDocumentoUrl('');
     setDocumentoFile(null);
+    setUploadType('local');
+    setDriveLink('');
     setObservaciones('');
     setFormErrors({});
     setShowForm(true);
@@ -521,7 +527,28 @@ export default function ProgramaGestion({ params }) {
       let finalDocUrl = documentoUrl;
 
       // 1. Si hay un nuevo archivo cargado, subirlo
-      if (documentoFile) {
+      if (uploadType === 'drive' && driveLink) {
+        if (isDevMode) {
+          finalDocUrl = 'mock-drive-uploaded-pdf-path';
+        } else {
+          // Call server-side API to download and upload Drive URL
+          const uploadRes = await fetch('/api/upload-from-url', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              url: driveLink,
+              tenantId: tenant.id
+            })
+          });
+          const uploadData = await uploadRes.json();
+          if (!uploadRes.ok || uploadData.error) {
+            throw new Error(uploadData.error || 'Error al importar desde Google Drive.');
+          }
+          finalDocUrl = uploadData.filePath;
+        }
+      } else if (documentoFile) {
         if (isDevMode) {
           finalDocUrl = 'mock-uploaded-pdf-path';
         } else {
@@ -1580,14 +1607,56 @@ export default function ProgramaGestion({ params }) {
                     </div>
                   ) : null}
 
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    onChange={(e) => setDocumentoFile(e.target.files[0])}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-xs text-slate-600 focus:outline-none file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:uppercase file:bg-[#468DFF]/10 file:text-[#468DFF] hover:file:bg-[#468DFF]/20 file:cursor-pointer"
-                  />
-                  <p className="text-[9px] text-slate-400 mt-1 italic">Solo formato PDF. Tamaño máximo de 10 MB.</p>
-                </div>
+                    <div className="flex items-center gap-2 mb-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setUploadType('local')}
+                        className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+                          uploadType === 'local'
+                            ? 'bg-[#468DFF]/10 text-[#468DFF] border-[#468DFF]/30'
+                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        Archivo Local (PC/Celular)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setUploadType('drive')}
+                        className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+                          uploadType === 'drive'
+                            ? 'bg-[#468DFF]/10 text-[#468DFF] border-[#468DFF]/30'
+                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        Vincular Google Drive
+                      </button>
+                    </div>
+
+                    {uploadType === 'local' ? (
+                      <>
+                        <input
+                          type="file"
+                          accept=".pdf"
+                          onChange={(e) => setDocumentoFile(e.target.files[0])}
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-xs text-slate-600 focus:outline-none file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:uppercase file:bg-[#468DFF]/10 file:text-[#468DFF] hover:file:bg-[#468DFF]/20 file:cursor-pointer"
+                        />
+                        <p className="text-[9px] text-slate-400 mt-1 italic">Solo formato PDF. Tamaño máximo de 10 MB.</p>
+                      </>
+                    ) : (
+                      <>
+                        <input
+                          type="url"
+                          placeholder="Pega el enlace compartido de Google Drive..."
+                          value={driveLink}
+                          onChange={(e) => setDriveLink(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-2.5 px-3 text-xs text-slate-800 focus:outline-none transition-all"
+                        />
+                        <p className="text-[9px] text-slate-400 mt-1 italic">
+                          El archivo debe ser público en Drive ("Cualquier persona con el enlace"). Se convertirá y guardará automáticamente.
+                        </p>
+                      </>
+                    )}
+                  </div>
 
                 {/* 9. Observaciones */}
                 <div>
