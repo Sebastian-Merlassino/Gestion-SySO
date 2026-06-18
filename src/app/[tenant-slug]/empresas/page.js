@@ -2279,7 +2279,7 @@ export default function EmpresasClientes({ params }) {
                 <button
                   type="button"
                   onClick={handleExitForm}
-                  className="py-3 px-6 rounded-xl border border-red-200 bg-red-50/20 text-red-600 hover:bg-red-600 hover:text-white text-xs font-bold transition-all active:scale-[0.98] cursor-pointer flex items-center gap-2 shadow-sm"
+                  className="py-3 px-6 rounded-xl border border-slate-300/80 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 text-xs font-bold transition-all active:scale-[0.98] cursor-pointer flex items-center gap-2 shadow-sm"
                 >
                   Salir sin guardar
                 </button>
