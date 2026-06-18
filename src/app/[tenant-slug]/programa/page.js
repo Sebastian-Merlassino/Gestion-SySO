@@ -680,6 +680,12 @@ export default function ProgramaGestion({ params }) {
       return;
     }
 
+    // Si es una URL completa (como Google Drive, spreadsheets, etc.), abrirla directamente en otra pestaña
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      window.open(path, '_blank');
+      return;
+    }
+
     try {
       const { data, error } = await supabase.storage
         .from('documents')
