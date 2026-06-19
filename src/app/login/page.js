@@ -153,13 +153,6 @@ export default function LoginPage() {
       <div className="absolute bottom-[-20%] right-[-20%] w-[600px] h-[600px] rounded-full bg-[#0511F2]/5 blur-[180px] pointer-events-none" />
 
       <div className="w-full max-w-md z-10">
-        {/* Header */}
-        <div className="text-center mb-6">
-          <p className="text-sm text-slate-600 mt-2 font-medium">
-            Ingresá a tu panel de seguridad e higiene laboral
-          </p>
-        </div>
-
         {/* Form Card */}
         <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-xl">
           <img
@@ -167,8 +160,12 @@ export default function LoginPage() {
             alt="Logo Gestión SySO"
             width="220"
             style={{ width: '220px', height: 'auto', display: 'block', margin: '0 auto' }}
-            className="mx-auto object-contain mb-6"
+            className="mx-auto object-contain mb-4"
           />
+
+          <p className="text-sm text-slate-600 font-medium text-center mb-6">
+            Ingresá a tu panel de Higiene y Seguridad laboral
+          </p>
 
           {isDevMode && (
             <div className="mb-6 p-3 rounded-lg border border-amber-500/20 bg-amber-50 text-amber-700 text-xs">
