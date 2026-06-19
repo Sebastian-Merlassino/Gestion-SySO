@@ -465,6 +465,48 @@ export default function ProgramaGestion({ params }) {
     }
   };
 
+  // Cambiar tipo de carga con aviso si ya hay documento guardado
+  const handleSwitchUploadType = (newType) => {
+    if (documentoUrl && newType !== uploadType) {
+      setConfirmModal({
+        show: true,
+        title: 'Reemplazar documento existente',
+        message: 'Ya hay un documento guardado. Si cambiás el método de carga y guardás, el documento actual será reemplazado. ¿Querés continuar?',
+        confirmText: 'Continuar',
+        onConfirm: () => {
+          setUploadType(newType);
+          setDocumentoFile(null);
+          setDriveLink('');
+          setConfirmModal({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Eliminar' });
+        }
+      });
+    } else {
+      setUploadType(newType);
+      setDocumentoFile(null);
+      setDriveLink('');
+    }
+  };
+
+  // Seleccionar archivo local con aviso si ya hay documento guardado
+  const handleFileChangeWithConfirm = (file) => {
+    if (!file) return;
+    if (documentoUrl) {
+      setConfirmModal({
+        show: true,
+        title: 'Reemplazar documento existente',
+        message: `Ya hay un documento guardado. Al guardar el formulario con este nuevo archivo ("${file.name}"), el documento anterior será reemplazado. ¿Confirmás el reemplazo?`,
+        confirmText: 'Reemplazar',
+        onConfirm: () => {
+          setDocumentoFile(file);
+          setDocumentoUrl(''); // Limpiar la URL anterior para reflejar el reemplazo
+          setConfirmModal({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Eliminar' });
+        }
+      });
+    } else {
+      setDocumentoFile(file);
+    }
+  };
+
   // 5. Cargar para Editar
   const handleEdit = (item) => {
     setEditingId(item.id);
@@ -696,24 +738,45 @@ export default function ProgramaGestion({ params }) {
       return;
     }
 
-    // Si es una URL completa (como Google Drive, spreadsheets, etc.), abrirla directamente en otra pestaña
+    // Si es una URL completa (Drive, Dropbox, etc.), abrirla directamente en otra pestaña
     if (path.startsWith('http://') || path.startsWith('https://')) {
-      window.open(path, '_blank');
+      // Transformar links de Google Drive para vista previa directa
+      let openUrl = path;
+      const driveMatch = path.match(/\/file\/d\/([^/]+)/);
+      if (driveMatch) {
+        openUrl = `https://drive.google.com/file/d/${driveMatch[1]}/preview`;
+      }
+      window.open(openUrl, '_blank');
       return;
     }
 
+    // Archivo almacenado en Supabase Storage: generar URL firmada y forzar apertura inline via blob
     try {
       const { data, error } = await supabase.storage
         .from('documents')
-        .createSignedUrl(path, 3600, { download: false });
-      
+        .createSignedUrl(path, 3600);
+
       if (error) throw error;
-      if (data?.signedUrl) {
-        window.open(data.signedUrl, '_blank');
+      if (!data?.signedUrl) {
+        triggerToast('No se pudo obtener el enlace del documento.', 'error');
+        return;
+      }
+
+      // Hacer fetch del PDF y abrir como blob para evitar Content-Disposition: attachment
+      const response = await fetch(data.signedUrl);
+      if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const newTab = window.open(blobUrl, '_blank');
+      // Liberar el blob URL después de que la pestaña lo haya cargado
+      if (newTab) {
+        newTab.onload = () => URL.revokeObjectURL(blobUrl);
+        // Fallback: revocar después de 30s si onload no dispara
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
       }
     } catch (err) {
-      console.error('Error al obtener URL firmada:', err);
-      triggerToast('No se pudo abrir el documento PDF.', 'error');
+      console.error('Error al abrir el documento:', err);
+      triggerToast('No se pudo abrir el documento. Verificá tu conexión.', 'error');
     }
   };
 
@@ -1197,7 +1260,7 @@ export default function ProgramaGestion({ params }) {
                     <div className="flex items-center gap-2 mb-2.5">
                       <button
                         type="button"
-                        onClick={() => setUploadType('local')}
+                        onClick={() => handleSwitchUploadType('local')}
                         className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
                           uploadType === 'local'
                             ? 'bg-[#468DFF]/10 text-[#468DFF] border-[#468DFF]/30'
@@ -1208,7 +1271,7 @@ export default function ProgramaGestion({ params }) {
                       </button>
                       <button
                         type="button"
-                        onClick={() => setUploadType('drive')}
+                        onClick={() => handleSwitchUploadType('drive')}
                         className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
                           uploadType === 'drive'
                             ? 'bg-[#468DFF]/10 text-[#468DFF] border-[#468DFF]/30'
@@ -1224,7 +1287,7 @@ export default function ProgramaGestion({ params }) {
                         <input
                           type="file"
                           accept=".pdf"
-                          onChange={(e) => setDocumentoFile(e.target.files[0])}
+                          onChange={(e) => handleFileChangeWithConfirm(e.target.files[0])}
                           className="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-xs text-slate-600 focus:outline-none file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:uppercase file:bg-[#468DFF]/10 file:text-[#468DFF] hover:file:bg-[#468DFF]/20 file:cursor-pointer"
                         />
                         <p className="text-[9px] text-slate-400 mt-1 italic">Solo formato PDF. Tamaño máximo de 10 MB.</p>

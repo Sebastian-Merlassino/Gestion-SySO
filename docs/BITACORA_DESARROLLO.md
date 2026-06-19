@@ -2,7 +2,39 @@
 
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
+## [2026-06-19] Corrección de Visualización de Documentos en Programa de Gestión Anual
+
+### Resumen de Cambios
+- **Bug corregido — apertura forzada de descarga en columna "Doc":** La función `handleViewPdf` en `programa/page.js` fue reescrita para resolver dos problemas reportados:
+  1. **Archivos en Supabase Storage que forzaban descarga:** El bucket `documents` tiene por defecto `Content-Disposition: attachment`, lo que hacía que al generar una `signedUrl` y abrirla con `window.open`, el navegador descargase el archivo en lugar de mostrarlo inline. Se solucionó haciendo un `fetch()` de la URL firmada, creando un `Blob URL` mediante `URL.createObjectURL()`, y abriendo ese blob en una nueva pestaña. El blob URL es temporal y se revoca automáticamente (con `onload` y un fallback de 30 segundos).
+  2. **Links de Google Drive que mostraban errores o pantallas de descarga:** Los links directos de Drive (`drive.google.com/file/d/ID/view`) se transforman automáticamente al formato de previsualización embebida (`/preview`) antes de abrirlos, lo que permite visualización directa en el navegador sin errores de política de Drive.
+- **Build verificado:** Compilación de producción exitosa (`npm.cmd run build`), sin errores ni advertencias.
+
+### Decisiones Clave
+- **Blob URL sobre signedUrl directa:** Se priorizó la experiencia del usuario (visualización inline del PDF) sobre la simpleza del código. El enfoque de blob es más robusto que depender de la configuración de `Content-Disposition` del bucket en Supabase, que no se puede cambiar desde el cliente.
+- **Transformación de links de Drive:** Se detectan automáticamente los links de Drive con regex, transformándolos a `/preview` sin intervención del usuario. Esto es transparente y compatible con links ya almacenados en la base de datos.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `supabase`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js` — función `handleViewPdf` reescrita (líneas 691–736)
+
+### Validaciones Ejecutadas
+- Compilación de producción local (`npm.cmd run build`) completada con éxito, ruta `/[tenant-slug]/programa` incluida en el output.
+- Revisión de código: la lógica de fetch/blob es estándar Web API, compatible con todos los navegadores modernos.
+
+### Riesgos Detectados / Remanentes
+- Si el usuario tiene activado el bloqueador de pop-ups, la nueva pestaña puede no abrirse. El error no produce un toast de aviso en ese caso (el navegador bloquea silenciosamente). A considerar en futuras iteraciones: usar un `<a>` con `href` y `target="_blank"` en lugar de `window.open`.
+- Los links de Google Docs/Sheets (no Drive) no pasan por la transformación a `/preview`; se abren tal cual. Esto está bien para documentos que no son archivos PDF binarios.
+
+### Próximo Paso Recomendado
+- Verificar en producción que los PDF almacenados abran correctamente en el navegador (no como descarga) con un usuario real de Supabase autenticado.
+- Considerar agregar la misma lógica de `handleViewPdf` mejorada en `capacitacion/page.js` y `correctivas/page.js` si también tienen columna de documentos.
+
 ## [2026-06-19] Unificación de Filtros de Búsqueda y Rediseño de Formulario Inline de Programa Anual
+
 
 ### Resumen de Cambios
 - **Rediseño Inline del Formulario de Programa Anual:** Modificada la página `programa/page.js` para cambiar el layout deslizante (slide-over drawer) por un contenedor inline de pantalla completa que se renderiza condicionalmente en base a `showForm` (igual que en Capacitaciones y Acciones Correctivas).
