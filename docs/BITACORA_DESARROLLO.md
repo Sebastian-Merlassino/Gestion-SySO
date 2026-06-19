@@ -5,19 +5,25 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 ## [2026-06-18] Redirecciones de Autenticación de Supabase y Personalización de Plantillas de Correo
 
 ### Resumen Ejecutivo
-Se implementó soporte para la redirección dinámica en el registro de cuentas de usuario y se diseñaron plantillas HTML responsivas y adaptadas a la marca para la verificación de cuenta y el restablecimiento de contraseñas. Además, se redactó una guía detallada para que el administrador configure el servidor SMTP propio de su dominio y las URLs de redirección permitidas en la consola de producción de Supabase, solucionando los enlaces fallidos dirigidos a localhost.
+Se implementó soporte para la redirección dinámica en el registro de cuentas de usuario y se diseñaron plantillas HTML responsivas y adaptadas a la marca para la verificación de cuenta y el restablecimiento de contraseñas. Además, se redactó una guía detallada para que el administrador configure el servidor SMTP propio de su dominio y las URLs de redirección permitidas en la consola de producción de Supabase, solucionando los enlaces fallidos dirigidos a localhost. Por último, se homogeneizó el diseño de la página de restablecimiento de contraseña para coincidir con la del login.
 
 ### Cambios Realizados
 - **Formulario de Registro (`register/page.js`):** Añadido el parámetro `emailRedirectTo` en la invocación de `supabase.auth.signUp`, apuntando dinámicamente al origen actual (`window.location.origin/login`), lo que fuerza a Supabase a redirigir al usuario al login una vez que la cuenta sea verificada.
+- **Formulario de Restablecimiento de Contraseña (`reset-password/page.js`):**
+  - Removido el indicador gráfico en forma de burbuja con la letra "H".
+  - Integrado el logotipo de la marca (`logo-black.png`) en el encabezado de la tarjeta.
+  - Añadido soporte interactivo de toggles de visibilidad (icono del ojo) para la contraseña y confirmación de la contraseña.
+  - Implementada regla de validación de contraseña robusta (mínimo 8 caracteres, 1 mayúscula, 1 número) y su texto informativo correspondiente.
+  - Modificado el cuadro de éxito final eliminando toda referencia a la base de datos de Supabase por un mensaje genérico profesional: *"Tu clave ha sido actualizada con éxito. Ya podés ingresar a tu panel."*.
 - **Plantillas de Correo HTML:** Diseñadas dos plantillas de correo responsivas e integradas bajo la paleta cromática de marca (`#468DFF`, `#0511F2`) y tipografías corporativas, con enlaces seguros y el logotipo de Gestión SySO para:
   - Verificación de cuenta nueva (Confirm Signup).
   - Restablecimiento de contraseña olvidada (Reset Password).
 
 ### Validaciones Ejecutadas
-- Compilación de producción local exitosa (`npm.cmd run build`) confirmando que el nuevo parámetro no genera fallas sintácticas ni rotura en los bundles.
+- Compilación de producción local exitosa (`npm.cmd run build`) confirmando que los nuevos parámetros y la reestructuración de la UI no generan fallas sintácticas ni rotura en los bundles.
 
 ### Próximo Paso Recomendado
-- Configurar las URLs permitidas (`https://app.gestionsyso.com/**`) y los parámetros SMTP del dominio personalizado en la consola web de Supabase.
+- Validar el flujo de recuperación de clave completo en producción y verificar que el diseño y usabilidad sean óptimos en computadoras y dispositivos móviles.
 
 ---
 
