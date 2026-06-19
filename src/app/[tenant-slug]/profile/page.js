@@ -34,7 +34,8 @@ import {
   Users,
   Settings,
   LogOut,
-  GraduationCap
+  GraduationCap,
+  Flame
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -997,6 +998,10 @@ const [partidosList, setPartidosList] = useState([]);
                   <ClipboardList className="h-4 w-4" />
                   Acciones Correctivas
                 </a>
+                <a href={`/${tenantSlug}/extintores`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                  <Flame className="h-4 w-4" />
+                  Extintores
+                </a>
                 
                 <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
                 <a href={`/${tenantSlug}/profile`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10">
@@ -1110,6 +1115,14 @@ const [partidosList, setPartidosList] = useState([]);
             >
               <ClipboardList className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Acciones Correctivas</span>}
+            </a>
+            <a 
+              href={`/${tenantSlug}/extintores`} 
+              title="Extintores"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <Flame className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Extintores</span>}
             </a>
             
             {!isSidebarCollapsed ? (

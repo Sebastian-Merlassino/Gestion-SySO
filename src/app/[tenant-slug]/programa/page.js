@@ -32,7 +32,8 @@ import {
   ClipboardList,
   GraduationCap,
   ArrowLeft,
-  Sliders
+  Sliders,
+  Flame
 } from 'lucide-react';
 
 const MONTH_NAMES = [
@@ -101,6 +102,7 @@ export default function ProgramaGestion({ params }) {
   const [descripcion, setDescripcion] = useState('');
   const [marcoLegal, setMarcoLegal] = useState('');
   const [responsableId, setResponsableId] = useState('');
+  const [responsableCustom, setResponsableCustom] = useState('');
   const [progreso, setProgreso] = useState(0);
   const [fechaPlanificada, setFechaPlanificada] = useState('');
   const [fechaRealizacion, setFechaRealizacion] = useState('');
@@ -254,6 +256,7 @@ export default function ProgramaGestion({ params }) {
         descripcion: 'Análisis bacteriológico de agua de consumo humano (Semestral)',
         marco_legal: 'Ley 19.587 - Dec. 351/79 - Res. 905/15',
         responsable_id: 'mock-miembro-1',
+        responsable: 'Ing. Carlos Gómez',
         progreso: 100,
         fecha_planificada: '2026-06-10',
         fecha_realizacion: '2026-06-09',
@@ -269,6 +272,7 @@ export default function ProgramaGestion({ params }) {
         descripcion: 'Control trimestral de Extintores (verificación visual de la presión por observación del manómetro, de partes mecánicas, válvula, precinto, marbete, manga, etc.)',
         marco_legal: 'Ley 19.587 - Dec. 351/79 - Res. 905/15',
         responsable_id: 'mock-miembro-2',
+        responsable: 'Lic. Laura Martínez',
         progreso: 40,
         fecha_planificada: '2026-06-25',
         fecha_realizacion: null,
@@ -284,6 +288,7 @@ export default function ProgramaGestion({ params }) {
         descripcion: 'Controlar y verificar la Puesta a tierra y continuidad de masas',
         marco_legal: 'Dec. 351/79 - Res. 900/15 - Res. 905/15',
         responsable_id: 'mock-miembro-1',
+        responsable: 'Ing. Carlos Gómez',
         progreso: 0,
         fecha_planificada: '2026-06-05',
         fecha_realizacion: null,
@@ -411,10 +416,8 @@ export default function ProgramaGestion({ params }) {
       valA = (a.descripcion || '').toLowerCase();
       valB = (b.descripcion || '').toLowerCase();
     } else if (sortField === 'responsable') {
-      const respA = miembros.find(m => m.id === a.responsable_id);
-      const respB = miembros.find(m => m.id === b.responsable_id);
-      valA = respA ? respA.full_name.toLowerCase() : '';
-      valB = respB ? respB.full_name.toLowerCase() : '';
+      valA = (a.responsable || '').toLowerCase();
+      valB = (b.responsable || '').toLowerCase();
     } else if (sortField === 'fecha_planificada') {
       valA = a.fecha_planificada || '';
       valB = b.fecha_planificada || '';
@@ -517,7 +520,16 @@ export default function ProgramaGestion({ params }) {
     setCatalogoId(inCatalog ? (item.catalogo_id || '') : '__custom__');
     setDescripcion(item.descripcion || '');
     setMarcoLegal(item.marco_legal || '');
-    setResponsableId(item.responsable_id || '');
+    if (item.responsable_id) {
+      setResponsableId(item.responsable_id);
+      setResponsableCustom('');
+    } else if (item.responsable) {
+      setResponsableId('__custom__');
+      setResponsableCustom(item.responsable);
+    } else {
+      setResponsableId('');
+      setResponsableCustom('');
+    }
     setProgreso(item.progreso || 0);
     setFechaPlanificada(item.fecha_planificada || '');
     setFechaRealizacion(item.fecha_realizacion || '');
@@ -539,6 +551,7 @@ export default function ProgramaGestion({ params }) {
     setDescripcion('');
     setMarcoLegal('');
     setResponsableId('');
+    setResponsableCustom('');
     setProgreso(0);
     setFechaPlanificada(preselectedDate || new Date().toISOString().split('T')[0]);
     setFechaRealizacion('');
@@ -630,7 +643,8 @@ export default function ProgramaGestion({ params }) {
         catalogo_id: catalogoId || null,
         descripcion,
         marco_legal: marcoLegal || null,
-        responsable_id: responsableId || null,
+        responsable_id: responsableId && responsableId !== '__custom__' ? responsableId : null,
+        responsable: responsableId === '__custom__' ? responsableCustom.trim() : (miembros.find(m => m.id === responsableId)?.full_name || null),
         progreso: parseInt(progreso),
         fecha_planificada: fechaPlanificada,
         fecha_realizacion: fechaRealizacion || null,
@@ -889,6 +903,10 @@ export default function ProgramaGestion({ params }) {
                   <ClipboardList className="h-4 w-4" />
                   Acciones Correctivas
                 </a>
+                <a href={`/${tenantSlug}/extintores`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                  <Flame className="h-4 w-4" />
+                  Extintores
+                </a>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
                 <a href={`/${tenantSlug}/profile`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <Settings className="h-4 w-4" />
@@ -989,6 +1007,14 @@ export default function ProgramaGestion({ params }) {
             >
               <ClipboardList className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Acciones Correctivas</span>}
+            </a>
+            <a 
+              href={`/${tenantSlug}/extintores`} 
+              title="Extintores"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <Flame className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Extintores</span>}
             </a>
             
             {!isSidebarCollapsed ? (
@@ -1180,7 +1206,19 @@ export default function ProgramaGestion({ params }) {
                       {miembros.map(m => (
                         <option key={m.id} value={m.id}>{m.full_name}</option>
                       ))}
+                      <option value="__custom__">Otro (cargar manualmente)...</option>
                     </select>
+
+                    {responsableId === '__custom__' && (
+                      <input
+                        type="text"
+                        required
+                        placeholder="Escribe el nombre del responsable..."
+                        value={responsableCustom}
+                        onChange={(e) => setResponsableCustom(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none transition-all mt-2 animate-scaleUp"
+                      />
+                    )}
                   </div>
 
                   {/* 6. Fechas */}
@@ -1743,7 +1781,7 @@ export default function ProgramaGestion({ params }) {
                               </td>
 
                               <td className="px-6 py-4 font-semibold text-slate-600">
-                                {resp?.full_name || 'Sin asignar'}
+                                {act.responsable || 'Sin asignar'}
                               </td>
 
                               <td className="px-6 py-4">

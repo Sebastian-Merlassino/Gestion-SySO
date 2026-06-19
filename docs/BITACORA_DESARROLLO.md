@@ -2,6 +2,49 @@
 
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
+## [2026-06-19] Implementación del Módulo de Extintores
+
+### Resumen de Cambios
+- **Módulo de Extintores:** Se creó una nueva sección operativa completa para la gestión de extintores en Next.js.
+- **Base de Datos y RLS:** Se creó la tabla `public.extintores` en Supabase con sus correspondientes relaciones (tenants, empresas, establecimientos) y se habilitó RLS para garantizar aislamiento absoluto por tenant.
+- **Formulario y Listado Interactivo:** Se diseñó la vista de tabla con cabecera sticky, columnas ordenables, filtros avanzados y búsqueda en tiempo real. El formulario inline incluye carga de imágenes y disparador nativo de cámara, selectores dinámicos dependientes de la geografía, y estado calculado reactivo según fechas de vencimiento.
+- **Navegación Unificada:** Se agregó el enlace "Extintores" (icono Lucide Flame) a los menús lateral móvil y de escritorio en todas las 7 secciones de la plataforma.
+
+### Decisiones Clave
+- **Estado Dinámico Client-Side:** El estado de vigencia del extintor ("Vigente" o "Vencido") se calcula directamente en el cliente comparando la fecha de recarga y de prueba hidráulica contra el día en curso, asegurando precisión permanente sin necesidad de actualizar registros estáticos mediante tareas programadas.
+- **Aislamiento Multi-tenant Seguro:** La política RLS de la base de datos utiliza `public.get_current_tenant_id()` para filtrar el acceso, garantizando que un tenant no pueda interactuar bajo ningún concepto con recursos de otros tenants.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `supabase`
+- `next-best-practices`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260626000000_create_extintores.sql`
+- `[NEW] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Se aplicó la migración SQL exitosamente en Supabase PostgreSQL.
+- Se corrió la compilación de Next.js (`npm run build`), obteniendo un empaquetado exitoso sin errores en la ruta dynamic `/[tenant-slug]/extintores` ni en los sidebars modificados.
+
+### Riesgos Detectados / Remanentes
+- Monitorear el consumo de almacenamiento en el bucket de storage si los inspectores suben imágenes de alta resolución desde dispositivos móviles (se mantiene un límite de 5 MB recomendado).
+
+### Próximo Paso Recomendado
+- Validar con usuarios finales reales la subida directa de fotos desde el navegador del celular y confirmar que la visualización del estado calculada se adapte a todas las zonas horarias.
+
+---
+
 ## [2026-06-19] Corrección de Visualización de Documentos en Programa de Gestión Anual
 
 ### Resumen de Cambios

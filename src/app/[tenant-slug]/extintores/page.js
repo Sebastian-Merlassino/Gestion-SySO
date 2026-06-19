@@ -1,4 +1,4 @@
-// src/app/[tenant-slug]/correctivas/page.js
+// src/app/[tenant-slug]/extintores/page.js
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -8,7 +8,6 @@ import {
   Search, 
   Building, 
   Users, 
-  AlertTriangle, 
   X, 
   Check, 
   Loader2, 
@@ -17,7 +16,6 @@ import {
   Briefcase, 
   Settings, 
   LogOut, 
-  User, 
   Menu,
   ClipboardList,
   Calendar,
@@ -34,87 +32,26 @@ import {
   Flame
 } from 'lucide-react';
 
-const FUENTE_OPTIONS = [
-  'Accidente',
-  'ACUMAR',
-  'Análisis de efluentes gaseosos',
-  'Análisis de efluentes líquidos',
-  'Análisis de la intensidad mínima de Iluminación, sobre el plano de trabajo',
-  'Análisis de los niveles de exposicion a Contaminantes Fisicos (CONDICIONES HIGROTERMICAS)',
-  'Análisis de los niveles de exposicion a Contaminantes Físicos (LÁSERES)',
-  'Análisis de los niveles de exposicion a Contaminantes Físicos (RADIACIONES IONIZANTES)',
-  'Análisis de los niveles de exposicion a Contaminantes Físicos (RADIACIONES NO IONIZANTES)',
-  'Análisis de los niveles de exposicion a Contaminantes Fisicos (RUIDO)',
-  'Análisis de los niveles de exposicion a Contaminantes Fisicos (VIBRACIONES)',
-  'Análisis de los niveles de exposicion a Contaminantes Químicos en el aire',
-  'Análisis de Puesta a tierra y continuidad de masas',
-  'Análisis de ventilación mínima',
-  'Análisis del registro de accidentes / incidentes',
-  'Análisis físicosquímico / bacteriológico de agua para el consumo humano',
-  'APRA',
-  'ART',
-  'Auditoria',
-  'Audoría del Sistema de Gestión',
-  'Auditoría Externa ISO 14001:2015',
-  'Auditoría Externa ISO 45001:2018',
-  'Auditoría Interna',
-  'Auditoría interna ISO 14001:2015',
-  'Auditoría Interna ISO 45001:2018',
-  'Auditoría Legal',
-  'Autoridad del Agua (ADA)',
-  'AYSA',
-  'Capacitaciones',
-  'Comite mixto de Higiene y Seguridad',
-  'Dirección',
-  'Ergonomía',
-  'Gremio',
-  'Incidente',
-  'Inspección de organimo gubernamental',
-  'Instituto Nacional del Agua (INA)',
-  'KPI´s',
-  'Matriz de riesgos',
-  'Ministerio de Ambiente PBA (ex OPDS)',
-  'Ministerio Trabajo',
-  'Municipio',
-  'Objetivo anual global',
-  'Objetivo anual local',
-  'Observación',
-  'Recorrida de planta',
-  'Requisito legal vigente',
-  'Residuos especiales',
-  'Residuos no especiales',
-  'Reuniones Semanales',
-  'Revisión por Dirección',
-  'RGRL',
-  'SEDRONAR',
-  'Simulacro',
-  'SRT',
-  'Sugerencia del personal',
-  'Visita de Higiene y Seguridad',
-  'Yokoten',
-  'Aseguradora'
+const TIPO_EXTINTORES = [
+  'Agua a presión (A)',
+  'Agua pulverizada (A)',
+  'Espuma AFFF (AB)',
+  'CO2 (BC)',
+  'Polvo químico seco (ABC)',
+  'Polvo químico seco (BC)',
+  'Polvo químico seco (D)',
+  'FM200 (ABC)',
+  'FE-36 (ABC)',
+  'Acetato de Potasio (K)',
+  'Cloruro Sódico (D)',
+  'NOVEC 1230 (ABC)',
+  'Otro'
 ];
 
-const TIPO_HALLAZGO_OPTIONS = [
-  'Condición insegura',
-  'Acto inseguro',
-  'Condición insegura / Acto inseguro',
-  'No conformidad',
-  'Observación',
-  'Oportunidad de mejora',
-  'N/A'
-];
+const PRESION_OPTIONS = ['Ok', 'Despresurizado', 'Sobrepresurizado', 'N/A'];
+const CHECK_OPTIONS = ['Ok', 'No Ok', 'N/A'];
 
-const NIVEL_RIESGO_OPTIONS = [
-  'Riesgo trivial',
-  'Riesgo tolerable',
-  'Riesgo moderado',
-  'Riesgo sustancial',
-  'Riesgo intolerable',
-  'N/A'
-];
-
-export default function AccionesCorrectivasPage({ params }) {
+export default function ExtintoresPage({ params }) {
   const tenantSlug = params['tenant-slug'];
 
   // Estados estructurales
@@ -122,7 +59,6 @@ export default function AccionesCorrectivasPage({ params }) {
   const [tenant, setTenant] = useState(null);
   const [empresas, setEmpresas] = useState([]);
   const [allEstablecimientos, setAllEstablecimientos] = useState([]);
-  const [miembrosList, setMiembrosList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isDevMode, setIsDevMode] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -141,8 +77,8 @@ export default function AccionesCorrectivasPage({ params }) {
     localStorage.setItem('sidebar-collapsed', String(newVal));
   };
 
-  // Datos principales de acciones
-  const [acciones, setAcciones] = useState([]);
+  // Datos principales de extintores
+  const [extintores, setExtintores] = useState([]);
 
   // Estados del CRUD / Vista Formulario
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -151,44 +87,45 @@ export default function AccionesCorrectivasPage({ params }) {
   // Campos del Formulario
   const [empresaId, setEmpresaId] = useState('');
   const [establecimientoId, setEstablecimientoId] = useState('');
-  const [fuente, setFuente] = useState('');
-  const [fuenteOtra, setFuenteOtra] = useState('');
-  const [fecha, setFecha] = useState('');
   const [areaSector, setAreaSector] = useState('');
-  const [puestoOperacion, setPuestoOperacion] = useState('');
-  const [tipoHallazgo, setTipoHallazgo] = useState('');
-  const [tipoHallazgoOtro, setTipoHallazgoOtro] = useState('');
-  const [descripcionHallazgo, setDescripcionHallazgo] = useState('');
-  const [nivelRiesgo, setNivelRiesgo] = useState('N/A');
+  const [puestoOperacionRef, setPuestoOperacionRef] = useState('');
+  const [nPuesto, setNPuesto] = useState('');
+  const [nExtintor, setNExtintor] = useState('');
+  const [tipo, setTipo] = useState('');
+  const [tipoOtro, setTipoOtro] = useState('');
+  const [capacidad, setCapacidad] = useState('');
+  const [vencRecarga, setVencRecarga] = useState('');
+  const [vencPh, setVencPh] = useState('');
+  const [presion, setPresion] = useState('N/A');
+  const [precinto, setPrecinto] = useState('N/A');
+  const [marbete, setMarbete] = useState('N/A');
+  const [partesMecanicas, setPartesMecanicas] = useState('N/A');
+  const [mangueraBoquilla, setMangueraBoquilla] = useState('N/A');
+  const [cilindro, setCilindro] = useState('N/A');
+  const [senalizacion, setSenalizacion] = useState('N/A');
   
   // Archivo e Imagenes
   const [imagenFile, setImagenFile] = useState(null);
   const [imagenPreview, setImagenPreview] = useState('');
-  const [imagenPath, setImagenPath] = useState(''); // relative path stored in database
+  const [imagenPath, setImagenPath] = useState(''); 
 
-  const [recomendacion, setRecomendacion] = useState('');
-  const [accionPreventiva, setAccionPreventiva] = useState('');
-  const [causaRaiz, setCausaRaiz] = useState('');
-  const [accionCorrectiva, setAccionCorrectiva] = useState('');
-  const [responsable, setResponsable] = useState('');
-  const [fechaPlanificada, setFechaPlanificada] = useState('');
-  const [fechaImplementacion, setFechaImplementacion] = useState('');
+  const [fechaControl, setFechaControl] = useState('');
   const [observaciones, setObservaciones] = useState('');
 
   // Filtros
   const [filterText, setFilterText] = useState('');
   const [filterEmpresa, setFilterEmpresa] = useState('');
   const [filterEstablecimiento, setFilterEstablecimiento] = useState('');
-  const [filterRiesgo, setFilterRiesgo] = useState('');
   const [filterEstado, setFilterEstado] = useState('');
+  const [filterTipo, setFilterTipo] = useState('');
 
   // Ordenamiento
-  const [sortField, setSortField] = useState('fecha');
-  const [sortOrder, setSortOrder] = useState('desc');
+  const [sortField, setSortField] = useState('n_extintor');
+  const [sortOrder, setSortOrder] = useState('asc');
 
   // Modales y Feedback
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
-  const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null });
+  const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
   const [saveLoading, setSaveLoading] = useState(false);
 
   // Cargar datos
@@ -196,19 +133,10 @@ export default function AccionesCorrectivasPage({ params }) {
     const checkEnvAndLoad = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        // Mock fallback if no auth session
         setIsDevMode(true);
         loadMockData();
       } else {
         await loadRealData();
-      }
-
-      // Detectar si se solicita abrir el formulario de alta
-      if (typeof window !== 'undefined') {
-        const searchParams = new URLSearchParams(window.location.search);
-        if (searchParams.get('new') === 'true') {
-          setIsFormOpen(true);
-        }
       }
     };
     checkEnvAndLoad();
@@ -221,7 +149,7 @@ export default function AccionesCorrectivasPage({ params }) {
     }, 4000);
   };
 
-  const closeAlert = () => setModalAlert({ show: false, title: '', message: '', onConfirm: null });
+  const closeAlert = () => setModalAlert({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
 
   // Cargar datos reales de Supabase
   const loadRealData = async () => {
@@ -268,31 +196,22 @@ export default function AccionesCorrectivasPage({ params }) {
       if (estErr) throw estErr;
       setAllEstablecimientos(ests || []);
 
-      // 5. Miembros del Equipo
-      const { data: mems, error: memErr } = await supabase
-        .from('miembros_equipo')
-        .select('id, full_name')
-        .eq('tenant_id', ten.id)
-        .order('full_name');
-      if (memErr) throw memErr;
-      setMiembrosList(mems || []);
-
-      // 6. Acciones Correctivas
-      const { data: accs, error: accErr } = await supabase
-        .from('acciones_correctivas')
+      // 5. Extintores
+      const { data: exts, error: extErr } = await supabase
+        .from('extintores')
         .select('*')
         .eq('tenant_id', ten.id)
         .order('created_at', { ascending: false });
-      if (accErr) throw accErr;
+      if (extErr) throw extErr;
 
       // Resuelve URLs firmadas para las imágenes
-      const resolvedAcciones = await Promise.all((accs || []).map(async (acc) => {
+      const resolvedExtintores = await Promise.all((exts || []).map(async (ext) => {
         let signedUrl = '';
-        if (acc.imagen_url) {
+        if (ext.imagen_url) {
           try {
             const { data, error: signErr } = await supabase.storage
               .from('documents')
-              .createSignedUrl(acc.imagen_url, 3600, { download: false }); // 1 hora de validez
+              .createSignedUrl(ext.imagen_url, 3600, { download: false });
             if (!signErr && data) {
               signedUrl = data.signedUrl;
             }
@@ -301,12 +220,12 @@ export default function AccionesCorrectivasPage({ params }) {
           }
         }
         return {
-          ...acc,
+          ...ext,
           imagen_preview_url: signedUrl
         };
       }));
 
-      setAcciones(resolvedAcciones);
+      setExtintores(resolvedExtintores);
       setLoading(false);
     } catch (err) {
       console.error('Error cargando datos de Supabase:', err);
@@ -328,31 +247,52 @@ export default function AccionesCorrectivasPage({ params }) {
       { id: 'mock-est-2', empresa_id: 'mock-empresa-1', denominacion: 'Cordoba 2045' },
       { id: 'mock-est-3', empresa_id: 'mock-empresa-2', denominacion: 'Único' }
     ]);
-    setMiembrosList([
-      { id: 'mock-miembro-1', full_name: 'Gonzalo Merlo' },
-      { id: 'mock-miembro-2', full_name: 'Florencia Benitez' }
-    ]);
-    setAcciones([
+    setExtintores([
       {
-        id: 'mock-acc-1',
+        id: 'mock-ext-1',
         empresa_id: 'mock-empresa-1',
         establecimiento_id: 'mock-est-1',
-        fuente: 'Inspección de organimo gubernamental',
-        fecha: '2026-06-10',
-        area_sector: 'Cocina',
-        puesto_operacion: 'Preparación',
-        tipo_hallazgo: 'Condición insegura',
-        descripcion_hallazgo: 'Falta de disyuntor en tablero eléctrico secundario.',
-        nivel_riesgo: 'Riesgo sustancial',
+        area_sector: 'Cocina Planta Alta',
+        puesto_operacion_ref: 'Salida de emergencia',
+        n_puesto: 'P1',
+        n_extintor: '001542',
+        tipo: 'Acetato de Potasio (K)',
+        capacidad: 6,
+        venc_recarga: '2026-12-10',
+        venc_ph: '2027-06-15',
+        presion: 'Ok',
+        precinto: 'Ok',
+        marbete: 'Ok',
+        partes_mecanicas: 'Ok',
+        manguera_boquilla: 'Ok',
+        cilindro: 'Ok',
+        senalizacion: 'Ok',
         imagen_url: '',
-        recomendacion: 'Instalar disyuntor bipolar diferencial de 30mA.',
-        accion_preventiva: 'Revisión mensual de tableros.',
-        causa_raiz: 'Falta de mantenimiento preventivo.',
-        accion_correctiva: 'Instalar disyuntor.',
-        responsable: 'Gonzalo Merlo',
-        fecha_planificada: '2026-06-20',
-        fecha_implementacion: '',
-        observaciones: 'Requiere electricista matriculado.'
+        fecha_control: '2026-06-10',
+        observaciones: 'Sin novedades. Ubicación despejada.'
+      },
+      {
+        id: 'mock-ext-2',
+        empresa_id: 'mock-empresa-1',
+        establecimiento_id: 'mock-est-2',
+        area_sector: 'Depósito Central',
+        puesto_operacion_ref: 'Cerca de portón de carga',
+        n_puesto: 'P5',
+        n_extintor: '001289',
+        tipo: 'Polvo químico seco (ABC)',
+        capacidad: 10,
+        venc_recarga: '2026-05-18', // Vencido
+        venc_ph: '2028-04-10',
+        presion: 'Ok',
+        precinto: 'Ok',
+        marbete: 'Ok',
+        partes_mecanicas: 'Ok',
+        manguera_boquilla: 'Ok',
+        cilindro: 'Ok',
+        senalizacion: 'Ok',
+        imagen_url: '',
+        fecha_control: '2026-05-20',
+        observaciones: 'Vencida la recarga anual.'
       }
     ]);
     setLoading(false);
@@ -390,14 +330,14 @@ export default function AccionesCorrectivasPage({ params }) {
 
   // Helper para subir archivo a storage
   const uploadImageToStorage = async (file) => {
-    if (isDevMode) return `mock-path/corrective_${Date.now()}_${file.name}`;
+    if (isDevMode) return `mock-path/extintor_${Date.now()}_${file.name}`;
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No autorizado');
 
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/corrective_${Date.now()}.${fileExt}`;
+      const fileName = `${user.id}/extintor_${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from('documents')
@@ -411,32 +351,42 @@ export default function AccionesCorrectivasPage({ params }) {
     }
   };
 
-  // Cálculo de estado para renderizar
-  const getCalculatedStatus = (fPlanificada, fImplementacion) => {
-    if (!fPlanificada) {
-      return { text: 'En análisis', color: 'bg-slate-100 text-slate-700 border-slate-200' };
-    }
-    if (fImplementacion) {
-      return { text: 'Cerrada', color: 'bg-[#00b050]/10 text-[#00b050] border-[#00b050]/20' };
-    }
-
+  // Cálculo dinámico de estado
+  const getCalculatedEstado = (recarga, ph) => {
+    if (!recarga && !ph) return { text: '', color: '' };
+    
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const planDate = new Date(fPlanificada + 'T00:00:00');
-    planDate.setHours(0, 0, 0, 0);
 
-    if (planDate >= today) {
-      return { text: 'En tiempo', color: 'bg-blue-500/10 text-[#468DFF] border-blue-500/20' };
-    } else {
+    let isVencido = false;
+    let hasDate = false;
+
+    if (recarga) {
+      hasDate = true;
+      const recDate = new Date(recarga + 'T00:00:00');
+      recDate.setHours(0, 0, 0, 0);
+      if (recDate < today) isVencido = true;
+    }
+
+    if (ph) {
+      hasDate = true;
+      const phDate = new Date(ph + 'T00:00:00');
+      phDate.setHours(0, 0, 0, 0);
+      if (phDate < today) isVencido = true;
+    }
+
+    if (!hasDate) return { text: '', color: '' };
+    if (isVencido) {
       return { text: 'Vencido', color: 'bg-red-500/10 text-red-600 border-red-500/20' };
     }
+    return { text: 'Vigente', color: 'bg-[#00b050]/10 text-[#00b050] border-[#00b050]/20' };
   };
 
-  // Guardado de Hallazgo
-  const handleSaveHallazgo = async (e) => {
+  // Guardado
+  const handleSaveExtintor = async (e) => {
     e.preventDefault();
-    if (!empresaId || !establecimientoId || !fuente || !fecha || !tipoHallazgo || !nivelRiesgo) {
-      triggerToast('Por favor completa todos los campos obligatorios.', 'error');
+    if (!empresaId || !establecimientoId) {
+      triggerToast('La Razón Social y el Establecimiento son obligatorios.', 'error');
       return;
     }
 
@@ -444,149 +394,143 @@ export default function AccionesCorrectivasPage({ params }) {
     try {
       let finalImagenUrl = imagenPath;
 
-      // Subir archivo de imagen si se seleccionó uno nuevo
+      // Subir archivo si hay
       if (imagenFile) {
         finalImagenUrl = await uploadImageToStorage(imagenFile);
       }
 
-      const dbFuente = fuente === 'Otra' ? fuenteOtra.trim() : fuente;
-      const dbTipoHallazgo = tipoHallazgo === 'Otro' ? tipoHallazgoOtro.trim() : tipoHallazgo;
+      const dbTipo = tipo === 'Otro' ? tipoOtro.trim() : tipo;
 
       const payload = {
         tenant_id: tenant.id,
         empresa_id: empresaId,
         establecimiento_id: establecimientoId,
-        fuente: dbFuente,
-        fecha: fecha,
         area_sector: areaSector || null,
-        puesto_operacion: puestoOperacion || null,
-        tipo_hallazgo: dbTipoHallazgo,
-        descripcion_hallazgo: descripcionHallazgo || null,
-        nivel_riesgo: nivelRiesgo,
+        puesto_operacion_ref: puestoOperacionRef || null,
+        n_puesto: nPuesto || null,
+        n_extintor: nExtintor || null,
+        tipo: dbTipo || null,
+        capacidad: capacidad ? parseInt(capacidad) : null,
+        venc_recarga: vencRecarga || null,
+        venc_ph: vencPh || null,
+        presion: presion || null,
+        precinto: precinto || null,
+        marbete: marbete || null,
+        partes_mecanicas: partesMecanicas || null,
+        manguera_boquilla: mangueraBoquilla || null,
+        cilindro: cilindro || null,
+        senalizacion: senalizacion || null,
         imagen_url: finalImagenUrl || null,
-        recomendacion: recomendacion || null,
-        accion_preventiva: accionPreventiva || null,
-        causa_raiz: causaRaiz || null,
-        accion_correctiva: accionCorrectiva || null,
-        responsable: responsable || null,
-        fecha_planificada: fechaPlanificada || null,
-        fecha_implementacion: fechaImplementacion || null,
+        fecha_control: fechaControl || null,
         observaciones: observaciones || null,
         updated_at: new Date().toISOString()
       };
 
       if (isDevMode) {
-        // Lógica de desarrollo (mock)
-        const updatedAccion = {
+        const updatedExt = {
           ...payload,
-          id: editingId || `mock-acc-${Date.now()}`
+          id: editingId || `mock-ext-${Date.now()}`
         };
         if (editingId) {
-          setAcciones(acciones.map(a => a.id === editingId ? updatedAccion : a));
-          triggerToast('Hallazgo actualizado exitosamente (Mock).');
+          setExtintores(extintores.map(x => x.id === editingId ? updatedExt : x));
+          triggerToast('Extintor actualizado exitosamente (Mock).');
         } else {
-          setAcciones([updatedAccion, ...acciones]);
-          triggerToast('Hallazgo incorporado exitosamente (Mock).');
+          setExtintores([updatedExt, ...extintores]);
+          triggerToast('Extintor incorporado exitosamente (Mock).');
         }
       } else {
-        // Lógica real de Supabase
         if (editingId) {
           const { error } = await supabase
-            .from('acciones_correctivas')
+            .from('extintores')
             .update(payload)
             .eq('id', editingId);
           if (error) throw error;
-          triggerToast('Hallazgo actualizado exitosamente.');
+          triggerToast('Extintor actualizado exitosamente.');
         } else {
           const { error } = await supabase
-            .from('acciones_correctivas')
+            .from('extintores')
             .insert([{ ...payload, created_at: new Date().toISOString() }]);
           if (error) throw error;
-          triggerToast('Hallazgo incorporado exitosamente.');
+          triggerToast('Extintor incorporado exitosamente.');
         }
         await loadRealData();
       }
 
       handleCloseForm();
     } catch (err) {
-      console.error('Error al guardar hallazgo:', err);
-      triggerToast(err.message || 'Error al guardar el hallazgo.', 'error');
+      console.error('Error al guardar extintor:', err);
+      triggerToast(err.message || 'Error al guardar el extintor.', 'error');
     } finally {
       setSaveLoading(false);
     }
   };
 
-  // Preparar edición
-  const handleEditClick = (acc) => {
-    setEditingId(acc.id);
+  // Carga para Edición
+  const handleEditClick = (ext) => {
+    setEditingId(ext.id);
+    setEmpresaId(ext.empresa_id);
+    setEstablecimientoId(ext.establecimiento_id);
+    setAreaSector(ext.area_sector || '');
+    setPuestoOperacionRef(ext.puesto_operacion_ref || '');
+    setNPuesto(ext.n_puesto || '');
+    setNExtintor(ext.n_extintor || '');
 
-    setEmpresaId(acc.empresa_id);
-    setEstablecimientoId(acc.establecimiento_id);
-    
-    // Si la fuente original no está en la lista de opciones, se asume "Otra"
-    if (FUENTE_OPTIONS.includes(acc.fuente)) {
-      setFuente(acc.fuente);
-      setFuenteOtra('');
+    if (TIPO_EXTINTORES.includes(ext.tipo)) {
+      setTipo(ext.tipo);
+      setTipoOtro('');
+    } else if (ext.tipo) {
+      setTipo('Otro');
+      setTipoOtro(ext.tipo);
     } else {
-      setFuente('Otra');
-      setFuenteOtra(acc.fuente);
+      setTipo('');
+      setTipoOtro('');
     }
 
-    setFecha(acc.fecha);
-    setAreaSector(acc.area_sector || '');
-    setPuestoOperacion(acc.puesto_operacion || '');
-
-    // Si el tipo de hallazgo no está en la lista de opciones, se asume "Otro"
-    if (TIPO_HALLAZGO_OPTIONS.includes(acc.tipo_hallazgo)) {
-      setTipoHallazgo(acc.tipo_hallazgo);
-      setTipoHallazgoOtro('');
-    } else {
-      setTipoHallazgo('Otro');
-      setTipoHallazgoOtro(acc.tipo_hallazgo);
-    }
-
-    setDescripcionHallazgo(acc.descripcion_hallazgo || '');
-    setNivelRiesgo(acc.nivel_riesgo);
+    setCapacidad(ext.capacidad || '');
+    setVencRecarga(ext.venc_recarga || '');
+    setVencPh(ext.venc_ph || '');
+    setPresion(ext.presion || 'N/A');
+    setPrecinto(ext.precinto || 'N/A');
+    setMarbete(ext.marbete || 'N/A');
+    setPartesMecanicas(ext.partes_mecanicas || 'N/A');
+    setMangueraBoquilla(ext.manguera_boquilla || 'N/A');
+    setCilindro(ext.cilindro || 'N/A');
+    setSenalizacion(ext.senalizacion || 'N/A');
 
     setImagenFile(null);
-    setImagenPreview(acc.imagen_preview_url || '');
-    setImagenPath(acc.imagen_url || '');
-
-    setRecomendacion(acc.recomendacion || '');
-    setAccionPreventiva(acc.accion_preventiva || '');
-    setCausaRaiz(acc.causa_raiz || '');
-    setAccionCorrectiva(acc.accion_correctiva || '');
-    setResponsable(acc.responsable || '');
-    setFechaPlanificada(acc.fecha_planificada || '');
-    setFechaImplementacion(acc.fecha_implementacion || '');
-    setObservaciones(acc.observaciones || '');
+    setImagenPreview(ext.imagen_preview_url || '');
+    setImagenPath(ext.imagen_url || '');
+    
+    setFechaControl(ext.fecha_control || '');
+    setObservaciones(ext.observaciones || '');
 
     setIsFormOpen(true);
   };
 
-  // Preparar eliminación
+  // Confirmar Eliminación
   const handleDeleteClick = (id) => {
     setModalAlert({
       show: true,
-      title: '¿Eliminar Hallazgo?',
-      message: 'Esta acción eliminará de forma permanente el registro del hallazgo seleccionado y no se podrá deshacer.',
+      title: '¿Eliminar Extintor?',
+      message: 'Esta acción eliminará de forma permanente el registro del extintor seleccionado y no se podrá deshacer.',
+      confirmText: 'Eliminar',
       onConfirm: async () => {
         try {
           if (isDevMode) {
-            setAcciones(acciones.filter(a => a.id !== id));
-            triggerToast('Hallazgo eliminado exitosamente (Mock).');
+            setExtintores(extintores.filter(x => x.id !== id));
+            triggerToast('Extintor eliminado exitosamente (Mock).');
           } else {
             const { error } = await supabase
-              .from('acciones_correctivas')
+              .from('extintores')
               .delete()
               .eq('id', id);
             if (error) throw error;
-            triggerToast('Hallazgo eliminado exitosamente.');
+            triggerToast('Extintor eliminado exitosamente.');
             await loadRealData();
           }
         } catch (err) {
           console.error('Error al eliminar:', err);
-          triggerToast('No tienes permisos para realizar esta acción.', 'error');
+          triggerToast('Error al eliminar el extintor.', 'error');
         } finally {
           closeAlert();
         }
@@ -594,32 +538,45 @@ export default function AccionesCorrectivasPage({ params }) {
     });
   };
 
-  // Cierre de formulario
+  // Cierre del Formulario (con advertencia si hay cambios)
+  const handleExitForm = () => {
+    setModalAlert({
+      show: true,
+      title: 'Salir sin guardar',
+      message: '¿Estás seguro de que deseas salir? Los cambios no guardados se perderán.',
+      confirmText: 'Salir',
+      onConfirm: () => {
+        handleCloseForm();
+        closeAlert();
+      }
+    });
+  };
+
   const handleCloseForm = () => {
     setIsFormOpen(false);
     setEditingId(null);
-
     setEmpresaId('');
     setEstablecimientoId('');
-    setFuente('');
-    setFuenteOtra('');
-    setFecha('');
     setAreaSector('');
-    setPuestoOperacion('');
-    setTipoHallazgo('');
-    setTipoHallazgoOtro('');
-    setDescripcionHallazgo('');
-    setNivelRiesgo('N/A');
+    setPuestoOperacionRef('');
+    setNPuesto('');
+    setNExtintor('');
+    setTipo('');
+    setTipoOtro('');
+    setCapacidad('');
+    setVencRecarga('');
+    setVencPh('');
+    setPresion('N/A');
+    setPrecinto('N/A');
+    setMarbete('N/A');
+    setPartesMecanicas('N/A');
+    setMangueraBoquilla('N/A');
+    setCilindro('N/A');
+    setSenalizacion('N/A');
     setImagenFile(null);
     setImagenPreview('');
     setImagenPath('');
-    setRecomendacion('');
-    setAccionPreventiva('');
-    setCausaRaiz('');
-    setAccionCorrectiva('');
-    setResponsable('');
-    setFechaPlanificada('');
-    setFechaImplementacion('');
+    setFechaControl('');
     setObservaciones('');
   };
 
@@ -632,74 +589,67 @@ export default function AccionesCorrectivasPage({ params }) {
     }
   };
 
-  // Filtrar el listado principal de hallazgos
-  const filteredAcciones = acciones.filter((acc) => {
-    // Buscar por texto
+  // Filtrado de extintores
+  const filteredExtintores = extintores.filter((ext) => {
     if (filterText) {
-      const search = filterText.toLowerCase();
-      const desc = (acc.descripcion_hallazgo || '').toLowerCase();
-      const area = (acc.area_sector || '').toLowerCase();
-      const puesto = (acc.puesto_operacion || '').toLowerCase();
-      const resp = (acc.responsable || '').toLowerCase();
-      if (!desc.includes(search) && !area.includes(search) && !puesto.includes(search) && !resp.includes(search)) {
+      const query = filterText.toLowerCase();
+      const nExt = (ext.n_extintor || '').toLowerCase();
+      const nPuestoStr = (ext.n_puesto || '').toLowerCase();
+      const area = (ext.area_sector || '').toLowerCase();
+      const ref = (ext.puesto_operacion_ref || '').toLowerCase();
+      
+      if (!nExt.includes(query) && !nPuestoStr.includes(query) && !area.includes(query) && !ref.includes(query)) {
         return false;
       }
     }
 
-    // Filtrar por Cliente
-    if (filterEmpresa && acc.empresa_id !== filterEmpresa) return false;
+    if (filterEmpresa && ext.empresa_id !== filterEmpresa) return false;
+    if (filterEstablecimiento && ext.establecimiento_id !== filterEstablecimiento) return false;
+    if (filterTipo && ext.tipo !== filterTipo) return false;
 
-    // Filtrar por Establecimiento
-    if (filterEstablecimiento && acc.establecimiento_id !== filterEstablecimiento) return false;
-
-    // Filtrar por Nivel de Riesgo
-    if (filterRiesgo && acc.nivel_riesgo !== filterRiesgo) return false;
-
-    // Filtrar por Estado
     if (filterEstado) {
-      const calc = getCalculatedStatus(acc.fecha_planificada, acc.fecha_implementacion);
+      const calc = getCalculatedEstado(ext.venc_recarga, ext.venc_ph);
       if (calc.text !== filterEstado) return false;
     }
 
     return true;
   });
 
-  const sortedAcciones = [...filteredAcciones].sort((a, b) => {
+  const sortedExtintores = [...filteredExtintores].sort((a, b) => {
     if (!sortField) return 0;
-    
+
     let valA = '';
     let valB = '';
-    
+
     if (sortField === 'cliente') {
       const empA = empresas.find(e => e.id === a.empresa_id);
       const empB = empresas.find(e => e.id === b.empresa_id);
       valA = empA ? empA.razon_social.toLowerCase() : '';
       valB = empB ? empB.razon_social.toLowerCase() : '';
-    } else if (sortField === 'fuente') {
-      valA = (a.fuente || '').toLowerCase();
-      valB = (b.fuente || '').toLowerCase();
-    } else if (sortField === 'hallazgo') {
-      valA = (a.descripcion_hallazgo || '').toLowerCase();
-      valB = (b.descripcion_hallazgo || '').toLowerCase();
-    } else if (sortField === 'nivel_riesgo') {
-      valA = (a.nivel_riesgo || '').toLowerCase();
-      valB = (b.nivel_riesgo || '').toLowerCase();
+    } else if (sortField === 'establecimiento') {
+      const estA = allEstablecimientos.find(t => t.id === a.establecimiento_id);
+      const estB = allEstablecimientos.find(t => t.id === b.establecimiento_id);
+      valA = estA ? estA.denominacion.toLowerCase() : '';
+      valB = estB ? estB.denominacion.toLowerCase() : '';
+    } else if (sortField === 'n_extintor') {
+      valA = a.n_extintor || '';
+      valB = b.n_extintor || '';
+    } else if (sortField === 'tipo') {
+      valA = a.tipo || '';
+      valB = b.tipo || '';
+    } else if (sortField === 'capacidad') {
+      valA = a.capacidad || 0;
+      valB = b.capacidad || 0;
     } else if (sortField === 'estado') {
-      const statusA = getCalculatedStatus(a.fecha_planificada, a.fecha_implementacion).text;
-      const statusB = getCalculatedStatus(b.fecha_planificada, b.fecha_implementacion).text;
+      const statusA = getCalculatedEstado(a.venc_recarga, a.venc_ph).text;
+      const statusB = getCalculatedEstado(b.venc_recarga, b.venc_ph).text;
       valA = statusA.toLowerCase();
       valB = statusB.toLowerCase();
-    } else if (sortField === 'fecha') {
-      valA = a.fecha || '';
-      valB = b.fecha || '';
-    } else if (sortField === 'responsable') {
-      valA = (a.responsable || '').toLowerCase();
-      valB = (b.responsable || '').toLowerCase();
     } else {
       valA = a[sortField] || '';
       valB = b[sortField] || '';
     }
-    
+
     if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
     if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
     return 0;
@@ -708,11 +658,10 @@ export default function AccionesCorrectivasPage({ params }) {
   return (
     <div className="h-screen overflow-hidden bg-[#D9D9D9] text-slate-700 flex flex-col md:flex-row relative font-sans">
       
-      {/* Menu Hamburguesa Mobile Drawer Overlay */}
+      {/* Mobile Sidebar */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-40 flex md:hidden">
           <div onClick={() => setIsMobileMenuOpen(false)} className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
-          
           <aside className="relative w-64 bg-[#0D0D0D] flex flex-col justify-between p-6 z-10 border-r border-white/5 animate-fade-in-right">
             <div>
               <div className="flex items-center justify-between mb-8">
@@ -749,11 +698,11 @@ export default function AccionesCorrectivasPage({ params }) {
                   <GraduationCap className="h-4 w-4" />
                   Programa de Capacitación Anual
                 </a>
-                <a href={`/${tenantSlug}/correctivas`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10">
+                <a href={`/${tenantSlug}/correctivas`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <ClipboardList className="h-4 w-4" />
                   Acciones Correctivas
                 </a>
-                <a href={`/${tenantSlug}/extintores`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                <a href={`/${tenantSlug}/extintores`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10">
                   <Flame className="h-4 w-4" />
                   Extintores
                 </a>
@@ -784,7 +733,6 @@ export default function AccionesCorrectivasPage({ params }) {
       {/* Desktop Sidebar */}
       <aside className={`bg-[#0D0D0D] flex flex-col justify-between shrink-0 hidden md:flex transition-all duration-300 ${isSidebarCollapsed ? 'w-20' : 'w-64'}`}>
         <div className="p-6">
-          {/* Logo Brand */}
           <div className={`flex items-center justify-between gap-3 mb-8 ${isSidebarCollapsed ? 'flex-col' : ''}`}>
             <div className="flex items-center gap-3">
               <img src="/brand/logo-primary.png" alt="Logo" className="h-9 w-9 object-contain shrink-0" />
@@ -794,14 +742,9 @@ export default function AccionesCorrectivasPage({ params }) {
             </div>
             <button
               onClick={toggleSidebar}
-              title={isSidebarCollapsed ? 'Expandir barra lateral' : 'Contraer barra lateral'}
               className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all cursor-pointer"
             >
-              {isSidebarCollapsed ? (
-                <ChevronRight className="h-4 w-4" />
-              ) : (
-                <ChevronLeft className="h-4 w-4" />
-              )}
+              {isSidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
             </button>
           </div>
 
@@ -811,61 +754,33 @@ export default function AccionesCorrectivasPage({ params }) {
             ) : (
               <div className="h-px bg-white/10 my-3" />
             )}
-            <a 
-              href={`/${tenantSlug}/dashboard`} 
-              title="Dashboard"
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-            >
+            <a href={`/${tenantSlug}/dashboard`} title="Dashboard" className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}>
               <Building className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Dashboard</span>}
             </a>
-            <a 
-              href={`/${tenantSlug}/empresas`} 
-              title="Clientes"
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-            >
+            <a href={`/${tenantSlug}/empresas`} title="Clientes" className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}>
               <Users className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
             </a>
             {(profile?.role === 'owner' || profile?.role === 'admin') && (
-              <a 
-                href={`/${tenantSlug}/equipo`} 
-                title="Equipo de Trabajo"
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-              >
+              <a href={`/${tenantSlug}/equipo`} title="Equipo de Trabajo" className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}>
                 <Briefcase className="h-4 w-4 shrink-0" />
                 {!isSidebarCollapsed && <span className="animate-fade-in">Equipo de Trabajo</span>}
               </a>
             )}
-            <a 
-              href={`/${tenantSlug}/programa`} 
-              title="Programa de Gestión Anual"
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-            >
+            <a href={`/${tenantSlug}/programa`} title="Programa de Gestión Anual" className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}>
               <Calendar className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Programa de Gestión Anual</span>}
             </a>
-            <a 
-              href={`/${tenantSlug}/capacitacion`} 
-              title="Programa de Capacitación Anual"
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-            >
+            <a href={`/${tenantSlug}/capacitacion`} title="Programa de Capacitación Anual" className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}>
               <GraduationCap className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Programa de Capacitación Anual</span>}
             </a>
-            <a 
-              href={`/${tenantSlug}/correctivas`} 
-              title="Acciones Correctivas"
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10 ${isSidebarCollapsed ? 'justify-center' : ''}`}
-            >
+            <a href={`/${tenantSlug}/correctivas`} title="Acciones Correctivas" className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}>
               <ClipboardList className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Acciones Correctivas</span>}
             </a>
-            <a 
-              href={`/${tenantSlug}/extintores`} 
-              title="Extintores"
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-            >
+            <a href={`/${tenantSlug}/extintores`} title="Extintores" className={`flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10 ${isSidebarCollapsed ? 'justify-center' : ''}`}>
               <Flame className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Extintores</span>}
             </a>
@@ -875,11 +790,7 @@ export default function AccionesCorrectivasPage({ params }) {
             ) : (
               <div className="h-px bg-white/10 my-6" />
             )}
-            <a 
-              href={`/${tenantSlug}/profile`} 
-              title="Editar Perfil"
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-            >
+            <a href={`/${tenantSlug}/profile`} title="Editar Perfil" className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}>
               <Settings className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Editar Perfil</span>}
             </a>
@@ -901,7 +812,7 @@ export default function AccionesCorrectivasPage({ params }) {
         </div>
       </aside>
 
-      {/* Main Container */}
+      {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         <header className="h-16 border-b border-slate-300/60 flex items-center justify-between px-6 md:px-8 bg-white/80 backdrop-blur-md sticky top-0 z-20">
           <div className="flex items-center gap-3">
@@ -909,8 +820,8 @@ export default function AccionesCorrectivasPage({ params }) {
               <Menu className="h-5 w-5" />
             </button>
             <h2 className="font-outfit text-lg font-bold text-slate-900 flex items-center gap-2">
-              <ClipboardList className="h-5 w-5 text-[#468DFF]" />
-              Seguimiento de Acciones Correctivas
+              <Flame className="h-5 w-5 text-[#468DFF]" />
+              Programa de Control de Extintores
             </h2>
           </div>
           <div className="flex items-center gap-3">
@@ -929,62 +840,56 @@ export default function AccionesCorrectivasPage({ params }) {
           <div className="flex-1 flex items-center justify-center p-8">
             <div className="text-center space-y-3">
               <Loader2 className="h-8 w-8 animate-spin text-[#468DFF] mx-auto" />
-              <p className="text-xs text-slate-500 font-semibold">Cargando acciones correctivas...</p>
+              <p className="text-xs text-slate-500 font-semibold">Cargando equipos extintores...</p>
             </div>
           </div>
         ) : (
           <div className="p-6 md:p-8 space-y-6 max-w-[95%] mx-auto w-full">
             
-            {/* VISTA FORMULARIO O TABLA */}
             {isFormOpen ? (
+              // FORMULARIO DE ALTA Y EDICIÓN INLINE
               <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden animate-fade-in-up">
                 <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5 bg-slate-50">
                   <div className="flex items-center gap-3">
                     <button 
-                      onClick={handleCloseForm}
+                      onClick={handleExitForm}
                       className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition-colors border border-slate-200 bg-white shadow-sm cursor-pointer"
                     >
                       <ArrowLeft className="h-4 w-4" />
                     </button>
                     <h3 className="font-outfit text-base font-extrabold text-slate-900">
-                      {editingId ? 'Editar Hallazgo / Acción' : 'Incorporar Nuevo Hallazgo'}
+                      {editingId ? 'Editar Equipo Extintor' : 'Registrar Nuevo Extintor'}
                     </h3>
                   </div>
-                  <button onClick={handleCloseForm} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                  <button onClick={handleExitForm} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                     <X className="h-5 w-5" />
                   </button>
                 </div>
 
-                <form onSubmit={handleSaveHallazgo} className="p-6 space-y-6">
+                <form onSubmit={handleSaveExtintor} className="p-6 space-y-6">
                   
                   {/* Seccion 1: Identificación y Ubicación */}
                   <div className="space-y-4">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block border-b border-slate-100 pb-1">Identificación y Ubicación</span>
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block border-b border-slate-100 pb-1">Ubicación e Identificación</span>
+                    
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                          Cliente / Razón Social <span className="text-[#468DFF]">*</span>
-                        </label>
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Cliente / Razón Social <span className="text-red-500">*</span></label>
                         <select
                           required
                           value={empresaId}
-                          onChange={(e) => {
-                            setEmpresaId(e.target.value);
-                            setEstablecimientoId('');
-                          }}
+                          onChange={(e) => { setEmpresaId(e.target.value); setEstablecimientoId(''); }}
                           className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer"
                         >
-                          <option value="" disabled>Selecciona un cliente</option>
-                          {empresas.map((emp) => (
+                          <option value="">Selecciona un cliente</option>
+                          {empresas.map(emp => (
                             <option key={emp.id} value={emp.id}>{emp.razon_social}</option>
                           ))}
                         </select>
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                          Establecimiento <span className="text-[#468DFF]">*</span>
-                        </label>
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Establecimiento <span className="text-red-500">*</span></label>
                         <select
                           required
                           disabled={!empresaId}
@@ -992,70 +897,9 @@ export default function AccionesCorrectivasPage({ params }) {
                           onChange={(e) => setEstablecimientoId(e.target.value)}
                           className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer disabled:opacity-50"
                         >
-                          <option value="" disabled>
-                            {!empresaId ? 'Primero selecciona un cliente' : 'Selecciona un establecimiento'}
-                          </option>
-                          {filteredEstablecimientos.map((est) => (
+                          <option value="">{!empresaId ? 'Selecciona un cliente primero' : 'Selecciona un establecimiento'}</option>
+                          {filteredEstablecimientos.map(est => (
                             <option key={est.id} value={est.id}>{est.denominacion}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="grid md:grid-cols-4 gap-4">
-                      <div className="space-y-1 md:col-span-2">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                          Fuente del Hallazgo <span className="text-[#468DFF]">*</span>
-                        </label>
-                        <select
-                          required
-                          value={fuente}
-                          onChange={(e) => setFuente(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer"
-                        >
-                          <option value="" disabled>Selecciona la fuente</option>
-                          {FUENTE_OPTIONS.map((opt) => (
-                            <option key={opt} value={opt}>{opt}</option>
-                          ))}
-                          <option value="Otra">Otra (Especificar...)</option>
-                        </select>
-                        {fuente === 'Otra' && (
-                          <input
-                            type="text"
-                            required
-                            placeholder="Especificar otra fuente..."
-                            value={fuenteOtra}
-                            onChange={(e) => setFuenteOtra(e.target.value)}
-                            className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2 mt-2 outline-none focus:border-[#468DFF]"
-                          />
-                        )}
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                          Fecha del Registro <span className="text-[#468DFF]">*</span>
-                        </label>
-                        <input
-                          type="date"
-                          required
-                          value={fecha}
-                          onChange={(e) => setFecha(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                          Nivel de Riesgo <span className="text-[#468DFF]">*</span>
-                        </label>
-                        <select
-                          required
-                          value={nivelRiesgo}
-                          onChange={(e) => setNivelRiesgo(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer"
-                        >
-                          {NIVEL_RIESGO_OPTIONS.map((opt) => (
-                            <option key={opt} value={opt}>{opt}</option>
                           ))}
                         </select>
                       </div>
@@ -1066,7 +910,7 @@ export default function AccionesCorrectivasPage({ params }) {
                         <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Área / Sector</label>
                         <input
                           type="text"
-                          placeholder="Ej: Depósito de Materiales"
+                          placeholder="Ej: Cocina, Oficinas 1er Piso..."
                           value={areaSector}
                           onChange={(e) => setAreaSector(e.target.value)}
                           className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
@@ -1074,72 +918,216 @@ export default function AccionesCorrectivasPage({ params }) {
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Puesto / Operación</label>
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Puesto / Operación / Referencia</label>
                         <input
                           type="text"
-                          placeholder="Ej: Operador de autoelevador"
-                          value={puestoOperacion}
-                          onChange={(e) => setPuestoOperacion(e.target.value)}
+                          placeholder="Ej: Cerca de salida de emergencia..."
+                          value={puestoOperacionRef}
+                          onChange={(e) => setPuestoOperacionRef(e.target.value)}
+                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">N° de Puesto</label>
+                        <input
+                          type="text"
+                          placeholder="Ej: P01"
+                          value={nPuesto}
+                          onChange={(e) => setNPuesto(e.target.value)}
+                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">N° de Extintor</label>
+                        <input
+                          type="text"
+                          placeholder="Ej: 004812"
+                          value={nExtintor}
+                          onChange={(e) => setNExtintor(e.target.value)}
                           className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
                         />
                       </div>
                     </div>
                   </div>
 
-                  {/* Seccion 2: Descripción y Análisis */}
+                  {/* Seccion 2: Características Técnicas y Fechas */}
                   <div className="space-y-4">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block border-b border-slate-100 pb-1">Descripción y Análisis</span>
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block border-b border-slate-100 pb-1">Especificaciones Técnicas y Vencimientos</span>
                     
                     <div className="grid md:grid-cols-3 gap-4">
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                          Tipo de Hallazgo <span className="text-[#468DFF]">*</span>
-                        </label>
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Tipo de Extintor</label>
                         <select
-                          required
-                          value={tipoHallazgo}
-                          onChange={(e) => setTipoHallazgo(e.target.value)}
+                          value={tipo}
+                          onChange={(e) => setTipo(e.target.value)}
                           className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer"
                         >
-                          <option value="" disabled>Selecciona el tipo</option>
-                          {TIPO_HALLAZGO_OPTIONS.map((opt) => (
-                            <option key={opt} value={opt}>{opt}</option>
+                          <option value="">Selecciona tipo</option>
+                          {TIPO_EXTINTORES.map(t => (
+                            <option key={t} value={t}>{t}</option>
                           ))}
-                          <option value="Otro">Otro (Especificar...)</option>
                         </select>
-                        {tipoHallazgo === 'Otro' && (
-                          <input
-                            type="text"
-                            required
-                            placeholder="Especificar otro tipo..."
-                            value={tipoHallazgoOtro}
-                            onChange={(e) => setTipoHallazgoOtro(e.target.value)}
-                            className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2 mt-2 outline-none focus:border-[#468DFF]"
-                          />
-                        )}
                       </div>
 
-                      <div className="space-y-1 md:col-span-2">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Descripción Detallada del Hallazgo</label>
-                        <textarea
-                          rows="3"
-                          placeholder="Describe detalladamente lo observado..."
-                          value={descripcionHallazgo}
-                          onChange={(e) => setDescripcionHallazgo(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] resize-none"
+                      {tipo === 'Otro' && (
+                        <div className="space-y-1 md:col-span-2">
+                          <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Especificar otro tipo <span className="text-red-500">*</span></label>
+                          <input
+                            required
+                            type="text"
+                            placeholder="Ej: Halotrón, Arena..."
+                            value={tipoOtro}
+                            onChange={(e) => setTipoOtro(e.target.value)}
+                            className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
+                          />
+                        </div>
+                      )}
+
+                      <div className={`space-y-1 ${tipo === 'Otro' ? 'md:col-span-3' : 'md:col-span-2'}`}>
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Capacidad [Kg] / [l]</label>
+                        <input
+                          type="number"
+                          placeholder="Ej: 5, 10, 6..."
+                          value={capacidad}
+                          onChange={(e) => setCapacidad(e.target.value)}
+                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
                         />
                       </div>
                     </div>
 
-                    {/* Imagen de Respaldo */}
-                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-                      <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block mb-3 flex items-center gap-1">
-                        <ImageIcon className="h-4 w-4 text-[#468DFF]" />
-                        Imagen de Evidencia (Hallazgo)
-                      </span>
-                      <div className="flex flex-col sm:flex-row items-center gap-4">
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Vencimiento de Recarga</label>
+                        <input
+                          type="date"
+                          value={vencRecarga}
+                          onChange={(e) => setVencRecarga(e.target.value)}
+                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Vencimiento de PH (Prueba Hidráulica)</label>
+                        <input
+                          type="date"
+                          value={vencPh}
+                          onChange={(e) => setVencPh(e.target.value)}
+                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Estado Estimado (Previsualización)</label>
+                        <div className="h-10 flex items-center px-4 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold">
+                          {(() => {
+                            const calc = getCalculatedEstado(vencRecarga, vencPh);
+                            if (!calc.text) return <span className="text-slate-400">Sin fechas asignadas</span>;
+                            return (
+                              <span className={`px-3 py-0.5 rounded-full border text-[10px] ${calc.color}`}>
+                                {calc.text}
+                              </span>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Seccion 3: Chequeo Visual e Imagen */}
+                  <div className="space-y-4">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block border-b border-slate-100 pb-1">Chequeo e Inspección Visual</span>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Presión</label>
+                        <select
+                          value={presion}
+                          onChange={(e) => setPresion(e.target.value)}
+                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer"
+                        >
+                          {PRESION_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Precinto</label>
+                        <select
+                          value={precinto}
+                          onChange={(e) => setPrecinto(e.target.value)}
+                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer"
+                        >
+                          {CHECK_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Marbete</label>
+                        <select
+                          value={marbete}
+                          onChange={(e) => setMarbete(e.target.value)}
+                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer"
+                        >
+                          {CHECK_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Partes Mecánicas</label>
+                        <select
+                          value={partesMecanicas}
+                          onChange={(e) => setPartesMecanicas(e.target.value)}
+                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer"
+                        >
+                          {CHECK_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Manguera / Boquilla</label>
+                        <select
+                          value={mangueraBoquilla}
+                          onChange={(e) => setMangueraBoquilla(e.target.value)}
+                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer"
+                        >
+                          {CHECK_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Cilindro</label>
+                        <select
+                          value={cilindro}
+                          onChange={(e) => setCilindro(e.target.value)}
+                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer"
+                        >
+                          {CHECK_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Señalización</label>
+                        <select
+                          value={senalizacion}
+                          onChange={(e) => setSenalizacion(e.target.value)}
+                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer"
+                        >
+                          {CHECK_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Foto / Evidencia de Control */}
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Imagen / Evidencia Fotográfica</label>
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-slate-50 p-4 border border-slate-200 rounded-xl">
                         {imagenPreview ? (
-                          <div className="relative h-32 w-32 rounded-xl overflow-hidden border border-slate-200 bg-white group shrink-0">
+                          <div className="relative h-32 w-32 rounded-xl overflow-hidden border border-slate-200 bg-white shrink-0 shadow-inner">
                             <img src={imagenPreview} alt="Vista previa" className="h-full w-full object-cover" />
                             <button
                               type="button"
@@ -1192,89 +1180,17 @@ export default function AccionesCorrectivasPage({ params }) {
                     </div>
                   </div>
 
-                  {/* Seccion 3: Acciones y Planificación */}
+                  {/* Seccion 4: Fecha Control y Comentarios */}
                   <div className="space-y-4">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block border-b border-slate-100 pb-1">Acciones, Plazos y Responsabilidades</span>
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block border-b border-slate-100 pb-1">Control y Trazabilidad</span>
                     
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Causa Raíz (Análisis)</label>
-                        <input
-                          type="text"
-                          placeholder="¿Por qué ocurrió?"
-                          value={causaRaiz}
-                          onChange={(e) => setCausaRaiz(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Recomendación Técnica</label>
-                        <input
-                          type="text"
-                          placeholder="Medida preventiva recomendada..."
-                          value={recomendacion}
-                          onChange={(e) => setRecomendacion(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Acción Preventiva Definida</label>
-                        <input
-                          type="text"
-                          placeholder="Acción a largo plazo..."
-                          value={accionPreventiva}
-                          onChange={(e) => setAccionPreventiva(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Acción Correctiva Inmediata</label>
-                        <input
-                          type="text"
-                          placeholder="Acción correctora directa..."
-                          value={accionCorrectiva}
-                          onChange={(e) => setAccionCorrectiva(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid md:grid-cols-3 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Responsable de Implementar</label>
-                        <select
-                          value={responsable}
-                          onChange={(e) => setResponsable(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer"
-                        >
-                          <option value="">Selecciona un responsable</option>
-                          {miembrosList.map((m) => (
-                            <option key={m.id} value={m.full_name}>{m.full_name}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Fecha Planificada (Plazo)</label>
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Fecha de Control</label>
                         <input
                           type="date"
-                          value={fechaPlanificada}
-                          onChange={(e) => setFechaPlanificada(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Fecha de Realización / Implementación</label>
-                        <input
-                          type="date"
-                          value={fechaImplementacion}
-                          onChange={(e) => setFechaImplementacion(e.target.value)}
+                          value={fechaControl}
+                          onChange={(e) => setFechaControl(e.target.value)}
                           className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
                         />
                       </div>
@@ -1284,7 +1200,7 @@ export default function AccionesCorrectivasPage({ params }) {
                       <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Observaciones Generales</label>
                       <textarea
                         rows="3"
-                        placeholder="Comentarios adicionales..."
+                        placeholder="Comentarios o aclaraciones sobre el estado del extintor..."
                         value={observaciones}
                         onChange={(e) => setObservaciones(e.target.value)}
                         className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] resize-none"
@@ -1296,10 +1212,10 @@ export default function AccionesCorrectivasPage({ params }) {
                   <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
                     <button
                       type="button"
-                      onClick={handleCloseForm}
+                      onClick={handleExitForm}
                       className="py-3 px-6 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer"
                     >
-                      Cancelar
+                      Salir
                     </button>
                     <button
                       type="submit"
@@ -1319,7 +1235,7 @@ export default function AccionesCorrectivasPage({ params }) {
                 </form>
               </div>
             ) : (
-              // TABLA DE HALLAZGOS Y FILTROS
+              // TABLA DE LISTADO Y FILTROS
               <div className="space-y-6">
                 
                 {/* Panel de Filtros y Búsqueda */}
@@ -1331,7 +1247,7 @@ export default function AccionesCorrectivasPage({ params }) {
                       </span>
                       <input
                         type="text"
-                        placeholder="Buscar por descripción, área, puesto, responsable..."
+                        placeholder="Buscar por N° de Extintor, N° de puesto, sector, referencia..."
                         value={filterText}
                         onChange={(e) => setFilterText(e.target.value)}
                         className="w-full text-xs bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-slate-800 placeholder-slate-400 focus:outline-none transition-all"
@@ -1343,7 +1259,7 @@ export default function AccionesCorrectivasPage({ params }) {
                       className="py-3 px-5 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white font-bold text-xs transition-all duration-200 flex items-center justify-center gap-2 shadow-md shadow-blue-500/15 cursor-pointer shrink-0"
                     >
                       <Plus className="h-4 w-4" />
-                      Incorporar Nuevo Hallazgo
+                      Incorporar Nuevo Extintor
                     </button>
                   </div>
 
@@ -1354,13 +1270,13 @@ export default function AccionesCorrectivasPage({ params }) {
                         <Sliders className="h-3 w-3" />
                         Filtros de Búsqueda
                       </span>
-                      {(filterEmpresa || filterEstablecimiento || filterRiesgo || filterEstado || filterText) && (
+                      {(filterEmpresa || filterEstablecimiento || filterEstado || filterTipo || filterText) && (
                         <button
                           onClick={() => {
                             setFilterEmpresa('');
                             setFilterEstablecimiento('');
-                            setFilterRiesgo('');
                             setFilterEstado('');
+                            setFilterTipo('');
                             setFilterText('');
                           }}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-200 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer"
@@ -1409,20 +1325,6 @@ export default function AccionesCorrectivasPage({ params }) {
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Filtrar por Nivel de Riesgo</label>
-                        <select
-                          value={filterRiesgo}
-                          onChange={(e) => setFilterRiesgo(e.target.value)}
-                          className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 outline-none focus:border-[#468DFF] cursor-pointer"
-                        >
-                          <option value="">Todos los riesgos</option>
-                          {NIVEL_RIESGO_OPTIONS.map((opt) => (
-                            <option key={opt} value={opt}>{opt}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="space-y-1">
                         <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Filtrar por Estado</label>
                         <select
                           value={filterEstado}
@@ -1430,10 +1332,22 @@ export default function AccionesCorrectivasPage({ params }) {
                           className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 outline-none focus:border-[#468DFF] cursor-pointer"
                         >
                           <option value="">Todos los estados</option>
-                          <option value="En análisis">En análisis</option>
-                          <option value="En tiempo">En tiempo</option>
-                          <option value="Vencido">Vencido</option>
-                          <option value="Cerrada">Cerrada</option>
+                          <option value="Vigente">Vigente (Verde)</option>
+                          <option value="Vencido">Vencido (Rojo)</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Filtrar por Tipo</label>
+                        <select
+                          value={filterTipo}
+                          onChange={(e) => setFilterTipo(e.target.value)}
+                          className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 outline-none focus:border-[#468DFF] cursor-pointer"
+                        >
+                          <option value="">Todos los tipos</option>
+                          {TIPO_EXTINTORES.map((t) => (
+                            <option key={t} value={t}>{t}</option>
+                          ))}
                         </select>
                       </div>
                     </div>
@@ -1452,22 +1366,22 @@ export default function AccionesCorrectivasPage({ params }) {
                               {sortField === 'cliente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                             </div>
                           </th>
-                          <th className="py-4 px-4 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('fuente')}>
+                          <th className="py-4 px-4 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('n_extintor')}>
                             <div className="flex items-center gap-1">
-                              Fuente / Fecha
-                              {sortField === 'fuente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              N° Ext / Puesto / Sector
+                              {sortField === 'n_extintor' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                             </div>
                           </th>
-                          <th className="py-4 px-4 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('hallazgo')}>
+                          <th className="py-4 px-4 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('tipo')}>
                             <div className="flex items-center gap-1">
-                              Hallazgo / Tipo
-                              {sortField === 'hallazgo' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              Tipo / Capacidad
+                              {sortField === 'tipo' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                             </div>
                           </th>
-                          <th className="py-4 px-4 text-center cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('nivel_riesgo')}>
+                          <th className="py-4 px-4 text-center cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('venc_recarga')}>
                             <div className="flex items-center justify-center gap-1">
-                              Nivel Riesgo
-                              {sortField === 'nivel_riesgo' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              Vencimientos (Rec. / PH)
+                              {sortField === 'venc_recarga' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                             </div>
                           </th>
                           <th className="py-4 px-4 text-center cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('estado')}>
@@ -1476,40 +1390,36 @@ export default function AccionesCorrectivasPage({ params }) {
                               {sortField === 'estado' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                             </div>
                           </th>
-                          <th className="py-4 px-4 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('responsable')}>
-                            <div className="flex items-center gap-1">
-                              Responsable
-                              {sortField === 'responsable' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
-                            </div>
-                          </th>
+                          <th className="py-4 px-4 text-center">Controles</th>
                           <th className="py-4 px-6 text-right">Acciones</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-xs font-normal text-slate-700">
-                        {sortedAcciones.length === 0 ? (
+                        {sortedExtintores.length === 0 ? (
                           <tr>
                             <td colSpan="7" className="py-12 px-6 text-center text-slate-400 italic">
-                              No se encontraron registros de acciones correctivas.
+                              No se encontraron registros de extintores.
                             </td>
                           </tr>
                         ) : (
-                          sortedAcciones.map((acc) => {
-                            const emp = empresas.find(e => e.id === acc.empresa_id);
-                            const est = allEstablecimientos.find(t => t.id === acc.establecimiento_id);
-                            const status = getCalculatedStatus(acc.fecha_planificada, acc.fecha_implementacion);
-                            
-                            // Color del nivel de riesgo
-                            let riskBadge = 'bg-slate-100 text-slate-700 border-slate-200';
-                            if (acc.nivel_riesgo === 'Riesgo trivial') riskBadge = 'bg-[#0b8043]/10 text-[#0b8043] border-[#0b8043]/20';
-                            else if (acc.nivel_riesgo === 'Riesgo tolerable') riskBadge = 'bg-[#00b050]/10 text-[#00b050] border-[#00b050]/20';
-                            else if (acc.nivel_riesgo === 'Riesgo moderado') riskBadge = 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20';
-                            else if (acc.nivel_riesgo === 'Riesgo sustancial') riskBadge = 'bg-orange-500/10 text-orange-700 border-orange-500/20';
-                            else if (acc.nivel_riesgo === 'Riesgo intolerable') riskBadge = 'bg-red-500/10 text-red-600 border-red-500/20';
+                          sortedExtintores.map((ext) => {
+                            const emp = empresas.find(e => e.id === ext.empresa_id);
+                            const est = allEstablecimientos.find(t => t.id === ext.establecimiento_id);
+                            const status = getCalculatedEstado(ext.venc_recarga, ext.venc_ph);
+
+                            // Checklist summary icons
+                            const cPresion = ext.presion === 'Ok' ? 'text-green-600' : ext.presion === 'N/A' ? 'text-slate-400' : 'text-red-500 font-bold';
+                            const cPrecinto = ext.precinto === 'Ok' ? 'text-green-600' : ext.precinto === 'N/A' ? 'text-slate-400' : 'text-red-500 font-bold';
+                            const cMarbete = ext.marbete === 'Ok' ? 'text-green-600' : ext.marbete === 'N/A' ? 'text-slate-400' : 'text-red-500 font-bold';
+                            const cMecanica = ext.partes_mecanicas === 'Ok' ? 'text-green-600' : ext.partes_mecanicas === 'N/A' ? 'text-slate-400' : 'text-red-500 font-bold';
+                            const cManguera = ext.manguera_boquilla === 'Ok' ? 'text-green-600' : ext.manguera_boquilla === 'N/A' ? 'text-slate-400' : 'text-red-500 font-bold';
+                            const cCilindro = ext.cilindro === 'Ok' ? 'text-green-600' : ext.cilindro === 'N/A' ? 'text-slate-400' : 'text-red-500 font-bold';
+                            const cSenal = ext.senalizacion === 'Ok' ? 'text-green-600' : ext.senalizacion === 'N/A' ? 'text-slate-400' : 'text-red-500 font-bold';
 
                             return (
                               <tr 
-                                key={acc.id} 
-                                onClick={() => handleEditClick(acc)}
+                                key={ext.id} 
+                                onClick={() => handleEditClick(ext)}
                                 className="hover:bg-slate-50 transition-colors cursor-pointer"
                               >
                                 <td className="py-4 px-6">
@@ -1520,35 +1430,45 @@ export default function AccionesCorrectivasPage({ params }) {
                                   </span>
                                 </td>
                                 <td className="py-4 px-4">
-                                  <span className="block max-w-[150px] truncate text-slate-600" title={acc.fuente}>{acc.fuente}</span>
-                                  <span className="text-[10px] text-slate-400 block mt-0.5 font-mono">{acc.fecha}</span>
+                                  <span className="font-bold text-slate-800 block">N° {ext.n_extintor || 'S/N'}</span>
+                                  <span className="text-[10px] text-slate-500 block">Puesto: {ext.n_puesto || 'S/D'}</span>
+                                  <span className="text-[10px] text-slate-400 block truncate max-w-[150px]">{ext.area_sector || 'S/D'}</span>
                                 </td>
                                 <td className="py-4 px-4">
-                                  <span className="block max-w-[200px] truncate font-semibold text-slate-800" title={acc.descripcion_hallazgo}>
-                                    {acc.descripcion_hallazgo || 'Sin descripción'}
-                                  </span>
-                                  <span className="text-[10px] text-slate-400 block mt-0.5">{acc.tipo_hallazgo}</span>
+                                  <span className="font-semibold text-slate-800 block max-w-[150px] truncate" title={ext.tipo}>{ext.tipo || 'S/D'}</span>
+                                  <span className="text-[10px] text-slate-400 block mt-0.5">{ext.capacidad ? `${ext.capacidad} Kg / l` : 'S/D'}</span>
                                 </td>
                                 <td className="py-4 px-4 text-center">
-                                  <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold inline-block ${riskBadge}`}>
-                                    {acc.nivel_riesgo}
-                                  </span>
+                                  <span className="text-[10px] text-slate-600 block">Rec: <span className="font-mono">{ext.venc_recarga || 'S/D'}</span></span>
+                                  <span className="text-[10px] text-slate-400 block font-normal">PH: <span className="font-mono">{ext.venc_ph || 'S/D'}</span></span>
                                 </td>
                                 <td className="py-4 px-4 text-center">
-                                  <span className={`px-2.5 py-0.5 rounded-full border text-[10px] font-bold inline-block ${status.color}`}>
-                                    {status.text}
-                                  </span>
+                                  {status.text ? (
+                                    <span className={`px-2.5 py-0.5 rounded-full border text-[10px] font-bold inline-block ${status.color}`}>
+                                      {status.text}
+                                    </span>
+                                  ) : (
+                                    <span className="text-slate-400 italic text-[10px]">S/Fechas</span>
+                                  )}
                                 </td>
-                                <td className="py-4 px-4 font-medium text-slate-600">
-                                  {acc.responsable || 'No asignado'}
+                                <td className="py-4 px-4 text-center" onClick={(e) => e.stopPropagation()}>
+                                  <div className="flex items-center justify-center gap-1.5 text-[9px] font-bold font-mono">
+                                    <span title={`Presión: ${ext.presion}`} className={`px-1 py-0.5 rounded border border-slate-200 bg-slate-50 ${cPresion}`}>PR</span>
+                                    <span title={`Precinto: ${ext.precinto}`} className={`px-1 py-0.5 rounded border border-slate-200 bg-slate-50 ${cPrecinto}`}>PC</span>
+                                    <span title={`Marbete: ${ext.marbete}`} className={`px-1 py-0.5 rounded border border-slate-200 bg-slate-50 ${cMarbete}`}>MB</span>
+                                    <span title={`Partes Mecánicas: ${ext.partes_mecanicas}`} className={`px-1 py-0.5 rounded border border-slate-200 bg-slate-50 ${cMecanica}`}>MC</span>
+                                    <span title={`Manguera/Boquilla: ${ext.manguera_boquilla}`} className={`px-1 py-0.5 rounded border border-slate-200 bg-slate-50 ${cManguera}`}>MG</span>
+                                    <span title={`Cilindro: ${ext.cilindro}`} className={`px-1 py-0.5 rounded border border-slate-200 bg-slate-50 ${cCilindro}`}>CL</span>
+                                    <span title={`Señalización: ${ext.senalizacion}`} className={`px-1 py-0.5 rounded border border-slate-200 bg-slate-50 ${cSenal}`}>SE</span>
+                                  </div>
                                 </td>
                                 <td className="py-4 px-6 text-right space-x-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                                  {acc.imagen_preview_url && (
+                                  {ext.imagen_preview_url && (
                                     <a 
-                                      href={acc.imagen_preview_url}
+                                      href={ext.imagen_preview_url}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      title="Ver Evidencia"
+                                      title="Ver Foto"
                                       className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-700 transition-colors inline-block cursor-pointer"
                                       onClick={(e) => e.stopPropagation()}
                                     >
@@ -1556,14 +1476,14 @@ export default function AccionesCorrectivasPage({ params }) {
                                     </a>
                                   )}
                                   <button
-                                    onClick={(e) => { e.stopPropagation(); handleEditClick(acc); }}
+                                    onClick={(e) => { e.stopPropagation(); handleEditClick(ext); }}
                                     title="Editar"
                                     className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 hover:text-blue-600 transition-colors inline-block cursor-pointer"
                                   >
                                     <Edit className="h-3.5 w-3.5" />
                                   </button>
                                   <button
-                                    onClick={(e) => { e.stopPropagation(); handleDeleteClick(acc.id); }}
+                                    onClick={(e) => { e.stopPropagation(); handleDeleteClick(ext.id); }}
                                     title="Eliminar"
                                     className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 hover:text-red-600 transition-colors inline-block cursor-pointer"
                                   >
@@ -1578,57 +1498,50 @@ export default function AccionesCorrectivasPage({ params }) {
                     </table>
                   </div>
                 </div>
-
               </div>
             )}
-
           </div>
         )}
-
       </main>
 
-      {/* MODAL DE CONFIRMACIÓN */}
+      {/* Alertas y Confirmaciones */}
       {modalAlert.show && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xl max-w-sm w-full space-y-4 text-center">
-            <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500">
-              <AlertTriangle className="h-6 w-6" />
-            </div>
-            <div className="space-y-1">
-              <h4 className="font-outfit text-base font-extrabold text-slate-800">{modalAlert.title}</h4>
-              <p className="text-xs text-slate-500 leading-relaxed">{modalAlert.message}</p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div onClick={closeAlert} className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" />
+          <div className="relative bg-white border border-slate-200 rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-scaleUp">
+            <h4 className="font-outfit text-base font-extrabold text-slate-900 mb-2">{modalAlert.title}</h4>
+            <p className="text-xs text-slate-500 mb-6 font-normal leading-relaxed">{modalAlert.message}</p>
+            <div className="flex justify-end gap-3">
+              <button 
                 onClick={closeAlert}
-                className="flex-1 py-2 px-4 rounded-xl border border-slate-300 text-slate-700 font-bold text-xs hover:bg-slate-50 transition-all cursor-pointer bg-white"
+                className="py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer"
               >
                 Cancelar
               </button>
-              {modalAlert.onConfirm && (
-                <button
-                  type="button"
-                  onClick={modalAlert.onConfirm}
-                  className="flex-1 py-2 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md shadow-red-500/10 cursor-pointer"
-                >
-                  Confirmar
-                </button>
-              )}
+              <button 
+                onClick={() => { modalAlert.onConfirm(); }}
+                className={`py-2.5 px-5 rounded-xl font-bold text-xs text-white transition-all cursor-pointer ${
+                  modalAlert.confirmText === 'Eliminar' 
+                    ? 'bg-red-600 hover:bg-red-700 shadow-md shadow-red-500/10' 
+                    : 'bg-[#468DFF] hover:bg-[#0511F2] shadow-md shadow-blue-500/10'
+                }`}
+              >
+                {modalAlert.confirmText}
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Notificación Toast flotante */}
+      {/* Toast notifications */}
       {toast.show && (
-        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl border shadow-lg transition-all text-xs font-bold ${
-          toast.type === 'error'
-            ? 'bg-red-50 border-red-200 text-red-600'
-            : 'bg-emerald-50 border-emerald-200 text-emerald-600'
+        <div className={`fixed bottom-5 right-5 z-50 flex items-center gap-2 px-4 py-3 rounded-xl border shadow-lg animate-fade-in-up ${
+          toast.type === 'error' 
+            ? 'bg-red-50 text-red-700 border-red-200' 
+            : 'bg-green-50 text-green-700 border-green-200'
         }`}>
-          <Check className="h-4 w-4 shrink-0" />
-          <span>{toast.message}</span>
+          {toast.type === 'success' ? <Check className="h-4 w-4 shrink-0" /> : <X className="h-4 w-4 shrink-0" />}
+          <span className="text-xs font-bold">{toast.message}</span>
         </div>
       )}
 
