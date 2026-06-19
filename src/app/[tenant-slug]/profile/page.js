@@ -680,7 +680,7 @@ const [partidosList, setPartidosList] = useState([]);
       if (!logo2Preview) logo2Url = '';
 
       // 2. Actualizar Tenant
-      if (tenantId && profileData?.role === 'owner') {
+      if (tenantId && (profileData?.role === 'owner' || profileData?.role === 'admin')) {
         const { error: tenantErr } = await supabase
           .from('tenants')
           .update({
@@ -1641,7 +1641,7 @@ const [partidosList, setPartidosList] = useState([]);
             </div>
           </div>
 
-          {profileData?.role === 'owner' && (
+          {(profileData?.role === 'owner' || profileData?.role === 'admin') && (
             <>
               {/* SECCIÓN 2: IDENTIDAD DE LA EMPRESA */}
               <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">

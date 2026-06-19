@@ -29,7 +29,8 @@ import {
   Camera,
   Upload,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Sliders
 } from 'lucide-react';
 
 const FUENTE_OPTIONS = [
@@ -120,6 +121,7 @@ export default function AccionesCorrectivasPage({ params }) {
   const [tenant, setTenant] = useState(null);
   const [empresas, setEmpresas] = useState([]);
   const [allEstablecimientos, setAllEstablecimientos] = useState([]);
+  const [miembrosList, setMiembrosList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isDevMode, setIsDevMode] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -265,7 +267,16 @@ export default function AccionesCorrectivasPage({ params }) {
       if (estErr) throw estErr;
       setAllEstablecimientos(ests || []);
 
-      // 5. Acciones Correctivas
+      // 5. Miembros del Equipo
+      const { data: mems, error: memErr } = await supabase
+        .from('miembros_equipo')
+        .select('id, full_name')
+        .eq('tenant_id', ten.id)
+        .order('full_name');
+      if (memErr) throw memErr;
+      setMiembrosList(mems || []);
+
+      // 6. Acciones Correctivas
       const { data: accs, error: accErr } = await supabase
         .from('acciones_correctivas')
         .select('*')
@@ -315,6 +326,10 @@ export default function AccionesCorrectivasPage({ params }) {
       { id: 'mock-est-1', empresa_id: 'mock-empresa-1', denominacion: 'Callao 727' },
       { id: 'mock-est-2', empresa_id: 'mock-empresa-1', denominacion: 'Cordoba 2045' },
       { id: 'mock-est-3', empresa_id: 'mock-empresa-2', denominacion: 'Único' }
+    ]);
+    setMiembrosList([
+      { id: 'mock-miembro-1', full_name: 'Gonzalo Merlo' },
+      { id: 'mock-miembro-2', full_name: 'Florencia Benitez' }
     ]);
     setAcciones([
       {
@@ -1219,13 +1234,16 @@ export default function AccionesCorrectivasPage({ params }) {
                     <div className="grid md:grid-cols-3 gap-4">
                       <div className="space-y-1">
                         <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Responsable de Implementar</label>
-                        <input
-                          type="text"
-                          placeholder="Nombre del responsable..."
+                        <select
                           value={responsable}
                           onChange={(e) => setResponsable(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
-                        />
+                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer"
+                        >
+                          <option value="">Selecciona un responsable</option>
+                          {miembrosList.map((m) => (
+                            <option key={m.id} value={m.full_name}>{m.full_name}</option>
+                          ))}
+                        </select>
                       </div>
 
                       <div className="space-y-1">
@@ -1319,7 +1337,10 @@ export default function AccionesCorrectivasPage({ params }) {
                   {/* Selectores de Filtrado */}
                   <div className="pt-2 border-t border-slate-100 space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Filtros</span>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <Sliders className="h-3 w-3" />
+                        Filtros de Búsqueda
+                      </span>
                       {(filterEmpresa || filterEstablecimiento || filterRiesgo || filterEstado || filterText) && (
                         <button
                           onClick={() => {

@@ -991,7 +991,7 @@ export default function CapacitacionPage({ params }) {
                       onClick={handleExitForm}
                       className="py-3 px-6 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer flex items-center gap-2"
                     >
-                      Salir sin guardar
+                      Salir
                     </button>
                     <button
                       type="submit"
@@ -1273,7 +1273,7 @@ export default function CapacitacionPage({ params }) {
                 <button
                   type="button"
                   onClick={modalAlert.onConfirm}
-                  className="flex-1 py-2 px-4 rounded-xl bg-red-650 hover:bg-red-700 text-white font-bold text-xs shadow-md shadow-red-500/10 cursor-pointer"
+                  className="flex-1 py-2 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md shadow-red-500/10 cursor-pointer"
                 >
                   Confirmar
                 </button>

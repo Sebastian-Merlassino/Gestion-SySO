@@ -30,7 +30,9 @@ import {
   CalendarDays,
   ExternalLink,
   ClipboardList,
-  GraduationCap
+  GraduationCap,
+  ArrowLeft,
+  Sliders
 } from 'lucide-react';
 
 const MONTH_NAMES = [
@@ -111,7 +113,7 @@ export default function ProgramaGestion({ params }) {
 
   // Modales y Toasts
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
-  const [confirmModal, setConfirmModal] = useState({ show: false, title: '', message: '', onConfirm: null });
+  const [confirmModal, setConfirmModal] = useState({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Eliminar' });
 
   // 1. Cargar datos iniciales
   useEffect(() => {
@@ -649,6 +651,7 @@ export default function ProgramaGestion({ params }) {
       show: true,
       title: 'Eliminar Actividad',
       message: '¿Estás seguro de que deseas eliminar esta actividad del programa anual? Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
       onConfirm: async () => {
         try {
           if (isDevMode) {
@@ -666,8 +669,21 @@ export default function ProgramaGestion({ params }) {
           console.error('Error al eliminar actividad:', err);
           triggerToast('Error al eliminar la actividad.', 'error');
         } finally {
-          setConfirmModal({ show: false, title: '', message: '', onConfirm: null });
+          setConfirmModal({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Eliminar' });
         }
+      }
+    });
+  };
+
+  const handleExitForm = () => {
+    setConfirmModal({
+      show: true,
+      title: 'Salir sin guardar',
+      message: '¿Estás seguro de que deseas salir? Los cambios no guardados se perderán.',
+      confirmText: 'Salir',
+      onConfirm: () => {
+        setShowForm(false);
+        setConfirmModal({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Eliminar' });
       }
     });
   };
@@ -951,8 +967,329 @@ export default function ProgramaGestion({ params }) {
           </div>
         ) : (
           <div className="p-6 md:p-8 space-y-6 max-w-[95%] mx-auto w-full">
-            
-            {/* Toolbar y Filtros Unificados */}
+            {showForm ? (
+              // FORMULARIO DE ALTA Y EDICIÓN INLINE
+              <div className="bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[85vh]">
+                <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5 bg-slate-50">
+                  <div className="flex items-center gap-3">
+                    <button 
+                      type="button"
+                      onClick={handleExitForm}
+                      className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition-colors border border-slate-200 bg-white shadow-sm cursor-pointer"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                    </button>
+                    <h3 className="font-outfit text-base font-extrabold text-slate-900">
+                      {editingId ? 'Editar Actividad Anual' : 'Nueva Actividad del Programa'}
+                    </h3>
+                  </div>
+                  <button type="button" onClick={handleExitForm} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleSave} className="p-6 space-y-6 overflow-y-auto flex-1 scrollbar-thin">
+                  
+                  {/* 1. Razón Social (Empresa) */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                      Cliente / Razón Social <span className="text-[#468DFF]">*</span>
+                    </label>
+                    <select
+                      required
+                      value={empresaId}
+                      onChange={(e) => handleEmpresaChange(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none transition-all"
+                    >
+                      <option value="">Selecciona un cliente</option>
+                      {empresas.map(e => (
+                        <option key={e.id} value={e.id}>{e.razon_social}</option>
+                      ))}
+                    </select>
+                    {formErrors.empresaId && <p className="text-[10px] text-red-500 font-bold mt-1">{formErrors.empresaId}</p>}
+                  </div>
+
+                  {/* 2. Establecimiento */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                      Establecimiento <span className="text-[#468DFF]">*</span>
+                    </label>
+                    <select
+                      value={establecimientoId}
+                      onChange={(e) => setEstablecimientoId(e.target.value)}
+                      disabled={!empresaId}
+                      className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <option value="">Selecciona un establecimiento</option>
+                      {filteredEstablecimientos.map(e => (
+                        <option key={e.id} value={e.id}>{e.denominacion}</option>
+                      ))}
+                    </select>
+                    {!empresaId && <p className="text-[9px] text-slate-400 mt-1 italic">Debes seleccionar una Razón Social primero.</p>}
+                    {formErrors.establecimientoId && <p className="text-[10px] text-red-500 font-bold mt-1">{formErrors.establecimientoId}</p>}
+                  </div>
+
+                  {/* 3. Descripción (Catálogo o texto manual) */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                      Descripción / Actividad <span className="text-[#468DFF]">*</span>
+                    </label>
+                    <select
+                      value={catalogoId}
+                      onChange={(e) => handleDescripcionChange(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none transition-all mb-2"
+                    >
+                      <option value="">-- Selecciona del catálogo --</option>
+                      {catalogo.map(c => (
+                        <option key={c.id} value={c.id}>{c.descripcion}</option>
+                      ))}
+                      <option value="__custom__">Otra actividad (cargar manualmente)...</option>
+                    </select>
+                    
+                    {/* Textarea: siempre visible; pre-cargada desde catálogo o editable manualmente */}
+                    <textarea
+                      required
+                      placeholder="Detalla la actividad a realizar..."
+                      value={descripcion}
+                      onChange={(e) => setDescripcion(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none transition-all h-20 resize-none"
+                    />
+                    {formErrors.descripcion && <p className="text-[10px] text-red-500 font-bold mt-1">{formErrors.descripcion}</p>}
+                  </div>
+
+                  {/* 4. Marco Legal */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                      Marco Legal / Requisito Legal Aplicable
+                    </label>
+                    <input
+                      type="text"
+                      placeholder={catalogoId && catalogoId !== '__custom__' ? 'Completado automáticamente desde catálogo...' : 'Ingresá el requisito legal aplicable...'}
+                      value={marcoLegal}
+                      onChange={(e) => setMarcoLegal(e.target.value)}
+                      className={`w-full border rounded-xl py-3 px-4 text-xs focus:outline-none transition-all ${
+                        catalogoId && catalogoId !== '__custom__'
+                          ? 'bg-slate-100 border-slate-200 text-slate-500 cursor-default'
+                          : 'bg-slate-50 border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] text-slate-800'
+                      }`}
+                      readOnly={!!(catalogoId && catalogoId !== '__custom__')}
+                    />
+                    {(!catalogoId || catalogoId === '__custom__') && (
+                      <p className="text-[9px] text-slate-400 mt-1 italic">Podés ingresar la norma o resolución aplicable (ej: Dec. 351/79, Res. 905/15...)</p>
+                    )}
+                  </div>
+
+                  {/* 5. Responsable */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                      Responsable Asignado
+                    </label>
+                    <select
+                      value={responsableId}
+                      onChange={(e) => setResponsableId(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none transition-all"
+                    >
+                      <option value="">Selecciona un responsable</option>
+                      {miembros.map(m => (
+                        <option key={m.id} value={m.id}>{m.full_name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* 6. Fechas */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                        F. Planificada
+                      </label>
+                      <input
+                        type="date"
+                        value={fechaPlanificada}
+                        onChange={(e) => setFechaPlanificada(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none transition-all font-mono"
+                      />
+                      <p className="text-[9px] text-slate-400 mt-1 italic">Opcional. Si no se carga, el estado será "En análisis".</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                        F. Realización
+                      </label>
+                      <input
+                        type="date"
+                        value={fechaRealizacion}
+                        onChange={(e) => handleRealizacionChange(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none transition-all font-mono"
+                      />
+                      <p className="text-[9px] text-slate-400 mt-1 italic">Si se carga, el progreso se fija al 100% y el estado a Vigente.</p>
+                    </div>
+                  </div>
+
+                  {/* 7. Progreso */}
+                  <div>
+                    <div className="flex justify-between items-center mb-1.5">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                        Progreso del Avance
+                      </label>
+                      <span className="text-xs font-bold text-[#468DFF]">{progreso}%</span>
+                    </div>
+                    <div className="flex items-center gap-3 py-1">
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="5"
+                        value={progreso}
+                        onChange={(e) => setProgreso(parseInt(e.target.value))}
+                        className="flex-1 accent-[#468DFF] h-2 bg-slate-200 rounded-lg cursor-pointer"
+                      />
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={progreso}
+                        onChange={(e) => {
+                          let val = parseInt(e.target.value) || 0;
+                          if (val > 100) val = 100;
+                          if (val < 0) val = 0;
+                          setProgreso(val);
+                        }}
+                        className="w-16 text-center text-xs bg-slate-50 border border-slate-300 rounded-xl py-1.5 outline-none focus:border-[#468DFF]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* 8. Carga de Documento */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                      Documento de Respaldo / Evidencia (PDF)
+                    </label>
+                    
+                    {documentoUrl ? (
+                      <div className="flex items-center justify-between border border-[#468DFF]/20 rounded-xl bg-blue-50/50 p-3 mb-2.5">
+                        <div className="flex items-center gap-2 truncate pr-2">
+                          <FileText className="h-5 w-5 text-[#468DFF] shrink-0" />
+                          <span className="text-xs text-slate-600 truncate font-semibold">
+                            PDF subido anteriormente
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleViewPdf(documentoUrl)}
+                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-[#468DFF] text-slate-500 hover:text-white transition-all cursor-pointer inline-flex items-center shadow-sm"
+                            title="Ver PDF en otra pestaña"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDocumentoUrl('')}
+                            className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white transition-all cursor-pointer inline-flex items-center shadow-sm"
+                            title="Eliminar documento cargado"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
+
+                    <div className="flex items-center gap-2 mb-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setUploadType('local')}
+                        className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+                          uploadType === 'local'
+                            ? 'bg-[#468DFF]/10 text-[#468DFF] border-[#468DFF]/30'
+                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        Archivo Local (PC/Celular)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setUploadType('drive')}
+                        className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+                          uploadType === 'drive'
+                            ? 'bg-[#468DFF]/10 text-[#468DFF] border-[#468DFF]/30'
+                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        Vincular Google Drive
+                      </button>
+                    </div>
+
+                    {uploadType === 'local' ? (
+                      <>
+                        <input
+                          type="file"
+                          accept=".pdf"
+                          onChange={(e) => setDocumentoFile(e.target.files[0])}
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-xs text-slate-600 focus:outline-none file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:uppercase file:bg-[#468DFF]/10 file:text-[#468DFF] hover:file:bg-[#468DFF]/20 file:cursor-pointer"
+                        />
+                        <p className="text-[9px] text-slate-400 mt-1 italic">Solo formato PDF. Tamaño máximo de 10 MB.</p>
+                      </>
+                    ) : (
+                      <>
+                        <input
+                          type="url"
+                          placeholder="Pega el enlace compartido de Google Drive..."
+                          value={driveLink}
+                          onChange={(e) => setDriveLink(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-2.5 px-3 text-xs text-slate-800 focus:outline-none transition-all"
+                        />
+                        <p className="text-[9px] text-slate-400 mt-1 italic">
+                          El archivo debe ser público en Drive ("Cualquier persona con el enlace"). Se convertirá y guardará automáticamente.
+                        </p>
+                      </>
+                    )}
+                  </div>
+
+                  {/* 9. Observaciones */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                      Observaciones Generales
+                    </label>
+                    <textarea
+                      placeholder="Escribe comentarios, novedades o detalles..."
+                      value={observaciones}
+                      onChange={(e) => setObservaciones(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none transition-all h-24 resize-none"
+                    />
+                  </div>
+
+                  {/* Botones de acción del formulario */}
+                  <div className="pt-4 border-t border-slate-200 flex items-center justify-between shrink-0">
+                    <button
+                      type="button"
+                      onClick={handleExitForm}
+                      className="px-5 py-3 border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 bg-white"
+                    >
+                      Salir
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={saving}
+                      className="flex items-center justify-center gap-2 px-6 py-3 bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-[#468DFF]/15 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer min-w-[120px]"
+                    >
+                      {saving ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Guardando...
+                        </>
+                      ) : (
+                        <>
+                          <Check className="h-4 w-4" />
+                          Guardar
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            ) : (
+              <>
+                {/* Toolbar y Filtros Unificados */}
             <div className="bg-white p-5 border border-slate-200/80 rounded-2xl shadow-sm space-y-6">
               
               {/* Fila Superior: Controles de Vista, Buscador y Botón Nuevo */}
@@ -1004,10 +1341,10 @@ export default function ProgramaGestion({ params }) {
               {/* Fila Inferior: Filtros rápidos */}
               <div className="border-t border-slate-100 pt-4 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                    <Settings className="h-3.5 w-3.5 text-slate-500" />
-                    Filtros del Programa
-                  </h4>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Sliders className="h-3 w-3" />
+                    Filtros de Búsqueda
+                  </span>
                   {(filterEmpresa || filterEstablecimiento || filterMonth || filterYear || filterEstado || searchQuery) && (
                     <button
                       onClick={() => {
@@ -1400,330 +1737,8 @@ export default function ProgramaGestion({ params }) {
                 </div>
               </div>
             )}
-          </div>
+          </>
         )}
-
-        {/* DIÁLOGO / FORMULARIO SLIDE-OVER DESLIZABLE */}
-        {showForm && (
-          <div className="fixed inset-0 z-50 flex justify-end">
-            {/* Fondo translúcido */}
-            <div 
-              onClick={() => setShowForm(false)}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300"
-            />
-            
-            {/* Panel de Formulario */}
-            <div className="relative w-full max-w-lg bg-white h-full shadow-2xl p-6 flex flex-col justify-between overflow-y-auto animate-scaleUp z-10 border-l border-slate-200">
-              
-              {/* Header */}
-              <div className="flex items-center justify-between pb-4 border-b border-slate-200">
-                <h3 className="font-outfit text-base font-extrabold text-slate-900 flex items-center gap-2">
-                  {editingId ? <Edit className="h-5 w-5 text-[#468DFF]" /> : <Plus className="h-5 w-5 text-[#468DFF]" />}
-                  {editingId ? 'Editar Actividad Anual' : 'Nueva Actividad del Programa'}
-                </h3>
-                <button 
-                  onClick={() => setShowForm(false)}
-                  className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-800 transition-colors cursor-pointer"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              {/* Form Body */}
-              <form onSubmit={handleSave} className="flex-1 py-6 space-y-5">
-                
-                {/* 1. Razón Social (Empresa) */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                    Cliente / Razón Social <span className="text-[#468DFF]">*</span>
-                  </label>
-                  <select
-                    required
-                    value={empresaId}
-                    onChange={(e) => handleEmpresaChange(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none transition-all"
-                  >
-                    <option value="">Selecciona un cliente</option>
-                    {empresas.map(e => (
-                      <option key={e.id} value={e.id}>{e.razon_social}</option>
-                    ))}
-                  </select>
-                  {formErrors.empresaId && <p className="text-[10px] text-red-500 font-bold mt-1">{formErrors.empresaId}</p>}
-                </div>
-
-                {/* 2. Establecimiento */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                    Establecimiento <span className="text-[#468DFF]">*</span>
-                  </label>
-                  <select
-                    value={establecimientoId}
-                    onChange={(e) => setEstablecimientoId(e.target.value)}
-                    disabled={!empresaId}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <option value="">Selecciona un establecimiento</option>
-                    {filteredEstablecimientos.map(e => (
-                      <option key={e.id} value={e.id}>{e.denominacion}</option>
-                    ))}
-                  </select>
-                  {!empresaId && <p className="text-[9px] text-slate-400 mt-1 italic">Debes seleccionar una Razón Social primero.</p>}
-                  {formErrors.establecimientoId && <p className="text-[10px] text-red-500 font-bold mt-1">{formErrors.establecimientoId}</p>}
-                </div>
-
-                {/* 3. Descripción (Catálogo o texto manual) */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                    Descripción / Actividad <span className="text-[#468DFF]">*</span>
-                  </label>
-                  <select
-                    value={catalogoId}
-                    onChange={(e) => handleDescripcionChange(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none transition-all mb-2"
-                  >
-                    <option value="">-- Selecciona del catálogo --</option>
-                    {catalogo.map(c => (
-                      <option key={c.id} value={c.id}>{c.descripcion}</option>
-                    ))}
-                    <option value="__custom__">Otra actividad (cargar manualmente)...</option>
-                  </select>
-                  
-                  {/* Textarea: siempre visible; pre-cargada desde catálogo o editable manualmente */}
-                  <textarea
-                    required
-                    placeholder="Detalla la actividad a realizar..."
-                    value={descripcion}
-                    onChange={(e) => setDescripcion(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none transition-all h-20 resize-none"
-                  />
-                  {formErrors.descripcion && <p className="text-[10px] text-red-500 font-bold mt-1">{formErrors.descripcion}</p>}
-                </div>
-
-                {/* 4. Marco Legal */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                    Marco Legal / Requisito Legal Aplicable
-                  </label>
-                  <input
-                    type="text"
-                    placeholder={catalogoId && catalogoId !== '__custom__' ? 'Completado automáticamente desde catálogo...' : 'Ingresá el requisito legal aplicable...'}
-                    value={marcoLegal}
-                    onChange={(e) => setMarcoLegal(e.target.value)}
-                    className={`w-full border rounded-xl py-3 px-4 text-xs focus:outline-none transition-all ${
-                      catalogoId && catalogoId !== '__custom__'
-                        ? 'bg-slate-100 border-slate-200 text-slate-500 cursor-default'
-                        : 'bg-slate-50 border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] text-slate-800'
-                    }`}
-                    readOnly={!!(catalogoId && catalogoId !== '__custom__')}
-                  />
-                  {(!catalogoId || catalogoId === '__custom__') && (
-                    <p className="text-[9px] text-slate-400 mt-1 italic">Podés ingresar la norma o resolución aplicable (ej: Dec. 351/79, Res. 905/15...)</p>
-                  )}
-                </div>
-
-                {/* 5. Responsable */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                    Responsable Asignado
-                  </label>
-                  <select
-                    value={responsableId}
-                    onChange={(e) => setResponsableId(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none transition-all"
-                  >
-                    <option value="">Selecciona un responsable</option>
-                    {miembros.map(m => (
-                      <option key={m.id} value={m.id}>{m.full_name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* 6. Fechas */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                      F. Planificada
-                    </label>
-                    <input
-                      type="date"
-                      value={fechaPlanificada}
-                      onChange={(e) => setFechaPlanificada(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none transition-all font-mono"
-                    />
-                    <p className="text-[9px] text-slate-400 mt-1 italic">Opcional. Si no se carga, el estado será "En análisis".</p>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                      F. Realización
-                    </label>
-                    <input
-                      type="date"
-                      value={fechaRealizacion}
-                      onChange={(e) => handleRealizacionChange(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none transition-all font-mono"
-                    />
-                  </div>
-                </div>
-
-                {/* 7. Progreso */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      Porcentaje de Progreso
-                    </label>
-                    <span className="text-xs font-extrabold text-[#468DFF] font-mono">{progreso}%</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      step="5"
-                      disabled={!!fechaRealizacion}
-                      value={progreso}
-                      onChange={(e) => setProgreso(e.target.value)}
-                      className="w-full accent-[#468DFF] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    />
-                  </div>
-                  {fechaRealizacion && (
-                    <p className="text-[10px] text-[#0b8043] font-bold mt-1 flex items-center gap-1">
-                      <Check className="h-3.5 w-3.5" />
-                      Forzado automáticamente al 100% debido a la fecha de realización.
-                    </p>
-                  )}
-                </div>
-
-                {/* 8. Cargar Documento PDF */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                    Documento de Respaldo (PDF)
-                  </label>
-                  
-                  {documentoUrl ? (
-                    <div className="flex items-center justify-between border border-[#468DFF]/20 rounded-xl bg-blue-50/50 p-3 mb-2.5">
-                      <div className="flex items-center gap-2 truncate pr-2">
-                        <FileText className="h-5 w-5 text-[#468DFF] shrink-0" />
-                        <span className="text-xs text-slate-600 truncate font-semibold">
-                          PDF subido anteriormente
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => handleViewPdf(documentoUrl)}
-                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-[#468DFF] text-slate-500 hover:text-white transition-all cursor-pointer inline-flex items-center shadow-sm"
-                          title="Ver PDF en otra pestaña"
-                        >
-                          <ExternalLink className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDocumentoUrl('')}
-                          className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white transition-all cursor-pointer inline-flex items-center shadow-sm"
-                          title="Eliminar documento cargado"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  ) : null}
-
-                    <div className="flex items-center gap-2 mb-2.5">
-                      <button
-                        type="button"
-                        onClick={() => setUploadType('local')}
-                        className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
-                          uploadType === 'local'
-                            ? 'bg-[#468DFF]/10 text-[#468DFF] border-[#468DFF]/30'
-                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                        }`}
-                      >
-                        Archivo Local (PC/Celular)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setUploadType('drive')}
-                        className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
-                          uploadType === 'drive'
-                            ? 'bg-[#468DFF]/10 text-[#468DFF] border-[#468DFF]/30'
-                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                        }`}
-                      >
-                        Vincular Google Drive
-                      </button>
-                    </div>
-
-                    {uploadType === 'local' ? (
-                      <>
-                        <input
-                          type="file"
-                          accept=".pdf"
-                          onChange={(e) => setDocumentoFile(e.target.files[0])}
-                          className="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-xs text-slate-600 focus:outline-none file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:uppercase file:bg-[#468DFF]/10 file:text-[#468DFF] hover:file:bg-[#468DFF]/20 file:cursor-pointer"
-                        />
-                        <p className="text-[9px] text-slate-400 mt-1 italic">Solo formato PDF. Tamaño máximo de 10 MB.</p>
-                      </>
-                    ) : (
-                      <>
-                        <input
-                          type="url"
-                          placeholder="Pega el enlace compartido de Google Drive..."
-                          value={driveLink}
-                          onChange={(e) => setDriveLink(e.target.value)}
-                          className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-2.5 px-3 text-xs text-slate-800 focus:outline-none transition-all"
-                        />
-                        <p className="text-[9px] text-slate-400 mt-1 italic">
-                          El archivo debe ser público en Drive ("Cualquier persona con el enlace"). Se convertirá y guardará automáticamente.
-                        </p>
-                      </>
-                    )}
-                  </div>
-
-                {/* 9. Observaciones */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                    Observaciones Generales
-                  </label>
-                  <textarea
-                    placeholder="Escribe comentarios, novedades o detalles..."
-                    value={observaciones}
-                    onChange={(e) => setObservaciones(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none transition-all h-24 resize-none"
-                  />
-                </div>
-
-              </form>
-
-              {/* Botones de acción */}
-              <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-3 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  className="px-5 py-3 border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition-all cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="flex items-center justify-center gap-2 px-6 py-3 bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-[#468DFF]/15 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer min-w-[120px]"
-                >
-                  {saving ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Guardando...
-                    </>
-                  ) : (
-                    <>
-                      <Check className="h-4 w-4" />
-                      Guardar
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
           </div>
         )}
 
@@ -1746,9 +1761,9 @@ export default function ProgramaGestion({ params }) {
                 </button>
                 <button
                   onClick={confirmModal.onConfirm}
-                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-red-500/15 cursor-pointer"
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-red-500/10 cursor-pointer"
                 >
-                  Eliminar
+                  {confirmModal.confirmText || 'Confirmar'}
                 </button>
               </div>
             </div>

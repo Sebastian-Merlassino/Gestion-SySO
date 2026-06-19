@@ -1879,7 +1879,7 @@ export default function EmpresasClientes({ params }) {
                                 <button
                                   type="button"
                                   onClick={() => handleRemoveEstablecimiento(idx)}
-                                  className="text-[10px] text-red-500 hover:text-white hover:bg-red-650 font-bold px-2.5 py-1 rounded-lg border border-red-200 hover:border-red-650 transition-all cursor-pointer flex items-center gap-1 shadow-sm"
+                                  className="text-[10px] text-red-500 hover:text-white hover:bg-red-600 font-bold px-2.5 py-1 rounded-lg border border-red-200 hover:border-red-600 transition-all cursor-pointer flex items-center gap-1 shadow-sm"
                                 >
                                   <Trash2 className="h-3 w-3" /> Quitar
                                 </button>

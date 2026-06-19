@@ -2,6 +2,77 @@
 
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
+## [2026-06-19] Unificación de Filtros de Búsqueda y Rediseño de Formulario Inline de Programa Anual
+
+### Resumen de Cambios
+- **Rediseño Inline del Formulario de Programa Anual:** Modificada la página `programa/page.js` para cambiar el layout deslizante (slide-over drawer) por un contenedor inline de pantalla completa que se renderiza condicionalmente en base a `showForm` (igual que en Capacitaciones y Acciones Correctivas).
+- **Advertencia de Salida y Renombrado de Botón:** Cambiado el botón "Salir sin guardar" a "Salir" en `capacitacion/page.js` y `programa/page.js`. Añadida la función `handleExitForm` en `programa/page.js` que abre el `confirmModal` solicitando confirmación del usuario para no perder cambios.
+- **Unificación de Filtros de Búsqueda:** Actualizados los encabezados de filtros en las vistas `programa/page.js` y `correctivas/page.js` (y confirmado en `empresas/page.js` y `capacitacion/page.js`) para utilizar el texto uniforme `"Filtros de Búsqueda"` y el icono `Sliders` de Lucide.
+- **Correcciones de Estilo en Botones de Descarte:** Reemplazados los colores de descarte no estándar en Tailwind (`bg-red-650` y `hover:bg-red-650`) por el color estándar `bg-red-600` e `hover:bg-red-700` en los botones de confirmación de modal de `capacitacion/page.js` y de eliminar de la tabla de contactos en `empresas/page.js`.
+
+### Decisiones Clave
+- **Unificación de Interfaz e Inline Forms:** Para conservar la coherencia estética en todo el SaaS, se eliminaron por completo las transiciones de slide-over, haciendo que todos los formularios operativos principales sigan el patrón inline que reemplaza el listado/calendario actual con un botón `ArrowLeft` de regreso.
+- **Estandarización de Colores de Alerta:** Estandarizar a `bg-red-600` los botones destructivos o de confirmación de alerta de primer nivel, asegurando su correcta visibilidad y contraste en navegadores de escritorio y móviles.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción local (`npm.cmd run build`) completada con éxito al 100%, verificando que no hay errores de sintaxis, JSX ni importaciones en los bundles optimizados.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. La unificación de layouts simplifica la mantenibilidad y depuración de la interfaz en futuras iteraciones.
+
+### Próximo Paso Recomendado
+- Realizar pruebas de humo en staging sobre los formularios de capacitación y programa anual para verificar que las transiciones inline funcionen de manera óptima y fluida.
+
+---
+
+## [2026-06-19] Restauración de Identidad de Marca y Responsables Administrativos en Desplegables
+
+### Resumen de Cambios
+- **Identidad de Marca en Perfil:** Modificado `profile/page.js` para permitir a usuarios con roles `owner` y `admin` ver, editar y guardar los datos del Tenant (empresa/consultora, logos, web, redes sociales).
+- **Asignación en Acciones Correctivas:** Reemplazado el input de texto libre "Responsable de Implementar" en `correctivas/page.js` por un selector desplegable dinámico que consulta `miembros_equipo`.
+- **Integridad Referencial en DB:** Creada y ejecutada la migración SQL `20260625000000_sync_owner_admin_to_miembros.sql` en Supabase para sincronizar automáticamente usuarios de roles `owner` y `admin` con la tabla `miembros_equipo` al completar onboarding, permitiendo su correcta selección en los dropdowns de responsable/capacitador sin violar constraints de claves foráneas.
+- **Asignación de Tenant a Owner:** Se detectó e interactuó a nivel de base de datos para corregir un bug de datos donde el usuario propietario (`owner`) tenía su `tenant_id` en `null` en la tabla `profiles`. Se asignó su correspondiente tenant id (`e3d40f7d-455a-41a1-a65f-8654408c6595`), restaurando de inmediato la carga de identidad visual.
+
+### Decisiones Clave
+- **Sincronización en Base de Datos vía Triggers:** Se optó por sincronizar los administradores y propietarios calificados directamente a la tabla `miembros_equipo` mediante un trigger PL/pgSQL en lugar de combinar arreglos de datos en el cliente. Esto previene violaciones de `FOREIGN KEY` existentes en las tablas `programa_anual` y `programa_capacitacion` de forma transparente y centralizada.
+- **Validación del Onboarding en Trigger:** Para evitar insertar registros con campos incompletos en la tabla `miembros_equipo` (que posee restricciones de campos no nulos como cuit, teléfono y provincia), el trigger valida que el perfil del administrador tenga estos datos cargados antes de sincronizarlo.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `gestion-syso-multitenant-security`
+- `supabase`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260625000000_sync_owner_admin_to_miembros.sql`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Ejecutado script de inspección de usuarios PG, confirmando que los perfiles administradores completos (`admin@gestionsyso.com` y `sebastianmerlassino@gmail.com`) se crearon e integraron automáticamente en `miembros_equipo` con su correspondiente `profile_id`.
+- Compilación del build de producción local exitosa (`npm run build`), certificando el empaquetado del 100% de las páginas sin advertencias ni errores.
+
+### Riesgos Detectados / Remanentes
+- En caso de registrarse nuevos administradores o dueños, estos no figurarán en la lista de responsables hasta tanto completen su información mínima requerida en la pantalla de Perfil (onboarding), debido a las restricciones `NOT NULL` de la tabla `miembros_equipo`.
+
+### Próximo Paso Recomendado
+- Monitorear el correcto funcionamiento de los desplegables de responsable/capacitador durante la operatoria diaria en el entorno de desarrollo y producción.
+
+---
+
 ## [2026-06-18] Redirecciones de Autenticación de Supabase y Personalización de Plantillas de Correo
 
 ### Resumen Ejecutivo
