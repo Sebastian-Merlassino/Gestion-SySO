@@ -730,27 +730,55 @@ export default function ProgramaGestion({ params }) {
     });
   };
 
-  // 8. Visualizar PDF Firmado
+  // 8. Visualizar documento (PDF Storage o link externo)
   const handleViewPdf = async (path) => {
     if (!path) return;
-    if (isDevMode || path === 'mock-pdf-url' || path === 'mock-uploaded-pdf-path') {
-      alert('Simulación: Abriendo documento PDF en nueva pestaña.');
+    if (isDevMode || path === 'mock-pdf-url' || path === 'mock-uploaded-pdf-path' || path === 'mock-drive-uploaded-pdf-path') {
+      alert('Simulación: Abriendo documento en nueva pestaña.');
       return;
     }
 
-    // Si es una URL completa (Drive, Dropbox, etc.), abrirla directamente en otra pestaña
+    // ── LINKS EXTERNOS (http/https) ──────────────────────────────────────────
     if (path.startsWith('http://') || path.startsWith('https://')) {
-      // Transformar links de Google Drive para vista previa directa
-      let openUrl = path;
-      const driveMatch = path.match(/\/file\/d\/([^/]+)/);
-      if (driveMatch) {
-        openUrl = `https://drive.google.com/file/d/${driveMatch[1]}/preview`;
+      
+      // Intentar extraer el ID de cualquier formato de Google Drive/Docs/Sheets
+      let googleFileId = null;
+
+      // Formato 1: /file/d/FILE_ID/...  (estándar de Drive para archivos)
+      const m1 = path.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+      if (m1) googleFileId = m1[1];
+
+      // Formato 2: ?id=FILE_ID  o  &id=FILE_ID  (enlace directo / uc?id=)
+      if (!googleFileId) {
+        const m2 = path.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+        if (m2) googleFileId = m2[1];
       }
-      window.open(openUrl, '_blank');
+
+      // Formato 3: /open?id=FILE_ID
+      if (!googleFileId) {
+        const m3 = path.match(/\/open\?id=([a-zA-Z0-9_-]+)/);
+        if (m3) googleFileId = m3[1];
+      }
+
+      // Formato 4: spreadsheets/d/FILE_ID  o  document/d/FILE_ID  (Google Docs/Sheets)
+      if (!googleFileId) {
+        const m4 = path.match(/\/(spreadsheets|document|presentation)\/d\/([a-zA-Z0-9_-]+)/);
+        if (m4) googleFileId = m4[2];
+      }
+
+      if (googleFileId) {
+        // Abrir como vista previa embebida de Drive (evita la pantalla de descarga)
+        const previewUrl = `https://drive.google.com/file/d/${googleFileId}/preview`;
+        window.open(previewUrl, '_blank');
+        return;
+      }
+
+      // No es un link de Google → abrir directamente
+      window.open(path, '_blank');
       return;
     }
 
-    // Archivo almacenado en Supabase Storage: generar URL firmada y forzar apertura inline via blob
+    // ── ARCHIVOS DE SUPABASE STORAGE (ruta relativa) ─────────────────────────
     try {
       const { data, error } = await supabase.storage
         .from('documents')
@@ -762,23 +790,19 @@ export default function ProgramaGestion({ params }) {
         return;
       }
 
-      // Hacer fetch del PDF y abrir como blob para evitar Content-Disposition: attachment
-      const response = await fetch(data.signedUrl);
-      if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
-      const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      const newTab = window.open(blobUrl, '_blank');
-      // Liberar el blob URL después de que la pestaña lo haya cargado
-      if (newTab) {
-        newTab.onload = () => URL.revokeObjectURL(blobUrl);
-        // Fallback: revocar después de 30s si onload no dispara
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
-      }
+      // Agregar ?download=false para pedir al servidor apertura inline
+      // (Supabase Storage respeta este parámetro en la signed URL)
+      const viewUrl = data.signedUrl.includes('?')
+        ? `${data.signedUrl}&download=`
+        : `${data.signedUrl}?download=`;
+
+      window.open(viewUrl, '_blank');
     } catch (err) {
       console.error('Error al abrir el documento:', err);
       triggerToast('No se pudo abrir el documento. Verificá tu conexión.', 'error');
     }
   };
+
 
   // 9. Lógica del Calendario
   const currYear = calendarDate.getFullYear();
