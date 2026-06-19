@@ -2,6 +2,40 @@
 
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
+## [2026-06-19] Responsable Personalizado ("Otro...") en Programa de Gestión Anual
+
+### Resumen de Cambios
+- **Entrada Manual de Responsable**: Modificado el formulario de carga de actividades del Programa de Gestión Anual (`programa/page.js`) para permitir seleccionar la opción "Otro (cargar manualmente)..." en el dropdown del Responsable Asignado.
+- **Input Dinámico**: Si se selecciona "Otro...", se despliega reactivamente un campo de texto obligatorio para escribir el nombre del responsable.
+- **Integridad y Mapeo en Base de Datos**:
+  - Al guardar la actividad, si se selecciona un miembro, se asigna su `responsable_id` correspondiente y su nombre se almacena en la columna `responsable`.
+  - Si se ingresa manualmente, `responsable_id` se guarda como `null` y el nombre en `responsable`.
+  - El listado en tabla, calendario y ordenamiento por responsable ahora consumen directamente la columna de texto `responsable`.
+- **Actualización de Base de Datos (Migración)**: Creada y ejecutada la migración incremental `20260627000000_add_responsable_text_to_programa_anual.sql` que agrega la columna `responsable` como `TEXT` a `public.programa_anual` y sincroniza retrospectivamente los nombres de los miembros existentes.
+
+### Decisiones Clave
+- **Columna de Texto para Desempeño y Flexibilidad**: Almacenar el nombre de texto directamente en la tabla `programa_anual` (además de conservar la clave foránea `responsable_id` opcional) previene la sobrecarga de consultas y permite listados ultra-rápidos en el cliente, además de soportar personalizaciones sin violar restricciones referenciales.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `supabase`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260627000000_add_responsable_text_to_programa_anual.sql`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación y build de verificación de Next.js (`npm run build`) completado con éxito, sin errores ni advertencias en el routing dinámico.
+- Verificación del comportamiento interactivo del dropdown y campo de texto reactivo.
+- Carga de datos mock adaptada con soporte de nombres en responsable para evitar celdas vacías en modo simulado.
+
+### Próximo Paso Recomendado
+- Monitorear que la sincronización de nombres funcione correctamente al asignar nuevos miembros del equipo en producción.
+
+---
+
 ## [2026-06-19] Implementación del Módulo de Extintores
 
 ### Resumen de Cambios
