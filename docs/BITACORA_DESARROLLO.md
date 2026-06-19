@@ -2,6 +2,25 @@
 
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
+## [2026-06-18] Redirecciones de Autenticación de Supabase y Personalización de Plantillas de Correo
+
+### Resumen Ejecutivo
+Se implementó soporte para la redirección dinámica en el registro de cuentas de usuario y se diseñaron plantillas HTML responsivas y adaptadas a la marca para la verificación de cuenta y el restablecimiento de contraseñas. Además, se redactó una guía detallada para que el administrador configure el servidor SMTP propio de su dominio y las URLs de redirección permitidas en la consola de producción de Supabase, solucionando los enlaces fallidos dirigidos a localhost.
+
+### Cambios Realizados
+- **Formulario de Registro (`register/page.js`):** Añadido el parámetro `emailRedirectTo` en la invocación de `supabase.auth.signUp`, apuntando dinámicamente al origen actual (`window.location.origin/login`), lo que fuerza a Supabase a redirigir al usuario al login una vez que la cuenta sea verificada.
+- **Plantillas de Correo HTML:** Diseñadas dos plantillas de correo responsivas e integradas bajo la paleta cromática de marca (`#468DFF`, `#0511F2`) y tipografías corporativas, con enlaces seguros y el logotipo de Gestión SySO para:
+  - Verificación de cuenta nueva (Confirm Signup).
+  - Restablecimiento de contraseña olvidada (Reset Password).
+
+### Validaciones Ejecutadas
+- Compilación de producción local exitosa (`npm.cmd run build`) confirmando que el nuevo parámetro no genera fallas sintácticas ni rotura en los bundles.
+
+### Próximo Paso Recomendado
+- Configurar las URLs permitidas (`https://app.gestionsyso.com/**`) y los parámetros SMTP del dominio personalizado en la consola web de Supabase.
+
+---
+
 ## [2026-06-18] Ajustes de Layout (Ancho al 95%), Corrección de Porcentajes y Mejoras de Usabilidad en Clientes
 
 ### Resumen Ejecutivo

@@ -141,7 +141,7 @@ export default function LoginPage() {
       setForgotSuccess(true);
     } catch (err) {
       console.error('Password reset error:', err);
-      setForgotError('Ocurrió un error al enviar el enlace. Por favor, verifica el correo ingresado.');
+      setForgotError(err.message || 'Ocurrió un error al enviar el enlace. Por favor, verifica el correo ingresado.');
       setForgotLoading(false);
     }
   };
