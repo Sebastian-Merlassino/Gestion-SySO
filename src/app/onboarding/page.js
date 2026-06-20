@@ -889,7 +889,7 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#D9D9D9] text-slate-700 flex flex-col items-center justify-center relative overflow-hidden font-sans py-12 px-4">
+    <div className="min-h-screen bg-syso-bg text-slate-700 flex flex-col items-center justify-center relative overflow-hidden font-sans py-12 px-4">
       {/* Background gradients */}
       <div className="absolute top-[-10%] left-[-20%] w-[600px] h-[600px] rounded-full bg-[#468DFF]/5 blur-[150px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-20%] w-[600px] h-[600px] rounded-full bg-[#0511F2]/5 blur-[150px] pointer-events-none" />
@@ -910,7 +910,7 @@ export default function OnboardingPage() {
         <form onSubmit={handleSaveData} className="space-y-8">
           
           {/* SECCIÓN 1: INFORMACIÓN DEL USUARIO */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
+          <div className="bg-syso-bg border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
             <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
               <User className="text-[#468DFF] h-5 w-5" />
               Información del usuario
@@ -1078,7 +1078,7 @@ export default function OnboardingPage() {
           </div>
 
           {/* SECCIÓN 2: MATRÍCULAS PROFESIONALES (OPCIONAL) */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
+          <div className="bg-syso-bg border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
             <div className="flex justify-between items-center border-b border-slate-200 pb-3">
               <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                 <Briefcase className="text-[#468DFF] h-5 w-5" />
@@ -1230,7 +1230,7 @@ export default function OnboardingPage() {
           </div>
 
           {/* SECCIÓN 3: FIRMA DIGITALIZADA (OPCIONAL) */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
+          <div className="bg-syso-bg border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
             <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
               <Upload className="text-[#468DFF] h-5 w-5" />
               Firma digitalizada (opcional)
@@ -1271,7 +1271,7 @@ export default function OnboardingPage() {
           </div>
 
           {/* SECCIÓN 4: IDENTIDAD DE MARCA (OPCIONAL) */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
+          <div className="bg-syso-bg border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
             <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
               <Globe className="text-[#468DFF] h-5 w-5" />
               Identidad de marca de la consultora (opcional)
@@ -1425,7 +1425,7 @@ export default function OnboardingPage() {
           </div>
 
           {/* SECCIÓN 5: TIPO DE PLAN */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
+          <div className="bg-syso-bg border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
             <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
               <Award className="text-[#468DFF] h-5 w-5" />
               Tipo de plan

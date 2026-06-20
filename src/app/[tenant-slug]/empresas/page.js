@@ -1116,7 +1116,7 @@ export default function EmpresasClientes({ params }) {
   };
 
   return (
-    <div className="h-screen overflow-hidden bg-[#D9D9D9] text-slate-700 flex font-sans">
+    <div className="h-screen overflow-hidden bg-syso-bg text-slate-700 flex font-sans">
       
       {/* Mobile Sidebar (Drawer Overlay) */}
       {isMobileMenuOpen && (
@@ -1598,7 +1598,7 @@ export default function EmpresasClientes({ params }) {
               </div>
 
               {/* Encabezado Ficha */}
-              <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
+              <div className="bg-syso-bg border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
                 <div className="flex items-start gap-4">
                   <div className="p-3 bg-blue-50 text-[#468DFF] rounded-xl shrink-0">
                     <Building className="h-6 w-6" />
@@ -1642,7 +1642,7 @@ export default function EmpresasClientes({ params }) {
                 {/* TAB 1: DATOS GENERALES Y CONTACTOS */}
                 {activeTab === 'general' && (
                   <div className="space-y-6">
-                    <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4">
+                    <div className="bg-syso-bg border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4">
                       <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Identidad de la empresa</h4>
                       
                       <div className="grid md:grid-cols-2 gap-4">
@@ -1942,7 +1942,7 @@ export default function EmpresasClientes({ params }) {
                 {/* TAB 3: ESTABLECIMIENTOS */}
                 {activeTab === 'establecimientos' && (
                   <div className="space-y-6">
-                    <div className="flex justify-between items-center bg-white border border-slate-150 rounded-2xl p-5 shadow-sm">
+                    <div className="flex justify-between items-center bg-syso-bg border border-slate-150 rounded-2xl p-5 shadow-sm">
                       <div>
                         <h4 className="text-sm font-bold text-slate-900">Listado de Establecimientos</h4>
                         <p className="text-[10px] text-slate-500 mt-0.5">Una empresa puede constar de múltiples sedes, fábricas u oficinas.</p>
@@ -1958,7 +1958,7 @@ export default function EmpresasClientes({ params }) {
                     </div>
 
                     {establecimientos.length === 0 ? (
-                      <div className="bg-white border border-slate-150 rounded-2xl p-10 text-center space-y-3 shadow-sm">
+                      <div className="bg-syso-bg border border-slate-150 rounded-2xl p-10 text-center space-y-3 shadow-sm">
                         <MapPin className="h-6 w-6 text-slate-400 mx-auto" />
                         <h5 className="font-bold text-slate-800 text-xs">No hay establecimientos cargados</h5>
                         <p className="text-[10px] text-slate-500 max-w-xs mx-auto">
@@ -1968,7 +1968,7 @@ export default function EmpresasClientes({ params }) {
                     ) : (
                       <div className="space-y-8">
                         {establecimientos.map((est, idx) => (
-                          <div key={idx} className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-6 relative hover:border-[#468DFF]/20 transition-all">
+                          <div key={idx} className="bg-syso-bg border border-slate-150 rounded-2xl p-6 shadow-sm space-y-6 relative hover:border-[#468DFF]/20 transition-all">
                             
                             {/* Header Establecimiento */}
                             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
@@ -2355,7 +2355,7 @@ export default function EmpresasClientes({ params }) {
                     )}
 
                     {/* Observaciones en Establecimientos */}
-                    <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4 mt-6">
+                    <div className="bg-syso-bg border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4 mt-6">
                       <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Observaciones Generales</h4>
                       <div className="space-y-1">
                         <label className="text-xs font-bold text-slate-600 block">Notas / Observaciones sobre la empresa</label>
@@ -2375,7 +2375,7 @@ export default function EmpresasClientes({ params }) {
                 {/* TAB 4: PLATAFORMAS & CREDENCIALES */}
                 {activeTab === 'credenciales' && (
                   <div className="space-y-6">
-                    <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4">
+                    <div className="bg-syso-bg border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4">
                       <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Aseguradora de Riesgos del Trabajo (ART)</h4>
                       
                       <div className="grid md:grid-cols-3 gap-4">
@@ -2437,7 +2437,7 @@ export default function EmpresasClientes({ params }) {
                       </div>
                     </div>
 
-                    <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4">
+                    <div className="bg-syso-bg border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4">
                       <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Plataforma MiBA / Trámites a Distancia (TAD)</h4>
                       
                       <div className="grid md:grid-cols-3 gap-4">
@@ -2476,7 +2476,7 @@ export default function EmpresasClientes({ params }) {
                       </div>
                     </div>
 
-                    <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4">
+                    <div className="bg-syso-bg border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4">
                       <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Ministerio de Ambiente PBA / APRA</h4>
                       
                       <div className="grid md:grid-cols-3 gap-4">
@@ -2516,7 +2516,7 @@ export default function EmpresasClientes({ params }) {
                     </div>
 
                     {/* Observaciones en Plataformas */}
-                    <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4 mt-6">
+                    <div className="bg-syso-bg border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4 mt-6">
                       <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Observaciones Generales</h4>
                       <div className="space-y-1">
                         <label className="text-xs font-bold text-slate-600 block">Notas / Observaciones sobre la empresa</label>

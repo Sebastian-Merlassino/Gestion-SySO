@@ -737,7 +737,7 @@ export default function ExtintoresPage({ params }) {
   });
 
   return (
-    <div className="h-screen overflow-hidden bg-[#D9D9D9] text-slate-700 flex flex-col md:flex-row relative font-sans">
+    <div className="h-screen overflow-hidden bg-syso-bg text-slate-700 flex flex-col md:flex-row relative font-sans">
       
       {/* Mobile Sidebar */}
       {isMobileMenuOpen && (
@@ -982,7 +982,7 @@ export default function ExtintoresPage({ params }) {
             
             {isFormOpen ? (
               // FORMULARIO DE ALTA Y EDICIÓN INLINE
-              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden animate-fade-in">
+              <div className="bg-syso-bg rounded-2xl border border-slate-150 shadow-sm overflow-hidden animate-fade-in">
                 <div className="px-6 py-4 bg-slate-50 border-b border-slate-150 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <button 

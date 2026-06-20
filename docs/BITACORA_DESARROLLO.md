@@ -2,6 +2,54 @@
 
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
+## [2026-06-20] Estandarización de Color de Fondo (#D9D9D9) y Pictogramas de Equipo
+
+### Resumen de Cambios
+- **Configuración de Color Global**: Se agregó el color `'syso-bg': '#D9D9D9'` en `tailwind.config.js` y se registró la variable `--syso-bg` en `src/app/globals.css`.
+- **Estandarización de Fondos de Sección**: Se reemplazó el color de fondo de las páginas (`bg-[#f8fafc]`) por `bg-syso-bg` en todas las secciones principales (visitas, extintores, correctivas, capacitacion, programa, dashboard, profile, empresas, equipo) y en las pantallas de acceso (login, register, reset-password, onboarding).
+- **Estandarización de Fondos de Formulario de Carga**: Se configuraron los contenedores de formularios inline para usar `bg-syso-bg` en lugar de `bg-white` para homogeneizar la vista de carga de datos, manteniendo los inputs con fondos claros (`bg-slate-50/50` / `bg-white`) para preservar el contraste.
+- **Pictogramas de Equipo**: Se refactorizó la tabla de integrantes en `src/app/[tenant-slug]/equipo/page.js` para usar iconos estandarizados de `lucide-react`:
+  - Icono `User` en la columna Nombre en lugar de iniciales.
+  - Iconos `Phone` y `Mail` para el teléfono y correo en la columna Contacto.
+  - Icono `MapPin` en la columna Ubicación.
+  - Iconos `Check` y `X` dentro del badge de Acceso Login.
+- **Actualización de Estándares y Marca**: Se modificaron `docs/design/ui-specs/DESIGN_STANDARD.md` y `docs/brand/BRAND_GUIDELINES.md` para normar el uso de `bg-syso-bg` en páginas y contenedores de formularios.
+
+### Decisiones Clave
+- **Fondo Unificado con Contraste**: El uso de `#D9D9D9` como fondo de formularios e interfaces de sección provee una visualización robusta. Se mantuvieron los campos de entrada de datos con fondo claro para asegurar legibilidad y cumplir con pautas de accesibilidad.
+- **Sustitución de Iniciales por Pictogramas**: El uso de iconos consistentes en la tabla de equipo de trabajo mejora la escaneabilidad visual y da un acabado premium.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `gestion-syso-multitenant-security`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] docs/brand/BRAND_GUIDELINES.md`
+- `[MODIFY] docs/design/ui-specs/DESIGN_STANDARD.md`
+- `[MODIFY] src/app/globals.css`
+- `[MODIFY] src/app/login/page.js`
+- `[MODIFY] src/app/onboarding/page.js`
+- `[MODIFY] src/app/register/page.js`
+- `[MODIFY] src/app/reset-password/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] tailwind.config.js`
+
+### Validaciones Ejecutadas
+- Compilación y build de producción de Next.js (`npm run build` vía cmd) completados con éxito para todo el proyecto sin errores ni advertencias.
+- Publicación y empuje de los cambios en Git.
+
+---
+
 ## [2026-06-20] Estandarización y Optimización de Filtros y Contenedores de Búsqueda
 
 ### Resumen de Cambios

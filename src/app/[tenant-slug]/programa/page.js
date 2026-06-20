@@ -931,7 +931,7 @@ export default function ProgramaGestion({ params }) {
   const filteredEstablecimientos = allEstablecimientos.filter(e => e.empresa_id === empresaId);
 
   return (
-    <div className="h-screen overflow-hidden bg-[#f8fafc] text-slate-700 flex font-sans">
+    <div className="h-screen overflow-hidden bg-syso-bg text-slate-700 flex font-sans">
       
       {/* Mobile Sidebar (Drawer Overlay) */}
       {isMobileMenuOpen && (
@@ -1182,7 +1182,7 @@ export default function ProgramaGestion({ params }) {
           <div className="p-6 md:p-8 space-y-6 max-w-[95%] mx-auto w-full">
             {showForm ? (
               // FORMULARIO DE ALTA Y EDICIÓN INLINE
-              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
+              <div className="bg-syso-bg rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
                 <div className="px-6 py-4 bg-slate-50 border-b border-slate-150 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <button 

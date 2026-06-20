@@ -8,8 +8,8 @@ Todas las secciones operativas del sistema deben cumplir estrictamente con estas
 
 ## 1. Diseño de Contenedores y Layout General
 
-- **Fondo de la Página**: `#f8fafc` (Slate 50 / Slate 100 suave).
-  - Clase: `bg-[#f8fafc]`
+- **Fondo de la Página**: `#D9D9D9` (Gris claro estándar).
+  - Clase: `bg-syso-bg`
 - **Margen Interno del Cuerpo**: `p-6` para el scroll central, con un contenedor de ancho útil máximo al **95%** alineado horizontalmente.
   - Clase: `max-w-[95%] mx-auto space-y-6`
 - **Fondo de las Tarjetas (Cards)**: Blanco puro (`#FFFFFF`) con bordes semitransparentes finos en color gris claro `#E2E8F0` / `#E8ECF2` (Slate 150) y esquinas muy redondeadas (`rounded-2xl`).
@@ -92,7 +92,7 @@ Los botones de acción en las celdas finales de la tabla deben estar contenidos 
 El formulario reemplaza la vista de listado y se despliega con una animación suave (`animate-fade-in`) dentro de un contenedor estándar.
 
 - **Contenedor Principal del Formulario**:
-  - Clase: `bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden`
+  - Clase: `bg-syso-bg rounded-2xl border border-slate-150 shadow-sm overflow-hidden`
 - **Cabecera del Formulario**:
   - Clase: `px-6 py-4 bg-slate-50 border-b border-slate-150 flex items-center justify-between`
   - Botón de regreso: `<button onClick={handleExitForm} className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 cursor-pointer"><ArrowLeft className="h-5 w-5" /></button>`

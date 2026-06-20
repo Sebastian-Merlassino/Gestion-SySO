@@ -1532,7 +1532,7 @@ export default function VisitasPage({ params }) {
         </header>
 
         {/* Content Body */}
-        <div className="flex-1 overflow-y-auto p-6 bg-[#f8fafc]">
+        <div className="flex-1 overflow-y-auto p-6 bg-syso-bg">
           <div className="max-w-[95%] mx-auto space-y-6">
 
             {/* LISTADO DE VISITAS */}
@@ -1729,7 +1729,7 @@ export default function VisitasPage({ params }) {
 
             {/* FORMULARIO INLINE */}
             {isFormOpen && (
-              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden animate-fade-in">
+              <div className="bg-syso-bg rounded-2xl border border-slate-150 shadow-sm overflow-hidden animate-fade-in">
                 
                 {/* Cabecera del formulario */}
                 <div className="px-6 py-4 bg-slate-50 border-b border-slate-150 flex items-center justify-between">

@@ -806,7 +806,7 @@ export default function CapacitacionPage({ params }) {
   });
 
   return (
-    <div className="h-screen overflow-hidden bg-[#f8fafc] text-slate-700 flex flex-col md:flex-row relative font-sans">
+    <div className="h-screen overflow-hidden bg-syso-bg text-slate-700 flex flex-col md:flex-row relative font-sans">
       
       {/* Menu Hamburguesa Mobile Drawer Overlay */}
       {isMobileMenuOpen && (
@@ -1054,7 +1054,7 @@ export default function CapacitacionPage({ params }) {
             
             {isFormOpen ? (
               // FORMULARIO DE ALTA Y EDICIÓN
-              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
+              <div className="bg-syso-bg rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
                 <div className="px-6 py-4 bg-slate-50 border-b border-slate-150 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <button 

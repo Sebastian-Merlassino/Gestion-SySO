@@ -147,7 +147,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#D9D9D9] text-slate-700 flex items-center justify-center relative overflow-hidden font-sans px-4">
+    <div className="min-h-screen bg-syso-bg text-slate-700 flex items-center justify-center relative overflow-hidden font-sans px-4">
       {/* Background gradients */}
       <div className="absolute top-[-20%] left-[-20%] w-[600px] h-[600px] rounded-full bg-[#468DFF]/5 blur-[180px] pointer-events-none" />
       <div className="absolute bottom-[-20%] right-[-20%] w-[600px] h-[600px] rounded-full bg-[#0511F2]/5 blur-[180px] pointer-events-none" />

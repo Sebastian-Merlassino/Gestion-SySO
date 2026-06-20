@@ -376,7 +376,7 @@ export default function TenantDashboard({ params }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f8fafc] text-slate-700 flex items-center justify-center font-sans">
+      <div className="min-h-screen bg-syso-bg text-slate-700 flex items-center justify-center font-sans">
         <div className="text-center space-y-4">
           <Loader2 className="h-10 w-10 animate-spin text-[#468DFF] mx-auto" />
           <p className="text-xs text-slate-500 font-medium">Generando tu área de trabajo...</p>
@@ -393,7 +393,7 @@ export default function TenantDashboard({ params }) {
   };
 
   return (
-    <div className="h-screen overflow-hidden bg-[#f8fafc] text-slate-700 flex font-sans">
+    <div className="h-screen overflow-hidden bg-syso-bg text-slate-700 flex font-sans">
       
       {/* Mobile Sidebar (Drawer Overlay) */}
       {isMobileMenuOpen && (

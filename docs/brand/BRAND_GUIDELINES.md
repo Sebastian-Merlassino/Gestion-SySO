@@ -14,9 +14,9 @@ Este documento establece los lineamientos visuales, conceptuales y de estilo par
 Para transmitir seguridad industrial y corporativa de una forma sofisticada y premium, se utiliza una paleta de colores basada en grises y negros profundos con acentos azules limpios.
 
 ### Colores Principales (Fondo y Estructura)
-- **Primary Background (Slate 950)**: `#020617` (Un negro azulado muy elegante que sirve como lienzo de la UI en modo oscuro).
-- **Secondary Background (Slate 900)**: `#0f172a` (Utilizado para tarjetas, páneles laterales y secciones flotantes).
-- **Border / Muted Line (Slate 800)**: `#1e293b` (Líneas divisorias limpias y de bajo contraste).
+- **Fondo de la Página y Formularios de Carga (SySO Background)**: `#D9D9D9` (Gris claro secundario, clase `bg-syso-bg`).
+- **Fondo de Tarjetas e Información (Card Background)**: `#FFFFFF` (Blanco puro, clase `bg-white` para tarjetas y modales).
+- **Líneas Divisorias y Bordes (Border/Muted Line)**: `#E2E8F0` / `#E8ECF2` (Gris suave, clase `border-slate-150`).
 
 ### Colores de Resaltado e Identidad
 - **Color Principal / Acción (Corporate Blue)**: `#468DFF` (Azul corporativo brillante, usado para botones primarios, llamadas a la acción importantes y elementos de navegación activos).
