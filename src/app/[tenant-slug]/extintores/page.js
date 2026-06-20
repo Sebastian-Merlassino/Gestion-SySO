@@ -14,6 +14,7 @@ import {
   Loader2, 
   Trash2, 
   Edit, 
+  AlertTriangle, 
   Briefcase, 
   Settings, 
   LogOut, 
@@ -1612,28 +1613,32 @@ export default function ExtintoresPage({ params }) {
 
       {/* Alertas y Confirmaciones */}
       {modalAlert.show && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div onClick={closeAlert} className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" />
-          <div className="relative bg-white border border-slate-200 rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-scaleUp">
-            <h4 className="font-outfit text-base font-extrabold text-slate-900 mb-2">{modalAlert.title}</h4>
-            <p className="text-xs text-slate-500 mb-6 font-normal leading-relaxed">{modalAlert.message}</p>
-            <div className="flex justify-end gap-3">
-              <button 
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xl max-w-sm w-full space-y-4 text-center">
+            <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500">
+              <AlertTriangle className="h-6 w-6" />
+            </div>
+            <div className="space-y-1">
+              <h4 className="font-outfit text-base font-extrabold text-slate-800">{modalAlert.title}</h4>
+              <p className="text-xs text-slate-500 leading-relaxed">{modalAlert.message}</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
                 onClick={closeAlert}
-                className="py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer"
+                className="flex-1 py-2 px-4 rounded-xl border border-slate-300 text-slate-700 font-bold text-xs hover:bg-slate-50 transition-all cursor-pointer bg-white"
               >
                 Cancelar
               </button>
-              <button 
-                onClick={() => { modalAlert.onConfirm(); }}
-                className={`py-2.5 px-5 rounded-xl font-bold text-xs text-white transition-all cursor-pointer ${
-                  modalAlert.confirmText === 'Eliminar' 
-                    ? 'bg-red-600 hover:bg-red-700 shadow-md shadow-red-500/10' 
-                    : 'bg-[#468DFF] hover:bg-[#0511F2] shadow-md shadow-blue-500/10'
-                }`}
-              >
-                {modalAlert.confirmText}
-              </button>
+              {modalAlert.onConfirm && (
+                <button
+                  type="button"
+                  onClick={modalAlert.onConfirm}
+                  className="flex-1 py-2 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md shadow-red-500/10 cursor-pointer"
+                >
+                  Confirmar
+                </button>
+              )}
             </div>
           </div>
         </div>
