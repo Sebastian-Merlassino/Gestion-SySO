@@ -199,7 +199,7 @@ export default function AccionesCorrectivasPage({ params }) {
 
   // Modales y Feedback
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
-  const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null });
+  const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
   const [saveLoading, setSaveLoading] = useState(false);
 
   // Cargar datos
@@ -232,7 +232,7 @@ export default function AccionesCorrectivasPage({ params }) {
     }, 4000);
   };
 
-  const closeAlert = () => setModalAlert({ show: false, title: '', message: '', onConfirm: null });
+  const closeAlert = () => setModalAlert({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
 
   // Cargar datos reales de Supabase
   const loadRealData = async () => {
@@ -630,11 +630,13 @@ export default function AccionesCorrectivasPage({ params }) {
       show: true,
       title: '¿Eliminar Hallazgo?',
       message: 'Esta acción eliminará de forma permanente el registro del hallazgo seleccionado y no se podrá deshacer.',
+      confirmText: 'Eliminar',
       onConfirm: async () => {
         try {
           if (isDevMode) {
             setAcciones(acciones.filter(a => a.id !== id));
             triggerToast('Hallazgo eliminado exitosamente (Mock).');
+            handleCloseForm();
           } else {
             const { error } = await supabase
               .from('acciones_correctivas')
@@ -642,6 +644,7 @@ export default function AccionesCorrectivasPage({ params }) {
               .eq('id', id);
             if (error) throw error;
             triggerToast('Hallazgo eliminado exitosamente.');
+            handleCloseForm();
             await loadRealData();
           }
         } catch (err) {
@@ -660,6 +663,7 @@ export default function AccionesCorrectivasPage({ params }) {
       show: true,
       title: 'Salir sin guardar',
       message: '¿Estás seguro de que deseas salir del formulario? Perderás todos los cambios cargados que no se hayan guardado.',
+      confirmText: 'Confirmar',
       onConfirm: () => {
         closeAlert();
         handleCloseForm();
@@ -674,9 +678,14 @@ export default function AccionesCorrectivasPage({ params }) {
         show: true,
         title: 'Salir sin guardar',
         message: '¿Estás seguro de que deseas salir? Los cambios no guardados se perderán.',
+        confirmText: 'Confirmar',
         onConfirm: () => {
           closeAlert();
-          window.location.href = path;
+          if (path.endsWith('/correctivas')) {
+            handleCloseForm();
+          } else {
+            window.location.href = path;
+          }
         }
       });
     }
@@ -1418,20 +1427,31 @@ export default function AccionesCorrectivasPage({ params }) {
                     >
                       Salir
                     </button>
-                    <button
-                      type="submit"
-                      disabled={saveLoading}
-                      className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
-                    >
-                      {saveLoading ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Guardando...
-                        </>
-                      ) : (
-                        'Guardar'
+                    <div className="flex items-center gap-3">
+                      {editingId && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteClick(editingId)}
+                          className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-red-600/10"
+                        >
+                          Eliminar
+                        </button>
                       )}
-                    </button>
+                      <button
+                        type="submit"
+                        disabled={saveLoading}
+                        className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
+                      >
+                        {saveLoading ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Guardando...
+                          </>
+                        ) : (
+                          'Guardar'
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </form>
               </div>
@@ -1748,7 +1768,7 @@ export default function AccionesCorrectivasPage({ params }) {
                   onClick={modalAlert.onConfirm}
                   className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer"
                 >
-                  Confirmar
+                  {modalAlert.confirmText || 'Confirmar'}
                 </button>
               )}
             </div>

@@ -219,7 +219,7 @@ export default function EmpresasClientes({ params }) {
   const [showAmbienteClave, setShowAmbienteClave] = useState(false);
 
   // Diálogo modal de alerta / confirmación
-  const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', type: 'info', onConfirm: null });
+  const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', type: 'info', onConfirm: null, confirmText: 'Confirmar' });
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   // Cargar datos iniciales
@@ -255,12 +255,12 @@ export default function EmpresasClientes({ params }) {
     }, 4000);
   };
 
-  const showAlert = (title, message, type = 'info', onConfirm = null) => {
-    setModalAlert({ show: true, title, message, type, onConfirm });
+  const showAlert = (title, message, type = 'info', onConfirm = null, confirmText = 'Confirmar') => {
+    setModalAlert({ show: true, title, message, type, onConfirm, confirmText });
   };
 
   const closeAlert = () => {
-    setModalAlert({ show: false, title: '', message: '', type: 'info', onConfirm: null });
+    setModalAlert({ show: false, title: '', message: '', type: 'info', onConfirm: null, confirmText: 'Confirmar' });
   };
 
   const loadMockData = () => {
@@ -658,6 +658,7 @@ export default function EmpresasClientes({ params }) {
           setEmpresas(prev => prev.filter(e => e.id !== empresaId));
           triggerToast('Empresa eliminada con éxito (Simulación).');
           setLoading(false);
+          setView('list');
           closeAlert();
           return;
         }
@@ -670,6 +671,7 @@ export default function EmpresasClientes({ params }) {
           if (error) throw error;
           
           triggerToast('Empresa cliente eliminada con éxito.');
+          setView('list');
           await loadRealData();
         } catch (err) {
           console.error('Error al borrar empresa:', err);
@@ -678,7 +680,8 @@ export default function EmpresasClientes({ params }) {
           setLoading(false);
           closeAlert();
         }
-      }
+      },
+      'Eliminar'
     );
   };
 
@@ -907,7 +910,8 @@ export default function EmpresasClientes({ params }) {
       () => {
         closeAlert();
         setView('list');
-      }
+      },
+      'Confirmar'
     );
   };
 
@@ -925,7 +929,8 @@ export default function EmpresasClientes({ params }) {
           } else {
             window.location.href = path;
           }
-        }
+        },
+        'Confirmar'
       );
     }
   };
@@ -2543,31 +2548,39 @@ export default function EmpresasClientes({ params }) {
               </div>
 
               {/* Botones de Acción */}
-              <div className="flex justify-between items-center pt-4 border-t border-slate-300/40">
+              <div className="flex justify-between items-center pt-6 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={handleExitForm}
-                  className="py-3 px-6 rounded-xl border border-slate-300/80 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 text-xs font-bold transition-all active:scale-[0.98] cursor-pointer flex items-center gap-2 shadow-sm"
+                  className="px-5 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer"
                 >
                   Salir
                 </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="py-3 px-6 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold transition-all shadow-lg shadow-blue-500/10 active:scale-[0.98] cursor-pointer disabled:opacity-50 flex items-center gap-2"
-                >
-                  {saving ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin text-white" />
-                      Guardando...
-                    </>
-                  ) : (
-                    <>
-                      <Check className="h-4 w-4 text-white" />
-                      Guardar
-                    </>
+                <div className="flex items-center gap-3">
+                  {editingId && (
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(editingId, razonSocial)}
+                      className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-red-600/10"
+                    >
+                      Eliminar
+                    </button>
                   )}
-                </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
+                  >
+                    {saving ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin text-white" />
+                        Guardando...
+                      </>
+                    ) : (
+                      'Guardar'
+                    )}
+                  </button>
+                </div>
               </div>
 
             </form>
@@ -2578,20 +2591,20 @@ export default function EmpresasClientes({ params }) {
 
       {/* Ventanas Emergentes Modales Centradas (Backdrop-blur-sm) */}
       {modalAlert.show && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xl max-w-sm w-full space-y-4 text-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
             <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500">
               <AlertTriangle className="h-6 w-6" />
             </div>
             <div className="space-y-1">
-              <h4 className="font-outfit text-base font-extrabold text-slate-800">{modalAlert.title}</h4>
+              <h4 className="font-outfit text-base font-bold text-slate-800">{modalAlert.title}</h4>
               <p className="text-xs text-slate-500 leading-relaxed">{modalAlert.message}</p>
             </div>
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={closeAlert}
-                className="flex-1 py-2 px-4 rounded-xl border border-slate-300 text-slate-700 font-bold text-xs hover:bg-slate-50 transition-all cursor-pointer"
+                className="flex-1 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer"
               >
                 {modalAlert.onConfirm ? 'Cancelar' : 'Entendido'}
               </button>
@@ -2599,9 +2612,9 @@ export default function EmpresasClientes({ params }) {
                 <button
                   type="button"
                   onClick={modalAlert.onConfirm}
-                  className="flex-1 py-2 px-4 rounded-xl bg-red-600 text-white font-bold text-xs hover:bg-red-700 transition-all cursor-pointer shadow-md shadow-red-500/10"
+                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-red-600/10"
                 >
-                  Confirmar
+                  {modalAlert.confirmText || 'Confirmar'}
                 </button>
               )}
             </div>

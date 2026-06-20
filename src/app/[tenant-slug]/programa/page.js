@@ -771,6 +771,7 @@ export default function ProgramaGestion({ params }) {
         try {
           if (isDevMode) {
             setActividades(prev => prev.filter(a => a.id !== id));
+            setShowForm(false);
           } else {
             const { error } = await supabase
               .from('programa_anual')
@@ -778,6 +779,7 @@ export default function ProgramaGestion({ params }) {
               .eq('id', id);
             if (error) throw error;
             setActividades(prev => prev.filter(a => a.id !== id));
+            setShowForm(false);
           }
           triggerToast('Actividad eliminada correctamente.', 'success');
         } catch (err) {
@@ -795,7 +797,7 @@ export default function ProgramaGestion({ params }) {
       show: true,
       title: 'Salir sin guardar',
       message: '¿Estás seguro de que deseas salir? Los cambios no guardados se perderán.',
-      confirmText: 'Salir',
+      confirmText: 'Confirmar',
       onConfirm: () => {
         setShowForm(false);
         setConfirmModal({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Eliminar' });
@@ -810,7 +812,7 @@ export default function ProgramaGestion({ params }) {
         show: true,
         title: 'Salir sin guardar',
         message: '¿Estás seguro de que deseas salir? Los cambios no guardados se perderán.',
-        confirmText: 'Salir',
+        confirmText: 'Confirmar',
         onConfirm: () => {
           setConfirmModal({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Eliminar' });
           if (path.endsWith('/programa')) {
@@ -1484,31 +1486,39 @@ export default function ProgramaGestion({ params }) {
                   </div>
 
                   {/* Botones de acción del formulario */}
-                  <div className="pt-4 border-t border-slate-100 flex justify-between items-center shrink-0">
+                  <div className="flex justify-between items-center pt-6 border-t border-slate-100 shrink-0">
                     <button
                       type="button"
                       onClick={handleExitForm}
-                      className="px-5 py-2.5 border border-slate-300 text-slate-700 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer bg-white"
+                      className="px-5 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer"
                     >
                       Salir
                     </button>
-                    <button
-                      type="submit"
-                      disabled={saving}
-                      className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50 disabled:cursor-not-allowed min-w-[120px] justify-center"
-                    >
-                      {saving ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Guardando...
-                        </>
-                      ) : (
-                        <>
-                          <Check className="h-4 w-4" />
-                          Guardar
-                        </>
+                    <div className="flex items-center gap-3">
+                      {editingId && (
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(editingId)}
+                          className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-red-600/10"
+                        >
+                          Eliminar
+                        </button>
                       )}
-                    </button>
+                      <button
+                        type="submit"
+                        disabled={saving}
+                        className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
+                      >
+                        {saving ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Guardando...
+                          </>
+                        ) : (
+                          'Guardar'
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </form>
               </div>
@@ -1988,7 +1998,7 @@ export default function ProgramaGestion({ params }) {
                 <button
                   type="button"
                   onClick={() => setConfirmModal({ show: false, title: '', message: '', onConfirm: null })}
-                  className="flex-1 py-2.5 border border-slate-300 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer bg-white"
+                  className="flex-1 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer"
                 >
                   Cancelar
                 </button>
@@ -1998,7 +2008,7 @@ export default function ProgramaGestion({ params }) {
                     onClick={confirmModal.onConfirm}
                     className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer"
                   >
-                    Confirmar
+                    {confirmModal.confirmText || 'Confirmar'}
                   </button>
                 )}
               </div>

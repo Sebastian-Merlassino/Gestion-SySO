@@ -551,7 +551,7 @@ export default function VisitasPage({ params }) {
       show: true,
       title: 'Salir sin guardar',
       message: '¿Estás seguro de que deseas salir? Los cambios no guardados se perderán.',
-      confirmText: 'Salir',
+      confirmText: 'Confirmar',
       onConfirm: () => {
         handleCloseForm();
         closeAlert();
@@ -566,7 +566,7 @@ export default function VisitasPage({ params }) {
         show: true,
         title: 'Salir sin guardar',
         message: '¿Estás seguro de que deseas salir? Los cambios no guardados se perderán.',
-        confirmText: 'Salir',
+        confirmText: 'Confirmar',
         onConfirm: () => {
           closeAlert();
           if (path.endsWith('/visitas')) {
@@ -916,6 +916,7 @@ export default function VisitasPage({ params }) {
           if (isDevMode) {
             setVisitas(visitas.filter(v => v.id !== id));
             triggerToast('Constancia eliminada exitosamente (Mock).');
+            handleCloseForm();
           } else {
             const { error } = await supabase
               .from('visitas')
@@ -923,6 +924,7 @@ export default function VisitasPage({ params }) {
               .eq('id', id);
             if (error) throw error;
             triggerToast('Constancia de visita eliminada con éxito.');
+            handleCloseForm();
             await loadRealData();
           }
         } catch (err) {
@@ -2609,18 +2611,29 @@ export default function VisitasPage({ params }) {
                     <button
                       type="button"
                       onClick={handleExitForm}
-                      className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-sm transition-all cursor-pointer"
+                      className="px-5 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer"
                     >
                       Salir
                     </button>
-                    <button
-                      type="submit"
-                      disabled={saveLoading}
-                      className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white font-bold rounded-xl text-sm transition-all shadow-md shadow-[#468DFF]/10 cursor-pointer flex items-center gap-2 disabled:bg-slate-400"
-                    >
-                      {saveLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                      {editingId ? 'Guardar Cambios' : 'Registrar Constancia'}
-                    </button>
+                    <div className="flex items-center gap-3">
+                      {editingId && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteClick(editingId)}
+                          className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-red-600/10"
+                        >
+                          Eliminar
+                        </button>
+                      )}
+                      <button
+                        type="submit"
+                        disabled={saveLoading}
+                        className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
+                      >
+                        {saveLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                        {editingId ? 'Guardar Cambios' : 'Registrar Constancia'}
+                      </button>
+                    </div>
                   </div>
 
                 </form>
@@ -2760,33 +2773,34 @@ export default function VisitasPage({ params }) {
         </div>
       )}
 
-      {/* ALERTAS Y CONFIRMACIONES */}
+      {/* MODAL DE CONFIRMACIÓN */}
       {modalAlert.show && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
-          <div className="bg-white rounded-2xl border border-slate-150 p-6 max-w-sm w-full z-10 shadow-2xl relative space-y-4 text-center animate-fade-in">
-            <div className="w-12 h-12 bg-amber-500/10 text-amber-500 rounded-full flex items-center justify-center mx-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
+            <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500">
               <AlertTriangle className="h-6 w-6" />
             </div>
-            <div className="space-y-2">
-              <h4 className="font-outfit text-base font-bold text-slate-900 leading-none">{modalAlert.title}</h4>
+            <div className="space-y-1">
+              <h4 className="font-outfit text-base font-bold text-slate-800">{modalAlert.title}</h4>
               <p className="text-xs text-slate-500 leading-relaxed">{modalAlert.message}</p>
             </div>
-            <div className="flex gap-3 pt-2">
+            <div className="flex gap-2">
               <button
+                type="button"
                 onClick={closeAlert}
-                className="flex-1 py-2 border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-100 transition-all cursor-pointer"
+                className="flex-1 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer"
               >
                 Cancelar
               </button>
-              <button
-                onClick={() => {
-                  if (modalAlert.onConfirm) modalAlert.onConfirm();
-                }}
-                className="flex-1 py-2 bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold rounded-lg transition-all shadow-md shadow-[#468DFF]/10 cursor-pointer"
-              >
-                {modalAlert.confirmText || 'Confirmar'}
-              </button>
+              {modalAlert.onConfirm && (
+                <button
+                  type="button"
+                  onClick={modalAlert.onConfirm}
+                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer"
+                >
+                  {modalAlert.confirmText || 'Confirmar'}
+                </button>
+              )}
             </div>
           </div>
         </div>

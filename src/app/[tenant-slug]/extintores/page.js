@@ -580,6 +580,7 @@ export default function ExtintoresPage({ params }) {
           if (isDevMode) {
             setExtintores(extintores.filter(x => x.id !== id));
             triggerToast('Extintor eliminado exitosamente (Mock).');
+            handleCloseForm();
           } else {
             const { error } = await supabase
               .from('extintores')
@@ -587,6 +588,7 @@ export default function ExtintoresPage({ params }) {
               .eq('id', id);
             if (error) throw error;
             triggerToast('Extintor eliminado exitosamente.');
+            handleCloseForm();
             await loadRealData();
           }
         } catch (err) {
@@ -605,7 +607,7 @@ export default function ExtintoresPage({ params }) {
       show: true,
       title: 'Salir sin guardar',
       message: '¿Estás seguro de que deseas salir? Los cambios no guardados se perderán.',
-      confirmText: 'Salir',
+      confirmText: 'Confirmar',
       onConfirm: () => {
         handleCloseForm();
         closeAlert();
@@ -620,7 +622,7 @@ export default function ExtintoresPage({ params }) {
         show: true,
         title: 'Salir sin guardar',
         message: '¿Estás seguro de que deseas salir? Los cambios no guardados se perderán.',
-        confirmText: 'Salir',
+        confirmText: 'Confirmar',
         onConfirm: () => {
           closeAlert();
           if (path.endsWith('/extintores')) {
@@ -1344,24 +1346,35 @@ export default function ExtintoresPage({ params }) {
                     <button
                       type="button"
                       onClick={handleExitForm}
-                      className="px-5 py-2.5 border border-slate-300 text-slate-700 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer bg-white"
+                      className="px-5 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer"
                     >
                       Salir
                     </button>
-                    <button
-                      type="submit"
-                      disabled={saveLoading}
-                      className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
-                    >
-                      {saveLoading ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Guardando...
-                        </>
-                      ) : (
-                        'Guardar'
+                    <div className="flex items-center gap-3">
+                      {editingId && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteClick(editingId)}
+                          className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-red-600/10"
+                        >
+                          Eliminar
+                        </button>
                       )}
-                    </button>
+                      <button
+                        type="submit"
+                        disabled={saveLoading}
+                        className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
+                      >
+                        {saveLoading ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Guardando...
+                          </>
+                        ) : (
+                          'Guardar'
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </form>
               </div>
@@ -1653,7 +1666,7 @@ export default function ExtintoresPage({ params }) {
                   onClick={modalAlert.onConfirm}
                   className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer"
                 >
-                  Confirmar
+                  {modalAlert.confirmText || 'Confirmar'}
                 </button>
               )}
             </div>

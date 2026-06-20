@@ -153,7 +153,7 @@ export default function EquipoPage({ params }) {
   }, []);
 
   // Modals / Toasts
-  const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', type: 'info', onConfirm: null });
+  const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', type: 'info', onConfirm: null, confirmText: 'Confirmar' });
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -164,12 +164,12 @@ export default function EquipoPage({ params }) {
     }, 4000);
   };
 
-  const showAlert = (title, message, type = 'info', onConfirm = null) => {
-    setModalAlert({ show: true, title, message, type, onConfirm });
+  const showAlert = (title, message, type = 'info', onConfirm = null, confirmText = 'Confirmar') => {
+    setModalAlert({ show: true, title, message, type, onConfirm, confirmText });
   };
 
   const closeAlert = () => {
-    setModalAlert({ show: false, title: '', message: '', type: 'info', onConfirm: null });
+    setModalAlert({ show: false, title: '', message: '', type: 'info', onConfirm: null, confirmText: 'Confirmar' });
   };
 
   // Signed URLs helper
@@ -732,6 +732,7 @@ export default function EquipoPage({ params }) {
           setMiembros(prev => prev.filter(m => m.id !== memberId));
           triggerToast('Miembro eliminado con éxito (Simulación).');
           setLoading(false);
+          setView('list');
           closeAlert();
           return;
         }
@@ -757,6 +758,7 @@ export default function EquipoPage({ params }) {
           if (error) throw error;
 
           triggerToast('Miembro del equipo eliminado con éxito.');
+          setView('list');
           await loadRealData();
         } catch (err) {
           console.error('Error deleting member:', err);
@@ -765,7 +767,8 @@ export default function EquipoPage({ params }) {
           setLoading(false);
           closeAlert();
         }
-      }
+      },
+      'Eliminar'
     );
   };
 
@@ -1041,8 +1044,9 @@ export default function EquipoPage({ params }) {
         title: 'Salir sin guardar',
         message: '¿Estás seguro de que deseas salir del formulario? Perderás todos los cambios cargados que no se hayan guardado.',
         type: 'warning',
+        confirmText: 'Confirmar',
         onConfirm: () => {
-          setModalAlert({ show: false, title: '', message: '', type: 'info', onConfirm: null });
+          setModalAlert({ show: false, title: '', message: '', type: 'info', onConfirm: null, confirmText: 'Confirmar' });
           if (onConfirmOverride) {
             onConfirmOverride();
           } else {
@@ -2013,31 +2017,39 @@ export default function EquipoPage({ params }) {
                 </div>
 
                 {/* BOTÓN UNIFICADO DE ACCIÓN */}
-                <div className="flex items-center justify-between border-t border-slate-200 pt-6">
+                <div className="flex justify-between items-center pt-6 border-t border-slate-100">
                   <button
                     type="button"
                     onClick={() => handleExitWithoutSave()}
-                    className="py-3 px-6 rounded-xl border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-800 text-xs font-bold transition-all bg-white cursor-pointer"
+                    className="px-5 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer"
                   >
                     Salir
                   </button>
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="py-3 px-8 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold transition-all flex items-center gap-2 shadow-lg shadow-blue-500/10 active:scale-[0.98] disabled:opacity-50 cursor-pointer"
-                  >
-                    {saving ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Guardando...
-                      </>
-                    ) : (
-                      <>
-                        <Check className="h-4 w-4" />
-                        Guardar
-                      </>
+                  <div className="flex items-center gap-3">
+                    {editingId && (
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(editingId, fullName, miembros.find(m => m.id === editingId)?.profile_id || null)}
+                        className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-red-600/10"
+                      >
+                        Eliminar
+                      </button>
                     )}
-                  </button>
+                    <button
+                      type="submit"
+                      disabled={saving}
+                      className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
+                    >
+                      {saving ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin text-white" />
+                          Guardando...
+                        </>
+                      ) : (
+                        'Guardar'
+                      )}
+                    </button>
+                  </div>
                 </div>
               </form>
             </div>
@@ -2063,36 +2075,30 @@ export default function EquipoPage({ params }) {
 
       {/* MODAL DIALOG ALERT */}
       {modalAlert.show && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-6 md:p-8 max-w-md w-full shadow-2xl animate-scale-up space-y-4">
-            <div className="flex items-start gap-4">
-              {modalAlert.type === 'warning' ? (
-                <div className="h-10 w-10 rounded-full bg-red-500/10 text-red-600 flex items-center justify-center shrink-0">
-                  <AlertTriangle className="h-5 w-5" />
-                </div>
-              ) : (
-                <div className="h-10 w-10 rounded-full bg-blue-500/10 text-[#468DFF] flex items-center justify-center shrink-0">
-                  <Info className="h-5 w-5" />
-                </div>
-              )}
-              <div className="space-y-1">
-                <h4 className="font-outfit text-base font-extrabold text-slate-900">{modalAlert.title}</h4>
-                <p className="text-xs text-slate-500 leading-relaxed font-normal">{modalAlert.message}</p>
-              </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
+            <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500">
+              <AlertTriangle className="h-6 w-6" />
             </div>
-            <div className="flex items-center justify-end gap-3 pt-2">
+            <div className="space-y-1">
+              <h4 className="font-outfit text-base font-bold text-slate-800">{modalAlert.title}</h4>
+              <p className="text-xs text-slate-500 leading-relaxed">{modalAlert.message}</p>
+            </div>
+            <div className="flex gap-2">
               <button
+                type="button"
                 onClick={closeAlert}
-                className="py-2.5 px-4 rounded-xl border border-slate-300 text-slate-600 hover:text-slate-800 text-xs font-bold transition-all bg-white cursor-pointer"
+                className="flex-1 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer"
               >
                 {modalAlert.onConfirm ? 'Cancelar' : 'Cerrar'}
               </button>
               {modalAlert.onConfirm && (
                 <button
+                  type="button"
                   onClick={modalAlert.onConfirm}
-                  className="py-2.5 px-5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all cursor-pointer shadow-md"
+                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-red-600/10"
                 >
-                  Confirmar
+                  {modalAlert.confirmText || 'Confirmar'}
                 </button>
               )}
             </div>

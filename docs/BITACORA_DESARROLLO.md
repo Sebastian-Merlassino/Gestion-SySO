@@ -2,6 +2,42 @@
 
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
+## [2026-06-20] Estandarización de Alertas y Botones en Formularios de Carga
+
+### Resumen de Cambios
+- **Estandarización de Alertas**: Se unificaron visual y funcionalmente los diálogos de alerta modal (`modalAlert` / `confirmModal`) en las 7 secciones operativas (Visitas, Extintores, Acciones Correctivas, Capacitación, Programa Anual, Empresas y Equipo). Ahora todos emplean el overlay oscuro y difuminado (`bg-slate-900/60 backdrop-blur-sm`), la animación de escala y el renderizado dinámico de confirmación `{confirmText || 'Confirmar'}`.
+- **Confirmación Homogénea al Salir**: Se unificó el comportamiento y textos de las alertas "Salir sin guardar", utilizando la confirmación estándar "Confirmar" al intentar abandonar un formulario con cambios activos o desde el menú lateral.
+- **Unificación de Estilo en Botones**: Se modificaron las clases de estilo de todos los botones "Salir" y "Guardar" de todos los formularios de carga de todas las secciones para coincidir exactamente con el diseño y tamaño del módulo operativo de Acciones Correctivas.
+- **Botón de Eliminación Inline**: Se integró un botón "Eliminar" de color rojo con sombreado de confirmación junto a "Guardar" en la tarjeta de edición de cada formulario (visible sólo con `editingId` activo). Al ser pulsado, despliega el modal estándar de confirmación antes de procesar el borrado del registro y regresar automáticamente a la vista de listado.
+
+### Decisiones Clave
+- **Renderizado Dinámico de Textos en Alertas**: El uso de variables JSX dinámicas para la confirmación de la alerta evita tener que hardcodear textos rígidos, permitiendo que la misma alerta muestre "Eliminar" o "Confirmar" según el evento de origen sin duplicar marcado.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+
+### Validaciones Ejecutadas
+- Compilación del proyecto (`npm run build`) completada con éxito.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. La consistencia operativa y de UX del pie de los formularios de carga se encuentra completamente unificada.
+
+### Próximo Paso Recomendado
+- Realizar pruebas de humo manuales en dispositivos de diversos tamaños para validar la alineación y el espaciado correcto de los botones de Guardar, Eliminar y Salir en modo edición.
+
+---
+
 ## [2026-06-20] Estandarización de Buscadores y Reversión de Fondos de Formularios a Blanco
 
 ### Resumen de Cambios
