@@ -1295,44 +1295,50 @@ export default function CapacitacionPage({ params }) {
                     </div>
                   </div>
 
-                  {/* Sección 4: Registros de Capacitación (Fotos) */}
+                  {/* Sección 4: Registros de capacitación */}
                   <div className="space-y-4">
                     <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block border-b border-slate-100 pb-1">
-                      Registros de Capacitación (Fotos / Firmas)
+                      Registros de capacitación
                     </span>
                     
-                    {/* Botones de acción para fotos */}
-                    <div className="flex flex-wrap gap-2.5">
-                      <label
-                        htmlFor="multi-photo-upload"
-                        className="py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer flex items-center gap-2"
-                      >
-                        <Upload className="h-4 w-4 text-slate-500" />
-                        Seleccionar fotos
-                      </label>
-                      <label
-                        htmlFor="camera-photo-capture"
-                        className="py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer flex items-center gap-2"
-                      >
-                        <Camera className="h-4 w-4 text-slate-500" />
-                        Sacar foto
-                      </label>
-                      <input
-                        id="multi-photo-upload"
-                        type="file"
-                        multiple
-                        accept="image/*"
-                        onChange={handleAddPhotos}
-                        className="hidden"
-                      />
-                      <input
-                        id="camera-photo-capture"
-                        type="file"
-                        accept="image/*"
-                        capture="environment"
-                        onChange={handleCapturePhoto}
-                        className="hidden"
-                      />
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-slate-50 p-4 border border-slate-200 rounded-xl">
+                      <div className="flex flex-wrap items-center gap-3 flex-1">
+                        <label
+                          htmlFor="multi-photo-upload"
+                          className="inline-flex items-center gap-2 py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer"
+                        >
+                          <Upload className="h-4 w-4 text-slate-500" />
+                          Seleccionar fotos
+                          <input
+                            id="multi-photo-upload"
+                            type="file"
+                            multiple
+                            accept="image/*"
+                            onChange={handleAddPhotos}
+                            className="hidden"
+                          />
+                        </label>
+
+                        <label
+                          htmlFor="camera-photo-capture"
+                          className="inline-flex items-center gap-2 py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer"
+                        >
+                          <Camera className="h-4 w-4 text-slate-500" />
+                          Sacar foto (Cámara)
+                          <input
+                            id="camera-photo-capture"
+                            type="file"
+                            accept="image/*"
+                            capture="environment"
+                            onChange={handleCapturePhoto}
+                            className="hidden"
+                          />
+                        </label>
+                        
+                        <p className="text-[9px] text-slate-400 w-full mt-1">
+                          Formatos soportados: JPG, PNG, GIF, WEBP. Tamaño máximo recomendado: 5 MB.
+                        </p>
+                      </div>
                     </div>
 
                     {/* Grid de previsualización */}
@@ -1510,43 +1516,43 @@ export default function CapacitacionPage({ params }) {
                     <table className="w-full text-left border-collapse">
                       <thead className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 shadow-sm">
                         <tr className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                          <th className="py-4 px-6 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('cliente')}>
+                          <th className="py-4 px-6 cursor-pointer hover:bg-slate-100 select-none transition-colors w-[20%]" onClick={() => handleSort('cliente')}>
                             <div className="flex items-center gap-1">
                               Cliente / Establecimiento
                               {sortField === 'cliente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                             </div>
                           </th>
-                          <th className="py-4 px-4 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('puesto')}>
+                          <th className="py-4 px-4 cursor-pointer hover:bg-slate-100 select-none transition-colors w-[15%]" onClick={() => handleSort('puesto')}>
                             <div className="flex items-center gap-1">
                               Puesto
                               {sortField === 'puesto' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                             </div>
                           </th>
-                          <th className="py-4 px-4 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('tema')}>
+                          <th className="py-4 px-4 cursor-pointer hover:bg-slate-100 select-none transition-colors w-[25%]" onClick={() => handleSort('tema')}>
                             <div className="flex items-center gap-1">
                               Tema de Capacitación
                               {sortField === 'tema' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                             </div>
                           </th>
-                          <th className="py-4 px-4 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('capacitador')}>
+                          <th className="py-4 px-4 cursor-pointer hover:bg-slate-100 select-none transition-colors w-[15%]" onClick={() => handleSort('capacitador')}>
                             <div className="flex items-center gap-1">
                               Capacitador
                               {sortField === 'capacitador' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                             </div>
                           </th>
-                          <th className="py-4 px-4 text-center cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('fecha_inicio_planificada')}>
+                          <th className="py-4 px-4 text-center cursor-pointer hover:bg-slate-100 select-none transition-colors w-[12%]" onClick={() => handleSort('fecha_inicio_planificada')}>
                             <div className="flex items-center justify-center gap-1">
                               Fechas Programadas
                               {sortField === 'fecha_inicio_planificada' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                             </div>
                           </th>
-                          <th className="py-4 px-4 text-center cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('progreso')}>
+                          <th className="py-4 px-4 text-center cursor-pointer hover:bg-slate-100 select-none transition-colors w-[8%]" onClick={() => handleSort('progreso')}>
                             <div className="flex items-center justify-center gap-1">
                               Progreso / Estado
                               {sortField === 'progreso' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                             </div>
                           </th>
-                          <th className="py-4 px-6 text-right">Acciones</th>
+                          <th className="py-4 px-6 text-right w-[5%]">Acciones</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-xs font-normal text-slate-700">
@@ -1576,14 +1582,16 @@ export default function CapacitacionPage({ params }) {
                                   </span>
                                 </td>
                                 <td className="py-4 px-4 text-slate-700 font-medium">
-                                  {cap.puesto || <span className="text-slate-400 italic">No especificado</span>}
+                                  <span className="block truncate max-w-[140px]" title={cap.puesto}>
+                                    {cap.puesto || <span className="text-slate-400 italic">No especificado</span>}
+                                  </span>
                                 </td>
                                 <td className="py-4 px-4">
-                                  <span className="block font-semibold text-slate-800" title={cap.tema}>
+                                  <span className="block font-semibold text-slate-800 truncate max-w-[240px]" title={cap.tema}>
                                     {cap.tema}
                                   </span>
                                   {cap.contenido && (
-                                    <span className="text-[10px] text-slate-400 block truncate max-w-[250px] mt-0.5" title={cap.contenido}>
+                                    <span className="text-[10px] text-slate-400 block truncate max-w-[240px] mt-0.5" title={cap.contenido}>
                                       {cap.contenido}
                                     </span>
                                   )}
