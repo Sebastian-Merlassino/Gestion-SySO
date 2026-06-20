@@ -2,6 +2,51 @@
 
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
+## [2026-06-20] Implementación de Constancia de Visita, Firma Digital y Envío de PDF por Correo
+
+### Resumen de Cambios
+- **Base de Datos y RLS**:
+  - Creada la tabla `public.visitas` con Row Level Security (RLS) y aislamiento multi-tenant a través de la migración `20260630000000_create_visitas.sql`.
+- **Backend API**:
+  - Creado el endpoint `/api/send-email` utilizando `nodemailer` para el envío de constancias en formato PDF adjunto, con simulación integrada para desarrollo y preview.
+- **Frontend y Firma Digital**:
+  - Diseñada la vista de visitas (`/visitas`) con formulario interactivo de lógica condicional (detalles de incidentes, mediciones, capacitaciones y simulacros).
+  - Implementados cuadros de firma digital basados en HTML5 Canvas con soporte mouse/touch, guardado en Supabase Storage (`documents` bucket) y visualización/previsualización dinámica.
+  - Generación de reportes PDF A4 vertical mediante `jspdf` y `jspdf-autotable` incorporando el logotipo del tenant en cabecera y firmas al pie.
+  - Modal interactivo de envío por correo sugerido (consumiendo `empresas.contactos_correos`) y libre.
+- **Navegación Unificada**:
+  - Integrado el enlace "Constancias de Visita" (icono `ClipboardCheck`) en las barras laterales de escritorio y menús móviles en los 8 módulos operativos de la plataforma (dashboard, empresas, equipo, programa, capacitacion, correctivas, extintores, profile).
+
+### Decisiones Clave
+- **Generación Local de PDF**: Procesar el PDF en el navegador a través de jsPDF reduce la latencia, evita cargos extras de procesamiento de PDF server-side y simplifica la firma de recursos multi-tenant al renderizar assets ya autorizados localmente.
+- **Canvas HTML5 Puro**: Se prefirió canvas nativo con manejadores de eventos básicos (`onMouseDown`, `onMouseMove`, `onMouseUp`, `onTouchStart`, `onTouchMove`, `onTouchEnd`) para evitar dependencias pesadas propensas a romper compilaciones o dificultar responsive.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `supabase`
+- `next-best-practices`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260630000000_create_visitas.sql`
+- `[NEW] src/app/api/send-email/route.js`
+- `[NEW] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de Next.js (`npm run build`) validada sin advertencias ni errores de enrutamiento o sintaxis.
+
+---
+
 ## [2026-06-20] Estandarización de Acciones de Salida y Modales de Advertencia
 
 ### Resumen de Cambios

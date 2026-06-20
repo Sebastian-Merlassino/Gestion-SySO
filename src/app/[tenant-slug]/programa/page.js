@@ -33,7 +33,8 @@ import {
   GraduationCap,
   ArrowLeft,
   Sliders,
-  Flame
+  Flame,
+  ClipboardCheck
 } from 'lucide-react';
 
 const MONTH_NAMES = [
@@ -976,6 +977,10 @@ export default function ProgramaGestion({ params }) {
                   <Flame className="h-4 w-4" />
                   Extintores
                 </a>
+                <a href={`/${tenantSlug}/visitas`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/visitas`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                  <ClipboardCheck className="h-4 w-4" />
+                  Constancia de Visita
+                </a>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
                 <a href={`/${tenantSlug}/profile`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/profile`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <Settings className="h-4 w-4" />
@@ -1091,6 +1096,15 @@ export default function ProgramaGestion({ params }) {
             >
               <Flame className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Extintores</span>}
+            </a>
+            <a 
+              href={`/${tenantSlug}/visitas`} 
+              title="Constancia de Visita"
+              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/visitas`)}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <ClipboardCheck className="h-4.5 w-4.5 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Constancia de Visita</span>}
             </a>
             
             {!isSidebarCollapsed ? (
