@@ -25,6 +25,8 @@ import {
   MapPin,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   ArrowLeft,
   Sliders,
   Flame,
@@ -181,7 +183,13 @@ export default function VisitasPage({ params }) {
   const [filterText, setFilterText] = useState('');
   const [filterEmpresa, setFilterEmpresa] = useState('');
   const [filterEstablecimiento, setFilterEstablecimiento] = useState('');
-  const [filterIncidentes, setFilterIncidentes] = useState('');
+  const [showFilters, setShowFilters] = useState(true);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setShowFilters(false);
+    }
+  }, []);
 
   // Ordenamiento
   const [sortField, setSortField] = useState('fecha');
@@ -1303,11 +1311,6 @@ export default function VisitasPage({ params }) {
     if (filterEmpresa && v.empresa_id !== filterEmpresa) return false;
     if (filterEstablecimiento && v.establecimiento_id !== filterEstablecimiento) return false;
 
-    if (filterIncidentes) {
-      const status = v.ocurrieron_incidentes ? 'Sí' : 'No';
-      if (status !== filterIncidentes) return false;
-    }
-
     return true;
   });
 
@@ -1536,18 +1539,18 @@ export default function VisitasPage({ params }) {
             {!isFormOpen && (
               <>
                 {/* Herramientas, Búsqueda y Filtros */}
-                <div className="bg-white rounded-2xl border border-slate-150 p-4 shadow-sm space-y-4">
-                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div className="bg-white rounded-2xl border border-slate-150 p-3 shadow-sm space-y-3 shrink-0">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                     
                     {/* Buscador de texto */}
                     <div className="relative flex-1">
-                      <Search className="absolute left-3.5 top-3 h-4.5 w-4.5 text-slate-400" />
+                      <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 pointer-events-none" />
                       <input 
                         type="text" 
                         placeholder="Buscar por profesional, responsable, observaciones..."
                         value={filterText}
                         onChange={(e) => setFilterText(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50"
+                        className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400"
                       />
                     </div>
 
@@ -1561,76 +1564,80 @@ export default function VisitasPage({ params }) {
                           }
                           setIsFormOpen(true);
                         }}
-                        className="px-4 py-2 bg-[#468DFF] text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0"
+                        className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0"
                       >
-                        <Plus className="h-4 w-4" />
+                        <Plus className="h-3.5 w-3.5" />
                         Nueva Constancia
                       </button>
                     </div>
                   </div>
 
                   {/* Filtros avanzados colapsables */}
-                  <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center gap-4 text-xs">
-                    <span className="font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider shrink-0">
-                      <Sliders className="h-3.5 w-3.5" />
-                      Filtros de Búsqueda
-                    </span>
-
-                    {/* Selector Cliente */}
-                    <select 
-                      value={filterEmpresa}
-                      onChange={(e) => {
-                        setFilterEmpresa(e.target.value);
-                        setFilterEstablecimiento('');
-                      }}
-                      className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF]"
-                    >
-                      <option value="">Todos los Clientes</option>
-                      {empresas.map(e => (
-                        <option key={e.id} value={e.id}>{e.razon_social}</option>
-                      ))}
-                    </select>
-
-                    {/* Selector Establecimiento */}
-                    <select 
-                      value={filterEstablecimiento}
-                      onChange={(e) => setFilterEstablecimiento(e.target.value)}
-                      disabled={!filterEmpresa}
-                      className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] disabled:bg-slate-50 disabled:text-slate-400"
-                    >
-                      <option value="">Todos los Establecimientos</option>
-                      {allEstablecimientos
-                        .filter(est => est.empresa_id === filterEmpresa)
-                        .map(est => (
-                          <option key={est.id} value={est.id}>{est.denominacion}</option>
-                        ))
-                      }
-                    </select>
-
-                    {/* Selector Incidentes */}
-                    <select 
-                      value={filterIncidentes}
-                      onChange={(e) => setFilterIncidentes(e.target.value)}
-                      className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF]"
-                    >
-                      <option value="">¿Hubo Incidentes?</option>
-                      <option value="Sí">Sí</option>
-                      <option value="No">No</option>
-                    </select>
-
-                    {/* Limpiar Filtros */}
-                    {(filterText || filterEmpresa || filterEstablecimiento || filterIncidentes) && (
-                      <button 
-                        onClick={() => {
-                          setFilterText('');
-                          setFilterEmpresa('');
-                          setFilterEstablecimiento('');
-                          setFilterIncidentes('');
-                        }}
-                        className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg font-semibold cursor-pointer transition-all"
+                  <div className="pt-2 border-t border-slate-100 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => setShowFilters(!showFilters)}
+                        className="font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px] hover:text-slate-600 transition-colors cursor-pointer"
                       >
-                        Limpiar Filtros
+                        <Sliders className="h-3 w-3" />
+                        Filtros de Búsqueda
+                        {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                       </button>
+
+                      {(filterText || filterEmpresa || filterEstablecimiento) && (
+                        <button 
+                          onClick={() => {
+                            setFilterText('');
+                            setFilterEmpresa('');
+                            setFilterEstablecimiento('');
+                          }}
+                          className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[10px] font-semibold cursor-pointer transition-all border border-slate-200"
+                        >
+                          Limpiar Filtros
+                        </button>
+                      )}
+                    </div>
+
+                    {showFilters && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pt-1 animate-fade-in">
+                        {/* Selector Cliente */}
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Cliente</label>
+                          <select 
+                            value={filterEmpresa}
+                            onChange={(e) => {
+                              setFilterEmpresa(e.target.value);
+                              setFilterEstablecimiento('');
+                            }}
+                            className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer"
+                          >
+                            <option value="">Todos los Clientes</option>
+                            {empresas.map(e => (
+                              <option key={e.id} value={e.id}>{e.razon_social}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Selector Establecimiento */}
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Establecimiento</label>
+                          <select 
+                            value={filterEstablecimiento}
+                            onChange={(e) => setFilterEstablecimiento(e.target.value)}
+                            disabled={!filterEmpresa}
+                            className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer disabled:bg-slate-50 disabled:text-slate-400"
+                          >
+                            <option value="">Todos los Establecimientos</option>
+                            {allEstablecimientos
+                              .filter(est => est.empresa_id === filterEmpresa)
+                              .map(est => (
+                                <option key={est.id} value={est.id}>{est.denominacion}</option>
+                              ))
+                            }
+                          </select>
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>

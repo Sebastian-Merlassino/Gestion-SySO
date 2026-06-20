@@ -37,7 +37,11 @@ import {
   ChevronRight,
   GraduationCap,
   Flame,
-  ClipboardCheck
+  ClipboardCheck,
+  ChevronDown,
+  ChevronUp,
+  Search,
+  Sliders
 } from 'lucide-react';
 
 const PROVINCIAS_ARGENTINAS = [
@@ -136,6 +140,17 @@ export default function EquipoPage({ params }) {
 
   // Initial values for dirty checking
   const [initialValues, setInitialValues] = useState(null);
+
+  // Filtros de búsqueda
+  const [filterText, setFilterText] = useState('');
+  const [filterProvincia, setFilterProvincia] = useState('');
+  const [showFilters, setShowFilters] = useState(true);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setShowFilters(false);
+    }
+  }, []);
 
   // Modals / Toasts
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', type: 'info', onConfirm: null });
@@ -1059,6 +1074,18 @@ export default function EquipoPage({ params }) {
 
   const hasLogin = editingId ? !!(miembros.find(m => m.id === editingId)?.profile_id) : false;
 
+  const filteredMiembros = miembros.filter(m => {
+    const matchesSearch = filterText ? (
+      (m.full_name || '').toLowerCase().includes(filterText.toLowerCase()) ||
+      (m.email || '').toLowerCase().includes(filterText.toLowerCase()) ||
+      (m.cuit || '').includes(filterText)
+    ) : true;
+
+    const matchesProvincia = filterProvincia ? m.provincia === filterProvincia : true;
+
+    return matchesSearch && matchesProvincia;
+  });
+
   return (
     <div className="h-screen overflow-hidden bg-[#f8fafc] text-slate-700 flex font-sans">
       
@@ -1345,18 +1372,73 @@ export default function EquipoPage({ params }) {
             // ==========================================
             <div className="space-y-6">
               
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="font-outfit text-xl font-extrabold text-slate-800 tracking-tight">Integrantes del Equipo</h3>
-                  <p className="text-xs text-slate-500 mt-1">Administra los técnicos, licenciados y colaboradores asignados a tu consultora.</p>
+              {/* Panel de Filtros y Búsqueda */}
+              <div className="bg-white rounded-2xl border border-slate-150 p-3 shadow-sm space-y-3">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <div className="relative flex-1">
+                    <span className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 pointer-events-none">
+                      <Search className="h-3.5 w-3.5" />
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="Buscar integrante por nombre, email o CUIT..."
+                      value={filterText}
+                      onChange={(e) => setFilterText(e.target.value)}
+                      className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400"
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleAddNew}
+                    className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0"
+                  >
+                    <PlusCircle className="h-3.5 w-3.5" />
+                    Agregar Integrante
+                  </button>
                 </div>
-                <button
-                  onClick={handleAddNew}
-                  className="py-2.5 px-4 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold transition-all flex items-center gap-2 shadow-lg shadow-blue-500/10 active:scale-[0.98] cursor-pointer"
-                >
-                  <PlusCircle className="h-4.5 w-4.5" />
-                  Agregar Integrante
-                </button>
+
+                <div className="pt-2 border-t border-slate-100 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => setShowFilters(!showFilters)}
+                      className="font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px] hover:text-slate-600 transition-colors cursor-pointer"
+                    >
+                      <Sliders className="h-3 w-3" />
+                      Filtros de Búsqueda
+                      {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                    </button>
+                    {(filterProvincia || filterText) && (
+                      <button
+                        onClick={() => {
+                          setFilterProvincia('');
+                          setFilterText('');
+                        }}
+                        className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[10px] font-semibold cursor-pointer transition-all border border-slate-200"
+                      >
+                        Limpiar filtros
+                      </button>
+                    )}
+                  </div>
+
+                  {showFilters && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-1 animate-fade-in">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Provincia</label>
+                        <select
+                          value={filterProvincia}
+                          onChange={(e) => setFilterProvincia(e.target.value)}
+                          className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer"
+                        >
+                          <option value="">Todas las provincias</option>
+                          {PROVINCIAS_ARGENTINAS.map(p => (
+                            <option key={p} value={p}>{p}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Members Grid/List */}
@@ -1389,62 +1471,70 @@ export default function EquipoPage({ params }) {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {miembros.map((m) => (
-                          <tr key={m.id} className="hover:bg-slate-50/50 cursor-pointer transition-colors" onClick={() => handleEdit(m.id)}>
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-3">
-                                <div className="h-8 w-8 rounded-full bg-[#468DFF]/10 flex items-center justify-center text-[#468DFF] font-bold text-xs">
-                                  {m.full_name.charAt(0).toUpperCase()}
-                                </div>
-                                <div>
-                                  <span className="font-semibold text-slate-800 text-xs block">{m.full_name}</span>
-                                  <span className="text-[10px] text-slate-400 block">{m.email}</span>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 text-xs font-mono text-slate-600">
-                              {m.cuit}
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="text-xs text-slate-600 space-y-0.5">
-                                <span className="flex items-center gap-1.5">
-                                  <Phone className="h-3 w-3 text-slate-400 shrink-0" />
-                                  {m.phone}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 text-xs text-slate-600">
-                              {m.localidad ? `${m.localidad}, ` : ''}{m.provincia}
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                                m.tiene_acceso 
-                                  ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' 
-                                  : 'bg-slate-100 text-slate-500 border border-slate-200'
-                              }`}>
-                                {m.tiene_acceso ? 'Con Acceso' : 'Solo Registro'}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
-                              <div className="flex items-center justify-end gap-2">
-                                <button
-                                  onClick={() => handleEdit(m.id)}
-                                  className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                  title="Editar"
-                                >
-                                  <Edit className="h-3.5 w-3.5" />
-                                </button>
-                                <button
-                                  onClick={() => handleDelete(m.id, m.full_name, m.profile_id)}
-                                  className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                  title="Eliminar"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </button>
-                              </div>
+                        {filteredMiembros.length === 0 ? (
+                          <tr>
+                            <td colSpan="6" className="py-12 px-6 text-center text-slate-400 italic">
+                              No se encontraron integrantes que coincidan con la búsqueda.
                             </td>
                           </tr>
-                        ))}
+                        ) : (
+                          filteredMiembros.map((m) => (
+                            <tr key={m.id} className="hover:bg-slate-50/50 cursor-pointer transition-colors" onClick={() => handleEdit(m.id)}>
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="h-8 w-8 rounded-full bg-[#468DFF]/10 flex items-center justify-center text-[#468DFF] font-bold text-xs">
+                                    {m.full_name.charAt(0).toUpperCase()}
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold text-slate-800 text-xs block">{m.full_name}</span>
+                                    <span className="text-[10px] text-slate-400 block">{m.email}</span>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 text-xs font-mono text-slate-600">
+                                {m.cuit}
+                              </td>
+                              <td className="px-6 py-4">
+                                <div className="text-xs text-slate-600 space-y-0.5">
+                                  <span className="flex items-center gap-1.5">
+                                    <Phone className="h-3 w-3 text-slate-400 shrink-0" />
+                                    {m.phone}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 text-xs text-slate-600">
+                                {m.localidad ? `${m.localidad}, ` : ''}{m.provincia}
+                              </td>
+                              <td className="px-6 py-4">
+                                <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                  m.tiene_acceso 
+                                    ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' 
+                                    : 'bg-slate-100 text-slate-500 border border-slate-200'
+                                }`}>
+                                  {m.tiene_acceso ? 'Con Acceso' : 'Solo Registro'}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex items-center justify-end gap-2">
+                                  <button
+                                    onClick={() => handleEdit(m.id)}
+                                    className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                    title="Editar"
+                                  >
+                                    <Edit className="h-3.5 w-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDelete(m.id, m.full_name, m.profile_id)}
+                                    className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                    title="Eliminar"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>
