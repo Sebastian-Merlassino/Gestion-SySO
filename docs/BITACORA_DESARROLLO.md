@@ -2,6 +2,38 @@
 
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
+## [2026-06-20] Estandarización y Optimización de Filtros y Contenedores de Búsqueda
+
+### Resumen de Cambios
+- **Diseño Compacto Unificado**: Homogeneizado el contenedor de búsqueda y filtros avanzados en las 7 secciones principales (`visitas`, `extintores`, `correctivas`, `capacitacion`, `programa`, `empresas`, `equipo`). Se redujo el padding vertical, aplicando buscador compacto (`py-1.5 text-xs`), selectores compactos (`text-xs py-1.5`) y botón primario adaptado (`py-1.5 px-3.5 text-xs font-bold`).
+- **Autocolapsado en Móviles**: Implementado el estado `showFilters` y hook `useEffect` en cada vista para autodetectar pantallas de dispositivos móviles (ancho < 768px) al cargar, colapsando los filtros avanzados por defecto.
+- **Toggle de Filtros Interactivo**: Añadido un botón toggle con una flecha rotativa (`ChevronDown`/`ChevronUp` de Lucide) junto al subtítulo "Filtros de Búsqueda" para permitir expandir/contraer los filtros dinámicamente en cualquier dispositivo.
+- **Limpieza de Visitas**: Eliminado el filtro "¿Hubo Accidentes?" en el módulo de Visitas (interfaz, lógica de filtro y restauración).
+
+### Decisiones Clave
+- **Colapso Client-Side Seguro**: Para evitar advertencias de hidratación en Server-Side Rendering (SSR) de Next.js, la inicialización del estado `showFilters` en dispositivos móviles se realiza estrictamente en el cliente mediante un hook `useEffect` que verifica `window.innerWidth`.
+- **Estandarización de Grillas de Filtros**: Se preservó la grilla de selects específica para cada sección pero encapsulada con animación CSS `animate-fade-in` y visibilidad condicional según el estado de colapso, garantizando consistencia operacional.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+
+### Validaciones Ejecutadas
+- Compilación y build de producción de Next.js (`npm run build` vía cmd) completados con éxito para todo el proyecto sin errores ni advertencias de sintaxis o empaquetado JSX.
+- Empuje y publicación del código exitosos en el repositorio Git.
+
+---
+
 ## [2026-06-20] Homogeneización Estética de la Plataforma al Estándar de Visitas
 
 ### Resumen de Cambios
