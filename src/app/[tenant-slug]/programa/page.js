@@ -922,7 +922,7 @@ export default function ProgramaGestion({ params }) {
   const filteredEstablecimientos = allEstablecimientos.filter(e => e.empresa_id === empresaId);
 
   return (
-    <div className="h-screen overflow-hidden bg-[#D9D9D9] text-slate-700 flex font-sans">
+    <div className="h-screen overflow-hidden bg-[#f8fafc] text-slate-700 flex font-sans">
       
       {/* Mobile Sidebar (Drawer Overlay) */}
       {isMobileMenuOpen && (
@@ -1173,21 +1173,21 @@ export default function ProgramaGestion({ params }) {
           <div className="p-6 md:p-8 space-y-6 max-w-[95%] mx-auto w-full">
             {showForm ? (
               // FORMULARIO DE ALTA Y EDICIÓN INLINE
-              <div className="bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[85vh]">
-                <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5 bg-slate-50">
+              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
+                <div className="px-6 py-4 bg-slate-50 border-b border-slate-150 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <button 
                       type="button"
                       onClick={handleExitForm}
-                      className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition-colors border border-slate-200 bg-white shadow-sm cursor-pointer"
+                      className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 cursor-pointer"
                     >
-                      <ArrowLeft className="h-4 w-4" />
+                      <ArrowLeft className="h-5 w-5" />
                     </button>
-                    <h3 className="font-outfit text-base font-extrabold text-slate-900">
+                    <h3 className="font-outfit text-base font-bold text-slate-900">
                       {editingId ? 'Editar Actividad Anual' : 'Nueva Actividad del Programa'}
                     </h3>
                   </div>
-                  <button type="button" onClick={handleExitForm} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                  <button type="button" onClick={handleExitForm} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200 cursor-pointer">
                     <X className="h-5 w-5" />
                   </button>
                 </div>
@@ -1196,14 +1196,14 @@ export default function ProgramaGestion({ params }) {
                   
                   {/* 1. Razón Social (Empresa) */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                    <label className="text-xs font-bold text-slate-600 block mb-1.5">
                       Cliente / Razón Social <span className="text-[#468DFF]">*</span>
                     </label>
                     <select
                       required
                       value={empresaId}
                       onChange={(e) => handleEmpresaChange(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none transition-all"
+                      className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
                     >
                       <option value="">Selecciona un cliente</option>
                       {empresas.map(e => (
@@ -1215,14 +1215,14 @@ export default function ProgramaGestion({ params }) {
 
                   {/* 2. Establecimiento */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                    <label className="text-xs font-bold text-slate-600 block mb-1.5">
                       Establecimiento <span className="text-[#468DFF]">*</span>
                     </label>
                     <select
                       value={establecimientoId}
                       onChange={(e) => setEstablecimientoId(e.target.value)}
                       disabled={!empresaId}
-                      className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <option value="">Selecciona un establecimiento</option>
                       {filteredEstablecimientos.map(e => (
@@ -1235,13 +1235,13 @@ export default function ProgramaGestion({ params }) {
 
                   {/* 3. Descripción (Catálogo o texto manual) */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                    <label className="text-xs font-bold text-slate-600 block mb-1.5">
                       Descripción / Actividad <span className="text-[#468DFF]">*</span>
                     </label>
                     <select
                       value={catalogoId}
                       onChange={(e) => handleDescripcionChange(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none transition-all mb-2"
+                      className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer mb-2"
                     >
                       <option value="">-- Selecciona del catálogo --</option>
                       {catalogo.map(c => (
@@ -1256,14 +1256,14 @@ export default function ProgramaGestion({ params }) {
                       placeholder="Detalla la actividad a realizar..."
                       value={descripcion}
                       onChange={(e) => setDescripcion(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none transition-all h-20 resize-none"
+                      className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all h-20 resize-none"
                     />
                     {formErrors.descripcion && <p className="text-[10px] text-red-500 font-bold mt-1">{formErrors.descripcion}</p>}
                   </div>
 
                   {/* 4. Marco Legal */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                    <label className="text-xs font-bold text-slate-600 block mb-1.5">
                       Marco Legal / Requisito Legal Aplicable
                     </label>
                     <input
@@ -1271,11 +1271,11 @@ export default function ProgramaGestion({ params }) {
                       placeholder={catalogoId && catalogoId !== '__custom__' ? 'Completado automáticamente desde catálogo...' : 'Ingresá el requisito legal aplicable...'}
                       value={marcoLegal}
                       onChange={(e) => setMarcoLegal(e.target.value)}
-                      className={`w-full border rounded-xl py-3 px-4 text-xs focus:outline-none transition-all ${
+                      className={
                         catalogoId && catalogoId !== '__custom__'
-                          ? 'bg-slate-100 border-slate-200 text-slate-500 cursor-default'
-                          : 'bg-slate-50 border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] text-slate-800'
-                      }`}
+                          ? "w-full border border-slate-150 rounded-xl px-3.5 py-2 text-sm bg-slate-100 text-slate-500 outline-none"
+                          : "w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
+                      }
                       readOnly={!!(catalogoId && catalogoId !== '__custom__')}
                     />
                     {(!catalogoId || catalogoId === '__custom__') && (
@@ -1285,13 +1285,13 @@ export default function ProgramaGestion({ params }) {
 
                   {/* 5. Responsable */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                    <label className="text-xs font-bold text-slate-600 block mb-1.5">
                       Responsable Asignado
                     </label>
                     <select
                       value={responsableId}
                       onChange={(e) => setResponsableId(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none transition-all"
+                      className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
                     >
                       <option value="">Selecciona un responsable</option>
                       {miembros.map(m => (
@@ -1307,7 +1307,7 @@ export default function ProgramaGestion({ params }) {
                         placeholder="Escribe el nombre del responsable..."
                         value={responsableCustom}
                         onChange={(e) => setResponsableCustom(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none transition-all mt-2 animate-scaleUp"
+                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 mt-2 transition-all"
                       />
                     )}
                   </div>
@@ -1315,27 +1315,27 @@ export default function ProgramaGestion({ params }) {
                   {/* 6. Fechas */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                      <label className="text-xs font-bold text-slate-600 block mb-1.5">
                         F. Planificada
                       </label>
                       <input
                         type="date"
                         value={fechaPlanificada}
                         onChange={(e) => setFechaPlanificada(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none transition-all font-mono"
+                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono"
                       />
                       <p className="text-[9px] text-slate-400 mt-1 italic">Opcional. Si no se carga, el estado será "En análisis".</p>
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                      <label className="text-xs font-bold text-slate-600 block mb-1.5">
                         F. Realización
                       </label>
                       <input
                         type="date"
                         value={fechaRealizacion}
                         onChange={(e) => handleRealizacionChange(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none transition-all font-mono"
+                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono"
                       />
                       <p className="text-[9px] text-slate-400 mt-1 italic">Si se carga, el progreso se fija al 100% y el estado a Vigente.</p>
                     </div>
@@ -1344,7 +1344,7 @@ export default function ProgramaGestion({ params }) {
                   {/* 7. Progreso */}
                   <div>
                     <div className="flex justify-between items-center mb-1.5">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      <label className="text-xs font-bold text-slate-600">
                         Progreso del Avance
                       </label>
                       <span className="text-xs font-bold text-[#468DFF]">{progreso}%</span>
@@ -1370,14 +1370,14 @@ export default function ProgramaGestion({ params }) {
                           if (val < 0) val = 0;
                           setProgreso(val);
                         }}
-                        className="w-16 text-center text-xs bg-slate-50 border border-slate-300 rounded-xl py-1.5 outline-none focus:border-[#468DFF]"
+                        className="w-16 text-center text-sm bg-slate-50/50 border border-slate-200 rounded-xl py-1.5 focus:outline-none focus:border-[#468DFF]"
                       />
                     </div>
                   </div>
 
                   {/* 8. Carga de Documento */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                    <label className="text-xs font-bold text-slate-600 block mb-1.5">
                       Documento de Respaldo / Evidencia (PDF)
                     </label>
                     
@@ -1401,7 +1401,7 @@ export default function ProgramaGestion({ params }) {
                           <button
                             type="button"
                             onClick={() => setDocumentoUrl('')}
-                            className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white transition-all cursor-pointer inline-flex items-center shadow-sm"
+                            className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-50 text-red-400 hover:text-white transition-all cursor-pointer inline-flex items-center shadow-sm"
                             title="Eliminar documento cargado"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
@@ -1441,7 +1441,7 @@ export default function ProgramaGestion({ params }) {
                           type="file"
                           accept=".pdf"
                           onChange={(e) => handleFileChangeWithConfirm(e.target.files[0])}
-                          className="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-xs text-slate-600 focus:outline-none file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:uppercase file:bg-[#468DFF]/10 file:text-[#468DFF] hover:file:bg-[#468DFF]/20 file:cursor-pointer"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all file:mr-3.5 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-[#468DFF]/10 file:text-[#468DFF] hover:file:bg-[#468DFF]/20 file:cursor-pointer text-slate-600"
                         />
                         <p className="text-[9px] text-slate-400 mt-1 italic">Solo formato PDF. Tamaño máximo de 10 MB.</p>
                       </>
@@ -1452,7 +1452,7 @@ export default function ProgramaGestion({ params }) {
                           placeholder="Pega el enlace compartido de Google Drive..."
                           value={driveLink}
                           onChange={(e) => setDriveLink(e.target.value)}
-                          className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-2.5 px-3 text-xs text-slate-800 focus:outline-none transition-all"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
                         />
                         <p className="text-[9px] text-slate-400 mt-1 italic">
                           El archivo debe ser público en Drive ("Cualquier persona con el enlace"). Se convertirá y guardará automáticamente.
@@ -1463,30 +1463,30 @@ export default function ProgramaGestion({ params }) {
 
                   {/* 9. Observaciones */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                    <label className="text-xs font-bold text-slate-600 block mb-1.5">
                       Observaciones Generales
                     </label>
                     <textarea
                       placeholder="Escribe comentarios, novedades o detalles..."
                       value={observaciones}
                       onChange={(e) => setObservaciones(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none transition-all h-24 resize-none"
+                      className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all h-24 resize-none"
                     />
                   </div>
 
                   {/* Botones de acción del formulario */}
-                  <div className="pt-4 border-t border-slate-200 flex items-center justify-between shrink-0">
+                  <div className="pt-4 border-t border-slate-100 flex justify-between items-center shrink-0">
                     <button
                       type="button"
                       onClick={handleExitForm}
-                      className="px-5 py-3 border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 bg-white"
+                      className="px-5 py-2.5 border border-slate-300 text-slate-700 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer bg-white"
                     >
                       Salir
                     </button>
                     <button
                       type="submit"
                       disabled={saving}
-                      className="flex items-center justify-center gap-2 px-6 py-3 bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-[#468DFF]/15 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer min-w-[120px]"
+                      className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50 disabled:cursor-not-allowed min-w-[120px] justify-center"
                     >
                       {saving ? (
                         <>
@@ -1506,7 +1506,7 @@ export default function ProgramaGestion({ params }) {
             ) : (
               <>
                 {/* Toolbar y Filtros Unificados */}
-            <div className="bg-white p-5 border border-slate-200/80 rounded-2xl shadow-sm space-y-6">
+            <div className="bg-white rounded-2xl border border-slate-150 p-4 shadow-sm space-y-4">
               
               {/* Fila Superior: Controles de Vista, Buscador y Botón Nuevo */}
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -1532,21 +1532,21 @@ export default function ProgramaGestion({ params }) {
                 {/* Buscador y Nueva Actividad */}
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="relative">
-                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                      <Search className="h-4 w-4" />
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+                      <Search className="h-4.5 w-4.5" />
                     </span>
                     <input
                       type="text"
                       placeholder="Buscar actividad, cliente, obs..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full sm:w-60 bg-slate-50 border border-slate-300 focus:border-[#468DFF] rounded-xl py-2 pl-9 pr-4 text-xs text-slate-800 focus:outline-none transition-all"
+                      className="w-full sm:w-60 pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50"
                     />
                   </div>
 
                   <button
                     onClick={() => handleAddNew()}
-                    className="flex items-center gap-2 px-4 py-2 bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-[#468DFF]/15 cursor-pointer"
+                    className="px-4 py-2 bg-[#468DFF] text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0"
                   >
                     <Plus className="h-4 w-4" />
                     Nueva Actividad
@@ -1555,10 +1555,10 @@ export default function ProgramaGestion({ params }) {
               </div>
 
               {/* Fila Inferior: Filtros rápidos */}
-              <div className="border-t border-slate-100 pt-4 space-y-4">
+              <div className="border-t border-slate-100 pt-3 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <Sliders className="h-3 w-3" />
+                  <span className="font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider shrink-0 text-[10px]">
+                    <Sliders className="h-3.5 w-3.5" />
                     Filtros de Búsqueda
                   </span>
                   {(filterEmpresa || filterEstablecimiento || filterMonth || filterYear || filterEstado || searchQuery) && (
@@ -1571,9 +1571,9 @@ export default function ProgramaGestion({ params }) {
                         setFilterEstado('');
                         setSearchQuery('');
                       }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-200 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer"
+                      className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg font-semibold cursor-pointer transition-all text-xs flex items-center gap-1.5"
                     >
-                      <X className="h-3 w-3" />
+                      <X className="h-3.5 w-3.5" />
                       Limpiar filtros
                     </button>
                   )}
@@ -1585,7 +1585,7 @@ export default function ProgramaGestion({ params }) {
                     <select
                       value={filterEmpresa}
                       onChange={(e) => { setFilterEmpresa(e.target.value); setFilterEstablecimiento(''); }}
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF]"
+                      className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer"
                     >
                       <option value="">Todos los clientes</option>
                       {empresas.map(e => (
@@ -1600,7 +1600,7 @@ export default function ProgramaGestion({ params }) {
                       value={filterEstablecimiento}
                       onChange={(e) => setFilterEstablecimiento(e.target.value)}
                       disabled={!filterEmpresa}
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF] disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <option value="">Todos los establecimientos</option>
                       {allEstablecimientos.filter(est => est.empresa_id === filterEmpresa).map(e => (
@@ -1614,7 +1614,7 @@ export default function ProgramaGestion({ params }) {
                     <select
                       value={filterMonth}
                       onChange={(e) => setFilterMonth(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF]"
+                      className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer"
                     >
                       <option value="">Todos los meses</option>
                       <option value="01">Enero</option>
@@ -1637,7 +1637,7 @@ export default function ProgramaGestion({ params }) {
                     <select
                       value={filterYear}
                       onChange={(e) => setFilterYear(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF]"
+                      className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer"
                     >
                       <option value="">Todos los años</option>
                       <option value="2024">2024</option>
@@ -1655,7 +1655,7 @@ export default function ProgramaGestion({ params }) {
                     <select
                       value={filterEstado}
                       onChange={(e) => setFilterEstado(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF]"
+                      className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer"
                     >
                       <option value="">Todos los estados</option>
                       <option value="Vigente">Vigente (verde)</option>
@@ -1669,7 +1669,7 @@ export default function ProgramaGestion({ params }) {
 
             {/* VISTA CALENDARIO */}
             {view === 'calendar' && (
-              <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-6">
+              <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4">
                 
                 {/* Cabecera del Mes del Calendario */}
                 <div className="flex items-center justify-between pb-3 border-b border-slate-200">
@@ -1681,19 +1681,19 @@ export default function ProgramaGestion({ params }) {
                   <div className="flex items-center gap-1">
                     <button
                       onClick={handlePrevMonth}
-                      className="p-2 border border-slate-300 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors text-slate-600 cursor-pointer"
+                      className="p-2 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 transition-colors text-slate-600 cursor-pointer"
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => setCalendarDate(new Date())}
-                      className="px-3 py-2 border border-slate-300 rounded-xl bg-slate-50 hover:bg-slate-100 text-xs font-bold transition-colors cursor-pointer text-slate-600"
+                      className="px-3 py-2 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 text-xs font-bold transition-colors cursor-pointer text-slate-600"
                     >
                       Hoy
                     </button>
                     <button
                       onClick={handleNextMonth}
-                      className="p-2 border border-slate-300 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors text-slate-600 cursor-pointer"
+                      className="p-2 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 transition-colors text-slate-600 cursor-pointer"
                     >
                       <ChevronRight className="h-4 w-4" />
                     </button>
@@ -1713,7 +1713,7 @@ export default function ProgramaGestion({ params }) {
                   {/* Celdas del calendario */}
                   {calendarDays.map((day, idx) => {
                     if (day === null) {
-                      return <div key={`empty-${idx}`} className="bg-slate-50/30 rounded-xl border border-slate-100/50 min-h-[100px] md:min-h-[120px]" />;
+                      return <div key={`empty-${idx}`} className="bg-slate-50/30 rounded-2xl border border-slate-100/50 min-h-[100px] md:min-h-[120px]" />;
                     }
 
                     const dateStr = `${currYear}-${String(currMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -1723,7 +1723,7 @@ export default function ProgramaGestion({ params }) {
                     return (
                       <div
                         key={`day-${day}`}
-                        className={`bg-white rounded-xl border p-2 flex flex-col justify-between group min-h-[100px] md:min-h-[120px] transition-all hover:shadow-md cursor-pointer ${isToday ? 'border-[#468DFF] ring-1 ring-[#468DFF]/30' : 'border-slate-200/80'}`}
+                        className={`bg-white rounded-2xl border p-2 flex flex-col justify-between group min-h-[100px] md:min-h-[120px] transition-all hover:shadow-md cursor-pointer ${isToday ? 'border-[#468DFF] ring-1 ring-[#468DFF]/30' : 'border-slate-150'}`}
                         onClick={() => handleAddNew(dateStr)}
                       >
                         {/* Indicador del número de día */}
@@ -1778,43 +1778,43 @@ export default function ProgramaGestion({ params }) {
 
             {/* VISTA DE TABLA / LISTADO */}
             {view === 'list' && (
-              <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
+              <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden">
                 <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
                   <table className="w-full border-collapse text-left">
-                    <thead className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200">
-                      <tr className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                        <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('cliente')}>
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('cliente')}>
                           <div className="flex items-center gap-1">
                             Cliente / Establecimiento
                             {sortField === 'cliente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                           </div>
                         </th>
-                        <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('actividad')}>
+                        <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('actividad')}>
                           <div className="flex items-center gap-1">
                             Actividad / Legal
                             {sortField === 'actividad' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                           </div>
                         </th>
-                        <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('responsable')}>
+                        <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('responsable')}>
                           <div className="flex items-center gap-1">
                             Responsable
                             {sortField === 'responsable' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                           </div>
                         </th>
-                        <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('fecha_planificada')}>
+                        <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('fecha_planificada')}>
                           <div className="flex items-center gap-1">
                             F. Planificada
                             {sortField === 'fecha_planificada' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                           </div>
                         </th>
-                        <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('fecha_realizacion')}>
+                        <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('fecha_realizacion')}>
                           <div className="flex items-center gap-1">
                             F. Realización
                             {sortField === 'fecha_realizacion' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                           </div>
                         </th>
                         <th className="px-6 py-4">Progreso</th>
-                        <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('estado')}>
+                        <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('estado')}>
                           <div className="flex items-center gap-1">
                             Estado
                             {sortField === 'estado' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
@@ -1840,7 +1840,7 @@ export default function ProgramaGestion({ params }) {
                           const statusInfo = getItemStatusAndColor(act);
                           
                           // Alerta visual de fecha planificada
-                          let dateColorClass = 'text-slate-700 font-mono';
+                          let dateColorClass = 'text-slate-500 font-mono font-medium';
                           if (statusInfo.dateAlertColor === 'red') {
                             dateColorClass = 'text-[#fa050b] bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-lg font-bold font-mono';
                           } else if (statusInfo.dateAlertColor === 'yellow') {
@@ -1851,27 +1851,27 @@ export default function ProgramaGestion({ params }) {
                             <tr 
                               key={act.id} 
                               onClick={() => handleEdit(act)}
-                              className="hover:bg-slate-50 transition-colors cursor-pointer"
+                              className="hover:bg-slate-50/50 cursor-pointer transition-colors"
                             >
                               <td className="px-6 py-4">
-                                <span className="font-extrabold text-slate-800 block truncate max-w-[160px]">
+                                <span className="font-semibold text-slate-900 block truncate max-w-[160px]">
                                   {emp?.razon_social || 'Cliente desconocido'}
                                 </span>
-                                <span className="text-[10px] text-slate-400 block truncate max-w-[160px]">
+                                <span className="text-[10px] text-slate-500 font-medium block truncate max-w-[160px]">
                                   {est?.denominacion || 'Sin establecimiento'}
                                 </span>
                               </td>
                               
                               <td className="px-6 py-4">
-                                <span className="font-semibold text-slate-700 block truncate max-w-[200px]" title={act.descripcion}>
+                                <span className="font-semibold text-slate-900 block truncate max-w-[200px]" title={act.descripcion}>
                                   {act.descripcion}
                                 </span>
-                                <span className="text-[10px] text-slate-400 block truncate max-w-[200px]">
+                                <span className="text-[10px] text-slate-500 font-medium block truncate max-w-[200px]">
                                   {act.marco_legal || 'Sin marco legal registrado'}
                                 </span>
                               </td>
 
-                              <td className="px-6 py-4 font-semibold text-slate-600">
+                              <td className="px-6 py-4 font-semibold text-slate-900">
                                 {act.responsable || 'Sin asignar'}
                               </td>
 
@@ -1916,10 +1916,10 @@ export default function ProgramaGestion({ params }) {
                                 {act.documento_url ? (
                                   <button
                                     onClick={(e) => { e.stopPropagation(); handleViewPdf(act.documento_url); }}
-                                    className="p-1.5 rounded-lg bg-slate-100 hover:bg-[#468DFF] text-slate-500 hover:text-white transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                    className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                                     title="Descargar o Ver Documento PDF"
                                   >
-                                    <FileText className="h-4 w-4" />
+                                    <FileText className="h-4.5 w-4.5" />
                                   </button>
                                 ) : (
                                   <span className="text-[10px] text-slate-400 font-semibold italic">Vacío</span>
@@ -1927,20 +1927,20 @@ export default function ProgramaGestion({ params }) {
                               </td>
 
                               <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
-                                <div className="flex items-center justify-end gap-1.5">
+                                <div className="flex items-center justify-end gap-2">
                                   <button
                                     onClick={(e) => { e.stopPropagation(); handleEdit(act); }}
-                                    className="p-1.5 border border-slate-200 rounded-lg bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-800 cursor-pointer transition-all shadow-sm"
+                                    className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                                     title="Editar actividad"
                                   >
-                                    <Edit className="h-3.5 w-3.5" />
+                                    <Edit className="h-4.5 w-4.5" />
                                   </button>
                                   <button
                                     onClick={(e) => { e.stopPropagation(); handleDelete(act.id); }}
-                                    className="p-1.5 border border-red-200 rounded-lg bg-white hover:bg-red-50 text-red-400 hover:text-red-600 cursor-pointer transition-all shadow-sm"
+                                    className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                                     title="Eliminar actividad"
                                   >
-                                    <Trash2 className="h-3.5 w-3.5" />
+                                    <Trash2 className="h-4.5 w-4.5" />
                                   </button>
                                 </div>
                               </td>
@@ -1960,8 +1960,8 @@ export default function ProgramaGestion({ params }) {
 
         {/* MODAL DE CONFIRMACIÓN */}
         {confirmModal.show && (
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xl max-w-sm w-full space-y-4 text-center">
+          <div className="fixed inset-0 z-55 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+            <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
               <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500">
                 <AlertTriangle className="h-6 w-6" />
               </div>
@@ -1973,7 +1973,7 @@ export default function ProgramaGestion({ params }) {
                 <button
                   type="button"
                   onClick={() => setConfirmModal({ show: false, title: '', message: '', onConfirm: null })}
-                  className="flex-1 py-2 px-4 rounded-xl border border-slate-300 text-slate-700 font-bold text-xs hover:bg-slate-50 transition-all cursor-pointer bg-white"
+                  className="flex-1 py-2.5 border border-slate-300 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer bg-white"
                 >
                   Cancelar
                 </button>
@@ -1981,7 +1981,7 @@ export default function ProgramaGestion({ params }) {
                   <button
                     type="button"
                     onClick={confirmModal.onConfirm}
-                    className="flex-1 py-2 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md shadow-red-500/10 cursor-pointer"
+                    className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer"
                   >
                     Confirmar
                   </button>

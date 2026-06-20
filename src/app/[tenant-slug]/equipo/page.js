@@ -1060,7 +1060,7 @@ export default function EquipoPage({ params }) {
   const hasLogin = editingId ? !!(miembros.find(m => m.id === editingId)?.profile_id) : false;
 
   return (
-    <div className="h-screen overflow-hidden bg-[#D9D9D9] text-slate-700 flex font-sans">
+    <div className="h-screen overflow-hidden bg-[#f8fafc] text-slate-700 flex font-sans">
       
       {/* Mobile Sidebar (Drawer Overlay) */}
       {isMobileMenuOpen && (
@@ -1375,22 +1375,22 @@ export default function EquipoPage({ params }) {
                   </button>
                 </div>
               ) : (
-                <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
+                <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                       <thead>
-                        <tr className="border-b border-slate-150 bg-slate-50/75">
-                          <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-500">Nombre</th>
-                          <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-500">CUIT</th>
-                          <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-500">Contacto</th>
-                          <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-500">Ubicación</th>
-                          <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-500">Acceso Login</th>
-                          <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-wider text-slate-500 text-right">Acciones</th>
+                        <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                          <th className="px-6 py-4">Nombre</th>
+                          <th className="px-6 py-4">CUIT</th>
+                          <th className="px-6 py-4">Contacto</th>
+                          <th className="px-6 py-4">Ubicación</th>
+                          <th className="px-6 py-4">Acceso Login</th>
+                          <th className="px-6 py-4 text-right">Acciones</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
                         {miembros.map((m) => (
-                          <tr key={m.id} className="hover:bg-slate-50/50 transition-colors">
+                          <tr key={m.id} className="hover:bg-slate-50/50 cursor-pointer transition-colors" onClick={() => handleEdit(m.id)}>
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-3">
                                 <div className="h-8 w-8 rounded-full bg-[#468DFF]/10 flex items-center justify-center text-[#468DFF] font-bold text-xs">
@@ -1425,18 +1425,18 @@ export default function EquipoPage({ params }) {
                                 {m.tiene_acceso ? 'Con Acceso' : 'Solo Registro'}
                               </span>
                             </td>
-                            <td className="px-6 py-4 text-right">
-                              <div className="inline-flex items-center gap-2">
+                            <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex items-center justify-end gap-2">
                                 <button
                                   onClick={() => handleEdit(m.id)}
-                                  className="p-1.5 rounded-lg border border-slate-200 hover:border-slate-300 text-slate-500 hover:text-slate-800 transition-colors bg-white shadow-sm cursor-pointer"
+                                  className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                                   title="Editar"
                                 >
                                   <Edit className="h-3.5 w-3.5" />
                                 </button>
                                 <button
                                   onClick={() => handleDelete(m.id, m.full_name, m.profile_id)}
-                                  className="p-1.5 rounded-lg border border-red-200 hover:border-red-300 text-red-500 hover:text-red-700 transition-colors bg-white shadow-sm cursor-pointer"
+                                  className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                                   title="Eliminar"
                                 >
                                   <Trash2 className="h-3.5 w-3.5" />
@@ -1461,7 +1461,7 @@ export default function EquipoPage({ params }) {
               <div className="flex items-center justify-between border-b border-slate-300/60 pb-5">
                 <button
                   onClick={handleExitWithoutSave}
-                  className="flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-slate-800 transition-colors py-2 px-3.5 rounded-xl border border-slate-300 bg-white shadow-sm cursor-pointer"
+                  className="flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-slate-800 transition-colors py-2 px-3.5 rounded-xl border border-slate-300 bg-white shadow-sm cursor-pointer shadow-sm active:scale-[0.98]"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   Volver al listado
@@ -1474,15 +1474,15 @@ export default function EquipoPage({ params }) {
               <form onSubmit={handleSave} className="space-y-8">
                 
                 {/* 1. INFORMACIÓN PERSONAL */}
-                <div className="bg-white border border-slate-200/80 rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
-                  <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
+                <div className="bg-white rounded-2xl border border-slate-150 p-6 md:p-8 shadow-sm space-y-6">
+                  <h4 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
                     <User className="text-[#468DFF] h-4.5 w-4.5" />
                     Información Personal
                   </h4>
 
                   <div className="grid md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      <label className="text-xs font-bold text-slate-600 block mb-1">
                         Nombre y Apellido <span className="text-[#468DFF]">*</span>
                       </label>
                       <input
@@ -1491,12 +1491,12 @@ export default function EquipoPage({ params }) {
                         placeholder="Ing. Carlos Gómez"
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none transition-all"
+                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      <label className="text-xs font-bold text-slate-600 block mb-1">
                         Correo Electrónico <span className="text-[#468DFF]">*</span>
                       </label>
                       <div className="relative">
@@ -1509,7 +1509,7 @@ export default function EquipoPage({ params }) {
                           placeholder="carlos.gomez@consultora.com"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
-                          className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] text-slate-800 rounded-xl py-3 pl-10 pr-4 text-xs focus:outline-none transition-all"
+                          className="w-full border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                         />
                       </div>
                       {editingId && tieneAcceso && (
@@ -1522,7 +1522,7 @@ export default function EquipoPage({ params }) {
 
                   <div className="grid md:grid-cols-3 gap-6">
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      <label className="text-xs font-bold text-slate-600 block mb-1">
                         CUIT (11 números) <span className="text-[#468DFF]">*</span>
                       </label>
                       <input
@@ -1531,7 +1531,7 @@ export default function EquipoPage({ params }) {
                         placeholder="20304567891"
                         value={cuit}
                         onChange={handleCuitChange}
-                        className={`w-full bg-slate-50 border ${cuitError ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500' : 'border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF]'} rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none transition-all`}
+                        className={`w-full border ${cuitError ? 'border-red-400 focus:border-red-500' : 'border-slate-200 focus:border-[#468DFF]'} rounded-xl px-3.5 py-2 text-sm focus:outline-none bg-slate-50/50 transition-all text-slate-700`}
                       />
                       {cuitError && (
                         <span className="text-[10px] text-red-600 mt-1 block font-semibold">{cuitError}</span>
@@ -1539,7 +1539,7 @@ export default function EquipoPage({ params }) {
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      <label className="text-xs font-bold text-slate-600 block mb-1">
                         Teléfono <span className="text-[#468DFF]">*</span>
                       </label>
                       <input
@@ -1548,26 +1548,26 @@ export default function EquipoPage({ params }) {
                         placeholder="1144445555"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none transition-all"
+                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      <label className="text-xs font-bold text-slate-600 block mb-1">
                         Fecha de Nacimiento
                       </label>
                       <input
                         type="date"
                         value={birthDate}
                         onChange={(e) => setBirthDate(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-3 text-xs text-slate-800 focus:outline-none transition-all"
+                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                       />
                     </div>
                   </div>
 
                   <div className="grid md:grid-cols-3 gap-6">
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      <label className="text-xs font-bold text-slate-600 block mb-1">
                         Provincia <span className="text-[#468DFF]">*</span>
                       </label>
                       <select
@@ -1578,7 +1578,7 @@ export default function EquipoPage({ params }) {
                           setPartido('');
                           setLocalidad('');
                         }}
-                        className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none cursor-pointer transition-all"
+                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 cursor-pointer"
                       >
                         <option value="" disabled>Selecciona una provincia</option>
                         {PROVINCIAS_ARGENTINAS.map((prov) => (
@@ -1590,7 +1590,7 @@ export default function EquipoPage({ params }) {
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      <label className="text-xs font-bold text-slate-600 block mb-1">
                         Partido <span className="text-[#468DFF]">*</span>
                       </label>
                       <select
@@ -1601,7 +1601,7 @@ export default function EquipoPage({ params }) {
                           setPartido(e.target.value);
                           setLocalidad('');
                         }}
-                        className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none cursor-pointer transition-all disabled:opacity-50"
+                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 cursor-pointer disabled:opacity-50"
                       >
                         <option value="" disabled>{!provincia ? 'Selecciona provincia primero' : 'Selecciona un partido'}</option>
                         {partidosList.map((p) => (
@@ -1613,14 +1613,14 @@ export default function EquipoPage({ params }) {
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      <label className="text-xs font-bold text-slate-600 block mb-1">
                         Localidad <span className="text-slate-400">(Opcional)</span>
                       </label>
                       <select
                         disabled={!partido || localidadesList.length === 0}
                         value={localidad}
                         onChange={(e) => setLocalidad(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none cursor-pointer transition-all disabled:opacity-50"
+                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 cursor-pointer disabled:opacity-50"
                       >
                         <option value="">{!partido ? 'Selecciona partido primero' : 'Selecciona localidad (Opcional)'}</option>
                         {localidadesList.map((loc) => (
@@ -1634,8 +1634,8 @@ export default function EquipoPage({ params }) {
                 </div>
 
                 {/* 2. ACCESO Y LOGIN */}
-                <div className="bg-white border border-slate-200/80 rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
-                  <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
+                <div className="bg-white rounded-2xl border border-slate-150 p-6 md:p-8 shadow-sm space-y-6">
+                  <h4 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
                     <Lock className="text-[#468DFF] h-4.5 w-4.5" />
                     Acceso a la plataforma
                   </h4>
@@ -1668,7 +1668,7 @@ export default function EquipoPage({ params }) {
                     {tieneAcceso && (
                       <div className="grid md:grid-cols-2 gap-6 pt-2">
                         <div>
-                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                          <label className="text-xs font-bold text-slate-600 block mb-1">
                             {hasLogin ? 'Nueva Contraseña (Opcional)' : 'Contraseña de Acceso'} <span className="text-[#468DFF]">{!hasLogin && '*'}</span>
                           </label>
                           <div className="relative">
@@ -1678,12 +1678,12 @@ export default function EquipoPage({ params }) {
                               placeholder={hasLogin ? 'Dejar en blanco para mantener' : 'Mínimo 8 caracteres, 1 mayúscula y 1 número'}
                               value={password}
                               onChange={(e) => setPassword(e.target.value)}
-                              className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-4 pr-12 text-xs text-slate-800 focus:outline-none transition-all"
+                              className="w-full border border-slate-200 rounded-xl py-3 pl-4 pr-12 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                             />
                             <button
                               type="button"
                               onClick={() => setShowPassword(!showPassword)}
-                              className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700"
+                              className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700 cursor-pointer"
                             >
                               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                             </button>
@@ -1694,7 +1694,7 @@ export default function EquipoPage({ params }) {
                         </div>
  
                         <div>
-                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                          <label className="text-xs font-bold text-slate-600 block mb-1">
                             {hasLogin ? 'Confirmar Nueva Contraseña (Opcional)' : 'Confirmar Contraseña'} <span className="text-[#468DFF]">{!hasLogin && '*'}</span>
                           </label>
                           <div className="relative">
@@ -1704,12 +1704,12 @@ export default function EquipoPage({ params }) {
                               placeholder={hasLogin ? 'Repetir nueva contraseña' : 'Repetir contraseña'}
                               value={confirmPassword}
                               onChange={(e) => setConfirmPassword(e.target.value)}
-                              className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-4 pr-12 text-xs text-slate-800 focus:outline-none transition-all"
+                              className="w-full border border-slate-200 rounded-xl py-3 pl-4 pr-12 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                             />
                             <button
                               type="button"
                               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                              className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700"
+                              className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700 cursor-pointer"
                             >
                               {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                             </button>
@@ -1724,16 +1724,16 @@ export default function EquipoPage({ params }) {
                 </div>
 
                 {/* 3. MATRÍCULAS PROFESIONALES */}
-                <div className="bg-white border border-slate-200/80 rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
+                <div className="bg-white rounded-2xl border border-slate-150 p-6 md:p-8 shadow-sm space-y-6">
                   <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-                    <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    <h4 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
                       <Award className="text-[#468DFF] h-4.5 w-4.5" />
                       Matrículas Profesionales
                     </h4>
                     <button
                       type="button"
                       onClick={handleAddMatricula}
-                      className="py-1.5 px-3 rounded-lg border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-800 text-[10px] font-bold transition-all flex items-center gap-1.5 bg-slate-50 shadow-sm"
+                      className="py-2 px-3.5 rounded-xl border border-[#468DFF]/40 hover:bg-[#468DFF] hover:text-white text-center text-[#468DFF] font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer shadow-sm bg-white hover:border-[#468DFF] active:scale-[0.98]"
                     >
                       <Plus className="h-3.5 w-3.5" />
                       Agregar Matrícula
@@ -1744,7 +1744,7 @@ export default function EquipoPage({ params }) {
                     {matriculas.map((mat, idx) => (
                       <div key={idx} className={`space-y-6 ${idx > 0 ? 'pt-8' : ''}`}>
                         <div className="flex justify-between items-center">
-                          <span className="text-xs font-bold text-[#468DFF] bg-blue-500/5 px-2.5 py-1 rounded-md">
+                          <span className="text-xs font-bold text-[#468DFF] bg-[#468DFF]/10 border border-[#468DFF]/15 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
                             Matrícula #{idx + 1}
                           </span>
                           {matriculas.length > 1 && (
@@ -1761,7 +1761,7 @@ export default function EquipoPage({ params }) {
 
                         <div className="grid md:grid-cols-3 gap-6">
                           <div>
-                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                            <label className="text-xs font-bold text-slate-600 block mb-1">
                               Colegio / Consejo Emisor
                             </label>
                             <input
@@ -1769,12 +1769,12 @@ export default function EquipoPage({ params }) {
                               placeholder="COPIME, CPSH, etc."
                               value={mat.institucion}
                               onChange={(e) => handleMatriculaChange(idx, 'institucion', e.target.value)}
-                              className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none transition-all"
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                             />
                           </div>
 
                           <div>
-                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                            <label className="text-xs font-bold text-slate-600 block mb-1">
                               Número de Matrícula
                             </label>
                             <input
@@ -1782,19 +1782,19 @@ export default function EquipoPage({ params }) {
                               placeholder="L000000"
                               value={mat.numero}
                               onChange={(e) => handleMatriculaChange(idx, 'numero', e.target.value)}
-                              className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-xs text-slate-800 focus:outline-none transition-all"
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                             />
                           </div>
 
                           <div>
-                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                            <label className="text-xs font-bold text-slate-600 block mb-1">
                               Fecha de Vencimiento
                             </label>
                             <input
                               type="date"
                               value={mat.vencimiento}
                               onChange={(e) => handleMatriculaChange(idx, 'vencimiento', e.target.value)}
-                              className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-3 text-xs text-slate-800 focus:outline-none transition-all"
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                             />
                           </div>
                         </div>
@@ -1802,8 +1802,8 @@ export default function EquipoPage({ params }) {
                         {/* Photos of License (Frente and Dorso) */}
                         <div className="grid md:grid-cols-2 gap-6">
                           {/* Frente */}
-                          <div className="border border-slate-200 rounded-xl p-4 bg-slate-50/50">
-                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                          <div className="border border-slate-150 rounded-2xl p-4 bg-slate-50/50">
+                            <label className="text-xs font-bold text-slate-600 block mb-2">
                               Foto de Matrícula (Frente)
                             </label>
                             {mat.fotoFrentePreview ? (
@@ -1812,13 +1812,13 @@ export default function EquipoPage({ params }) {
                                 <button
                                   type="button"
                                   onClick={() => handleMatriculaFileClear(idx, 'Frente')}
-                                  className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors"
+                                  className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors cursor-pointer"
                                 >
                                   <X className="h-3.5 w-3.5" />
                                 </button>
                               </div>
                             ) : (
-                              <div className="relative border-2 border-dashed border-slate-300 hover:border-slate-400 rounded-lg p-6 text-center cursor-pointer transition-colors max-w-[280px] mx-auto bg-white">
+                              <div className="relative border-2 border-dashed border-slate-200 hover:border-slate-300 rounded-xl p-6 text-center cursor-pointer transition-colors max-w-[280px] mx-auto bg-white">
                                 <input
                                   type="file"
                                   accept="image/jpeg,image/jpg,image/png"
@@ -1833,8 +1833,8 @@ export default function EquipoPage({ params }) {
                           </div>
 
                           {/* Dorso */}
-                          <div className="border border-slate-200 rounded-xl p-4 bg-slate-50/50">
-                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                          <div className="border border-slate-150 rounded-2xl p-4 bg-slate-50/50">
+                            <label className="text-xs font-bold text-slate-600 block mb-2">
                               Foto de Matrícula (Dorso)
                             </label>
                             {mat.fotoDorsoPreview ? (
@@ -1843,13 +1843,13 @@ export default function EquipoPage({ params }) {
                                 <button
                                   type="button"
                                   onClick={() => handleMatriculaFileClear(idx, 'Dorso')}
-                                  className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors"
+                                  className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors cursor-pointer"
                                 >
                                   <X className="h-3.5 w-3.5" />
                                 </button>
                               </div>
                             ) : (
-                              <div className="relative border-2 border-dashed border-slate-300 hover:border-slate-400 rounded-lg p-6 text-center cursor-pointer transition-colors max-w-[280px] mx-auto bg-white">
+                              <div className="relative border-2 border-dashed border-slate-200 hover:border-slate-300 rounded-xl p-6 text-center cursor-pointer transition-colors max-w-[280px] mx-auto bg-white">
                                 <input
                                   type="file"
                                   accept="image/jpeg,image/jpg,image/png"
@@ -1869,14 +1869,14 @@ export default function EquipoPage({ params }) {
                 </div>
 
                 {/* 4. FIRMA DIGITAL */}
-                <div className="bg-white border border-slate-200/80 rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
-                  <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
+                <div className="bg-white rounded-2xl border border-slate-150 p-6 md:p-8 shadow-sm space-y-6">
+                  <h4 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
                     <FileText className="text-[#468DFF] h-4.5 w-4.5" />
                     Firma Digital
                   </h4>
 
-                  <div className="border border-slate-200 rounded-xl p-4 bg-slate-50/50 max-w-[320px] mx-auto">
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 text-center">
+                  <div className="border border-slate-150 rounded-2xl p-4 bg-slate-50/50 max-w-[320px] mx-auto">
+                    <label className="text-xs font-bold text-slate-600 block mb-2 text-center">
                       Imagen de Firma Digital <span className="text-slate-400">(Opcional)</span>
                     </label>
                     {fotoFirmaPreview ? (
@@ -1888,13 +1888,13 @@ export default function EquipoPage({ params }) {
                             setFotoFirma(null);
                             setFotoFirmaPreview('');
                           }}
-                          className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors"
+                          className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors cursor-pointer"
                         >
                           <X className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     ) : (
-                      <div className="relative border-2 border-dashed border-slate-300 hover:border-slate-400 rounded-lg p-6 text-center cursor-pointer transition-colors bg-white">
+                      <div className="relative border-2 border-dashed border-slate-200 hover:border-slate-300 rounded-xl p-6 text-center cursor-pointer transition-colors bg-white">
                         <input
                           type="file"
                           accept="image/jpeg,image/jpg,image/png"

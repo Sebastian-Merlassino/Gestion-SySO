@@ -784,7 +784,7 @@ export default function AccionesCorrectivasPage({ params }) {
   });
 
   return (
-    <div className="h-screen overflow-hidden bg-[#D9D9D9] text-slate-700 flex flex-col md:flex-row relative font-sans">
+    <div className="h-screen overflow-hidden bg-[#f8fafc] text-slate-700 flex flex-col md:flex-row relative font-sans">
       
       {/* Menu Hamburguesa Mobile Drawer Overlay */}
       {isMobileMenuOpen && (
@@ -1036,20 +1036,20 @@ export default function AccionesCorrectivasPage({ params }) {
             
             {/* VISTA FORMULARIO O TABLA */}
             {isFormOpen ? (
-              <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden animate-fade-in-up">
-                <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5 bg-slate-50">
+              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden animate-fade-in">
+                <div className="px-6 py-4 bg-slate-50 border-b border-slate-150 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <button 
                       onClick={handleExitForm}
-                      className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition-colors border border-slate-200 bg-white shadow-sm cursor-pointer"
+                      className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 cursor-pointer"
                     >
-                      <ArrowLeft className="h-4 w-4" />
+                      <ArrowLeft className="h-5 w-5" />
                     </button>
-                    <h3 className="font-outfit text-base font-extrabold text-slate-900">
+                    <h3 className="font-outfit text-base font-bold text-slate-900">
                       {editingId ? 'Editar Hallazgo / Acción' : 'Incorporar Nuevo Hallazgo'}
                     </h3>
                   </div>
-                  <button onClick={handleExitForm} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                  <button onClick={handleExitForm} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200 cursor-pointer">
                     <X className="h-5 w-5" />
                   </button>
                 </div>
@@ -1058,10 +1058,13 @@ export default function AccionesCorrectivasPage({ params }) {
                   
                   {/* Seccion 1: Identificación y Ubicación */}
                   <div className="space-y-4">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block border-b border-slate-100 pb-1">Identificación y Ubicación</span>
+                    <span className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-[#468DFF]" />
+                      Identificación y Ubicación
+                    </span>
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                        <label className="text-xs font-bold text-slate-600 block mb-1">
                           Cliente / Razón Social <span className="text-[#468DFF]">*</span>
                         </label>
                         <select
@@ -1071,7 +1074,7 @@ export default function AccionesCorrectivasPage({ params }) {
                             setEmpresaId(e.target.value);
                             setEstablecimientoId('');
                           }}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
                         >
                           <option value="" disabled>Selecciona un cliente</option>
                           {empresas.map((emp) => (
@@ -1081,7 +1084,7 @@ export default function AccionesCorrectivasPage({ params }) {
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                        <label className="text-xs font-bold text-slate-600 block mb-1">
                           Establecimiento <span className="text-[#468DFF]">*</span>
                         </label>
                         <select
@@ -1089,7 +1092,7 @@ export default function AccionesCorrectivasPage({ params }) {
                           disabled={!empresaId}
                           value={establecimientoId}
                           onChange={(e) => setEstablecimientoId(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer disabled:opacity-50"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer disabled:opacity-50"
                         >
                           <option value="" disabled>
                             {!empresaId ? 'Primero selecciona un cliente' : 'Selecciona un establecimiento'}
@@ -1103,14 +1106,14 @@ export default function AccionesCorrectivasPage({ params }) {
 
                     <div className="grid md:grid-cols-4 gap-4">
                       <div className="space-y-1 md:col-span-2">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                        <label className="text-xs font-bold text-slate-600 block mb-1">
                           Fuente del Hallazgo <span className="text-[#468DFF]">*</span>
                         </label>
                         <select
                           required
                           value={fuente}
                           onChange={(e) => setFuente(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
                         >
                           <option value="" disabled>Selecciona la fuente</option>
                           {FUENTE_OPTIONS.map((opt) => (
@@ -1125,13 +1128,13 @@ export default function AccionesCorrectivasPage({ params }) {
                             placeholder="Especificar otra fuente..."
                             value={fuenteOtra}
                             onChange={(e) => setFuenteOtra(e.target.value)}
-                            className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2 mt-2 outline-none focus:border-[#468DFF]"
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 mt-2 transition-all"
                           />
                         )}
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                        <label className="text-xs font-bold text-slate-600 block mb-1">
                           Fecha del Registro <span className="text-[#468DFF]">*</span>
                         </label>
                         <input
@@ -1139,19 +1142,19 @@ export default function AccionesCorrectivasPage({ params }) {
                           required
                           value={fecha}
                           onChange={(e) => setFecha(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
                         />
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                        <label className="text-xs font-bold text-slate-600 block mb-1">
                           Nivel de Riesgo <span className="text-[#468DFF]">*</span>
                         </label>
                         <select
                           required
                           value={nivelRiesgo}
                           onChange={(e) => setNivelRiesgo(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
                         >
                           {NIVEL_RIESGO_OPTIONS.map((opt) => (
                             <option key={opt} value={opt}>{opt}</option>
@@ -1162,24 +1165,24 @@ export default function AccionesCorrectivasPage({ params }) {
 
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Área / Sector</label>
+                        <label className="text-xs font-bold text-slate-600 block mb-1">Área / Sector</label>
                         <input
                           type="text"
                           placeholder="Ej: Depósito de Materiales"
                           value={areaSector}
                           onChange={(e) => setAreaSector(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
                         />
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Puesto / Operación</label>
+                        <label className="text-xs font-bold text-slate-600 block mb-1">Puesto / Operación</label>
                         <input
                           type="text"
                           placeholder="Ej: Operador de autoelevador"
                           value={puestoOperacion}
                           onChange={(e) => setPuestoOperacion(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
                         />
                       </div>
                     </div>
@@ -1187,18 +1190,21 @@ export default function AccionesCorrectivasPage({ params }) {
 
                   {/* Seccion 2: Descripción y Análisis */}
                   <div className="space-y-4">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block border-b border-slate-100 pb-1">Descripción y Análisis</span>
+                    <span className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-[#468DFF]" />
+                      Descripción y Análisis
+                    </span>
                     
                     <div className="grid md:grid-cols-3 gap-4">
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                        <label className="text-xs font-bold text-slate-600 block mb-1">
                           Tipo de Hallazgo <span className="text-[#468DFF]">*</span>
                         </label>
                         <select
                           required
                           value={tipoHallazgo}
                           onChange={(e) => setTipoHallazgo(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
                         >
                           <option value="" disabled>Selecciona el tipo</option>
                           {TIPO_HALLAZGO_OPTIONS.map((opt) => (
@@ -1213,32 +1219,32 @@ export default function AccionesCorrectivasPage({ params }) {
                             placeholder="Especificar otro tipo..."
                             value={tipoHallazgoOtro}
                             onChange={(e) => setTipoHallazgoOtro(e.target.value)}
-                            className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2 mt-2 outline-none focus:border-[#468DFF]"
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 mt-2 transition-all"
                           />
                         )}
                       </div>
 
                       <div className="space-y-1 md:col-span-2">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Descripción Detallada del Hallazgo</label>
+                        <label className="text-xs font-bold text-slate-600 block mb-1">Descripción Detallada del Hallazgo</label>
                         <textarea
                           rows="3"
                           placeholder="Describe detalladamente lo observado..."
                           value={descripcionHallazgo}
                           onChange={(e) => setDescripcionHallazgo(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] resize-none"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all resize-none"
                         />
                       </div>
                     </div>
 
                     {/* Imagen de Respaldo */}
-                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-                      <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block mb-3 flex items-center gap-1">
+                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-150">
+                      <span className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-3 flex items-center gap-1">
                         <ImageIcon className="h-4 w-4 text-[#468DFF]" />
                         Imagen de Evidencia (Hallazgo)
                       </span>
                       <div className="flex flex-col sm:flex-row items-center gap-4">
                         {imagenPreview ? (
-                          <div className="relative h-32 w-32 rounded-xl overflow-hidden border border-slate-200 bg-white group shrink-0">
+                          <div className="relative h-32 w-32 rounded-xl overflow-hidden border border-slate-150 bg-white group shrink-0">
                             <img src={imagenPreview} alt="Vista previa" className="h-full w-full object-cover" />
                             <button
                               type="button"
@@ -1253,14 +1259,14 @@ export default function AccionesCorrectivasPage({ params }) {
                             </button>
                           </div>
                         ) : (
-                          <div className="h-32 w-32 rounded-xl border-2 border-dashed border-slate-300 bg-white flex flex-col items-center justify-center text-slate-400 shrink-0">
+                          <div className="h-32 w-32 rounded-xl border-2 border-dashed border-slate-200 bg-white flex flex-col items-center justify-center text-slate-400 shrink-0">
                             <ImageIcon className="h-8 w-8 mb-1 opacity-50" />
                             <span className="text-[9px] font-bold text-center">Sin imagen</span>
                           </div>
                         )}
 
                         <div className="flex flex-wrap items-center gap-3 flex-1">
-                          <label className="inline-flex items-center gap-2 py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer">
+                          <label className="inline-flex items-center gap-2 py-2.5 px-4 rounded-xl border border-slate-350 text-slate-700 hover:bg-slate-100 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer">
                             <Upload className="h-4 w-4 text-slate-500" />
                             Seleccionar imagen
                             <input
@@ -1271,7 +1277,7 @@ export default function AccionesCorrectivasPage({ params }) {
                             />
                           </label>
 
-                          <label className="inline-flex items-center gap-2 py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer">
+                          <label className="inline-flex items-center gap-2 py-2.5 px-4 rounded-xl border border-slate-350 text-slate-700 hover:bg-slate-100 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer">
                             <Camera className="h-4 w-4 text-slate-500" />
                             Sacar foto (Cámara)
                             <input
@@ -1293,63 +1299,66 @@ export default function AccionesCorrectivasPage({ params }) {
 
                   {/* Seccion 3: Acciones y Planificación */}
                   <div className="space-y-4">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block border-b border-slate-100 pb-1">Acciones, Plazos y Responsabilidades</span>
+                    <span className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-[#468DFF]" />
+                      Acciones, Plazos y Responsabilidades
+                    </span>
                     
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Causa Raíz (Análisis)</label>
+                        <label className="text-xs font-bold text-slate-600 block mb-1">Causa Raíz (Análisis)</label>
                         <input
                           type="text"
                           placeholder="¿Por qué ocurrió?"
                           value={causaRaiz}
                           onChange={(e) => setCausaRaiz(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
                         />
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Recomendación Técnica</label>
+                        <label className="text-xs font-bold text-slate-600 block mb-1">Recomendación Técnica</label>
                         <input
                           type="text"
                           placeholder="Medida preventiva recomendada..."
                           value={recomendacion}
                           onChange={(e) => setRecomendacion(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
                         />
                       </div>
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Acción Preventiva Definida</label>
+                        <label className="text-xs font-bold text-slate-600 block mb-1">Acción Preventiva Definida</label>
                         <input
                           type="text"
                           placeholder="Acción a largo plazo..."
                           value={accionPreventiva}
                           onChange={(e) => setAccionPreventiva(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
                         />
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Acción Correctiva Inmediata</label>
+                        <label className="text-xs font-bold text-slate-600 block mb-1">Acción Correctiva Inmediata</label>
                         <input
                           type="text"
                           placeholder="Acción correctora directa..."
                           value={accionCorrectiva}
                           onChange={(e) => setAccionCorrectiva(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
                         />
                       </div>
                     </div>
 
                     <div className="grid md:grid-cols-3 gap-4">
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Responsable de Implementar</label>
+                        <label className="text-xs font-bold text-slate-600 block mb-1">Responsable de Implementar</label>
                         <select
                           value={responsable}
                           onChange={(e) => setResponsable(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
                         >
                           <option value="">Selecciona un responsable</option>
                           {miembrosList.map((m) => (
@@ -1359,51 +1368,51 @@ export default function AccionesCorrectivasPage({ params }) {
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Fecha Planificada (Plazo)</label>
+                        <label className="text-xs font-bold text-slate-600 block mb-1">Fecha Planificada (Plazo)</label>
                         <input
                           type="date"
                           value={fechaPlanificada}
                           onChange={(e) => setFechaPlanificada(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
                         />
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Fecha de Realización / Implementación</label>
+                        <label className="text-xs font-bold text-slate-600 block mb-1">Fecha de Realización / Implementación</label>
                         <input
                           type="date"
                           value={fechaImplementacion}
                           onChange={(e) => setFechaImplementacion(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
                         />
                       </div>
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Observaciones Generales</label>
+                      <label className="text-xs font-bold text-slate-600 block mb-1">Observaciones Generales</label>
                       <textarea
                         rows="3"
                         placeholder="Comentarios adicionales..."
                         value={observaciones}
                         onChange={(e) => setObservaciones(e.target.value)}
-                        className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] resize-none"
+                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all resize-none"
                       />
                     </div>
                   </div>
 
                   {/* Botones del Formulario */}
-                  <div className="flex justify-between items-center pt-4 border-t border-slate-200">
+                  <div className="flex justify-between items-center pt-6 border-t border-slate-100">
                     <button
                       type="button"
                       onClick={handleExitForm}
-                      className="py-3 px-6 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer"
+                      className="px-5 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer"
                     >
                       Salir
                     </button>
                     <button
                       type="submit"
                       disabled={saveLoading}
-                      className="py-3 px-8 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white font-bold text-xs transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/10 active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+                      className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
                     >
                       {saveLoading ? (
                         <>
@@ -1422,10 +1431,10 @@ export default function AccionesCorrectivasPage({ params }) {
               <div className="space-y-6">
                 
                 {/* Panel de Filtros y Búsqueda */}
-                <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4">
+                <div className="bg-white rounded-2xl border border-slate-150 p-4 shadow-sm space-y-4">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="relative flex-1">
-                      <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 pointer-events-none">
+                      <span className="absolute left-3.5 top-3 h-4.5 w-4.5 text-slate-400 pointer-events-none">
                         <Search className="h-4 w-4" />
                       </span>
                       <input
@@ -1433,13 +1442,13 @@ export default function AccionesCorrectivasPage({ params }) {
                         placeholder="Buscar por descripción, área, puesto, responsable..."
                         value={filterText}
                         onChange={(e) => setFilterText(e.target.value)}
-                        className="w-full text-xs bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-slate-800 placeholder-slate-400 focus:outline-none transition-all"
+                        className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-800"
                       />
                     </div>
                     
                     <button
                       onClick={() => setIsFormOpen(true)}
-                      className="py-3 px-5 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white font-bold text-xs transition-all duration-200 flex items-center justify-center gap-2 shadow-md shadow-blue-500/15 cursor-pointer shrink-0"
+                      className="px-4 py-2 bg-[#468DFF] text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0"
                     >
                       <Plus className="h-4 w-4" />
                       Incorporar Nuevo Hallazgo
@@ -1449,8 +1458,8 @@ export default function AccionesCorrectivasPage({ params }) {
                   {/* Selectores de Filtrado */}
                   <div className="pt-2 border-t border-slate-100 space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                        <Sliders className="h-3 w-3" />
+                      <span className="font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider shrink-0">
+                        <Sliders className="h-3.5 w-3.5" />
                         Filtros de Búsqueda
                       </span>
                       {(filterEmpresa || filterEstablecimiento || filterRiesgo || filterEstado || filterText) && (
@@ -1462,23 +1471,22 @@ export default function AccionesCorrectivasPage({ params }) {
                             setFilterEstado('');
                             setFilterText('');
                           }}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-200 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer"
+                          className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg font-semibold cursor-pointer transition-all text-xs"
                         >
-                          <X className="h-3 w-3" />
                           Limpiar filtros
                         </button>
                       )}
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Filtrar por Cliente</label>
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Cliente</label>
                         <select
                           value={filterEmpresa}
                           onChange={(e) => {
                             setFilterEmpresa(e.target.value);
                             setFilterEstablecimiento('');
                           }}
-                          className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 outline-none focus:border-[#468DFF] cursor-pointer"
+                          className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer"
                         >
                           <option value="">Todos los clientes</option>
                           {empresas.map((emp) => (
@@ -1488,12 +1496,12 @@ export default function AccionesCorrectivasPage({ params }) {
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Filtrar por Establecimiento</label>
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Establecimiento</label>
                         <select
                           disabled={!filterEmpresa}
                           value={filterEstablecimiento}
                           onChange={(e) => setFilterEstablecimiento(e.target.value)}
-                          className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 outline-none focus:border-[#468DFF] cursor-pointer disabled:opacity-50"
+                          className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full disabled:opacity-50 cursor-pointer"
                         >
                           <option value="">
                             {!filterEmpresa ? 'Selecciona un cliente primero' : 'Todos los establecimientos'}
@@ -1508,11 +1516,11 @@ export default function AccionesCorrectivasPage({ params }) {
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Filtrar por Nivel de Riesgo</label>
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Nivel de Riesgo</label>
                         <select
                           value={filterRiesgo}
                           onChange={(e) => setFilterRiesgo(e.target.value)}
-                          className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 outline-none focus:border-[#468DFF] cursor-pointer"
+                          className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer"
                         >
                           <option value="">Todos los riesgos</option>
                           {NIVEL_RIESGO_OPTIONS.map((opt) => (
@@ -1522,11 +1530,11 @@ export default function AccionesCorrectivasPage({ params }) {
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Filtrar por Estado</label>
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Estado</label>
                         <select
                           value={filterEstado}
                           onChange={(e) => setFilterEstado(e.target.value)}
-                          className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 outline-none focus:border-[#468DFF] cursor-pointer"
+                          className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer"
                         >
                           <option value="">Todos los estados</option>
                           <option value="En análisis">En análisis</option>
@@ -1540,48 +1548,48 @@ export default function AccionesCorrectivasPage({ params }) {
                 </div>
 
                 {/* Listado / Tabla */}
-                <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden">
                   <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 320px)' }}>
                     <table className="w-full text-left border-collapse">
-                      <thead className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 shadow-sm">
-                        <tr className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                          <th className="py-4 px-6 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('cliente')}>
+                      <thead className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150">
+                        <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('cliente')}>
                             <div className="flex items-center gap-1">
                               Cliente / Establecimiento
                               {sortField === 'cliente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                             </div>
                           </th>
-                          <th className="py-4 px-4 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('fuente')}>
+                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('fuente')}>
                             <div className="flex items-center gap-1">
                               Fuente / Fecha
                               {sortField === 'fuente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                             </div>
                           </th>
-                          <th className="py-4 px-4 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('hallazgo')}>
+                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('hallazgo')}>
                             <div className="flex items-center gap-1">
                               Hallazgo / Tipo
                               {sortField === 'hallazgo' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                             </div>
                           </th>
-                          <th className="py-4 px-4 text-center cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('nivel_riesgo')}>
+                          <th className="px-6 py-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('nivel_riesgo')}>
                             <div className="flex items-center justify-center gap-1">
                               Nivel Riesgo
                               {sortField === 'nivel_riesgo' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                             </div>
                           </th>
-                          <th className="py-4 px-4 text-center cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('estado')}>
+                          <th className="px-6 py-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('estado')}>
                             <div className="flex items-center justify-center gap-1">
                               Estado
                               {sortField === 'estado' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                             </div>
                           </th>
-                          <th className="py-4 px-4 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('responsable')}>
+                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('responsable')}>
                             <div className="flex items-center gap-1">
                               Responsable
                               {sortField === 'responsable' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                             </div>
                           </th>
-                          <th className="py-4 px-6 text-right">Acciones</th>
+                          <th className="px-6 py-4 text-right">Acciones</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-xs font-normal text-slate-700">
@@ -1609,65 +1617,67 @@ export default function AccionesCorrectivasPage({ params }) {
                               <tr 
                                 key={acc.id} 
                                 onClick={() => handleEditClick(acc)}
-                                className="hover:bg-slate-50 transition-colors cursor-pointer"
+                                className="hover:bg-slate-50/50 transition-colors cursor-pointer"
                               >
-                                <td className="py-4 px-6">
-                                  <span className="font-bold text-slate-800 block">{emp?.razon_social || 'Desconocido'}</span>
-                                  <span className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
+                                <td className="px-6 py-4 font-semibold text-slate-900">
+                                  <span className="block">{emp?.razon_social || 'Desconocido'}</span>
+                                  <span className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5 font-normal">
                                     <MapPin className="h-3 w-3 shrink-0" />
                                     {est?.denominacion || 'Único'}
                                   </span>
                                 </td>
-                                <td className="py-4 px-4">
-                                  <span className="block max-w-[150px] truncate text-slate-600" title={acc.fuente}>{acc.fuente}</span>
-                                  <span className="text-[10px] text-slate-400 block mt-0.5 font-mono">{formatDate(acc.fecha)}</span>
+                                <td className="px-6 py-4 font-medium text-slate-600">
+                                  <span className="block max-w-[150px] truncate" title={acc.fuente}>{acc.fuente}</span>
+                                  <span className="text-[10px] text-slate-400 block mt-0.5 font-mono font-normal">{formatDate(acc.fecha)}</span>
                                 </td>
-                                <td className="py-4 px-4">
+                                <td className="px-6 py-4 font-medium text-slate-600">
                                   <span className="block max-w-[200px] truncate font-semibold text-slate-800" title={acc.descripcion_hallazgo}>
                                     {acc.descripcion_hallazgo || 'Sin descripción'}
                                   </span>
-                                  <span className="text-[10px] text-slate-400 block mt-0.5">{acc.tipo_hallazgo}</span>
+                                  <span className="text-[10px] text-slate-400 block mt-0.5 font-normal">{acc.tipo_hallazgo}</span>
                                 </td>
-                                <td className="py-4 px-4 text-center">
+                                <td className="px-6 py-4 text-center">
                                   <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold inline-block ${riskBadge}`}>
                                     {acc.nivel_riesgo}
                                   </span>
                                 </td>
-                                <td className="py-4 px-4 text-center">
+                                <td className="px-6 py-4 text-center">
                                   <span className={`px-2.5 py-0.5 rounded-full border text-[10px] font-bold inline-block ${status.color}`}>
                                     {status.text}
                                   </span>
                                 </td>
-                                <td className="py-4 px-4 font-medium text-slate-600">
+                                <td className="px-6 py-4 font-semibold text-slate-900">
                                   {acc.responsable || 'No asignado'}
                                 </td>
-                                <td className="py-4 px-6 text-right space-x-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                                  {acc.imagen_preview_url && (
-                                    <a 
-                                      href={acc.imagen_preview_url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      title="Ver Evidencia"
-                                      className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-700 transition-colors inline-block cursor-pointer"
-                                      onClick={(e) => e.stopPropagation()}
+                                <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                                  <div className="flex items-center justify-end gap-2">
+                                    {acc.imagen_preview_url && (
+                                      <a 
+                                        href={acc.imagen_preview_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        title="Ver Evidencia"
+                                        className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer inline-flex items-center"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        <Eye className="h-4.5 w-4.5" />
+                                      </a>
+                                    )}
+                                    <button
+                                      onClick={() => handleEditClick(acc)}
+                                      title="Editar"
+                                      className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer inline-flex items-center"
                                     >
-                                      <Eye className="h-3.5 w-3.5" />
-                                    </a>
-                                  )}
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); handleEditClick(acc); }}
-                                    title="Editar"
-                                    className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 hover:text-blue-600 transition-colors inline-block cursor-pointer"
-                                  >
-                                    <Edit className="h-3.5 w-3.5" />
-                                  </button>
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); handleDeleteClick(acc.id); }}
-                                    title="Eliminar"
-                                    className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 hover:text-red-600 transition-colors inline-block cursor-pointer"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </button>
+                                      <Edit className="h-4.5 w-4.5" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteClick(acc.id)}
+                                      title="Eliminar"
+                                      className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center"
+                                    >
+                                      <Trash2 className="h-4.5 w-4.5" />
+                                    </button>
+                                  </div>
                                 </td>
                               </tr>
                             );
@@ -1688,20 +1698,20 @@ export default function AccionesCorrectivasPage({ params }) {
 
       {/* MODAL DE CONFIRMACIÓN */}
       {modalAlert.show && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xl max-w-sm w-full space-y-4 text-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
             <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500">
               <AlertTriangle className="h-6 w-6" />
             </div>
             <div className="space-y-1">
-              <h4 className="font-outfit text-base font-extrabold text-slate-800">{modalAlert.title}</h4>
+              <h4 className="font-outfit text-base font-bold text-slate-800">{modalAlert.title}</h4>
               <p className="text-xs text-slate-500 leading-relaxed">{modalAlert.message}</p>
             </div>
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={closeAlert}
-                className="flex-1 py-2 px-4 rounded-xl border border-slate-300 text-slate-700 font-bold text-xs hover:bg-slate-50 transition-all cursor-pointer bg-white"
+                className="flex-1 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer"
               >
                 Cancelar
               </button>
@@ -1709,7 +1719,7 @@ export default function AccionesCorrectivasPage({ params }) {
                 <button
                   type="button"
                   onClick={modalAlert.onConfirm}
-                  className="flex-1 py-2 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md shadow-red-500/10 cursor-pointer"
+                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer"
                 >
                   Confirmar
                 </button>

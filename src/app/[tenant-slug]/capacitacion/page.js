@@ -797,7 +797,7 @@ export default function CapacitacionPage({ params }) {
   });
 
   return (
-    <div className="h-screen overflow-hidden bg-[#D9D9D9] text-slate-700 flex flex-col md:flex-row relative font-sans">
+    <div className="h-screen overflow-hidden bg-[#f8fafc] text-slate-700 flex flex-col md:flex-row relative font-sans">
       
       {/* Menu Hamburguesa Mobile Drawer Overlay */}
       {isMobileMenuOpen && (
@@ -1045,20 +1045,20 @@ export default function CapacitacionPage({ params }) {
             
             {isFormOpen ? (
               // FORMULARIO DE ALTA Y EDICIÓN
-              <div className="bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[85vh]">
-                <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5 bg-slate-50">
+              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
+                <div className="px-6 py-4 bg-slate-50 border-b border-slate-150 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <button 
                       onClick={handleExitForm}
-                      className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition-colors border border-slate-200 bg-white shadow-sm cursor-pointer"
+                      className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 cursor-pointer"
                     >
-                      <ArrowLeft className="h-4 w-4" />
+                      <ArrowLeft className="h-5 w-5" />
                     </button>
-                    <h3 className="font-outfit text-base font-extrabold text-slate-900">
+                    <h3 className="font-outfit text-base font-bold text-slate-900">
                       {editingId ? 'Editar Registro de Capacitación' : 'Registrar Nueva Capacitación'}
                     </h3>
                   </div>
-                  <button onClick={handleExitForm} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                  <button onClick={handleExitForm} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200 cursor-pointer">
                     <X className="h-5 w-5" />
                   </button>
                 </div>
@@ -1067,10 +1067,13 @@ export default function CapacitacionPage({ params }) {
                   
                   {/* Sección 1: Cliente e Ubicación */}
                   <div className="space-y-4">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block border-b border-slate-100 pb-1">Identificación del Cliente</span>
+                    <span className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-[#468DFF]" />
+                      Identificación del Cliente
+                    </span>
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                        <label className="text-xs font-bold text-slate-600 block mb-1">
                           Cliente / Razón Social <span className="text-[#468DFF]">*</span>
                         </label>
                         <select
@@ -1080,7 +1083,7 @@ export default function CapacitacionPage({ params }) {
                             setEmpresaId(e.target.value);
                             setEstablecimientoId('');
                           }}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
                         >
                           <option value="" disabled>Selecciona un cliente</option>
                           {empresas.map((emp) => (
@@ -1090,14 +1093,14 @@ export default function CapacitacionPage({ params }) {
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                        <label className="text-xs font-bold text-slate-600 block mb-1">
                           Establecimiento
                         </label>
                         <select
                           disabled={!empresaId}
                           value={establecimientoId}
                           onChange={(e) => setEstablecimientoId(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer disabled:opacity-50"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer disabled:opacity-50"
                         >
                           <option value="">
                             {!empresaId ? 'Primero selecciona un cliente' : 'Selecciona un establecimiento (Opcional - Todos)'}
@@ -1111,7 +1114,7 @@ export default function CapacitacionPage({ params }) {
 
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                        <label className="text-xs font-bold text-slate-600 block mb-1">
                           Puesto / Sector afectado
                         </label>
                         <input
@@ -1119,7 +1122,7 @@ export default function CapacitacionPage({ params }) {
                           placeholder="Ej: Personal de Planta / Operarios"
                           value={puesto}
                           onChange={(e) => setPuesto(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
                         />
                       </div>
                     </div>
@@ -1127,18 +1130,20 @@ export default function CapacitacionPage({ params }) {
 
                   {/* Sección 2: Detalle de la Capacitación */}
                   <div className="space-y-4">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block border-b border-slate-100 pb-1">Detalle del Tema de Capacitación</span>
+                    <span className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
+                      <GraduationCap className="h-4 w-4 text-[#468DFF]" />
+                      Detalle del Tema de Capacitación
+                    </span>
                     
                     <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                      <div className="space-y-1 relative">
+                        <label className="text-xs font-bold text-slate-600 block mb-1">
                           Tema de Capacitación <span className="text-[#468DFF]">*</span>
                         </label>
-                        <div className="relative">
-                          <button
-                            type="button"
-                            onClick={() => setIsTemasDropdownOpen(!isTemasDropdownOpen)}
-                            className="w-full text-left text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] cursor-pointer flex justify-between items-center shadow-sm"
+                        <button
+                          type="button"
+                          onClick={() => setIsTemasDropdownOpen(!isTemasDropdownOpen)}
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-left flex justify-between items-center cursor-pointer shadow-sm text-slate-700 font-medium"
                           >
                             <span className="truncate">
                               {selectedTemas.length === 0 
@@ -1155,7 +1160,7 @@ export default function CapacitacionPage({ params }) {
                                 className="fixed inset-0 z-20 cursor-default" 
                                 onClick={() => setIsTemasDropdownOpen(false)} 
                               />
-                              <div className="absolute z-30 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-xl max-h-60 overflow-y-auto p-2 space-y-1 animate-fade-in">
+                              <div className="absolute z-30 mt-1 w-full bg-white border border-slate-150 rounded-xl shadow-xl max-h-60 overflow-y-auto p-2 space-y-1 animate-fade-in">
                                 <div className="relative mb-2 sticky top-0 bg-white pb-1">
                                   <input
                                     type="text"
@@ -1171,13 +1176,13 @@ export default function CapacitacionPage({ params }) {
                                   return (
                                     <label
                                       key={topic.id}
-                                      className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer select-none text-xs text-slate-700 transition-colors"
+                                      className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer select-none text-xs text-slate-700 transition-colors font-medium"
                                     >
                                       <input
                                         type="checkbox"
                                         checked={isChecked}
                                         onChange={() => handleToggleTema(topic)}
-                                        className="rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF] h-3.5 w-3.5 cursor-pointer"
+                                        className="rounded border-slate-350 text-[#468DFF] focus:ring-[#468DFF] h-3.5 w-3.5 cursor-pointer"
                                       />
                                       <span>{topic.tema}</span>
                                     </label>
@@ -1193,14 +1198,13 @@ export default function CapacitacionPage({ params }) {
                                     type="checkbox"
                                     checked={selectedTemas.some(t => t.id === '__custom__')}
                                     onChange={() => handleToggleTema({ id: '__custom__', tema: 'Otro tema (Especificar...)' })}
-                                    className="rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF] h-3.5 w-3.5 cursor-pointer"
+                                    className="rounded border-slate-350 text-[#468DFF] focus:ring-[#468DFF] h-3.5 w-3.5 cursor-pointer"
                                   />
                                   <span>Otro tema (Especificar...)</span>
                                 </label>
                               </div>
                             </>
                           )}
-                        </div>
                         {selectedTemas.some(t => t.id === '__custom__') && (
                           <input
                             type="text"
@@ -1208,20 +1212,20 @@ export default function CapacitacionPage({ params }) {
                             placeholder="Escribe el tema personalizado..."
                             value={temaCustom}
                             onChange={(e) => setTemaCustom(e.target.value)}
-                            className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2 mt-2 outline-none focus:border-[#468DFF]"
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 mt-2 transition-all"
                           />
                         )}
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                        <label className="text-xs font-bold text-slate-600 block mb-1">
                           Capacitador / Disertante <span className="text-[#468DFF]">*</span>
                         </label>
                         <select
                           required
                           value={capacitador}
                           onChange={handleCapacitadorChange}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer font-medium"
                         >
                           <option value="" disabled>Selecciona el capacitador</option>
                           {miembrosList.map((member) => (
@@ -1236,14 +1240,14 @@ export default function CapacitacionPage({ params }) {
                             placeholder="Escribe el nombre del capacitador..."
                             value={capacitadorCustom}
                             onChange={(e) => setCapacitadorCustom(e.target.value)}
-                            className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2 mt-2 outline-none focus:border-[#468DFF]"
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 mt-2 transition-all"
                           />
                         )}
                       </div>
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                      <label className="text-xs font-bold text-slate-600 block mb-1">
                         Contenido Programado <span className="text-slate-400 font-normal">(Auto-rellenado y editable)</span>
                       </label>
                       <textarea
@@ -1251,18 +1255,21 @@ export default function CapacitacionPage({ params }) {
                         placeholder="Ingresa el desglose de contenidos de la capacitación..."
                         value={contenido}
                         onChange={(e) => setContenido(e.target.value)}
-                        className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] resize-none"
+                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all resize-none font-medium"
                       />
                     </div>
                   </div>
 
                   {/* Sección 3: Planificación y Progreso */}
                   <div className="space-y-4">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block border-b border-slate-100 pb-1">Cronograma y Avance</span>
+                    <span className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-[#468DFF]" />
+                      Cronograma y Avance
+                    </span>
                     
                     <div className="grid md:grid-cols-3 gap-4">
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                        <label className="text-xs font-bold text-slate-600 block mb-1">
                           Fecha Inicio Planificada <span className="text-[#468DFF]">*</span>
                         </label>
                         <input
@@ -1270,12 +1277,12 @@ export default function CapacitacionPage({ params }) {
                           required
                           value={fechaInicioPlanificada}
                           onChange={(e) => setFechaInicioPlanificada(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                         />
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                        <label className="text-xs font-bold text-slate-600 block mb-1">
                           Fecha Fin Planificada <span className="text-[#468DFF]">*</span>
                         </label>
                         <input
@@ -1283,13 +1290,13 @@ export default function CapacitacionPage({ params }) {
                           required
                           value={fechaFinPlanificada}
                           onChange={(e) => setFechaFinPlanificada(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                         />
                       </div>
 
                       <div className="space-y-1">
-                        <div className="flex justify-between items-center">
-                          <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                        <div className="flex justify-between items-center mb-1">
+                          <label className="text-xs font-bold text-slate-600 block">
                             Progreso de Cumplimiento
                           </label>
                           <span className="text-xs font-bold text-[#468DFF]">{progreso}%</span>
@@ -1315,35 +1322,36 @@ export default function CapacitacionPage({ params }) {
                               if (val < 0) val = 0;
                               setProgreso(val);
                             }}
-                            className="w-16 text-center text-xs bg-white border border-slate-300 rounded-xl py-1.5 outline-none focus:border-[#468DFF]"
+                            className="w-16 text-center border border-slate-200 rounded-xl px-2 py-1 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                           />
                         </div>
                       </div>
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Observaciones y Notas</label>
+                      <label className="text-xs font-bold text-slate-600 block mb-1">Observaciones y Notas</label>
                       <textarea
                         rows="3"
                         placeholder="Comentarios adicionales..."
                         value={observaciones}
                         onChange={(e) => setObservaciones(e.target.value)}
-                        className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] resize-none"
+                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all resize-none text-slate-700"
                       />
                     </div>
                   </div>
 
                   {/* Sección 4: Registros de capacitación */}
                   <div className="space-y-4">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block border-b border-slate-100 pb-1">
+                    <span className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
+                      <ImageIcon className="h-4 w-4 text-[#468DFF]" />
                       Registros de capacitación
                     </span>
                     
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-slate-50 p-4 border border-slate-200 rounded-xl">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-slate-50 p-4 border border-slate-150 rounded-xl">
                       <div className="flex flex-wrap items-center gap-3 flex-1">
                         <label
                           htmlFor="multi-photo-upload"
-                          className="inline-flex items-center gap-2 py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer"
+                          className="inline-flex items-center gap-2 py-2.5 px-4 rounded-xl border border-slate-350 text-slate-700 hover:bg-slate-100 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer"
                         >
                           <Upload className="h-4 w-4 text-slate-500" />
                           Seleccionar fotos
@@ -1359,7 +1367,7 @@ export default function CapacitacionPage({ params }) {
 
                         <label
                           htmlFor="camera-photo-capture"
-                          className="inline-flex items-center gap-2 py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer"
+                          className="inline-flex items-center gap-2 py-2.5 px-4 rounded-xl border border-slate-350 text-slate-700 hover:bg-slate-100 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer"
                         >
                           <Camera className="h-4 w-4 text-slate-500" />
                           Sacar foto (Cámara)
@@ -1381,13 +1389,13 @@ export default function CapacitacionPage({ params }) {
 
                     {/* Grid de previsualización */}
                     {fotosFiles.length === 0 ? (
-                      <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center text-slate-400 italic text-xs bg-slate-50/50">
+                      <div className="border border-slate-150 rounded-2xl p-6 text-center text-slate-400 italic text-xs bg-slate-50/50">
                         No hay fotos de registros cargadas.
                       </div>
                     ) : (
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 pt-2">
                         {fotosFiles.map((foto, idx) => (
-                          <div key={idx} className="relative group rounded-xl overflow-hidden border border-slate-200 bg-slate-50 aspect-video flex items-center justify-center shadow-sm">
+                          <div key={idx} className="relative group rounded-xl overflow-hidden border border-slate-150 bg-slate-50 aspect-video flex items-center justify-center shadow-sm">
                             <img src={foto.preview} alt={`Previsualización ${idx + 1}`} className="max-h-full max-w-full object-contain" />
                             
                             {/* Hover overlay with action buttons */}
@@ -1417,18 +1425,18 @@ export default function CapacitacionPage({ params }) {
                   </div>
 
                   {/* Botones del Formulario */}
-                  <div className="flex justify-between items-center pt-4 border-t border-slate-200">
+                  <div className="flex justify-between items-center pt-6 border-t border-slate-100">
                     <button
                       type="button"
                       onClick={handleExitForm}
-                      className="py-3 px-6 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer flex items-center gap-2"
+                      className="px-5 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer flex items-center gap-2"
                     >
                       Salir
                     </button>
                     <button
                       type="submit"
                       disabled={saveLoading}
-                      className="py-3 px-8 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white font-bold text-xs transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/10 active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+                      className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
                     >
                       {saveLoading ? (
                         <>
@@ -1447,24 +1455,22 @@ export default function CapacitacionPage({ params }) {
               <div className="space-y-6 flex-1 flex flex-col min-h-0">
                 
                 {/* Panel de Filtros y Búsqueda */}
-                <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4 shrink-0">
+                <div className="bg-white border border-slate-150 rounded-2xl p-4 shadow-sm space-y-4 shrink-0">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="relative flex-1">
-                      <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 pointer-events-none">
-                        <Search className="h-4 w-4" />
-                      </span>
+                      <Search className="absolute left-3.5 top-3 h-4.5 w-4.5 text-slate-400 pointer-events-none" />
                       <input
                         type="text"
                         placeholder="Buscar por tema, capacitador, puesto, observaciones..."
                         value={filterText}
                         onChange={(e) => setFilterText(e.target.value)}
-                        className="w-full text-xs bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-slate-800 placeholder-slate-400 focus:outline-none transition-all"
+                        className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-800 placeholder-slate-400"
                       />
                     </div>
                     
                     <button
                       onClick={() => setIsFormOpen(true)}
-                      className="py-3 px-5 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white font-bold text-xs transition-all duration-200 flex items-center justify-center gap-2 shadow-md shadow-blue-500/15 cursor-pointer shrink-0"
+                      className="px-4 py-2.5 bg-[#468DFF] text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0"
                     >
                       <Plus className="h-4 w-4" />
                       Registrar Capacitación
@@ -1502,7 +1508,7 @@ export default function CapacitacionPage({ params }) {
                             setFilterEmpresa(e.target.value);
                             setFilterEstablecimiento('');
                           }}
-                          className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 outline-none focus:border-[#468DFF] cursor-pointer"
+                          className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs cursor-pointer w-full"
                         >
                           <option value="">Todos los clientes</option>
                           {empresas.map((emp) => (
@@ -1517,7 +1523,7 @@ export default function CapacitacionPage({ params }) {
                           disabled={!filterEmpresa}
                           value={filterEstablecimiento}
                           onChange={(e) => setFilterEstablecimiento(e.target.value)}
-                          className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 outline-none focus:border-[#468DFF] cursor-pointer disabled:opacity-50"
+                          className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs cursor-pointer w-full disabled:opacity-50"
                         >
                           <option value="">
                             {!filterEmpresa ? 'Selecciona un cliente primero' : 'Todos los establecimientos'}
@@ -1536,7 +1542,7 @@ export default function CapacitacionPage({ params }) {
                         <select
                           value={filterEstado}
                           onChange={(e) => setFilterEstado(e.target.value)}
-                          className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 outline-none focus:border-[#468DFF] cursor-pointer"
+                          className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs cursor-pointer w-full"
                         >
                           <option value="">Todos los estados</option>
                           <option value="Planificado">Planificado (0%)</option>
@@ -1549,48 +1555,48 @@ export default function CapacitacionPage({ params }) {
                 </div>
 
                 {/* Listado / Tabla */}
-                <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex-1 flex flex-col min-h-0">
+                <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden flex-1 flex flex-col min-h-0">
                   <div className="overflow-auto flex-1">
                     <table className="w-full text-left border-collapse">
-                      <thead className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 shadow-sm">
-                        <tr className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                          <th className="py-4 px-6 cursor-pointer hover:bg-slate-100 select-none transition-colors w-[20%]" onClick={() => handleSort('cliente')}>
+                      <thead className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        <tr>
+                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[20%]" onClick={() => handleSort('cliente')}>
                             <div className="flex items-center gap-1">
                               Cliente / Establecimiento
                               {sortField === 'cliente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                             </div>
                           </th>
-                          <th className="py-4 px-4 cursor-pointer hover:bg-slate-100 select-none transition-colors w-[15%]" onClick={() => handleSort('puesto')}>
+                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[15%]" onClick={() => handleSort('puesto')}>
                             <div className="flex items-center gap-1">
                               Puesto
                               {sortField === 'puesto' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                             </div>
                           </th>
-                          <th className="py-4 px-4 cursor-pointer hover:bg-slate-100 select-none transition-colors w-[25%]" onClick={() => handleSort('tema')}>
+                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[25%]" onClick={() => handleSort('tema')}>
                             <div className="flex items-center gap-1">
                               Tema de Capacitación
                               {sortField === 'tema' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                             </div>
                           </th>
-                          <th className="py-4 px-4 cursor-pointer hover:bg-slate-100 select-none transition-colors w-[15%]" onClick={() => handleSort('capacitador')}>
+                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[15%]" onClick={() => handleSort('capacitador')}>
                             <div className="flex items-center gap-1">
                               Capacitador
                               {sortField === 'capacitador' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                             </div>
                           </th>
-                          <th className="py-4 px-4 text-center cursor-pointer hover:bg-slate-100 select-none transition-colors w-[12%]" onClick={() => handleSort('fecha_inicio_planificada')}>
+                          <th className="px-6 py-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors w-[12%]" onClick={() => handleSort('fecha_inicio_planificada')}>
                             <div className="flex items-center justify-center gap-1">
                               Fechas Programadas
                               {sortField === 'fecha_inicio_planificada' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                             </div>
                           </th>
-                          <th className="py-4 px-4 text-center cursor-pointer hover:bg-slate-100 select-none transition-colors w-[8%]" onClick={() => handleSort('progreso')}>
+                          <th className="px-6 py-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors w-[8%]" onClick={() => handleSort('progreso')}>
                             <div className="flex items-center justify-center gap-1">
                               Progreso / Estado
                               {sortField === 'progreso' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                             </div>
                           </th>
-                          <th className="py-4 px-6 text-right w-[5%]">Acciones</th>
+                          <th className="px-6 py-4 text-right w-[5%]">Acciones</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-xs font-normal text-slate-700">
@@ -1610,75 +1616,77 @@ export default function CapacitacionPage({ params }) {
                               <tr 
                                 key={cap.id} 
                                 onClick={() => handleEditClick(cap)}
-                                className="hover:bg-slate-50 transition-colors cursor-pointer"
+                                className="hover:bg-slate-50/50 cursor-pointer"
                               >
-                                <td className="py-4 px-6">
-                                  <span className="font-bold text-slate-800 block">{emp?.razon_social || 'Desconocido'}</span>
-                                  <span className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
+                                <td className="px-6 py-4">
+                                  <span className="font-semibold text-slate-900 block">{emp?.razon_social || 'Desconocido'}</span>
+                                  <span className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5 font-normal">
                                     <MapPin className="h-3 w-3 shrink-0" />
                                     {est?.denominacion || 'General / Todos'}
                                   </span>
                                 </td>
-                                <td className="py-4 px-4 text-slate-700 font-medium">
+                                <td className="px-6 py-4 font-medium text-slate-600">
                                   <span className="block truncate max-w-[140px]" title={cap.puesto}>
-                                    {cap.puesto || <span className="text-slate-400 italic">No especificado</span>}
+                                    {cap.puesto || <span className="text-slate-400 italic font-normal">No especificado</span>}
                                   </span>
                                 </td>
-                                <td className="py-4 px-4">
-                                  <span className="block font-semibold text-slate-800 truncate max-w-[240px]" title={cap.tema}>
+                                <td className="px-6 py-4">
+                                  <span className="block font-semibold text-slate-900 truncate max-w-[240px]" title={cap.tema}>
                                     {cap.tema}
                                   </span>
                                   {cap.contenido && (
-                                    <span className="text-[10px] text-slate-400 block truncate max-w-[240px] mt-0.5" title={cap.contenido}>
+                                    <span className="text-[10px] text-slate-400 block truncate max-w-[240px] mt-0.5 font-normal" title={cap.contenido}>
                                       {cap.contenido}
                                     </span>
                                   )}
                                 </td>
-                                <td className="py-4 px-4 text-slate-700 font-medium">
+                                <td className="px-6 py-4 font-medium text-slate-600">
                                   {cap.capacitador}
                                 </td>
-                                <td className="py-4 px-4 text-center">
-                                  <span className="text-[10px] text-slate-600 block font-mono">
+                                <td className="px-6 py-4 text-center text-slate-500 font-mono text-[10px]">
+                                  <span className="block font-medium">
                                     {formatDate(cap.fecha_inicio_planificada)} al
                                   </span>
-                                  <span className="text-[10px] text-slate-600 block font-mono">
+                                  <span className="block font-medium">
                                     {formatDate(cap.fecha_fin_planificada)}
                                   </span>
                                 </td>
-                                <td className="py-4 px-4 text-center">
+                                <td className="px-6 py-4 text-center">
                                   <div className="flex flex-col items-center gap-1">
                                     <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold ${status.color}`}>
                                       {status.text} ({cap.progreso}%)
                                     </span>
-                                    <div className="w-16 h-1.5 bg-slate-100 border border-slate-200 rounded-full overflow-hidden">
+                                    <div className="w-16 h-1.5 bg-slate-100 border border-slate-150 rounded-full overflow-hidden">
                                       <div className="bg-[#468DFF] h-full" style={{ width: `${cap.progreso}%` }} />
                                     </div>
                                   </div>
                                 </td>
-                                <td className="py-4 px-6 text-right space-x-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                                  {cap.fotos_urls && cap.fotos_urls.length > 0 && (
+                                <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                                  <div className="flex items-center justify-end gap-2">
+                                    {cap.fotos_urls && cap.fotos_urls.length > 0 && (
+                                      <button
+                                        onClick={() => handleViewFotosClick(cap)}
+                                        title="Ver Registros de Capacitación (Fotos)"
+                                        className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer inline-flex items-center"
+                                      >
+                                        <ImageIcon className="h-4.5 w-4.5" />
+                                      </button>
+                                    )}
                                     <button
-                                      onClick={(e) => { e.stopPropagation(); handleViewFotosClick(cap); }}
-                                      title="Ver Registros de Capacitación (Fotos)"
-                                      className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-700 transition-colors inline-block cursor-pointer"
+                                      onClick={() => handleEditClick(cap)}
+                                      title="Editar"
+                                      className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer inline-flex items-center"
                                     >
-                                      <ImageIcon className="h-3.5 w-3.5" />
+                                      <Edit className="h-4.5 w-4.5" />
                                     </button>
-                                  )}
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); handleEditClick(cap); }}
-                                    title="Editar"
-                                    className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 hover:text-blue-600 transition-colors inline-block cursor-pointer"
-                                  >
-                                    <Edit className="h-3.5 w-3.5" />
-                                  </button>
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); handleDeleteClick(cap.id); }}
-                                    title="Eliminar"
-                                    className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 hover:text-red-600 transition-colors inline-block cursor-pointer"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </button>
+                                    <button
+                                      onClick={() => handleDeleteClick(cap.id)}
+                                      title="Eliminar"
+                                      className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center"
+                                    >
+                                      <Trash2 className="h-4.5 w-4.5" />
+                                    </button>
+                                  </div>
                                 </td>
                               </tr>
                             );
@@ -1699,20 +1707,20 @@ export default function CapacitacionPage({ params }) {
 
       {/* MODAL DE CONFIRMACIÓN */}
       {modalAlert.show && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xl max-w-sm w-full space-y-4 text-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
             <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500">
               <AlertTriangle className="h-6 w-6" />
             </div>
             <div className="space-y-1">
-              <h4 className="font-outfit text-base font-extrabold text-slate-800">{modalAlert.title}</h4>
+              <h4 className="font-outfit text-base font-bold text-slate-800">{modalAlert.title}</h4>
               <p className="text-xs text-slate-500 leading-relaxed">{modalAlert.message}</p>
             </div>
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={closeAlert}
-                className="flex-1 py-2 px-4 rounded-xl border border-slate-300 text-slate-700 font-bold text-xs hover:bg-slate-50 transition-all cursor-pointer bg-white"
+                className="flex-1 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer"
               >
                 Cancelar
               </button>
@@ -1720,7 +1728,7 @@ export default function CapacitacionPage({ params }) {
                 <button
                   type="button"
                   onClick={modalAlert.onConfirm}
-                  className="flex-1 py-2 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md shadow-red-500/10 cursor-pointer"
+                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer"
                 >
                   Confirmar
                 </button>

@@ -1413,26 +1413,26 @@ export default function EmpresasClientes({ params }) {
               ) : (
                 <>
                   {/* Toolbar y Filtros Unificados */}
-                  <div className="bg-white p-5 border border-slate-200/80 rounded-2xl shadow-sm space-y-4">
+                  <div className="bg-white rounded-2xl border border-slate-150 p-4 shadow-sm space-y-4">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       {/* Buscador */}
                       <div className="relative flex-1">
-                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 pointer-events-none">
-                          <Search className="h-4 w-4" />
+                        <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400 pointer-events-none">
+                          <Search className="h-4.5 w-4.5" />
                         </span>
                         <input
                           type="text"
                           placeholder="Buscar por razón social, nombre comercial o CUIT..."
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
-                          className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-xs text-slate-800 focus:outline-none transition-all"
+                          className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50"
                         />
                       </div>
 
                       {/* Botón de Agregar */}
                       <button
                         onClick={handleAddNew}
-                        className="py-3 px-5 bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-[#468DFF]/15 flex items-center gap-2 cursor-pointer shrink-0"
+                        className="px-4 py-2 bg-[#468DFF] text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0"
                       >
                         <PlusCircle className="h-4 w-4" />
                         Agregar nueva empresa
@@ -1442,8 +1442,8 @@ export default function EmpresasClientes({ params }) {
                     {/* Filtros rápidos */}
                     <div className="border-t border-slate-100 pt-3 space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                          <Sliders className="h-3 w-3 text-slate-500" />
+                        <span className="font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider shrink-0 text-[10px]">
+                          <Sliders className="h-3.5 w-3.5 text-slate-500" />
                           Filtros de Búsqueda
                         </span>
                         {(filterEmpresa || searchQuery) && (
@@ -1452,9 +1452,9 @@ export default function EmpresasClientes({ params }) {
                               setFilterEmpresa('');
                               setSearchQuery('');
                             }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-200 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer"
+                            className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg font-semibold cursor-pointer transition-all text-xs flex items-center gap-1.5"
                           >
-                            <X className="h-3 w-3" />
+                            <X className="h-3.5 w-3.5" />
                             Limpiar filtros
                           </button>
                         )}
@@ -1465,7 +1465,7 @@ export default function EmpresasClientes({ params }) {
                           <select
                             value={filterEmpresa}
                             onChange={(e) => setFilterEmpresa(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF] cursor-pointer"
+                            className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer"
                           >
                             <option value="">Todos los clientes</option>
                             {empresas.map(e => (
@@ -1478,13 +1478,13 @@ export default function EmpresasClientes({ params }) {
                   </div>
 
                   {/* Tabla */}
-                  <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
+                  <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden">
                     <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
                       <table className="w-full text-left border-collapse">
-                        <thead className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 shadow-sm">
-                          <tr className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                        <thead>
+                          <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider">
                             <th 
-                              className="py-4 px-6 cursor-pointer hover:bg-slate-100 select-none transition-colors"
+                              className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors"
                               onClick={() => handleSort('razon_social')}
                             >
                               <div className="flex items-center gap-1">
@@ -1493,7 +1493,7 @@ export default function EmpresasClientes({ params }) {
                               </div>
                             </th>
                             <th 
-                              className="py-4 px-6 cursor-pointer hover:bg-slate-100 select-none transition-colors"
+                              className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors"
                               onClick={() => handleSort('cuit')}
                             >
                               <div className="flex items-center gap-1">
@@ -1501,47 +1501,53 @@ export default function EmpresasClientes({ params }) {
                                 {sortField === 'cuit' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                               </div>
                             </th>
-                            <th className="py-4 px-6 text-center">Establecimientos</th>
-                            <th className="py-4 px-6 text-right">Acciones</th>
+                            <th className="px-6 py-4 text-center">Establecimientos</th>
+                            <th className="px-6 py-4 text-right">Acciones</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 text-xs font-normal text-slate-700">
+                        <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
                           {sortedEmpresas.length === 0 ? (
                             <tr>
-                              <td colSpan="4" className="py-8 px-6 text-center text-slate-400 font-semibold">
+                              <td colSpan="4" className="px-6 py-10 text-center text-slate-400 font-semibold">
                                 No se encontraron clientes con los filtros aplicados.
                               </td>
                             </tr>
                           ) : (
                             sortedEmpresas.map((emp) => (
-                              <tr key={emp.id} className="hover:bg-slate-50/50 transition-colors">
-                                <td className="py-4 px-6">
-                                  <span className="font-bold text-slate-800 block">{emp.razon_social}</span>
+                              <tr 
+                                key={emp.id} 
+                                onClick={() => handleEdit(emp.id)}
+                                className="hover:bg-slate-50/50 cursor-pointer transition-colors"
+                              >
+                                <td className="px-6 py-4">
+                                  <span className="font-semibold text-slate-900 block">{emp.razon_social}</span>
                                   {emp.nombre_comercial && (
-                                    <span className="text-[10px] text-slate-400 block mt-0.5">{emp.nombre_comercial}</span>
+                                    <span className="text-[10px] text-slate-500 font-medium block mt-0.5">{emp.nombre_comercial}</span>
                                   )}
                                 </td>
-                                <td className="py-4 px-6 font-mono text-slate-600">{emp.cuit}</td>
-                                <td className="py-4 px-6 text-center">
-                                  <span className="px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-slate-600 text-[10px] font-bold">
+                                <td className="px-6 py-4 font-mono text-slate-500">{emp.cuit}</td>
+                                <td className="px-6 py-4 text-center">
+                                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold">
                                     {emp.establecimientos_count}
                                   </span>
                                 </td>
-                                <td className="py-4 px-6 text-right space-x-1">
-                                  <button
-                                    onClick={() => handleEdit(emp.id)}
-                                    className="p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition-all cursor-pointer shadow-sm inline-block"
-                                    title="Editar ficha de cliente"
-                                  >
-                                    <Edit className="h-3.5 w-3.5" />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDelete(emp.id, emp.razon_social)}
-                                    className="p-2 rounded-lg border border-red-100 bg-red-50/20 text-red-500 hover:bg-red-500 hover:text-white transition-all cursor-pointer shadow-sm inline-block"
-                                    title="Borrar cliente"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </button>
+                                <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                                  <div className="flex items-center justify-end gap-2">
+                                    <button
+                                      onClick={() => handleEdit(emp.id)}
+                                      className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                      title="Editar ficha de cliente"
+                                    >
+                                      <Edit className="h-4.5 w-4.5" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDelete(emp.id, emp.razon_social)}
+                                      className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                      title="Borrar cliente"
+                                    >
+                                      <Trash2 className="h-4.5 w-4.5" />
+                                    </button>
+                                  </div>
                                 </td>
                               </tr>
                             ))
@@ -1622,7 +1628,7 @@ export default function EmpresasClientes({ params }) {
                 {/* TAB 1: DATOS GENERALES Y CONTACTOS */}
                 {activeTab === 'general' && (
                   <div className="space-y-6">
-                    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
+                    <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4">
                       <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Identidad de la empresa</h4>
                       
                       <div className="grid md:grid-cols-2 gap-4">
@@ -1634,7 +1640,7 @@ export default function EmpresasClientes({ params }) {
                             onChange={(e) => setRazonSocial(e.target.value)}
                             required
                             placeholder="Ej: Acme S.R.L."
-                            className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 outline-none focus:border-[#468DFF] focus:bg-white text-slate-700 transition-all"
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
                           />
                         </div>
 
@@ -1645,7 +1651,7 @@ export default function EmpresasClientes({ params }) {
                             value={nombreComercial}
                             onChange={(e) => setNombreComercial(e.target.value)}
                             placeholder="Ej: Acme Solutions"
-                            className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 outline-none focus:border-[#468DFF] focus:bg-white text-slate-700 transition-all"
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
                           />
                         </div>
 
@@ -1657,7 +1663,7 @@ export default function EmpresasClientes({ params }) {
                             onChange={handleCuitChange}
                             required
                             placeholder="Ej: 30712345678 (11 números sin puntos ni guiones)"
-                            className={`w-full text-xs bg-slate-50 border ${cuitError ? 'border-red-400 focus:border-red-500' : 'border-slate-300 focus:border-[#468DFF]'} rounded-xl px-4 py-2.5 outline-none focus:bg-white text-slate-700 transition-all`}
+                            className={`w-full border ${cuitError ? 'border-red-400 focus:border-red-500' : 'border-slate-200 focus:border-[#468DFF]'} rounded-xl px-3.5 py-2 text-sm focus:outline-none bg-slate-50/50 transition-all`}
                           />
                           {cuitError && <p className="text-[10px] text-red-500 font-bold mt-1">{cuitError}</p>}
                         </div>
@@ -1671,7 +1677,7 @@ export default function EmpresasClientes({ params }) {
                             placeholder="Buscar por código o descripción (Ej: arroz, 11111)..."
                             value={searchTermCiiu}
                             onChange={(e) => setSearchTermCiiu(e.target.value)}
-                            className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 outline-none focus:border-[#468DFF] focus:bg-white text-slate-700 transition-all"
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
                           />
 
                           {/* Dropdown de Resultados de Búsqueda */}
@@ -1728,7 +1734,7 @@ export default function EmpresasClientes({ params }) {
                     </div>
 
                     {/* CONTACTOS (TELEFONOS, CORREOS, FACTURACION) */}
-                    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-6">
+                    <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-6">
                       <div className="space-y-1">
                         <h4 className="text-sm font-bold text-slate-900">Contactos y Administración</h4>
                         <p className="text-[10px] text-slate-500">Agrega múltiples contactos para teléfonos, correos y notificaciones de cobro.</p>
@@ -1747,7 +1753,7 @@ export default function EmpresasClientes({ params }) {
                           </button>
                         </div>
                         {telefonos.map((tel, idx) => (
-                          <div key={idx} className="grid grid-cols-1 md:grid-cols-3 gap-2 items-center bg-slate-50 p-3 rounded-xl border border-slate-200">
+                          <div key={idx} className="grid grid-cols-1 md:grid-cols-3 gap-2 items-center bg-slate-50/50 p-3 rounded-2xl border border-slate-150 shadow-sm">
                             <input
                               type="text"
                               placeholder="Nombre y Apellido"
@@ -1757,7 +1763,7 @@ export default function EmpresasClientes({ params }) {
                                 copy[idx].nombre = e.target.value;
                                 setTelefonos(copy);
                               }}
-                              className="text-[11px] bg-white border border-slate-300 rounded-lg px-3 py-1.5 outline-none focus:border-[#468DFF] text-slate-700"
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white transition-all text-slate-700"
                             />
                             <input
                               type="text"
@@ -1768,7 +1774,7 @@ export default function EmpresasClientes({ params }) {
                                 copy[idx].cargo = e.target.value;
                                 setTelefonos(copy);
                               }}
-                              className="text-[11px] bg-white border border-slate-300 rounded-lg px-3 py-1.5 outline-none focus:border-[#468DFF] text-slate-700"
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white transition-all text-slate-700"
                             />
                             <div className="flex gap-2 items-center">
                               <input
@@ -1780,12 +1786,12 @@ export default function EmpresasClientes({ params }) {
                                   copy[idx].valor = e.target.value;
                                   setTelefonos(copy);
                                 }}
-                                className="text-[11px] bg-white border border-slate-300 rounded-lg px-3 py-1.5 outline-none focus:border-[#468DFF] text-slate-700 flex-1"
+                                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white transition-all text-slate-700 flex-1"
                               />
                               <button
                                 type="button"
                                 onClick={() => setTelefonos(telefonos.filter((_, i) => i !== idx))}
-                                className="p-1.5 rounded-lg border border-red-100 hover:bg-red-500 hover:text-white text-red-500 transition-colors"
+                                className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                               >
                                 <Minus className="h-3 w-3" />
                               </button>
@@ -1807,7 +1813,7 @@ export default function EmpresasClientes({ params }) {
                           </button>
                         </div>
                         {correos.map((cor, idx) => (
-                          <div key={idx} className="grid grid-cols-1 md:grid-cols-3 gap-2 items-center bg-slate-50 p-3 rounded-xl border border-slate-200">
+                          <div key={idx} className="grid grid-cols-1 md:grid-cols-3 gap-2 items-center bg-slate-50/50 p-3 rounded-2xl border border-slate-150 shadow-sm">
                             <input
                               type="text"
                               placeholder="Nombre y Apellido"
@@ -1817,7 +1823,7 @@ export default function EmpresasClientes({ params }) {
                                 copy[idx].nombre = e.target.value;
                                 setCorreos(copy);
                               }}
-                              className="text-[11px] bg-white border border-slate-300 rounded-lg px-3 py-1.5 outline-none focus:border-[#468DFF] text-slate-700"
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white transition-all text-slate-700"
                             />
                             <input
                               type="text"
@@ -1828,7 +1834,7 @@ export default function EmpresasClientes({ params }) {
                                 copy[idx].cargo = e.target.value;
                                 setCorreos(copy);
                               }}
-                              className="text-[11px] bg-white border border-slate-300 rounded-lg px-3 py-1.5 outline-none focus:border-[#468DFF] text-slate-700"
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white transition-all text-slate-700"
                             />
                             <div className="flex gap-2 items-center">
                               <input
@@ -1840,12 +1846,12 @@ export default function EmpresasClientes({ params }) {
                                   copy[idx].valor = e.target.value;
                                   setCorreos(copy);
                                 }}
-                                className="text-[11px] bg-white border border-slate-300 rounded-lg px-3 py-1.5 outline-none focus:border-[#468DFF] text-slate-700 flex-1"
+                                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white transition-all text-slate-700 flex-1"
                               />
                               <button
                                 type="button"
                                 onClick={() => setCorreos(correos.filter((_, i) => i !== idx))}
-                                className="p-1.5 rounded-lg border border-red-100 hover:bg-red-500 hover:text-white text-red-500 transition-colors"
+                                className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                               >
                                 <Minus className="h-3 w-3" />
                               </button>
@@ -1867,7 +1873,7 @@ export default function EmpresasClientes({ params }) {
                           </button>
                         </div>
                         {facturacion.map((fac, idx) => (
-                          <div key={idx} className="grid grid-cols-1 md:grid-cols-3 gap-2 items-center bg-slate-50 p-3 rounded-xl border border-slate-200">
+                          <div key={idx} className="grid grid-cols-1 md:grid-cols-3 gap-2 items-center bg-slate-50/50 p-3 rounded-2xl border border-slate-150 shadow-sm">
                             <input
                               type="text"
                               placeholder="Nombre y Apellido"
@@ -1877,7 +1883,7 @@ export default function EmpresasClientes({ params }) {
                                 copy[idx].nombre = e.target.value;
                                 setFacturacion(copy);
                               }}
-                              className="text-[11px] bg-white border border-slate-300 rounded-lg px-3 py-1.5 outline-none focus:border-[#468DFF] text-slate-700"
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white transition-all text-slate-700"
                             />
                             <input
                               type="text"
@@ -1888,7 +1894,7 @@ export default function EmpresasClientes({ params }) {
                                 copy[idx].cargo = e.target.value;
                                 setFacturacion(copy);
                               }}
-                              className="text-[11px] bg-white border border-slate-300 rounded-lg px-3 py-1.5 outline-none focus:border-[#468DFF] text-slate-700"
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white transition-all text-slate-700"
                             />
                             <div className="flex gap-2 items-center">
                               <input
@@ -1900,12 +1906,12 @@ export default function EmpresasClientes({ params }) {
                                   copy[idx].valor = e.target.value;
                                   setFacturacion(copy);
                                 }}
-                                className="text-[11px] bg-white border border-slate-300 rounded-lg px-3 py-1.5 outline-none focus:border-[#468DFF] text-slate-700 flex-1"
+                                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white transition-all text-slate-700 flex-1"
                               />
                               <button
                                 type="button"
                                 onClick={() => setFacturacion(facturacion.filter((_, i) => i !== idx))}
-                                className="p-1.5 rounded-lg border border-red-100 hover:bg-red-500 hover:text-white text-red-500 transition-colors"
+                                className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                               >
                                 <Minus className="h-3 w-3" />
                               </button>
@@ -1922,7 +1928,7 @@ export default function EmpresasClientes({ params }) {
                 {/* TAB 3: ESTABLECIMIENTOS */}
                 {activeTab === 'establecimientos' && (
                   <div className="space-y-6">
-                    <div className="flex justify-between items-center bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm">
+                    <div className="flex justify-between items-center bg-white border border-slate-150 rounded-2xl p-5 shadow-sm">
                       <div>
                         <h4 className="text-sm font-bold text-slate-900">Listado de Establecimientos</h4>
                         <p className="text-[10px] text-slate-500 mt-0.5">Una empresa puede constar de múltiples sedes, fábricas u oficinas.</p>
@@ -1930,7 +1936,7 @@ export default function EmpresasClientes({ params }) {
                       <button
                         type="button"
                         onClick={handleAddEstablecimiento}
-                        className="py-2 px-3 rounded-xl border border-[#468DFF]/40 hover:bg-[#468DFF] hover:text-white text-center text-[#468DFF] font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                        className="py-2 px-3 rounded-xl border border-[#468DFF]/40 hover:bg-[#468DFF] hover:text-white text-center text-[#468DFF] font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer shadow-sm bg-white hover:border-[#468DFF] active:scale-[0.98]"
                       >
                         <Plus className="h-3.5 w-3.5" />
                         Agregar establecimiento
@@ -1938,7 +1944,7 @@ export default function EmpresasClientes({ params }) {
                     </div>
 
                     {establecimientos.length === 0 ? (
-                      <div className="bg-white border border-slate-200/80 rounded-2xl p-10 text-center space-y-3 shadow-sm">
+                      <div className="bg-white border border-slate-150 rounded-2xl p-10 text-center space-y-3 shadow-sm">
                         <MapPin className="h-6 w-6 text-slate-400 mx-auto" />
                         <h5 className="font-bold text-slate-800 text-xs">No hay establecimientos cargados</h5>
                         <p className="text-[10px] text-slate-500 max-w-xs mx-auto">
@@ -1948,7 +1954,7 @@ export default function EmpresasClientes({ params }) {
                     ) : (
                       <div className="space-y-8">
                         {establecimientos.map((est, idx) => (
-                          <div key={idx} className="bg-white border border-slate-200/85 rounded-2xl p-6 shadow-sm space-y-6 relative hover:border-[#468DFF]/20 transition-all">
+                          <div key={idx} className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-6 relative hover:border-[#468DFF]/20 transition-all">
                             
                             {/* Header Establecimiento */}
                             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
@@ -1963,7 +1969,7 @@ export default function EmpresasClientes({ params }) {
                                     copy[idx].isCollapsed = !copy[idx].isCollapsed;
                                     setEstablecimientos(copy);
                                   }}
-                                  className="text-[10px] text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 font-bold px-2.5 py-1 rounded-lg border border-slate-250 transition-all cursor-pointer flex items-center gap-1 shadow-sm"
+                                  className="text-[10px] text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 font-bold px-2.5 py-1 rounded-lg border border-slate-200 transition-all cursor-pointer flex items-center gap-1 shadow-sm"
                                   title={est.isCollapsed ? "Expandir todos los campos" : "Contraer detalles"}
                                 >
                                   {est.isCollapsed ? (
@@ -1981,7 +1987,7 @@ export default function EmpresasClientes({ params }) {
                                 <button
                                   type="button"
                                   onClick={() => handleRemoveEstablecimiento(idx)}
-                                  className="text-[10px] text-red-500 hover:text-white hover:bg-red-600 font-bold px-2.5 py-1 rounded-lg border border-red-200 hover:border-red-600 transition-all cursor-pointer flex items-center gap-1 shadow-sm"
+                                  className="text-[10px] text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 font-bold px-2.5 py-1 rounded-lg border border-red-200 transition-all cursor-pointer flex items-center gap-1 shadow-sm"
                                 >
                                   <Trash2 className="h-3 w-3" /> Quitar
                                 </button>
@@ -2001,7 +2007,7 @@ export default function EmpresasClientes({ params }) {
                                     copy[idx].denominacion = e.target.value;
                                     setEstablecimientos(copy);
                                   }}
-                                  className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 outline-none focus:border-[#468DFF] focus:bg-white text-slate-700"
+                                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                                 />
                               </div>
 
@@ -2016,7 +2022,7 @@ export default function EmpresasClientes({ params }) {
                                     copy[idx].direccion = e.target.value;
                                     setEstablecimientos(copy);
                                   }}
-                                  className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 outline-none focus:border-[#468DFF] focus:bg-white text-slate-700"
+                                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                                 />
                               </div>
                             </div>
@@ -2031,7 +2037,7 @@ export default function EmpresasClientes({ params }) {
                                 <select
                                   value={est.provincia}
                                   onChange={(e) => handleEstProvinciaChange(idx, e.target.value)}
-                                  className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 outline-none focus:border-[#468DFF] focus:bg-white text-slate-700"
+                                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 cursor-pointer"
                                 >
                                   <option value="" disabled>Selecciona provincia</option>
                                   {PROVINCIAS_ARGENTINAS.map(p => (
@@ -2046,7 +2052,7 @@ export default function EmpresasClientes({ params }) {
                                   value={est.partido}
                                   onChange={(e) => handleEstPartidoChange(idx, e.target.value)}
                                   disabled={!est.provincia || est.partidosList.length === 0}
-                                  className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 outline-none focus:border-[#468DFF] focus:bg-white text-slate-700 disabled:opacity-50"
+                                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   <option value="" disabled>{!est.provincia ? 'Primero elige provincia' : 'Selecciona partido'}</option>
                                   {est.partidosList.map(p => (
@@ -2065,7 +2071,7 @@ export default function EmpresasClientes({ params }) {
                                     setEstablecimientos(copy);
                                   }}
                                   disabled={!est.partido}
-                                  className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 outline-none focus:border-[#468DFF] focus:bg-white text-slate-700 disabled:opacity-50"
+                                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   <option value="" disabled>{!est.partido ? 'Primero elige partido' : 'Selecciona localidad'}</option>
                                   {est.localidadesList.map(l => (
@@ -2085,7 +2091,7 @@ export default function EmpresasClientes({ params }) {
                                     copy[idx].cp = e.target.value;
                                     setEstablecimientos(copy);
                                   }}
-                                  className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 outline-none focus:border-[#468DFF] focus:bg-white text-slate-700"
+                                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                                 />
                               </div>
 
@@ -2100,7 +2106,7 @@ export default function EmpresasClientes({ params }) {
                                     copy[idx].superficie_total = e.target.value;
                                     setEstablecimientos(copy);
                                   }}
-                                  className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 outline-none focus:border-[#468DFF] focus:bg-white text-slate-700"
+                                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                                 />
                               </div>
 
@@ -2115,7 +2121,7 @@ export default function EmpresasClientes({ params }) {
                                     copy[idx].superficie_cubierta = e.target.value;
                                     setEstablecimientos(copy);
                                   }}
-                                  className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 outline-none focus:border-[#468DFF] focus:bg-white text-slate-700"
+                                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                                 />
                               </div>
 
@@ -2130,7 +2136,7 @@ export default function EmpresasClientes({ params }) {
                                     copy[idx].superficie_piso = e.target.value;
                                     setEstablecimientos(copy);
                                   }}
-                                  className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 outline-none focus:border-[#468DFF] focus:bg-white text-slate-700"
+                                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                                 />
                               </div>
 
@@ -2145,7 +2151,7 @@ export default function EmpresasClientes({ params }) {
                                     copy[idx].cantidad_plantas = e.target.value;
                                     setEstablecimientos(copy);
                                   }}
-                                  className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 outline-none focus:border-[#468DFF] focus:bg-white text-slate-700"
+                                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                                 />
                               </div>
 
@@ -2160,13 +2166,13 @@ export default function EmpresasClientes({ params }) {
                                     copy[idx].horario_funcionamiento = e.target.value;
                                     setEstablecimientos(copy);
                                   }}
-                                  className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 outline-none focus:border-[#468DFF] focus:bg-white text-slate-700"
+                                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                                 />
                               </div>
                             </div>
 
                             {/* Dotación y Trabajadores Equivalentes */}
-                            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/60 space-y-4">
+                            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-150 space-y-4">
                               <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wider block">Dotación de trabajadores</span>
                               <div className="grid md:grid-cols-3 gap-4">
                                 <div className="space-y-1">
@@ -2176,7 +2182,7 @@ export default function EmpresasClientes({ params }) {
                                     min="0"
                                     value={est.trabajadores_administrativos}
                                     onChange={(e) => handleWorkerChange(idx, 'trabajadores_administrativos', e.target.value)}
-                                    className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2 outline-none focus:border-[#468DFF]"
+                                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white transition-all text-slate-700"
                                   />
                                 </div>
                                 <div className="space-y-1">
@@ -2186,10 +2192,10 @@ export default function EmpresasClientes({ params }) {
                                     min="0"
                                     value={est.trabajadores_productivos}
                                     onChange={(e) => handleWorkerChange(idx, 'trabajadores_productivos', e.target.value)}
-                                    className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2 outline-none focus:border-[#468DFF]"
+                                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white transition-all text-slate-700"
                                   />
                                 </div>
-                                <div className="space-y-1 bg-[#468DFF]/5 p-3 rounded-xl border border-[#468DFF]/15 text-center flex flex-col justify-center">
+                                <div className="space-y-1 bg-[#468DFF]/5 p-3 rounded-2xl border border-[#468DFF]/15 text-center flex flex-col justify-center">
                                   <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Trabajadores Equivalentes</span>
                                   <span className="font-outfit text-xl font-extrabold text-[#468DFF] block mt-0.5">
                                     {est.trabajadores_equivalentes}
@@ -2205,9 +2211,9 @@ export default function EmpresasClientes({ params }) {
                                 <span className="text-[10px] text-slate-500 block">Indica los capítulos de cumplimiento obligatorio aplicables al establecimiento.</span>
                               </div>
                               
-                              <div className="grid md:grid-cols-2 gap-2 max-h-60 overflow-y-auto p-4 border border-slate-200/80 rounded-xl bg-slate-50/50">
+                              <div className="grid md:grid-cols-2 gap-2 max-h-60 overflow-y-auto p-4 border border-slate-150 rounded-2xl bg-slate-50/50">
                                 {DECRETO_CHAPTERS.map((cap) => (
-                                  <label key={cap.id} className="flex items-start gap-2.5 p-2 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-[11px] font-semibold text-slate-700 transition-all cursor-pointer">
+                                  <label key={cap.id} className="flex items-start gap-2.5 p-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-150 text-[11px] font-semibold text-slate-700 transition-all cursor-pointer">
                                     <input
                                       type="checkbox"
                                       checked={!!est.capitulos_decreto[cap.id]}
@@ -2231,7 +2237,7 @@ export default function EmpresasClientes({ params }) {
                                 </p>
                               </div>
                               <div className="flex gap-4">
-                                <div className="text-center bg-white px-5 py-2.5 rounded-xl border border-slate-250 shadow-sm shrink-0 min-w-[100px]">
+                                <div className="text-center bg-white px-5 py-2.5 rounded-2xl border border-slate-150 shadow-sm shrink-0 min-w-[100px]">
                                   <span className="text-[9px] text-slate-400 font-bold block uppercase tracking-wider">Categoría</span>
                                   <span className="font-outfit text-xl font-extrabold text-slate-800 block mt-0.5">
                                     {est.capitulos_decreto.cap_8 || est.capitulos_decreto.cap_9 || est.capitulos_decreto.cap_10 
@@ -2241,7 +2247,7 @@ export default function EmpresasClientes({ params }) {
                                         : 'A')}
                                   </span>
                                 </div>
-                                <div className="text-center bg-[#468DFF] text-white px-5 py-2.5 rounded-xl border border-[#468DFF] shadow-sm shrink-0 min-w-[120px]">
+                                <div className="text-center bg-[#468DFF] text-white px-5 py-2.5 rounded-2xl border border-[#468DFF] shadow-sm shrink-0 min-w-[120px]">
                                   <span className="text-[9px] text-white/70 font-bold block uppercase tracking-wider">Horas Asignadas</span>
                                   <span className="font-outfit text-xl font-extrabold block mt-0.5">
                                     {est.horas_profesional} hs/mes
@@ -2263,7 +2269,7 @@ export default function EmpresasClientes({ params }) {
                                 { key: 'equipos_elevacion', label: 'Equipos de Elevación de Personas', options: EQUIPOS_ELEVACION_OPTS, customKey: 'customElevacion', setCustomKey: (val) => { const copy = [...establecimientos]; copy[idx].customElevacion = val; setEstablecimientos(copy); } },
                                 { key: 'equipos_izaje', label: 'Equipos de Izaje de Cargas', options: EQUIPOS_IZAJE_OPTS, customKey: 'customIzaje', setCustomKey: (val) => { const copy = [...establecimientos]; copy[idx].customIzaje = val; setEstablecimientos(copy); } }
                               ].map((item) => (
-                                <div key={item.key} className="space-y-2 p-4 rounded-xl border border-slate-200 bg-slate-50/20">
+                                <div key={item.key} className="space-y-2 p-4 rounded-2xl border border-slate-150 bg-slate-50/20">
                                   <span className="text-[11px] font-bold text-slate-700 block">{item.label}</span>
                                   
                                   {/* Listado de Opciones Fijas */}
@@ -2275,10 +2281,10 @@ export default function EmpresasClientes({ params }) {
                                           key={opt}
                                           type="button"
                                           onClick={() => handleMachineOptionToggle(idx, item.key, opt)}
-                                          className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${
+                                          className={`px-3 py-1.5 rounded-xl text-[10px] font-bold border transition-all cursor-pointer ${
                                             isSelected 
                                               ? 'bg-slate-800 text-white border-slate-800' 
-                                              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                                              : 'bg-white text-slate-600 border-slate-150 hover:bg-slate-50'
                                           }`}
                                         >
                                           {opt}
@@ -2312,12 +2318,12 @@ export default function EmpresasClientes({ params }) {
                                       placeholder="Agregar otra..."
                                       value={est[item.customKey] || ''}
                                       onChange={(e) => item.setCustomKey(e.target.value)}
-                                      className="flex-1 text-[10px] bg-white border border-slate-300 rounded-lg px-3 py-1.5 outline-none focus:border-[#468DFF]"
+                                      className="flex-1 text-[10px] bg-white border border-slate-200 rounded-xl px-3 py-1.5 outline-none focus:border-[#468DFF] focus:bg-slate-50/50 transition-all text-slate-700"
                                     />
                                     <button
                                       type="button"
                                       onClick={() => handleAddCustomMachine(idx, item.key, est[item.customKey] || '', () => item.setCustomKey(''))}
-                                      className="py-1.5 px-3 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-[10px] font-bold text-slate-700 transition-all cursor-pointer"
+                                      className="py-1.5 px-3 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-[10px] font-bold text-slate-700 transition-all cursor-pointer"
                                     >
                                       Añadir
                                     </button>
@@ -2335,7 +2341,7 @@ export default function EmpresasClientes({ params }) {
                     )}
 
                     {/* Observaciones en Establecimientos */}
-                    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4 mt-6">
+                    <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4 mt-6">
                       <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Observaciones Generales</h4>
                       <div className="space-y-1">
                         <label className="text-xs font-bold text-slate-600 block">Notas / Observaciones sobre la empresa</label>
@@ -2344,7 +2350,7 @@ export default function EmpresasClientes({ params }) {
                           value={observaciones}
                           onChange={(e) => setObservaciones(e.target.value)}
                           placeholder="Escribe comentarios, deudas técnicas, particularidades operativas, etc..."
-                          className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 outline-none focus:border-[#468DFF] focus:bg-white text-slate-700 transition-all resize-y"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 resize-y"
                         />
                       </div>
                     </div>
@@ -2355,7 +2361,7 @@ export default function EmpresasClientes({ params }) {
                 {/* TAB 4: PLATAFORMAS & CREDENCIALES */}
                 {activeTab === 'credenciales' && (
                   <div className="space-y-6">
-                    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
+                    <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4">
                       <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Aseguradora de Riesgos del Trabajo (ART)</h4>
                       
                       <div className="grid md:grid-cols-3 gap-4">
@@ -2378,7 +2384,7 @@ export default function EmpresasClientes({ params }) {
                             value={artWeb}
                             onChange={(e) => setArtWeb(e.target.value)}
                             placeholder="Ej: https://www.art.com.ar"
-                            className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 outline-none focus:border-[#468DFF] focus:bg-white text-slate-700 transition-all"
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                           />
                         </div>
 
@@ -2390,7 +2396,7 @@ export default function EmpresasClientes({ params }) {
                             onChange={(e) => setArtUsuario(e.target.value)}
                             placeholder="Usuario"
                             autoComplete="new-username"
-                            className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 outline-none focus:border-[#468DFF] focus:bg-white text-slate-700 transition-all"
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                           />
                         </div>
 
@@ -2403,7 +2409,7 @@ export default function EmpresasClientes({ params }) {
                               onChange={(e) => setArtClave(e.target.value)}
                               placeholder="Clave"
                               autoComplete="new-password"
-                              className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 pr-10 outline-none focus:border-[#468DFF] focus:bg-white text-slate-700 transition-all"
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                             />
                             <button
                               type="button"
@@ -2417,7 +2423,7 @@ export default function EmpresasClientes({ params }) {
                       </div>
                     </div>
 
-                    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
+                    <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4">
                       <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Plataforma MiBA / Trámites a Distancia (TAD)</h4>
                       
                       <div className="grid md:grid-cols-3 gap-4">
@@ -2429,7 +2435,7 @@ export default function EmpresasClientes({ params }) {
                             onChange={(e) => setMibaUsuario(e.target.value)}
                             placeholder="Usuario"
                             autoComplete="new-username"
-                            className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 outline-none focus:border-[#468DFF] focus:bg-white text-slate-700 transition-all"
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                           />
                         </div>
 
@@ -2442,7 +2448,7 @@ export default function EmpresasClientes({ params }) {
                               onChange={(e) => setMibaClave(e.target.value)}
                               placeholder="Clave"
                               autoComplete="new-password"
-                              className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 pr-10 outline-none focus:border-[#468DFF] focus:bg-white text-slate-700 transition-all"
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                             />
                             <button
                               type="button"
@@ -2456,7 +2462,7 @@ export default function EmpresasClientes({ params }) {
                       </div>
                     </div>
 
-                    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
+                    <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4">
                       <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Ministerio de Ambiente PBA / APRA</h4>
                       
                       <div className="grid md:grid-cols-3 gap-4">
@@ -2468,7 +2474,7 @@ export default function EmpresasClientes({ params }) {
                             onChange={(e) => setAmbienteUsuario(e.target.value)}
                             placeholder="Usuario"
                             autoComplete="new-username"
-                            className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 outline-none focus:border-[#468DFF] focus:bg-white text-slate-700 transition-all"
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                           />
                         </div>
 
@@ -2481,7 +2487,7 @@ export default function EmpresasClientes({ params }) {
                               onChange={(e) => setAmbienteClave(e.target.value)}
                               placeholder="Clave"
                               autoComplete="new-password"
-                              className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 pr-10 outline-none focus:border-[#468DFF] focus:bg-white text-slate-700 transition-all"
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                             />
                             <button
                               type="button"
@@ -2496,7 +2502,7 @@ export default function EmpresasClientes({ params }) {
                     </div>
 
                     {/* Observaciones en Plataformas */}
-                    <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4 mt-6">
+                    <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4 mt-6">
                       <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Observaciones Generales</h4>
                       <div className="space-y-1">
                         <label className="text-xs font-bold text-slate-600 block">Notas / Observaciones sobre la empresa</label>
@@ -2505,7 +2511,7 @@ export default function EmpresasClientes({ params }) {
                           value={observaciones}
                           onChange={(e) => setObservaciones(e.target.value)}
                           placeholder="Escribe comentarios, deudas técnicas, particularidades operativas, etc..."
-                          className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 outline-none focus:border-[#468DFF] focus:bg-white text-slate-700 transition-all resize-y"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 resize-y"
                         />
                       </div>
                     </div>

@@ -1003,17 +1003,17 @@ const [partidosList, setPartidosList] = useState([]);
 
   if (initialLoading) {
     return (
-      <div className="min-h-screen bg-[#D9D9D9] text-slate-700 flex items-center justify-center font-sans">
+      <div className="min-h-screen bg-[#f8fafc] text-slate-700 flex items-center justify-center font-sans">
         <div className="text-center space-y-4">
           <Loader2 className="h-8 w-8 animate-spin text-[#468DFF] mx-auto" />
-          <p className="text-xs text-slate-600 font-semibold">Cargando datos del perfil...</p>
+          <p className="text-xs text-slate-500 font-medium">Cargando datos del perfil...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-screen overflow-hidden bg-[#D9D9D9] text-slate-700 flex font-sans">
+    <div className="h-screen overflow-hidden bg-[#f8fafc] text-slate-700 flex font-sans">
       
       {/* Mobile Sidebar (Drawer Overlay) */}
       {isMobileMenuOpen && (
@@ -1303,7 +1303,7 @@ const [partidosList, setPartidosList] = useState([]);
         <form onSubmit={handleSaveChanges} className="space-y-8">
           
           {/* SECCIÓN 1: INFORMACIÓN DEL USUARIO */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
+          <div className="bg-white border border-slate-150 rounded-2xl p-8 shadow-sm space-y-6">
             <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
               <User className="text-[#468DFF] h-5 w-5" />
               Información del usuario
@@ -1321,7 +1321,7 @@ const [partidosList, setPartidosList] = useState([]);
                   placeholder="Juan Pérez"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all"
+                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                 />
               </div>
 
@@ -1337,7 +1337,7 @@ const [partidosList, setPartidosList] = useState([]);
                     type="email"
                     required
                     value={email}
-                    className="w-full bg-slate-100 border border-slate-200 rounded-xl py-3 pl-10 pr-4 text-slate-500 cursor-not-allowed focus:outline-none"
+                    className="w-full border border-slate-150 rounded-xl pl-10 pr-4 py-2 text-sm bg-slate-100 text-slate-500 outline-none cursor-not-allowed focus:outline-none"
                     disabled
                   />
                 </div>
@@ -1355,7 +1355,7 @@ const [partidosList, setPartidosList] = useState([]);
                   placeholder="20443332225"
                   value={cuit}
                   onChange={handleCuitChange}
-                  className={`w-full bg-slate-50 border ${cuitError ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500' : 'border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF]'} rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all`}
+                  className={`w-full border ${cuitError ? 'border-red-400 focus:border-red-500' : 'border-slate-200 focus:border-[#468DFF]'} rounded-xl px-3.5 py-2 text-sm focus:outline-none bg-slate-50/50 transition-all text-slate-700`}
                 />
                 {cuitError && (
                   <span className="text-[10px] text-red-600 mt-1 block font-semibold">{cuitError}</span>
@@ -1372,7 +1372,7 @@ const [partidosList, setPartidosList] = useState([]);
                   placeholder="1165432109"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all"
+                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                 />
               </div>
 
@@ -1385,7 +1385,7 @@ const [partidosList, setPartidosList] = useState([]);
                   required
                   value={birthDate}
                   onChange={(e) => setBirthDate(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-3 text-slate-800 text-xs focus:outline-none transition-all"
+                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                 />
               </div>
             </div>
@@ -1403,7 +1403,7 @@ const [partidosList, setPartidosList] = useState([]);
                     setPartido('');
                     setLocalidad('');
                   }}
-                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none cursor-pointer transition-all"
+                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 cursor-pointer"
                 >
                   <option value="" disabled>Selecciona una provincia</option>
                   {PROVINCIAS_ARGENTINAS.map((prov) => (
@@ -1426,7 +1426,7 @@ const [partidosList, setPartidosList] = useState([]);
                     setPartido(e.target.value);
                     setLocalidad('');
                   }}
-                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none cursor-pointer transition-all disabled:opacity-50"
+                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 cursor-pointer disabled:opacity-50"
                 >
                   <option value="" disabled>{!provincia ? 'Primero selecciona una provincia' : 'Selecciona un partido'}</option>
                   {partidosList.map((p) => (
@@ -1445,7 +1445,7 @@ const [partidosList, setPartidosList] = useState([]);
                   disabled={!partido || localidadesList.length === 0}
                   value={localidad}
                   onChange={(e) => setLocalidad(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none cursor-pointer transition-all disabled:opacity-50"
+                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 cursor-pointer disabled:opacity-50"
                 >
                   <option value="">
                     {!partido ? 'Primero selecciona un partido' : 'Selecciona una localidad (opcional)'}
@@ -1467,7 +1467,7 @@ const [partidosList, setPartidosList] = useState([]);
               </h4>
 
               {matriculas.map((m, index) => (
-                <div key={index} className="p-6 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-6 relative">
+                <div key={index} className="p-6 rounded-2xl border border-slate-150 bg-slate-50/50 space-y-6 relative">
                   {matriculas.length > 1 && (
                     <button
                       type="button"
@@ -1479,10 +1479,6 @@ const [partidosList, setPartidosList] = useState([]);
                     </button>
                   )}
                   
-                  <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    Matrícula #{index + 1}
-                  </div>
-
                   <div className="grid md:grid-cols-3 gap-6">
                     <div className="md:col-span-2">
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
@@ -1493,7 +1489,7 @@ const [partidosList, setPartidosList] = useState([]);
                         placeholder="COPIME, CPSH..."
                         value={m.institucion}
                         onChange={(e) => handleMatriculaChange(index, 'institucion', e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all"
+                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                       />
                     </div>
 
@@ -1507,7 +1503,7 @@ const [partidosList, setPartidosList] = useState([]);
                           placeholder="L000000"
                           value={m.numero}
                           onChange={(e) => handleMatriculaChange(index, 'numero', e.target.value)}
-                          className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                         />
                       </div>
                       <div>
@@ -1518,7 +1514,7 @@ const [partidosList, setPartidosList] = useState([]);
                           type="date"
                           value={m.vencimiento}
                           onChange={(e) => handleMatriculaChange(index, 'vencimiento', e.target.value)}
-                          className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-2 text-xs text-slate-800 focus:outline-none transition-all"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                         />
                       </div>
                     </div>
@@ -1530,14 +1526,14 @@ const [partidosList, setPartidosList] = useState([]);
                       <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">
                         Foto Frente Matrícula #{index + 1}
                       </label>
-                      <div className="relative border border-dashed border-slate-300 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-50 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
+                      <div className="relative border-2 border-dashed border-slate-200 hover:border-slate-300 rounded-xl p-6 text-center cursor-pointer transition-colors bg-white h-28 flex flex-col items-center justify-center overflow-hidden group">
                         {m.fotoFrentePreview ? (
                           <div className="relative w-full h-full">
                             <img src={m.fotoFrentePreview} alt={`Frente matrícula ${index+1}`} className="w-full h-full object-contain" />
                             <button
                               type="button"
                               onClick={() => handleMatriculaFileClear(index, 'Frente')}
-                              className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
+                              className="absolute top-1 right-1 bg-red-650 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold cursor-pointer"
                             >
                               Quitar
                             </button>
@@ -1561,14 +1557,14 @@ const [partidosList, setPartidosList] = useState([]);
                       <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">
                         Foto Dorso Matrícula #{index + 1}
                       </label>
-                      <div className="relative border border-dashed border-slate-300 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-50 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
+                      <div className="relative border-2 border-dashed border-slate-200 hover:border-slate-300 rounded-xl p-6 text-center cursor-pointer transition-colors bg-white h-28 flex flex-col items-center justify-center overflow-hidden group">
                         {m.fotoDorsoPreview ? (
                           <div className="relative w-full h-full">
                             <img src={m.fotoDorsoPreview} alt={`Dorso matrícula ${index+1}`} className="w-full h-full object-contain" />
                             <button
                               type="button"
                               onClick={() => handleMatriculaFileClear(index, 'Dorso')}
-                              className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
+                              className="absolute top-1 right-1 bg-red-650 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold cursor-pointer"
                             >
                               Quitar
                             </button>
@@ -1595,7 +1591,7 @@ const [partidosList, setPartidosList] = useState([]);
                 <button
                   type="button"
                   onClick={handleAddMatricula}
-                  className="py-2.5 px-4 rounded-xl border border-[#468DFF]/40 hover:bg-[#468DFF] hover:text-white text-[#468DFF] font-bold text-xs transition-all flex items-center gap-2 active:scale-[0.98]"
+                  className="py-2.5 px-4 rounded-xl border border-[#468DFF]/40 hover:bg-[#468DFF] hover:text-white text-[#468DFF] font-bold text-xs transition-all flex items-center gap-2 active:scale-[0.98] cursor-pointer"
                 >
                   <PlusCircle className="h-4 w-4" />
                   Agregar otra matrícula
@@ -1613,14 +1609,14 @@ const [partidosList, setPartidosList] = useState([]);
                     <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">
                       Firma Digital (Imagen)
                     </label>
-                    <div className="relative border border-dashed border-slate-300 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-50 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
+                    <div className="relative border-2 border-dashed border-slate-200 hover:border-slate-300 rounded-xl p-6 text-center cursor-pointer transition-colors bg-white h-28 flex flex-col items-center justify-center overflow-hidden group">
                       {fotoFirmaPreview ? (
                         <div className="relative w-full h-full">
                           <img src={fotoFirmaPreview} alt="Firma" className="w-full h-full object-contain" />
                           <button
                             type="button"
                             onClick={() => { setFotoFirma(null); setFotoFirmaPreview(''); }}
-                            className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
+                            className="absolute top-1 right-1 bg-red-650 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold cursor-pointer"
                           >
                             Quitar
                           </button>
@@ -1645,7 +1641,7 @@ const [partidosList, setPartidosList] = useState([]);
           </div>
 
           {/* SECCIÓN: SEGURIDAD (CAMBIAR CONTRASEÑA) */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
+          <div className="bg-white border border-slate-150 rounded-2xl p-8 shadow-sm space-y-6">
             <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
               <Lock className="text-[#468DFF] h-5 w-5" />
               Seguridad (Cambiar Contraseña)
@@ -1662,12 +1658,12 @@ const [partidosList, setPartidosList] = useState([]);
                     placeholder="Contraseña actual"
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-4 pr-12 text-slate-800 focus:outline-none transition-all"
+                    className="w-full border border-slate-200 rounded-xl py-2 pl-3.5 pr-12 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                   />
                   <button
                     type="button"
                     onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700 cursor-pointer"
                   >
                     {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -1683,12 +1679,12 @@ const [partidosList, setPartidosList] = useState([]);
                     placeholder="Mínimo 8 caracteres, 1 mayúscula y 1 número"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-4 pr-12 text-slate-800 focus:outline-none transition-all"
+                    className="w-full border border-slate-200 rounded-xl py-2 pl-3.5 pr-12 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                   />
                   <button
                     type="button"
                     onClick={() => setShowNewPassword(!showNewPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700 cursor-pointer"
                   >
                     {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -1707,12 +1703,12 @@ const [partidosList, setPartidosList] = useState([]);
                     placeholder="Repetir contraseña"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-4 pr-12 text-slate-800 focus:outline-none transition-all"
+                    className="w-full border border-slate-200 rounded-xl py-2 pl-3.5 pr-12 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700 cursor-pointer"
                   >
                     {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -1728,7 +1724,7 @@ const [partidosList, setPartidosList] = useState([]);
                 type="button"
                 onClick={handleChangePassword}
                 disabled={passLoading}
-                className="py-2.5 px-6 rounded-xl border border-[#468DFF] hover:bg-[#468DFF] hover:text-white text-[#468DFF] font-bold text-xs transition-all flex items-center gap-2 active:scale-[0.98] disabled:opacity-50"
+                className="py-2.5 px-6 rounded-xl border border-[#468DFF] hover:bg-[#468DFF] hover:text-white text-[#468DFF] font-bold text-xs transition-all flex items-center gap-2 active:scale-[0.98] disabled:opacity-50 cursor-pointer"
               >
                 {passLoading ? (
                   <>
@@ -1745,7 +1741,7 @@ const [partidosList, setPartidosList] = useState([]);
           {(profileData?.role === 'owner' || profileData?.role === 'admin') && (
             <>
               {/* SECCIÓN 2: IDENTIDAD DE LA EMPRESA */}
-              <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
+              <div className="bg-white border border-slate-150 rounded-2xl p-8 shadow-sm space-y-6">
             <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
               <Building className="text-[#468DFF] h-5 w-5" />
               Identidad de la empresa
@@ -1760,7 +1756,7 @@ const [partidosList, setPartidosList] = useState([]);
                   type="text"
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all"
+                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                 />
               </div>
 
@@ -1773,7 +1769,7 @@ const [partidosList, setPartidosList] = useState([]);
                   placeholder="https://miweb.com"
                   value={website}
                   onChange={(e) => setWebsite(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all"
+                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                 />
               </div>
             </div>
@@ -1789,7 +1785,7 @@ const [partidosList, setPartidosList] = useState([]);
                     type="url"
                     value={linkedin}
                     onChange={(e) => setLinkedin(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none"
+                    className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                   />
                 </div>
                 <div>
@@ -1798,7 +1794,7 @@ const [partidosList, setPartidosList] = useState([]);
                     type="url"
                     value={instagram}
                     onChange={(e) => setInstagram(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none"
+                    className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                   />
                 </div>
               </div>
@@ -1810,7 +1806,7 @@ const [partidosList, setPartidosList] = useState([]);
                     type="url"
                     value={facebook}
                     onChange={(e) => setFacebook(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none"
+                    className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                   />
                 </div>
                 <div>
@@ -1819,7 +1815,7 @@ const [partidosList, setPartidosList] = useState([]);
                     type="url"
                     value={tiktok}
                     onChange={(e) => setTiktok(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none"
+                    className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                   />
                 </div>
                 <div>
@@ -1828,7 +1824,7 @@ const [partidosList, setPartidosList] = useState([]);
                     type="url"
                     value={youtube}
                     onChange={(e) => setYoutube(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none"
+                    className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                   />
                 </div>
               </div>
@@ -1840,14 +1836,14 @@ const [partidosList, setPartidosList] = useState([]);
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
                   Logo Principal (Logo 1)
                 </label>
-                <div className="relative border border-dashed border-slate-300 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-50 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
+                <div className="relative border border-dashed border-slate-200 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-50/50 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
                   {logo1Preview ? (
                     <div className="relative w-full h-full">
                       <img src={logo1Preview} alt="Logo 1" className="w-full h-full object-contain" />
                       <button
                         type="button"
                         onClick={() => { setLogo1(null); setLogo1Preview(''); }}
-                        className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
+                        className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold cursor-pointer"
                       >
                         Quitar
                       </button>
@@ -1871,14 +1867,14 @@ const [partidosList, setPartidosList] = useState([]);
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
                   Logo Secundario (Logo 2)
                 </label>
-                <div className="relative border border-dashed border-slate-300 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-50 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
+                <div className="relative border border-dashed border-slate-200 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-50/50 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
                   {logo2Preview ? (
                     <div className="relative w-full h-full">
                       <img src={logo2Preview} alt="Logo 2" className="w-full h-full object-contain" />
                       <button
                         type="button"
                         onClick={() => { setLogo2(null); setLogo2Preview(''); }}
-                        className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
+                        className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold cursor-pointer"
                       >
                         Quitar
                       </button>
@@ -1901,13 +1897,13 @@ const [partidosList, setPartidosList] = useState([]);
           </div>
 
           {/* SECCIÓN 3: PLAN */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
+          <div className="bg-white border border-slate-150 rounded-2xl p-8 shadow-sm space-y-6">
             <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
               <Award className="text-[#468DFF] h-5 w-5" />
               Plan Suscrito
             </h3>
 
-            <div className="relative rounded-2xl border border-blue-500/15 bg-gradient-to-br from-blue-50/50 via-slate-50 to-indigo-50/10 p-6 overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="relative rounded-2xl border border-[#468DFF]/15 bg-gradient-to-br from-blue-50/50 via-slate-50 to-indigo-50/10 p-6 overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-[#468DFF]/5 blur-xl pointer-events-none" />
               
               <div className="space-y-2">
@@ -2018,12 +2014,12 @@ const [partidosList, setPartidosList] = useState([]);
                     placeholder="Contraseña actual"
                     value={deletePassword}
                     onChange={(e) => setDeletePassword(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-red-500 focus:ring-1 focus:ring-red-500 rounded-xl py-3 pl-4 pr-12 text-slate-800 focus:outline-none transition-all"
+                    className="w-full border border-slate-200 rounded-xl py-2 pl-3.5 pr-12 text-sm focus:outline-none focus:border-red-500 bg-slate-50/50 transition-all text-slate-700"
                   />
                   <button
                     type="button"
                     onClick={() => setShowDeletePassword(!showDeletePassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700 cursor-pointer"
                   >
                     {showDeletePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -2171,7 +2167,7 @@ const [partidosList, setPartidosList] = useState([]);
       {/* CENTERED MODAL NOTIFICATION (VENTANA EMERGENTE) */}
       {toast.show && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="w-full max-w-md p-6 rounded-2xl border shadow-2xl text-center bg-white border-slate-200 animate-scaleUp">
+          <div className="w-full max-w-md p-6 rounded-2xl border shadow-2xl text-center bg-white border-slate-150 animate-scaleUp">
             <div className="flex justify-center mb-4">
               {toast.type === 'error' ? (
                 <div className="p-3 rounded-full bg-red-50 border border-red-100 text-red-500">

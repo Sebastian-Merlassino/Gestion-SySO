@@ -2,6 +2,44 @@
 
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
+## [2026-06-20] Homogeneización Estética de la Plataforma al Estándar de Visitas
+
+### Resumen de Cambios
+- **Estandarización de Estilos**: Estandarizados los fondos de loaders y de páginas a `bg-[#f8fafc]`, los bordes a `border-slate-150`, y los contenedores/cards a `rounded-2xl` en todas las secciones principales (Dashboard, Perfil, Clientes, Programa Anual, Programa de Capacitación, Equipo de Trabajo, Acciones Correctivas y Extintores).
+- **Unificación de Elementos de Formulario**: Homogeneizados los inputs y selects de formulario a la clase `border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50`.
+- **Estandarización de Perfil (profile/page.js)**: Actualizado el input de sitio web, los inputs de redes sociales, las cajas de carga de logos (dropzones) y la tarjeta de Plan Suscrito para alinearse a la marca y formato del estándar.
+- **Resolución de Errores de Sintaxis**: Corregidas etiquetas JSX mal formadas en `capacitacion/page.js` y `programa/page.js` que impedían el empaquetado del proyecto.
+
+### Decisiones Clave
+- **Eliminación de Bordes slate-300 y slate-200/80**: Se optó por reemplazar todos los bordes rígidos por `border-slate-150` para suavizar el aspecto general del dashboard y brindar un aspecto más premium alineado al mockup de referencia.
+- **Inputs Compactos en Redes Sociales**: Conservación del tamaño de fuente en `text-xs` para los inputs de redes sociales en el perfil por consistencia espacial, pero aplicando el mismo esquema cromático de bordes y fondos del estándar.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción local (`npm run build` vía cmd) completada exitosamente al 100% de manera íntegra, sin advertencias ni errores en ninguno de los bundles de Next.js.
+
+### Riesgos Detectados / Remanentes
+- Ninguno detectado. La UI ahora es consistente y coherente en todas sus vistas.
+
+### Próximo Paso Recomendado
+- Realizar pruebas de usuario en producción/staging para confirmar que el feedback táctil y visual de los inputs/botones actualizados cumple con las expectativas.
+
+---
+
 ## [2026-06-20] Implementación de Constancia de Visita, Firma Digital y Envío de PDF por Correo
 
 ### Resumen de Cambios

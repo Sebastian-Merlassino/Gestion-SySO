@@ -376,10 +376,10 @@ export default function TenantDashboard({ params }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">
+      <div className="min-h-screen bg-[#f8fafc] text-slate-700 flex items-center justify-center font-sans">
         <div className="text-center space-y-4">
           <Loader2 className="h-10 w-10 animate-spin text-[#468DFF] mx-auto" />
-          <p className="text-xs text-slate-400">Generando tu área de trabajo...</p>
+          <p className="text-xs text-slate-500 font-medium">Generando tu área de trabajo...</p>
         </div>
       </div>
     );
@@ -393,7 +393,7 @@ export default function TenantDashboard({ params }) {
   };
 
   return (
-    <div className="h-screen overflow-hidden bg-[#D9D9D9] text-slate-700 flex font-sans">
+    <div className="h-screen overflow-hidden bg-[#f8fafc] text-slate-700 flex font-sans">
       
       {/* Mobile Sidebar (Drawer Overlay) */}
       {isMobileMenuOpen && (
@@ -666,9 +666,9 @@ export default function TenantDashboard({ params }) {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
             {/* Próximos Vencimientos */}
-            <div className="lg:col-span-2 bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4 flex flex-col justify-between">
+            <div className="lg:col-span-2 bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4 flex flex-col justify-between">
               <div>
-                <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
+                <div className="flex items-center justify-between border-b border-slate-150 pb-3 mb-4">
                   <h3 className="font-outfit text-base font-extrabold text-slate-900 flex items-center gap-2">
                     <Calendar className="h-5 w-5 text-[#468DFF]" />
                     Vencimientos del Mes en Curso y Próximo Mes
@@ -681,7 +681,7 @@ export default function TenantDashboard({ params }) {
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse text-left text-xs">
                     <thead>
-                      <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      <tr className="bg-slate-50 border-b border-slate-150 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                         <th className="px-4 py-3">Cliente / Razón Social</th>
                         <th className="px-4 py-3">Establecimiento</th>
                         <th className="px-4 py-3">Actividad</th>
@@ -747,9 +747,9 @@ export default function TenantDashboard({ params }) {
             </div>
 
             {/* Calendario Compacto Vinculado */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm flex flex-col justify-between space-y-4">
+            <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm flex flex-col justify-between space-y-4">
               <div>
-                <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
+                <div className="flex items-center justify-between border-b border-slate-150 pb-3 mb-4">
                   <h3 className="font-outfit text-base font-extrabold text-slate-900 flex items-center gap-2">
                     <Calendar className="h-5 w-5 text-[#468DFF]" />
                     Calendario Mensual
@@ -843,7 +843,7 @@ export default function TenantDashboard({ params }) {
           {/* Cards de Métricas */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             
-            <div className="bg-white border border-slate-200/85 rounded-xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
+            <div className="bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
               <div className="text-slate-400 group-hover:text-[#468DFF] transition-colors mb-3">
                 <Users className="h-6 w-6" />
               </div>
@@ -854,7 +854,7 @@ export default function TenantDashboard({ params }) {
               </span>
             </div>
 
-            <div className="bg-white border border-slate-200/85 rounded-xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
+            <div className="bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
               <div className="text-slate-400 group-hover:text-[#468DFF] transition-colors mb-3">
                 <ClipboardList className="h-6 w-6" />
               </div>
@@ -863,7 +863,7 @@ export default function TenantDashboard({ params }) {
               <span className="text-[10px] text-slate-400 block mt-2">Hallazgos registrados</span>
             </div>
 
-            <div className="bg-white border border-slate-200/85 rounded-xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
+            <div className="bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
               <div className="text-slate-400 group-hover:text-emerald-500 transition-colors mb-3">
                 <ShieldCheck className="h-6 w-6" />
               </div>
@@ -872,7 +872,7 @@ export default function TenantDashboard({ params }) {
               <span className="text-[10px] text-slate-400 block mt-2">Nivel de cumplimiento global</span>
             </div>
 
-            <div className="bg-white border border-slate-200/85 rounded-xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
+            <div className="bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
               <div className="text-slate-400 group-hover:text-amber-500 transition-colors mb-3">
                 <Calendar className="h-6 w-6" />
               </div>
@@ -887,7 +887,7 @@ export default function TenantDashboard({ params }) {
           <div className="grid md:grid-cols-3 gap-6">
             
             {/* Listado de accesos rápidos */}
-            <div className="md:col-span-2 bg-white border border-slate-200/80 rounded-2xl p-6 space-y-4 shadow-sm">
+            <div className="md:col-span-2 bg-white border border-slate-150 rounded-2xl p-6 space-y-4 shadow-sm">
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <Sparkles className="h-4.5 w-4.5 text-[#468DFF]" />
                 Accesos rápidos
@@ -895,7 +895,7 @@ export default function TenantDashboard({ params }) {
 
               <div className="grid md:grid-cols-2 gap-4">
                 
-                <a href={`/${tenantSlug}/empresas?new=true`} className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-[#468DFF]/5 hover:border-[#468DFF]/30 transition-all flex items-start gap-3 group">
+                <a href={`/${tenantSlug}/empresas?new=true`} className="p-4 rounded-xl border border-slate-150 bg-slate-50/50 hover:bg-[#468DFF]/5 hover:border-[#468DFF]/30 transition-all flex items-start gap-3 group">
                   <div className="p-2 rounded-lg bg-blue-500/10 text-[#468DFF] shrink-0 mt-0.5">
                     <PlusCircle className="h-4 w-4" />
                   </div>
@@ -905,7 +905,7 @@ export default function TenantDashboard({ params }) {
                   </div>
                 </a>
 
-                <a href={`/${tenantSlug}/programa`} className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-[#468DFF]/5 hover:border-[#468DFF]/30 transition-all flex items-start gap-3 group">
+                <a href={`/${tenantSlug}/programa`} className="p-4 rounded-xl border border-slate-150 bg-slate-50/50 hover:bg-[#468DFF]/5 hover:border-[#468DFF]/30 transition-all flex items-start gap-3 group">
                   <div className="p-2 rounded-lg bg-blue-500/10 text-[#468DFF] shrink-0 mt-0.5">
                     <Calendar className="h-4 w-4" />
                   </div>
@@ -915,7 +915,7 @@ export default function TenantDashboard({ params }) {
                   </div>
                 </a>
 
-                <a href={`/${tenantSlug}/correctivas?new=true`} className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-[#468DFF]/5 hover:border-[#468DFF]/30 transition-all flex items-start gap-3 group">
+                <a href={`/${tenantSlug}/correctivas?new=true`} className="p-4 rounded-xl border border-slate-150 bg-slate-50/50 hover:bg-[#468DFF]/5 hover:border-[#468DFF]/30 transition-all flex items-start gap-3 group">
                   <div className="p-2 rounded-lg bg-blue-500/10 text-[#468DFF] shrink-0 mt-0.5">
                     <ClipboardList className="h-4 w-4" />
                   </div>
@@ -925,7 +925,7 @@ export default function TenantDashboard({ params }) {
                   </div>
                 </a>
 
-                <a href={`/${tenantSlug}/profile`} className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-[#468DFF]/5 hover:border-[#468DFF]/30 transition-all flex items-start gap-3 group">
+                <a href={`/${tenantSlug}/profile`} className="p-4 rounded-xl border border-slate-150 bg-slate-50/50 hover:bg-[#468DFF]/5 hover:border-[#468DFF]/30 transition-all flex items-start gap-3 group">
                   <div className="p-2 rounded-lg bg-blue-500/10 text-[#468DFF] shrink-0 mt-0.5">
                     <User className="h-4 w-4" />
                   </div>
@@ -939,7 +939,7 @@ export default function TenantDashboard({ params }) {
             </div>
 
             {/* Sidebar info plan */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl p-6 flex flex-col justify-between space-y-6 shadow-sm">
+            <div className="bg-white border border-slate-150 rounded-2xl p-6 flex flex-col justify-between space-y-6 shadow-sm">
               <div className="space-y-4">
                 <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                   <Award className="h-4.5 w-4.5 text-[#468DFF]" />

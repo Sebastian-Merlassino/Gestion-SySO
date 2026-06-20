@@ -973,20 +973,20 @@ export default function ExtintoresPage({ params }) {
             
             {isFormOpen ? (
               // FORMULARIO DE ALTA Y EDICIÓN INLINE
-              <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden animate-fade-in-up">
-                <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5 bg-slate-50">
-                  <div className="flex items-center gap-3">
+              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden animate-fade-in">
+                <div className="px-6 py-4 bg-slate-50 border-b border-slate-150 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
                     <button 
                       onClick={handleExitForm}
-                      className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition-colors border border-slate-200 bg-white shadow-sm cursor-pointer"
+                      className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 cursor-pointer"
                     >
-                      <ArrowLeft className="h-4 w-4" />
+                      <ArrowLeft className="h-5 w-5" />
                     </button>
-                    <h3 className="font-outfit text-base font-extrabold text-slate-900">
+                    <span className="font-outfit text-base font-bold text-slate-900">
                       {editingId ? 'Editar Equipo Extintor' : 'Registrar Nuevo Extintor'}
-                    </h3>
+                    </span>
                   </div>
-                  <button onClick={handleExitForm} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                  <button onClick={handleExitForm} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200 cursor-pointer">
                     <X className="h-5 w-5" />
                   </button>
                 </div>
@@ -995,16 +995,19 @@ export default function ExtintoresPage({ params }) {
                   
                   {/* Seccion 1: Identificación y Ubicación */}
                   <div className="space-y-4">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block border-b border-slate-100 pb-1">Ubicación e Identificación</span>
+                    <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
+                      <Building className="h-4 w-4 text-[#468DFF]" />
+                      1. Ubicación e Identificación
+                    </h3>
                     
                     <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Cliente / Razón Social <span className="text-red-500">*</span></label>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-bold text-slate-600">Cliente / Razón Social *</label>
                         <select
                           required
                           value={empresaId}
                           onChange={(e) => { setEmpresaId(e.target.value); setEstablecimientoId(''); }}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
                         >
                           <option value="">Selecciona un cliente</option>
                           {empresas.map(emp => (
@@ -1013,14 +1016,14 @@ export default function ExtintoresPage({ params }) {
                         </select>
                       </div>
 
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Establecimiento <span className="text-red-500">*</span></label>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-bold text-slate-600">Establecimiento *</label>
                         <select
                           required
                           disabled={!empresaId}
                           value={establecimientoId}
                           onChange={(e) => setEstablecimientoId(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer disabled:opacity-50"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer disabled:bg-slate-100 disabled:text-slate-400"
                         >
                           <option value="">{!empresaId ? 'Selecciona un cliente primero' : 'Selecciona un establecimiento'}</option>
                           {filteredEstablecimientos.map(est => (
@@ -1031,49 +1034,49 @@ export default function ExtintoresPage({ params }) {
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Área / Sector</label>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-bold text-slate-600">Área / Sector</label>
                         <input
                           type="text"
                           placeholder="Ej: Cocina, Oficinas 1er Piso..."
                           value={areaSector}
                           onChange={(e) => setAreaSector(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
                         />
                       </div>
 
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Puesto / Operación / Referencia</label>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-bold text-slate-600">Puesto / Operación / Referencia</label>
                         <input
                           type="text"
                           placeholder="Ej: Cerca de salida de emergencia..."
                           value={puestoOperacionRef}
                           onChange={(e) => setPuestoOperacionRef(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
                         />
                       </div>
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">N° de Puesto</label>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-bold text-slate-600">N° de Puesto</label>
                         <input
                           type="text"
                           placeholder="Ej: P01"
                           value={nPuesto}
                           onChange={(e) => setNPuesto(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
                         />
                       </div>
 
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">N° de Extintor</label>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-bold text-slate-600">N° de Extintor</label>
                         <input
                           type="text"
                           placeholder="Ej: 004812"
                           value={nExtintor}
                           onChange={(e) => setNExtintor(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
                         />
                       </div>
                     </div>
@@ -1081,15 +1084,18 @@ export default function ExtintoresPage({ params }) {
 
                   {/* Seccion 2: Características Técnicas y Fechas */}
                   <div className="space-y-4">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block border-b border-slate-100 pb-1">Especificaciones Técnicas y Vencimientos</span>
+                    <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
+                      <Sliders className="h-4 w-4 text-[#468DFF]" />
+                      2. Especificaciones Técnicas y Vencimientos
+                    </h3>
                     
                     <div className="grid md:grid-cols-3 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Tipo de Extintor</label>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-bold text-slate-600">Tipo de Extintor</label>
                         <select
                           value={tipo}
                           onChange={(e) => setTipo(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
                         >
                           <option value="">Selecciona tipo</option>
                           {TIPO_EXTINTORES.map(t => (
@@ -1099,113 +1105,101 @@ export default function ExtintoresPage({ params }) {
                       </div>
 
                       {tipo === 'Otro' && (
-                        <div className="space-y-1 md:col-span-2">
-                          <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Especificar otro tipo <span className="text-red-500">*</span></label>
+                        <div className="flex flex-col gap-1.5 md:col-span-2">
+                          <label className="text-xs font-bold text-slate-600">Especificar otro tipo <span className="text-red-500">*</span></label>
                           <input
                             required
                             type="text"
                             placeholder="Ej: Halotrón, Arena..."
                             value={tipoOtro}
                             onChange={(e) => setTipoOtro(e.target.value)}
-                            className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
                           />
                         </div>
                       )}
 
-                      <div className={`space-y-1 ${tipo === 'Otro' ? 'md:col-span-3' : 'md:col-span-2'}`}>
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Capacidad [Kg] / [l]</label>
+                      <div className={`flex flex-col gap-1.5 ${tipo === 'Otro' ? 'md:col-span-3' : 'md:col-span-2'}`}>
+                        <label className="text-xs font-bold text-slate-600">Capacidad [Kg] / [l]</label>
                         <input
                           type="number"
                           placeholder="Ej: 5, 10, 6..."
                           value={capacidad}
                           onChange={(e) => setCapacidad(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
                         />
                       </div>
                     </div>
 
                     <div className="grid md:grid-cols-3 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Vencimiento de Recarga</label>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-bold text-slate-600">Vencimiento de Recarga</label>
                         <input
                           type="date"
                           value={vencRecarga}
                           onChange={(e) => setVencRecarga(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
                         />
                       </div>
 
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Vencimiento de PH (Prueba Hidráulica)</label>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-bold text-slate-600">Vencimiento P.H. (Prueba Hidráulica)</label>
                         <input
                           type="date"
                           value={vencPh}
                           onChange={(e) => setVencPh(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
                         />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Estado Estimado (Previsualización)</label>
-                        <div className="h-10 flex items-center px-4 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold">
-                          {(() => {
-                            const calc = getCalculatedEstado(vencRecarga, vencPh);
-                            if (!calc.text) return <span className="text-slate-400">Sin fechas asignadas</span>;
-                            return (
-                              <span className={`px-3 py-0.5 rounded-full border text-[10px] ${calc.color}`}>
-                                {calc.text}
-                              </span>
-                            );
-                          })()}
-                        </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Seccion 3: Chequeo Visual e Imagen */}
+                  {/* Seccion 3: Inspección y Estado Visual */}
                   <div className="space-y-4">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block border-b border-slate-100 pb-1">Chequeo e Inspección Visual</span>
-                    
+                    <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
+                      <Eye className="h-4 w-4 text-[#468DFF]" />
+                      3. Inspección y Estado Visual
+                    </h3>
+
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Presión</label>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-bold text-slate-600">Presión</label>
                         <select
                           value={presion}
                           onChange={(e) => setPresion(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
                         >
                           {PRESION_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
                       </div>
 
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Precinto</label>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-bold text-slate-600">Precinto</label>
                         <select
                           value={precinto}
                           onChange={(e) => setPrecinto(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
                         >
                           {CHECK_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
                       </div>
 
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Marbete</label>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-bold text-slate-600">Marbete</label>
                         <select
                           value={marbete}
                           onChange={(e) => setMarbete(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
                         >
                           {CHECK_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
                       </div>
 
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Partes Mecánicas</label>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-bold text-slate-600">Partes Mecánicas</label>
                         <select
                           value={partesMecanicas}
                           onChange={(e) => setPartesMecanicas(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
                         >
                           {CHECK_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
@@ -1213,34 +1207,34 @@ export default function ExtintoresPage({ params }) {
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Manguera / Boquilla</label>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-bold text-slate-600">Manguera / Boquilla</label>
                         <select
                           value={mangueraBoquilla}
                           onChange={(e) => setMangueraBoquilla(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
                         >
                           {CHECK_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
                       </div>
 
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Cilindro</label>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-bold text-slate-600">Cilindro</label>
                         <select
                           value={cilindro}
                           onChange={(e) => setCilindro(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
                         >
                           {CHECK_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
                       </div>
 
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Señalización</label>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-bold text-slate-600">Señalización</label>
                         <select
                           value={senalizacion}
                           onChange={(e) => setSenalizacion(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
                         >
                           {CHECK_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
@@ -1249,8 +1243,8 @@ export default function ExtintoresPage({ params }) {
 
                     {/* Foto / Evidencia de Control */}
                     <div className="space-y-2">
-                      <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Imagen / Evidencia Fotográfica</label>
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-slate-50 p-4 border border-slate-200 rounded-xl">
+                      <label className="text-xs font-bold text-slate-600">Imagen / Evidencia Fotográfica</label>
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-slate-50 p-4 border border-slate-150 rounded-xl">
                         {imagenPreview ? (
                           <div className="relative h-32 w-32 rounded-xl overflow-hidden border border-slate-200 bg-white shrink-0 shadow-inner">
                             <img src={imagenPreview} alt="Vista previa" className="h-full w-full object-cover" />
@@ -1274,7 +1268,7 @@ export default function ExtintoresPage({ params }) {
                         )}
 
                         <div className="flex flex-wrap items-center gap-3 flex-1">
-                          <label className="inline-flex items-center gap-2 py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer">
+                          <label className="inline-flex items-center gap-2 py-2 px-4 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer">
                             <Upload className="h-4 w-4 text-slate-500" />
                             Seleccionar imagen
                             <input
@@ -1285,7 +1279,7 @@ export default function ExtintoresPage({ params }) {
                             />
                           </label>
 
-                          <label className="inline-flex items-center gap-2 py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer">
+                          <label className="inline-flex items-center gap-2 py-2 px-4 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer">
                             <Camera className="h-4 w-4 text-slate-500" />
                             Sacar foto (Cámara)
                             <input
@@ -1307,45 +1301,48 @@ export default function ExtintoresPage({ params }) {
 
                   {/* Seccion 4: Fecha Control y Comentarios */}
                   <div className="space-y-4">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block border-b border-slate-100 pb-1">Control y Trazabilidad</span>
+                    <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-[#468DFF]" />
+                      4. Control y Trazabilidad
+                    </h3>
                     
                     <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Fecha de Control</label>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-bold text-slate-600">Fecha de Control</label>
                         <input
                           type="date"
                           value={fechaControl}
                           onChange={(e) => setFechaControl(e.target.value)}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF]"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
                         />
                       </div>
                     </div>
 
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Observaciones Generales</label>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-bold text-slate-600">Observaciones Generales</label>
                       <textarea
                         rows="3"
                         placeholder="Comentarios o aclaraciones sobre el estado del extintor..."
                         value={observaciones}
                         onChange={(e) => setObservaciones(e.target.value)}
-                        className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] resize-none"
+                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all resize-none"
                       />
                     </div>
                   </div>
 
                   {/* Botones del Formulario */}
-                  <div className="flex justify-between items-center pt-4 border-t border-slate-200">
+                  <div className="flex justify-between items-center pt-6 border-t border-slate-100">
                     <button
                       type="button"
                       onClick={handleExitForm}
-                      className="py-3 px-6 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer"
+                      className="px-5 py-2.5 border border-slate-300 text-slate-700 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer bg-white"
                     >
                       Salir
                     </button>
                     <button
                       type="submit"
                       disabled={saveLoading}
-                      className="py-3 px-8 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white font-bold text-xs transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/10 active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+                      className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
                     >
                       {saveLoading ? (
                         <>
@@ -1364,24 +1361,24 @@ export default function ExtintoresPage({ params }) {
               <div className="space-y-6">
                 
                 {/* Panel de Filtros y Búsqueda */}
-                <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4">
+                <div className="bg-white rounded-2xl border border-slate-150 p-4 shadow-sm space-y-4">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="relative flex-1">
-                      <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 pointer-events-none">
-                        <Search className="h-4 w-4" />
+                      <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 pointer-events-none">
+                        <Search className="h-4.5 w-4.5" />
                       </span>
                       <input
                         type="text"
                         placeholder="Buscar por N° de Extintor, N° de puesto, sector, referencia..."
                         value={filterText}
                         onChange={(e) => setFilterText(e.target.value)}
-                        className="w-full text-xs bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-slate-800 placeholder-slate-400 focus:outline-none transition-all"
+                        className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
                       />
                     </div>
                     
                     <button
                       onClick={() => setIsFormOpen(true)}
-                      className="py-3 px-5 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white font-bold text-xs transition-all duration-200 flex items-center justify-center gap-2 shadow-md shadow-blue-500/15 cursor-pointer shrink-0"
+                      className="px-4 py-2 bg-[#468DFF] text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0"
                     >
                       <Plus className="h-4 w-4" />
                       Incorporar Nuevo Extintor
@@ -1389,145 +1386,120 @@ export default function ExtintoresPage({ params }) {
                   </div>
 
                   {/* Selectores de Filtrado */}
-                  <div className="pt-2 border-t border-slate-100 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                        <Sliders className="h-3 w-3" />
+                  <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center gap-4 text-xs">
+                    <div className="flex items-center justify-between w-full sm:w-auto">
+                      <span className="font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider shrink-0">
+                        <Sliders className="h-3.5 w-3.5" />
                         Filtros de Búsqueda
                       </span>
-                      {(filterEmpresa || filterEstablecimiento || filterEstado || filterTipo || filterText) && (
-                        <button
-                          onClick={() => {
-                            setFilterEmpresa('');
-                            setFilterEstablecimiento('');
-                            setFilterEstado('');
-                            setFilterTipo('');
-                            setFilterText('');
-                          }}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-200 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer"
-                        >
-                          <X className="h-3 w-3" />
-                          Limpiar filtros
-                        </button>
-                      )}
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Filtrar por Cliente</label>
-                        <select
-                          value={filterEmpresa}
-                          onChange={(e) => {
-                            setFilterEmpresa(e.target.value);
-                            setFilterEstablecimiento('');
-                          }}
-                          className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 outline-none focus:border-[#468DFF] cursor-pointer"
-                        >
-                          <option value="">Todos los clientes</option>
-                          {empresas.map((emp) => (
-                            <option key={emp.id} value={emp.id}>{emp.razon_social}</option>
-                          ))}
-                        </select>
-                      </div>
 
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Filtrar por Establecimiento</label>
-                        <select
-                          disabled={!filterEmpresa}
-                          value={filterEstablecimiento}
-                          onChange={(e) => setFilterEstablecimiento(e.target.value)}
-                          className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 outline-none focus:border-[#468DFF] cursor-pointer disabled:opacity-50"
-                        >
-                          <option value="">
-                            {!filterEmpresa ? 'Selecciona un cliente primero' : 'Todos los establecimientos'}
-                          </option>
-                          {allEstablecimientos
-                            .filter(est => est.empresa_id === filterEmpresa)
-                            .map((est) => (
-                              <option key={est.id} value={est.id}>{est.denominacion}</option>
-                            ))
-                          }
-                        </select>
-                      </div>
+                    <select
+                      value={filterEmpresa}
+                      onChange={(e) => {
+                        setFilterEmpresa(e.target.value);
+                        setFilterEstablecimiento('');
+                      }}
+                      className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs cursor-pointer"
+                    >
+                      <option value="">Todos los clientes</option>
+                      {empresas.map((emp) => (
+                        <option key={emp.id} value={emp.id}>{emp.razon_social}</option>
+                      ))}
+                    </select>
 
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Filtrar por Estado</label>
-                        <select
-                          value={filterEstado}
-                          onChange={(e) => setFilterEstado(e.target.value)}
-                          className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 outline-none focus:border-[#468DFF] cursor-pointer"
-                        >
-                          <option value="">Todos los estados</option>
-                          <option value="Vigente">Vigente (Verde)</option>
-                          <option value="Vencido">Vencido (Rojo)</option>
-                        </select>
-                      </div>
+                    <select
+                      disabled={!filterEmpresa}
+                      value={filterEstablecimiento}
+                      onChange={(e) => setFilterEstablecimiento(e.target.value)}
+                      className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs cursor-pointer disabled:bg-slate-50 disabled:text-slate-400"
+                    >
+                      <option value="">
+                        {!filterEmpresa ? 'Selecciona un cliente primero' : 'Todos los establecimientos'}
+                      </option>
+                      {allEstablecimientos
+                        .filter(est => est.empresa_id === filterEmpresa)
+                        .map((est) => (
+                          <option key={est.id} value={est.id}>{est.denominacion}</option>
+                        ))
+                      }
+                    </select>
 
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Filtrar por Tipo</label>
-                        <select
-                          value={filterTipo}
-                          onChange={(e) => setFilterTipo(e.target.value)}
-                          className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 outline-none focus:border-[#468DFF] cursor-pointer"
-                        >
-                          <option value="">Todos los tipos</option>
-                          {TIPO_EXTINTORES.map((t) => (
-                            <option key={t} value={t}>{t}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
+                    <select
+                      value={filterEstado}
+                      onChange={(e) => setFilterEstado(e.target.value)}
+                      className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs cursor-pointer"
+                    >
+                      <option value="">Todos los estados</option>
+                      <option value="Vigente">Vigente (Verde)</option>
+                      <option value="Vencido">Vencido (Rojo)</option>
+                    </select>
+
+                    <select
+                      value={filterTipo}
+                      onChange={(e) => setFilterTipo(e.target.value)}
+                      className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs cursor-pointer"
+                    >
+                      <option value="">Todos los tipos</option>
+                      {TIPO_EXTINTORES.map((t) => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </select>
+
+                    {(filterEmpresa || filterEstablecimiento || filterEstado || filterTipo || filterText) && (
+                      <button
+                        onClick={() => {
+                          setFilterEmpresa('');
+                          setFilterEstablecimiento('');
+                          setFilterEstado('');
+                          setFilterTipo('');
+                          setFilterText('');
+                        }}
+                        className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg font-semibold cursor-pointer transition-all text-xs"
+                      >
+                        Limpiar filtros
+                      </button>
+                    )}
                   </div>
                 </div>
 
                 {/* Listado / Tabla */}
-                <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                  <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 320px)' }}>
+                <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden">
+                  <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
-                      <thead className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 shadow-sm">
-                        <tr className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                          <th className="py-4 px-6 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('cliente')}>
-                            <div className="flex items-center gap-1">
-                              Cliente / Establecimiento
-                              {sortField === 'cliente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
-                            </div>
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                          <th className="py-4 px-6 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('cliente')}>
+                            Cliente / Establecimiento
+                            {sortField === 'cliente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                           </th>
-                          <th className="py-4 px-4 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('n_extintor')}>
-                            <div className="flex items-center gap-1">
-                              N° Ext / Puesto / Sector
-                              {sortField === 'n_extintor' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
-                            </div>
+                          <th className="py-4 px-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('n_extintor')}>
+                            N° Ext / Puesto / Sector
+                            {sortField === 'n_extintor' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                           </th>
-                          <th className="py-4 px-4 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('tipo')}>
-                            <div className="flex items-center gap-1">
-                              Tipo / Capacidad
-                              {sortField === 'tipo' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
-                            </div>
+                          <th className="py-4 px-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('tipo')}>
+                            Tipo / Capacidad
+                            {sortField === 'tipo' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                           </th>
-                          <th className="py-4 px-4 text-center cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('venc_recarga')}>
-                            <div className="flex items-center justify-center gap-1">
-                              Venc. Recarga
-                              {sortField === 'venc_recarga' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
-                            </div>
+                          <th className="py-4 px-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('venc_recarga')}>
+                            Venc. Recarga
+                            {sortField === 'venc_recarga' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                           </th>
-                          <th className="py-4 px-4 text-center cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('venc_ph')}>
-                            <div className="flex items-center justify-center gap-1">
-                              Venc. P.H.
-                              {sortField === 'venc_ph' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
-                            </div>
+                          <th className="py-4 px-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('venc_ph')}>
+                            Venc. P.H.
+                            {sortField === 'venc_ph' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                           </th>
-                          <th className="py-4 px-4 text-center cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('estado')}>
-                            <div className="flex items-center justify-center gap-1">
-                              Estado
-                              {sortField === 'estado' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
-                            </div>
+                          <th className="py-4 px-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('estado')}>
+                            Estado
+                            {sortField === 'estado' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                           </th>
                           <th className="py-4 px-6 text-right">Acciones</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 text-xs font-normal text-slate-700">
+                      <tbody className="divide-y divide-slate-100 text-sm">
                         {sortedExtintores.length === 0 ? (
                           <tr>
-                            <td colSpan="7" className="py-12 px-6 text-center text-slate-400 italic">
+                            <td colSpan="7" className="text-center py-10 text-slate-400 font-medium bg-slate-50/20">
                               No se encontraron registros de extintores.
                             </td>
                           </tr>
@@ -1537,79 +1509,72 @@ export default function ExtintoresPage({ params }) {
                             const est = allEstablecimientos.find(t => t.id === ext.establecimiento_id);
                             const status = getCalculatedEstado(ext.venc_recarga, ext.venc_ph);
 
-                            // Checklist summary icons
-                            const cPresion = ext.presion === 'Ok' ? 'text-green-600' : ext.presion === 'N/A' ? 'text-slate-400' : 'text-red-500 font-bold';
-                            const cPrecinto = ext.precinto === 'Ok' ? 'text-green-600' : ext.precinto === 'N/A' ? 'text-slate-400' : 'text-red-500 font-bold';
-                            const cMarbete = ext.marbete === 'Ok' ? 'text-green-600' : ext.marbete === 'N/A' ? 'text-slate-400' : 'text-red-500 font-bold';
-                            const cMecanica = ext.partes_mecanicas === 'Ok' ? 'text-green-600' : ext.partes_mecanicas === 'N/A' ? 'text-slate-400' : 'text-red-500 font-bold';
-                            const cManguera = ext.manguera_boquilla === 'Ok' ? 'text-green-600' : ext.manguera_boquilla === 'N/A' ? 'text-slate-400' : 'text-red-500 font-bold';
-                            const cCilindro = ext.cilindro === 'Ok' ? 'text-green-600' : ext.cilindro === 'N/A' ? 'text-slate-400' : 'text-red-500 font-bold';
-                            const cSenal = ext.senalizacion === 'Ok' ? 'text-green-600' : ext.senalizacion === 'N/A' ? 'text-slate-400' : 'text-red-500 font-bold';
-
                             return (
                               <tr 
                                 key={ext.id} 
                                 onClick={() => handleEditClick(ext)}
-                                className="hover:bg-slate-50 transition-colors cursor-pointer"
+                                className="hover:bg-slate-50/50 cursor-pointer"
                               >
                                 <td className="py-4 px-6">
-                                  <span className="font-bold text-slate-800 block">{emp?.razon_social || 'Desconocido'}</span>
-                                  <span className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
+                                  <span className="font-semibold text-slate-900 block">{emp?.razon_social || 'Desconocido'}</span>
+                                  <span className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5 font-medium">
                                     <MapPin className="h-3 w-3 shrink-0" />
                                     {est?.denominacion || 'Único'}
                                   </span>
                                 </td>
                                 <td className="py-4 px-4">
-                                  <span className="font-bold text-slate-800 block">N° {ext.n_extintor || 'S/N'}</span>
-                                  <span className="text-[10px] text-slate-500 block">Puesto: {ext.n_puesto || 'S/D'}</span>
-                                  <span className="text-[10px] text-slate-400 block truncate max-w-[150px]">{ext.area_sector || 'S/D'}</span>
+                                  <span className="font-semibold text-slate-900 block">N° {ext.n_extintor || 'S/N'}</span>
+                                  <span className="text-[10px] text-slate-500 font-medium block">Puesto: {ext.n_puesto || 'S/D'}</span>
+                                  <span className="text-[10px] text-slate-400 block truncate max-w-[150px] font-medium">{ext.area_sector || 'S/D'}</span>
                                 </td>
                                 <td className="py-4 px-4">
-                                  <span className="font-semibold text-slate-800 block max-w-[150px] truncate" title={ext.tipo}>{ext.tipo || 'S/D'}</span>
-                                  <span className="text-[10px] text-slate-400 block mt-0.5">{ext.capacidad ? `${ext.capacidad} Kg / l` : 'S/D'}</span>
+                                  <span className="font-medium text-slate-600 block max-w-[150px] truncate" title={ext.tipo}>{ext.tipo || 'S/D'}</span>
+                                  <span className="text-[10px] text-slate-400 block mt-0.5 font-medium">{ext.capacidad ? `${ext.capacidad} Kg / l` : 'S/D'}</span>
                                 </td>
-                                <td className="py-4 px-4 text-center font-mono text-[10px] text-slate-600">
+                                <td className="py-4 px-4 text-center font-mono text-[10px] text-slate-500 font-medium">
                                   {ext.venc_recarga ? formatDate(ext.venc_recarga) : 'S/D'}
                                 </td>
-                                <td className="py-4 px-4 text-center font-mono text-[10px] text-slate-600">
+                                <td className="py-4 px-4 text-center font-mono text-[10px] text-slate-500 font-medium">
                                   {ext.venc_ph ? formatDate(ext.venc_ph) : 'S/D'}
                                 </td>
                                 <td className="py-4 px-4 text-center">
                                   {status.text ? (
-                                    <span className={`px-2.5 py-0.5 rounded-full border text-[10px] font-bold inline-block ${status.color}`}>
+                                    <span className={`px-2.5 py-0.5 rounded-md border text-[10px] font-bold inline-block uppercase tracking-wider ${status.color}`}>
                                       {status.text}
                                     </span>
                                   ) : (
                                     <span className="text-slate-400 italic text-[10px]">S/Fechas</span>
                                   )}
                                 </td>
-                                <td className="py-4 px-6 text-right space-x-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                                  {ext.imagen_preview_url && (
-                                    <a 
-                                      href={ext.imagen_preview_url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      title="Ver Foto"
-                                      className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-700 transition-colors inline-block cursor-pointer"
-                                      onClick={(e) => e.stopPropagation()}
+                                <td className="py-4 px-6 text-right" onClick={(e) => e.stopPropagation()}>
+                                  <div className="flex items-center justify-end gap-2">
+                                    {ext.imagen_preview_url && (
+                                      <a 
+                                        href={ext.imagen_preview_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        title="Ver Foto"
+                                        className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer inline-flex items-center"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        <Eye className="h-4.5 w-4.5" />
+                                      </a>
+                                    )}
+                                    <button
+                                      onClick={() => handleEditClick(ext)}
+                                      title="Editar"
+                                      className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer"
                                     >
-                                      <Eye className="h-3.5 w-3.5" />
-                                    </a>
-                                  )}
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); handleEditClick(ext); }}
-                                    title="Editar"
-                                    className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 hover:text-blue-600 transition-colors inline-block cursor-pointer"
-                                  >
-                                    <Edit className="h-3.5 w-3.5" />
-                                  </button>
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); handleDeleteClick(ext.id); }}
-                                    title="Eliminar"
-                                    className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 hover:text-red-600 transition-colors inline-block cursor-pointer"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </button>
+                                      <Edit className="h-4.5 w-4.5" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteClick(ext.id)}
+                                      title="Eliminar"
+                                      className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer"
+                                    >
+                                      <Trash2 className="h-4.5 w-4.5" />
+                                    </button>
+                                  </div>
                                 </td>
                               </tr>
                             );
@@ -1627,8 +1592,8 @@ export default function ExtintoresPage({ params }) {
 
       {/* Alertas y Confirmaciones */}
       {modalAlert.show && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xl max-w-sm w-full space-y-4 text-center">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
             <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500">
               <AlertTriangle className="h-6 w-6" />
             </div>
@@ -1640,7 +1605,7 @@ export default function ExtintoresPage({ params }) {
               <button
                 type="button"
                 onClick={closeAlert}
-                className="flex-1 py-2 px-4 rounded-xl border border-slate-300 text-slate-700 font-bold text-xs hover:bg-slate-50 transition-all cursor-pointer bg-white"
+                className="flex-1 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer"
               >
                 Cancelar
               </button>
@@ -1648,7 +1613,7 @@ export default function ExtintoresPage({ params }) {
                 <button
                   type="button"
                   onClick={modalAlert.onConfirm}
-                  className="flex-1 py-2 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md shadow-red-500/10 cursor-pointer"
+                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer"
                 >
                   Confirmar
                 </button>
