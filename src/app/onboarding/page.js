@@ -129,74 +129,102 @@ export default function OnboardingPage() {
       setIsDevMode(true);
     }
 
-    // Obtener sesión y datos del perfil del usuario
-    const fetchUser = async () => {
-      try {
-        const cachedEmail = localStorage.getItem('onboarding_email') || '';
-        const cachedName = localStorage.getItem('onboarding_full_name') || '';
-        if (cachedEmail) setEmail(cachedEmail);
-        if (cachedName) setFullName(cachedName);
+    const cachedEmail = localStorage.getItem('onboarding_email') || '';
+    const cachedName = localStorage.getItem('onboarding_full_name') || '';
+    if (cachedEmail) setEmail(cachedEmail);
+    if (cachedName) setFullName(cachedName);
 
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user && !isDev) {
-          window.location.href = '/login';
-          return;
+    let redirectTimeout = null;
+
+    const checkSession = async (user) => {
+      if (user) {
+        if (redirectTimeout) clearTimeout(redirectTimeout);
+        setCurrentUser(user);
+        const emailVal = user.email || cachedEmail || '';
+        setEmail(emailVal);
+
+        let nameVal = '';
+        // Consultar el perfil de Supabase para obtener el nombre cargado
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', user.id)
+          .single();
+
+        if (profile?.full_name) {
+          nameVal = profile.full_name;
+          setFullName(nameVal);
+        } else {
+          nameVal = user.user_metadata?.full_name || cachedName || '';
+          setFullName(nameVal);
         }
 
-        if (user) {
-          setCurrentUser(user);
-          const emailVal = user.email || cachedEmail || '';
-          setEmail(emailVal);
-
-          let nameVal = '';
-          // Consultar el perfil de Supabase para obtener el nombre cargado
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('full_name')
-            .eq('id', user.id)
-            .single();
-
-          if (profile?.full_name) {
-            nameVal = profile.full_name;
-            setFullName(nameVal);
-          } else {
-            nameVal = user.user_metadata?.full_name || cachedName || '';
-            setFullName(nameVal);
-          }
-
-          setInitialValues({
-            fullName: nameVal,
-            email: emailVal,
-            phone: '',
-            cuit: '',
-            provincia: '',
-            partido: '',
-            localidad: '',
-            birthDate: '',
-            companyName: '',
-            website: '',
-            linkedin: '',
-            instagram: '',
-            facebook: '',
-            tiktok: '',
-            youtube: '',
-            matriculas: [
-              {
-                institucion: '',
-                numero: '',
-                vencimiento: '',
-                fotoFrentePreview: '',
-                fotoDorsoPreview: ''
-              }
-            ],
-            planId: 'free'
-          });
-        }
-      } catch (e) {
-        console.error('Error al recuperar datos del perfil:', e);
+        setInitialValues({
+          fullName: nameVal,
+          email: emailVal,
+          phone: '',
+          cuit: '',
+          provincia: '',
+          partido: '',
+          localidad: '',
+          birthDate: '',
+          companyName: '',
+          website: '',
+          linkedin: '',
+          instagram: '',
+          facebook: '',
+          tiktok: '',
+          youtube: '',
+          matriculas: [
+            {
+              institucion: '',
+              numero: '',
+              vencimiento: '',
+              fotoFrentePreview: '',
+              fotoDorsoPreview: ''
+            }
+          ],
+          planId: 'free'
+        });
       }
     };
-    fetchUser();
+
+    // 1. Verificar sesión inmediata
+    const initFetch = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        checkSession(user);
+      } else {
+        // Si no hay usuario inmediato pero hay un token en la URL, damos tiempo para procesarlo
+        const hasHash = window.location.hash && window.location.hash.includes('access_token');
+        const hasCode = window.location.search && (window.location.search.includes('code=') || window.location.search.includes('token_hash='));
+        
+        const delay = (hasHash || hasCode) ? 2000 : 800; // Si no hay tokens, un delay menor para redirigir rápido
+        
+        redirectTimeout = setTimeout(async () => {
+          const { data: { user: delayedUser } } = await supabase.auth.getUser();
+          if (!delayedUser && !isDev) {
+            window.location.href = '/login';
+          } else if (delayedUser) {
+            checkSession(delayedUser);
+          }
+        }, delay);
+      }
+    };
+
+    // 2. Suscribirse a cambios de autenticación (esto captura cuando Supabase procesa el hash del email)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        checkSession(session.user);
+      }
+    });
+
+    initFetch();
+
+    return () => {
+      if (redirectTimeout) clearTimeout(redirectTimeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Manejar cambio de provincia para cargar localidades dinámicamente desde Supabase

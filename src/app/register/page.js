@@ -71,7 +71,7 @@ export default function RegisterPage() {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/login`,
+          emailRedirectTo: `${window.location.origin}/onboarding`,
           data: {
             full_name: fullName,
             role: 'owner', // El primer usuario registrado es el dueño del workspace
