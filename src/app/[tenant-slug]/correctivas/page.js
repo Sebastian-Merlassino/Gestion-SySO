@@ -241,13 +241,62 @@ export default function AccionesCorrectivasPage({ params }) {
       if (pErr) throw pErr;
       setProfile(prof);
 
-      // 2. Tenant
+      // 2. Tenant por slug de URL
       const { data: ten, error: tErr } = await supabase
         .from('tenants')
         .select('*')
-        .eq('id', prof.tenant_id)
+        .eq('slug', tenantSlug)
         .single();
-      if (tErr) throw tErr;
+
+      if (tErr || !ten) {
+        if (prof.tenant_id) {
+          const { data: homeTen } = await supabase
+            .from('tenants')
+            .select('slug')
+            .eq('id', prof.tenant_id)
+            .single();
+          if (homeTen) {
+            window.location.href = `/${homeTen.slug}/correctivas`;
+            return;
+          }
+        }
+        window.location.href = '/login';
+        return;
+      }
+
+      // Verificar acceso: ¿Es el owner o es miembro activo con acceso?
+      let hasAccess = false;
+      if (prof.tenant_id === ten.id) {
+        hasAccess = true;
+      } else {
+        const { data: member } = await supabase
+          .from('miembros_equipo')
+          .select('id, tiene_acceso')
+          .eq('tenant_id', ten.id)
+          .eq('profile_id', user.id)
+          .maybeSingle();
+
+        if (member && member.tiene_acceso) {
+          hasAccess = true;
+        }
+      }
+
+      if (!hasAccess) {
+        if (prof.tenant_id) {
+          const { data: homeTen } = await supabase
+            .from('tenants')
+            .select('slug')
+            .eq('id', prof.tenant_id)
+            .single();
+          if (homeTen) {
+            window.location.href = `/${homeTen.slug}/correctivas`;
+            return;
+          }
+        }
+        window.location.href = '/login';
+        return;
+      }
+
       setTenant(ten);
 
       // 3. Clientes

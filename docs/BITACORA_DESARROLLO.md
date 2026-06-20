@@ -2,6 +2,53 @@
 
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
+## [2026-06-19] Mejoras de Seguridad de Acceso, Onboarding, Multitenant Flexible y Eliminación de Cuentas
+
+### Resumen de Cambios
+- **Registro Seguro y Confirmación de Correo**: Modificada la vista de registro (`register/page.js`) para evitar que redireccione directamente al onboarding tras el registro. Ahora expone una pantalla de éxito invitando al usuario a confirmar su dirección de correo electrónico mediante el enlace enviado por Supabase.
+- **Seguridad en Onboarding**: Protegido el enrutamiento de onboarding (`onboarding/page.js`) para validar la existencia de una sesión de Supabase autenticada, redirigiendo de inmediato al login si el usuario no tiene sesión activa.
+- **Acceso Multi-tenant Flexible (Slug-based)**:
+  - Creado un modelo RLS flexible que permite que un mismo correo electrónico (usuario registrado en `auth.users`) sea propietario (`owner`) de su propio tenant e invitado con acceso activo en otro tenant (`miembros_equipo.tiene_acceso = true`), solucionando el problema de duplicación de correos.
+  - Modificado el route handler `api/equipo/route.js` para reutilizar cuentas de usuario existentes al invitar nuevos miembros en lugar de lanzar errores de duplicación.
+  - Actualizadas todas las vistas del dashboard operativo (`dashboard`, `empresas`, `equipo`, `programa`, `capacitacion`, `correctivas`, `extintores`, `profile`) para obtener y autorizar el acceso según el slug de URL de manera estricta, en lugar de mapear ciegamente la propiedad `tenant_id` del perfil de usuario.
+- **Eliminación Definitiva de Cuenta**:
+  - Implementada una sección destructiva de "Eliminar Cuenta" en la vista de perfil de usuario (`profile/page.js`), visible únicamente para usuarios con rol `owner`.
+  - La eliminación requiere re-autenticación de contraseña y confirmación explícita escribiendo "ELIMINAR MI CUENTA". Al confirmar, llama a la función SQL segura `public.delete_own_account()` que borra la cuenta en `auth.users` y en cascada (`ON DELETE CASCADE`) elimina el tenant y toda la información asociada del sistema.
+- **Geografía y Usabilidad de Perfil**:
+  - El campo "Localidad / Barrio" se redefinió como opcional tanto en el onboarding como en el perfil de usuario.
+  - Se reordenó la pantalla de onboarding para separar visualmente la Firma Digitalizada (Sección 3) de la Identidad de Marca (Sección 4), agilizando los flujos de carga.
+
+### Decisiones Clave
+- **RLS Dinámico sobre profile.tenant_id**: El esquema clásico multi-tenant limitaba a un usuario a un único tenant. Al migrar a políticas basadas en `public.user_has_tenant_access(tenant_id)` que valida membresías activas en `miembros_equipo` o rol `owner` nativo, se habilitó la flexibilidad multi-tenant conservando la seguridad estricta a nivel base de datos.
+- **Seguridad Destructiva en Backend (RPC con SECURITY DEFINER)**: Para permitir al usuario propietario eliminar su propia cuenta de `auth` sin exponer credenciales de bypass, se creó una función RPC en PostgreSQL con permisos definidores que remueve la fila del usuario autenticado en `auth.users` de manera limpia y bajo estrictos controles referenciales.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `supabase`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260628000000_multi_tenant_access.sql`
+- `[MODIFY] src/app/register/page.js`
+- `[MODIFY] src/app/onboarding/page.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/api/equipo/route.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de Next.js (`npm run build`) completada con éxito para el 100% de las rutas dinámicas y estáticas, asegurando que no haya errores de tipo o sintaxis Webpack.
+- Aplicación exitosa de la migración de base de datos Postgres incremental.
+
+---
+
 ## [2026-06-19] Responsable Personalizado ("Otro...") en Programa de Gestión Anual
 
 ### Resumen de Cambios

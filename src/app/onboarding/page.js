@@ -124,7 +124,8 @@ export default function OnboardingPage() {
     // Verificar si las variables de Supabase reales están configuradas
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('placeholder')) {
+    const isDev = !supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('placeholder');
+    if (isDev) {
       setIsDevMode(true);
     }
 
@@ -137,6 +138,11 @@ export default function OnboardingPage() {
         if (cachedName) setFullName(cachedName);
 
         const { data: { user } } = await supabase.auth.getUser();
+        if (!user && !isDev) {
+          window.location.href = '/login';
+          return;
+        }
+
         if (user) {
           setCurrentUser(user);
           const emailVal = user.email || cachedEmail || '';
@@ -389,8 +395,8 @@ export default function OnboardingPage() {
     setError(null);
     setLoading(true);
 
-    // Validar únicamente campos obligatorios (incluyendo Fecha de Nacimiento)
-    if (!fullName || !email || !phone || !cuit || !provincia || !partido || !localidad || !birthDate) {
+    // Validar únicamente campos obligatorios (localidad es opcional)
+    if (!fullName || !email || !phone || !cuit || !provincia || !partido || !birthDate) {
       triggerToast('Por favor completa todos los campos obligatorios (*).', 'error');
       setLoading(false);
       return;
@@ -648,8 +654,8 @@ export default function OnboardingPage() {
 
   // Guardar solo campos obligatorios mínimos y redirigir
   const handleSaveOnlyRequired = async () => {
-    // Validar únicamente campos obligatorios
-    if (!fullName || !email || !phone || !cuit || !provincia || !partido || !localidad || !birthDate) {
+    // Validar únicamente campos obligatorios (localidad es opcional)
+    if (!fullName || !email || !phone || !cuit || !provincia || !partido || !birthDate) {
       triggerToast('Por favor completa todos los campos obligatorios (*) antes de salir.', 'error');
       return;
     }
@@ -1024,17 +1030,16 @@ export default function OnboardingPage() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                  Localidad <span className="text-[#468DFF]">*</span>
+                  Localidad (Opcional)
                 </label>
                 <select
-                  required
                   disabled={!partido}
                   value={localidad}
                   onChange={(e) => setLocalidad(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all disabled:opacity-50"
                 >
-                  <option value="" disabled>
-                    {!partido ? 'Selecciona un partido primero' : 'Selecciona una localidad'}
+                  <option value="">
+                    {!partido ? 'Selecciona un partido primero' : 'Selecciona una localidad (opcional)'}
                   </option>
                   {localidadesList.map((loc) => (
                     <option key={loc} value={loc}>{loc}</option>
@@ -1196,58 +1201,66 @@ export default function OnboardingPage() {
             )}
           </div>
 
-          {/* SECCIÓN 3: FIRMA DIGITAL & IDENTIDAD EMPRESA (OPCIONAL) */}
+          {/* SECCIÓN 3: FIRMA DIGITALIZADA (OPCIONAL) */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
+            <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
+              <Upload className="text-[#468DFF] h-5 w-5" />
+              Firma digitalizada (opcional)
+            </h3>
+            <p className="text-xs text-slate-500 leading-relaxed font-medium">
+              Subí tu firma digitalizada en formato JPG o PNG. Esta firma se utilizará para firmar automáticamente los reportes y documentos generados en la plataforma.
+            </p>
+            <div className="max-w-md">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                Firma Digitalizada (para reportes en PDF)
+              </label>
+              <div className="relative border border-dashed border-slate-300 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-50 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
+                {fotoFirmaPreview ? (
+                  <div className="relative w-full h-full">
+                    <img src={fotoFirmaPreview} alt="Firma" className="w-full h-full object-contain" />
+                    <button
+                      type="button"
+                      onClick={() => { setFotoFirma(null); setFotoFirmaPreview(''); }}
+                      className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
+                    >
+                      Remover
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <Upload className="h-5 w-5 text-slate-400 group-hover:text-[#468DFF] mb-1" />
+                    <span className="text-[11px] text-slate-500 font-medium">Subir firma escaneada (JPG/PNG)</span>
+                    <input
+                      type="file"
+                      accept=".png, .jpg, .jpeg"
+                      onChange={(e) => handleImageChange(e, setFotoFirma, setFotoFirmaPreview)}
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                    />
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* SECCIÓN 4: IDENTIDAD DE MARCA (OPCIONAL) */}
           <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
             <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
               <Globe className="text-[#468DFF] h-5 w-5" />
-              Identidad de marca y firma (opcional)
+              Identidad de marca de la consultora (opcional)
             </h3>
 
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-600 block mb-1">Nombre Comercial de la Consultora</label>
-                <input
-                  type="text"
-                  placeholder="Ej: Consultora Integral de SySO"
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all text-xs"
-                />
-                <p className="text-[10px] text-slate-400 font-medium mt-1 leading-relaxed">
-                  Generará tu espacio de trabajo en: <strong>app.gestionsyso.com/{companySlug}</strong>
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  Firma Digitalizada (para reportes en PDF)
-                </label>
-                <div className="relative border border-dashed border-slate-300 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-50 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
-                  {fotoFirmaPreview ? (
-                    <div className="relative w-full h-full">
-                      <img src={fotoFirmaPreview} alt="Firma" className="w-full h-full object-contain" />
-                      <button
-                        type="button"
-                        onClick={() => { setFotoFirma(null); setFotoFirmaPreview(''); }}
-                        className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
-                      >
-                        Remover
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <Upload className="h-5 w-5 text-slate-400 group-hover:text-[#468DFF] mb-1" />
-                      <span className="text-[11px] text-slate-500 font-medium">Subir firma escaneada (JPG/PNG)</span>
-                      <input
-                        type="file"
-                        accept=".png, .jpg, .jpeg"
-                        onChange={(e) => handleImageChange(e, setFotoFirma, setFotoFirmaPreview)}
-                        className="absolute inset-0 opacity-0 cursor-pointer"
-                      />
-                    </>
-                  )}
-                </div>
-              </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-600 block mb-1">Nombre Comercial de la Consultora</label>
+              <input
+                type="text"
+                placeholder="Ej: Consultora Integral de SySO"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all text-xs"
+              />
+              <p className="text-[10px] text-slate-400 font-medium mt-1 leading-relaxed">
+                Generará tu espacio de trabajo en: <strong>app.gestionsyso.com/{companySlug}</strong>
+              </p>
             </div>
 
             {/* Redes Sociales y Sitio Web */}
@@ -1383,7 +1396,7 @@ export default function OnboardingPage() {
             </div>
           </div>
 
-          {/* SECCIÓN 3: TIPO DE PLAN */}
+          {/* SECCIÓN 5: TIPO DE PLAN */}
           <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
             <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
               <Award className="text-[#468DFF] h-5 w-5" />

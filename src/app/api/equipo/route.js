@@ -71,39 +71,54 @@ export async function POST(request) {
       }
     });
 
-    // Create user in auth.users
-    const { data: newUserData, error: createError } = await adminClient.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true, // Auto-confirm email to bypass confirmation email flow
-      user_metadata: {
-        full_name,
-        role: role || 'inspector'
-      }
-    });
-
-    if (createError) {
-      return NextResponse.json({ error: createError.message }, { status: 400 });
-    }
-
-    const newUser = newUserData.user;
-
-    // Update the profile manually to link to the same tenant & set role
-    const { error: updateProfileError } = await adminClient
+    // Check if user already exists in profiles
+    const { data: existingProfile } = await adminClient
       .from('profiles')
-      .update({ 
-        tenant_id: profile.tenant_id,
-        role: role || 'inspector'
-      })
-      .eq('id', newUser.id);
+      .select('id')
+      .eq('email', email)
+      .maybeSingle();
 
-    if (updateProfileError) {
-      // Cleanup the user if profile linking failed
-      await adminClient.auth.admin.deleteUser(newUser.id);
-      return NextResponse.json({ error: `Error enlazando perfil: ${updateProfileError.message}` }, { status: 400 });
+    let userId = '';
+
+    if (existingProfile) {
+      userId = existingProfile.id;
+    } else {
+      // Create user in auth.users
+      const { data: newUserData, error: createError } = await adminClient.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true, // Auto-confirm email to bypass confirmation email flow
+        user_metadata: {
+          full_name,
+          role: role || 'inspector'
+        }
+      });
+
+      if (createError) {
+        return NextResponse.json({ error: createError.message }, { status: 400 });
+      }
+
+      userId = newUserData.user.id;
     }
 
-    return NextResponse.json({ success: true, userId: newUser.id });
+    // Update the profile manually to link to the same tenant & set role ONLY IF it's a new user
+    if (!existingProfile) {
+      const { error: updateProfileError } = await adminClient
+        .from('profiles')
+        .update({ 
+          tenant_id: profile.tenant_id,
+          role: role || 'inspector'
+        })
+        .eq('id', userId);
+
+      if (updateProfileError) {
+        // Cleanup the user if profile linking failed
+        await adminClient.auth.admin.deleteUser(userId);
+        return NextResponse.json({ error: `Error enlazando perfil: ${updateProfileError.message}` }, { status: 400 });
+      }
+    }
+
+    return NextResponse.json({ success: true, userId });
 
   } catch (err) {
     console.error('Error in API equipo POST:', err);

@@ -152,6 +152,11 @@ const [partidosList, setPartidosList] = useState([]);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // Eliminación de cuenta
+  const [deletePassword, setDeletePassword] = useState('');
+  const [showDeletePassword, setShowDeletePassword] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
   // Campos Opcionales - Sitio Web y Redes Sociales de la Empresa
   const [website, setWebsite] = useState('');
   const [linkedin, setLinkedin] = useState('');
@@ -300,81 +305,101 @@ const [partidosList, setPartidosList] = useState([]);
         }
         setMatriculas(initialMatriculas);
 
-        // Cargar Tenant
-        if (profile.tenant_id) {
-          const { data: tenant, error: tErr } = await supabase
-            .from('tenants')
-            .select('*')
-            .eq('id', profile.tenant_id)
-            .single();
+        // Cargar Tenant por slug de URL
+        const { data: tenant, error: tErr } = await supabase
+          .from('tenants')
+          .select('*')
+          .eq('slug', tenantSlug)
+          .single();
 
-          if (tErr) throw tErr;
-          setTenantData(tenant);
-
-          // Pre-cargar inputs de tenant
-          setCompanyName(tenant.name || '');
-          setSelectedPlan(tenant.plan_id || 'free');
-          setLogo1Preview(tenant.logo_1_url || '');
-          setLogo2Preview(tenant.logo_2_url || '');
-          setWebsite(tenant.website || '');
-          setLinkedin(tenant.social_linkedin || '');
-          setInstagram(tenant.social_instagram || '');
-          setFacebook(tenant.social_facebook || '');
-          setTiktok(tenant.social_tiktok || '');
-          setYoutube(tenant.social_youtube || '');
-
-          // Guardar valores iniciales para dirty checking
-          setInitialValues({
-            fullName: profile.full_name || '',
-            phone: profile.phone || '',
-            cuit: profile.cuit || '',
-            provincia: profile.provincia || '',
-            partido: profile.departamento_partido || '',
-            localidad: profile.localidad || '',
-            birthDate: profile.birth_date || '',
-            matriculas: initialMatriculas.map(m => ({
-              institucion: m.institucion,
-              numero: m.numero,
-              vencimiento: m.vencimiento,
-              fotoFrentePreview: m.fotoFrentePreview,
-              fotoDorsoPreview: m.fotoDorsoPreview
-            })),
-            companyName: tenant.name || '',
-            website: tenant.website || '',
-            linkedin: tenant.social_linkedin || '',
-            instagram: tenant.social_instagram || '',
-            facebook: tenant.social_facebook || '',
-            tiktok: tenant.social_tiktok || '',
-            youtube: tenant.social_youtube || '',
-            planId: tenant.plan_id || 'free'
-          });
-        } else {
-          // Si no tiene tenant todavía, guardar iniciales mínimos
-          setInitialValues({
-            fullName: profile.full_name || '',
-            phone: profile.phone || '',
-            cuit: profile.cuit || '',
-            provincia: profile.provincia || '',
-            partido: profile.departamento_partido || '',
-            localidad: profile.localidad || '',
-            birthDate: profile.birth_date || '',
-            matriculas: initialMatriculas.map(m => ({
-              institucion: m.institucion,
-              numero: m.numero,
-              vencimiento: m.vencimiento,
-              fotoFrentePreview: m.fotoFrentePreview,
-              fotoDorsoPreview: m.fotoDorsoPreview
-            })),
-            companyName: '',
-            website: '',
-            linkedin: '',
-            instagram: '',
-            facebook: '',
-            tiktok: '',
-            youtube: '',
-            planId: 'free'
-          });
+        if (tErr || !tenant) {
+          if (profile.tenant_id) {
+            const { data: homeTen } = await supabase
+              .from('tenants')
+              .select('slug')
+              .eq('id', profile.tenant_id)
+              .single();
+            if (homeTen) {
+              window.location.href = `/${homeTen.slug}/profile`;
+              return;
+            }
+          }
+          window.location.href = '/login';
+          return;
         }
+
+        // Verificar acceso: ¿Es el owner o es miembro activo con acceso?
+        let hasAccess = false;
+        if (profile.tenant_id === tenant.id) {
+          hasAccess = true;
+        } else {
+          const { data: member } = await supabase
+            .from('miembros_equipo')
+            .select('id, tiene_acceso')
+            .eq('tenant_id', tenant.id)
+            .eq('profile_id', user.id)
+            .maybeSingle();
+
+          if (member && member.tiene_acceso) {
+            hasAccess = true;
+          }
+        }
+
+        if (!hasAccess) {
+          if (profile.tenant_id) {
+            const { data: homeTen } = await supabase
+              .from('tenants')
+              .select('slug')
+              .eq('id', profile.tenant_id)
+              .single();
+            if (homeTen) {
+              window.location.href = `/${homeTen.slug}/profile`;
+              return;
+            }
+          }
+          window.location.href = '/login';
+          return;
+        }
+
+        setTenantData(tenant);
+
+        // Pre-cargar inputs de tenant
+        setCompanyName(tenant.name || '');
+        setSelectedPlan(tenant.plan_id || 'free');
+        setLogo1Preview(tenant.logo_1_url || '');
+        setLogo2Preview(tenant.logo_2_url || '');
+        setWebsite(tenant.website || '');
+        setLinkedin(tenant.social_linkedin || '');
+        setInstagram(tenant.social_instagram || '');
+        setFacebook(tenant.social_facebook || '');
+        setTiktok(tenant.social_tiktok || '');
+        setYoutube(tenant.social_youtube || '');
+
+        // Guardar valores iniciales para dirty checking
+        setInitialValues({
+          fullName: profile.full_name || '',
+          phone: profile.phone || '',
+          cuit: profile.cuit || '',
+          provincia: profile.provincia || '',
+          partido: profile.departamento_partido || '',
+          localidad: profile.localidad || '',
+          birthDate: profile.birth_date || '',
+          matriculas: initialMatriculas.map(m => ({
+            institucion: m.institucion,
+            numero: m.numero,
+            vencimiento: m.vencimiento,
+            fotoFrentePreview: m.fotoFrentePreview,
+            fotoDorsoPreview: m.fotoDorsoPreview
+          })),
+          companyName: tenant.name || '',
+          website: tenant.website || '',
+          linkedin: tenant.social_linkedin || '',
+          instagram: tenant.social_instagram || '',
+          facebook: tenant.social_facebook || '',
+          tiktok: tenant.social_tiktok || '',
+          youtube: tenant.social_youtube || '',
+          planId: tenant.plan_id || 'free'
+        });
 
         setInitialLoading(false);
       } catch (e) {
@@ -560,8 +585,8 @@ const [partidosList, setPartidosList] = useState([]);
     e.preventDefault();
     setLoading(true);
 
-    // Validar obligatorios
-    if (!fullName || !email || !phone || !cuit || !provincia || !partido || !localidad || !birthDate) {
+    // Validar obligatorios (localidad es opcional)
+    if (!fullName || !email || !phone || !cuit || !provincia || !partido || !birthDate) {
       triggerToast('Por favor completa todos los campos obligatorios (*).', 'error');
       setLoading(false);
       return;
@@ -809,8 +834,8 @@ const [partidosList, setPartidosList] = useState([]);
   };
 
   const handleExitWithoutSave = () => {
-    // Validar requeridos en local antes de salir para no romper el multi-tenancy
-    if (!fullName || !email || !phone || !cuit || !provincia || !partido || !localidad || !birthDate) {
+    // Validar requeridos en local antes de salir para no romper el multi-tenancy (localidad es opcional)
+    if (!fullName || !email || !phone || !cuit || !provincia || !partido || !birthDate) {
       triggerToast('No puedes salir sin haber completado los datos obligatorios mínimos.', 'error');
       return;
     }
@@ -921,6 +946,57 @@ const [partidosList, setPartidosList] = useState([]);
       triggerToast(err.message || 'Error al actualizar la contraseña.', 'error');
     } finally {
       setPassLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!deletePassword) {
+      triggerToast('Por favor, ingresá tu contraseña para confirmar.', 'error');
+      return;
+    }
+
+    const confirmFirst = window.confirm(
+      '¿Estás ABSOLUTAMENTE seguro de que deseas eliminar tu cuenta? Esta acción destruirá por completo tu organización y todos sus datos.'
+    );
+    if (!confirmFirst) return;
+
+    const confirmSecond = window.prompt(
+      'Para confirmar la eliminación definitiva, escribe "ELIMINAR MI CUENTA" en mayúsculas:'
+    );
+    if (confirmSecond !== 'ELIMINAR MI CUENTA') {
+      triggerToast('Confirmación incorrecta. No se eliminó la cuenta.', 'error');
+      return;
+    }
+
+    setDeleteLoading(true);
+
+    try {
+      // 1. Re-autenticar al usuario para validar su contraseña
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: deletePassword,
+      });
+
+      if (authError) {
+        throw new Error('La contraseña ingresada es incorrecta.');
+      }
+
+      // 2. Llamar a la función RPC delete_own_account
+      const { error: rpcError } = await supabase.rpc('delete_own_account');
+      if (rpcError) throw rpcError;
+
+      // 3. Cerrar sesión local
+      await supabase.auth.signOut();
+      localStorage.clear();
+
+      triggerToast('Tu cuenta y organización han sido eliminadas correctamente.', 'success');
+      setTimeout(() => {
+        window.location.href = '/register';
+      }, 2000);
+    } catch (err) {
+      console.error('Error deleting account:', err);
+      triggerToast(err.message || 'Error al eliminar la cuenta.', 'error');
+      setDeleteLoading(false);
     }
   };
 
@@ -1350,17 +1426,16 @@ const [partidosList, setPartidosList] = useState([]);
 
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                  Localidad <span className="text-[#468DFF]">*</span>
+                  Localidad (Opcional)
                 </label>
                 <select
-                  required
-                  disabled={!provincia}
+                  disabled={!partido || localidadesList.length === 0}
                   value={localidad}
                   onChange={(e) => setLocalidad(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none cursor-pointer transition-all disabled:opacity-50"
                 >
-                  <option value="" disabled>
-                    {!provincia ? 'Primero selecciona una provincia' : 'Selecciona una localidad'}
+                  <option value="">
+                    {!partido ? 'Primero selecciona un partido' : 'Selecciona una localidad (opcional)'}
                   </option>
                   {localidadesList.map((loc) => (
                     <option key={loc} value={loc}>
@@ -1894,6 +1969,77 @@ const [partidosList, setPartidosList] = useState([]);
           </div>
 
         </form>
+
+        {/* ELIMINAR CUENTA (Solo para Propietarios / Owners) */}
+        {profileData?.role === 'owner' && (
+          <div className="mt-8 bg-white border border-red-200 rounded-2xl p-8 shadow-sm space-y-6">
+            <h3 className="text-lg font-bold text-red-600 border-b border-red-100 pb-3 flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-600" />
+              Eliminar Cuenta
+            </h3>
+            
+            <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-red-800 text-sm space-y-3 leading-relaxed">
+              <p className="font-bold">¡ADVERTENCIA DE SEGURIDAD CRÍTICA!</p>
+              <p>
+                Al eliminar tu cuenta, se borrará de forma permanente e irreversible toda la información asociada a tu organización/consultora (<strong>{tenantData?.name}</strong>), incluyendo:
+              </p>
+              <ul className="list-disc pl-5 space-y-1 text-xs">
+                <li>Configuración y perfil del administrador y miembros de equipo.</li>
+                <li>Todas las empresas clientes y sus establecimientos cargados.</li>
+                <li>El historial completo de auditorías, capacitaciones, acciones correctivas y extintores.</li>
+                <li>Firmas, logotipos y archivos digitales subidos al almacenamiento.</li>
+              </ul>
+              <p className="font-semibold text-xs">
+                Esta acción no se puede deshacer y no habrá forma de recuperar los datos.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="max-w-md">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                  Para confirmar la eliminación, ingresá tu contraseña actual:
+                </label>
+                <div className="relative">
+                  <input
+                    type={showDeletePassword ? 'text' : 'password'}
+                    placeholder="Contraseña actual"
+                    value={deletePassword}
+                    onChange={(e) => setDeletePassword(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-red-500 focus:ring-1 focus:ring-red-500 rounded-xl py-3 pl-4 pr-12 text-slate-800 focus:outline-none transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowDeletePassword(!showDeletePassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700"
+                  >
+                    {showDeletePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex justify-start">
+                <button
+                  type="button"
+                  onClick={handleDeleteAccount}
+                  disabled={deleteLoading || !deletePassword}
+                  className="py-3 px-6 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition-all flex items-center gap-2 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-lg shadow-red-500/10"
+                >
+                  {deleteLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Eliminando cuenta y datos...
+                    </>
+                  ) : (
+                    <>
+                      <AlertTriangle className="h-4 w-4" />
+                      Eliminar Cuenta de Forma Permanente
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </main>

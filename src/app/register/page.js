@@ -13,6 +13,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [modal, setModal] = useState({ show: false, message: '', type: 'success' });
   const [isDevMode, setIsDevMode] = useState(false);
+  const [registered, setRegistered] = useState(false);
 
   useEffect(() => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -57,8 +58,7 @@ export default function RegisterPage() {
       localStorage.setItem('onboarding_full_name', fullName);
       setTimeout(() => {
         setLoading(false);
-        // Redirigir a onboarding
-        window.location.href = '/onboarding';
+        setRegistered(true);
       }, 1500);
       return;
     }
@@ -93,8 +93,8 @@ export default function RegisterPage() {
       if (data.user) {
         localStorage.setItem('onboarding_email', email);
         localStorage.setItem('onboarding_full_name', fullName);
-        // Redirigir directamente al onboarding para completar datos (firma, logos, matricula)
-        window.location.href = '/onboarding';
+        setRegistered(true);
+        setLoading(false);
       }
     } catch (err) {
       setModal({ show: true, message: err.message || 'Error al registrar la cuenta. Intente nuevamente.', type: 'error' });
@@ -121,112 +121,140 @@ export default function RegisterPage() {
 
         {/* Form Card */}
         <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-xl">
-          {isDevMode && (
-            <div className="mb-6 p-3 rounded-lg border border-amber-500/20 bg-amber-50 text-amber-700 text-xs flex items-center gap-2">
-              <span>
-                <strong>Modo Demo / Desarrollo Activo</strong>: Se simulará el registro y se redirigirá a onboarding para pruebas visuales.
-              </span>
-            </div>
-          )}
-
-          <form onSubmit={handleRegister} className="space-y-5">
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                Nombre y Apellido
-              </label>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                  <User className="h-5 w-5" />
-                </span>
-                <input
-                  type="text"
-                  required
-                  placeholder="Juan Pérez"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-slate-800 placeholder-slate-400 focus:outline-none transition-all"
-                />
+          {registered ? (
+            <div className="text-center space-y-6 animate-scaleUp">
+              <div className="flex justify-center">
+                <div className="p-4 rounded-full bg-emerald-50 border border-emerald-100 text-[#468DFF] shadow-sm">
+                  <Mail className="h-10 w-10 text-[#468DFF]" />
+                </div>
               </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                Correo Electrónico
-              </label>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                  <Mail className="h-5 w-5" />
-                </span>
-                <input
-                  type="email"
-                  required
-                  placeholder="juan.perez@empresa.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-slate-800 placeholder-slate-400 focus:outline-none transition-all"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                Contraseña
-              </label>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                  <Lock className="h-5 w-5" />
-                </span>
-                <input
-                  type="password"
-                  required
-                  placeholder="Mínimo 8 caracteres"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-slate-800 placeholder-slate-400 focus:outline-none transition-all"
-                />
-              </div>
-              <p className="text-[10px] text-slate-500 mt-1.5 font-medium leading-relaxed">
-                Debe tener al menos 8 caracteres, incluir al menos una letra mayúscula y al menos un número.
+              <h3 className="font-outfit text-xl font-extrabold text-slate-900">
+                ¡Confirmá tu correo!
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                Hemos enviado un correo de verificación a <strong className="text-slate-800">{email}</strong>. 
+                Por favor, ingresá a tu bandeja de entrada y hacé clic en el enlace para verificar tu cuenta e ingresar.
               </p>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                Confirmar Contraseña
-              </label>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                  <Lock className="h-5 w-5" />
-                </span>
-                <input
-                  type="password"
-                  required
-                  placeholder="Repita la contraseña"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-slate-800 placeholder-slate-400 focus:outline-none transition-all"
-                />
+              <div className="pt-2">
+                <a
+                  href="/login"
+                  className="w-full py-3 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/10 hover:shadow-blue-500/25 active:scale-[0.98]"
+                >
+                  Ir a Iniciar Sesión
+                  <ArrowRight className="h-4 w-4" />
+                </a>
               </div>
             </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/10 hover:shadow-blue-500/25 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none mt-2"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Registrando cuenta...
-                </>
-              ) : (
-                <>
-                  Crear Cuenta
-                  <ArrowRight className="h-4 w-4" />
-                </>
+          ) : (
+            <>
+              {isDevMode && (
+                <div className="mb-6 p-3 rounded-lg border border-amber-500/20 bg-amber-50 text-amber-700 text-xs flex items-center gap-2">
+                  <span>
+                    <strong>Modo Demo / Desarrollo Activo</strong>: Se simulará el registro y se mostrará la pantalla de confirmación.
+                  </span>
+                </div>
               )}
-            </button>
-          </form>
+
+              <form onSubmit={handleRegister} className="space-y-5">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                    Nombre y Apellido
+                  </label>
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                      <User className="h-5 w-5" />
+                    </span>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Juan Pérez"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-slate-800 placeholder-slate-400 focus:outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                    Correo Electrónico
+                  </label>
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                      <Mail className="h-5 w-5" />
+                    </span>
+                    <input
+                      type="email"
+                      required
+                      placeholder="juan.perez@empresa.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-slate-800 placeholder-slate-400 focus:outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                    Contraseña
+                  </label>
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                      <Lock className="h-5 w-5" />
+                    </span>
+                    <input
+                      type="password"
+                      required
+                      placeholder="Mínimo 8 caracteres"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-slate-800 placeholder-slate-400 focus:outline-none transition-all"
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-1.5 font-medium leading-relaxed">
+                    Debe tener al menos 8 caracteres, incluir al menos una letra mayúscula y al menos un número.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                    Confirmar Contraseña
+                  </label>
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                      <Lock className="h-5 w-5" />
+                    </span>
+                    <input
+                      type="password"
+                      required
+                      placeholder="Repita la contraseña"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-slate-800 placeholder-slate-400 focus:outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/10 hover:shadow-blue-500/25 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none mt-2"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Registrando cuenta...
+                    </>
+                  ) : (
+                    <>
+                      Crear Cuenta
+                      <ArrowRight className="h-4 w-4" />
+                    </>
+                  )}
+                </button>
+              </form>
+            </>
+          )}
         </div>
 
         {/* Footer info */}
