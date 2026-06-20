@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { formatDate } from '@/lib/utils';
 import { 
   Building, 
   Users, 
@@ -702,7 +703,7 @@ export default function TenantDashboard({ params }) {
                               </td>
                               <td className="px-4 py-3 font-mono font-bold">
                                 <span className={statusInfo.dateAlertColor === 'red' ? 'text-[#fa050b] bg-red-500/10 px-1.5 py-0.5 rounded' : statusInfo.dateAlertColor === 'yellow' ? 'text-amber-600 bg-amber-500/10 px-1.5 py-0.5 rounded' : 'text-slate-700'}>
-                                  {act.fecha_planificada}
+                                  {formatDate(act.fecha_planificada)}
                                 </span>
                               </td>
                               <td className="px-4 py-3">

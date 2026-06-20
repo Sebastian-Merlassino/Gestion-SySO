@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { formatDate } from '@/lib/utils';
 import { 
   Plus, 
   Search, 
@@ -1429,8 +1430,14 @@ export default function ExtintoresPage({ params }) {
                           </th>
                           <th className="py-4 px-4 text-center cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('venc_recarga')}>
                             <div className="flex items-center justify-center gap-1">
-                              Vencimientos (Rec. / PH)
+                              Venc. Recarga
                               {sortField === 'venc_recarga' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                            </div>
+                          </th>
+                          <th className="py-4 px-4 text-center cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('venc_ph')}>
+                            <div className="flex items-center justify-center gap-1">
+                              Venc. P.H.
+                              {sortField === 'venc_ph' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                             </div>
                           </th>
                           <th className="py-4 px-4 text-center cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('estado')}>
@@ -1439,7 +1446,6 @@ export default function ExtintoresPage({ params }) {
                               {sortField === 'estado' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                             </div>
                           </th>
-                          <th className="py-4 px-4 text-center">Controles</th>
                           <th className="py-4 px-6 text-right">Acciones</th>
                         </tr>
                       </thead>
@@ -1487,9 +1493,11 @@ export default function ExtintoresPage({ params }) {
                                   <span className="font-semibold text-slate-800 block max-w-[150px] truncate" title={ext.tipo}>{ext.tipo || 'S/D'}</span>
                                   <span className="text-[10px] text-slate-400 block mt-0.5">{ext.capacidad ? `${ext.capacidad} Kg / l` : 'S/D'}</span>
                                 </td>
-                                <td className="py-4 px-4 text-center">
-                                  <span className="text-[10px] text-slate-600 block">Rec: <span className="font-mono">{ext.venc_recarga || 'S/D'}</span></span>
-                                  <span className="text-[10px] text-slate-400 block font-normal">PH: <span className="font-mono">{ext.venc_ph || 'S/D'}</span></span>
+                                <td className="py-4 px-4 text-center font-mono text-[10px] text-slate-600">
+                                  {ext.venc_recarga ? formatDate(ext.venc_recarga) : 'S/D'}
+                                </td>
+                                <td className="py-4 px-4 text-center font-mono text-[10px] text-slate-600">
+                                  {ext.venc_ph ? formatDate(ext.venc_ph) : 'S/D'}
                                 </td>
                                 <td className="py-4 px-4 text-center">
                                   {status.text ? (
@@ -1499,17 +1507,6 @@ export default function ExtintoresPage({ params }) {
                                   ) : (
                                     <span className="text-slate-400 italic text-[10px]">S/Fechas</span>
                                   )}
-                                </td>
-                                <td className="py-4 px-4 text-center" onClick={(e) => e.stopPropagation()}>
-                                  <div className="flex items-center justify-center gap-1.5 text-[9px] font-bold font-mono">
-                                    <span title={`Presión: ${ext.presion}`} className={`px-1 py-0.5 rounded border border-slate-200 bg-slate-50 ${cPresion}`}>PR</span>
-                                    <span title={`Precinto: ${ext.precinto}`} className={`px-1 py-0.5 rounded border border-slate-200 bg-slate-50 ${cPrecinto}`}>PC</span>
-                                    <span title={`Marbete: ${ext.marbete}`} className={`px-1 py-0.5 rounded border border-slate-200 bg-slate-50 ${cMarbete}`}>MB</span>
-                                    <span title={`Partes Mecánicas: ${ext.partes_mecanicas}`} className={`px-1 py-0.5 rounded border border-slate-200 bg-slate-50 ${cMecanica}`}>MC</span>
-                                    <span title={`Manguera/Boquilla: ${ext.manguera_boquilla}`} className={`px-1 py-0.5 rounded border border-slate-200 bg-slate-50 ${cManguera}`}>MG</span>
-                                    <span title={`Cilindro: ${ext.cilindro}`} className={`px-1 py-0.5 rounded border border-slate-200 bg-slate-50 ${cCilindro}`}>CL</span>
-                                    <span title={`Señalización: ${ext.senalizacion}`} className={`px-1 py-0.5 rounded border border-slate-200 bg-slate-50 ${cSenal}`}>SE</span>
-                                  </div>
                                 </td>
                                 <td className="py-4 px-6 text-right space-x-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                                   {ext.imagen_preview_url && (

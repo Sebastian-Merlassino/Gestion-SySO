@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { formatDate } from '@/lib/utils';
 import { 
   Plus, 
   Search, 
@@ -26,7 +27,11 @@ import {
   ChevronRight,
   ArrowLeft,
   Sliders,
-  Flame
+  Flame,
+  Image as ImageIcon,
+  Camera,
+  Upload,
+  Eye
 } from 'lucide-react';
 
 export default function CapacitacionPage({ params }) {
@@ -72,6 +77,14 @@ export default function CapacitacionPage({ params }) {
   const [fechaInicioPlanificada, setFechaInicioPlanificada] = useState('');
   const [fechaFinPlanificada, setFechaFinPlanificada] = useState('');
   const [observaciones, setObservaciones] = useState('');
+
+  // Estados para temas múltiples e imágenes de registro
+  const [selectedTemas, setSelectedTemas] = useState([]); // array de { id, tema, contenido }
+  const [isTemasDropdownOpen, setIsTemasDropdownOpen] = useState(false);
+  const [searchTopicTerm, setSearchTopicTerm] = useState('');
+  const [fotosFiles, setFotosFiles] = useState([]); // array de { file: File | null, preview: string, path: string }
+  const [viewingFotosCap, setViewingFotosCap] = useState(null); // capacitación para el modal de ver fotos
+  const [viewingFotosUrls, setViewingFotosUrls] = useState([]); // urls firmadas para el modal de ver fotos
 
   // Filtros
   const [filterText, setFilterText] = useState('');
@@ -242,7 +255,28 @@ export default function CapacitacionPage({ params }) {
         .eq('tenant_id', ten.id)
         .order('created_at', { ascending: false });
       if (capErr) throw capErr;
-      setCapacitaciones(capData || []);
+
+      // Resuelve URLs firmadas para las múltiples fotos de registro
+      const resolvedCapacitaciones = await Promise.all((capData || []).map(async (cap) => {
+        let signedUrls = [];
+        if (cap.fotos_urls && cap.fotos_urls.length > 0) {
+          try {
+            signedUrls = await Promise.all(cap.fotos_urls.map(async (fpath) => {
+              const { data, error: signErr } = await supabase.storage
+                .from('documents')
+                .createSignedUrl(fpath, 3600, { download: false });
+              return !signErr && data ? data.signedUrl : '';
+            }));
+          } catch (e) {
+            console.error('Error resolviendo URLs firmadas de capacitación:', e);
+          }
+        }
+        return {
+          ...cap,
+          fotos_preview_urls: signedUrls.filter(Boolean)
+        };
+      }));
+      setCapacitaciones(resolvedCapacitaciones);
 
       setLoading(false);
     } catch (err) {
@@ -337,6 +371,66 @@ export default function CapacitacionPage({ params }) {
     }
   };
 
+  // Filtrar temas localmente para el dropdown multiselect
+  const filteredTemasList = temasList.filter(t => 
+    t.tema.toLowerCase().includes(searchTopicTerm.toLowerCase())
+  );
+
+  // Manejador para alternar temas en el multiselect
+  const handleToggleTema = (topic) => {
+    let updated = [];
+    const exists = selectedTemas.some(t => t.id === topic.id);
+    if (exists) {
+      updated = selectedTemas.filter(t => t.id !== topic.id);
+    } else {
+      updated = [...selectedTemas, topic];
+    }
+    setSelectedTemas(updated);
+    
+    // Actualizar contenido reactivamente combinando los contenidos de los temas seleccionados
+    const contents = updated
+      .map(t => {
+        if (t.id === '__custom__') return '';
+        return t.contenido;
+      })
+      .filter(Boolean)
+      .join('\n\n');
+    setContenido(contents);
+  };
+
+  // Manejadores de carga de fotos
+  const handleAddPhotos = (e) => {
+    const files = Array.from(e.target.files || []);
+    const newPhotos = files.map(file => ({
+      file,
+      preview: URL.createObjectURL(file),
+      path: ''
+    }));
+    setFotosFiles(prev => [...prev, ...newPhotos]);
+  };
+
+  const handleCapturePhoto = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    const file = files[0];
+    const newPhoto = {
+      file,
+      preview: URL.createObjectURL(file),
+      path: ''
+    };
+    setFotosFiles(prev => [...prev, newPhoto]);
+  };
+
+  const handleRemovePhoto = (index) => {
+    setFotosFiles(prev => {
+      const target = prev[index];
+      if (target && target.preview && target.preview.startsWith('blob:')) {
+        URL.revokeObjectURL(target.preview);
+      }
+      return prev.filter((_, idx) => idx !== index);
+    });
+  };
+
   // Salir con advertencia
   const handleExitForm = () => {
     setModalAlert({
@@ -368,23 +462,67 @@ export default function CapacitacionPage({ params }) {
     setFechaInicioPlanificada('');
     setFechaFinPlanificada('');
     setObservaciones('');
+    
+    // Nuevos
+    setSelectedTemas([]);
+    setIsTemasDropdownOpen(false);
+    setFotosFiles([]);
+  };
+
+  const uploadFotoToStorage = async (file, index) => {
+    if (isDevMode) return `mock-path/capacitacion_${Date.now()}_${index}_${file.name}`;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No autorizado');
+
+      const fileExt = file.name.split('.').pop();
+      const fileId = editingId || crypto.randomUUID();
+      const fileName = `${user.id}/capacitacion_${fileId}_${index}_${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(fileName, file, { cacheControl: '3600', upsert: true });
+
+      if (uploadError) throw uploadError;
+      return fileName;
+    } catch (err) {
+      console.error('Error al subir foto de capacitación:', err);
+      throw new Error('Error al guardar la foto en el servidor.');
+    }
   };
 
   // Guardado de Capacitación
   const handleSaveCapacitacion = async (e) => {
     e.preventDefault();
-    if (!empresaId || !tema || !capacitador || !fechaInicioPlanificada || !fechaFinPlanificada) {
+    if (!empresaId || !capacitador || !fechaInicioPlanificada || !fechaFinPlanificada) {
       triggerToast('Por favor completa todos los campos obligatorios.', 'error');
       return;
     }
 
-    const dbTema = tema === '__custom__' ? temaCustom.trim() : (temasList.find(t => t.id === tema)?.tema || '');
-    const dbCapacitador = capacitador === '__custom__' ? capacitadorCustom.trim() : (miembrosList.find(m => m.id === capacitador)?.full_name || '');
+    // Obtener la lista de nombres de temas y ids
+    let dbTemasNames = [];
+    let dbTemasIds = [];
+    
+    selectedTemas.forEach(t => {
+      if (t.id === '__custom__') {
+        if (temaCustom.trim()) {
+          dbTemasNames.push(temaCustom.trim());
+        }
+      } else {
+        dbTemasNames.push(t.tema);
+        dbTemasIds.push(t.id);
+      }
+    });
 
-    if (!dbTema) {
-      triggerToast('Debes especificar un tema de capacitación.', 'error');
+    if (dbTemasNames.length === 0) {
+      triggerToast('Debes especificar al menos un tema de capacitación.', 'error');
       return;
     }
+
+    const dbTema = dbTemasNames.join(', ');
+    const dbCapacitador = capacitador === '__custom__' ? capacitadorCustom.trim() : (miembrosList.find(m => m.id === capacitador)?.full_name || '');
+
     if (!dbCapacitador) {
       triggerToast('Debes especificar un capacitador.', 'error');
       return;
@@ -392,13 +530,26 @@ export default function CapacitacionPage({ params }) {
 
     setSaveLoading(true);
     try {
+      // Subir fotos
+      const finalFotosUrls = [];
+      for (const foto of fotosFiles) {
+        if (foto.file) {
+          const uploadedPath = await uploadFotoToStorage(foto.file, finalFotosUrls.length);
+          finalFotosUrls.push(uploadedPath);
+        } else if (foto.path) {
+          finalFotosUrls.push(foto.path);
+        }
+      }
+
       const payload = {
         tenant_id: tenant.id,
         empresa_id: empresaId,
         establecimiento_id: establecimientoId || null,
         puesto: puesto.trim() || null,
         tema: dbTema,
-        tema_id: temaId,
+        tema_id: dbTemasIds.length > 0 ? dbTemasIds[0] : null,
+        temas: dbTemasNames,
+        tema_ids: dbTemasIds,
         contenido: contenido.trim() || null,
         capacitador: dbCapacitador,
         capacitador_id: capacitadorId,
@@ -406,13 +557,15 @@ export default function CapacitacionPage({ params }) {
         fecha_inicio_planificada: fechaInicioPlanificada,
         fecha_fin_planificada: fechaFinPlanificada,
         observaciones: observaciones.trim() || null,
+        fotos_urls: finalFotosUrls,
         updated_at: new Date().toISOString()
       };
 
       if (isDevMode) {
         const updatedCap = {
           ...payload,
-          id: editingId || `mock-cap-${Date.now()}`
+          id: editingId || `mock-cap-${Date.now()}`,
+          fotos_preview_urls: fotosFiles.map(f => f.preview)
         };
         if (editingId) {
           setCapacitaciones(capacitaciones.map(c => c.id === editingId ? updatedCap : c));
@@ -449,7 +602,7 @@ export default function CapacitacionPage({ params }) {
   };
 
   // Preparar edición
-  const handleEditClick = (cap) => {
+  const handleEditClick = async (cap) => {
     setEditingId(cap.id);
     setEmpresaId(cap.empresa_id);
     setEstablecimientoId(cap.establecimiento_id || '');
@@ -460,15 +613,40 @@ export default function CapacitacionPage({ params }) {
     setFechaFinPlanificada(cap.fecha_fin_planificada);
     setObservaciones(cap.observaciones || '');
 
-    // Vincular Tema
-    if (cap.tema_id) {
-      setTema(cap.tema_id);
-      setTemaId(cap.tema_id);
-      setTemaCustom('');
+    // Vincular Temas (opción múltiple)
+    if (cap.tema_ids && cap.tema_ids.length > 0) {
+      const selected = [];
+      cap.tema_ids.forEach(tid => {
+        const topic = temasList.find(t => t.id === tid);
+        if (topic) selected.push(topic);
+      });
+      // Si tiene temas en la columna array que no estén vinculados por ID
+      if (cap.temas) {
+        cap.temas.forEach(tName => {
+          if (!selected.some(s => s.tema === tName)) {
+            const topic = temasList.find(t => t.tema === tName);
+            if (topic) {
+              selected.push(topic);
+            } else {
+              setTemaCustom(tName);
+              if (!selected.some(s => s.id === '__custom__')) {
+                selected.push({ id: '__custom__', tema: 'Otro tema (Especificar...)' });
+              }
+            }
+          }
+        });
+      }
+      setSelectedTemas(selected);
+    } else if (cap.tema_id) {
+      const topic = temasList.find(t => t.id === cap.tema_id);
+      if (topic) {
+        setSelectedTemas([topic]);
+      } else {
+        setSelectedTemas([]);
+      }
     } else {
-      setTema('__custom__');
-      setTemaId(null);
-      setTemaCustom(cap.tema);
+      setTemaCustom(cap.tema || '');
+      setSelectedTemas([{ id: '__custom__', tema: 'Otro tema (Especificar...)' }]);
     }
 
     // Vincular Capacitador
@@ -479,7 +657,18 @@ export default function CapacitacionPage({ params }) {
     } else {
       setCapacitador('__custom__');
       setCapacitadorId(null);
-      setCapacitadorCustom(cap.capacitador);
+      setCapacitadorCustom(cap.capacitador || '');
+    }
+
+    // Vincular Fotos
+    if (cap.fotos_urls && cap.fotos_urls.length > 0) {
+      const loadedFotos = cap.fotos_urls.map((fpath, idx) => {
+        const previewUrl = cap.fotos_preview_urls?.[idx] || '';
+        return { file: null, preview: previewUrl || '/brand/logo-primary.png', path: fpath };
+      });
+      setFotosFiles(loadedFotos);
+    } else {
+      setFotosFiles([]);
     }
 
     setIsFormOpen(true);
@@ -513,6 +702,11 @@ export default function CapacitacionPage({ params }) {
         }
       }
     });
+  };
+
+  const handleViewFotosClick = (cap) => {
+    setViewingFotosCap(cap);
+    setViewingFotosUrls(cap.fotos_preview_urls || []);
   };
 
   const handleSort = (field) => {
@@ -902,19 +1096,74 @@ export default function CapacitacionPage({ params }) {
                         <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                           Tema de Capacitación <span className="text-[#468DFF]">*</span>
                         </label>
-                        <select
-                          required
-                          value={tema}
-                          onChange={handleTemaChange}
-                          className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] cursor-pointer"
-                        >
-                          <option value="" disabled>Selecciona el tema</option>
-                          {temasList.map((topic) => (
-                            <option key={topic.id} value={topic.id}>{topic.tema}</option>
-                          ))}
-                          <option value="__custom__">Otro tema (Especificar...)</option>
-                        </select>
-                        {tema === '__custom__' && (
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => setIsTemasDropdownOpen(!isTemasDropdownOpen)}
+                            className="w-full text-left text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] cursor-pointer flex justify-between items-center shadow-sm"
+                          >
+                            <span className="truncate">
+                              {selectedTemas.length === 0 
+                                ? 'Selecciona los temas...' 
+                                : selectedTemas.map(t => t.id === '__custom__' ? (temaCustom || 'Otro tema') : t.tema).join(', ')
+                              }
+                            </span>
+                            <span className="text-slate-400 text-[10px]">▼</span>
+                          </button>
+                          
+                          {isTemasDropdownOpen && (
+                            <>
+                              <div 
+                                className="fixed inset-0 z-20 cursor-default" 
+                                onClick={() => setIsTemasDropdownOpen(false)} 
+                              />
+                              <div className="absolute z-30 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-xl max-h-60 overflow-y-auto p-2 space-y-1 animate-fade-in">
+                                <div className="relative mb-2 sticky top-0 bg-white pb-1">
+                                  <input
+                                    type="text"
+                                    placeholder="Buscar tema..."
+                                    value={searchTopicTerm}
+                                    onClick={(e) => e.stopPropagation()}
+                                    onChange={(e) => setSearchTopicTerm(e.target.value)}
+                                    className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-[#468DFF]"
+                                  />
+                                </div>
+                                {filteredTemasList.map((topic) => {
+                                  const isChecked = selectedTemas.some(t => t.id === topic.id);
+                                  return (
+                                    <label
+                                      key={topic.id}
+                                      className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer select-none text-xs text-slate-700 transition-colors"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={isChecked}
+                                        onChange={() => handleToggleTema(topic)}
+                                        className="rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF] h-3.5 w-3.5 cursor-pointer"
+                                      />
+                                      <span>{topic.tema}</span>
+                                    </label>
+                                  );
+                                })}
+                                
+                                <div className="border-t border-slate-100 my-1 pt-1" />
+                                
+                                <label
+                                  className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer select-none text-xs text-slate-700 font-semibold transition-colors"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedTemas.some(t => t.id === '__custom__')}
+                                    onChange={() => handleToggleTema({ id: '__custom__', tema: 'Otro tema (Especificar...)' })}
+                                    className="rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF] h-3.5 w-3.5 cursor-pointer"
+                                  />
+                                  <span>Otro tema (Especificar...)</span>
+                                </label>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                        {selectedTemas.some(t => t.id === '__custom__') && (
                           <input
                             type="text"
                             required
@@ -1044,6 +1293,83 @@ export default function CapacitacionPage({ params }) {
                         className="w-full text-xs bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 outline-none focus:border-[#468DFF] resize-none"
                       />
                     </div>
+                  </div>
+
+                  {/* Sección 4: Registros de Capacitación (Fotos) */}
+                  <div className="space-y-4">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block border-b border-slate-100 pb-1">
+                      Registros de Capacitación (Fotos / Firmas)
+                    </span>
+                    
+                    {/* Botones de acción para fotos */}
+                    <div className="flex flex-wrap gap-2.5">
+                      <label
+                        htmlFor="multi-photo-upload"
+                        className="py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer flex items-center gap-2"
+                      >
+                        <Upload className="h-4 w-4 text-slate-500" />
+                        Seleccionar fotos
+                      </label>
+                      <label
+                        htmlFor="camera-photo-capture"
+                        className="py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer flex items-center gap-2"
+                      >
+                        <Camera className="h-4 w-4 text-slate-500" />
+                        Sacar foto
+                      </label>
+                      <input
+                        id="multi-photo-upload"
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handleAddPhotos}
+                        className="hidden"
+                      />
+                      <input
+                        id="camera-photo-capture"
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        onChange={handleCapturePhoto}
+                        className="hidden"
+                      />
+                    </div>
+
+                    {/* Grid de previsualización */}
+                    {fotosFiles.length === 0 ? (
+                      <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center text-slate-400 italic text-xs bg-slate-50/50">
+                        No hay fotos de registros cargadas.
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 pt-2">
+                        {fotosFiles.map((foto, idx) => (
+                          <div key={idx} className="relative group rounded-xl overflow-hidden border border-slate-200 bg-slate-50 aspect-video flex items-center justify-center shadow-sm">
+                            <img src={foto.preview} alt={`Previsualización ${idx + 1}`} className="max-h-full max-w-full object-contain" />
+                            
+                            {/* Hover overlay with action buttons */}
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
+                              <a
+                                href={foto.preview}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title="Ver en pantalla completa"
+                                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => handleRemovePhoto(idx)}
+                                title="Eliminar"
+                                className="p-1.5 rounded-lg bg-red-600/80 hover:bg-red-600 text-white transition-colors cursor-pointer"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* Botones del Formulario */}
@@ -1190,6 +1516,12 @@ export default function CapacitacionPage({ params }) {
                               {sortField === 'cliente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                             </div>
                           </th>
+                          <th className="py-4 px-4 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('puesto')}>
+                            <div className="flex items-center gap-1">
+                              Puesto
+                              {sortField === 'puesto' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                            </div>
+                          </th>
                           <th className="py-4 px-4 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('tema')}>
                             <div className="flex items-center gap-1">
                               Tema de Capacitación
@@ -1198,7 +1530,7 @@ export default function CapacitacionPage({ params }) {
                           </th>
                           <th className="py-4 px-4 cursor-pointer hover:bg-slate-100 select-none transition-colors" onClick={() => handleSort('capacitador')}>
                             <div className="flex items-center gap-1">
-                              Capacitador / Puesto
+                              Capacitador
                               {sortField === 'capacitador' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                             </div>
                           </th>
@@ -1220,7 +1552,7 @@ export default function CapacitacionPage({ params }) {
                       <tbody className="divide-y divide-slate-100 text-xs font-normal text-slate-700">
                         {sortedCapacitaciones.length === 0 ? (
                           <tr>
-                            <td colSpan="6" className="py-12 px-6 text-center text-slate-400 italic">
+                            <td colSpan="7" className="py-12 px-6 text-center text-slate-400 italic">
                               No se encontraron registros de capacitaciones programadas.
                             </td>
                           </tr>
@@ -1243,30 +1575,28 @@ export default function CapacitacionPage({ params }) {
                                     {est?.denominacion || 'General / Todos'}
                                   </span>
                                 </td>
+                                <td className="py-4 px-4 text-slate-700 font-medium">
+                                  {cap.puesto || <span className="text-slate-400 italic">No especificado</span>}
+                                </td>
                                 <td className="py-4 px-4">
                                   <span className="block font-semibold text-slate-800" title={cap.tema}>
                                     {cap.tema}
                                   </span>
                                   {cap.contenido && (
-                                    <span className="text-[10px] text-slate-450 block truncate max-w-[250px] mt-0.5" title={cap.contenido}>
+                                    <span className="text-[10px] text-slate-400 block truncate max-w-[250px] mt-0.5" title={cap.contenido}>
                                       {cap.contenido}
                                     </span>
                                   )}
                                 </td>
-                                <td className="py-4 px-4">
-                                  <span className="block text-slate-700 font-medium">{cap.capacitador}</span>
-                                  {cap.puesto && (
-                                    <span className="text-[10px] text-slate-400 block mt-0.5">
-                                      {cap.puesto}
-                                    </span>
-                                  )}
+                                <td className="py-4 px-4 text-slate-700 font-medium">
+                                  {cap.capacitador}
                                 </td>
                                 <td className="py-4 px-4 text-center">
                                   <span className="text-[10px] text-slate-600 block font-mono">
-                                    {cap.fecha_inicio_planificada} al
+                                    {formatDate(cap.fecha_inicio_planificada)} al
                                   </span>
                                   <span className="text-[10px] text-slate-600 block font-mono">
-                                    {cap.fecha_fin_planificada}
+                                    {formatDate(cap.fecha_fin_planificada)}
                                   </span>
                                 </td>
                                 <td className="py-4 px-4 text-center">
@@ -1280,6 +1610,15 @@ export default function CapacitacionPage({ params }) {
                                   </div>
                                 </td>
                                 <td className="py-4 px-6 text-right space-x-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                                  {cap.fotos_urls && cap.fotos_urls.length > 0 && (
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); handleViewFotosClick(cap); }}
+                                      title="Ver Registros de Capacitación (Fotos)"
+                                      className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-700 transition-colors inline-block cursor-pointer"
+                                    >
+                                      <ImageIcon className="h-3.5 w-3.5" />
+                                    </button>
+                                  )}
                                   <button
                                     onClick={(e) => { e.stopPropagation(); handleEditClick(cap); }}
                                     title="Editar"
@@ -1340,6 +1679,59 @@ export default function CapacitacionPage({ params }) {
                   Confirmar
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE VISUALIZACIÓN DE FOTOS DE REGISTRO */}
+      {viewingFotosCap && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xl max-w-2xl w-full space-y-4 flex flex-col max-h-[85vh]">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <div>
+                <h4 className="font-outfit text-base font-extrabold text-slate-900">Registros de Capacitación</h4>
+                <p className="text-[10px] text-slate-500 font-semibold mt-0.5">{viewingFotosCap.tema} - {viewingFotosCap.puesto || 'General'}</p>
+              </div>
+              <button 
+                onClick={() => { setViewingFotosCap(null); setViewingFotosUrls([]); }} 
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <div className="overflow-y-auto flex-1 p-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {viewingFotosUrls.length === 0 ? (
+                <div className="col-span-full py-12 text-center text-slate-400 italic text-xs">
+                  Cargando imágenes de registro...
+                </div>
+              ) : (
+                viewingFotosUrls.map((url, i) => (
+                  <div key={i} className="relative group rounded-xl overflow-hidden border border-slate-200 bg-slate-50 aspect-video flex items-center justify-center shadow-sm">
+                    <img src={url} alt={`Registro ${i+1}`} className="max-h-full max-w-full object-contain" />
+                    <a 
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-xs font-bold gap-1.5"
+                    >
+                      <Eye className="h-4 w-4" />
+                      Ampliar Imagen
+                    </a>
+                  </div>
+                ))
+              )}
+            </div>
+            
+            <div className="flex justify-end pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => { setViewingFotosCap(null); setViewingFotosUrls([]); }}
+                className="py-2 px-6 rounded-xl border border-slate-300 text-slate-700 font-bold text-xs hover:bg-slate-100 transition-colors bg-white cursor-pointer"
+              >
+                Cerrar
+              </button>
             </div>
           </div>
         </div>

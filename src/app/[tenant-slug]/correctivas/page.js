@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { formatDate } from '@/lib/utils';
 import { 
   Plus, 
   Search, 
@@ -1570,7 +1571,7 @@ export default function AccionesCorrectivasPage({ params }) {
                                 </td>
                                 <td className="py-4 px-4">
                                   <span className="block max-w-[150px] truncate text-slate-600" title={acc.fuente}>{acc.fuente}</span>
-                                  <span className="text-[10px] text-slate-400 block mt-0.5 font-mono">{acc.fecha}</span>
+                                  <span className="text-[10px] text-slate-400 block mt-0.5 font-mono">{formatDate(acc.fecha)}</span>
                                 </td>
                                 <td className="py-4 px-4">
                                   <span className="block max-w-[200px] truncate font-semibold text-slate-800" title={acc.descripcion_hallazgo}>
