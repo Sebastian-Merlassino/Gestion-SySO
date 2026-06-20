@@ -910,7 +910,7 @@ export default function OnboardingPage() {
         <form onSubmit={handleSaveData} className="space-y-8">
           
           {/* SECCIÓN 1: INFORMACIÓN DEL USUARIO */}
-          <div className="bg-syso-bg border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
+          <div className="bg-white border border-slate-150 rounded-2xl p-8 shadow-sm space-y-6">
             <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
               <User className="text-[#468DFF] h-5 w-5" />
               Información del usuario
@@ -1078,7 +1078,7 @@ export default function OnboardingPage() {
           </div>
 
           {/* SECCIÓN 2: MATRÍCULAS PROFESIONALES (OPCIONAL) */}
-          <div className="bg-syso-bg border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
+          <div className="bg-white border border-slate-150 rounded-2xl p-8 shadow-sm space-y-6">
             <div className="flex justify-between items-center border-b border-slate-200 pb-3">
               <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                 <Briefcase className="text-[#468DFF] h-5 w-5" />
@@ -1230,7 +1230,7 @@ export default function OnboardingPage() {
           </div>
 
           {/* SECCIÓN 3: FIRMA DIGITALIZADA (OPCIONAL) */}
-          <div className="bg-syso-bg border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
+          <div className="bg-white border border-slate-150 rounded-2xl p-8 shadow-sm space-y-6">
             <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
               <Upload className="text-[#468DFF] h-5 w-5" />
               Firma digitalizada (opcional)
@@ -1271,7 +1271,7 @@ export default function OnboardingPage() {
           </div>
 
           {/* SECCIÓN 4: IDENTIDAD DE MARCA (OPCIONAL) */}
-          <div className="bg-syso-bg border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
             <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
               <Globe className="text-[#468DFF] h-5 w-5" />
               Identidad de marca de la consultora (opcional)
@@ -1425,7 +1425,7 @@ export default function OnboardingPage() {
           </div>
 
           {/* SECCIÓN 5: TIPO DE PLAN */}
-          <div className="bg-syso-bg border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
             <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
               <Award className="text-[#468DFF] h-5 w-5" />
               Tipo de plan

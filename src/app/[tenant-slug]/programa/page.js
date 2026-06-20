@@ -1182,7 +1182,7 @@ export default function ProgramaGestion({ params }) {
           <div className="p-6 md:p-8 space-y-6 max-w-[95%] mx-auto w-full">
             {showForm ? (
               // FORMULARIO DE ALTA Y EDICIÓN INLINE
-              <div className="bg-syso-bg rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
+              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
                 <div className="px-6 py-4 bg-slate-50 border-b border-slate-150 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <button 
@@ -1288,7 +1288,7 @@ export default function ProgramaGestion({ params }) {
                       readOnly={!!(catalogoId && catalogoId !== '__custom__')}
                     />
                     {(!catalogoId || catalogoId === '__custom__') && (
-                      <p className="text-[9px] text-slate-400 mt-1 italic">Podés ingresar la norma o resolución aplicable (ej: Dec. 351/79, Res. 905/15...)</p>
+                      <p className="text-[9px] text-slate-400 mt-1 italic">Podés ingresar la norma aplicable (ej: Dec. 351/79, Res. 905/15...)</p>
                     )}
                   </div>
 
@@ -1440,7 +1440,7 @@ export default function ProgramaGestion({ params }) {
                             : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                         }`}
                       >
-                        Vincular Google Drive
+                        Enlace Google Drive
                       </button>
                     </div>
 
@@ -1539,9 +1539,9 @@ export default function ProgramaGestion({ params }) {
                 </div>
 
                 {/* Buscador y Nueva Actividad */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                  <div className="relative flex-1">
-                    <span className="absolute left-3 top-2 h-4 w-4 text-slate-400 pointer-events-none">
+                <div className="flex flex-col md:flex-row md:items-center gap-3 w-full md:w-auto">
+                  <div className="relative w-full md:w-72">
+                    <span className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 pointer-events-none">
                       <Search className="h-3.5 w-3.5" />
                     </span>
                     <input
@@ -1555,7 +1555,7 @@ export default function ProgramaGestion({ params }) {
 
                   <button
                     onClick={() => handleAddNew()}
-                    className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0"
+                    className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0 w-full md:w-auto"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Nueva Actividad

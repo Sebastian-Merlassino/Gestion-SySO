@@ -2,6 +2,39 @@
 
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
+## [2026-06-20] Estandarización de Buscadores y Reversión de Fondos de Formularios a Blanco
+
+### Resumen de Cambios
+- **Rediseño de Barra de Herramientas**: Se unificó la ubicación y el tamaño del buscador (cuadro de búsqueda) en las 7 secciones principales (Visitas, Extintores, Acciones Correctivas, Programa de Capacitación, Programa Anual, Clientes y Equipo). Ahora todos se encuentran alineados a la derecha, agrupados junto al botón de acción principal y configurados con un ancho fijo de `w-full md:w-72` en pantallas medianas/grandes.
+- **Reversión de Color de Fondo de Formularios**: Se modificaron todos los contenedores de formularios inline, tarjetas del perfil de usuario y tarjetas del formulario de onboarding para regresar al color de fondo blanco (`bg-white`) en lugar de `bg-syso-bg`, restableciendo la coherencia visual con el fondo de las tablas y mejorando la visualización.
+- **Consistencia en Botón Limpiar Filtros**: Se revisó y unificó la implementación del botón "Limpiar filtros" en todas las secciones, asegurando que se posicione en la misma fila del toggle "Filtros de Búsqueda" sin incrementar la altura del contenedor.
+
+### Decisiones Clave
+- **Alineación y Ancho Consistente del Buscador**: Mantener el buscador compacto a la derecha junto al botón de carga, con un espaciador flexible en la izquierda, estandariza visualmente la parte superior de las tablas y reduce el ruido visual.
+- **Fondo de Formularios en Blanco**: Devolver el fondo de los formularios y fichas de datos a blanco (`bg-white`) mantiene un contraste nítido y consistente con las tablas de datos, dejando que el fondo gris `#D9D9D9` actúe puramente como lienzo de fondo de la ventana.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/app/onboarding/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+
+### Validaciones Ejecutadas
+- Compilación y build de Next.js (`npm run build` vía cmd) completados con éxito.
+- Commits y push a Git.
+
+---
+
 ## [2026-06-20] Estandarización de Color de Fondo (#D9D9D9) y Pictogramas de Equipo
 
 ### Resumen de Cambios

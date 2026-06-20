@@ -1303,7 +1303,7 @@ const [partidosList, setPartidosList] = useState([]);
         <form onSubmit={handleSaveChanges} className="space-y-8">
           
           {/* SECCIÓN 1: INFORMACIÓN DEL USUARIO */}
-          <div className="bg-syso-bg border border-slate-150 rounded-2xl p-8 shadow-sm space-y-6">
+          <div className="bg-white border border-slate-150 rounded-2xl p-8 shadow-sm space-y-6">
             <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
               <User className="text-[#468DFF] h-5 w-5" />
               Información del usuario
@@ -1641,7 +1641,7 @@ const [partidosList, setPartidosList] = useState([]);
           </div>
 
           {/* SECCIÓN: SEGURIDAD (CAMBIAR CONTRASEÑA) */}
-          <div className="bg-syso-bg border border-slate-150 rounded-2xl p-8 shadow-sm space-y-6">
+          <div className="bg-white border border-slate-150 rounded-2xl p-8 shadow-sm space-y-6">
             <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
               <Lock className="text-[#468DFF] h-5 w-5" />
               Seguridad (Cambiar Contraseña)
@@ -1741,7 +1741,7 @@ const [partidosList, setPartidosList] = useState([]);
           {(profileData?.role === 'owner' || profileData?.role === 'admin') && (
             <>
               {/* SECCIÓN 2: IDENTIDAD DE LA EMPRESA */}
-              <div className="bg-syso-bg border border-slate-150 rounded-2xl p-8 shadow-sm space-y-6">
+              <div className="bg-white border border-slate-150 rounded-2xl p-8 shadow-sm space-y-6">
             <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
               <Building className="text-[#468DFF] h-5 w-5" />
               Identidad de la empresa
@@ -1897,7 +1897,7 @@ const [partidosList, setPartidosList] = useState([]);
           </div>
 
           {/* SECCIÓN 3: PLAN */}
-          <div className="bg-syso-bg border border-slate-150 rounded-2xl p-8 shadow-sm space-y-6">
+          <div className="bg-white border border-slate-150 rounded-2xl p-8 shadow-sm space-y-6">
             <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
               <Award className="text-[#468DFF] h-5 w-5" />
               Plan Suscrito
@@ -1981,7 +1981,7 @@ const [partidosList, setPartidosList] = useState([]);
 
         {/* ELIMINAR CUENTA (Solo para Propietarios / Owners) */}
         {profileData?.role === 'owner' && (
-          <div className="mt-8 bg-syso-bg border border-red-200 rounded-2xl p-8 shadow-sm space-y-6">
+          <div className="mt-8 bg-white border border-red-200 rounded-2xl p-8 shadow-sm space-y-6">
             <h3 className="text-lg font-bold text-red-600 border-b border-red-100 pb-3 flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-red-600" />
               Eliminar Cuenta

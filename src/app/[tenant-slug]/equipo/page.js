@@ -1375,26 +1375,32 @@ export default function EquipoPage({ params }) {
               {/* Panel de Filtros y Búsqueda */}
               <div className="bg-white rounded-2xl border border-slate-150 p-3 shadow-sm space-y-3">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                  <div className="relative flex-1">
-                    <span className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 pointer-events-none">
-                      <Search className="h-3.5 w-3.5" />
-                    </span>
-                    <input
-                      type="text"
-                      placeholder="Buscar integrante por nombre, email o CUIT..."
-                      value={filterText}
-                      onChange={(e) => setFilterText(e.target.value)}
-                      className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400"
-                    />
-                  </div>
+                  {/* Espaciador para empujar el buscador y botón a la derecha en desktop */}
+                  <div className="hidden md:block flex-1"></div>
 
-                  <button
-                    onClick={handleAddNew}
-                    className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0"
-                  >
-                    <PlusCircle className="h-3.5 w-3.5" />
-                    Agregar Integrante
-                  </button>
+                  {/* Buscador y Botón agrupados */}
+                  <div className="flex flex-col md:flex-row md:items-center gap-3 w-full md:w-auto">
+                    <div className="relative w-full md:w-72">
+                      <span className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 pointer-events-none">
+                        <Search className="h-3.5 w-3.5" />
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="Buscar integrante por nombre, email o CUIT..."
+                        value={filterText}
+                        onChange={(e) => setFilterText(e.target.value)}
+                        className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400"
+                      />
+                    </div>
+
+                    <button
+                      onClick={handleAddNew}
+                      className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0 w-full md:w-auto"
+                    >
+                      <PlusCircle className="h-3.5 w-3.5" />
+                      Agregar Integrante
+                    </button>
+                  </div>
                 </div>
 
                 <div className="pt-2 border-t border-slate-100 space-y-2">
@@ -1571,7 +1577,7 @@ export default function EquipoPage({ params }) {
               <form onSubmit={handleSave} className="space-y-8">
                 
                 {/* 1. INFORMACIÓN PERSONAL */}
-                <div className="bg-syso-bg rounded-2xl border border-slate-150 p-6 md:p-8 shadow-sm space-y-6">
+                <div className="bg-white rounded-2xl border border-slate-150 p-6 md:p-8 shadow-sm space-y-6">
                   <h4 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
                     <User className="text-[#468DFF] h-4.5 w-4.5" />
                     Información Personal
@@ -1731,7 +1737,7 @@ export default function EquipoPage({ params }) {
                 </div>
 
                 {/* 2. ACCESO Y LOGIN */}
-                <div className="bg-syso-bg rounded-2xl border border-slate-150 p-6 md:p-8 shadow-sm space-y-6">
+                <div className="bg-white rounded-2xl border border-slate-150 p-6 md:p-8 shadow-sm space-y-6">
                   <h4 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
                     <Lock className="text-[#468DFF] h-4.5 w-4.5" />
                     Acceso a la plataforma
@@ -1821,7 +1827,7 @@ export default function EquipoPage({ params }) {
                 </div>
 
                 {/* 3. MATRÍCULAS PROFESIONALES */}
-                <div className="bg-syso-bg rounded-2xl border border-slate-150 p-6 md:p-8 shadow-sm space-y-6">
+                <div className="bg-white rounded-2xl border border-slate-150 p-6 md:p-8 shadow-sm space-y-6">
                   <div className="flex justify-between items-center border-b border-slate-100 pb-3">
                     <h4 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
                       <Award className="text-[#468DFF] h-4.5 w-4.5" />
@@ -1966,7 +1972,7 @@ export default function EquipoPage({ params }) {
                 </div>
 
                 {/* 4. FIRMA DIGITAL */}
-                <div className="bg-syso-bg rounded-2xl border border-slate-150 p-6 md:p-8 shadow-sm space-y-6">
+                <div className="bg-white rounded-2xl border border-slate-150 p-6 md:p-8 shadow-sm space-y-6">
                   <h4 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
                     <FileText className="text-[#468DFF] h-4.5 w-4.5" />
                     Firma Digital

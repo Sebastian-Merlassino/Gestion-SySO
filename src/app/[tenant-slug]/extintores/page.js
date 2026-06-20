@@ -982,7 +982,7 @@ export default function ExtintoresPage({ params }) {
             
             {isFormOpen ? (
               // FORMULARIO DE ALTA Y EDICIÓN INLINE
-              <div className="bg-syso-bg rounded-2xl border border-slate-150 shadow-sm overflow-hidden animate-fade-in">
+              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden animate-fade-in">
                 <div className="px-6 py-4 bg-slate-50 border-b border-slate-150 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <button 
@@ -1372,26 +1372,30 @@ export default function ExtintoresPage({ params }) {
                 {/* Panel de Filtros y Búsqueda */}
                 <div className="bg-white rounded-2xl border border-slate-150 p-3 shadow-sm space-y-3 shrink-0">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                    
-                    {/* Buscador de texto */}
-                    <div className="relative flex-1">
-                      <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 pointer-events-none" />
-                      <input
-                        type="text"
-                        placeholder="Buscar por N° de Extintor, N° de puesto, sector, referencia..."
-                        value={filterText}
-                        onChange={(e) => setFilterText(e.target.value)}
-                        className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400"
-                      />
+                    {/* Espaciador para empujar el buscador y botón a la derecha en desktop */}
+                    <div className="hidden md:block flex-1"></div>
+
+                    {/* Buscador y Botón agrupados */}
+                    <div className="flex flex-col md:flex-row md:items-center gap-3 w-full md:w-auto">
+                      <div className="relative w-full md:w-72">
+                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 pointer-events-none" />
+                        <input
+                          type="text"
+                          placeholder="Buscar por N° de Extintor, N° de puesto, sector, referencia..."
+                          value={filterText}
+                          onChange={(e) => setFilterText(e.target.value)}
+                          className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400"
+                        />
+                      </div>
+                      
+                      <button
+                        onClick={() => setIsFormOpen(true)}
+                        className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0 w-full md:w-auto"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        Incorporar Nuevo Extintor
+                      </button>
                     </div>
-                    
-                    <button
-                      onClick={() => setIsFormOpen(true)}
-                      className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                      Incorporar Nuevo Extintor
-                    </button>
                   </div>
 
                   {/* Selectores de Filtrado */}

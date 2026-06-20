@@ -1422,28 +1422,33 @@ export default function EmpresasClientes({ params }) {
                   {/* Toolbar y Filtros Unificados */}
                   <div className="bg-white rounded-2xl border border-slate-150 p-3 shadow-sm space-y-3">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                      {/* Buscador */}
-                      <div className="relative flex-1">
-                        <span className="absolute left-3 top-2 h-4 w-4 text-slate-400 pointer-events-none">
-                          <Search className="h-3.5 w-3.5" />
-                        </span>
-                        <input
-                          type="text"
-                          placeholder="Buscar por razón social, nombre comercial o CUIT..."
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400"
-                        />
-                      </div>
+                      {/* Espaciador para empujar el buscador y botón a la derecha en desktop */}
+                      <div className="hidden md:block flex-1"></div>
 
-                      {/* Botón de Agregar */}
-                      <button
-                        onClick={handleAddNew}
-                        className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0"
-                      >
-                        <PlusCircle className="h-3.5 w-3.5" />
-                        Agregar nueva empresa
-                      </button>
+                      {/* Buscador y Botón agrupados */}
+                      <div className="flex flex-col md:flex-row md:items-center gap-3 w-full md:w-auto">
+                        <div className="relative w-full md:w-72">
+                          <span className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 pointer-events-none">
+                            <Search className="h-3.5 w-3.5" />
+                          </span>
+                          <input
+                            type="text"
+                            placeholder="Buscar por razón social, nombre comercial o CUIT..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400"
+                          />
+                        </div>
+
+                        {/* Botón de Agregar */}
+                        <button
+                          onClick={handleAddNew}
+                          className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0 w-full md:w-auto"
+                        >
+                          <PlusCircle className="h-3.5 w-3.5" />
+                          Agregar nueva empresa
+                        </button>
+                      </div>
                     </div>
 
                     {/* Filtros rápidos */}
@@ -1598,7 +1603,7 @@ export default function EmpresasClientes({ params }) {
               </div>
 
               {/* Encabezado Ficha */}
-              <div className="bg-syso-bg border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
+              <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4">
                 <div className="flex items-start gap-4">
                   <div className="p-3 bg-blue-50 text-[#468DFF] rounded-xl shrink-0">
                     <Building className="h-6 w-6" />
@@ -1642,7 +1647,7 @@ export default function EmpresasClientes({ params }) {
                 {/* TAB 1: DATOS GENERALES Y CONTACTOS */}
                 {activeTab === 'general' && (
                   <div className="space-y-6">
-                    <div className="bg-syso-bg border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4">
+                    <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4">
                       <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Identidad de la empresa</h4>
                       
                       <div className="grid md:grid-cols-2 gap-4">
@@ -1942,7 +1947,7 @@ export default function EmpresasClientes({ params }) {
                 {/* TAB 3: ESTABLECIMIENTOS */}
                 {activeTab === 'establecimientos' && (
                   <div className="space-y-6">
-                    <div className="flex justify-between items-center bg-syso-bg border border-slate-150 rounded-2xl p-5 shadow-sm">
+                    <div className="flex justify-between items-center bg-white border border-slate-150 rounded-2xl p-5 shadow-sm">
                       <div>
                         <h4 className="text-sm font-bold text-slate-900">Listado de Establecimientos</h4>
                         <p className="text-[10px] text-slate-500 mt-0.5">Una empresa puede constar de múltiples sedes, fábricas u oficinas.</p>
@@ -1958,7 +1963,7 @@ export default function EmpresasClientes({ params }) {
                     </div>
 
                     {establecimientos.length === 0 ? (
-                      <div className="bg-syso-bg border border-slate-150 rounded-2xl p-10 text-center space-y-3 shadow-sm">
+                      <div className="bg-white border border-slate-150 rounded-2xl p-10 text-center space-y-3 shadow-sm">
                         <MapPin className="h-6 w-6 text-slate-400 mx-auto" />
                         <h5 className="font-bold text-slate-800 text-xs">No hay establecimientos cargados</h5>
                         <p className="text-[10px] text-slate-500 max-w-xs mx-auto">
@@ -1968,7 +1973,7 @@ export default function EmpresasClientes({ params }) {
                     ) : (
                       <div className="space-y-8">
                         {establecimientos.map((est, idx) => (
-                          <div key={idx} className="bg-syso-bg border border-slate-150 rounded-2xl p-6 shadow-sm space-y-6 relative hover:border-[#468DFF]/20 transition-all">
+                          <div key={idx} className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-6 relative hover:border-[#468DFF]/20 transition-all">
                             
                             {/* Header Establecimiento */}
                             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
@@ -2355,7 +2360,7 @@ export default function EmpresasClientes({ params }) {
                     )}
 
                     {/* Observaciones en Establecimientos */}
-                    <div className="bg-syso-bg border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4 mt-6">
+                    <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4 mt-6">
                       <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Observaciones Generales</h4>
                       <div className="space-y-1">
                         <label className="text-xs font-bold text-slate-600 block">Notas / Observaciones sobre la empresa</label>
@@ -2375,7 +2380,7 @@ export default function EmpresasClientes({ params }) {
                 {/* TAB 4: PLATAFORMAS & CREDENCIALES */}
                 {activeTab === 'credenciales' && (
                   <div className="space-y-6">
-                    <div className="bg-syso-bg border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4">
+                    <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4">
                       <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Aseguradora de Riesgos del Trabajo (ART)</h4>
                       
                       <div className="grid md:grid-cols-3 gap-4">
@@ -2437,7 +2442,7 @@ export default function EmpresasClientes({ params }) {
                       </div>
                     </div>
 
-                    <div className="bg-syso-bg border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4">
+                    <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4">
                       <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Plataforma MiBA / Trámites a Distancia (TAD)</h4>
                       
                       <div className="grid md:grid-cols-3 gap-4">
@@ -2476,7 +2481,7 @@ export default function EmpresasClientes({ params }) {
                       </div>
                     </div>
 
-                    <div className="bg-syso-bg border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4">
+                    <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4">
                       <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Ministerio de Ambiente PBA / APRA</h4>
                       
                       <div className="grid md:grid-cols-3 gap-4">
@@ -2516,7 +2521,7 @@ export default function EmpresasClientes({ params }) {
                     </div>
 
                     {/* Observaciones en Plataformas */}
-                    <div className="bg-syso-bg border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4 mt-6">
+                    <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4 mt-6">
                       <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Observaciones Generales</h4>
                       <div className="space-y-1">
                         <label className="text-xs font-bold text-slate-600 block">Notas / Observaciones sobre la empresa</label>
