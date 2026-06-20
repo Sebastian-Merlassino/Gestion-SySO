@@ -2,24 +2,28 @@
 
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
-## [2026-06-20] Ajustes de Capacitaciones y Unificación de Fechas
+## [2026-06-20] Ajustes de Capacitaciones y Extintores, Unificación de Fechas y Carga de Imágenes a Supabase
 
 ### Resumen de Cambios
+- **Módulo de Extintores**:
+  - Reestructurada la tabla de listado de extintores para separar las fechas de recarga y prueba hidráulica en dos columnas independientes y ordenables: **Venc. Recarga** y **Venc. P.H.**, aplicando el helper `formatDate`.
+  - Removida por completo la columna **Controles** de la grilla de listado para simplificar la visualización de datos.
+  - Diseñado y ejecutado el script `scripts/migrate-extintores-files.js` que descargó las 185 imágenes almacenadas como URLs externas de Drive y AppSheet, las subió a Supabase Storage (`documents` bucket) bajo la ruta del tenant correspondiente, y actualizó la columna `imagen_url`.
 - **Módulo de Capacitación Anual**:
-  - Reestructurada la tabla de listado de capacitaciones para separar Puesto y Capacitador en columnas individuales y reordenarlas según Cliente/Establecimiento, Puesto, Tema, Capacitador, Fechas, Progreso, Acciones.
-  - Implementado dropdown multiselect interactivo de temas con barra de búsqueda interna y soporte para temas predefinidos y personalizados ("Otro tema").
-  - El campo "Contenido" se actualiza dinámicamente concatenando la información teórica de cada tema seleccionado al alternarlos.
-  - Añadido soporte para registros de capacitación mediante carga masiva de fotos y captura directa con cámara del dispositivo móvil. Se diseñó un grid de previsualización con modal interactivo de visualización a pantalla completa y descarte en caliente.
-  - Lógica del CRUD refactorizada para persistir de manera estructurada los nombres en `temas` (`TEXT[]`), los IDs en `tema_ids` (`UUID[]`) y múltiples rutas de fotos en `fotos_urls` (`TEXT[]`).
+  - Separados Puesto y Capacitador en columnas individuales y reordenadas según Cliente/Establecimiento, Puesto, Tema, Capacitador, Fechas, Progreso, Acciones.
+  - Implementado dropdown multiselect interactivo de temas con barra de búsqueda interna y soporte para temas predefinidos y personalizados ("Otro tema"). El campo "Contenido" se actualiza concatenando la información teórica de cada tema seleccionado al alternarlos.
+  - Añadido soporte para registros de capacitación mediante carga masiva de fotos y captura directa con cámara del dispositivo móvil. Se diseñó un grid de previsualización con modal interactivo de visualización a pantalla completa.
+  - Lógica del CRUD refactorizada para persistir los nombres en `temas` (`TEXT[]`), los IDs en `tema_ids` (`UUID[]`) y múltiples fotos en `fotos_urls` (`TEXT[]`).
 - **Unificación de Formato de Fechas**:
   - Agregado el helper `formatDate` en `src/lib/utils.js` para estandarizar la visualización de fechas como `DD/MM/YYYY`.
   - Aplicada la unificación de visualización en los módulos de Acciones Correctivas, Extintores, Dashboard, Programa de Gestión Anual y Capacitaciones.
 - **Resolución de Dependencias**:
-  - Instaladas y guardadas las dependencias `clsx` y `tailwind-merge` en el proyecto para asegurar compatibilidad total del helper `cn` y del empaquetado de shadcn/ui.
+  - Instaladas y guardadas las dependencias `clsx` y `tailwind-merge` en el proyecto para asegurar compatibilidad total de `cn`.
 
 ### Decisiones Clave
-- **Dropdown Multiselect Reactivo con Backdrop**: Para optimizar el cierre del dropdown al hacer clic fuera en interfaces móviles y de escritorio, se integró una capa overlay invisible (`fixed inset-0 z-20`) que previene manipulaciones complejas de manejadores globales del navegador.
-- **Preservación Referencial e Histórica**: Se guardan los nombres concatenados en la columna `tema` para compatibilidad retrospectiva, a la vez que se aprovechan arreglos PG para los campos multiselect.
+- **Dropdown Multiselect Reactivo con Backdrop**: Para optimizar el cierre del dropdown al hacer clic fuera se integró una capa overlay invisible (`fixed inset-0 z-20`).
+- **Preservación Referencial e Histórica**: Se guardan los nombres en la columna `tema` para compatibilidad retrospectiva, y se aprovechan arreglos PG para los campos multiselect.
+- **Estructura Multi-tenant en Storage**: Los archivos de imágenes de extintores y capacitaciones se almacenan bajo el directorio del ID de perfil del usuario creador para integrarse con las políticas RLS existentes.
 
 ### Skills Utilizadas
 - `gestion-syso-bitacora`
@@ -29,6 +33,7 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 
 ### Archivos Modificados / Creados
 - `[NEW] supabase/migrations/20260629000000_add_temas_and_fotos_to_capacitacion.sql`
+- `[NEW] scripts/migrate-extintores-files.js`
 - `[MODIFY] src/lib/utils.js`
 - `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
 - `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
@@ -40,6 +45,7 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 
 ### Validaciones Ejecutadas
 - Compilación y optimización final de Next.js (`npm.cmd run build`) completada con éxito.
+- Ejecución completa del script de migración actualizando 185 registros de imágenes.
 
 ---
 
