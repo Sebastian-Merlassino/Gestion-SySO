@@ -11,9 +11,9 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 - **Estandarización de Botones y Header Actions**:
   - Reemplazados los botones "Cancelar" y "Volver al listado" por "Salir" alineado abajo a la izquierda y "Guardar" abajo a la derecha utilizando un contenedor unificado con clases `flex justify-between items-center`.
   - Vinculadas todas las cabeceras del formulario (`ArrowLeft` de regreso y la cruz `X` de cierre) para lanzar consistentemente el diálogo modal de confirmación antes de limpiar campos y volver a la vista del listado.
-- **Eliminación de Confirmación Nativa en Equipo y Estandarización de Extintores**:
+- **Eliminación de Confirmación Nativa en Equipo y Estandarización de Extintores y Programa de Gestión**:
   - Sustituida la confirmación nativa del navegador (`window.confirm`) en `equipo/page.js` por el componente visual personalizado `modalAlert`.
-  - Actualizado el modal de confirmación en `extintores/page.js` para usar el diseño centrado con el icono de advertencia (`AlertTriangle`) y botones adaptados de igual ancho (`flex-1`) para coincidir exactamente con el resto de las vistas.
+  - Actualizados los modales de confirmación en `extintores/page.js` y `programa/page.js` para usar el diseño centrado con el icono de advertencia (`AlertTriangle`) y botones de igual ancho (`flex-1`) para coincidir exactamente con las demás vistas.
 
 ### Decisiones Clave
 - **Intercepción Nativa de Anchor Tags**: Se decidió usar `e.preventDefault()` en los tags de enlace en combinación con redirección a través de `window.location.href = path` en el callback de confirmación del modal. Esto permite compatibilidad directa con el esquema modular sin necesidad de inyectar enrutadores pesados adicionales.

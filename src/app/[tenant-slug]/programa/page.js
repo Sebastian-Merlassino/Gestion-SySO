@@ -1946,27 +1946,32 @@ export default function ProgramaGestion({ params }) {
 
         {/* MODAL DE CONFIRMACIÓN */}
         {confirmModal.show && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={() => setConfirmModal({ show: false, title: '', message: '', onConfirm: null })} />
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xl max-w-sm w-full z-10 space-y-4 animate-scaleUp">
-              <div className="flex items-center gap-3 text-red-500">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xl max-w-sm w-full space-y-4 text-center">
+              <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500">
                 <AlertTriangle className="h-6 w-6" />
-                <h4 className="font-outfit font-extrabold text-slate-900">{confirmModal.title}</h4>
               </div>
-              <p className="text-xs text-slate-600 leading-relaxed font-normal">{confirmModal.message}</p>
-              <div className="flex justify-end gap-3 pt-2">
+              <div className="space-y-1">
+                <h4 className="font-outfit text-base font-extrabold text-slate-800">{confirmModal.title}</h4>
+                <p className="text-xs text-slate-500 leading-relaxed">{confirmModal.message}</p>
+              </div>
+              <div className="flex gap-2">
                 <button
+                  type="button"
                   onClick={() => setConfirmModal({ show: false, title: '', message: '', onConfirm: null })}
-                  className="px-4 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition-all cursor-pointer"
+                  className="flex-1 py-2 px-4 rounded-xl border border-slate-300 text-slate-700 font-bold text-xs hover:bg-slate-50 transition-all cursor-pointer bg-white"
                 >
                   Cancelar
                 </button>
-                <button
-                  onClick={confirmModal.onConfirm}
-                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-red-500/10 cursor-pointer"
-                >
-                  {confirmModal.confirmText || 'Confirmar'}
-                </button>
+                {confirmModal.onConfirm && (
+                  <button
+                    type="button"
+                    onClick={confirmModal.onConfirm}
+                    className="flex-1 py-2 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md shadow-red-500/10 cursor-pointer"
+                  >
+                    Confirmar
+                  </button>
+                )}
               </div>
             </div>
           </div>
