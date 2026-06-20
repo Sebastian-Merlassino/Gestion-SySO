@@ -11,8 +11,10 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
   - Diseñado y ejecutado el script `scripts/migrate-extintores-files.js` que descargó las 185 imágenes almacenadas como URLs externas de Drive y AppSheet, las subió a Supabase Storage (`documents` bucket) bajo la ruta del tenant correspondiente, y actualizó la columna `imagen_url`.
 - **Módulo de Capacitación Anual**:
   - Separados Puesto y Capacitador en columnas individuales y reordenadas según Cliente/Establecimiento, Puesto, Tema, Capacitador, Fechas, Progreso, Acciones.
+  - Distribuido de forma proporcional el ancho de las columnas de la tabla de listado (`w-[20%]`, `w-[15%]`, `w-[25%]`, etc.) y configurado el truncado de texto en las celdas de Puesto y Tema para evitar deformaciones en la grilla.
   - Implementado dropdown multiselect interactivo de temas con barra de búsqueda interna y soporte para temas predefinidos y personalizados ("Otro tema"). El campo "Contenido" se actualiza concatenando la información teórica de cada tema seleccionado al alternarlos.
   - Añadido soporte para registros de capacitación mediante carga masiva de fotos y captura directa con cámara del dispositivo móvil. Se diseñó un grid de previsualización con modal interactivo de visualización a pantalla completa.
+  - Reestructurado el contenedor de carga de imágenes en el formulario para usar el mismo diseño y formato consistente que en extintores y acciones correctivas (caja `bg-slate-50 border-slate-200 rounded-xl` con detalle de formatos y peso recomendado). El subtítulo se unificó a **"Registros de capacitación"**.
   - Lógica del CRUD refactorizada para persistir los nombres en `temas` (`TEXT[]`), los IDs en `tema_ids` (`UUID[]`) y múltiples fotos en `fotos_urls` (`TEXT[]`).
 - **Unificación de Formato de Fechas**:
   - Agregado el helper `formatDate` en `src/lib/utils.js` para estandarizar la visualización de fechas como `DD/MM/YYYY`.
