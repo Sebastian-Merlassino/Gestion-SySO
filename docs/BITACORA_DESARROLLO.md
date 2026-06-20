@@ -5,7 +5,7 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 ## [2026-06-19] Mejoras de Seguridad de Acceso, Onboarding, Multitenant Flexible y Eliminación de Cuentas
 
 ### Resumen de Cambios
-- **Registro Seguro y Confirmación de Correo**: Modificada la vista de registro (`register/page.js`) para evitar que redireccione directamente al onboarding tras el registro. Ahora expone una pantalla de éxito invitando al usuario a confirmar su dirección de correo electrónico mediante el enlace enviado por Supabase.
+- **Registro Seguro y Confirmación de Correo**: Modificada la vista de registro (`register/page.js`) para evitar que redireccione directamente al onboarding tras el registro. Ahora expone una pantalla de éxito invitando al usuario a confirmar su dirección de correo electrónico mediante el enlace enviado por Supabase. Se unificó el estilo estético moviendo el logotipo de la marca y el subtítulo ("Registrate para comenzar a gestionar tus clientes de Higiene y Seguridad") dentro del contenedor de la tarjeta (igual que en el login), y se integraron botones de visualización de contraseña (ojo) en los inputs de clave y confirmación de clave.
 - **Seguridad en Onboarding**: Protegido el enrutamiento de onboarding (`onboarding/page.js`) para validar la existencia de una sesión de Supabase autenticada, redirigiendo de inmediato al login si el usuario no tiene sesión activa.
 - **Acceso Multi-tenant Flexible (Slug-based)**:
   - Creado un modelo RLS flexible que permite que un mismo correo electrónico (usuario registrado en `auth.users`) sea propietario (`owner`) de su propio tenant e invitado con acceso activo en otro tenant (`miembros_equipo.tiene_acceso = true`), solucionando el problema de duplicación de correos.

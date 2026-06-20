@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Mail, Lock, User, ShieldAlert, ArrowRight, Loader2, Award, AlertTriangle, X, CheckCircle } from 'lucide-react';
+import { Mail, Lock, User, ShieldAlert, ArrowRight, Loader2, Award, AlertTriangle, X, CheckCircle, Eye, EyeOff } from 'lucide-react';
 
 export default function RegisterPage() {
   const [fullName, setFullName] = useState('');
@@ -14,6 +14,8 @@ export default function RegisterPage() {
   const [modal, setModal] = useState({ show: false, message: '', type: 'success' });
   const [isDevMode, setIsDevMode] = useState(false);
   const [registered, setRegistered] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -109,18 +111,23 @@ export default function RegisterPage() {
       <div className="absolute bottom-[-20%] right-[-20%] w-[600px] h-[600px] rounded-full bg-[#0511F2]/5 blur-[180px] pointer-events-none" />
 
       <div className="w-full max-w-md z-10 my-8">
-        {/* Logo and Header */}
-        <div className="text-center mb-8">
-          <h2 className="font-outfit text-3xl font-extrabold tracking-tight text-slate-900">
-            Crear Cuenta <span className="text-[#468DFF]">SySO</span>
-          </h2>
-          <p className="text-sm text-slate-600 mt-2 font-medium">
-            Registrate para comenzar a gestionar tus obras y auditorías
-          </p>
-        </div>
-
         {/* Form Card */}
         <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-xl">
+          {!registered && (
+            <>
+              <img
+                src="/brand/logo-black.png"
+                alt="Logo Gestión SySO"
+                width="220"
+                style={{ width: '220px', height: 'auto', display: 'block', margin: '0 auto' }}
+                className="mx-auto object-contain mb-4"
+              />
+              <p className="text-sm text-slate-600 font-medium text-center mb-6">
+                Registrate para comenzar a gestionar tus clientes de Higiene y Seguridad
+              </p>
+            </>
+          )}
+
           {registered ? (
             <div className="text-center space-y-6 animate-scaleUp">
               <div className="flex justify-center">
@@ -203,13 +210,20 @@ export default function RegisterPage() {
                       <Lock className="h-5 w-5" />
                     </span>
                     <input
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       required
                       placeholder="Mínimo 8 caracteres"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-slate-800 placeholder-slate-400 focus:outline-none transition-all"
+                      className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-12 text-slate-800 placeholder-slate-400 focus:outline-none transition-all"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
                   </div>
                   <p className="text-[10px] text-slate-500 mt-1.5 font-medium leading-relaxed">
                     Debe tener al menos 8 caracteres, incluir al menos una letra mayúscula y al menos un número.
@@ -225,13 +239,20 @@ export default function RegisterPage() {
                       <Lock className="h-5 w-5" />
                     </span>
                     <input
-                      type="password"
+                      type={showConfirmPassword ? 'text' : 'password'}
                       required
                       placeholder="Repita la contraseña"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-slate-800 placeholder-slate-400 focus:outline-none transition-all"
+                      className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-12 text-slate-800 placeholder-slate-400 focus:outline-none transition-all"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700"
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
                   </div>
                 </div>
 
