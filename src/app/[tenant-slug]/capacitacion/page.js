@@ -444,6 +444,22 @@ export default function CapacitacionPage({ params }) {
     });
   };
 
+  const handleSidebarNavigation = (e, path) => {
+    if (isFormOpen) {
+      e.preventDefault();
+      setModalAlert({
+        show: true,
+        title: 'Salir sin guardar',
+        message: '¿Estás seguro de que deseas salir? Los cambios no guardados se perderán.',
+        onConfirm: () => {
+          closeAlert();
+          window.location.href = path;
+        }
+      });
+    }
+  };
+
+
   const handleCloseForm = () => {
     setIsFormOpen(false);
     setEditingId(null);
@@ -801,39 +817,39 @@ export default function CapacitacionPage({ params }) {
 
               <nav className="space-y-1.5">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block mb-2">Panel principal</span>
-                <a href={`/${tenantSlug}/dashboard`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                <a href={`/${tenantSlug}/dashboard`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/dashboard`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <Building className="h-4 w-4" />
                   Dashboard
                 </a>
-                <a href={`/${tenantSlug}/empresas`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                <a href={`/${tenantSlug}/empresas`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <Users className="h-4 w-4" />
                   Clientes
                 </a>
                 {(profile?.role === 'owner' || profile?.role === 'admin') && (
-                  <a href={`/${tenantSlug}/equipo`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                  <a href={`/${tenantSlug}/equipo`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/equipo`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                     <Briefcase className="h-4 w-4" />
                     Equipo de Trabajo
                   </a>
                 )}
-                <a href={`/${tenantSlug}/programa`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                <a href={`/${tenantSlug}/programa`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/programa`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <Calendar className="h-4 w-4" />
                   Programa de Gestión Anual
                 </a>
-                <a href={`/${tenantSlug}/capacitacion`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10">
+                <a href={`/${tenantSlug}/capacitacion`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/capacitacion`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10">
                   <GraduationCap className="h-4 w-4" />
                   Programa de Capacitación Anual
                 </a>
-                <a href={`/${tenantSlug}/correctivas`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                <a href={`/${tenantSlug}/correctivas`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/correctivas`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <ClipboardList className="h-4 w-4" />
                   Acciones Correctivas
                 </a>
-                <a href={`/${tenantSlug}/extintores`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                <a href={`/${tenantSlug}/extintores`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/extintores`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <Flame className="h-4 w-4" />
                   Extintores
                 </a>
                 
                 <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
-                <a href={`/${tenantSlug}/profile`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                <a href={`/${tenantSlug}/profile`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/profile`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <Settings className="h-4 w-4" />
                   Editar Perfil
                 </a>
@@ -887,6 +903,7 @@ export default function CapacitacionPage({ params }) {
             <a 
               href={`/${tenantSlug}/dashboard`} 
               title="Dashboard"
+              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/dashboard`)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
             >
               <Building className="h-4 w-4 shrink-0" />
@@ -895,6 +912,7 @@ export default function CapacitacionPage({ params }) {
             <a 
               href={`/${tenantSlug}/empresas`} 
               title="Clientes"
+              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
             >
               <Users className="h-4 w-4 shrink-0" />
@@ -904,6 +922,7 @@ export default function CapacitacionPage({ params }) {
               <a 
                 href={`/${tenantSlug}/equipo`} 
                 title="Equipo de Trabajo"
+                onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/equipo`)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
               >
                 <Briefcase className="h-4 w-4 shrink-0" />
@@ -913,6 +932,7 @@ export default function CapacitacionPage({ params }) {
             <a 
               href={`/${tenantSlug}/programa`} 
               title="Programa de Gestión Anual"
+              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/programa`)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
             >
               <Calendar className="h-4 w-4 shrink-0" />
@@ -921,6 +941,7 @@ export default function CapacitacionPage({ params }) {
             <a 
               href={`/${tenantSlug}/capacitacion`} 
               title="Programa de Capacitación Anual"
+              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/capacitacion`)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10 ${isSidebarCollapsed ? 'justify-center' : ''}`}
             >
               <GraduationCap className="h-4 w-4 shrink-0" />
@@ -929,6 +950,7 @@ export default function CapacitacionPage({ params }) {
             <a 
               href={`/${tenantSlug}/correctivas`} 
               title="Acciones Correctivas"
+              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/correctivas`)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
             >
               <ClipboardList className="h-4 w-4 shrink-0" />
@@ -937,6 +959,7 @@ export default function CapacitacionPage({ params }) {
             <a 
               href={`/${tenantSlug}/extintores`} 
               title="Extintores"
+              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/extintores`)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
             >
               <Flame className="h-4 w-4 shrink-0" />
@@ -951,6 +974,7 @@ export default function CapacitacionPage({ params }) {
             <a 
               href={`/${tenantSlug}/profile`} 
               title="Editar Perfil"
+              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/profile`)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
             >
               <Settings className="h-4 w-4 shrink-0" />

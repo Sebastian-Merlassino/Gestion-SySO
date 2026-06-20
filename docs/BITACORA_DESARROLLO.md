@@ -2,6 +2,47 @@
 
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
+## [2026-06-20] Estandarización de Acciones de Salida y Modales de Advertencia
+
+### Resumen de Cambios
+- **Modales de Salida Interceptados**:
+  - Implementada la función `handleSidebarNavigation(e, path)` en los seis módulos operativos principales para interceptar clics de navegación en la barra lateral (tanto menú móvil como lateral de escritorio) si el usuario se encuentra con un formulario activo de creación/edición de datos.
+  - El click en links de barra lateral activa un diálogo modal de confirmación ("Salir sin guardar") antes de redirigir de forma transparente.
+- **Estandarización de Botones y Header Actions**:
+  - Reemplazados los botones "Cancelar" y "Volver al listado" por "Salir" alineado abajo a la izquierda y "Guardar" abajo a la derecha utilizando un contenedor unificado con clases `flex justify-between items-center`.
+  - Vinculadas todas las cabeceras del formulario (`ArrowLeft` de regreso y la cruz `X` de cierre) para lanzar consistentemente el diálogo modal de confirmación antes de limpiar campos y volver a la vista del listado.
+- **Eliminación de Confirmación Nativa en Equipo**:
+  - Sustituida la confirmación nativa del navegador (`window.confirm`) en `equipo/page.js` por el componente visual personalizado `modalAlert` de Rich Aesthetics con desenfoque de fondo y paleta de colores de marca para lograr consistencia estructural.
+
+### Decisiones Clave
+- **Intercepción Nativa de Anchor Tags**: Se decidió usar `e.preventDefault()` en los tags de enlace en combinación con redirección a través de `window.location.href = path` en el callback de confirmación del modal. Esto permite compatibilidad directa con el esquema modular sin necesidad de inyectar enrutadores pesados adicionales.
+- **Intercepción Inteligente de la Misma Página**: En los enlaces de la barra lateral que corresponden a la sección actual (que usan `href="#"` o el path exacto de la página actual), la confirmación del modal ejecuta el cierre del formulario (`setView('list')` o `setIsFormOpen(false)`) en lugar de recargar la página, mejorando la fluidez operacional del usuario.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Se ejecutó exitosamente el comando de empaquetado de producción de Next.js (`cmd.exe /c "npm run build"`) compilando el 100% de las rutas dinámicas del tenant de manera íntegra y sin errores de routing.
+
+### Riesgos Detectados / Remanentes
+- Monitorear si algún inspector reporta bloqueos de navegación en otros enlaces fuera de la barra lateral (como el menú de logout o de perfil si están cargando datos).
+
+### Próximo Paso Recomendado
+- Realizar pruebas de humo manuales en dispositivos móviles para verificar que el menú drawer lateral intercepta los clics de manera limpia al presionar fuera de la pantalla.
+
+---
+
 ## [2026-06-20] Ajustes de Capacitaciones y Extintores, Unificación de Fechas y Carga de Imágenes a Supabase
 
 ### Resumen de Cambios
