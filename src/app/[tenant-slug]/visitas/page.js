@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { formatDate } from '@/lib/utils';
 import { 
@@ -183,7 +184,7 @@ export default function VisitasPage({ params }) {
   const [filterText, setFilterText] = useState('');
   const [filterEmpresa, setFilterEmpresa] = useState('');
   const [filterEstablecimiento, setFilterEstablecimiento] = useState('');
-  const [showFilters, setShowFilters] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
@@ -1681,7 +1682,7 @@ export default function VisitasPage({ params }) {
   };
 
   return (
-    <div className="h-screen overflow-hidden bg-[#D9D9D9] text-slate-700 flex flex-col md:flex-row relative font-sans">
+    <div className="h-screen overflow-hidden bg-syso-bg text-slate-700 flex font-sans">
       
       {/* Mobile Sidebar */}
       {isMobileMenuOpen && (
@@ -1701,46 +1702,46 @@ export default function VisitasPage({ params }) {
 
               <nav className="space-y-1.5">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block mb-2">Panel principal</span>
-                <a href={`/${tenantSlug}/dashboard`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/dashboard`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                <Link href={`/${tenantSlug}/dashboard`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/dashboard`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <Building className="h-4 w-4" />
                   Dashboard
-                </a>
-                <a href={`/${tenantSlug}/empresas`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                </Link>
+                <Link href={`/${tenantSlug}/empresas`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <Users className="h-4 w-4" />
                   Clientes
-                </a>
+                </Link>
                 {(!profile || profile?.role === 'owner' || profile?.role === 'admin') && (
-                  <a href={`/${tenantSlug}/equipo`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/equipo`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                  <Link href={`/${tenantSlug}/equipo`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/equipo`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                     <Briefcase className="h-4 w-4" />
                     Equipo de Trabajo
-                  </a>
+                  </Link>
                 )}
-                <a href={`/${tenantSlug}/programa`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/programa`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                <Link href={`/${tenantSlug}/programa`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/programa`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <Calendar className="h-4 w-4" />
                   Programa de Gestión Anual
-                </a>
-                <a href={`/${tenantSlug}/capacitacion`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/capacitacion`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                </Link>
+                <Link href={`/${tenantSlug}/capacitacion`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/capacitacion`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <GraduationCap className="h-4 w-4" />
                   Programa de Capacitación Anual
-                </a>
-                <a href={`/${tenantSlug}/correctivas`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/correctivas`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                </Link>
+                <Link href={`/${tenantSlug}/correctivas`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/correctivas`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <ClipboardList className="h-4 w-4" />
                   Acciones Correctivas
-                </a>
-                <a href={`/${tenantSlug}/extintores`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/extintores`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                </Link>
+                <Link href={`/${tenantSlug}/extintores`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/extintores`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <Flame className="h-4 w-4" />
                   Extintores
-                </a>
-                <a href={`/${tenantSlug}/visitas`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/visitas`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10">
+                </Link>
+                <Link href={`/${tenantSlug}/visitas`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/visitas`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10">
                   <ClipboardCheck className="h-4 w-4" />
                   Constancia de Visita
-                </a>
+                </Link>
                 
                 <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
-                <a href={`/${tenantSlug}/profile`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/profile`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                <Link href={`/${tenantSlug}/profile`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/profile`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <Settings className="h-4 w-4" />
                   Editar Perfil
-                </a>
+                </Link>
               </nav>
             </div>
 
@@ -1760,84 +1761,132 @@ export default function VisitasPage({ params }) {
       )}
 
       {/* Desktop Sidebar */}
-      <aside className={`hidden md:flex flex-col justify-between p-6 bg-[#0D0D0D] border-r border-white/5 transition-all duration-300 shrink-0 ${isSidebarCollapsed ? 'w-20' : 'w-64'}`}>
-        <div>
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-3 overflow-hidden">
+      <aside className={`bg-[#0D0D0D] flex flex-col justify-between shrink-0 hidden md:flex transition-all duration-300 ${isSidebarCollapsed ? 'w-20' : 'w-64'}`}>
+        <div className="p-6">
+          <div className={`flex items-center justify-between gap-3 mb-8 ${isSidebarCollapsed ? 'flex-col' : ''}`}>
+            <div className="flex items-center gap-3">
               <img src="/brand/logo-primary.png" alt="Logo" className="h-9 w-9 object-contain shrink-0" />
               {!isSidebarCollapsed && (
-                <span className="font-outfit text-base font-extrabold text-white tracking-tight animate-fade-in truncate">Gestión SySO</span>
+                <span className="font-outfit text-base font-extrabold text-white tracking-tight block animate-fade-in">Gestión SySO</span>
               )}
             </div>
-            <button onClick={toggleSidebar} className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/5 cursor-pointer">
-              <ChevronLeft className={`h-4.5 w-4.5 transition-transform duration-300 ${isSidebarCollapsed ? 'rotate-180' : ''}`} />
+            <button
+              onClick={toggleSidebar}
+              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all cursor-pointer"
+            >
+              {isSidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
             </button>
           </div>
 
-          <nav className="space-y-1">
-            <span className={`text-[10px] font-bold uppercase tracking-wider text-white/30 px-3 block mb-2 truncate ${isSidebarCollapsed ? 'opacity-0' : ''}`}>Panel principal</span>
-            <a href={`/${tenantSlug}/dashboard`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/dashboard`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all" title="Dashboard">
-              <Building className="h-4.5 w-4.5 shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fade-in">Dashboard</span>}
-            </a>
-            <a href={`/${tenantSlug}/empresas`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all" title="Clientes">
-              <Users className="h-4.5 w-4.5 shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
-            </a>
-            {(!profile || profile?.role === 'owner' || profile?.role === 'admin') && (
-              <a href={`/${tenantSlug}/equipo`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/equipo`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all" title="Equipo de Trabajo">
-                <Briefcase className="h-4.5 w-4.5 shrink-0" />
-                {!isSidebarCollapsed && <span className="animate-fade-in">Equipo de Trabajo</span>}
-              </a>
+          <nav className="space-y-1.5">
+            {!isSidebarCollapsed ? (
+              <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block mb-2">Panel principal</span>
+            ) : (
+              <div className="h-px bg-white/10 my-3" />
             )}
-            <a href={`/${tenantSlug}/programa`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/programa`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all" title="Programa de Gestión Anual">
-              <Calendar className="h-4.5 w-4.5 shrink-0" />
+            <Link 
+              href={`/${tenantSlug}/dashboard`} 
+              title="Dashboard"
+              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/dashboard`)}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <Building className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Dashboard</span>}
+            </Link>
+            <Link 
+              href={`/${tenantSlug}/empresas`} 
+              title="Clientes"
+              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <Users className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
+            </Link>
+            {(!profile || profile?.role === 'owner' || profile?.role === 'admin') && (
+              <Link 
+                href={`/${tenantSlug}/equipo`} 
+                title="Equipo de Trabajo"
+                onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/equipo`)}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+              >
+                <Briefcase className="h-4 w-4 shrink-0" />
+                {!isSidebarCollapsed && <span className="animate-fade-in">Equipo de Trabajo</span>}
+              </Link>
+            )}
+            <Link 
+              href={`/${tenantSlug}/programa`} 
+              title="Programa de Gestión Anual"
+              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/programa`)}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <Calendar className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Programa de Gestión Anual</span>}
-            </a>
-            <a href={`/${tenantSlug}/capacitacion`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/capacitacion`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all" title="Programa de Capacitación Anual">
-              <GraduationCap className="h-4.5 w-4.5 shrink-0" />
+            </Link>
+            <Link 
+              href={`/${tenantSlug}/capacitacion`} 
+              title="Programa de Capacitación Anual"
+              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/capacitacion`)}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <GraduationCap className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Programa de Capacitación Anual</span>}
-            </a>
-            <a href={`/${tenantSlug}/correctivas`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/correctivas`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all" title="Acciones Correctivas">
-              <ClipboardList className="h-4.5 w-4.5 shrink-0" />
+            </Link>
+            <Link 
+              href={`/${tenantSlug}/correctivas`} 
+              title="Acciones Correctivas"
+              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/correctivas`)}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <ClipboardList className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Acciones Correctivas</span>}
-            </a>
-            <a href={`/${tenantSlug}/extintores`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/extintores`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all" title="Extintores">
-              <Flame className="h-4.5 w-4.5 shrink-0" />
+            </Link>
+            <Link 
+              href={`/${tenantSlug}/extintores`} 
+              title="Extintores"
+              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/extintores`)}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <Flame className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Extintores</span>}
-            </a>
-            <a href={`/${tenantSlug}/visitas`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/visitas`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10" title="Constancia de Visita">
-              <ClipboardCheck className="h-4.5 w-4.5 shrink-0" />
+            </Link>
+            <Link 
+              href={`/${tenantSlug}/visitas`} 
+              title="Constancia de Visita"
+              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/visitas`)}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10 ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <ClipboardCheck className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Constancia de Visita</span>}
-            </a>
+            </Link>
 
-            <span className={`text-[10px] font-bold uppercase tracking-wider text-white/30 px-3 block pt-6 mb-2 truncate ${isSidebarCollapsed ? 'opacity-0' : ''}`}>Configuración</span>
-            <a href={`/${tenantSlug}/profile`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/profile`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all" title="Editar Perfil">
-              <Settings className="h-4.5 w-4.5 shrink-0" />
+            {!isSidebarCollapsed ? (
+              <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
+            ) : (
+              <div className="h-px bg-white/10 my-6" />
+            )}
+            <Link 
+              href={`/${tenantSlug}/profile`} 
+              title="Editar Perfil"
+              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/profile`)}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <Settings className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Editar Perfil</span>}
-            </a>
+            </Link>
           </nav>
         </div>
 
-        <div className="pt-4 border-t border-white/5">
-          <div className="flex items-center gap-3 rounded-xl bg-black/30 p-2.5 border border-white/5 overflow-hidden">
-            <div className="truncate pr-1 flex-1">
-              {!isSidebarCollapsed ? (
-                <>
-                  <span className="text-xs font-bold text-white block truncate">{profile?.full_name || 'Usuario'}</span>
-                  <span className="text-[9px] text-white/40 block truncate uppercase tracking-wider">{profile?.role || 'Profesional'}</span>
-                </>
-              ) : (
-                <div className="h-5 w-5 bg-white/5 rounded-full flex items-center justify-center text-white/60 font-bold text-[10px] uppercase">
-                  {profile?.full_name?.[0] || 'U'}
-                </div>
-              )}
-            </div>
+        <div className="p-4 border-t border-white/10">
+          <div className={`flex items-center justify-between rounded-xl bg-black/40 p-3 border border-white/5 ${isSidebarCollapsed ? 'flex-col gap-2' : ''}`}>
             {!isSidebarCollapsed && (
-              <button onClick={handleLogout} className="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-600 hover:text-white transition-all cursor-pointer shrink-0">
-                <LogOut className="h-4 w-4" />
-              </button>
+              <div className="truncate pr-2">
+                <span className="text-xs font-bold text-white block truncate">{profile?.full_name || 'Usuario'}</span>
+                <span className="text-[10px] text-white/40 block truncate uppercase tracking-wider">{profile?.role || 'Profesional'}</span>
+              </div>
             )}
+            <button onClick={handleLogout} className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-600 hover:text-white transition-all cursor-pointer shrink-0">
+              <LogOut className="h-4 w-4" />
+            </button>
           </div>
         </div>
       </aside>
@@ -1985,16 +2034,16 @@ export default function VisitasPage({ params }) {
 
                 {/* Tabla de Resultados */}
                 <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden">
-                  <div className="overflow-x-auto">
+                  <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 240px)' }}>
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700" onClick={() => handleSort('cliente')}>Cliente</th>
-                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700" onClick={() => handleSort('establecimiento')}>Establecimiento</th>
-                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700" onClick={() => handleSort('fecha')}>Fecha</th>
-                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700" onClick={() => handleSort('profesional_nombre')}>Profesional</th>
-                          <th className="px-6 py-4">Responsable Presente</th>
-                          <th className="px-6 py-4 text-right">Acciones</th>
+                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('cliente')}>Cliente</th>
+                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('establecimiento')}>Establecimiento</th>
+                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('fecha')}>Fecha</th>
+                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('profesional_nombre')}>Profesional</th>
+                          <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Responsable Presente</th>
+                          <th className="px-6 py-4 text-right sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Acciones</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-sm">

@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { supabase, fetchAllGeography } from '@/lib/supabase';
 import { 
   User, 
@@ -106,6 +107,10 @@ export default function ProfilePage({ params }) {
 
   // Notificación de tipo Toast
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+  // Modal Alert
+  const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null, confirmText: '' });
+  const closeAlert = () => setModalAlert({ show: false, title: '', message: '', onConfirm: null, confirmText: '' });
 
   // Campos Obligatorios
   const [fullName, setFullName] = useState('');
@@ -889,12 +894,84 @@ const [partidosList, setPartidosList] = useState([]);
       logo2 !== null;
 
     if (isDirty) {
-      const confirmExit = window.confirm('Tienes cambios sin guardar. ¿Deseas salir sin guardar los cambios?');
-      if (!confirmExit) return;
+      setModalAlert({
+        show: true,
+        title: 'Salir sin guardar',
+        message: 'Tienes cambios sin guardar. ¿Deseas salir sin guardar los cambios?',
+        confirmText: 'Confirmar',
+        onConfirm: () => {
+          closeAlert();
+          window.location.href = `/${tenantSlug}/dashboard`;
+        }
+      });
+    } else {
+      window.location.href = `/${tenantSlug}/dashboard`;
     }
+  };
 
-    // Redirigir de inmediato al dashboard sin guardar cambios nuevos
-    window.location.href = `/${tenantSlug}/dashboard`;
+  const handleSidebarNavigation = (e, path) => {
+    if (path.endsWith('/profile')) return;
+
+    // Verificar si las matriculas cambiaron
+    const areMatriculasEqual = (a, b) => {
+      if (!a || !b || a.length !== b.length) return false;
+      for (let i = 0; i < a.length; i++) {
+        if (
+          a[i].institucion !== b[i].institucion ||
+          a[i].numero !== b[i].numero ||
+          a[i].vencimiento !== b[i].vencimiento ||
+          a[i].fotoFrentePreview !== b[i].fotoFrentePreview ||
+          a[i].fotoDorsoPreview !== b[i].fotoDorsoPreview
+        ) return false;
+      }
+      return true;
+    };
+
+    // Verificar si el formulario está sucio
+    const isDirty = 
+      fullName !== (initialValues?.fullName || '') ||
+      phone !== (initialValues?.phone || '') ||
+      cuit !== (initialValues?.cuit || '') ||
+      provincia !== (initialValues?.provincia || '') ||
+      partido !== (initialValues?.partido || '') ||
+      localidad !== (initialValues?.localidad || '') ||
+      birthDate !== (initialValues?.birthDate || '') ||
+      !areMatriculasEqual(
+        matriculas.map(m => ({
+          institucion: m.institucion,
+          numero: m.numero,
+          vencimiento: m.vencimiento,
+          fotoFrentePreview: m.fotoFrentePreview,
+          fotoDorsoPreview: m.fotoDorsoPreview
+        })),
+        initialValues?.matriculas
+      ) ||
+      companyName !== (initialValues?.companyName || '') ||
+      website !== (initialValues?.website || '') ||
+      linkedin !== (initialValues?.linkedin || '') ||
+      instagram !== (initialValues?.instagram || '') ||
+      facebook !== (initialValues?.facebook || '') ||
+      tiktok !== (initialValues?.tiktok || '') ||
+      youtube !== (initialValues?.youtube || '') ||
+      selectedPlan !== (initialValues?.planId || 'free') ||
+      matriculas.some(m => m.fotoFrente !== null || m.fotoDorso !== null) ||
+      fotoFirma !== null ||
+      logo1 !== null ||
+      logo2 !== null;
+
+    if (isDirty) {
+      e.preventDefault();
+      setModalAlert({
+        show: true,
+        title: 'Salir sin guardar',
+        message: '¿Estás seguro de que deseas salir? Los cambios no guardados se perderán.',
+        confirmText: 'Confirmar',
+        onConfirm: () => {
+          closeAlert();
+          window.location.href = path;
+        }
+      });
+    }
   };
 
   const handleChangePassword = async () => {
@@ -1001,17 +1078,6 @@ const [partidosList, setPartidosList] = useState([]);
     }
   };
 
-  if (initialLoading) {
-    return (
-      <div className="min-h-screen bg-syso-bg text-slate-700 flex items-center justify-center font-sans">
-        <div className="text-center space-y-4">
-          <Loader2 className="h-8 w-8 animate-spin text-[#468DFF] mx-auto" />
-          <p className="text-xs text-slate-500 font-medium">Cargando datos del perfil...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="h-screen overflow-hidden bg-syso-bg text-slate-700 flex font-sans">
       
@@ -1049,46 +1115,46 @@ const [partidosList, setPartidosList] = useState([]);
               {/* Menú de navegación */}
               <nav className="space-y-1.5">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block mb-2">Panel principal</span>
-                <a href={`/${tenantSlug}/dashboard`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                <Link href={`/${tenantSlug}/dashboard`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/dashboard`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <Building className="h-4 w-4" />
                   Dashboard
-                </a>
-                <a href={`/${tenantSlug}/empresas`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                </Link>
+                <Link href={`/${tenantSlug}/empresas`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <Users className="h-4 w-4" />
                   Clientes
-                </a>
+                </Link>
                 {(!profileData || profileData?.role === 'owner' || profileData?.role === 'admin') && (
-                  <a href={`/${tenantSlug}/equipo`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                  <Link href={`/${tenantSlug}/equipo`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/equipo`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                     <Briefcase className="h-4 w-4" />
                     Equipo de Trabajo
-                  </a>
+                  </Link>
                 )}
-                 <a href={`/${tenantSlug}/programa`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                 <Link href={`/${tenantSlug}/programa`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/programa`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <Calendar className="h-4 w-4" />
                   Programa de Gestión Anual
-                </a>
-                <a href={`/${tenantSlug}/capacitacion`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                </Link>
+                <Link href={`/${tenantSlug}/capacitacion`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/capacitacion`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <GraduationCap className="h-4 w-4" />
                   Programa de Capacitación Anual
-                </a>
-                <a href={`/${tenantSlug}/correctivas`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                </Link>
+                <Link href={`/${tenantSlug}/correctivas`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/correctivas`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <ClipboardList className="h-4 w-4" />
                   Acciones Correctivas
-                </a>
-                <a href={`/${tenantSlug}/extintores`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                </Link>
+                <Link href={`/${tenantSlug}/extintores`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/extintores`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <Flame className="h-4 w-4" />
                   Extintores
-                </a>
-                <a href={`/${tenantSlug}/visitas`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                </Link>
+                <Link href={`/${tenantSlug}/visitas`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/visitas`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <ClipboardCheck className="h-4 w-4" />
                   Constancias de Visita
-                </a>
+                </Link>
                 
                 <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
-                <a href={`/${tenantSlug}/profile`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10">
+                <Link href={`/${tenantSlug}/profile`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/profile`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10">
                   <Settings className="h-4 w-4" />
                   Editar Perfil
-                </a>
+                </Link>
               </nav>
             </div>
 
@@ -1147,86 +1213,95 @@ const [partidosList, setPartidosList] = useState([]);
             ) : (
               <div className="h-px bg-white/10 my-3" />
             )}
-            <a 
+            <Link 
               href={`/${tenantSlug}/dashboard`}
               title="Dashboard"
+              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/dashboard`)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
             >
               <Building className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Dashboard</span>}
-            </a>
-            <a 
+            </Link>
+            <Link 
               href={`/${tenantSlug}/empresas`} 
               title="Clientes"
+              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
             >
               <Users className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
-            </a>
+            </Link>
             {(!profileData || profileData?.role === 'owner' || profileData?.role === 'admin') && (
-              <a 
+              <Link 
                 href={`/${tenantSlug}/equipo`} 
                 title="Equipo de Trabajo"
+                onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/equipo`)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
               >
                 <Briefcase className="h-4 w-4 shrink-0" />
                 {!isSidebarCollapsed && <span className="animate-fade-in">Equipo de Trabajo</span>}
-              </a>
+              </Link>
             )}
-            <a 
+            <Link 
               href={`/${tenantSlug}/programa`} 
               title="Programa de Gestión Anual"
+              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/programa`)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
             >
               <Calendar className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Programa de Gestión Anual</span>}
-            </a>
-            <a 
+            </Link>
+            <Link 
               href={`/${tenantSlug}/capacitacion`} 
               title="Programa de Capacitación Anual"
+              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/capacitacion`)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
             >
               <GraduationCap className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Programa de Capacitación Anual</span>}
-            </a>
-            <a 
+            </Link>
+            <Link 
               href={`/${tenantSlug}/correctivas`} 
               title="Acciones Correctivas"
+              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/correctivas`)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
             >
               <ClipboardList className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Acciones Correctivas</span>}
-            </a>
-            <a 
+            </Link>
+            <Link 
               href={`/${tenantSlug}/extintores`} 
               title="Extintores"
+              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/extintores`)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
             >
               <Flame className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Extintores</span>}
-            </a>
-            <a 
+            </Link>
+            <Link 
               href={`/${tenantSlug}/visitas`} 
               title="Constancias de Visita"
+              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/visitas`)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
             >
               <ClipboardCheck className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Constancias de Visita</span>}
-            </a>
+            </Link>
             
             {!isSidebarCollapsed ? (
               <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
             ) : (
               <div className="h-px bg-white/10 my-6" />
             )}
-            <a 
+            <Link 
               href={`/${tenantSlug}/profile`} 
               title="Editar Perfil"
+              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/profile`)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10 ${isSidebarCollapsed ? 'justify-center' : ''}`}
             >
               <Settings className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Editar Perfil</span>}
-            </a>
+            </Link>
           </nav>
         </div>
 
@@ -1280,7 +1355,15 @@ const [partidosList, setPartidosList] = useState([]);
           </div>
         </header>
 
-        <div className="p-6 md:p-8 space-y-8 max-w-[95%] mx-auto w-full z-10">
+        {initialLoading ? (
+          <div className="flex-1 flex items-center justify-center p-8 bg-white">
+            <div className="text-center space-y-4">
+              <Loader2 className="h-10 w-10 animate-spin text-[#468DFF] mx-auto" />
+              <p className="text-xs text-slate-500 font-medium">Cargando datos del perfil...</p>
+            </div>
+          </div>
+        ) : (
+          <div className="p-6 md:p-8 space-y-8 max-w-[95%] mx-auto w-full z-10">
         
         {/* Back Link and Header */}
         <div className="flex items-center justify-between mb-8 border-b border-slate-300 pb-5">
@@ -2047,6 +2130,7 @@ const [partidosList, setPartidosList] = useState([]);
         )}
 
       </div>
+        )}
     </main>
 
       {/* PLAN SELECTION MODAL */}
@@ -2192,6 +2276,39 @@ const [partidosList, setPartidosList] = useState([]);
             >
               Aceptar
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE CONFIRMACIÓN */}
+      {modalAlert.show && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
+            <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500">
+              <AlertTriangle className="h-6 w-6" />
+            </div>
+            <div className="space-y-1">
+              <h4 className="font-outfit text-base font-bold text-slate-800">{modalAlert.title}</h4>
+              <p className="text-xs text-slate-500 leading-relaxed">{modalAlert.message}</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={closeAlert}
+                className="flex-1 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer"
+              >
+                Cancelar
+              </button>
+              {modalAlert.onConfirm && (
+                <button
+                  type="button"
+                  onClick={modalAlert.onConfirm}
+                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer"
+                >
+                  {modalAlert.confirmText || 'Confirmar'}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}

@@ -2,6 +2,53 @@
 
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
+## [2026-06-21] Inicialización de Filtros Colapsados y Estandarización de Altura de Tablas
+
+### Resumen de Cambios
+- **Filtros avanzados colapsados por defecto**: Se modificó el estado inicial `showFilters` de `true` a `false` en las 6 secciones operativas que cuentan con buscador y filtros avanzados (`visitas`, `programa`, `extintores`, `empresas`, `correctivas`, `capacitacion`). Esto permite que la interfaz inicie limpia y sin elementos distractores hasta que el usuario decida desplegarlos de forma manual mediante el botón de flecha correspondiente.
+- **Estandarización del alto máximo de las tablas**: Se unificaron los contenedores de las tablas en las 7 secciones operativas (`visitas`, `programa`, `extintores`, `equipo`, `empresas`, `correctivas`, `capacitacion`) a una altura máxima consistente de `calc(100vh - 240px)`. Esto aprovecha de forma óptima el espacio liberado al colapsar los filtros avanzados, asegurando que la grilla ocupe al menos el 95% del alto disponible.
+- **Cabeceras Sticky Fijas**: Se inyectó la clase `sticky top-0 z-10 bg-slate-50 border-b border-slate-150` a todas las cabeceras `<th>` en las vistas que no contaban con ellas directamente (`visitas`, `empresas`, `correctivas`, `capacitacion`, `equipo`), previniendo que los encabezados se desplacen y desaparezcan de la vista al realizar scroll.
+
+### Decisiones Clave
+- **Unificación del Espaciado Vertical**: Homogeneizar las tablas a `calc(100vh - 240px)` garantiza una experiencia de usuario sumamente consistente y prolija al transicionar entre los diferentes módulos operativos de la consultora.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+
+---
+
+## [2026-06-21] Estandarización de Navegación del Sidebar y Resolución de Layout Shifts
+
+### Resumen de Cambios
+- **Navegación SPA sin recarga**: Se reemplazaron todas las etiquetas HTML `<a>` de la barra lateral (tanto desktop como mobile/drawer) por el componente `<Link>` de Next.js en las 9 vistas operativas (`visitas`, `programa`, `profile`, `extintores`, `equipo`, `empresas`, `dashboard`, `correctivas`, `capacitacion`). Esto previene la recarga completa del navegador al navegar y asegura que el sidebar se mantenga montado de forma estática en el DOM.
+- **Estandarización de Iconos**: Se unificaron los tamaños de todos los iconos de la barra lateral a `h-4 w-4 shrink-0`. Específicamente, se corrigió el pictograma `ClipboardCheck` de Constancias de Visita que medía `h-4.5 w-4.5` en las vistas de `equipo` y `empresas`.
+- **Estructura del Perfil de Usuario (`profile/page.js`)**: Se reestructuró la validación del estado `initialLoading` para evitar renderizar un cargador de pantalla completa que destruía el layout superior y ocultaba la barra lateral. Ahora el spinner se muestra únicamente dentro del contenedor `<main>`, preservando la barra lateral renderizada desde el primer instante.
+
+### Decisiones Clave
+- **Uso de Link con handleSidebarNavigation**: El reemplazo por `<Link>` preserva la funcionalidad de intercepción de navegación mediante `onClick` (`handleSidebarNavigation`), garantizando que se advierta al usuario antes de perder datos no guardados en formularios editables sin sacrificar la velocidad de navegación del cliente.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción exitosa mediante `npm run build` vía `cmd.exe`.
+
+---
+
 ## [2026-06-21] Fix de Visualización de Extintores y Envío de Correo de Constancia
 
 ### Resumen de Cambios
