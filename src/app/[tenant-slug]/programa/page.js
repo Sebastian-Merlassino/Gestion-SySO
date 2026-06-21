@@ -1845,11 +1845,10 @@ export default function ProgramaGestion({ params }) {
                                 {sortField === 'fecha_realizacion' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                               </div>
                             </th>
-                            <th className="px-6 py-4">Progreso</th>
-                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('estado')}>
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[15%]" onClick={() => handleSort('progreso')}>
                               <div className="flex items-center gap-1">
-                                Estado
-                                {sortField === 'estado' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                                Progreso / Estado
+                                {sortField === 'progreso' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                               </div>
                             </th>
                             <th className="px-6 py-4 text-center">Doc</th>
@@ -1859,7 +1858,7 @@ export default function ProgramaGestion({ params }) {
                         <tbody className="divide-y divide-slate-100 text-xs">
                           {sortedActividades.length === 0 ? (
                             <tr>
-                              <td colSpan="9" className="px-6 py-10 text-center text-slate-400 font-semibold">
+                              <td colSpan="8" className="px-6 py-10 text-center text-slate-400 font-semibold">
                                 No se encontraron actividades de gestión anual.
                               </td>
                             </tr>
@@ -1913,35 +1912,35 @@ export default function ProgramaGestion({ params }) {
                                         {formatDate(act.fecha_planificada)}
                                       </span>
                                     ) : (
-                                      <span className="text-[10px] text-slate-400 font-semibold italic">Pendiente</span>
+                                      <span className="text-[10px] text-slate-400 font-medium italic">Pendiente</span>
                                     )}
                                   </td>
 
-                                  <td className="px-6 py-4 font-mono text-slate-500">
-                                    {act.fecha_realizacion ? formatDate(act.fecha_realizacion) : <span className="text-[10px] text-slate-400 italic">Pendiente</span>}
+                                  <td className="px-6 py-4 text-slate-600">
+                                    {act.fecha_realizacion ? (
+                                      <span className="font-mono text-slate-500 font-medium">
+                                        {formatDate(act.fecha_realizacion)}
+                                      </span>
+                                    ) : (
+                                      <span className="text-[10px] text-slate-400 font-medium italic">Pendiente</span>
+                                    )}
                                   </td>
 
-                                  <td className="px-6 py-4">
-                                    <div className="space-y-1 w-24">
-                                      <div className="flex items-center justify-between text-[10px] font-bold text-slate-500">
-                                        <span>{act.progreso}%</span>
-                                      </div>
-                                      <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                                        <div
-                                          className={`h-full rounded-full transition-all duration-300 ${act.progreso === 100 ? 'bg-[#0b8043]' : 'bg-[#468DFF]'}`}
-                                          style={{ width: `${act.progreso}%` }}
-                                        />
+                                  <td className="px-6 py-4 text-center">
+                                    <div className="flex flex-col items-center gap-1">
+                                      <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold ${
+                                        statusInfo.estadoText === 'Vencido'
+                                          ? 'bg-red-500/10 text-red-600 border-red-500/20'
+                                          : statusInfo.estadoText === 'En análisis'
+                                            ? 'bg-slate-100 text-slate-700 border-slate-200'
+                                            : 'bg-[#00b050]/10 text-[#00b050] border-[#00b050]/20'
+                                      }`}>
+                                        {statusInfo.estadoText} ({act.progreso}%)
+                                      </span>
+                                      <div className="w-16 h-1.5 bg-slate-100 border border-slate-150 rounded-full overflow-hidden">
+                                        <div className="bg-[#468DFF] h-full" style={{ width: `${act.progreso}%` }} />
                                       </div>
                                     </div>
-                                  </td>
-
-                                  <td className="px-6 py-4">
-                                    <span
-                                      className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white uppercase tracking-wider"
-                                      style={{ backgroundColor: statusInfo.estadoColor }}
-                                    >
-                                      {statusInfo.estadoText}
-                                    </span>
                                   </td>
 
                                   <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
