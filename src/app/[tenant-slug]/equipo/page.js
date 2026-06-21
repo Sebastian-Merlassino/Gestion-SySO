@@ -1119,7 +1119,7 @@ export default function EquipoPage({ params }) {
                   <Users className="h-4 w-4" />
                   Clientes
                 </a>
-                {(profile?.role === 'owner' || profile?.role === 'admin') && (
+                {(!profile || profile?.role === 'owner' || profile?.role === 'admin') && (
                   <a href="#" onClick={(e) => handleSidebarNavigation(e, 'list')} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10">
                     <Briefcase className="h-4 w-4" />
                     Equipo de Trabajo
@@ -1226,7 +1226,7 @@ export default function EquipoPage({ params }) {
               <Users className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
             </a>
-            {(profile?.role === 'owner' || profile?.role === 'admin') && (
+            {(!profile || profile?.role === 'owner' || profile?.role === 'admin') && (
               <a 
                 href="#" 
                 title="Equipo de Trabajo"

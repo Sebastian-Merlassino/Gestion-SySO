@@ -1057,7 +1057,7 @@ const [partidosList, setPartidosList] = useState([]);
                   <Users className="h-4 w-4" />
                   Clientes
                 </a>
-                {(profileData?.role === 'owner' || profileData?.role === 'admin') && (
+                {(!profileData || profileData?.role === 'owner' || profileData?.role === 'admin') && (
                   <a href={`/${tenantSlug}/equipo`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                     <Briefcase className="h-4 w-4" />
                     Equipo de Trabajo
@@ -1163,7 +1163,7 @@ const [partidosList, setPartidosList] = useState([]);
               <Users className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
             </a>
-            {(profileData?.role === 'owner' || profileData?.role === 'admin') && (
+            {(!profileData || profileData?.role === 'owner' || profileData?.role === 'admin') && (
               <a 
                 href={`/${tenantSlug}/equipo`} 
                 title="Equipo de Trabajo"

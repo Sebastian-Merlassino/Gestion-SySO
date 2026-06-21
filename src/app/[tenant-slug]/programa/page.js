@@ -966,7 +966,7 @@ export default function ProgramaGestion({ params }) {
                   <Users className="h-4 w-4" />
                   Clientes
                 </a>
-                {(profile?.role === 'owner' || profile?.role === 'admin') && (
+                {(!profile || profile?.role === 'owner' || profile?.role === 'admin') && (
                   <a href={`/${tenantSlug}/equipo`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/equipo`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                     <Briefcase className="h-4 w-4" />
                     Equipo de Trabajo
@@ -1061,7 +1061,7 @@ export default function ProgramaGestion({ params }) {
               <Users className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
             </a>
-            {(profile?.role === 'owner' || profile?.role === 'admin') && (
+            {(!profile || profile?.role === 'owner' || profile?.role === 'admin') && (
               <a
                 href={`/${tenantSlug}/equipo`}
                 title="Equipo de Trabajo"
@@ -1813,46 +1813,46 @@ export default function ProgramaGestion({ params }) {
                   <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden">
                     <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
                       <table className="w-full border-collapse text-left">
-                        <thead>
+                        <thead className="sticky top-0 z-10 bg-slate-50">
                           <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('cliente')}>
+                            <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('cliente')}>
                               <div className="flex items-center gap-1">
                                 Cliente / Establecimiento
                                 {sortField === 'cliente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                               </div>
                             </th>
-                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('actividad')}>
+                            <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('actividad')}>
                               <div className="flex items-center gap-1">
                                 Actividad / Legal
                                 {sortField === 'actividad' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                               </div>
                             </th>
-                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('responsable')}>
+                            <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('responsable')}>
                               <div className="flex items-center gap-1">
                                 Responsable
                                 {sortField === 'responsable' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                               </div>
                             </th>
-                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('fecha_planificada')}>
+                            <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('fecha_planificada')}>
                               <div className="flex items-center gap-1">
                                 F. Planificada
                                 {sortField === 'fecha_planificada' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                               </div>
                             </th>
-                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('fecha_realizacion')}>
+                            <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('fecha_realizacion')}>
                               <div className="flex items-center gap-1">
                                 F. Realización
                                 {sortField === 'fecha_realizacion' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                               </div>
                             </th>
-                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[15%]" onClick={() => handleSort('progreso')}>
+                            <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[15%]" onClick={() => handleSort('progreso')}>
                               <div className="flex items-center gap-1">
                                 Progreso / Estado
                                 {sortField === 'progreso' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                               </div>
                             </th>
-                            <th className="px-6 py-4 text-center">Doc</th>
-                            <th className="px-6 py-4 text-right">Acciones</th>
+                            <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 px-6 py-4 text-center">Doc</th>
+                            <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 px-6 py-4 text-right">Acciones</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-xs">

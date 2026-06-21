@@ -1659,7 +1659,7 @@ export default function VisitasPage({ params }) {
                   <Users className="h-4 w-4" />
                   Clientes
                 </a>
-                {(profile?.role === 'owner' || profile?.role === 'admin') && (
+                {(!profile || profile?.role === 'owner' || profile?.role === 'admin') && (
                   <a href={`/${tenantSlug}/equipo`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/equipo`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                     <Briefcase className="h-4 w-4" />
                     Equipo de Trabajo
@@ -1734,7 +1734,7 @@ export default function VisitasPage({ params }) {
               <Users className="h-4.5 w-4.5 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
             </a>
-            {(profile?.role === 'owner' || profile?.role === 'admin') && (
+            {(!profile || profile?.role === 'owner' || profile?.role === 'admin') && (
               <a href={`/${tenantSlug}/equipo`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/equipo`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all" title="Equipo de Trabajo">
                 <Briefcase className="h-4.5 w-4.5 shrink-0" />
                 {!isSidebarCollapsed && <span className="animate-fade-in">Equipo de Trabajo</span>}
