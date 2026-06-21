@@ -1,9 +1,33 @@
 // src/app/api/send-email/route.js
 import { NextResponse } from 'next/server';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 import nodemailer from 'nodemailer';
 
 export async function POST(request) {
   try {
+    // ── Autenticación: solo usuarios con sesión activa pueden enviar correos ──
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const cookieStore = cookies();
+
+    const serverClient = createServerClient(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        get(name) { return cookieStore.get(name)?.value; },
+        set(name, value, options) { cookieStore.set({ name, value, ...options }); },
+        remove(name, options) { cookieStore.set({ name, value: '', ...options }); },
+      },
+    });
+
+    const { data: { user }, error: authError } = await serverClient.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'No autorizado. Debe iniciar sesión para enviar correos.' },
+        { status: 401 }
+      );
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     const { emails, pdfBase64, companyName, establishmentName, date, inspectorName } = await request.json();
 
     if (!emails || !pdfBase64) {
@@ -14,8 +38,8 @@ export async function POST(request) {
     }
 
     // Convert comma-separated string to array if necessary
-    const emailList = Array.isArray(emails) 
-      ? emails 
+    const emailList = Array.isArray(emails)
+      ? emails
       : emails.split(',').map(e => e.trim()).filter(Boolean);
 
     if (emailList.length === 0) {
@@ -27,19 +51,19 @@ export async function POST(request) {
 
     const host = process.env.SMTP_HOST;
     const port = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT) : 587;
-    const user = process.env.SMTP_USER;
+    const user_smtp = process.env.SMTP_USER;
     const pass = process.env.SMTP_PASS;
-    const from = process.env.SMTP_FROM || user || 'no-reply@gestionsyso.com';
+    const from = process.env.SMTP_FROM || user_smtp || 'no-reply@gestionsyso.com';
 
     const mailSubject = `Constancia de Visita de Higiene y Seguridad - ${companyName || 'Cliente'}`;
-    
+
     const mailHtml = `
       <div style="font-family: 'Segoe UI', Inter, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1e293b; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px;">
         <div style="text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">
           <h2 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.025em;">Gestión SySO</h2>
           <p style="margin: 4px 0 0 0; font-size: 13px; font-weight: 600; color: #468DFF; text-transform: uppercase; letter-spacing: 0.05em;">Constancia de Visita Técnica</p>
         </div>
-        
+
         <div style="background-color: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 24px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);">
           <p style="margin-top: 0; font-size: 15px; line-height: 1.6; color: #334155;">
             Estimado cliente,
@@ -47,7 +71,7 @@ export async function POST(request) {
           <p style="font-size: 15px; line-height: 1.6; color: #334155;">
             Se adjunta la <strong>Constancia de Visita de Higiene y Seguridad</strong> correspondiente a la inspección técnica realizada en sus instalaciones.
           </p>
-          
+
           <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px;">
             <tr style="border-bottom: 1px solid #f1f5f9;">
               <td style="padding: 10px 0; font-weight: 600; color: #64748b; width: 40%;">Razón Social:</td>
@@ -85,21 +109,21 @@ export async function POST(request) {
       contentType: 'application/pdf'
     };
 
-    if (host && user && pass) {
-      console.log(`[Email Route] Sending real email to ${emailList.join(', ')} via SMTP ${host}:${port}`);
-      
+    if (host && user_smtp && pass) {
+      console.log(`[Email Route] Enviando correo real a ${emailList.join(', ')} via ${host}:${port} — usuario: ${user.email}`);
+
       const transporter = nodemailer.createTransport({
         host,
         port,
-        secure: port === 465, // true for 465, false for other ports
+        secure: port === 465, // STARTTLS para 587, SSL para 465
         auth: {
-          user,
+          user: user_smtp,
           pass,
         },
       });
 
       await transporter.sendMail({
-        from,
+        from: `"${process.env.SMTP_SENDER_NAME || 'Gestión SySO'}" <${from}>`,
         to: emailList.join(', '),
         subject: mailSubject,
         html: mailHtml,
@@ -111,6 +135,7 @@ export async function POST(request) {
         message: 'Correo electrónico enviado exitosamente.',
       });
     } else {
+      // SMTP no configurado — modo simulación (solo en desarrollo)
       console.log('================= SIMULACIÓN DE ENVÍO DE CORREO =================');
       console.log(`Para: ${emailList.join(', ')}`);
       console.log(`De: ${from}`);
