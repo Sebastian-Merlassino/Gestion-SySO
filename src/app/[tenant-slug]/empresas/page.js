@@ -1366,29 +1366,26 @@ export default function EmpresasClientes({ params }) {
 
       {/* Area del Contenido Principal */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <header className="h-16 border-b border-slate-300/60 flex items-center justify-between px-6 md:px-8 bg-white/80 backdrop-blur-md sticky top-0 z-20">
-          <div className="flex items-center gap-3">
-            {/* Hamburger Button (Mobile Only) */}
+        <header className="h-16 border-b border-slate-200 flex items-center justify-between px-4 md:px-6 bg-white shrink-0 sticky top-0 z-20">
+          <div className="flex items-center gap-2.5 min-w-0">
             <button 
-              onClick={() => setIsMobileMenuOpen(true)}
-              className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 md:hidden cursor-pointer"
+              onClick={() => setIsMobileMenuOpen(true)} 
+              className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 md:hidden cursor-pointer shrink-0"
             >
               <Menu className="h-5 w-5" />
             </button>
-            <h2 className="font-outfit text-lg font-bold text-slate-900 flex items-center gap-2">
-              <Users className="h-5 w-5 text-[#468DFF]" />
-              Clientes
-            </h2>
+            <Building className="h-5 w-5 text-[#468DFF] shrink-0" />
+            <h1 className="font-outfit text-base md:text-lg font-bold text-slate-900 truncate leading-none">
+              Clientes / Empresas
+            </h1>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-semibold text-slate-500 bg-slate-100 py-1.5 px-3 rounded-lg border border-slate-200">
-              {tenant?.name || 'Mi Consultora'}
+          <div className="flex items-center gap-3 shrink-0">
+            <span className="text-xs font-semibold text-slate-500 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-150 hidden sm:inline-block">
+              {tenant?.name || 'Cargando...'}
             </span>
-            {tenant?.plan_id && (
-              <span className="px-2.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/25 text-[#468DFF] text-[10px] font-semibold uppercase tracking-wider hidden sm:inline-block">
-                {tenant.plan_id === 'libre' ? 'Plan Libre' : tenant.plan_id === 'standard_25' ? 'Plan 25' : tenant.plan_id === 'basic_5' ? 'Plan 5' : 'Plan Gratis'}
-              </span>
-            )}
+            <span className="px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider">
+              {tenant?.plan_id ? (tenant.plan_id.toLowerCase() === 'libre' ? 'Plan Libre' : tenant.plan_id.toLowerCase().startsWith('standard') ? 'Plan Standard' : tenant.plan_id.toLowerCase().startsWith('basic') ? 'Plan Basic' : `Plan ${tenant.plan_id}`) : 'Plan Pro'}
+            </span>
           </div>
         </header>
 
@@ -1506,18 +1503,27 @@ export default function EmpresasClientes({ params }) {
                     <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
                       <table className="w-full text-left border-collapse">
                         <thead>
-                          <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                          <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider font-outfit">
                             <th 
-                              className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors"
+                              className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[30%]"
                               onClick={() => handleSort('razon_social')}
                             >
                               <div className="flex items-center gap-1">
-                                Razón Social / Nombre Comercial
+                                Razón Social
                                 {sortField === 'razon_social' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                               </div>
                             </th>
                             <th 
-                              className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors"
+                              className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[28%]"
+                              onClick={() => handleSort('nombre_comercial')}
+                            >
+                              <div className="flex items-center gap-1">
+                                Nombre Comercial
+                                {sortField === 'nombre_comercial' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              </div>
+                            </th>
+                            <th 
+                              className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[18%]"
                               onClick={() => handleSort('cuit')}
                             >
                               <div className="flex items-center gap-1">
@@ -1525,14 +1531,14 @@ export default function EmpresasClientes({ params }) {
                                 {sortField === 'cuit' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                               </div>
                             </th>
-                            <th className="px-6 py-4 text-center">Establecimientos</th>
-                            <th className="px-6 py-4 text-right">Acciones</th>
+                            <th className="px-6 py-4 text-center w-[12%]">Establecimientos</th>
+                            <th className="px-6 py-4 text-right w-[12%]">Acciones</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
                           {sortedEmpresas.length === 0 ? (
                             <tr>
-                              <td colSpan="4" className="px-6 py-10 text-center text-slate-400 font-semibold">
+                              <td colSpan="5" className="px-6 py-10 text-center text-slate-400 font-semibold">
                                 No se encontraron clientes con los filtros aplicados.
                               </td>
                             </tr>
@@ -1544,10 +1550,14 @@ export default function EmpresasClientes({ params }) {
                                 className="hover:bg-slate-50/50 cursor-pointer transition-colors"
                               >
                                 <td className="px-6 py-4">
-                                  <span className="font-semibold text-slate-900 block">{emp.razon_social}</span>
-                                  {emp.nombre_comercial && (
-                                    <span className="text-[10px] text-slate-500 font-medium block mt-0.5">{emp.nombre_comercial}</span>
-                                  )}
+                                  <span className="font-semibold text-slate-900 block truncate max-w-[240px]" title={emp.razon_social}>
+                                    {emp.razon_social}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <span className="text-slate-600 block truncate max-w-[220px]" title={emp.nombre_comercial || 'Sin nombre comercial'}>
+                                    {emp.nombre_comercial || <span className="text-slate-400 italic font-normal">No especificado</span>}
+                                  </span>
                                 </td>
                                 <td className="px-6 py-4 font-mono text-slate-500">{emp.cuit}</td>
                                 <td className="px-6 py-4 text-center">
@@ -1589,23 +1599,30 @@ export default function EmpresasClientes({ params }) {
             // ==========================================
             // VISTA: FORMULARIO DE CARGA / EDICIÓN (TABS)
             // ==========================================
-            <form onSubmit={handleSaveAll} className="space-y-6">
-              
-              <div className="flex justify-between items-center">
-                <button
-                  type="button"
-                  onClick={handleExitForm}
-                  className="py-2 px-4 rounded-xl border border-slate-300/80 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 text-xs font-bold transition-all shadow-sm flex items-center gap-2"
-                >
-                  <ArrowLeft className="h-3.5 w-3.5" />
-                  Volver al listado
-                </button>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-slate-400 bg-slate-100 border border-slate-200 px-2 py-1 rounded font-bold uppercase tracking-wider">
-                    {editingId ? 'Modo Edición' : 'Ficha Nueva'}
+            <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
+              <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-150 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-3">
+                  <button 
+                    type="button"
+                    onClick={handleExitForm}
+                    className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 cursor-pointer"
+                  >
+                    <ArrowLeft className="h-5 w-5" />
+                  </button>
+                  <span className="font-outfit text-base font-bold text-slate-900">
+                    {editingId ? 'Editar Cliente' : 'Agregar Cliente'}
                   </span>
                 </div>
+                <button 
+                  type="button" 
+                  onClick={handleExitForm} 
+                  className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200 cursor-pointer"
+                >
+                  <X className="h-5 w-5" />
+                </button>
               </div>
+
+              <form onSubmit={handleSaveAll} className="p-6 md:p-8 space-y-6 overflow-y-auto flex-1 scrollbar-thin">
 
               {/* Encabezado Ficha */}
               <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4">
@@ -1694,7 +1711,7 @@ export default function EmpresasClientes({ params }) {
 
                         {/* Actividad Económica (CIIU) dentro de Identidad de la empresa */}
                         <div className="space-y-3 pt-4 border-t border-slate-100 relative md:col-span-2">
-                          <label className="text-xs font-bold text-slate-600 block">Actividad Económica (CIIU) <span className="text-[#468DFF]">*</span></label>
+                          <label className="text-xs font-bold text-slate-600 block">Actividad Económica (CIIU)</label>
                           <p className="text-[10px] text-slate-500">Busca y agrega las actividades económicas de la empresa.</p>
                           <input
                             type="text"
@@ -2584,6 +2601,7 @@ export default function EmpresasClientes({ params }) {
               </div>
 
             </form>
+          </div>
           )}
 
         </div>

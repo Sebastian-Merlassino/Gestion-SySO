@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { formatDate } from '@/lib/utils';
 import { 
-  Plus, 
+  PlusCircle, 
   Search, 
   Building, 
   Users, 
@@ -950,25 +950,26 @@ export default function ExtintoresPage({ params }) {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <header className="h-16 border-b border-slate-300/60 flex items-center justify-between px-6 md:px-8 bg-white/80 backdrop-blur-md sticky top-0 z-20">
-          <div className="flex items-center gap-3">
-            <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 md:hidden cursor-pointer">
+        <header className="h-16 border-b border-slate-200 flex items-center justify-between px-4 md:px-6 bg-white shrink-0 sticky top-0 z-20">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <button 
+              onClick={() => setIsMobileMenuOpen(true)} 
+              className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 md:hidden cursor-pointer shrink-0"
+            >
               <Menu className="h-5 w-5" />
             </button>
-            <h2 className="font-outfit text-lg font-bold text-slate-900 flex items-center gap-2">
-              <Flame className="h-5 w-5 text-[#468DFF]" />
+            <Flame className="h-5 w-5 text-[#468DFF] shrink-0" />
+            <h1 className="font-outfit text-base md:text-lg font-bold text-slate-900 truncate leading-none">
               Programa de Control de Extintores
-            </h2>
+            </h1>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-semibold text-slate-500 bg-slate-100 py-1.5 px-3 rounded-lg border border-slate-200">
-              {tenant?.name || 'Mi Consultora'}
+          <div className="flex items-center gap-3 shrink-0">
+            <span className="text-xs font-semibold text-slate-500 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-150 hidden sm:inline-block">
+              {tenant?.name || 'Cargando...'}
             </span>
-            {tenant?.plan_id && (
-              <span className="px-2.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/25 text-[#468DFF] text-[10px] font-semibold uppercase tracking-wider hidden sm:inline-block">
-                {tenant.plan_id === 'libre' ? 'Plan Libre' : tenant.plan_id === 'standard_25' ? 'Plan 25' : tenant.plan_id === 'basic_5' ? 'Plan 5' : 'Plan Gratis'}
-              </span>
-            )}
+            <span className="px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider">
+              {tenant?.plan_id ? (tenant.plan_id.toLowerCase() === 'libre' ? 'Plan Libre' : tenant.plan_id.toLowerCase().startsWith('standard') ? 'Plan Standard' : tenant.plan_id.toLowerCase().startsWith('basic') ? 'Plan Basic' : `Plan ${tenant.plan_id}`) : 'Plan Pro'}
+            </span>
           </div>
         </header>
 
@@ -985,8 +986,8 @@ export default function ExtintoresPage({ params }) {
             {isFormOpen ? (
               // FORMULARIO DE ALTA Y EDICIÓN INLINE
               <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden animate-fade-in">
-                <div className="px-6 py-4 bg-slate-50 border-b border-slate-150 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-150 flex items-center justify-between shrink-0">
+                  <div className="flex items-center gap-3">
                     <button 
                       onClick={handleExitForm}
                       className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 cursor-pointer"
@@ -997,7 +998,7 @@ export default function ExtintoresPage({ params }) {
                       {editingId ? 'Editar Equipo Extintor' : 'Registrar Nuevo Extintor'}
                     </span>
                   </div>
-                  <button onClick={handleExitForm} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200 cursor-pointer">
+                  <button type="button" onClick={handleExitForm} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200 cursor-pointer">
                     <X className="h-5 w-5" />
                   </button>
                 </div>
@@ -1405,7 +1406,7 @@ export default function ExtintoresPage({ params }) {
                         onClick={() => setIsFormOpen(true)}
                         className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0 w-full md:w-auto"
                       >
-                        <Plus className="h-3.5 w-3.5" />
+                        <PlusCircle className="h-3.5 w-3.5" />
                         Incorporar Nuevo Extintor
                       </button>
                     </div>

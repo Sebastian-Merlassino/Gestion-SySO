@@ -143,14 +143,6 @@ export default function EquipoPage({ params }) {
 
   // Filtros de búsqueda
   const [filterText, setFilterText] = useState('');
-  const [filterProvincia, setFilterProvincia] = useState('');
-  const [showFilters, setShowFilters] = useState(true);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.innerWidth < 768) {
-      setShowFilters(false);
-    }
-  }, []);
 
   // Modals / Toasts
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', type: 'info', onConfirm: null, confirmText: 'Confirmar' });
@@ -1079,15 +1071,7 @@ export default function EquipoPage({ params }) {
   const hasLogin = editingId ? !!(miembros.find(m => m.id === editingId)?.profile_id) : false;
 
   const filteredMiembros = miembros.filter(m => {
-    const matchesSearch = filterText ? (
-      (m.full_name || '').toLowerCase().includes(filterText.toLowerCase()) ||
-      (m.email || '').toLowerCase().includes(filterText.toLowerCase()) ||
-      (m.cuit || '').includes(filterText)
-    ) : true;
-
-    const matchesProvincia = filterProvincia ? m.provincia === filterProvincia : true;
-
-    return matchesSearch && matchesProvincia;
+    return filterText ? (m.full_name || '').toLowerCase().includes(filterText.toLowerCase()) : true;
   });
 
   return (
@@ -1336,29 +1320,26 @@ export default function EquipoPage({ params }) {
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <header className="h-16 border-b border-slate-300/60 flex items-center justify-between px-6 md:px-8 bg-white/80 backdrop-blur-md sticky top-0 z-20">
-          <div className="flex items-center gap-3">
-            {/* Hamburger Button (Mobile Only) */}
+        <header className="h-16 border-b border-slate-200 flex items-center justify-between px-4 md:px-6 bg-white shrink-0 sticky top-0 z-20">
+          <div className="flex items-center gap-2.5 min-w-0">
             <button 
-              onClick={() => setIsMobileMenuOpen(true)}
-              className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 md:hidden cursor-pointer"
+              onClick={() => setIsMobileMenuOpen(true)} 
+              className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 md:hidden cursor-pointer shrink-0"
             >
               <Menu className="h-5 w-5" />
             </button>
-            <h2 className="font-outfit text-lg font-bold text-slate-900 flex items-center gap-2">
-              <Briefcase className="h-5 w-5 text-[#468DFF]" />
+            <Users className="h-5 w-5 text-[#468DFF] shrink-0" />
+            <h1 className="font-outfit text-base md:text-lg font-bold text-slate-900 truncate leading-none">
               Equipo de Trabajo
-            </h2>
+            </h1>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-semibold text-slate-500 bg-slate-100 py-1.5 px-3 rounded-lg border border-slate-200">
-              {tenant?.name || 'Mi Consultora'}
+          <div className="flex items-center gap-3 shrink-0">
+            <span className="text-xs font-semibold text-slate-500 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-150 hidden sm:inline-block">
+              {tenant?.name || 'Cargando...'}
             </span>
-            {tenant?.plan_id && (
-              <span className="px-2.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/25 text-[#468DFF] text-[10px] font-semibold uppercase tracking-wider hidden sm:inline-block">
-                {tenant.plan_id === 'libre' ? 'Plan Libre' : tenant.plan_id === 'standard_25' ? 'Plan 25' : tenant.plan_id === 'basic_5' ? 'Plan 5' : 'Plan Gratis'}
-              </span>
-            )}
+            <span className="px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider">
+              {tenant?.plan_id ? (tenant.plan_id.toLowerCase() === 'libre' ? 'Plan Libre' : tenant.plan_id.toLowerCase().startsWith('standard') ? 'Plan Standard' : tenant.plan_id.toLowerCase().startsWith('basic') ? 'Plan Basic' : `Plan ${tenant.plan_id}`) : 'Plan Pro'}
+            </span>
           </div>
         </header>
 
@@ -1377,26 +1358,34 @@ export default function EquipoPage({ params }) {
             <div className="space-y-6">
               
               {/* Panel de Filtros y Búsqueda */}
-              <div className="bg-white rounded-2xl border border-slate-150 p-3 shadow-sm space-y-3">
+              <div className="bg-white rounded-2xl border border-slate-150 p-3 shadow-sm">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                   {/* Espaciador para empujar el buscador y botón a la derecha en desktop */}
                   <div className="hidden md:block flex-1"></div>
-
+ 
                   {/* Buscador y Botón agrupados */}
                   <div className="flex flex-col md:flex-row md:items-center gap-3 w-full md:w-auto">
+                    {filterText && (
+                      <button
+                        onClick={() => setFilterText('')}
+                        className="px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-semibold cursor-pointer transition-all border border-slate-200 self-end md:self-auto"
+                      >
+                        Limpiar búsqueda
+                      </button>
+                    )}
                     <div className="relative w-full md:w-72">
                       <span className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 pointer-events-none">
                         <Search className="h-3.5 w-3.5" />
                       </span>
                       <input
                         type="text"
-                        placeholder="Buscar integrante por nombre, email o CUIT..."
+                        placeholder="Buscar por nombre y apellido..."
                         value={filterText}
                         onChange={(e) => setFilterText(e.target.value)}
                         className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400"
                       />
                     </div>
-
+ 
                     <button
                       onClick={handleAddNew}
                       className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0 w-full md:w-auto"
@@ -1405,49 +1394,6 @@ export default function EquipoPage({ params }) {
                       Agregar Integrante
                     </button>
                   </div>
-                </div>
-
-                <div className="pt-2 border-t border-slate-100 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <button
-                      type="button"
-                      onClick={() => setShowFilters(!showFilters)}
-                      className="font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px] hover:text-slate-600 transition-colors cursor-pointer"
-                    >
-                      <Sliders className="h-3 w-3" />
-                      Filtros de Búsqueda
-                      {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                    </button>
-                    {(filterProvincia || filterText) && (
-                      <button
-                        onClick={() => {
-                          setFilterProvincia('');
-                          setFilterText('');
-                        }}
-                        className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[10px] font-semibold cursor-pointer transition-all border border-slate-200"
-                      >
-                        Limpiar filtros
-                      </button>
-                    )}
-                  </div>
-
-                  {showFilters && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-1 animate-fade-in">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Provincia</label>
-                        <select
-                          value={filterProvincia}
-                          onChange={(e) => setFilterProvincia(e.target.value)}
-                          className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer"
-                        >
-                          <option value="">Todas las provincias</option>
-                          {PROVINCIAS_ARGENTINAS.map(p => (
-                            <option key={p} value={p}>{p}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -1528,7 +1474,7 @@ export default function EquipoPage({ params }) {
                                     : 'bg-slate-100 text-slate-500 border border-slate-200'
                                 }`}>
                                   {m.tiene_acceso ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
-                                  {m.tiene_acceso ? 'Con Acceso' : 'Solo Registro'}
+                                  {m.tiene_acceso ? 'Con Acceso' : 'Sin Acceso'}
                                 </span>
                               </td>
                               <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
@@ -1538,14 +1484,14 @@ export default function EquipoPage({ params }) {
                                     className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                                     title="Editar"
                                   >
-                                    <Edit className="h-3.5 w-3.5" />
+                                    <Edit className="h-4.5 w-4.5" />
                                   </button>
                                   <button
                                     onClick={() => handleDelete(m.id, m.full_name, m.profile_id)}
                                     className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                                     title="Eliminar"
                                   >
-                                    <Trash2 className="h-3.5 w-3.5" />
+                                    <Trash2 className="h-4.5 w-4.5" />
                                   </button>
                                 </div>
                               </td>
@@ -1564,21 +1510,30 @@ export default function EquipoPage({ params }) {
             // ==========================================
             // VIEW: CREATE / EDIT FORM
             // ==========================================
-            <div className="space-y-6">
-              <div className="flex items-center justify-between border-b border-slate-300/60 pb-5">
-                <button
-                  onClick={handleExitWithoutSave}
-                  className="flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-slate-800 transition-colors py-2 px-3.5 rounded-xl border border-slate-300 bg-white shadow-sm cursor-pointer shadow-sm active:scale-[0.98]"
+            <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
+              <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-150 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-3">
+                  <button 
+                    type="button"
+                    onClick={handleExitWithoutSave}
+                    className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 cursor-pointer"
+                  >
+                    <ArrowLeft className="h-5 w-5" />
+                  </button>
+                  <span className="font-outfit text-base font-bold text-slate-900">
+                    {editingId ? 'Editar Integrante' : 'Agregar Integrante'}
+                  </span>
+                </div>
+                <button 
+                  type="button" 
+                  onClick={handleExitWithoutSave} 
+                  className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200 cursor-pointer"
                 >
-                  <ArrowLeft className="h-4 w-4" />
-                  Volver al listado
+                  <X className="h-5 w-5" />
                 </button>
-                <h3 className="font-outfit text-xl font-extrabold text-slate-900 tracking-tight">
-                  {editingId ? 'Editar Integrante' : 'Agregar Integrante'}
-                </h3>
               </div>
 
-              <form onSubmit={handleSave} className="space-y-8">
+              <form onSubmit={handleSave} className="p-6 md:p-8 space-y-8 overflow-y-auto flex-1 scrollbar-thin">
                 
                 {/* 1. INFORMACIÓN PERSONAL */}
                 <div className="bg-white rounded-2xl border border-slate-150 p-6 md:p-8 shadow-sm space-y-6">

@@ -3,28 +3,28 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { 
-  Calendar, 
-  List, 
-  Plus, 
-  Search, 
-  Building, 
-  Users, 
-  FileText, 
-  ChevronLeft, 
-  ChevronRight, 
-  AlertTriangle, 
-  X, 
-  Check, 
-  Loader2, 
-  Download, 
-  Trash2, 
-  HelpCircle, 
-  Edit, 
-  Briefcase, 
-  Settings, 
-  LogOut, 
-  User, 
+import {
+  Calendar,
+  List,
+  PlusCircle,
+  Search,
+  Building,
+  Users,
+  FileText,
+  ChevronLeft,
+  ChevronRight,
+  AlertTriangle,
+  X,
+  Check,
+  Loader2,
+  Download,
+  Trash2,
+  HelpCircle,
+  Edit,
+  Briefcase,
+  Settings,
+  LogOut,
+  User,
   Menu,
   Info,
   CalendarDays,
@@ -40,7 +40,7 @@ import {
 } from 'lucide-react';
 
 const MONTH_NAMES = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
 ];
 
@@ -48,7 +48,7 @@ const WEEK_DAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
 export default function ProgramaGestion({ params }) {
   const tenantSlug = params['tenant-slug'];
-  
+
   // Vistas y Cargas
   const [view, setView] = useState('list'); // 'list' o 'calendar'
   const [loading, setLoading] = useState(true);
@@ -155,7 +155,7 @@ export default function ProgramaGestion({ params }) {
         window.location.href = '/login';
         return;
       }
-      
+
       // Cargar Perfil
       const { data: prof, error: pErr } = await supabase
         .from('profiles')
@@ -278,7 +278,7 @@ export default function ProgramaGestion({ params }) {
   const loadMockData = () => {
     setProfile({ full_name: 'Profesional de SySO (Mock)', role: 'owner' });
     setTenant({ id: 'mock-tenant', name: 'Consultora de Prueba', plan_id: 'free' });
-    
+
     const mockEmpresas = [
       { id: 'mock-empresa-1', razon_social: 'Acme Argentina S.A.' },
       { id: 'mock-empresa-2', razon_social: 'Constructora del Sur' }
@@ -393,20 +393,20 @@ export default function ProgramaGestion({ params }) {
     const todayStr = new Date().toISOString().split('T')[0];
     const today = new Date(todayStr);
     const planDate = new Date(item.fecha_planificada);
-    
+
     let estadoText = 'Vigente';
     let estadoColor = '#0b8043'; // Verde
-    
+
     if (!hasRealization && today >= planDate) {
       estadoText = 'Vencido';
       estadoColor = '#fa050b'; // Rojo
     }
-    
+
     let dateAlertColor = ''; // Sin alerta
     if (!hasRealization && hasPlanDate) {
       const timeDiff = planDate.getTime() - today.getTime();
       const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-      
+
       if (daysDiff < 0) {
         dateAlertColor = 'red'; // Vencida
       } else if (daysDiff <= 15) {
@@ -439,21 +439,21 @@ export default function ProgramaGestion({ params }) {
     const obsMatch = act.observaciones ? act.observaciones.toLowerCase() : '';
     const query = searchQuery.toLowerCase();
 
-    const matchesSearch = 
+    const matchesSearch =
       razonSocialMatch.includes(query) ||
       descMatch.includes(query) ||
       obsMatch.includes(query);
 
     const matchesEmpresa = !filterEmpresa || act.empresa_id === filterEmpresa;
     const matchesEstablecimiento = !filterEstablecimiento || act.establecimiento_id === filterEstablecimiento;
-    
+
     // Filtro por mes y año
     const planDateStr = act.fecha_planificada || '';
     const planYear = planDateStr.split('-')[0] || '';
     const planMonth = planDateStr.split('-')[1] || '';
     const matchesMonth = !filterMonth || planMonth === filterMonth;
     const matchesYear = !filterYear || planYear === filterYear;
-    
+
     const statusData = getItemStatusAndColor(act);
     const matchesEstado = !filterEstado || statusData.estadoText === filterEstado;
 
@@ -462,10 +462,10 @@ export default function ProgramaGestion({ params }) {
 
   const sortedActividades = [...filteredActividades].sort((a, b) => {
     if (!sortField) return 0;
-    
+
     let valA = '';
     let valB = '';
-    
+
     if (sortField === 'cliente') {
       const empA = empresas.find(e => e.id === a.empresa_id);
       const empB = empresas.find(e => e.id === b.empresa_id);
@@ -490,7 +490,7 @@ export default function ProgramaGestion({ params }) {
       valA = a[sortField] || '';
       valB = b[sortField] || '';
     }
-    
+
     if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
     if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
     return 0;
@@ -626,13 +626,13 @@ export default function ProgramaGestion({ params }) {
   // 6. Subir PDF y Guardar Actividad
   const handleSave = async (e) => {
     e.preventDefault();
-    
+
     // Validar formulario
     const errors = {};
     if (!empresaId) errors.empresaId = 'La razón social es obligatoria.';
     if (!establecimientoId) errors.establecimientoId = 'El establecimiento es obligatorio.';
     if (!descripcion) errors.descripcion = 'La descripción/actividad es obligatoria.';
-    
+
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
       triggerToast('Completa los campos obligatorios.', 'error');
@@ -684,7 +684,7 @@ export default function ProgramaGestion({ params }) {
 
           const { error: uploadErr } = await supabase.storage
             .from('documents')
-            .upload(filePath, documentoFile, { 
+            .upload(filePath, documentoFile, {
               upsert: true,
               contentType: 'application/pdf'
             });
@@ -835,7 +835,7 @@ export default function ProgramaGestion({ params }) {
 
     // ── LINKS EXTERNOS (http/https) ──────────────────────────────────────────
     if (path.startsWith('http://') || path.startsWith('https://')) {
-      
+
       // Intentar extraer el ID de cualquier formato de Google Drive/Docs/Sheets
       let googleFileId = null;
 
@@ -934,17 +934,17 @@ export default function ProgramaGestion({ params }) {
 
   return (
     <div className="h-screen overflow-hidden bg-syso-bg text-slate-700 flex font-sans">
-      
+
       {/* Mobile Sidebar (Drawer Overlay) */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-40 flex md:hidden">
-          <div 
+          <div
             onClick={() => setIsMobileMenuOpen(false)}
             className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300"
           />
           <aside className="relative flex-1 flex flex-col max-w-xs w-full bg-[#0D0D0D] p-6 justify-between animate-scaleUp">
             <div className="absolute top-4 right-4">
-              <button 
+              <button
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors cursor-pointer"
               >
@@ -1043,8 +1043,8 @@ export default function ProgramaGestion({ params }) {
             ) : (
               <div className="h-px bg-white/10 my-3" />
             )}
-            <a 
-              href={`/${tenantSlug}/dashboard`} 
+            <a
+              href={`/${tenantSlug}/dashboard`}
               title="Dashboard"
               onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/dashboard`)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
@@ -1052,8 +1052,8 @@ export default function ProgramaGestion({ params }) {
               <Building className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Dashboard</span>}
             </a>
-            <a 
-              href={`/${tenantSlug}/empresas`} 
+            <a
+              href={`/${tenantSlug}/empresas`}
               title="Clientes"
               onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
@@ -1062,8 +1062,8 @@ export default function ProgramaGestion({ params }) {
               {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
             </a>
             {(profile?.role === 'owner' || profile?.role === 'admin') && (
-              <a 
-                href={`/${tenantSlug}/equipo`} 
+              <a
+                href={`/${tenantSlug}/equipo`}
                 title="Equipo de Trabajo"
                 onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/equipo`)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
@@ -1072,8 +1072,8 @@ export default function ProgramaGestion({ params }) {
                 {!isSidebarCollapsed && <span className="animate-fade-in">Equipo de Trabajo</span>}
               </a>
             )}
-            <a 
-              href={`/${tenantSlug}/programa`} 
+            <a
+              href={`/${tenantSlug}/programa`}
               title="Programa de Gestión Anual"
               onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/programa`)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10 ${isSidebarCollapsed ? 'justify-center' : ''}`}
@@ -1081,8 +1081,8 @@ export default function ProgramaGestion({ params }) {
               <Calendar className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Programa de Gestión Anual</span>}
             </a>
-            <a 
-              href={`/${tenantSlug}/capacitacion`} 
+            <a
+              href={`/${tenantSlug}/capacitacion`}
               title="Programa de Capacitación Anual"
               onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/capacitacion`)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
@@ -1090,8 +1090,8 @@ export default function ProgramaGestion({ params }) {
               <GraduationCap className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Programa de Capacitación Anual</span>}
             </a>
-            <a 
-              href={`/${tenantSlug}/correctivas`} 
+            <a
+              href={`/${tenantSlug}/correctivas`}
               title="Acciones Correctivas"
               onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/correctivas`)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
@@ -1099,8 +1099,8 @@ export default function ProgramaGestion({ params }) {
               <ClipboardList className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Acciones Correctivas</span>}
             </a>
-            <a 
-              href={`/${tenantSlug}/extintores`} 
+            <a
+              href={`/${tenantSlug}/extintores`}
               title="Extintores"
               onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/extintores`)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
@@ -1108,8 +1108,8 @@ export default function ProgramaGestion({ params }) {
               <Flame className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Extintores</span>}
             </a>
-            <a 
-              href={`/${tenantSlug}/visitas`} 
+            <a
+              href={`/${tenantSlug}/visitas`}
               title="Constancia de Visita"
               onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/visitas`)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
@@ -1117,14 +1117,14 @@ export default function ProgramaGestion({ params }) {
               <ClipboardCheck className="h-4.5 w-4.5 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Constancia de Visita</span>}
             </a>
-            
+
             {!isSidebarCollapsed ? (
               <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
             ) : (
               <div className="h-px bg-white/10 my-6" />
             )}
-            <a 
-              href={`/${tenantSlug}/profile`} 
+            <a
+              href={`/${tenantSlug}/profile`}
               title="Editar Perfil"
               onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/profile`)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
@@ -1151,25 +1151,26 @@ export default function ProgramaGestion({ params }) {
 
       {/* Main Container */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <header className="h-16 border-b border-slate-300/60 flex items-center justify-between px-6 md:px-8 bg-white/80 backdrop-blur-md sticky top-0 z-20">
-          <div className="flex items-center gap-3">
-            <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 md:hidden cursor-pointer">
+        <header className="h-16 border-b border-slate-200 flex items-center justify-between px-4 md:px-6 bg-white shrink-0 sticky top-0 z-20">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <button
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 md:hidden cursor-pointer shrink-0"
+            >
               <Menu className="h-5 w-5" />
             </button>
-            <h2 className="font-outfit text-lg font-bold text-slate-900 flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-[#468DFF]" />
+            <Calendar className="h-5 w-5 text-[#468DFF] shrink-0" />
+            <h1 className="font-outfit text-base md:text-lg font-bold text-slate-900 truncate leading-none">
               Programa de Gestión Anual
-            </h2>
+            </h1>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-semibold text-slate-500 bg-slate-100 py-1.5 px-3 rounded-lg border border-slate-200">
-              {tenant?.name || 'Mi Consultora'}
+          <div className="flex items-center gap-3 shrink-0">
+            <span className="text-xs font-semibold text-slate-500 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-150 hidden sm:inline-block">
+              {tenant?.name || 'Cargando...'}
             </span>
-            {tenant?.plan_id && (
-              <span className="px-2.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/25 text-[#468DFF] text-[10px] font-semibold uppercase tracking-wider hidden sm:inline-block">
-                {tenant.plan_id === 'libre' ? 'Plan Libre' : tenant.plan_id === 'standard_25' ? 'Plan 25' : tenant.plan_id === 'basic_5' ? 'Plan 5' : 'Plan Gratis'}
-              </span>
-            )}
+            <span className="px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider">
+              {tenant?.plan_id ? (tenant.plan_id.toLowerCase() === 'libre' ? 'Plan Libre' : tenant.plan_id.toLowerCase().startsWith('standard') ? 'Plan Standard' : tenant.plan_id.toLowerCase().startsWith('basic') ? 'Plan Basic' : `Plan ${tenant.plan_id}`) : 'Plan Pro'}
+            </span>
           </div>
         </header>
 
@@ -1185,18 +1186,18 @@ export default function ProgramaGestion({ params }) {
             {showForm ? (
               // FORMULARIO DE ALTA Y EDICIÓN INLINE
               <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
-                <div className="px-6 py-4 bg-slate-50 border-b border-slate-150 flex items-center justify-between">
+                <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-150 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
-                    <button 
+                    <button
                       type="button"
                       onClick={handleExitForm}
                       className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 cursor-pointer"
                     >
                       <ArrowLeft className="h-5 w-5" />
                     </button>
-                    <h3 className="font-outfit text-base font-bold text-slate-900">
+                    <span className="font-outfit text-base font-bold text-slate-900">
                       {editingId ? 'Editar Actividad Anual' : 'Nueva Actividad del Programa'}
-                    </h3>
+                    </span>
                   </div>
                   <button type="button" onClick={handleExitForm} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200 cursor-pointer">
                     <X className="h-5 w-5" />
@@ -1204,44 +1205,47 @@ export default function ProgramaGestion({ params }) {
                 </div>
 
                 <form onSubmit={handleSave} className="p-6 space-y-6 overflow-y-auto flex-1 scrollbar-thin">
-                  
-                  {/* 1. Razón Social (Empresa) */}
-                  <div>
-                    <label className="text-xs font-bold text-slate-600 block mb-1.5">
-                      Cliente / Razón Social <span className="text-[#468DFF]">*</span>
-                    </label>
-                    <select
-                      required
-                      value={empresaId}
-                      onChange={(e) => handleEmpresaChange(e.target.value)}
-                      className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
-                    >
-                      <option value="">Selecciona un cliente</option>
-                      {empresas.map(e => (
-                        <option key={e.id} value={e.id}>{e.razon_social}</option>
-                      ))}
-                    </select>
-                    {formErrors.empresaId && <p className="text-[10px] text-red-500 font-bold mt-1">{formErrors.empresaId}</p>}
-                  </div>
 
-                  {/* 2. Establecimiento */}
-                  <div>
-                    <label className="text-xs font-bold text-slate-600 block mb-1.5">
-                      Establecimiento <span className="text-[#468DFF]">*</span>
-                    </label>
-                    <select
-                      value={establecimientoId}
-                      onChange={(e) => setEstablecimientoId(e.target.value)}
-                      disabled={!empresaId}
-                      className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <option value="">Selecciona un establecimiento</option>
-                      {filteredEstablecimientos.map(e => (
-                        <option key={e.id} value={e.id}>{e.denominacion}</option>
-                      ))}
-                    </select>
-                    {!empresaId && <p className="text-[9px] text-slate-400 mt-1 italic">Debes seleccionar una Razón Social primero.</p>}
-                    {formErrors.establecimientoId && <p className="text-[10px] text-red-500 font-bold mt-1">{formErrors.establecimientoId}</p>}
+                  {/* 1 y 2. Razón Social y Establecimiento */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Cliente / Razón Social */}
+                    <div>
+                      <label className="text-xs font-bold text-slate-600 block mb-1.5">
+                        Cliente / Razón Social <span className="text-[#468DFF]">*</span>
+                      </label>
+                      <select
+                        required
+                        value={empresaId}
+                        onChange={(e) => handleEmpresaChange(e.target.value)}
+                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
+                      >
+                        <option value="">Selecciona un cliente</option>
+                        {empresas.map(e => (
+                          <option key={e.id} value={e.id}>{e.razon_social}</option>
+                        ))}
+                      </select>
+                      {formErrors.empresaId && <p className="text-[10px] text-red-500 font-bold mt-1">{formErrors.empresaId}</p>}
+                    </div>
+
+                    {/* Establecimiento */}
+                    <div>
+                      <label className="text-xs font-bold text-slate-600 block mb-1.5">
+                        Establecimiento <span className="text-[#468DFF]">*</span>
+                      </label>
+                      <select
+                        value={establecimientoId}
+                        onChange={(e) => setEstablecimientoId(e.target.value)}
+                        disabled={!empresaId}
+                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <option value="">Selecciona un establecimiento</option>
+                        {filteredEstablecimientos.map(e => (
+                          <option key={e.id} value={e.id}>{e.denominacion}</option>
+                        ))}
+                      </select>
+                      {!empresaId && <p className="text-[9px] text-slate-400 mt-1 italic">Debes seleccionar una Razón Social primero.</p>}
+                      {formErrors.establecimientoId && <p className="text-[10px] text-red-500 font-bold mt-1">{formErrors.establecimientoId}</p>}
+                    </div>
                   </div>
 
                   {/* 3. Descripción (Catálogo o texto manual) */}
@@ -1260,7 +1264,7 @@ export default function ProgramaGestion({ params }) {
                       ))}
                       <option value="__custom__">Otra actividad (cargar manualmente)...</option>
                     </select>
-                    
+
                     {/* Textarea: siempre visible; pre-cargada desde catálogo o editable manualmente */}
                     <textarea
                       required
@@ -1272,59 +1276,63 @@ export default function ProgramaGestion({ params }) {
                     {formErrors.descripcion && <p className="text-[10px] text-red-500 font-bold mt-1">{formErrors.descripcion}</p>}
                   </div>
 
-                  {/* 4. Marco Legal */}
-                  <div>
-                    <label className="text-xs font-bold text-slate-600 block mb-1.5">
-                      Marco Legal / Requisito Legal Aplicable
-                    </label>
-                    <input
-                      type="text"
-                      placeholder={catalogoId && catalogoId !== '__custom__' ? 'Completado automáticamente desde catálogo...' : 'Ingresá el requisito legal aplicable...'}
-                      value={marcoLegal}
-                      onChange={(e) => setMarcoLegal(e.target.value)}
-                      className={
-                        catalogoId && catalogoId !== '__custom__'
-                          ? "w-full border border-slate-150 rounded-xl px-3.5 py-2 text-sm bg-slate-100 text-slate-500 outline-none"
-                          : "w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
-                      }
-                      readOnly={!!(catalogoId && catalogoId !== '__custom__')}
-                    />
-                    {(!catalogoId || catalogoId === '__custom__') && (
-                      <p className="text-[9px] text-slate-400 mt-1 italic">Podés ingresar la norma aplicable (ej: Dec. 351/79, Res. 905/15...)</p>
-                    )}
-                  </div>
-
-                  {/* 5. Responsable */}
-                  <div>
-                    <label className="text-xs font-bold text-slate-600 block mb-1.5">
-                      Responsable Asignado
-                    </label>
-                    <select
-                      value={responsableId}
-                      onChange={(e) => setResponsableId(e.target.value)}
-                      className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
-                    >
-                      <option value="">Selecciona un responsable</option>
-                      {miembros.map(m => (
-                        <option key={m.id} value={m.id}>{m.full_name}</option>
-                      ))}
-                      <option value="__custom__">Otro (cargar manualmente)...</option>
-                    </select>
-
-                    {responsableId === '__custom__' && (
+                  {/* 4 y 5. Marco Legal y Responsable */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Marco Legal */}
+                    <div>
+                      <label className="text-xs font-bold text-slate-600 block mb-1.5">
+                        Marco Legal / Requisito Legal Aplicable
+                      </label>
                       <input
                         type="text"
-                        required
-                        placeholder="Escribe el nombre del responsable..."
-                        value={responsableCustom}
-                        onChange={(e) => setResponsableCustom(e.target.value)}
-                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 mt-2 transition-all"
+                        placeholder={catalogoId && catalogoId !== '__custom__' ? 'Completado automáticamente desde catálogo...' : 'Ingresá el requisito legal aplicable...'}
+                        value={marcoLegal}
+                        onChange={(e) => setMarcoLegal(e.target.value)}
+                        className={
+                          catalogoId && catalogoId !== '__custom__'
+                            ? "w-full border border-slate-150 rounded-xl px-3.5 py-2 text-sm bg-slate-100 text-slate-500 outline-none"
+                            : "w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
+                        }
+                        readOnly={!!(catalogoId && catalogoId !== '__custom__')}
                       />
-                    )}
+                      {(!catalogoId || catalogoId === '__custom__') && (
+                        <p className="text-[9px] text-slate-400 mt-1 italic">Podés ingresar la norma aplicable (ej: Dec. 351/79, Res. 905/15...)</p>
+                      )}
+                    </div>
+
+                    {/* Responsable */}
+                    <div>
+                      <label className="text-xs font-bold text-slate-600 block mb-1.5">
+                        Responsable Asignado
+                      </label>
+                      <select
+                        value={responsableId}
+                        onChange={(e) => setResponsableId(e.target.value)}
+                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
+                      >
+                        <option value="">Selecciona un responsable</option>
+                        {miembros.map(m => (
+                          <option key={m.id} value={m.id}>{m.full_name}</option>
+                        ))}
+                        <option value="__custom__">Otro (cargar manualmente)...</option>
+                      </select>
+
+                      {responsableId === '__custom__' && (
+                        <input
+                          type="text"
+                          required
+                          placeholder="Escribe el nombre del responsable..."
+                          value={responsableCustom}
+                          onChange={(e) => setResponsableCustom(e.target.value)}
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 mt-2 transition-all"
+                        />
+                      )}
+                    </div>
                   </div>
 
-                  {/* 6. Fechas */}
-                  <div className="grid grid-cols-2 gap-4">
+                  {/* 6 y 7. Fechas y Progreso */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* F. Planificada */}
                     <div>
                       <label className="text-xs font-bold text-slate-600 block mb-1.5">
                         F. Planificada
@@ -1338,6 +1346,7 @@ export default function ProgramaGestion({ params }) {
                       <p className="text-[9px] text-slate-400 mt-1 italic">Opcional. Si no se carga, el estado será "En análisis".</p>
                     </div>
 
+                    {/* F. Realización */}
                     <div>
                       <label className="text-xs font-bold text-slate-600 block mb-1.5">
                         F. Realización
@@ -1350,39 +1359,39 @@ export default function ProgramaGestion({ params }) {
                       />
                       <p className="text-[9px] text-slate-400 mt-1 italic">Si se carga, el progreso se fija al 100% y el estado a Vigente.</p>
                     </div>
-                  </div>
 
-                  {/* 7. Progreso */}
-                  <div>
-                    <div className="flex justify-between items-center mb-1.5">
-                      <label className="text-xs font-bold text-slate-600">
-                        Progreso del Avance
-                      </label>
-                      <span className="text-xs font-bold text-[#468DFF]">{progreso}%</span>
-                    </div>
-                    <div className="flex items-center gap-3 py-1">
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        step="5"
-                        value={progreso}
-                        onChange={(e) => setProgreso(parseInt(e.target.value))}
-                        className="flex-1 accent-[#468DFF] h-2 bg-slate-200 rounded-lg cursor-pointer"
-                      />
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={progreso}
-                        onChange={(e) => {
-                          let val = parseInt(e.target.value) || 0;
-                          if (val > 100) val = 100;
-                          if (val < 0) val = 0;
-                          setProgreso(val);
-                        }}
-                        className="w-16 text-center text-sm bg-slate-50/50 border border-slate-200 rounded-xl py-1.5 focus:outline-none focus:border-[#468DFF]"
-                      />
+                    {/* Progreso del Avance */}
+                    <div>
+                      <div className="flex justify-between items-center mb-1.5">
+                        <label className="text-xs font-bold text-slate-600">
+                          Progreso del Avance
+                        </label>
+                        <span className="text-xs font-bold text-[#468DFF]">{progreso}%</span>
+                      </div>
+                      <div className="flex items-center gap-3 py-1">
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          step="5"
+                          value={progreso}
+                          onChange={(e) => setProgreso(parseInt(e.target.value))}
+                          className="flex-1 accent-[#468DFF] h-2 bg-slate-200 rounded-lg cursor-pointer"
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={progreso}
+                          onChange={(e) => {
+                            let val = parseInt(e.target.value) || 0;
+                            if (val > 100) val = 100;
+                            if (val < 0) val = 0;
+                            setProgreso(val);
+                          }}
+                          className="w-16 text-center text-sm bg-slate-50/50 border border-slate-200 rounded-xl py-1.5 focus:outline-none focus:border-[#468DFF]"
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -1391,7 +1400,7 @@ export default function ProgramaGestion({ params }) {
                     <label className="text-xs font-bold text-slate-600 block mb-1.5">
                       Documento de Respaldo / Evidencia (PDF)
                     </label>
-                    
+
                     {documentoUrl ? (
                       <div className="flex items-center justify-between border border-[#468DFF]/20 rounded-xl bg-blue-50/50 p-3 mb-2.5">
                         <div className="flex items-center gap-2 truncate pr-2">
@@ -1425,24 +1434,22 @@ export default function ProgramaGestion({ params }) {
                       <button
                         type="button"
                         onClick={() => handleSwitchUploadType('local')}
-                        className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
-                          uploadType === 'local'
-                            ? 'bg-[#468DFF]/10 text-[#468DFF] border-[#468DFF]/30'
-                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                        }`}
+                        className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer border ${uploadType === 'local'
+                          ? 'bg-[#468DFF]/10 text-[#468DFF] border-[#468DFF]/30'
+                          : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                          }`}
                       >
                         Archivo Local (PC/Celular)
                       </button>
                       <button
                         type="button"
                         onClick={() => handleSwitchUploadType('drive')}
-                        className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
-                          uploadType === 'drive'
-                            ? 'bg-[#468DFF]/10 text-[#468DFF] border-[#468DFF]/30'
-                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                        }`}
+                        className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer border ${uploadType === 'drive'
+                          ? 'bg-[#468DFF]/10 text-[#468DFF] border-[#468DFF]/30'
+                          : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                          }`}
                       >
-                        Enlace Google Drive
+                        Enlace de Google Drive
                       </button>
                     </div>
 
@@ -1525,461 +1532,461 @@ export default function ProgramaGestion({ params }) {
             ) : (
               <>
                 {/* Toolbar y Filtros Unificados */}
-            <div className="bg-white rounded-2xl border border-slate-150 p-4 shadow-sm space-y-4">
-              
-              {/* Fila Superior: Controles de Vista, Buscador y Botón Nuevo */}
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                
-                {/* Selector de Vista */}
-                <div className="flex items-center gap-2 rounded-xl bg-slate-100 p-1 border border-slate-200/80 self-start">
-                  <button
-                    onClick={() => setView('list')}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${view === 'list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
-                  >
-                    <List className="h-4 w-4" />
-                    Programa anual
-                  </button>
-                  <button
-                    onClick={() => setView('calendar')}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${view === 'calendar' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
-                  >
-                    <CalendarDays className="h-4 w-4" />
-                    Calendario
-                  </button>
-                </div>
+                <div className="bg-white rounded-2xl border border-slate-150 p-4 shadow-sm space-y-4">
 
-                {/* Buscador y Nueva Actividad */}
-                <div className="flex flex-col md:flex-row md:items-center gap-3 w-full md:w-auto">
-                  <div className="relative w-full md:w-72">
-                    <span className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 pointer-events-none">
-                      <Search className="h-3.5 w-3.5" />
-                    </span>
-                    <input
-                      type="text"
-                      placeholder="Buscar actividad, cliente, obs..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400"
-                    />
+                  {/* Fila Superior: Controles de Vista, Buscador y Botón Nuevo */}
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+
+                    {/* Selector de Vista */}
+                    <div className="flex items-center gap-2 rounded-xl bg-slate-100 p-1 border border-slate-200/80 self-start">
+                      <button
+                        onClick={() => setView('list')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${view === 'list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                      >
+                        <List className="h-4 w-4" />
+                        Programa anual
+                      </button>
+                      <button
+                        onClick={() => setView('calendar')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${view === 'calendar' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                      >
+                        <CalendarDays className="h-4 w-4" />
+                        Calendario
+                      </button>
+                    </div>
+
+                    {/* Buscador y Nueva Actividad */}
+                    <div className="flex flex-col md:flex-row md:items-center gap-3 w-full md:w-auto">
+                      <div className="relative w-full md:w-72">
+                        <span className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 pointer-events-none">
+                          <Search className="h-3.5 w-3.5" />
+                        </span>
+                        <input
+                          type="text"
+                          placeholder="Buscar actividad, cliente, obs..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400"
+                        />
+                      </div>
+
+                      <button
+                        onClick={() => handleAddNew()}
+                        className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0 w-full md:w-auto"
+                      >
+                        <PlusCircle className="h-3.5 w-3.5" />
+                        Nueva Actividad
+                      </button>
+                    </div>
                   </div>
 
-                  <button
-                    onClick={() => handleAddNew()}
-                    className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0 w-full md:w-auto"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    Nueva Actividad
-                  </button>
+                  {/* Fila Inferior: Filtros rápidos */}
+                  <div className="border-t border-slate-100 pt-2 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => setShowFilters(!showFilters)}
+                        className="font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px] hover:text-slate-600 transition-colors cursor-pointer"
+                      >
+                        <Sliders className="h-3 w-3" />
+                        Filtros de Búsqueda
+                        {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                      </button>
+                      {(filterEmpresa || filterEstablecimiento || filterMonth || filterYear || filterEstado || searchQuery) && (
+                        <button
+                          onClick={() => {
+                            setFilterEmpresa('');
+                            setFilterEstablecimiento('');
+                            setFilterMonth('');
+                            setFilterYear('');
+                            setFilterEstado('');
+                            setSearchQuery('');
+                          }}
+                          className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[10px] font-semibold cursor-pointer transition-all border border-slate-200"
+                        >
+                          Limpiar filtros
+                        </button>
+                      )}
+                    </div>
+
+                    {showFilters && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 pt-1 animate-fade-in">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Cliente</label>
+                          <select
+                            value={filterEmpresa}
+                            onChange={(e) => { setFilterEmpresa(e.target.value); setFilterEstablecimiento(''); }}
+                            className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer"
+                          >
+                            <option value="">Todos los clientes</option>
+                            {empresas.map(e => (
+                              <option key={e.id} value={e.id}>{e.razon_social}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Establecimiento</label>
+                          <select
+                            value={filterEstablecimiento}
+                            onChange={(e) => setFilterEstablecimiento(e.target.value)}
+                            disabled={!filterEmpresa}
+                            className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer disabled:bg-slate-50 disabled:text-slate-400"
+                          >
+                            <option value="">Todos los establecimientos</option>
+                            {allEstablecimientos.filter(est => est.empresa_id === filterEmpresa).map(e => (
+                              <option key={e.id} value={e.id}>{e.denominacion}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Mes</label>
+                          <select
+                            value={filterMonth}
+                            onChange={(e) => setFilterMonth(e.target.value)}
+                            className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer"
+                          >
+                            <option value="">Todos los meses</option>
+                            <option value="01">Enero</option>
+                            <option value="02">Febrero</option>
+                            <option value="03">Marzo</option>
+                            <option value="04">Abril</option>
+                            <option value="05">Mayo</option>
+                            <option value="06">Junio</option>
+                            <option value="07">Julio</option>
+                            <option value="08">Agosto</option>
+                            <option value="09">Septiembre</option>
+                            <option value="10">Octubre</option>
+                            <option value="11">Noviembre</option>
+                            <option value="12">Diciembre</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Año</label>
+                          <select
+                            value={filterYear}
+                            onChange={(e) => setFilterYear(e.target.value)}
+                            className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer"
+                          >
+                            <option value="">Todos los años</option>
+                            <option value="2024">2024</option>
+                            <option value="2025">2025</option>
+                            <option value="2026">2026</option>
+                            <option value="2027">2027</option>
+                            <option value="2028">2028</option>
+                            <option value="2029">2029</option>
+                            <option value="2030">2030</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Estado</label>
+                          <select
+                            value={filterEstado}
+                            onChange={(e) => setFilterEstado(e.target.value)}
+                            className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer"
+                          >
+                            <option value="">Todos los estados</option>
+                            <option value="Vigente">Vigente (verde)</option>
+                            <option value="Vencido">Vencido (rojo)</option>
+                            <option value="En análisis">En análisis</option>
+                          </select>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {/* Fila Inferior: Filtros rápidos */}
-              <div className="border-t border-slate-100 pt-2 space-y-2">
-                <div className="flex items-center justify-between">
-                  <button
-                    type="button"
-                    onClick={() => setShowFilters(!showFilters)}
-                    className="font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px] hover:text-slate-600 transition-colors cursor-pointer"
-                  >
-                    <Sliders className="h-3 w-3" />
-                    Filtros de Búsqueda
-                    {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                  </button>
-                  {(filterEmpresa || filterEstablecimiento || filterMonth || filterYear || filterEstado || searchQuery) && (
-                    <button
-                      onClick={() => {
-                        setFilterEmpresa('');
-                        setFilterEstablecimiento('');
-                        setFilterMonth('');
-                        setFilterYear('');
-                        setFilterEstado('');
-                        setSearchQuery('');
-                      }}
-                      className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[10px] font-semibold cursor-pointer transition-all border border-slate-200"
-                    >
-                      Limpiar filtros
-                    </button>
-                  )}
-                </div>
+                {/* VISTA CALENDARIO */}
+                {view === 'calendar' && (
+                  <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4">
 
-                {showFilters && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 pt-1 animate-fade-in">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Cliente</label>
-                      <select
-                        value={filterEmpresa}
-                        onChange={(e) => { setFilterEmpresa(e.target.value); setFilterEstablecimiento(''); }}
-                        className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer"
-                      >
-                        <option value="">Todos los clientes</option>
-                        {empresas.map(e => (
-                          <option key={e.id} value={e.id}>{e.razon_social}</option>
-                        ))}
-                      </select>
+                    {/* Cabecera del Mes del Calendario */}
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+                      <h3 className="font-outfit text-base font-extrabold text-slate-900 flex items-center gap-2">
+                        <Calendar className="h-5 w-5 text-[#468DFF]" />
+                        {MONTH_NAMES[currMonth]} {currYear}
+                      </h3>
+
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={handlePrevMonth}
+                          className="p-2 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 transition-colors text-slate-600 cursor-pointer"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => setCalendarDate(new Date())}
+                          className="px-3 py-2 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 text-xs font-bold transition-colors cursor-pointer text-slate-600"
+                        >
+                          Hoy
+                        </button>
+                        <button
+                          onClick={handleNextMonth}
+                          className="p-2 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 transition-colors text-slate-600 cursor-pointer"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
 
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Establecimiento</label>
-                      <select
-                        value={filterEstablecimiento}
-                        onChange={(e) => setFilterEstablecimiento(e.target.value)}
-                        disabled={!filterEmpresa}
-                        className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer disabled:bg-slate-50 disabled:text-slate-400"
-                      >
-                        <option value="">Todos los establecimientos</option>
-                        {allEstablecimientos.filter(est => est.empresa_id === filterEmpresa).map(e => (
-                          <option key={e.id} value={e.id}>{e.denominacion}</option>
-                        ))}
-                      </select>
-                    </div>
+                    {/* Grilla de días */}
+                    <div className="grid grid-cols-7 gap-1.5">
 
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Mes</label>
-                      <select
-                        value={filterMonth}
-                        onChange={(e) => setFilterMonth(e.target.value)}
-                        className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer"
-                      >
-                        <option value="">Todos los meses</option>
-                        <option value="01">Enero</option>
-                        <option value="02">Febrero</option>
-                        <option value="03">Marzo</option>
-                        <option value="04">Abril</option>
-                        <option value="05">Mayo</option>
-                        <option value="06">Junio</option>
-                        <option value="07">Julio</option>
-                        <option value="08">Agosto</option>
-                        <option value="09">Septiembre</option>
-                        <option value="10">Octubre</option>
-                        <option value="11">Noviembre</option>
-                        <option value="12">Diciembre</option>
-                      </select>
-                    </div>
+                      {/* Cabecera días semana */}
+                      {WEEK_DAYS.map((day, idx) => (
+                        <div key={idx} className="text-center font-bold text-[10px] text-slate-400 uppercase tracking-widest py-2 bg-slate-50/50 rounded-lg">
+                          {day}
+                        </div>
+                      ))}
 
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Año</label>
-                      <select
-                        value={filterYear}
-                        onChange={(e) => setFilterYear(e.target.value)}
-                        className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer"
-                      >
-                        <option value="">Todos los años</option>
-                        <option value="2024">2024</option>
-                        <option value="2025">2025</option>
-                        <option value="2026">2026</option>
-                        <option value="2027">2027</option>
-                        <option value="2028">2028</option>
-                        <option value="2029">2029</option>
-                        <option value="2030">2030</option>
-                      </select>
-                    </div>
+                      {/* Celdas del calendario */}
+                      {calendarDays.map((day, idx) => {
+                        if (day === null) {
+                          return <div key={`empty-${idx}`} className="bg-slate-50/30 rounded-2xl border border-slate-100/50 min-h-[100px] md:min-h-[120px]" />;
+                        }
 
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Estado</label>
-                      <select
-                        value={filterEstado}
-                        onChange={(e) => setFilterEstado(e.target.value)}
-                        className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer"
-                      >
-                        <option value="">Todos los estados</option>
-                        <option value="Vigente">Vigente (verde)</option>
-                        <option value="Vencido">Vencido (rojo)</option>
-                        <option value="En análisis">En análisis</option>
-                      </select>
+                        const dateStr = `${currYear}-${String(currMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                        const dayActs = filteredActividades.filter(act => act.fecha_planificada === dateStr);
+                        const isToday = new Date().toISOString().split('T')[0] === dateStr;
+
+                        return (
+                          <div
+                            key={`day-${day}`}
+                            className={`bg-white rounded-2xl border p-2 flex flex-col justify-between group min-h-[100px] md:min-h-[120px] transition-all hover:shadow-md cursor-pointer ${isToday ? 'border-[#468DFF] ring-1 ring-[#468DFF]/30' : 'border-slate-150'}`}
+                            onClick={() => handleAddNew(dateStr)}
+                          >
+                            {/* Indicador del número de día */}
+                            <div className="flex items-center justify-between mb-1.5">
+                              <span className={`text-xs font-extrabold px-1.5 py-0.5 rounded-md ${isToday ? 'bg-[#468DFF] text-white' : 'text-slate-800'}`}>
+                                {day}
+                              </span>
+
+                              {/* Botón rápido de agregar */}
+                              <span className="opacity-0 group-hover:opacity-100 text-[10px] text-[#468DFF] hover:text-[#0511F2] font-bold transition-all transition-opacity">
+                                + Añadir
+                              </span>
+                            </div>
+
+                            {/* Listado de actividades del día */}
+                            <div className="space-y-1.5 flex-1 overflow-y-auto max-h-[80px]" onClick={(e) => e.stopPropagation()}>
+                              {dayActs.map(act => {
+                                const statusInfo = getItemStatusAndColor(act);
+                                const emp = empresas.find(e => e.id === act.empresa_id);
+
+                                // Color del bloque según el estado
+                                let blockBgClass = 'bg-[#0b8043]/10 border-[#0b8043]/30 text-[#0b8043]'; // Vigente
+                                if (statusInfo.estadoText === 'Vencido') {
+                                  blockBgClass = 'bg-[#fa050b]/10 border-[#fa050b]/30 text-[#fa050b]'; // Vencido
+                                } else if (statusInfo.dateAlertColor === 'yellow') {
+                                  blockBgClass = 'bg-amber-500/10 border-amber-500/30 text-amber-600'; // Próximo
+                                }
+
+                                return (
+                                  <div
+                                    key={act.id}
+                                    onClick={(e) => { e.stopPropagation(); handleEdit(act); }}
+                                    className={`text-[10px] font-bold p-1 rounded-lg border truncate text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${blockBgClass}`}
+                                    title={`${emp?.razon_social || 'Cliente'}: ${act.descripcion}`}
+                                  >
+                                    <span className="block truncate font-semibold opacity-70">
+                                      {emp?.razon_social || 'Cliente'}
+                                    </span>
+                                    <span className="block truncate font-extrabold leading-tight">
+                                      {act.descripcion}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
-              </div>
-            </div>
 
-            {/* VISTA CALENDARIO */}
-            {view === 'calendar' && (
-              <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4">
-                
-                {/* Cabecera del Mes del Calendario */}
-                <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-                  <h3 className="font-outfit text-base font-extrabold text-slate-900 flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-[#468DFF]" />
-                    {MONTH_NAMES[currMonth]} {currYear}
-                  </h3>
-                  
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={handlePrevMonth}
-                      className="p-2 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 transition-colors text-slate-600 cursor-pointer"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => setCalendarDate(new Date())}
-                      className="px-3 py-2 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 text-xs font-bold transition-colors cursor-pointer text-slate-600"
-                    >
-                      Hoy
-                    </button>
-                    <button
-                      onClick={handleNextMonth}
-                      className="p-2 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 transition-colors text-slate-600 cursor-pointer"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Grilla de días */}
-                <div className="grid grid-cols-7 gap-1.5">
-                  
-                  {/* Cabecera días semana */}
-                  {WEEK_DAYS.map((day, idx) => (
-                    <div key={idx} className="text-center font-bold text-[10px] text-slate-400 uppercase tracking-widest py-2 bg-slate-50/50 rounded-lg">
-                      {day}
-                    </div>
-                  ))}
-
-                  {/* Celdas del calendario */}
-                  {calendarDays.map((day, idx) => {
-                    if (day === null) {
-                      return <div key={`empty-${idx}`} className="bg-slate-50/30 rounded-2xl border border-slate-100/50 min-h-[100px] md:min-h-[120px]" />;
-                    }
-
-                    const dateStr = `${currYear}-${String(currMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                    const dayActs = filteredActividades.filter(act => act.fecha_planificada === dateStr);
-                    const isToday = new Date().toISOString().split('T')[0] === dateStr;
-
-                    return (
-                      <div
-                        key={`day-${day}`}
-                        className={`bg-white rounded-2xl border p-2 flex flex-col justify-between group min-h-[100px] md:min-h-[120px] transition-all hover:shadow-md cursor-pointer ${isToday ? 'border-[#468DFF] ring-1 ring-[#468DFF]/30' : 'border-slate-150'}`}
-                        onClick={() => handleAddNew(dateStr)}
-                      >
-                        {/* Indicador del número de día */}
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className={`text-xs font-extrabold px-1.5 py-0.5 rounded-md ${isToday ? 'bg-[#468DFF] text-white' : 'text-slate-800'}`}>
-                            {day}
-                          </span>
-                          
-                          {/* Botón rápido de agregar */}
-                          <span className="opacity-0 group-hover:opacity-100 text-[10px] text-[#468DFF] hover:text-[#0511F2] font-bold transition-all transition-opacity">
-                            + Añadir
-                          </span>
-                        </div>
-
-                        {/* Listado de actividades del día */}
-                        <div className="space-y-1.5 flex-1 overflow-y-auto max-h-[80px]" onClick={(e) => e.stopPropagation()}>
-                          {dayActs.map(act => {
-                            const statusInfo = getItemStatusAndColor(act);
-                            const emp = empresas.find(e => e.id === act.empresa_id);
-                            
-                            // Color del bloque según el estado
-                            let blockBgClass = 'bg-[#0b8043]/10 border-[#0b8043]/30 text-[#0b8043]'; // Vigente
-                            if (statusInfo.estadoText === 'Vencido') {
-                              blockBgClass = 'bg-[#fa050b]/10 border-[#fa050b]/30 text-[#fa050b]'; // Vencido
-                            } else if (statusInfo.dateAlertColor === 'yellow') {
-                              blockBgClass = 'bg-amber-500/10 border-amber-500/30 text-amber-600'; // Próximo
-                            }
-
-                            return (
-                              <div
-                                key={act.id}
-                                onClick={(e) => { e.stopPropagation(); handleEdit(act); }}
-                                className={`text-[10px] font-bold p-1 rounded-lg border truncate text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${blockBgClass}`}
-                                title={`${emp?.razon_social || 'Cliente'}: ${act.descripcion}`}
-                              >
-                                <span className="block truncate font-semibold opacity-70">
-                                  {emp?.razon_social || 'Cliente'}
-                                </span>
-                                <span className="block truncate font-extrabold leading-tight">
-                                  {act.descripcion}
-                                </span>
+                {/* VISTA DE TABLA / LISTADO */}
+                {view === 'list' && (
+                  <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden">
+                    <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
+                      <table className="w-full border-collapse text-left">
+                        <thead>
+                          <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('cliente')}>
+                              <div className="flex items-center gap-1">
+                                Cliente / Establecimiento
+                                {sortField === 'cliente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                               </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* VISTA DE TABLA / LISTADO */}
-            {view === 'list' && (
-              <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden">
-                <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
-                  <table className="w-full border-collapse text-left">
-                    <thead>
-                      <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                        <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('cliente')}>
-                          <div className="flex items-center gap-1">
-                            Cliente / Establecimiento
-                            {sortField === 'cliente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
-                          </div>
-                        </th>
-                        <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('actividad')}>
-                          <div className="flex items-center gap-1">
-                            Actividad / Legal
-                            {sortField === 'actividad' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
-                          </div>
-                        </th>
-                        <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('responsable')}>
-                          <div className="flex items-center gap-1">
-                            Responsable
-                            {sortField === 'responsable' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
-                          </div>
-                        </th>
-                        <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('fecha_planificada')}>
-                          <div className="flex items-center gap-1">
-                            F. Planificada
-                            {sortField === 'fecha_planificada' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
-                          </div>
-                        </th>
-                        <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('fecha_realizacion')}>
-                          <div className="flex items-center gap-1">
-                            F. Realización
-                            {sortField === 'fecha_realizacion' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
-                          </div>
-                        </th>
-                        <th className="px-6 py-4">Progreso</th>
-                        <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('estado')}>
-                          <div className="flex items-center gap-1">
-                            Estado
-                            {sortField === 'estado' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
-                          </div>
-                        </th>
-                        <th className="px-6 py-4 text-center">Doc</th>
-                        <th className="px-6 py-4 text-right">Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-xs">
-                      {sortedActividades.length === 0 ? (
-                        <tr>
-                          <td colSpan="9" className="px-6 py-10 text-center text-slate-400 font-semibold">
-                            No se encontraron actividades de gestión anual.
-                          </td>
-                        </tr>
-                      ) : (
-                        sortedActividades.map(act => {
-                          const emp = empresas.find(e => e.id === act.empresa_id);
-                          const est = allEstablecimientos.find(e => e.id === act.establecimiento_id);
-                          const resp = miembros.find(m => m.id === act.responsable_id);
-                          
-                          const statusInfo = getItemStatusAndColor(act);
-                          
-                          // Alerta visual de fecha planificada
-                          let dateColorClass = 'text-slate-500 font-mono font-medium';
-                          if (statusInfo.dateAlertColor === 'red') {
-                            dateColorClass = 'text-[#fa050b] bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-lg font-bold font-mono';
-                          } else if (statusInfo.dateAlertColor === 'yellow') {
-                            dateColorClass = 'text-amber-600 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-lg font-bold font-mono';
-                          }
-
-                          return (
-                            <tr 
-                              key={act.id} 
-                              onClick={() => handleEdit(act)}
-                              className="hover:bg-slate-50/50 cursor-pointer transition-colors"
-                            >
-                              <td className="px-6 py-4">
-                                <span className="font-semibold text-slate-900 block truncate max-w-[160px]">
-                                  {emp?.razon_social || 'Cliente desconocido'}
-                                </span>
-                                <span className="text-[10px] text-slate-500 font-medium block truncate max-w-[160px]">
-                                  {est?.denominacion || 'Sin establecimiento'}
-                                </span>
-                              </td>
-                              
-                              <td className="px-6 py-4">
-                                <span className="font-semibold text-slate-900 block truncate max-w-[200px]" title={act.descripcion}>
-                                  {act.descripcion}
-                                </span>
-                                <span className="text-[10px] text-slate-500 font-medium block truncate max-w-[200px]">
-                                  {act.marco_legal || 'Sin marco legal registrado'}
-                                </span>
-                              </td>
-
-                              <td className="px-6 py-4 font-semibold text-slate-900">
-                                {act.responsable || 'Sin asignar'}
-                              </td>
-
-                              <td className="px-6 py-4">
-                                {act.fecha_planificada ? (
-                                  <span className={dateColorClass}>
-                                    {formatDate(act.fecha_planificada)}
-                                  </span>
-                                ) : (
-                                  <span className="text-[10px] text-slate-400 font-semibold italic">Pendiente</span>
-                                )}
-                              </td>
-
-                              <td className="px-6 py-4 font-mono text-slate-500">
-                                {act.fecha_realizacion ? formatDate(act.fecha_realizacion) : <span className="text-[10px] text-slate-400 italic">Pendiente</span>}
-                              </td>
-
-                              <td className="px-6 py-4">
-                                <div className="space-y-1 w-24">
-                                  <div className="flex items-center justify-between text-[10px] font-bold text-slate-500">
-                                    <span>{act.progreso}%</span>
-                                  </div>
-                                  <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                                    <div 
-                                      className={`h-full rounded-full transition-all duration-300 ${act.progreso === 100 ? 'bg-[#0b8043]' : 'bg-[#468DFF]'}`}
-                                      style={{ width: `${act.progreso}%` }}
-                                    />
-                                  </div>
-                                </div>
-                              </td>
-
-                              <td className="px-6 py-4">
-                                <span
-                                  className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white uppercase tracking-wider"
-                                  style={{ backgroundColor: statusInfo.estadoColor }}
-                                >
-                                  {statusInfo.estadoText}
-                                </span>
-                              </td>
-
-                              <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
-                                {act.documento_url ? (
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); handleViewPdf(act.documento_url); }}
-                                    className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                    title="Descargar o Ver Documento PDF"
-                                  >
-                                    <FileText className="h-4.5 w-4.5" />
-                                  </button>
-                                ) : (
-                                  <span className="text-[10px] text-slate-400 font-semibold italic">Vacío</span>
-                                )}
-                              </td>
-
-                              <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
-                                <div className="flex items-center justify-end gap-2">
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); handleEdit(act); }}
-                                    className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                    title="Editar actividad"
-                                  >
-                                    <Edit className="h-4.5 w-4.5" />
-                                  </button>
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); handleDelete(act.id); }}
-                                    className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                    title="Eliminar actividad"
-                                  >
-                                    <Trash2 className="h-4.5 w-4.5" />
-                                  </button>
-                                </div>
+                            </th>
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('actividad')}>
+                              <div className="flex items-center gap-1">
+                                Actividad / Legal
+                                {sortField === 'actividad' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              </div>
+                            </th>
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('responsable')}>
+                              <div className="flex items-center gap-1">
+                                Responsable
+                                {sortField === 'responsable' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              </div>
+                            </th>
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('fecha_planificada')}>
+                              <div className="flex items-center gap-1">
+                                F. Planificada
+                                {sortField === 'fecha_planificada' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              </div>
+                            </th>
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('fecha_realizacion')}>
+                              <div className="flex items-center gap-1">
+                                F. Realización
+                                {sortField === 'fecha_realizacion' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              </div>
+                            </th>
+                            <th className="px-6 py-4">Progreso</th>
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('estado')}>
+                              <div className="flex items-center gap-1">
+                                Estado
+                                {sortField === 'estado' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              </div>
+                            </th>
+                            <th className="px-6 py-4 text-center">Doc</th>
+                            <th className="px-6 py-4 text-right">Acciones</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-xs">
+                          {sortedActividades.length === 0 ? (
+                            <tr>
+                              <td colSpan="9" className="px-6 py-10 text-center text-slate-400 font-semibold">
+                                No se encontraron actividades de gestión anual.
                               </td>
                             </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+                          ) : (
+                            sortedActividades.map(act => {
+                              const emp = empresas.find(e => e.id === act.empresa_id);
+                              const est = allEstablecimientos.find(e => e.id === act.establecimiento_id);
+                              const resp = miembros.find(m => m.id === act.responsable_id);
+
+                              const statusInfo = getItemStatusAndColor(act);
+
+                              // Alerta visual de fecha planificada
+                              let dateColorClass = 'text-slate-500 font-mono font-medium';
+                              if (statusInfo.dateAlertColor === 'red') {
+                                dateColorClass = 'text-[#fa050b] bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-lg font-bold font-mono';
+                              } else if (statusInfo.dateAlertColor === 'yellow') {
+                                dateColorClass = 'text-amber-600 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-lg font-bold font-mono';
+                              }
+
+                              return (
+                                <tr
+                                  key={act.id}
+                                  onClick={() => handleEdit(act)}
+                                  className="hover:bg-slate-50/50 cursor-pointer transition-colors"
+                                >
+                                  <td className="px-6 py-4">
+                                    <span className="font-semibold text-slate-900 block truncate max-w-[160px]">
+                                      {emp?.razon_social || 'Cliente desconocido'}
+                                    </span>
+                                    <span className="text-[10px] text-slate-500 font-medium block truncate max-w-[160px]">
+                                      {est?.denominacion || 'Sin establecimiento'}
+                                    </span>
+                                  </td>
+
+                                  <td className="px-6 py-4">
+                                    <span className="font-semibold text-slate-900 block truncate max-w-[200px]" title={act.descripcion}>
+                                      {act.descripcion}
+                                    </span>
+                                    <span className="text-[10px] text-slate-500 font-medium block truncate max-w-[200px]">
+                                      {act.marco_legal || 'Sin marco legal registrado'}
+                                    </span>
+                                  </td>
+
+                                  <td className="px-6 py-4 font-semibold text-slate-900">
+                                    {act.responsable || 'Sin asignar'}
+                                  </td>
+
+                                  <td className="px-6 py-4">
+                                    {act.fecha_planificada ? (
+                                      <span className={dateColorClass}>
+                                        {formatDate(act.fecha_planificada)}
+                                      </span>
+                                    ) : (
+                                      <span className="text-[10px] text-slate-400 font-semibold italic">Pendiente</span>
+                                    )}
+                                  </td>
+
+                                  <td className="px-6 py-4 font-mono text-slate-500">
+                                    {act.fecha_realizacion ? formatDate(act.fecha_realizacion) : <span className="text-[10px] text-slate-400 italic">Pendiente</span>}
+                                  </td>
+
+                                  <td className="px-6 py-4">
+                                    <div className="space-y-1 w-24">
+                                      <div className="flex items-center justify-between text-[10px] font-bold text-slate-500">
+                                        <span>{act.progreso}%</span>
+                                      </div>
+                                      <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                        <div
+                                          className={`h-full rounded-full transition-all duration-300 ${act.progreso === 100 ? 'bg-[#0b8043]' : 'bg-[#468DFF]'}`}
+                                          style={{ width: `${act.progreso}%` }}
+                                        />
+                                      </div>
+                                    </div>
+                                  </td>
+
+                                  <td className="px-6 py-4">
+                                    <span
+                                      className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white uppercase tracking-wider"
+                                      style={{ backgroundColor: statusInfo.estadoColor }}
+                                    >
+                                      {statusInfo.estadoText}
+                                    </span>
+                                  </td>
+
+                                  <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
+                                    {act.documento_url ? (
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); handleViewPdf(act.documento_url); }}
+                                        className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                        title="Descargar o Ver Documento PDF"
+                                      >
+                                        <FileText className="h-4.5 w-4.5" />
+                                      </button>
+                                    ) : (
+                                      <span className="text-[10px] text-slate-400 font-semibold italic">Vacío</span>
+                                    )}
+                                  </td>
+
+                                  <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                                    <div className="flex items-center justify-end gap-2">
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); handleEdit(act); }}
+                                        className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                        title="Editar actividad"
+                                      >
+                                        <Edit className="h-4.5 w-4.5" />
+                                      </button>
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); handleDelete(act.id); }}
+                                        className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                        title="Eliminar actividad"
+                                      >
+                                        <Trash2 className="h-4.5 w-4.5" />
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
-          </>
-        )}
           </div>
         )}
 

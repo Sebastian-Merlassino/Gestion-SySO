@@ -2,6 +2,184 @@
 
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
+## [2026-06-21] Estandarización Global de Encabezados de Página y Formularios de Carga
+
+### Resumen de Cambios
+- **Encabezado de Página (Top Navbar)**: Se unificó estructural y estéticamente el header de navegación en las 9 vistas operativas (`visitas`, `programa`, `profile`, `extintores`, `equipo`, `empresas`, `dashboard`, `correctivas`, `capacitacion`). Ahora todas tienen exactamente `h-16`, border en `border-slate-200`, padding responsivo `px-4 md:px-6`, y tipografía `font-outfit text-base md:text-lg font-bold text-slate-900 truncate leading-none`.
+- **Badge de Plan**: Se estandarizó la visualización del plan actual de manera uniforme con la clase `bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider`.
+- **Formularios de Carga Inline**: Se homogeneizaron las cabeceras de los formularios en los módulos (`visitas`, `programa`, `extintores`, `correctivas`, `capacitacion`, `equipo`, `empresas`) a la altura `h-16` con padding `px-4 md:px-6` y fondo `bg-slate-50 border-b border-slate-150`.
+- **Contenedores de Formulario en Clientes y Equipo**: Se refactorizaron las vistas de creación y edición en `equipo/page.js` y `empresas/page.js` para usar la estructura de tarjeta inline (`bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh]`) y scroll interno independiente, igualándolos con el resto de los módulos.
+- **Tabla de Constancias de Visita (`visitas/page.js`)**: Se eliminó la columna de incidentes para optimizar la cuadrícula y se integró un botón de visualización rápida con el icono `Eye` (ojito) que abre y previsualiza el PDF generado mediante Object URLs en una nueva pestaña sin forzar su descarga inmediata.
+- **Documentación de Reglas de Workspace**: Se actualizaron los documentos `docs/design/ui-specs/DESIGN_STANDARD.md` y `docs/brand/BRAND_GUIDELINES.md` para normar la unificación estética y estructural de los encabezados.
+
+### Decisiones Clave
+- **Consistencia Visual Absoluta**: Mantener la misma cuadrícula responsiva (`px-4 md:px-6`) y la misma altura (`h-16`) para el top navbar y las cabeceras de los formularios asegura que no existan desalineaciones horizontales y que la UI se perciba como un producto cohesionado.
+- **Formularios como Tarjetas Scrollables**: Limitar la altura de los formularios a `max-h-[85vh]` con scroll independiente evita la pérdida del navbar superior de la página y mejora la navegación en pantallas pequeñas.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] docs/design/ui-specs/DESIGN_STANDARD.md`
+- `[MODIFY] docs/brand/BRAND_GUIDELINES.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción exitosa (`npm run build`) para todas las rutas dinámicas y estáticas, asegurando consistencia de sintaxis en JSX y empaquetado final.
+
+---
+
+## [2026-06-20] Flexibilización de Formulario y Carga de Logotipo en PDF de Constancia de Visita
+
+### Resumen de Cambios
+- **Formulario de Constancia de Visita (`visitas/page.js`)**:
+  - **Flexibilización de Firmas y Responsable**: Se eliminaron las validaciones obligatorias de las firmas digitales y del campo "Nombre del Responsable Presente". Ahora el formulario se puede registrar con estos campos vacíos.
+  - **Selector de Profesional Unificado**: Se removió el selector de radio "Tipo de Carga Profesional" y se reemplazó por un select dropdown unificado para "Profesional Interviniente" con opción "Otro (cargar manualmente)..." y renderizado condicional de campo de texto manual, imitando el flujo de "Responsable Asignado" en el Programa de Gestión.
+  - **Remoción de Observaciones Internas**: Se eliminó del formulario de carga el campo textarea "Observaciones y notas internas", el cual ya no es editable desde la interfaz del usuario.
+  - **Estandarización de Colores**: Todos los botones de toggles (Sí/No) para incidentes, capacitaciones, simulacros y aviso de riesgo se estandarizaron para emplear el color azul `#468DFF` en su estado seleccionado.
+- **Generación de PDF**:
+  - **Carga de Logotipo Principal**: Se reestructuró la carga del logo en la cabecera del reporte PDF para que consulte y pinte dinámicamente el logotipo principal del tenant (`tenant.logo_1_url`), con fallback automático y seguro al logotipo por defecto `/brand/logo-primary.png` si no está configurado o falla su obtención.
+  - **Alineación de Profesional**: Se ajustó la coordenada horizontal (de `185` a `205`) del valor de "Profesional interviniente" para evitar superposición con el texto de la etiqueta y mantener la alineación vertical uniforme con el campo de Razón Social.
+
+### Decisiones Clave
+- **Consistencia Visual en Acciones de Formulario**: El uso del color `#468DFF` para todas las selecciones activas uniforma la identidad visual de la marca y elimina los verdes, rojos e índigos distractores del formulario de carga.
+- **Tolerancia y Robustez del PDF**: Mantener un fallback local para la cabecera asegura la disponibilidad del PDF descargable ante cualquier eventualidad con la URL del logotipo del tenant.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+
+---
+
+## [2026-06-20] Rediseño del PDF de Constancia de Visita y Hardening de jsPDF
+
+### Resumen de Cambios
+- **Módulo de Visitas (`visitas/page.js`)**:
+  - **Rediseño Completo de PDF**: Se reestructuró la función `handleGeneratePdf` para generar un PDF de 2 páginas en formato **A4** (con coordenadas en puntos `pt`) siguiendo el diseño y especificaciones detalladas del JSON de la constancia.
+  - **Componentes Fijos de Marca**: Se agregaron el logotipo en el encabezado de ambas páginas y el pie de página unificado de marca (barra azul, aclaración "Gestión SySO ®" con teléfonos y número de página).
+  - **Tablas de Actividades**:
+    - **Página 1**: Grid de datos generales de la empresa (Razón social, CUIT, etc. de 24 pt de alto) y tabla de actividades de control (ítems 1 al 4) dibujando checkboxes y checkmarks manuales `[X]`.
+    - **Página 2**: Tabla de actividades parte 2 (ítems 5 al 8) incluyendo renderizado horizontal multicheckbox para los simulacros.
+  - **Líneas de Observaciones**: Sección de observaciones de altura fija (307.75 pt) que dibuja 9 líneas punteadas y superpone el texto de observaciones preventivas y generales.
+  - **Hardening de jsPDF**: Se envolvieron las llamadas de `doc.addImage` en bloques `try-catch` y se agregaron validaciones de prefijo `data:image/` para evitar que imágenes de firmas corruptas o caídas de red al cargar el logotipo congelen e interrumpan la generación del archivo.
+
+### Decisiones Clave
+- **Coordenadas y Posicionamiento Manual**: Utilizar coordenadas absolutas de jsPDF en lugar de autoTable para las secciones críticas de datos, firmas y observaciones garantiza el cumplimiento estricto del diseño físico del formulario.
+- **Tolerancia a Imágenes Nulas/Corruptas**: Evitar la propagación de excepciones en la inyección de assets base64 garantiza que el usuario siempre pueda descargar el PDF incluso si un inspector cuenta con firmas incompletas o corruptas en base de datos.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+
+### Validaciones Ejecutadas
+- Compilación del proyecto (`cmd.exe /c "npm run build"`) completada con éxito.
+- Pruebas automatizadas con Playwright (`temp/test_ui.py`) simulando la navegación a visitas y descargando exitosamente el PDF en formato A4 sin arrojar excepciones de interfaz.
+
+---
+
+## [2026-06-20] Actividad Económica Opcional y Botones Estandarizados con PlusCircle
+
+### Resumen de Cambios
+- **Clientes / Empresas (empresas/page.js)**:
+  - **Actividad Económica Opcional**: Se removió el asterisco obligatorio `*` de la etiqueta visual "Actividad Económica (CIIU)" en el formulario de creación/edición de empresas. La plataforma permite guardar correctamente una empresa con el arreglo de actividades vacío.
+- **Estandarización de Iconos de Encabezado**:
+  - Se sustituyó el icono simple de adición `Plus` por el icono circular `PlusCircle` en los botones superiores de los encabezados de las vistas de listado de las 5 secciones restantes:
+    - **Visitas (`visitas/page.js`)**: Botón "Nueva Constancia".
+    - **Programa de Gestión Anual (`programa/page.js`)**: Botón "Nueva Actividad".
+    - **Extintores (`extintores/page.js`)**: Botón "Incorporar Nuevo Extintor".
+    - **Acciones Correctivas (`correctivas/page.js`)**: Botón "Incorporar Nuevo Hallazgo".
+    - **Capacitación (`capacitacion/page.js`)**: Botón "Registrar Capacitación".
+  - Se removió la importación del componente `Plus` no utilizado en dichos archivos y se importó `PlusCircle` de `lucide-react`.
+
+### Decisiones Clave
+- **Consistencia Visual en Acciones de Agregar**: Mantener el mismo pictograma (`PlusCircle`) para las acciones principales de agregado de la cabecera en las 7 secciones de la app mejora la consistencia del diseño.
+- **Flexibilidad en el Registro de Empresas**: Permitir registrar empresas sin código CIIU de inicio se alinea con la flexibilidad del flujo operativo, requiriendo menos datos obligatorios rígidos.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción de Next.js (`cmd.exe /c "npm run build"`) completada de manera exitosa y sin advertencias.
+
+---
+
+## [2026-06-20] Correcciones en la Vista de Equipo y Separación de Columnas en Clientes
+
+### Resumen de Cambios
+- **Equipo de Trabajo (equipo/page.js)**:
+  - **Alineación de Pictogramas**: Se ajustó el tamaño de los iconos de Editar (`Edit`) y Eliminar (`Trash2`) en la tabla principal de `h-3.5 w-3.5` a `h-4.5 w-4.5`, unificando su dimensión con la de los demás listados del proyecto.
+  - **Simplificación de Filtros**: Se eliminaron los filtros avanzados de Provincia (estados reactivos `filterProvincia` y `showFilters`, y sus selectores en la UI). El buscador de texto ahora solo comprueba coincidencia contra el Nombre y Apellido (`full_name`) y se actualizó el placeholder correspondiente.
+  - **Texto de Acceso Login**: Se modificó la etiqueta de estado de acceso para los integrantes sin cuenta de login, reemplazando `"Solo Registro"` por `"Sin Acceso"` para mayor claridad conceptual en la tabla.
+- **Clientes (empresas/page.js)**:
+  - **Separación de Columnas**: Se dividió la columna combinada "Razón Social / Nombre Comercial" en dos columnas independientes: **Razón Social** y **Nombre Comercial**.
+  - **Equilibrio de Columnas**: Se asignaron anchos estables y proporcionados a los headers de la tabla (`w-[30%]`, `w-[28%]`, `w-[18%]`, `w-[12%]`, `w-[12%]`) para prevenir deformaciones en pantalla ancha.
+  - **Ordenamiento y Estructura**: Se añadió soporte de ordenación al hacer clic sobre "Nombre Comercial" (`handleSort('nombre_comercial')`), y se actualizó el `colSpan` de la fila de tabla vacía de 4 a 5.
+- **Dashboard (dashboard/page.js)**:
+  - **Título de Contenedor**: Se corrigió el título del contenedor de vencimientos del mes en curso y próximo mes para mostrar la leyenda `"Próximos vencimientos"` en lugar del texto anterior, unificando el formato textual del panel.
+
+### Decisiones Clave
+- **Unificación de Componentes y Visualización**: Asegurar un tamaño uniforme de los pictogramas de acción y la consistencia en el balance de ancho de las tablas previene el ruido visual y mejora la escaneabilidad.
+- **Simplificación del Filtro de Equipo**: Dado que el personal técnico de Higiene y Seguridad de una consultora suele ser acotado, mantener un panel de filtros avanzados y búsquedas por CUIT/email añadía complejidad innecesaria. Limitar la búsqueda al Nombre y Apellido agiliza la operatoria y limpia la interfaz.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+
+### Validaciones Ejecutadas
+- Compilación y build de producción de Next.js (`npm run build`) completados de manera exitosa y sin advertencias.
+
+---
+
+## [2026-06-20] Reorganización del Formulario en Programa de Gestión Anual
+
+### Resumen de Cambios
+- **Rediseño del Formulario de Programa Anual**: Se reestructuró la disposición espacial del formulario inline en `programa/page.js` para optimizar la organización de los campos y hacerla más fluida y compacta:
+  - **Cliente y Establecimiento**: Agrupados en la misma fila utilizando un grid responsivo (`grid grid-cols-1 md:grid-cols-2 gap-4`), ubicando Establecimiento a la derecha de Razón Social.
+  - **Marco Legal y Responsable**: Agrupados en la misma fila en un grid responsivo (`grid grid-cols-1 md:grid-cols-2 gap-4`), con Responsable Asignado a la derecha del campo Marco Legal.
+  - **Fechas y Progreso**: Agrupados en la misma fila en un grid responsivo de tres columnas (`grid grid-cols-1 md:grid-cols-3 gap-4`), colocando Fecha Planificada (columna 1), Fecha de Realización (columna 2) y la barra de Progreso (columna 3) de manera consecutiva.
+- **Responsabilidad Mobile**: Se conservan los estilos y el apilado vertical en dispositivos móviles mediante la regla `grid-cols-1 md:grid-cols-*`.
+
+### Decisiones Clave
+- **Optimización de Espacio en Pantallas Grandes**: La agrupación de campos relacionados en filas horizontales reduce considerablemente el scrolling vertical del formulario de carga inline sin comprometer la legibilidad ni la usabilidad móvil.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+
+### Validaciones Ejecutadas
+- Compilación y build de producción de Next.js (`cmd.exe /c "npm run build"`) completados de manera exitosa y sin advertencias.
+
+### Próximo Paso Recomendado
+- Realizar pruebas de humo visuales y responsive en dispositivos reales de diferentes escalas para asegurar que los inputs no tengan desbordamientos de flexbox.
+
+---
+
 ## [2026-06-20] Estandarización de Alertas y Botones en Formularios de Carga
 
 ### Resumen de Cambios

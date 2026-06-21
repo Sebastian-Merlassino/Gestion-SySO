@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { formatDate } from '@/lib/utils';
 import { 
-  Plus, 
+  PlusCircle, 
   Search, 
   Building, 
   Users, 
@@ -619,6 +619,16 @@ export default function VisitasPage({ params }) {
     setFirmaProfSavedUrl('');
   };
 
+  const handleProfesionalChange = (value) => {
+    setProfesionalId(value);
+    if (value === '__custom__') {
+      setProfesionalTipo('manual');
+    } else {
+      setProfesionalTipo('miembro');
+      setProfesionalNombre('');
+    }
+  };
+
   // Filtrar los establecimientos según la empresa elegida
   const filteredEstablecimientos = allEstablecimientos.filter(
     (est) => est.empresa_id === empresaId
@@ -722,8 +732,8 @@ export default function VisitasPage({ params }) {
   // Guardar datos de visita
   const handleSaveVisita = async (e) => {
     e.preventDefault();
-    if (!empresaId || !establecimientoId || !fecha || !responsablePresente) {
-      triggerToast('Complete la Razón Social, Establecimiento, Fecha y Responsable presente.', 'error');
+    if (!empresaId || !establecimientoId || !fecha) {
+      triggerToast('Complete la Razón Social, Establecimiento y Fecha.', 'error');
       return;
     }
 
@@ -733,16 +743,6 @@ export default function VisitasPage({ params }) {
 
     if (!finalProfNombre) {
       triggerToast('Especifique el profesional interviniente.', 'error');
-      return;
-    }
-
-    // Verificar si se ha firmado en el canvas o si ya existe firma guardada
-    if (!hasSignedResp && !firmaRespSavedUrl) {
-      triggerToast('La firma del responsable de la empresa es requerida.', 'error');
-      return;
-    }
-    if (!hasSignedProf && !firmaProfSavedUrl) {
-      triggerToast('La firma del profesional de Higiene y Seguridad es requerida.', 'error');
       return;
     }
 
@@ -782,7 +782,7 @@ export default function VisitasPage({ params }) {
         profesional_tipo: profesionalTipo,
         profesional_nombre: finalProfNombre,
         profesional_id: profesionalTipo === 'miembro' ? profesionalId : null,
-        responsable_presente: responsablePresente.trim(),
+        responsable_presente: responsablePresente.trim() || null,
         ocurrieron_incidentes: ocurrieronIncidentes,
         analisis_correspondiente: ocurrieronIncidentes ? analisisCorrespondiente : 'N/A',
         causa_raiz: ocurrieronIncidentes ? causaRaiz.trim() : null,
@@ -860,7 +860,7 @@ export default function VisitasPage({ params }) {
       setProfesionalId(v.profesional_id || '');
       setProfesionalNombre('');
     } else {
-      setProfesionalId('');
+      setProfesionalId('__custom__');
       setProfesionalNombre(v.profesional_nombre || '');
     }
     setResponsablePresente(v.responsable_presente || '');
@@ -1022,202 +1022,470 @@ export default function VisitasPage({ params }) {
       const estName = est ? est.denominacion : 'N/A';
       const address = est ? est.direccion : 'N/A';
 
+      // Inicializar jsPDF en puntos, orientación retrato, formato A4 (595.28 x 841.89 pt)
       const doc = new jsPDF({
         orientation: 'portrait',
-        unit: 'mm',
+        unit: 'pt',
         format: 'a4'
       });
 
-      // Dimensiones A4: 210 x 297 mm
-      const margin = 15;
-      let yPos = 18;
-
-      // Header: Cargar logo principal
+      // Cargar Logo
+      let logoBase64 = '';
       try {
-        const logoBase64 = await getBase64ImageFromUrl('/brand/logo-primary.png');
-        if (logoBase64) {
-          // logo a la izquierda
-          doc.addImage(logoBase64, 'PNG', margin, yPos, 15, 15);
+        if (tenant && tenant.logo_1_url) {
+          logoBase64 = await getBase64ImageFromUrl(tenant.logo_1_url);
         }
       } catch (e) {
-        console.error('No se pudo cargar el logo de la cabecera en el PDF:', e);
+        console.error('No se pudo cargar el logo 1 personalizado, intentando logo principal por defecto:', e);
       }
 
-      // Título en la cabecera
-      doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(16);
-      doc.setTextColor(15, 23, 42); // slate-900
-      doc.text('CONSTANCIA DE VISITA TÉCNICA', 40, yPos + 6);
+      if (!logoBase64) {
+        try {
+          logoBase64 = await getBase64ImageFromUrl('/brand/logo-primary.png');
+        } catch (e) {
+          console.error('No se pudo cargar el logo de la cabecera por defecto en el PDF:', e);
+        }
+      }
+
+      // Helper para dibujar Cabecera y Pie de Página en cada página
+      const drawHeaderAndFooter = (pageNum) => {
+        // Logo superior izquierdo
+        if (logoBase64) {
+          try {
+            doc.addImage(logoBase64, 'PNG', 63.85, 22.11, 142.5, 78.31);
+          } catch (e) {
+            console.error('Error dibujando el logo de la cabecera:', e);
+          }
+        }
+        
+        // Footer: Barra azul
+        doc.setFillColor(60, 120, 216); // #3C78D8
+        doc.rect(42.1, 730.63, 525.75, 10.5, 'F');
+        
+        // Footer: Texto centrado
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(0, 0, 0);
+        
+        const prefix = "Gestión SySO ®";
+        const restText = " - Tel.: 1159969956 / 1132296691 - Email: info@gestionsyso.com";
+        doc.setFont('helvetica', 'bold');
+        const prefixWidth = doc.getTextWidth(prefix);
+        doc.setFont('helvetica', 'normal');
+        const restWidth = doc.getTextWidth(restText);
+        const totalFooterWidth = prefixWidth + restWidth;
+        const footerX = (595.28 - totalFooterWidth) / 2;
+        
+        doc.setFont('helvetica', 'bold');
+        doc.text(prefix, footerX, 751);
+        doc.setFont('helvetica', 'normal');
+        doc.text(restText, footerX + prefixWidth, 751);
+        
+        // Footer: Número de página
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(128, 128, 128); // #808080
+        doc.text(`${pageNum}`, 549, 751, { align: 'right' });
+      };
+
+      // ==========================================
+      // PAGINA 1
+      // ==========================================
+      drawHeaderAndFooter(1);
+
+      // Título del documento
+      doc.setFillColor(60, 120, 216); // #3C78D8
+      doc.rect(61.6, 116.71, 486.75, 25.5, 'F');
       
-      doc.setFont('Helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.setTextColor(100, 116, 139); // slate-500
-      doc.text(`Consultora: ${tenant?.name || 'Gestión SySO'}`, 40, yPos + 11);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.setTextColor(255, 255, 255);
+      doc.text('Constancia de visita', 61.6 + 486.75 / 2, 116.71 + 16.5, { align: 'center' });
 
-      yPos += 20;
+      // Tabla de Datos Generales (Renderizado manual del grid)
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(1);
+      doc.rect(62, 156, 487, 144);
 
-      // Línea divisora
-      doc.setDrawColor(217, 217, 217); // gris de marca #D9D9D9
-      doc.setLineWidth(0.5);
-      doc.line(margin, yPos, 210 - margin, yPos);
+      // Líneas horizontales de división
+      for (let i = 1; i <= 5; i++) {
+        doc.line(62, 156 + 24 * i, 62 + 487, 156 + 24 * i);
+      }
+      // Líneas verticales de división
+      doc.line(305, 180, 305, 204);
+      doc.line(305, 228, 305, 252);
 
-      yPos += 8;
+      // Textos de la Tabla de Datos Generales
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
 
-      // Tabla vertical de datos
-      const tableRows = [
-        { key: 'Razón Social', value: empName },
-        { key: 'Establecimiento', value: estName },
-        { key: 'C.U.I.T.', value: cuit },
-        { key: 'Dirección', value: address },
-        { key: 'Fecha de Visita', value: formatDate(v.fecha) },
-        { key: 'Profesional Interviniente', value: v.profesional_nombre },
-        { key: 'Responsable Presente', value: v.responsable_presente },
-        { key: '¿Ocurrieron incidentes/accidentes?', value: v.ocurrieron_incidentes ? 'Sí' : 'No' },
+      // Fila 1
+      doc.setFont('helvetica', 'bold');
+      doc.text('Razón social de la empresa:', 68, 171);
+      doc.setFont('helvetica', 'normal');
+      doc.text(empName, 205, 171);
+
+      // Fila 2
+      doc.setFont('helvetica', 'bold');
+      doc.text('C.U.I.T.:', 68, 195);
+      doc.setFont('helvetica', 'normal');
+      doc.text(cuit, 115, 195);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Establecimiento:', 311, 195);
+      doc.setFont('helvetica', 'normal');
+      doc.text(estName, 395, 195);
+
+      // Fila 3
+      doc.setFont('helvetica', 'bold');
+      doc.text('Dirección:', 68, 219);
+      doc.setFont('helvetica', 'normal');
+      doc.text(address, 120, 219);
+
+      // Fila 4
+      doc.setFont('helvetica', 'bold');
+      doc.text('Fecha:', 68, 243);
+      doc.setFont('helvetica', 'normal');
+      doc.text(formatDate(v.fecha), 105, 243);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Hora de finalización:', 311, 243);
+      doc.setFont('helvetica', 'normal');
+      doc.text(v.hora_finalizacion || 'N/A', 415, 243);
+
+      // Fila 5
+      doc.setFont('helvetica', 'bold');
+      doc.text('Nombre y cargo del responsable presente:', 68, 267);
+      doc.setFont('helvetica', 'normal');
+      doc.text(v.responsable_presente || 'N/A', 285, 267);
+
+      // Fila 6
+      doc.setFont('helvetica', 'bold');
+      doc.text('Profesional interviniente:', 68, 291);
+      doc.setFont('helvetica', 'normal');
+      doc.text(v.profesional_nombre || 'N/A', 205, 291);
+
+      // Tabla de Actividades de la Página 1
+      doc.setFillColor(60, 120, 216); // #3C78D8
+      doc.rect(62.35, 314.25, 486, 24.75, 'F');
+      
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(255, 255, 255);
+      doc.text('Actividades realizadas durante la visita', 68, 314.25 + 15.5);
+      doc.text('Si', 462.85 + 14.25, 314.25 + 15.5, { align: 'center' });
+      doc.text('No', 491.35 + 14.25, 314.25 + 15.5, { align: 'center' });
+      doc.text('NA', 519.85 + 14.25, 314.25 + 15.5, { align: 'center' });
+
+      // Líneas verticales de cabecera
+      doc.setDrawColor(0, 0, 0);
+      doc.line(462.85, 314.25, 462.85, 314.25 + 24.75);
+      doc.line(491.35, 314.25, 491.35, 314.25 + 24.75);
+      doc.line(519.85, 314.25, 519.85, 314.25 + 24.75);
+
+      // Estructura de las filas de la Página 1
+      const isMedFisQuim = (v.mediciones_realizadas || []).some(x => x !== 'Evaluación ergonómica' && x !== 'N/A');
+      const isMedErg = (v.mediciones_realizadas || []).includes('Evaluación ergonómica');
+      const isMedOther = (v.mediciones_realizadas || []).some(x => !MEDICIONES_OPTS.includes(x) && x !== 'N/A');
+      const otherMedText = (v.mediciones_realizadas || []).filter(x => x !== 'Evaluación ergonómica' && !MEDICIONES_OPTS.includes(x)).join(', ');
+
+      const p1Rows = [
+        { id: '1', text: '1. ¿Ocurrieron incidentes o accidentes laborales desde la última visita?', type: 'main', height: 25, val: v.ocurrieron_incidentes ? 'Sí' : 'No' },
+        { id: '1.1', text: '  1.1. ¿Se realizó el análisis correspondiente (causa raíz, acciones correctivas)?', type: 'sub', height: 25, val: v.analisis_correspondiente },
+        { id: '1.2', text: '  1.2. ¿Cuál fue la causa raíz?:\n  ' + (v.causa_raiz || 'N/A'), type: 'desc', height: 36 },
+        { id: '1.3', text: '  1.3. ¿Qué acción correctiva se planificó / realizó?:\n  ' + (v.accion_correctiva || 'N/A'), type: 'desc', height: 37 },
+        { id: '2', text: '2. ¿Se realizó relevamiento de:', type: 'group', height: 24 },
+        { id: '2.1', text: '  2.1. Condiciones de Higiene y Seguridad', type: 'sub', height: 25, val: v.relevamiento_higiene_seguridad },
+        { id: '2.2', text: '  2.2. Prácticas de trabajo seguro', type: 'sub', height: 25, val: v.relevamiento_practicas_seguras },
+        { id: '2.3', text: '  2.3. Uso adecuado de elementos de protección personal (EPP’s)', type: 'sub', height: 25, val: v.relevamiento_epp },
+        { id: '3', text: '3. ¿Se realizaron mediciones o evaluaciones técnicas específicas?', type: 'main', height: 25, val: v.realizaron_mediciones },
+        { id: '3.1', text: '  3.1. Medición de contaminantes físicos y/o químicos?', type: 'sub', height: 25, val: isMedFisQuim ? 'Sí' : (v.realizaron_mediciones === 'No' ? 'No' : (v.realizaron_mediciones === 'N/A' ? 'N/A' : '')) },
+        { id: '3.2', text: '  3.2. Evaluación de riesgos ergonómicos', type: 'sub', height: 25, val: isMedErg ? 'Sí' : (v.realizaron_mediciones === 'No' ? 'No' : (v.realizaron_mediciones === 'N/A' ? 'N/A' : '')) },
+        { id: '3.3', text: '  3.3. Otras (especificar): ' + (otherMedText || 'Ninguna'), type: 'sub', height: 25, val: isMedOther ? 'Sí' : (v.realizaron_mediciones === 'No' ? 'No' : (v.realizaron_mediciones === 'N/A' ? 'N/A' : '')) },
+        { id: '4', text: '4. ¿Se verificó la implementación de acciones correctivas previamente recomendadas?', type: 'main', height: 37, val: v.verifico_acciones_correctivas }
       ];
 
-      if (v.ocurrieron_incidentes) {
-        tableRows.push(
-          { key: '¿Se realizó el análisis causa-raíz?', value: v.analisis_correspondiente || 'N/A' },
-          { key: 'Causa raíz del incidente', value: v.causa_raiz || 'N/A' },
-          { key: 'Acción correctiva planificada', value: v.accion_correctiva || 'N/A' }
-        );
-      }
+      let curY = 314.25 + 24.75;
+      doc.rect(62.35, 314.25, 486, 385);
 
-      tableRows.push(
-        { key: 'Relevamiento Higiene y Seguridad', value: v.relevamiento_higiene_seguridad || 'N/A' },
-        { key: 'Relevamiento Prácticas Trabajo Seguro', value: v.relevamiento_practicas_seguras || 'N/A' },
-        { key: 'Relevamiento Uso de EPP', value: v.relevamiento_epp || 'N/A' },
-        { key: '¿Se realizaron mediciones técnicas?', value: v.realizaron_mediciones || 'N/A' }
-      );
-
-      if (v.realizaron_mediciones === 'Sí') {
-        tableRows.push({ key: 'Mediciones / evaluaciones realizadas', value: (v.mediciones_realizadas || []).join(', ') });
-      }
-
-      tableRows.push(
-        { key: 'Verificación de correctivas previas', value: v.verifico_acciones_correctivas || 'N/A' },
-        { key: '¿Se dictaron capacitaciones?', value: v.dictaron_capacitaciones ? 'Sí' : 'No' }
-      );
-
-      if (v.dictaron_capacitaciones) {
-        tableRows.push({ key: 'Temas capacitados', value: (v.capacitaciones_temas || []).join(', ') });
-      }
-
-      tableRows.push(
-        { key: '¿Se realizaron simulacros?', value: v.realizaron_simulacros ? 'Sí' : 'No' }
-      );
-
-      if (v.realizaron_simulacros) {
-        tableRows.push({ key: 'Especificación de simulacro', value: (v.simulacros_tipo || []).join(', ') });
-      }
-
-      tableRows.push(
-        { key: '¿Se emite aviso de riesgo?', value: v.emite_aviso_riesgo ? 'Sí' : 'No' },
-        { key: 'Documentación en Legajo SySO', value: (v.documentacion_incorporada || []).join(', ') || 'Ninguna' },
-        { key: 'Observaciones / Recomendaciones', value: v.observaciones_recomendaciones || 'Sin observaciones preventivas.' },
-        { key: 'Observaciones generales', value: v.observaciones || 'Sin observaciones adicionales.' }
-      );
-
-      doc.autoTable({
-        startY: yPos,
-        margin: { left: margin, right: margin },
-        columns: [
-          { header: 'Pregunta / Concepto', dataKey: 'key' },
-          { header: 'Detalle / Respuesta', dataKey: 'value' }
-        ],
-        body: tableRows,
-        theme: 'striped',
-        styles: {
-          fontSize: 9,
-          cellPadding: 3,
-          font: 'Helvetica',
-          textColor: [30, 41, 59] // slate-800
-        },
-        headStyles: {
-          fillColor: [70, 141, 255], // #468DFF color principal
-          textColor: [255, 255, 255],
-          fontStyle: 'bold'
-        },
-        columnStyles: {
-          key: { fontStyle: 'bold', width: 65, fillColor: [248, 250, 252] }, // gris muy suave
-          value: { width: 115 }
+      p1Rows.forEach(row => {
+        // Línea horizontal de fondo
+        doc.line(62.35, curY + row.height, 62.35 + 486, curY + row.height);
+        
+        // Líneas verticales divisoras (excepto para campos descriptivos)
+        if (row.type !== 'desc') {
+          doc.line(462.85, curY, 462.85, curY + row.height);
+          doc.line(491.35, curY, 491.35, curY + row.height);
+          doc.line(519.85, curY, 519.85, curY + row.height);
         }
+
+        // Renderizar el Texto
+        doc.setFont('helvetica', (row.type === 'main' || row.type === 'group') ? 'bold' : 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(0, 0, 0);
+
+        if (row.type === 'desc') {
+          doc.text(row.text, 68, curY + 14, { maxWidth: 475 });
+        } else {
+          doc.text(row.text, 68, curY + 15, { maxWidth: 390 });
+        }
+
+        // Checkboxes y Checkmarks
+        if (row.type === 'main' || row.type === 'sub') {
+          const checkVal = row.val;
+          const cbSize = 8;
+          const cbY = curY + row.height / 2 - 4;
+
+          // Dibujar cuadrados de opción
+          doc.rect(462.85 + 10.25, cbY, cbSize, cbSize);
+          doc.rect(491.35 + 10.25, cbY, cbSize, cbSize);
+          doc.rect(519.85 + 10.25, cbY, cbSize, cbSize);
+
+          // Poner una X
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(8);
+          if (checkVal === 'Sí' || checkVal === 'Si' || checkVal === true) {
+            doc.text('X', 462.85 + 12, cbY + 7);
+          } else if (checkVal === 'No' || checkVal === false) {
+            doc.text('X', 491.35 + 12, cbY + 7);
+          } else if (checkVal === 'N/A' || checkVal === 'NA') {
+            doc.text('X', 519.85 + 12, cbY + 7);
+          }
+        }
+
+        curY += row.height;
       });
 
-      // Calcular posición final
-      let finalY = doc.lastAutoTable.finalY || yPos + 100;
+      // ==========================================
+      // PAGINA 2
+      // ==========================================
+      doc.addPage();
+      drawHeaderAndFooter(2);
+
+      // Tabla de Actividades de la Página 2
+      doc.setFillColor(60, 120, 216); // #3C78D8
+      doc.rect(62.35, 102.91, 486, 24.75, 'F');
       
-      // Si la firma no cabe al pie de la página, creamos una nueva página
-      if (finalY > 220) {
-        doc.addPage();
-        finalY = margin + 10;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(255, 255, 255);
+      doc.text('Actividades realizadas durante la visita', 68, 102.91 + 15.5);
+      doc.text('Si', 462.85 + 14.25, 102.91 + 15.5, { align: 'center' });
+      doc.text('No', 491.35 + 14.25, 102.91 + 15.5, { align: 'center' });
+      doc.text('NA', 519.85 + 14.25, 102.91 + 15.5, { align: 'center' });
+
+      // Líneas verticales de cabecera
+      doc.line(462.85, 102.91, 462.85, 102.91 + 24.75);
+      doc.line(491.35, 102.91, 491.35, 102.91 + 24.75);
+      doc.line(519.85, 102.91, 519.85, 102.91 + 24.75);
+
+      // Estructura de las filas de la Página 2
+      const capTemas = (v.capacitaciones_temas || []).join(', ');
+      const p2Rows = [
+        { id: '5', text: '5. ¿Se dictaron capacitaciones? Especificar temas: ' + (capTemas || 'N/A'), type: 'main', height: 37, val: v.dictaron_capacitaciones ? 'Sí' : 'No' },
+        { id: '6', text: '6. ¿Se realizaron simulacros?', type: 'main', height: 25, val: v.realizaron_simulacros ? 'Sí' : 'No' },
+        { id: '6.1', text: '  6.1. Tipo: Evacuación / Incendio / Derrame / Fuga de gas / Otro:', type: 'simulacro_options', height: 25 },
+        { id: '7', text: '7. ¿Se emitieron avisos por condiciones inseguras o actos inseguros?', type: 'main', height: 25, val: v.emite_aviso_riesgo ? 'Sí' : 'No' },
+        { id: '8', text: '8. Documentación incorporada al Legajo de SySO:\n  ' + ((v.documentacion_incorporada || []).join(', ') || 'Ninguna'), type: 'desc', height: 37 }
+      ];
+
+      let curY2 = 102.91 + 24.75;
+      doc.rect(62.35, 102.91, 486, 174);
+
+      p2Rows.forEach(row => {
+        // Línea horizontal de fondo
+        doc.line(62.35, curY2 + row.height, 62.35 + 486, curY2 + row.height);
+        
+        // Líneas verticales divisoras (excepto para descriptivos y simulacros en línea)
+        if (row.type !== 'desc' && row.type !== 'simulacro_options') {
+          doc.line(462.85, curY2, 462.85, curY2 + row.height);
+          doc.line(491.35, curY2, 491.35, curY2 + row.height);
+          doc.line(519.85, curY2, 519.85, curY2 + row.height);
+        }
+
+        // Renderizar el texto
+        doc.setFont('helvetica', (row.type === 'main') ? 'bold' : 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(0, 0, 0);
+
+        if (row.type === 'desc') {
+          doc.text(row.text, 68, curY2 + 14, { maxWidth: 475 });
+        } else if (row.type === 'simulacro_options') {
+          // Renderizar opciones múltiples en línea
+          doc.setFont('helvetica', 'normal');
+          doc.text('  6.1. Tipo:', 68, curY2 + 15);
+          
+          const opts = [
+            { name: 'Evacuación', x: 130 },
+            { name: 'Incendio', x: 210 },
+            { name: 'Derrame', x: 280 },
+            { name: 'Fuga de gas', x: 350 },
+            { name: 'Otro', x: 430 }
+          ];
+
+          opts.forEach(opt => {
+            const cbSize = 8;
+            const cbY = curY2 + 7;
+            
+            // Cuadrado
+            doc.rect(opt.x, cbY, cbSize, cbSize);
+            doc.text(opt.name, opt.x + 12, curY2 + 15);
+
+            const hasOpt = (v.simulacros_tipo || []).includes(opt.name);
+            if (hasOpt) {
+              doc.setFont('helvetica', 'bold');
+              doc.text('X', opt.x + 1.5, cbY + 7);
+              doc.setFont('helvetica', 'normal');
+            }
+          });
+        } else {
+          doc.text(row.text, 68, curY2 + 15, { maxWidth: 390 });
+        }
+
+        // Checkboxes Si/No/NA
+        if (row.type === 'main') {
+          const checkVal = row.val;
+          const cbSize = 8;
+          const cbY = curY2 + row.height / 2 - 4;
+
+          doc.rect(462.85 + 10.25, cbY, cbSize, cbSize);
+          doc.rect(491.35 + 10.25, cbY, cbSize, cbSize);
+          doc.rect(519.85 + 10.25, cbY, cbSize, cbSize);
+
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(8);
+          if (checkVal === 'Sí' || checkVal === 'Si' || checkVal === true) {
+            doc.text('X', 462.85 + 12, cbY + 7);
+          } else if (checkVal === 'No' || checkVal === false) {
+            doc.text('X', 491.35 + 12, cbY + 7);
+          } else if (checkVal === 'N/A' || checkVal === 'NA') {
+            doc.text('X', 519.85 + 12, cbY + 7);
+          }
+        }
+
+        curY2 += row.height;
+      });
+
+      // Nota inferior
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(0, 0, 0);
+      doc.text('* Indicar con una X si corresponde: Sí / No / No Aplica (NA)', 62, 290);
+
+      // Sección de Observaciones
+      const obsY = 302.25;
+      doc.setFillColor(60, 120, 216); // #3C78D8
+      doc.rect(62.35, obsY, 486.75, 24.75, 'F');
+      
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(255, 255, 255);
+      doc.text('Observaciones y recomendaciones preventivas:', 68, obsY + 15.5);
+
+      // Contenedor principal de observaciones
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(1);
+      doc.rect(62.35, obsY, 486.75, 307.75); // Llega hasta la zona de firmas (y ~ 610)
+
+      // Texto introductorio
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(64, 64, 64);
+      doc.text('Se realiza la presente visita a efectos de verificar las condiciones de Higiene y Seguridad en el establecimiento, supervisar las prácticas laborales y dar seguimiento a las acciones correctivas recomendadas.', 68, obsY + 42, { maxWidth: 475 });
+      doc.text('Se detallan a continuación las observaciones relevantes y sugerencias preventivas:', 68, obsY + 80);
+
+      // Dibujar 9 líneas punteadas
+      doc.setLineDash([1, 2], 0);
+      doc.setLineWidth(1);
+      doc.setDrawColor(128, 128, 128); // #808080
+      const lineYs = [412, 436, 459, 483, 507, 531, 555, 579, 603];
+      lineYs.forEach(lineY => {
+        doc.line(61.875, lineY, 548.875, lineY);
+      });
+      doc.setLineDash([], 0); // Resetear a sólido
+
+      // Imprimir el contenido de observaciones en las líneas
+      let fullObsText = v.observaciones_recomendaciones || '';
+      if (v.observaciones) {
+        fullObsText += '\n\nNotas internas generales:\n' + v.observaciones;
       }
 
-      // Sección de Firmas
-      finalY += 15;
-      doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(10);
-      doc.setTextColor(15, 23, 42);
-      doc.text('REGISTRO DE FIRMAS', margin, finalY);
+      if (fullObsText) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        const lines = doc.splitTextToSize(fullObsText, 475);
+        for (let i = 0; i < Math.min(lines.length, 9); i++) {
+          doc.text(lines[i], 68, lineYs[i] - 4); // Alinear justo arriba de la línea
+        }
+      }
 
-      doc.setDrawColor(226, 232, 240);
-      doc.setLineWidth(0.3);
-      doc.line(margin, finalY + 2, 210 - margin, finalY + 2);
+      // Sección de Firmas (tercio inferior)
+      const sigY = 645;
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(1);
 
-      finalY += 8;
+      // Firma Responsable Empresa (Columna Izquierda)
+      doc.line(79, sigY, 263, sigY);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(0, 0, 0);
+      doc.text('Firma del responsable de la empresa', 171, sigY + 10, { align: 'center' });
+      doc.setFont('helvetica', 'bold');
+      doc.text(v.responsable_presente || '', 171, sigY + 22, { align: 'center' });
+      doc.setFont('helvetica', 'normal');
+      doc.text('Responsable del Establecimiento', 171, sigY + 32, { align: 'center' });
 
-      // Obtener firmas como base64
+      // Firma Profesional HyS (Columna Derecha)
+      doc.line(346, sigY, 530, sigY);
+      doc.text('Firma del profesional de Higiene y', 438, sigY + 10, { align: 'center' });
+      doc.text('Seguridad', 438, sigY + 20, { align: 'center' });
+      doc.setFont('helvetica', 'bold');
+      doc.text(v.profesional_nombre || '', 438, sigY + 32, { align: 'center' });
+      doc.setFont('helvetica', 'normal');
+      doc.text('Profesional Interviniente', 438, sigY + 42, { align: 'center' });
+
+      // Obtener firmas como base64 de manera segura
       let imgRespBase64 = '';
       let imgProfBase64 = '';
 
       if (v.firma_resp_preview_url) {
-        imgRespBase64 = await getBase64ImageFromUrl(v.firma_resp_preview_url);
+        try {
+          imgRespBase64 = await getBase64ImageFromUrl(v.firma_resp_preview_url);
+        } catch (err) {
+          console.error('Error fetching responsable signature:', err);
+        }
       }
       if (v.firma_prof_preview_url) {
-        imgProfBase64 = await getBase64ImageFromUrl(v.firma_prof_preview_url);
+        try {
+          imgProfBase64 = await getBase64ImageFromUrl(v.firma_prof_preview_url);
+        } catch (err) {
+          console.error('Error fetching profesional signature:', err);
+        }
       }
 
-      // Dibujar columnas de firmas
-      const colWidth = (210 - (margin * 2) - 10) / 2; // ~85mm cada columna
-      
-      // Columna Izquierda: Responsable Empresa
-      doc.setFont('Helvetica', 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(100, 116, 139);
-      doc.text('Firma del Responsable de la Empresa:', margin, finalY);
-      
-      if (imgRespBase64) {
-        doc.addImage(imgRespBase64, 'PNG', margin, finalY + 3, colWidth - 10, 20);
+      // Dibujar las imágenes sobre las líneas
+      if (imgRespBase64 && imgRespBase64.startsWith('data:image/')) {
+        try {
+          doc.addImage(imgRespBase64, 'PNG', 131, sigY - 35, 80, 32);
+        } catch (err) {
+          console.error('Error rendering imgRespBase64:', err);
+        }
       }
-      doc.line(margin, finalY + 24, margin + colWidth - 10, finalY + 24);
-      doc.setFont('Helvetica', 'bold');
-      doc.setTextColor(15, 23, 42);
-      doc.text(v.responsable_presente, margin, finalY + 28);
-      doc.setFont('Helvetica', 'normal');
-      doc.setTextColor(100, 116, 139);
-      doc.text('Responsable del Establecimiento', margin, finalY + 32);
-
-      // Columna Derecha: Profesional Higiene & Seguridad
-      doc.setFont('Helvetica', 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(100, 116, 139);
-      doc.text('Firma del Profesional de HyS:', margin + colWidth + 10, finalY);
-
-      if (imgProfBase64) {
-        doc.addImage(imgProfBase64, 'PNG', margin + colWidth + 10, finalY + 3, colWidth - 10, 20);
+      if (imgProfBase64 && imgProfBase64.startsWith('data:image/')) {
+        try {
+          doc.addImage(imgProfBase64, 'PNG', 398, sigY - 35, 80, 32);
+        } catch (err) {
+          console.error('Error rendering imgProfBase64:', err);
+        }
       }
-      doc.line(margin + colWidth + 10, finalY + 24, margin + (colWidth * 2) + 10, finalY + 24);
-      doc.setFont('Helvetica', 'bold');
-      doc.setTextColor(15, 23, 42);
-      doc.text(v.profesional_nombre, margin + colWidth + 10, finalY + 28);
-      doc.setFont('Helvetica', 'normal');
-      doc.setTextColor(100, 116, 139);
-      doc.text('Profesional Interviniente', margin + colWidth + 10, finalY + 32);
 
-      if (shouldDownload) {
+      // Guardar o retornar
+      if (shouldDownload === true) {
         doc.save(`Constancia_Visita_${empName.replace(/\s+/g, '_')}_${v.fecha}.pdf`);
         triggerToast('PDF descargado exitosamente.');
         return null;
+      } else if (shouldDownload === 'bloburl') {
+        const blob = doc.output('blob');
+        return URL.createObjectURL(blob);
       } else {
         // Retornar en base64 para enviar por correo
         return doc.output('datauristring');
@@ -1226,6 +1494,20 @@ export default function VisitasPage({ params }) {
       console.error('Error al generar PDF:', e);
       triggerToast('Error al estructurar el PDF de la constancia.', 'error');
       return null;
+    }
+  };
+
+  // Previsualizar PDF en nueva pestaña sin descargar
+  const handlePreviewPdf = async (v) => {
+    try {
+      triggerToast('Generando vista previa del PDF...');
+      const blobUrl = await handleGeneratePdf(v, 'bloburl');
+      if (blobUrl) {
+        window.open(blobUrl, '_blank');
+      }
+    } catch (e) {
+      console.error('Error al abrir la vista previa:', e);
+      triggerToast('Error al abrir la vista previa.', 'error');
     }
   };
 
@@ -1514,22 +1796,27 @@ export default function VisitasPage({ params }) {
       <main className="flex-1 flex flex-col h-full bg-[#FFFFFF] overflow-hidden">
         
         {/* Navbar / Top Bar */}
-        <header className="h-16 border-b border-slate-200 px-6 flex items-center justify-between bg-white shrink-0 sticky top-0 z-20">
-          <div className="flex items-center gap-3">
-            <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 md:hidden cursor-pointer">
+        <header className="h-16 border-b border-slate-200 flex items-center justify-between px-4 md:px-6 bg-white shrink-0 sticky top-0 z-20">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <button 
+              onClick={() => setIsMobileMenuOpen(true)} 
+              className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 md:hidden cursor-pointer shrink-0"
+            >
               <Menu className="h-5 w-5" />
             </button>
-            <ClipboardCheck className="h-5 w-5 text-[#468DFF]" />
-            <h1 className="font-outfit text-lg font-bold text-slate-900 leading-none">Constancia de Visita</h1>
+            <ClipboardCheck className="h-5 w-5 text-[#468DFF] shrink-0" />
+            <h1 className="font-outfit text-base md:text-lg font-bold text-slate-900 truncate leading-none">
+              Constancia de Visita
+            </h1>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-600 hidden sm:block">
+          <div className="flex items-center gap-3 shrink-0">
+            <span className="text-xs font-semibold text-slate-500 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-150 hidden sm:inline-block">
               {tenant?.name || 'Cargando...'}
-            </div>
-            <div className="px-2.5 py-1 rounded-lg bg-[#468DFF]/15 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider border border-[#468DFF]/25">
-              Plan {tenant?.plan_id || 'Pro'}
-            </div>
+            </span>
+            <span className="px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider">
+              {tenant?.plan_id ? (tenant.plan_id.toLowerCase() === 'libre' ? 'Plan Libre' : tenant.plan_id.toLowerCase().startsWith('standard') ? 'Plan Standard' : tenant.plan_id.toLowerCase().startsWith('basic') ? 'Plan Basic' : `Plan ${tenant.plan_id}`) : 'Plan Pro'}
+            </span>
           </div>
         </header>
 
@@ -1570,7 +1857,7 @@ export default function VisitasPage({ params }) {
                         }}
                         className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0 w-full md:w-auto"
                       >
-                        <Plus className="h-3.5 w-3.5" />
+                        <PlusCircle className="h-3.5 w-3.5" />
                         Nueva Constancia
                       </button>
                     </div>
@@ -1657,14 +1944,13 @@ export default function VisitasPage({ params }) {
                           <th className="px-6 py-4 cursor-pointer hover:text-slate-700" onClick={() => handleSort('fecha')}>Fecha</th>
                           <th className="px-6 py-4 cursor-pointer hover:text-slate-700" onClick={() => handleSort('profesional_nombre')}>Profesional</th>
                           <th className="px-6 py-4">Responsable Presente</th>
-                          <th className="px-6 py-4">Incidentes</th>
                           <th className="px-6 py-4 text-right">Acciones</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-sm">
                         {sortedVisitas.length === 0 ? (
                           <tr>
-                            <td colSpan="7" className="text-center py-10 text-slate-400 font-medium bg-slate-50/20">
+                            <td colSpan="6" className="text-center py-10 text-slate-400 font-medium bg-slate-50/20">
                               No se encontraron constancias de visita cargadas.
                             </td>
                           </tr>
@@ -1679,17 +1965,15 @@ export default function VisitasPage({ params }) {
                                 <td className="px-6 py-4 font-semibold text-slate-600">{formatDate(v.fecha)}</td>
                                 <td className="px-6 py-4 text-slate-600">{v.profesional_nombre}</td>
                                 <td className="px-6 py-4 text-slate-500">{v.responsable_presente}</td>
-                                <td className="px-6 py-4">
-                                  <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
-                                    v.ocurrieron_incidentes
-                                      ? 'bg-red-50 text-red-600 border-red-150'
-                                      : 'bg-green-50 text-green-600 border-green-150'
-                                  }`}>
-                                    {v.ocurrieron_incidentes ? 'Sí' : 'No'}
-                                  </span>
-                                </td>
                                 <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                                   <div className="flex items-center justify-end gap-2">
+                                    <button 
+                                      onClick={() => handlePreviewPdf(v)}
+                                      className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer"
+                                      title="Visualizar PDF"
+                                    >
+                                      <Eye className="h-4.5 w-4.5" />
+                                    </button>
                                     <button 
                                       onClick={() => handleGeneratePdf(v)}
                                       className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer"
@@ -1736,16 +2020,20 @@ export default function VisitasPage({ params }) {
               <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden animate-fade-in">
                 
                 {/* Cabecera del formulario */}
-                <div className="px-6 py-4 bg-slate-50 border-b border-slate-150 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <button onClick={handleExitForm} className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 cursor-pointer">
+                <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-150 flex items-center justify-between shrink-0">
+                  <div className="flex items-center gap-3">
+                    <button 
+                      type="button"
+                      onClick={handleExitForm} 
+                      className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 cursor-pointer"
+                    >
                       <ArrowLeft className="h-5 w-5" />
                     </button>
                     <span className="font-outfit text-base font-bold text-slate-900">
                       {editingId ? 'Editar Constancia de Visita' : 'Registrar Nueva Constancia de Visita'}
                     </span>
                   </div>
-                  <button onClick={handleExitForm} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200 cursor-pointer">
+                  <button type="button" onClick={handleExitForm} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200 cursor-pointer">
                     <X className="h-5 w-5" />
                   </button>
                 </div>
@@ -1834,78 +2122,42 @@ export default function VisitasPage({ params }) {
                         />
                       </div>
 
-                      {/* Profesional Interviniente tipo */}
+                      {/* Profesional Interviniente */}
                       <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600">Tipo de Carga Profesional *</label>
-                        <div className="flex items-center gap-3 py-1">
-                          <label className="inline-flex items-center gap-1.5 text-sm font-semibold cursor-pointer">
-                            <input 
-                              type="radio" 
-                              name="prof_tipo"
-                              checked={profesionalTipo === 'miembro'}
-                              onChange={() => {
-                                setProfesionalTipo('miembro');
-                                setProfesionalNombre('');
-                              }}
-                              className="accent-[#468DFF] h-4 w-4"
-                            />
-                            Miembro del Equipo
-                          </label>
-                          <label className="inline-flex items-center gap-1.5 text-sm font-semibold cursor-pointer">
-                            <input 
-                              type="radio" 
-                              name="prof_tipo"
-                              checked={profesionalTipo === 'manual'}
-                              onChange={() => {
-                                setProfesionalTipo('manual');
-                                setProfesionalId('');
-                              }}
-                              className="accent-[#468DFF] h-4 w-4"
-                            />
-                            Ingresar Manualmente
-                          </label>
-                        </div>
-                      </div>
+                        <label className="text-xs font-bold text-slate-600">Profesional Interviniente *</label>
+                        <select
+                          value={profesionalId}
+                          onChange={(e) => handleProfesionalChange(e.target.value)}
+                          required
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 cursor-pointer"
+                        >
+                          <option value="">Seleccionar Profesional...</option>
+                          {miembrosList.map(m => (
+                            <option key={m.id} value={m.id}>{m.full_name}</option>
+                          ))}
+                          <option value="__custom__">Otro (cargar manualmente)...</option>
+                        </select>
 
-                      {/* Profesional - Miembro dropdown */}
-                      {profesionalTipo === 'miembro' ? (
-                        <div className="flex flex-col gap-1.5">
-                          <label className="text-xs font-bold text-slate-600">Profesional del Equipo *</label>
-                          <select
-                            value={profesionalId}
-                            onChange={(e) => setProfesionalId(e.target.value)}
-                            required
-                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50"
-                          >
-                            <option value="">Seleccionar Miembro...</option>
-                            {miembrosList.map(m => (
-                              <option key={m.id} value={m.id}>{m.full_name}</option>
-                            ))}
-                          </select>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col gap-1.5">
-                          <label className="text-xs font-bold text-slate-600">Nombre Profesional (Manual) *</label>
+                        {profesionalId === '__custom__' && (
                           <input
                             type="text"
                             placeholder="Nombre y Apellido del Profesional"
                             value={profesionalNombre}
                             onChange={(e) => setProfesionalNombre(e.target.value)}
                             required
-                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50"
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white mt-2 transition-all"
                           />
-                        </div>
-                      )}
+                        )}
+                      </div>
 
                       {/* Responsable presente */}
                       <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600">Nombre del Responsable Presente *</label>
+                        <label className="text-xs font-bold text-slate-600">Nombre del Responsable Presente</label>
                         <input
                           type="text"
                           placeholder="Nombre del Responsable"
                           value={responsablePresente}
                           onChange={(e) => setResponsablePresente(e.target.value)}
-                          required
                           className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50"
                         />
                       </div>
@@ -1930,7 +2182,7 @@ export default function VisitasPage({ params }) {
                             onClick={() => setOcurrieronIncidentes(true)}
                             className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all cursor-pointer ${
                               ocurrieronIncidentes
-                                ? 'bg-red-500 text-white border-red-500 shadow-md shadow-red-500/10'
+                                ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-md shadow-[#468DFF]/10'
                                 : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
                             }`}
                           >
@@ -1946,7 +2198,7 @@ export default function VisitasPage({ params }) {
                             }}
                             className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all cursor-pointer ${
                               !ocurrieronIncidentes
-                                ? 'bg-green-600 text-white border-green-600 shadow-md shadow-green-600/10'
+                                ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-md shadow-[#468DFF]/10'
                                 : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
                             }`}
                           >
@@ -2196,7 +2448,7 @@ export default function VisitasPage({ params }) {
                             onClick={() => setDictaronCapacitaciones(true)}
                             className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-all cursor-pointer ${
                               dictaronCapacitaciones
-                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                                ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-sm'
                                 : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                             }`}
                           >
@@ -2210,7 +2462,7 @@ export default function VisitasPage({ params }) {
                             }}
                             className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-all cursor-pointer ${
                               !dictaronCapacitaciones
-                                ? 'bg-[#00b050] text-white border-[#00b050] shadow-sm'
+                                ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-sm'
                                 : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                             }`}
                           >
@@ -2228,7 +2480,7 @@ export default function VisitasPage({ params }) {
                             onClick={() => setRealizaronSimulacros(true)}
                             className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-all cursor-pointer ${
                               realizaronSimulacros
-                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                                ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-sm'
                                 : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                             }`}
                           >
@@ -2242,7 +2494,7 @@ export default function VisitasPage({ params }) {
                             }}
                             className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-all cursor-pointer ${
                               !realizaronSimulacros
-                                ? 'bg-[#00b050] text-white border-[#00b050] shadow-sm'
+                                ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-sm'
                                 : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                             }`}
                           >
@@ -2373,7 +2625,7 @@ export default function VisitasPage({ params }) {
                           onClick={() => setEmiteAvisoRiesgo(true)}
                           className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all cursor-pointer ${
                             emiteAvisoRiesgo
-                              ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
+                              ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-sm'
                               : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
                           }`}
                         >
@@ -2384,7 +2636,7 @@ export default function VisitasPage({ params }) {
                           onClick={() => setEmiteAvisoRiesgo(false)}
                           className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all cursor-pointer ${
                             !emiteAvisoRiesgo
-                              ? 'bg-green-600 text-white border-green-600 shadow-sm'
+                              ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-sm'
                               : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
                           }`}
                         >
@@ -2513,18 +2765,7 @@ export default function VisitasPage({ params }) {
                         </div>
                       </div>
 
-                      {/* Observaciones generales (internas) */}
-                      <div className="flex flex-col gap-1.5 pt-2">
-                        <label className="text-xs font-bold text-slate-600">Observaciones y notas internas (Último campo del formulario, se imprime en el PDF)</label>
-                        <textarea
-                          rows="3"
-                          placeholder="Notas internas adicionales, detalles de la coordinación, observaciones finales..."
-                          value={observaciones}
-                          onChange={(e) => setObservaciones(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50"
-                        />
-                      </div>
-
+                      
                     </div>
                   </div>
 
@@ -2540,7 +2781,7 @@ export default function VisitasPage({ params }) {
                       {/* Firma 1: Responsable Empresa */}
                       <div className="space-y-2 flex flex-col">
                         <div className="flex justify-between items-center">
-                          <label className="text-xs font-bold text-slate-600">Firma del Responsable de la Empresa *</label>
+                          <label className="text-xs font-bold text-slate-600">Firma del Responsable de la Empresa</label>
                           {(hasSignedResp || firmaRespSavedUrl) && (
                             <button
                               type="button"
@@ -2573,7 +2814,7 @@ export default function VisitasPage({ params }) {
                       {/* Firma 2: Profesional Higiene y Seguridad */}
                       <div className="space-y-2 flex flex-col">
                         <div className="flex justify-between items-center">
-                          <label className="text-xs font-bold text-slate-600">Firma del Profesional de Higiene y Seguridad *</label>
+                          <label className="text-xs font-bold text-slate-600">Firma del Profesional de Higiene y Seguridad</label>
                           {(hasSignedProf || firmaProfSavedUrl) && (
                             <button
                               type="button"

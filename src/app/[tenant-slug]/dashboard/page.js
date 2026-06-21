@@ -633,31 +633,26 @@ export default function TenantDashboard({ params }) {
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         
-        {/* Navbar */}
-        <header className="h-16 border-b border-slate-300/60 flex items-center justify-between px-6 md:px-8 bg-white/80 backdrop-blur-md sticky top-0 z-20">
-          <div className="flex items-center gap-3">
-            {/* Hamburger Button (Mobile Only) */}
+        <header className="h-16 border-b border-slate-200 flex items-center justify-between px-4 md:px-6 bg-white shrink-0 sticky top-0 z-20">
+          <div className="flex items-center gap-2.5 min-w-0">
             <button 
-              onClick={() => setIsMobileMenuOpen(true)}
-              className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 md:hidden cursor-pointer"
+              onClick={() => setIsMobileMenuOpen(true)} 
+              className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 md:hidden cursor-pointer shrink-0"
             >
               <Menu className="h-5 w-5" />
             </button>
-            <h2 className="font-outfit text-lg font-bold text-slate-900 flex items-center gap-2">
-              <Building className="h-5 w-5 text-[#468DFF]" />
+            <Building className="h-5 w-5 text-[#468DFF] shrink-0" />
+            <h1 className="font-outfit text-base md:text-lg font-bold text-slate-900 truncate leading-none">
               Dashboard
-            </h2>
+            </h1>
           </div>
-          
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-semibold text-slate-500 bg-slate-100 py-1.5 px-3 rounded-lg border border-slate-200">
-              {tenant?.name || 'Mi Consultora'}
+          <div className="flex items-center gap-3 shrink-0">
+            <span className="text-xs font-semibold text-slate-500 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-150 hidden sm:inline-block">
+              {tenant?.name || 'Cargando...'}
             </span>
-            {tenant?.plan_id && (
-              <span className="px-2.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/25 text-[#468DFF] text-[10px] font-semibold uppercase tracking-wider hidden sm:inline-block">
-                {tenant.plan_id === 'libre' ? 'Plan Libre' : tenant.plan_id === 'standard_25' ? 'Plan 25' : tenant.plan_id === 'basic_5' ? 'Plan 5' : 'Plan Gratis'}
-              </span>
-            )}
+            <span className="px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider">
+              {tenant?.plan_id ? (tenant.plan_id.toLowerCase() === 'libre' ? 'Plan Libre' : tenant.plan_id.toLowerCase().startsWith('standard') ? 'Plan Standard' : tenant.plan_id.toLowerCase().startsWith('basic') ? 'Plan Basic' : `Plan ${tenant.plan_id}`) : 'Plan Pro'}
+            </span>
           </div>
         </header>
 
@@ -671,7 +666,7 @@ export default function TenantDashboard({ params }) {
                 <div className="flex items-center justify-between border-b border-slate-150 pb-3 mb-4">
                   <h3 className="font-outfit text-base font-extrabold text-slate-900 flex items-center gap-2">
                     <Calendar className="h-5 w-5 text-[#468DFF]" />
-                    Vencimientos del Mes en Curso y Próximo Mes
+                    Próximos vencimientos
                   </h3>
                   <span className="px-2.5 py-0.5 rounded-full bg-blue-500/10 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider">
                     Programa de Gestión

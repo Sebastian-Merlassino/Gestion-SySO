@@ -1257,30 +1257,26 @@ const [partidosList, setPartidosList] = useState([]);
         <div className="absolute bottom-[-10%] right-[-20%] w-[600px] h-[600px] rounded-full bg-[#0511F2]/5 blur-[150px] pointer-events-none" />
 
         {/* Navbar */}
-        <header className="h-16 border-b border-slate-300/60 flex items-center justify-between px-6 md:px-8 bg-white/80 backdrop-blur-md sticky top-0 z-20 shrink-0">
-          <div className="flex items-center gap-3">
-            {/* Hamburger Button (Mobile Only) */}
+        <header className="h-16 border-b border-slate-200 flex items-center justify-between px-4 md:px-6 bg-white shrink-0 sticky top-0 z-20">
+          <div className="flex items-center gap-2.5 min-w-0">
             <button 
-              onClick={() => setIsMobileMenuOpen(true)}
-              className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 md:hidden cursor-pointer"
+              onClick={() => setIsMobileMenuOpen(true)} 
+              className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 md:hidden cursor-pointer shrink-0"
             >
               <Menu className="h-5 w-5" />
             </button>
-            <h2 className="font-outfit text-lg font-bold text-slate-900 flex items-center gap-2">
-              <Settings className="h-5 w-5 text-[#468DFF]" />
+            <Settings className="h-5 w-5 text-[#468DFF] shrink-0" />
+            <h1 className="font-outfit text-base md:text-lg font-bold text-slate-900 truncate leading-none">
               Editar Perfil
-            </h2>
+            </h1>
           </div>
-          
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-semibold text-slate-500 bg-slate-100 py-1.5 px-3 rounded-lg border border-slate-200">
-              {tenantData?.name || 'Mi Consultora'}
+          <div className="flex items-center gap-3 shrink-0">
+            <span className="text-xs font-semibold text-slate-500 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-150 hidden sm:inline-block">
+              {tenantData?.name || 'Cargando...'}
             </span>
-            {tenantData?.plan_id && (
-              <span className="px-2.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/25 text-[#468DFF] text-[10px] font-semibold uppercase tracking-wider hidden sm:inline-block">
-                {tenantData.plan_id === 'libre' ? 'Plan Libre' : tenantData.plan_id === 'standard_25' ? 'Plan 25' : tenantData.plan_id === 'basic_5' ? 'Plan 5' : 'Plan Gratis'}
-              </span>
-            )}
+            <span className="px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider">
+              {tenantData?.plan_id ? (tenantData.plan_id.toLowerCase() === 'libre' ? 'Plan Libre' : tenantData.plan_id.toLowerCase().startsWith('standard') ? 'Plan Standard' : tenantData.plan_id.toLowerCase().startsWith('basic') ? 'Plan Basic' : `Plan ${tenantData.plan_id}`) : 'Plan Pro'}
+            </span>
           </div>
         </header>
 
