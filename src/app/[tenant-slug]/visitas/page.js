@@ -1604,7 +1604,20 @@ export default function VisitasPage({ params }) {
       const emp = empresas.find(e => e.id === mailTargetVisita.empresa_id);
       const est = allEstablecimientos.find(e => e.id === mailTargetVisita.establecimiento_id);
 
-      // 2. Llamar API route
+      // 2. Obtener logo del tenant como base64 (para el encabezado del email)
+      let tenantLogoBase64 = '';
+      if (tenant && tenant.logo_1_url) {
+        try {
+          tenantLogoBase64 = await getBase64ImageFromUrl(tenant.logo_1_url);
+          if (tenantLogoBase64) {
+            tenantLogoBase64 = await resizeImage(tenantLogoBase64, 400, 200);
+          }
+        } catch (logoErr) {
+          console.warn('No se pudo cargar el logo para el email:', logoErr);
+        }
+      }
+
+      // 3. Llamar API route
       const res = await fetch('/api/send-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1614,7 +1627,9 @@ export default function VisitasPage({ params }) {
           companyName: emp ? emp.razon_social : 'Cliente',
           establishmentName: est ? est.denominacion : 'Establecimiento',
           date: formatDate(mailTargetVisita.fecha),
-          inspectorName: mailTargetVisita.profesional_nombre
+          inspectorName: mailTargetVisita.profesional_nombre,
+          tenantLogoBase64: tenantLogoBase64 || null,
+          tenantName: tenant ? (tenant.razon_social || tenant.nombre || 'Gestión SySO') : 'Gestión SySO'
         })
       });
 

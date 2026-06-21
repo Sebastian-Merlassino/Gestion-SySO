@@ -28,7 +28,7 @@ export async function POST(request) {
     }
     // ─────────────────────────────────────────────────────────────────────────
 
-    const { emails, pdfBase64, companyName, establishmentName, date, inspectorName } = await request.json();
+    const { emails, pdfBase64, companyName, establishmentName, date, inspectorName, tenantLogoBase64, tenantName } = await request.json();
 
     if (!emails || !pdfBase64) {
       return NextResponse.json(
@@ -60,8 +60,11 @@ export async function POST(request) {
     const mailHtml = `
       <div style="font-family: 'Segoe UI', Inter, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1e293b; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px;">
         <div style="text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">
-          <h2 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.025em;">Gestión SySO</h2>
-          <p style="margin: 4px 0 0 0; font-size: 13px; font-weight: 600; color: #468DFF; text-transform: uppercase; letter-spacing: 0.05em;">Constancia de Visita Técnica</p>
+          ${tenantLogoBase64
+            ? `<img src="${tenantLogoBase64}" alt="${tenantName || 'Logo'}" style="max-height: 72px; max-width: 240px; object-fit: contain; display: block; margin: 0 auto 8px auto;" />`
+            : `<h2 style="margin: 0 0 8px 0; font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.025em;">${tenantName || 'Gestión SySO'}</h2>`
+          }
+          <p style="margin: 0; font-size: 13px; font-weight: 600; color: #468DFF; text-transform: uppercase; letter-spacing: 0.05em;">Constancia de Visita</p>
         </div>
 
         <div style="background-color: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 24px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);">
