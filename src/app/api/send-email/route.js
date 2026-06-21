@@ -76,7 +76,7 @@ export async function POST(request) {
     `;
 
     // Attach PDF from base64
-    const cleanBase64 = pdfBase64.replace(/^data:application\/pdf;base64,/, '');
+    const cleanBase64 = pdfBase64.replace(/^data:application\/pdf;.*base64,/, '');
     const pdfBuffer = Buffer.from(cleanBase64, 'base64');
 
     const attachment = {

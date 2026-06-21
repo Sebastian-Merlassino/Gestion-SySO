@@ -1010,6 +1010,45 @@ export default function VisitasPage({ params }) {
     }
   };
 
+  // Helper para redimensionar y comprimir una imagen en base64
+  const resizeImage = (base64Str, maxWidth = 300, maxHeight = 300) => {
+    return new Promise((resolve) => {
+      if (!base64Str) {
+        resolve('');
+        return;
+      }
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = base64Str;
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        const isPng = base64Str.startsWith('data:image/png') || base64Str.includes('signature');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        if (isPng) {
+          resolve(canvas.toDataURL('image/png'));
+        } else {
+          resolve(canvas.toDataURL('image/jpeg', 0.85));
+        }
+      };
+      img.onerror = () => {
+        resolve(base64Str);
+      };
+    });
+  };
+
   // Generar PDF
   const handleGeneratePdf = async (v, shouldDownload = true) => {
     try {
@@ -1022,11 +1061,12 @@ export default function VisitasPage({ params }) {
       const estName = est ? est.denominacion : 'N/A';
       const address = est ? est.direccion : 'N/A';
 
-      // Inicializar jsPDF en puntos, orientación retrato, formato A4 (595.28 x 841.89 pt)
+      // Inicializar jsPDF en puntos, orientación retrato, formato A4 (595.28 x 841.89 pt) con compresión
       const doc = new jsPDF({
         orientation: 'portrait',
         unit: 'pt',
-        format: 'a4'
+        format: 'a4',
+        compress: true
       });
 
       // Cargar Logo
@@ -1045,6 +1085,10 @@ export default function VisitasPage({ params }) {
         } catch (e) {
           console.error('No se pudo cargar el logo de la cabecera por defecto en el PDF:', e);
         }
+      }
+
+      if (logoBase64) {
+        logoBase64 = await resizeImage(logoBase64, 300, 300);
       }
 
       // Helper para dibujar Cabecera y Pie de Página en cada página
@@ -1450,6 +1494,9 @@ export default function VisitasPage({ params }) {
       if (v.firma_resp_preview_url) {
         try {
           imgRespBase64 = await getBase64ImageFromUrl(v.firma_resp_preview_url);
+          if (imgRespBase64) {
+            imgRespBase64 = await resizeImage(imgRespBase64, 200, 100);
+          }
         } catch (err) {
           console.error('Error fetching responsable signature:', err);
         }
@@ -1457,6 +1504,9 @@ export default function VisitasPage({ params }) {
       if (v.firma_prof_preview_url) {
         try {
           imgProfBase64 = await getBase64ImageFromUrl(v.firma_prof_preview_url);
+          if (imgProfBase64) {
+            imgProfBase64 = await resizeImage(imgProfBase64, 200, 100);
+          }
         } catch (err) {
           console.error('Error fetching profesional signature:', err);
         }

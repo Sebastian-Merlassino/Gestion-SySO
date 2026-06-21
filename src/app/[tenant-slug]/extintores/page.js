@@ -1517,35 +1517,35 @@ export default function ExtintoresPage({ params }) {
 
                 {/* Listado / Tabla */}
                 <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden">
-                  <div className="overflow-x-auto">
+                  <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                          <th className="py-4 px-6 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('cliente')}>
+                          <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 py-4 px-6 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('cliente')}>
                             Cliente / Establecimiento
                             {sortField === 'cliente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                           </th>
-                          <th className="py-4 px-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('n_extintor')}>
+                          <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 py-4 px-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('n_extintor')}>
                             N° Ext / Puesto / Sector
                             {sortField === 'n_extintor' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                           </th>
-                          <th className="py-4 px-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('tipo')}>
+                          <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 py-4 px-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('tipo')}>
                             Tipo / Capacidad
                             {sortField === 'tipo' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                           </th>
-                          <th className="py-4 px-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('venc_recarga')}>
+                          <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 py-4 px-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('venc_recarga')}>
                             Venc. Recarga
                             {sortField === 'venc_recarga' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                           </th>
-                          <th className="py-4 px-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('venc_ph')}>
+                          <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 py-4 px-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('venc_ph')}>
                             Venc. P.H.
                             {sortField === 'venc_ph' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                           </th>
-                          <th className="py-4 px-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('estado')}>
+                          <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 py-4 px-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('estado')}>
                             Estado
                             {sortField === 'estado' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                           </th>
-                          <th className="py-4 px-6 text-right">Acciones</th>
+                          <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 py-4 px-6 text-right">Acciones</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-sm">

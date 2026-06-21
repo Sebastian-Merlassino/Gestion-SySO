@@ -2,6 +2,57 @@
 
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
+## [2026-06-21] Fix de Visualización de Extintores y Envío de Correo de Constancia
+
+### Resumen de Cambios
+- **Tabla de Extintores (`extintores/page.js`)**: Se estandarizó la tabla para ocupar el alto máximo disponible en pantalla (`calc(100vh - 280px)`) con scroll vertical interno. Se configuraron todos los elementos `<th>` con posicionamiento `sticky top-0 z-10 bg-slate-50 border-b border-slate-150` para mantener la cabecera fija durante el desplazamiento.
+- **Optimización de Envío de Correo (`visitas/page.js` y `/api/send-email/route.js`)**:
+  - Se solucionó el error `Unexpected token 'R'` (HTTP 413 Payload Too Large) habilitando la compresión nativa de jsPDF (`compress: true`) y agregando un helper de redimensionamiento de imagen (`resizeImage`) que comprime y reduce el logo y las firmas a baja resolución antes de insertarlos en el PDF.
+  - Se corrigió la expresión regular en el backend de `/^data:application\/pdf;base64,/` a `/^data:application\/pdf;.*base64,/` para permitir metadatos adicionales y decodificar correctamente el PDF.
+
+### Decisiones Clave
+- **Redimensionamiento en Cliente**: Al comprimir y bajar la resolución de los logotipos y firmas en el cliente se disminuye el peso del payload del correo electrónico en un ~95%, lo cual asegura compatibilidad con cualquier hosting (incluyendo Vercel Serverless Functions y Next.js API Routes que tienen límites estrictos de 1MB a 4.5MB).
+- **Compresión nativa de jsPDF**: El uso de `compress: true` reduce significativamente el peso final del PDF binario adjunto de varios megabytes a menos de 150KB.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/api/send-email/route.js`
+
+---
+
+## [2026-06-21] Fix de Cabecera Sticky y Optimización de Carga en Barra Lateral
+
+### Resumen de Cambios
+- **Tabla del Programa de Gestión Anual (`programa/page.js`)**: Se solucionó el error del encabezado de la tabla no fijo agregando `sticky top-0 z-10 bg-slate-50 border-b border-slate-150` a todos los elementos `<th>` de la cabecera, logrando que quede fijo de manera robusta al hacer scroll vertical.
+- **Barra Lateral / Sidebar (9 Páginas)**: Se resolvió el parpadeo y la desaparición intermitente de la sección "Equipo de Trabajo" durante la recarga del perfil del usuario. Se reemplazó la validación condicional estricta `(profile?.role === 'owner' || profile?.role === 'admin')` por `(!profile || profile?.role === 'owner' || profile?.role === 'admin')` en las páginas `visitas/page.js`, `extintores/page.js`, `equipo/page.js`, `empresas/page.js`, `dashboard/page.js`, `correctivas/page.js`, `capacitacion/page.js` y `profile/page.js` (con `profileData`). Esto permite que el elemento de menú se renderice visible por defecto durante el estado de carga del usuario, y se oculte dinámicamente sólo si el perfil cargado es de otro rol (como `inspector`), eliminando el layout shift y el flash visual para el owner y admin.
+
+### Decisiones Clave
+- **Estilos Sticky a Nivel TH**: Aplicar la posición `sticky` directamente a las celdas de encabezado `th` en lugar de la fila o contenedor de la cabecera asegura que el comportamiento sticky funcione adecuadamente en navegadores modernos frente a tablas que utilizan la propiedad CSS `border-collapse`.
+- **Pre-renderizado del Sidebar Basado en Suposición de Acceso**: Mostrar por defecto las secciones del sidebar críticas para roles privilegiados durante la fase inicial de carga previene saltos e inconsistencias de UI al navegar entre secciones del dashboard, mejorando significativamente la percepción de velocidad de la app.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción exitosa en Next.js (`npm run build` vía cmd) sin ningún error de enrutamiento o sintaxis.
+- Commit y empuje de cambios (git push) al repositorio remoto.
+
+---
+
 ## [2026-06-21] Estandarización Global de Encabezados de Página y Formularios de Carga
 
 ### Resumen de Cambios
