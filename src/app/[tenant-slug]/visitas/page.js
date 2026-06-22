@@ -1112,8 +1112,12 @@ export default function VisitasPage({ params }) {
         doc.setFontSize(8);
         doc.setTextColor(0, 0, 0);
         
-        const prefix = "Gestión SySO ®";
-        const restText = " - Tel.: 1159969956 / 1132296691 - Email: info@gestionsyso.com";
+        const companyName = tenant?.name || "Gestión SySO";
+        const prefix = `${companyName} ®`;
+        const phoneVal = profile?.phone || "1159969956 / 1132296691";
+        const emailVal = profile?.email || "info@gestionsyso.com";
+        const restText = ` - Tel.: ${phoneVal} - Email: ${emailVal}`;
+        
         doc.setFont('helvetica', 'bold');
         const prefixWidth = doc.getTextWidth(prefix);
         doc.setFont('helvetica', 'normal');
