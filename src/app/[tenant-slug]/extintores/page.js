@@ -1518,7 +1518,7 @@ export default function ExtintoresPage({ params }) {
 
                 {/* Listado / Tabla */}
                 <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden">
-                  <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 240px)' }}>
+                  <div className="overflow-auto" style={{ maxHeight: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider">

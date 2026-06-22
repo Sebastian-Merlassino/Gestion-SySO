@@ -1033,15 +1033,19 @@ const [partidosList, setPartidosList] = useState([]);
       return;
     }
 
-    const confirmFirst = window.confirm(
-      '¿Estás ABSOLUTAMENTE seguro de que deseas eliminar tu cuenta? Esta acción destruirá por completo tu organización y todos sus datos.'
-    );
+    const isOwner = profileData?.role === 'owner';
+    const messageConfirm = isOwner
+      ? '¿Estás ABSOLUTAMENTE seguro de que deseas eliminar tu cuenta? Esta acción destruirá por completo tu organización y todos sus datos.'
+      : '¿Estás seguro de que deseas eliminar tu cuenta de usuario y revocar tu acceso a la organización?';
+
+    const confirmFirst = window.confirm(messageConfirm);
     if (!confirmFirst) return;
 
+    const promptPlaceholder = isOwner ? 'ELIMINAR MI CUENTA' : 'ELIMINAR MI ACCESO';
     const confirmSecond = window.prompt(
-      'Para confirmar la eliminación definitiva, escribe "ELIMINAR MI CUENTA" en mayúsculas:'
+      `Para confirmar la eliminación definitiva, escribe "${promptPlaceholder}" en mayúsculas:`
     );
-    if (confirmSecond !== 'ELIMINAR MI CUENTA') {
+    if (confirmSecond !== promptPlaceholder) {
       triggerToast('Confirmación incorrecta. No se eliminó la cuenta.', 'error');
       return;
     }
@@ -2058,29 +2062,44 @@ const [partidosList, setPartidosList] = useState([]);
 
         </form>
 
-        {/* ELIMINAR CUENTA (Solo para Propietarios / Owners) */}
-        {profileData?.role === 'owner' && (
-          <div className="mt-8 bg-white border border-red-200 rounded-2xl p-8 shadow-sm space-y-6">
+        {/* ELIMINAR CUENTA (Disponible para todos los usuarios) */}
+        {profileData && (
+          <div className="mt-8 bg-white border border-red-200 rounded-2xl p-8 shadow-sm space-y-6 animate-fade-in">
             <h3 className="text-lg font-bold text-red-600 border-b border-red-100 pb-3 flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-red-600" />
-              Eliminar Cuenta
+              {profileData?.role === 'owner' ? 'Eliminar Cuenta y Organización' : 'Eliminar Cuenta de Acceso'}
             </h3>
             
-            <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-red-800 text-sm space-y-3 leading-relaxed">
-              <p className="font-bold">¡ADVERTENCIA DE SEGURIDAD CRÍTICA!</p>
-              <p>
-                Al eliminar tu cuenta, se borrará de forma permanente e irreversible toda la información asociada a tu organización/consultora (<strong>{tenantData?.name}</strong>), incluyendo:
-              </p>
-              <ul className="list-disc pl-5 space-y-1 text-xs">
-                <li>Configuración y perfil del administrador y miembros de equipo.</li>
-                <li>Todas las empresas clientes y sus establecimientos cargados.</li>
-                <li>El historial completo de auditorías, capacitaciones, acciones correctivas y extintores.</li>
-                <li>Firmas, logotipos y archivos digitales subidos al almacenamiento.</li>
-              </ul>
-              <p className="font-semibold text-xs">
-                Esta acción no se puede deshacer y no habrá forma de recuperar los datos.
-              </p>
-            </div>
+            {profileData?.role === 'owner' ? (
+              <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-red-800 text-sm space-y-3 leading-relaxed">
+                <p className="font-bold">¡ADVERTENCIA DE SEGURIDAD CRÍTICA!</p>
+                <p>
+                  Al eliminar tu cuenta, se borrará de forma permanente e irreversible toda la información asociada a tu organización/consultora (<strong>{tenantData?.name}</strong>), incluyendo:
+                </p>
+                <ul className="list-disc pl-5 space-y-1 text-xs">
+                  <li>Configuración y perfil del administrador y miembros de equipo.</li>
+                  <li>Todas las empresas clientes y sus establecimientos cargados.</li>
+                  <li>El historial completo de auditorías, capacitaciones, acciones correctivas y extintores.</li>
+                  <li>Firmas, logotipos y archivos digitales subidos al almacenamiento.</li>
+                </ul>
+                <p className="font-semibold text-xs">
+                  Esta acción no se puede deshacer y no habrá forma de recuperar los datos.
+                </p>
+              </div>
+            ) : (
+              <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-red-800 text-sm space-y-3 leading-relaxed">
+                <p className="font-bold">¡ADVERTENCIA DE SEGURIDAD!</p>
+                <p>
+                  Al confirmar, se eliminará tu cuenta de usuario de forma permanente y ya no tendrás acceso a la organización/consultora <strong>{tenantData?.name}</strong>.
+                </p>
+                <p className="text-xs">
+                  Tu perfil y configuraciones personales serán borrados definitivamente. Sin embargo, las constancias de visita, capacitaciones y actividades del programa anual que hayas registrado o firmado seguirán guardadas para el historial de la organización.
+                </p>
+                <p className="font-semibold text-xs">
+                  Esta acción es irreversible y no podrás volver a ingresar con este usuario.
+                </p>
+              </div>
+            )}
 
             <div className="space-y-4">
               <div className="max-w-md">
@@ -2120,7 +2139,7 @@ const [partidosList, setPartidosList] = useState([]);
                   ) : (
                     <>
                       <AlertTriangle className="h-4 w-4" />
-                      Eliminar Cuenta de Forma Permanente
+                      {profileData?.role === 'owner' ? 'Eliminar Cuenta y Organización Permanente' : 'Eliminar Mi Acceso Permanentemente'}
                     </>
                   )}
                 </button>

@@ -3,6 +3,30 @@
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
 
+
+## [2026-06-21] Estandarización de Alturas Reactivas, Alerta de Salida de Equipo y Eliminación de Cuenta
+
+### Resumen de Cambios
+- **Alturas Reactivas en Tablas y Calendario (7 Páginas)**: Se reemplazaron las alturas fijas (`maxHeight: 'calc(100vh - 240px)'`) en las tablas de listados de 6 módulos (`visitas`, `extintores`, `empresas`, `correctivas`, `capacitacion`, `programa`) por una propiedad condicional en línea controlada por el estado `showFilters`. Si se despliegan los filtros, el `maxHeight` se reduce dinámicamente (`calc(100vh - 310px)` o `calc(100vh - 360px)` para el programa anual, que cuenta con barra de vistas extra), evitando que el pie de página desborde y obligue al navegador a generar un scroll global. Esta misma lógica se aplicó al contenedor del **Calendario** en el Programa de Gestión y se ajustó el alto mínimo de las celdas de día de `100px/120px` a `70px/85px` para optimizar visualización en laptops.
+- **Estandarización de Alerta de Salida en Equipo de Trabajo (`equipo/page.js`)**: Se actualizó el componente modal `modalAlert` para mostrar de forma estática la etiqueta `"Cancelar"` en el botón de retroceso y se eliminó la sombra roja de confirmación ad-hoc, alineando el diseño del modal con el estándar del resto de las secciones.
+- **Generalización de Eliminación de Cuenta en Perfil (`profile/page.js`)**: Se retiró la restricción exclusiva para el rol de `'owner'` de manera que todos los integrantes de equipo puedan darse de baja. El contenedor del perfil ahora renderiza de forma dinámica las advertencias de seguridad y los textos requeridos en el prompt de confirmación en mayúsculas (`"ELIMINAR MI CUENTA"` para dueños de organizaciones y `"ELIMINAR MI ACCESO"` para otros roles).
+
+### Decisiones Clave
+- **Control de Altura de Scroll en Cliente**: Utilizar `maxHeight` reactivo en base al estado `showFilters` evita la complejidad de recalcular dinámicamente los tamaños mediante listeners de redimensionamiento de ventana (ResizeObservers) y preserva el rendimiento.
+- **Seguridad en Eliminación de Usuarios**: Permitir a cualquier rol invocar `delete_own_account()` es seguro ya que el backend de Supabase Auth y la función RPC ya aíslan y resguardan de forma nativa los registros de la empresa cuando no se trata del propietario principal.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+
+---
+
 ## [2026-06-21] Optimización de Email de Visitas: Fix para Gmail Web y Remitente Personalizado
 
 ### Resumen de Cambios

@@ -1702,7 +1702,7 @@ export default function ProgramaGestion({ params }) {
 
                 {/* VISTA CALENDARIO */}
                 {view === 'calendar' && (
-                  <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4">
+                  <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4 overflow-auto" style={{ maxHeight: showFilters ? 'calc(100vh - 360px)' : 'calc(100vh - 290px)' }}>
 
                     {/* Cabecera del Mes del Calendario */}
                     <div className="flex items-center justify-between pb-3 border-b border-slate-200">
@@ -1746,7 +1746,7 @@ export default function ProgramaGestion({ params }) {
                       {/* Celdas del calendario */}
                       {calendarDays.map((day, idx) => {
                         if (day === null) {
-                          return <div key={`empty-${idx}`} className="bg-slate-50/30 rounded-2xl border border-slate-100/50 min-h-[100px] md:min-h-[120px]" />;
+                          return <div key={`empty-${idx}`} className="bg-slate-50/30 rounded-2xl border border-slate-100/50 min-h-[70px] md:min-h-[85px]" />;
                         }
 
                         const dateStr = `${currYear}-${String(currMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -1756,7 +1756,7 @@ export default function ProgramaGestion({ params }) {
                         return (
                           <div
                             key={`day-${day}`}
-                            className={`bg-white rounded-2xl border p-2 flex flex-col justify-between group min-h-[100px] md:min-h-[120px] transition-all hover:shadow-md cursor-pointer ${isToday ? 'border-[#468DFF] ring-1 ring-[#468DFF]/30' : 'border-slate-150'}`}
+                            className={`bg-white rounded-2xl border p-2 flex flex-col justify-between group min-h-[70px] md:min-h-[85px] transition-all hover:shadow-md cursor-pointer ${isToday ? 'border-[#468DFF] ring-1 ring-[#468DFF]/30' : 'border-slate-150'}`}
                             onClick={() => handleAddNew(dateStr)}
                           >
                             {/* Indicador del número de día */}
@@ -1812,7 +1812,7 @@ export default function ProgramaGestion({ params }) {
                 {/* VISTA DE TABLA / LISTADO */}
                 {view === 'list' && (
                   <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden">
-                    <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 240px)' }}>
+                    <div className="overflow-auto" style={{ maxHeight: showFilters ? 'calc(100vh - 360px)' : 'calc(100vh - 290px)' }}>
                       <table className="w-full border-collapse text-left">
                         <thead className="sticky top-0 z-10 bg-slate-50">
                           <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider">

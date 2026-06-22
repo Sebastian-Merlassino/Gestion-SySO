@@ -2047,13 +2047,13 @@ export default function EquipoPage({ params }) {
                 onClick={closeAlert}
                 className="flex-1 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer"
               >
-                {modalAlert.onConfirm ? 'Cancelar' : 'Cerrar'}
+                Cancelar
               </button>
               {modalAlert.onConfirm && (
                 <button
                   type="button"
                   onClick={modalAlert.onConfirm}
-                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-red-600/10"
+                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer"
                 >
                   {modalAlert.confirmText || 'Confirmar'}
                 </button>
