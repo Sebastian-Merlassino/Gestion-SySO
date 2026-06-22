@@ -1113,7 +1113,7 @@ export default function VisitasPage({ params }) {
         doc.setTextColor(0, 0, 0);
         
         const companyName = tenant?.name || "Gestión SySO";
-        const prefix = `${companyName} ®`;
+        const prefix = companyName;
         const phoneVal = profile?.phone || "1159969956 / 1132296691";
         const emailVal = profile?.email || "info@gestionsyso.com";
         const restText = ` - Tel.: ${phoneVal} - Email: ${emailVal}`;
