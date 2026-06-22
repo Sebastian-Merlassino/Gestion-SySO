@@ -174,6 +174,7 @@ const [partidosList, setPartidosList] = useState([]);
   // Plan
   const [selectedPlan, setSelectedPlan] = useState('free');
   const [showPlanModal, setShowPlanModal] = useState(false);
+  const [showDeleteSection, setShowDeleteSection] = useState(false);
 
   // Función para mostrar Toast auto-cerrable
   const triggerToast = (message, type = 'success') => {
@@ -1127,12 +1128,10 @@ const [partidosList, setPartidosList] = useState([]);
                   <Users className="h-4 w-4" />
                   Clientes
                 </Link>
-                {(!profileData || profileData?.role === 'owner' || profileData?.role === 'admin') && (
                   <Link href={`/${tenantSlug}/equipo`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/equipo`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                     <Briefcase className="h-4 w-4" />
                     Equipo de Trabajo
                   </Link>
-                )}
                  <Link href={`/${tenantSlug}/programa`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/programa`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <Calendar className="h-4 w-4" />
                   Programa de Gestión Anual
@@ -1235,7 +1234,6 @@ const [partidosList, setPartidosList] = useState([]);
               <Users className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
             </Link>
-            {(!profileData || profileData?.role === 'owner' || profileData?.role === 'admin') && (
               <Link 
                 href={`/${tenantSlug}/equipo`} 
                 title="Equipo de Trabajo"
@@ -1245,7 +1243,6 @@ const [partidosList, setPartidosList] = useState([]);
                 <Briefcase className="h-4 w-4 shrink-0" />
                 {!isSidebarCollapsed && <span className="animate-fade-in">Equipo de Trabajo</span>}
               </Link>
-            )}
             <Link 
               href={`/${tenantSlug}/programa`} 
               title="Programa de Gestión Anual"
@@ -1330,7 +1327,7 @@ const [partidosList, setPartidosList] = useState([]);
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto relative py-0 px-0">
+      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto overflow-x-hidden relative py-0 px-0">
         {/* Background gradients */}
         <div className="absolute top-[-10%] left-[-20%] w-[600px] h-[600px] rounded-full bg-[#468DFF]/5 blur-[150px] pointer-events-none" />
         <div className="absolute bottom-[-10%] right-[-20%] w-[600px] h-[600px] rounded-full bg-[#0511F2]/5 blur-[150px] pointer-events-none" />
@@ -1486,7 +1483,7 @@ const [partidosList, setPartidosList] = useState([]);
                     setPartido('');
                     setLocalidad('');
                   }}
-                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 cursor-pointer"
+                  className="w-full max-w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 cursor-pointer"
                 >
                   <option value="" disabled>Selecciona una provincia</option>
                   {PROVINCIAS_ARGENTINAS.map((prov) => (
@@ -1509,7 +1506,7 @@ const [partidosList, setPartidosList] = useState([]);
                     setPartido(e.target.value);
                     setLocalidad('');
                   }}
-                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 cursor-pointer disabled:opacity-50"
+                  className="w-full max-w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 cursor-pointer disabled:opacity-50"
                 >
                   <option value="" disabled>{!provincia ? 'Primero selecciona una provincia' : 'Selecciona un partido'}</option>
                   {partidosList.map((p) => (
@@ -1528,7 +1525,7 @@ const [partidosList, setPartidosList] = useState([]);
                   disabled={!partido || localidadesList.length === 0}
                   value={localidad}
                   onChange={(e) => setLocalidad(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 cursor-pointer disabled:opacity-50"
+                  className="w-full max-w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 cursor-pointer disabled:opacity-50"
                 >
                   <option value="">
                     {!partido ? 'Primero selecciona un partido' : 'Selecciona una localidad (opcional)'}
@@ -1611,12 +1608,12 @@ const [partidosList, setPartidosList] = useState([]);
                       </label>
                       <div className="relative border-2 border-dashed border-slate-200 hover:border-slate-300 rounded-xl p-6 text-center cursor-pointer transition-colors bg-white h-28 flex flex-col items-center justify-center overflow-hidden group">
                         {m.fotoFrentePreview ? (
-                          <div className="relative w-full h-full">
+                          <div className="relative w-full h-full flex items-center justify-center">
                             <img src={m.fotoFrentePreview} alt={`Frente matrícula ${index+1}`} className="w-full h-full object-contain" />
                             <button
                               type="button"
                               onClick={() => handleMatriculaFileClear(index, 'Frente')}
-                              className="absolute top-1 right-1 bg-red-650 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold cursor-pointer"
+                              className="z-25 absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-lg px-2.5 py-1 text-[10px] font-bold cursor-pointer shadow-md transition-all active:scale-95"
                             >
                               Quitar
                             </button>
@@ -1642,12 +1639,12 @@ const [partidosList, setPartidosList] = useState([]);
                       </label>
                       <div className="relative border-2 border-dashed border-slate-200 hover:border-slate-300 rounded-xl p-6 text-center cursor-pointer transition-colors bg-white h-28 flex flex-col items-center justify-center overflow-hidden group">
                         {m.fotoDorsoPreview ? (
-                          <div className="relative w-full h-full">
+                          <div className="relative w-full h-full flex items-center justify-center">
                             <img src={m.fotoDorsoPreview} alt={`Dorso matrícula ${index+1}`} className="w-full h-full object-contain" />
                             <button
                               type="button"
                               onClick={() => handleMatriculaFileClear(index, 'Dorso')}
-                              className="absolute top-1 right-1 bg-red-650 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold cursor-pointer"
+                              className="z-25 absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-lg px-2.5 py-1 text-[10px] font-bold cursor-pointer shadow-md transition-all active:scale-95"
                             >
                               Quitar
                             </button>
@@ -1692,22 +1689,22 @@ const [partidosList, setPartidosList] = useState([]);
                     <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">
                       Firma Digital (Imagen)
                     </label>
-                    <div className="relative border-2 border-dashed border-slate-200 hover:border-slate-300 rounded-xl p-6 text-center cursor-pointer transition-colors bg-white h-28 flex flex-col items-center justify-center overflow-hidden group">
+                    <div className="relative border border-dashed border-slate-200 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-50/50 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
                       {fotoFirmaPreview ? (
-                        <div className="relative w-full h-full">
+                        <div className="relative w-full h-full flex items-center justify-center">
                           <img src={fotoFirmaPreview} alt="Firma" className="w-full h-full object-contain" />
                           <button
                             type="button"
                             onClick={() => { setFotoFirma(null); setFotoFirmaPreview(''); }}
-                            className="absolute top-1 right-1 bg-red-650 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold cursor-pointer"
+                            className="z-25 absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-lg px-2.5 py-1 text-[10px] font-bold cursor-pointer shadow-md transition-all active:scale-95"
                           >
                             Quitar
                           </button>
                         </div>
                       ) : (
                         <>
-                          <FileText className="h-5 w-5 text-slate-400 group-hover:text-[#468DFF] mb-1" />
-                          <span className="text-[10px] text-slate-500 font-medium">Subir Firma</span>
+                          <ImageIcon className="h-5 w-5 text-slate-400 group-hover:text-[#468DFF] mb-1" />
+                          <span className="text-[11px] text-slate-500 font-medium">Subir Firma</span>
                           <input
                             type="file"
                             accept=".png, .jpg, .jpeg"
@@ -1921,12 +1918,12 @@ const [partidosList, setPartidosList] = useState([]);
                 </label>
                 <div className="relative border border-dashed border-slate-200 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-50/50 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
                   {logo1Preview ? (
-                    <div className="relative w-full h-full">
+                    <div className="relative w-full h-full flex items-center justify-center">
                       <img src={logo1Preview} alt="Logo 1" className="w-full h-full object-contain" />
                       <button
                         type="button"
                         onClick={() => { setLogo1(null); setLogo1Preview(''); }}
-                        className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold cursor-pointer"
+                        className="z-25 absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-lg px-2.5 py-1 text-[10px] font-bold cursor-pointer shadow-md transition-all active:scale-95"
                       >
                         Quitar
                       </button>
@@ -1952,12 +1949,12 @@ const [partidosList, setPartidosList] = useState([]);
                 </label>
                 <div className="relative border border-dashed border-slate-200 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-50/50 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
                   {logo2Preview ? (
-                    <div className="relative w-full h-full">
+                    <div className="relative w-full h-full flex items-center justify-center">
                       <img src={logo2Preview} alt="Logo 2" className="w-full h-full object-contain" />
                       <button
                         type="button"
                         onClick={() => { setLogo2(null); setLogo2Preview(''); }}
-                        className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold cursor-pointer"
+                        className="z-25 absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-lg px-2.5 py-1 text-[10px] font-bold cursor-pointer shadow-md transition-all active:scale-95"
                       >
                         Quitar
                       </button>
@@ -2032,11 +2029,11 @@ const [partidosList, setPartidosList] = useState([]);
       )}
 
           {/* Form Actions */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between pt-4 gap-4 border-t border-slate-300 pt-6">
+          <div className="flex justify-between items-center pt-6 border-t border-slate-100">
             <button
               type="button"
               onClick={handleExitWithoutSave}
-              className="py-3 px-6 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-800 font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2"
+              className="px-5 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer"
             >
               Salir
             </button>
@@ -2044,7 +2041,7 @@ const [partidosList, setPartidosList] = useState([]);
             <button
               type="submit"
               disabled={loading}
-              className="py-4 px-10 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white font-bold text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/10 active:scale-[0.98] disabled:opacity-50"
+              className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
             >
               {loading ? (
                 <>
@@ -2064,87 +2061,111 @@ const [partidosList, setPartidosList] = useState([]);
 
         {/* ELIMINAR CUENTA (Disponible para todos los usuarios) */}
         {profileData && (
-          <div className="mt-8 bg-white border border-red-200 rounded-2xl p-8 shadow-sm space-y-6 animate-fade-in">
-            <h3 className="text-lg font-bold text-red-600 border-b border-red-100 pb-3 flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-600" />
-              {profileData?.role === 'owner' ? 'Eliminar Cuenta y Organización' : 'Eliminar Cuenta de Acceso'}
-            </h3>
-            
-            {profileData?.role === 'owner' ? (
-              <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-red-800 text-sm space-y-3 leading-relaxed">
-                <p className="font-bold">¡ADVERTENCIA DE SEGURIDAD CRÍTICA!</p>
-                <p>
-                  Al eliminar tu cuenta, se borrará de forma permanente e irreversible toda la información asociada a tu organización/consultora (<strong>{tenantData?.name}</strong>), incluyendo:
-                </p>
-                <ul className="list-disc pl-5 space-y-1 text-xs">
-                  <li>Configuración y perfil del administrador y miembros de equipo.</li>
-                  <li>Todas las empresas clientes y sus establecimientos cargados.</li>
-                  <li>El historial completo de auditorías, capacitaciones, acciones correctivas y extintores.</li>
-                  <li>Firmas, logotipos y archivos digitales subidos al almacenamiento.</li>
-                </ul>
-                <p className="font-semibold text-xs">
-                  Esta acción no se puede deshacer y no habrá forma de recuperar los datos.
-                </p>
-              </div>
-            ) : (
-              <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-red-800 text-sm space-y-3 leading-relaxed">
-                <p className="font-bold">¡ADVERTENCIA DE SEGURIDAD!</p>
-                <p>
-                  Al confirmar, se eliminará tu cuenta de usuario de forma permanente y ya no tendrás acceso a la organización/consultora <strong>{tenantData?.name}</strong>.
-                </p>
-                <p className="text-xs">
-                  Tu perfil y configuraciones personales serán borrados definitivamente. Sin embargo, las constancias de visita, capacitaciones y actividades del programa anual que hayas registrado o firmado seguirán guardadas para el historial de la organización.
-                </p>
-                <p className="font-semibold text-xs">
-                  Esta acción es irreversible y no podrás volver a ingresar con este usuario.
-                </p>
-              </div>
-            )}
-
-            <div className="space-y-4">
-              <div className="max-w-md">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                  Para confirmar la eliminación, ingresá tu contraseña actual:
-                </label>
-                <div className="relative">
-                  <input
-                    type={showDeletePassword ? 'text' : 'password'}
-                    placeholder="Contraseña actual"
-                    value={deletePassword}
-                    onChange={(e) => setDeletePassword(e.target.value)}
-                    className="w-full border border-slate-200 rounded-xl py-2 pl-3.5 pr-12 text-sm focus:outline-none focus:border-red-500 bg-slate-50/50 transition-all text-slate-700"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowDeletePassword(!showDeletePassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700 cursor-pointer"
-                  >
-                    {showDeletePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-
+          <div className="mt-8 border-t border-slate-200 pt-6">
+            {!showDeleteSection ? (
               <div className="flex justify-start">
                 <button
                   type="button"
-                  onClick={handleDeleteAccount}
-                  disabled={deleteLoading || !deletePassword}
-                  className="py-3 px-6 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition-all flex items-center gap-2 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-lg shadow-red-500/10"
+                  onClick={() => setShowDeleteSection(true)}
+                  className="py-2.5 px-4 rounded-xl border border-red-200 hover:bg-red-50 text-red-600 text-xs font-bold transition-all cursor-pointer flex items-center gap-2 active:scale-[0.98]"
                 >
-                  {deleteLoading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Eliminando cuenta y datos...
-                    </>
-                  ) : (
-                    <>
-                      <AlertTriangle className="h-4 w-4" />
-                      {profileData?.role === 'owner' ? 'Eliminar Cuenta y Organización Permanente' : 'Eliminar Mi Acceso Permanentemente'}
-                    </>
-                  )}
+                  <AlertTriangle className="h-4 w-4" />
+                  {profileData?.role === 'owner' ? 'Eliminar Cuenta y Organización' : 'Eliminar Cuenta de Acceso'}
                 </button>
               </div>
-            </div>
+            ) : (
+              <div className="bg-white border border-red-200 rounded-2xl p-6 shadow-sm space-y-6 animate-scaleUp">
+                <div className="flex items-center justify-between border-b border-red-100 pb-3">
+                  <h3 className="text-base font-bold text-red-600 flex items-center gap-2">
+                    <AlertTriangle className="h-4.5 w-4.5 text-red-600" />
+                    {profileData?.role === 'owner' ? 'Eliminar Cuenta y Organización' : 'Eliminar Cuenta de Acceso'}
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => { setShowDeleteSection(false); setDeletePassword(''); }}
+                    className="py-1.5 px-3 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-500 text-[10px] font-bold cursor-pointer transition-all active:scale-[0.98]"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+                
+                {profileData?.role === 'owner' ? (
+                  <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-red-800 text-sm space-y-3 leading-relaxed">
+                    <p className="font-bold">¡ADVERTENCIA DE SEGURIDAD CRÍTICA!</p>
+                    <p>
+                      Al eliminar tu cuenta, se borrará de forma permanente e irreversible toda la información asociada a tu organización/consultora (<strong>{tenantData?.name}</strong>), incluyendo:
+                    </p>
+                    <ul className="list-disc pl-5 space-y-1 text-xs">
+                      <li>Configuración y perfil del administrador y miembros de equipo.</li>
+                      <li>Todas las empresas clientes y sus establecimientos cargados.</li>
+                      <li>El historial completo de auditorías, capacitaciones, acciones correctivas y extintores.</li>
+                      <li>Firmas, logotipos y archivos digitales subidos al almacenamiento.</li>
+                    </ul>
+                    <p className="font-semibold text-xs">
+                      Esta acción no se puede deshacer y no habrá forma de recuperar los datos.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-red-800 text-sm space-y-3 leading-relaxed">
+                    <p className="font-bold">¡ADVERTENCIA DE SEGURIDAD!</p>
+                    <p>
+                      Al confirmar, se elminará tu cuenta de usuario de forma permanente y ya no tendrás acceso a la organización/consultora <strong>{tenantData?.name}</strong>.
+                    </p>
+                    <p className="text-xs">
+                      Tu perfil y configuraciones personales serán borrados definitivamente. Sin embargo, las constancias de visita, capacitaciones y actividades del programa anual que hayas registrado o firmado seguirán guardadas para el historial de la organización.
+                    </p>
+                    <p className="font-semibold text-xs">
+                      Esta acción es irreversible y no podrás volver a ingresar con este usuario.
+                    </p>
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  <div className="max-w-md">
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      Para confirmar la eliminación, ingresá tu contraseña actual:
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showDeletePassword ? 'text' : 'password'}
+                        placeholder="Contraseña actual"
+                        value={deletePassword}
+                        onChange={(e) => setDeletePassword(e.target.value)}
+                        className="w-full border border-slate-200 rounded-xl py-2 pl-3.5 pr-12 text-sm focus:outline-none focus:border-red-500 bg-slate-50/50 transition-all text-slate-700"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowDeletePassword(!showDeletePassword)}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700 cursor-pointer"
+                      >
+                        {showDeletePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-start">
+                    <button
+                      type="button"
+                      onClick={handleDeleteAccount}
+                      disabled={deleteLoading || !deletePassword}
+                      className="py-3 px-6 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition-all flex items-center gap-2 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-lg shadow-red-500/10"
+                    >
+                      {deleteLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Eliminando cuenta y datos...
+                        </>
+                      ) : (
+                        <>
+                          <AlertTriangle className="h-4 w-4" />
+                          {profileData?.role === 'owner' ? 'Eliminar Cuenta y Organización Permanente' : 'Eliminar Mi Acceso Permanentemente'}
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

@@ -200,6 +200,7 @@ export default function VisitasPage({ params }) {
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
   const [saveLoading, setSaveLoading] = useState(false);
+  const canEdit = !profile || profile.role === 'owner' || profile.role === 'admin' || profile.permisos?.visitas !== false;
 
   // Modal para enviar correo
   const [isMailModalOpen, setIsMailModalOpen] = useState(false);
@@ -238,7 +239,7 @@ export default function VisitasPage({ params }) {
 
   // Setup de Canvas de dibujo para firmas
   useEffect(() => {
-    if (!isFormOpen) return;
+    if (!isFormOpen || !canEdit) return;
 
     const setupCanvas = (canvas, setHasSigned) => {
       if (!canvas) return;
@@ -733,6 +734,10 @@ export default function VisitasPage({ params }) {
   // Guardar datos de visita
   const handleSaveVisita = async (e) => {
     e.preventDefault();
+    if (!canEdit) {
+      triggerToast('No tiene permisos para modificar constancias de visita.', 'error');
+      return;
+    }
     if (!empresaId || !establecimientoId || !fecha) {
       triggerToast('Complete la Razón Social, Establecimiento y Fecha.', 'error');
       return;
@@ -907,6 +912,10 @@ export default function VisitasPage({ params }) {
 
   // Eliminar
   const handleDeleteClick = (id) => {
+    if (!canEdit) {
+      triggerToast('No tiene permisos para eliminar constancias de visita.', 'error');
+      return;
+    }
     setModalAlert({
       show: true,
       title: '¿Eliminar Constancia?',
@@ -1729,12 +1738,10 @@ export default function VisitasPage({ params }) {
                   <Users className="h-4 w-4" />
                   Clientes
                 </Link>
-                {(!profile || profile?.role === 'owner' || profile?.role === 'admin') && (
                   <Link href={`/${tenantSlug}/equipo`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/equipo`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                     <Briefcase className="h-4 w-4" />
                     Equipo de Trabajo
                   </Link>
-                )}
                 <Link href={`/${tenantSlug}/programa`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/programa`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <Calendar className="h-4 w-4" />
                   Programa de Gestión Anual
@@ -1821,7 +1828,6 @@ export default function VisitasPage({ params }) {
               <Users className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
             </Link>
-            {(!profile || profile?.role === 'owner' || profile?.role === 'admin') && (
               <Link 
                 href={`/${tenantSlug}/equipo`} 
                 title="Equipo de Trabajo"
@@ -1831,7 +1837,6 @@ export default function VisitasPage({ params }) {
                 <Briefcase className="h-4 w-4 shrink-0" />
                 {!isSidebarCollapsed && <span className="animate-fade-in">Equipo de Trabajo</span>}
               </Link>
-            )}
             <Link 
               href={`/${tenantSlug}/programa`} 
               title="Programa de Gestión Anual"
@@ -1964,20 +1969,22 @@ export default function VisitasPage({ params }) {
                         />
                       </div>
 
-                      <button 
-                        onClick={() => {
-                          setFecha(new Date().toISOString().split('T')[0]);
-                          setProfesionalTipo('miembro');
-                          if (profile?.role !== 'inspector') {
-                            setProfesionalId(profile?.id || '');
-                          }
-                          setIsFormOpen(true);
-                        }}
-                        className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0 w-full md:w-auto"
-                      >
-                        <PlusCircle className="h-3.5 w-3.5" />
-                        Nueva Constancia
-                      </button>
+                      {canEdit && (
+                        <button 
+                          onClick={() => {
+                            setFecha(new Date().toISOString().split('T')[0]);
+                            setProfesionalTipo('miembro');
+                            if (profile?.role !== 'inspector') {
+                              setProfesionalId(profile?.id || '');
+                            }
+                            setIsFormOpen(true);
+                          }}
+                          className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0 w-full md:w-auto"
+                        >
+                          <PlusCircle className="h-3.5 w-3.5" />
+                          Nueva Constancia
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -2108,18 +2115,20 @@ export default function VisitasPage({ params }) {
                                     </button>
                                     <button 
                                       onClick={() => handleEditClick(v)}
-                                      className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer"
-                                      title="Editar Constancia"
+                                      className={`p-1.5 rounded-lg transition-all cursor-pointer ${canEdit ? 'bg-amber-50 hover:bg-amber-100 text-amber-600' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}
+                                      title={canEdit ? "Editar Constancia" : "Ver Detalle"}
                                     >
-                                      <Edit className="h-4.5 w-4.5" />
+                                      {canEdit ? <Edit className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
                                     </button>
-                                    <button 
-                                      onClick={() => handleDeleteClick(v.id)}
-                                      className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer"
-                                      title="Eliminar Constancia"
-                                    >
-                                      <Trash2 className="h-4.5 w-4.5" />
-                                    </button>
+                                    {canEdit && (
+                                      <button 
+                                        onClick={() => handleDeleteClick(v.id)}
+                                        className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer"
+                                        title="Eliminar Constancia"
+                                      >
+                                        <Trash2 className="h-4.5 w-4.5" />
+                                      </button>
+                                    )}
                                   </div>
                                 </td>
                               </tr>
@@ -2158,6 +2167,7 @@ export default function VisitasPage({ params }) {
 
                 {/* Formulario */}
                 <form onSubmit={handleSaveVisita} className="p-6 space-y-6">
+                  <fieldset disabled={!canEdit} className="space-y-6">
                   
                   {/* SECCIÓN 1: DATOS GENERALES */}
                   <div className="space-y-4">
@@ -2833,51 +2843,55 @@ export default function VisitasPage({ params }) {
                       <div className="flex flex-col gap-2">
                         <label className="text-xs font-bold text-slate-600">Adjuntar registros fotográficos (Mediciones, constancia física, firmas escritas, etc.)</label>
                         
-                        <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-6 text-center space-y-4">
-                          <div className="flex justify-center gap-4">
-                            
-                            {/* Cámara */}
-                            <label className="px-4 py-2 bg-slate-150 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer transition-all">
-                              <Camera className="h-4 w-4 text-[#468DFF]" />
-                              Capturar Foto (Cámara)
-                              <input
-                                type="file"
-                                accept="image/*"
-                                capture="environment"
-                                onChange={handleCapturePhoto}
-                                className="hidden"
-                              />
-                            </label>
+                        {canEdit && (
+                          <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-6 text-center space-y-4">
+                            <div className="flex justify-center gap-4">
+                              
+                              {/* Cámara */}
+                              <label className="px-4 py-2 bg-slate-150 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer transition-all">
+                                <Camera className="h-4 w-4 text-[#468DFF]" />
+                                Capturar Foto (Cámara)
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  capture="environment"
+                                  onChange={handleCapturePhoto}
+                                  className="hidden"
+                                />
+                              </label>
 
-                            {/* Archivos */}
-                            <label className="px-4 py-2 bg-slate-150 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer transition-all">
-                              <Upload className="h-4 w-4 text-[#468DFF]" />
-                              Seleccionar Archivos
-                              <input
-                                type="file"
-                                accept="image/*"
-                                multiple
-                                onChange={handleAddPhotos}
-                                className="hidden"
-                              />
-                            </label>
+                              {/* Archivos */}
+                              <label className="px-4 py-2 bg-slate-150 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer transition-all">
+                                <Upload className="h-4 w-4 text-[#468DFF]" />
+                                Seleccionar Archivos
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  multiple
+                                  onChange={handleAddPhotos}
+                                  className="hidden"
+                                />
+                              </label>
+                            </div>
+                            
+                            <p className="text-[10px] text-slate-400 font-medium">PNG, JPG o JPEG de hasta 5 MB por archivo</p>
                           </div>
-                          
-                          <p className="text-[10px] text-slate-400 font-medium">PNG, JPG o JPEG de hasta 5 MB por archivo</p>
-                        </div>
+                        )}
 
                         {/* Grid de previsualización */}
                         <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 pt-2">
                           {fotosFiles.map((foto, idx) => (
                             <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-100 group shadow-sm">
                               <img src={foto.preview} alt="Vista previa" className="w-full h-full object-cover" />
-                              <button
-                                type="button"
-                                onClick={() => handleRemovePhoto(idx)}
-                                className="absolute top-1.5 right-1.5 p-1 bg-red-600 text-white rounded-lg opacity-90 hover:bg-red-700 transition-all cursor-pointer"
-                              >
-                                <Trash className="h-3.5 w-3.5" />
-                              </button>
+                              {canEdit && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemovePhoto(idx)}
+                                  className="absolute top-1.5 right-1.5 p-1 bg-red-600 text-white rounded-lg opacity-90 hover:bg-red-700 transition-all cursor-pointer"
+                                >
+                                  <Trash className="h-3.5 w-3.5" />
+                                </button>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -2900,7 +2914,7 @@ export default function VisitasPage({ params }) {
                       <div className="space-y-2 flex flex-col">
                         <div className="flex justify-between items-center">
                           <label className="text-xs font-bold text-slate-600">Firma del Responsable de la Empresa</label>
-                          {(hasSignedResp || firmaRespSavedUrl) && (
+                          {canEdit && (hasSignedResp || firmaRespSavedUrl) && (
                             <button
                               type="button"
                               onClick={() => handleClearCanvas(firmaRespCanvasRef, setHasSignedResp, setFirmaRespSavedUrl)}
@@ -2920,7 +2934,7 @@ export default function VisitasPage({ params }) {
                               ref={firmaRespCanvasRef}
                               width={400}
                               height={200}
-                              className="w-full h-full bg-white block cursor-crosshair"
+                              className={`w-full h-full bg-white block ${canEdit ? 'cursor-crosshair' : 'cursor-default'}`}
                             />
                           )}
                           {!hasSignedResp && !firmaRespSavedUrl && (
@@ -2933,7 +2947,7 @@ export default function VisitasPage({ params }) {
                       <div className="space-y-2 flex flex-col">
                         <div className="flex justify-between items-center">
                           <label className="text-xs font-bold text-slate-600">Firma del Profesional de Higiene y Seguridad</label>
-                          {(hasSignedProf || firmaProfSavedUrl) && (
+                          {canEdit && (hasSignedProf || firmaProfSavedUrl) && (
                             <button
                               type="button"
                               onClick={() => handleClearCanvas(firmaProfCanvasRef, setHasSignedProf, setFirmaProfSavedUrl)}
@@ -2953,7 +2967,7 @@ export default function VisitasPage({ params }) {
                               ref={firmaProfCanvasRef}
                               width={400}
                               height={200}
-                              className="w-full h-full bg-white block cursor-crosshair"
+                              className={`w-full h-full bg-white block ${canEdit ? 'cursor-crosshair' : 'cursor-default'}`}
                             />
                           )}
                           {!hasSignedProf && !firmaProfSavedUrl && (
@@ -2965,6 +2979,8 @@ export default function VisitasPage({ params }) {
                     </div>
                   </div>
 
+                  </fieldset>
+
                   {/* Acciones del formulario */}
                   <div className="flex justify-between items-center pt-6 border-t border-slate-100">
                     <button
@@ -2975,7 +2991,7 @@ export default function VisitasPage({ params }) {
                       Salir
                     </button>
                     <div className="flex items-center gap-3">
-                      {editingId && (
+                      {canEdit && editingId && (
                         <button
                           type="button"
                           onClick={() => handleDeleteClick(editingId)}
@@ -2984,14 +3000,16 @@ export default function VisitasPage({ params }) {
                           Eliminar
                         </button>
                       )}
-                      <button
-                        type="submit"
-                        disabled={saveLoading}
-                        className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
-                      >
-                        {saveLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                        {editingId ? 'Guardar Cambios' : 'Registrar Constancia'}
-                      </button>
+                      {canEdit && (
+                        <button
+                          type="submit"
+                          disabled={saveLoading}
+                          className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
+                        >
+                          {saveLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                          {editingId ? 'Guardar Cambios' : 'Registrar Constancia'}
+                        </button>
+                      )}
                     </div>
                   </div>
 

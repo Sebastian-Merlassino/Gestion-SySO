@@ -3,6 +3,59 @@
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
 
+## [2026-06-21] Control de Accesos y Permisos de Edición Granulares por Sección
+
+### Resumen de Cambios
+- **Migración de Base de Datos**: Se incorporó el campo `permisos` JSONB en las tablas `public.profiles` y `public.miembros_equipo` con sincronización bidireccional automática mediante triggers, habilitando la verificación granular a nivel de RLS.
+- **Configuración de Permisos en Equipo**: Se añadieron los controles interactivos en la vista de edición/creación del personal para configurar accesos específicos cuando cuentan con login habilitado.
+- **Protección de Lectura/Escritura en Módulos**: Se implementó la validación de `canEdit` en las 7 secciones de trabajo (`empresas`, `equipo`, `programa`, `capacitacion`, `correctivas`, `extintores`, `visitas`). Si el rol o permiso del usuario es de solo lectura, se deshabilitan todos los campos de entrada de datos (mediante `<fieldset disabled>`), se ocultan los botones de agregado/guardado/eliminación y se limita el control de firmas y fotos.
+- **Correcciones JSX de Módulos**: Se subsanaron errores de tags desparejados en las páginas de Capacitaciones y Equipo de Trabajo generados en sesiones previas, garantizando que el build de producción Next.js finalice de manera exitosa.
+
+### Decisiones Clave
+- **Bloqueo a Nivel de Formulario (Fieldset)**: El uso de `<fieldset disabled={!canEdit}>` a nivel del contenedor principal del formulario garantiza de forma robusta e idiomática en HTML5 que ninguno de los inputs o botones hijos (incluyendo checkboxes y textareas) reciba foco o sea interactuable.
+- **Restricción de Dibujo en Canvas**: Para evitar firmas no autorizadas, el gancho `useEffect` de configuración de los canvas de firma digital evalúa directamente `canEdit` y aborta tempranamente sin vincular listeners de mouse/touch, preservando el estado de solo lectura de forma segura.
+
+### Archivos Modificados
+- `[NEW] supabase/migrations/20260630010000_add_permisos_to_profiles_and_members.sql`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+
+---
+
+## [2026-06-21] Unificación de Barra Lateral de Miembros y Contenedor de Eliminación de Cuenta
+
+### Resumen de Cambios
+- **Corrección de Barra Lateral en Programa**: Se removió el condicional remanente del menú de de escritorio en la sección del Programa de Gestión Anual (`programa/page.js`), el cual ocultaba el enlace "Equipo de Trabajo" a usuarios con rol `inspector` o `supervisor` tras la carga del perfil. Con esto, todas las vistas cargan el enlace "Equipo de Trabajo" incondicionalmente de forma homogeneizada, resolviendo el efecto de parpadeo y desaparición en refresco.
+- **Estandarización de Salir y Eliminación de Cuenta**: Se validaron los estilos del botón "Salir" en el formulario del perfil de usuario y la lógica colapsable del contenedor de "Eliminar Cuenta/Acceso" para asegurar consistencia absoluta con los estándares de diseño.
+
+### Decisiones Clave
+- **Visualización Unificada de Secciones**: Todos los integrantes del equipo pueden visualizar y acceder a todas las secciones principales del dashboard de la consultora. Las acciones de inserción y modificación de datos quedan resguardadas por políticas RLS en la base de datos de Supabase.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js` (en sesión anterior)
+
+---
+
+## [2026-06-21] Correcciones en Perfil de Usuario: Scroll, Pictogramas y Botones de Quitar
+
+### Resumen de Cambios
+- **Corrección de Scroll Horizontal**: Se agregó la propiedad CSS `overflow-x-hidden` al contenedor principal `<main>` del Perfil de Usuario (`profile/page.js`), evitando que los gradientes de fondo absolutos generen una barra de desplazamiento horizontal innecesaria en laptops y móviles.
+- **Estandarización del Pictograma de Carga de Firma**: Se sustituyó el icono `FileText` de Lucide por `ImageIcon` en la caja de carga de firma digital en el perfil, alineando la interfaz gráfica de firma con la de los logotipos.
+- **Visibilidad del Botón "Quitar" en Previsualizaciones**: Se rediseñó la estructura HTML y estilos CSS de los cargadores de imágenes (Logotipo 1, Logotipo 2, Firma y Matrículas frente/dorso) en el perfil. Los botones de eliminar ("Quitar") ahora se renderizan directamente bajo el contenedor relativo del cargador con la clase `z-10 absolute top-2 right-2 bg-red-600 hover:bg-red-700`, resolviendo el problema de falta de visibilidad y clics ocultos por flexbox.
+
+### Decisiones Clave
+- **Posicionamiento Absoluto a Nivel de Contenedor**: Al mover los botones de eliminar del div interno al contenedor principal `relative`, garantizamos que su posición se fije de forma inequívoca en la esquina superior derecha del cuadro de carga, sin interferir con el escalado o centrado de las imágenes.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+
+---
 
 ## [2026-06-21] Estandarización de Alturas Reactivas, Alerta de Salida de Equipo y Eliminación de Cuenta
 

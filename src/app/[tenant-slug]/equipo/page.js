@@ -85,6 +85,9 @@ export default function EquipoPage({ params }) {
   const [tenant, setTenant] = useState(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
+  // Permisos granulares de edición
+  const canEdit = !profile || profile.role === 'owner' || profile.role === 'admin' || profile.permisos?.equipo !== false;
+
   useEffect(() => {
     const collapsed = localStorage.getItem('sidebar-collapsed');
     if (collapsed === 'true') {
@@ -124,6 +127,17 @@ export default function EquipoPage({ params }) {
   // Files
   const [fotoFirma, setFotoFirma] = useState(null);
   const [fotoFirmaPreview, setFotoFirmaPreview] = useState('');
+
+  // Permisos de edición por sección
+  const [permisos, setPermisos] = useState({
+    empresas: true,
+    equipo: true,
+    programa: true,
+    capacitacion: true,
+    correctivas: true,
+    extintores: true,
+    visitas: true
+  });
 
   // Matrículas
   const [matriculas, setMatriculas] = useState([
@@ -259,11 +273,7 @@ export default function EquipoPage({ params }) {
         .single();
       if (pErr) throw pErr;
       
-      // Bloquear acceso a inspectores / supervisores
-      if (prof.role !== 'owner' && prof.role !== 'admin') {
-        window.location.href = `/${tenantSlug}/dashboard`;
-        return;
-      }
+      // Removido condicional limitante de carga: los inspectores con acceso ahora pueden visualizar el listado.
       
       setProfile(prof);
 
@@ -538,6 +548,15 @@ export default function EquipoPage({ params }) {
     setSignatureUrl('');
     setFotoFirma(null);
     setFotoFirmaPreview('');
+    setPermisos({
+      empresas: true,
+      equipo: true,
+      programa: true,
+      capacitacion: true,
+      correctivas: true,
+      extintores: true,
+      visitas: true
+    });
     setMatriculas([
       {
         id: null,
@@ -563,6 +582,15 @@ export default function EquipoPage({ params }) {
       localidad: '',
       tieneAcceso: false,
       signatureUrl: '',
+      permisos: {
+        empresas: true,
+        equipo: true,
+        programa: true,
+        capacitacion: true,
+        correctivas: true,
+        extintores: true,
+        visitas: true
+      },
       matriculas: [{ institucion: '', numero: '', vencimiento: '', fotoFrentePreview: '', fotoDorsoPreview: '', fotoFrentePath: '', fotoDorsoPath: '' }]
     });
     setView('form');
@@ -636,6 +664,15 @@ export default function EquipoPage({ params }) {
       setLocalidad(member.localidad || '');
 
       setTieneAcceso(member.tiene_acceso);
+      setPermisos(member.permisos || {
+        empresas: true,
+        equipo: true,
+        programa: true,
+        capacitacion: true,
+        correctivas: true,
+        extintores: true,
+        visitas: true
+      });
       setPassword('');
       setConfirmPassword('');
       setShowPassword(false);
@@ -696,6 +733,15 @@ export default function EquipoPage({ params }) {
         localidad: member.localidad || '',
         tieneAcceso: member.tiene_acceso,
         signatureUrl: member.signature_url || '',
+        permisos: member.permisos || {
+          empresas: true,
+          equipo: true,
+          programa: true,
+          capacitacion: true,
+          correctivas: true,
+          extintores: true,
+          visitas: true
+        },
         matriculas: loadedMatriculas.map(m => ({
           institucion: m.institucion,
           numero: m.numero,
@@ -893,7 +939,8 @@ export default function EquipoPage({ params }) {
         localidad: localidad || null,
         tiene_acceso: tieneAcceso,
         profile_id: linkedProfileId,
-        signature_url: finalSignatureUrl
+        signature_url: finalSignatureUrl,
+        permisos
       };
 
       let memberId = editingId;
@@ -1018,6 +1065,7 @@ export default function EquipoPage({ params }) {
       localidad !== (initialValues?.localidad || '') ||
       tieneAcceso !== (initialValues?.tieneAcceso || false) ||
       signatureUrl !== (initialValues?.signatureUrl || '') ||
+      JSON.stringify(permisos) !== JSON.stringify(initialValues?.permisos || {}) ||
       !areMatriculasEqual(
         matriculas.map(m => ({
           institucion: m.institucion,
@@ -1120,12 +1168,10 @@ export default function EquipoPage({ params }) {
                   <Users className="h-4 w-4" />
                   Clientes
                 </Link>
-                {(!profile || profile?.role === 'owner' || profile?.role === 'admin') && (
                   <Link href="#" onClick={(e) => handleSidebarNavigation(e, 'list')} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10">
                     <Briefcase className="h-4 w-4" />
                     Equipo de Trabajo
                   </Link>
-                )}
                 <Link href={`/${tenantSlug}/programa`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/programa`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <Calendar className="h-4 w-4" />
                   Programa de Gestión Anual
@@ -1227,7 +1273,6 @@ export default function EquipoPage({ params }) {
               <Users className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
             </Link>
-            {(!profile || profile?.role === 'owner' || profile?.role === 'admin') && (
               <Link 
                 href="#" 
                 title="Equipo de Trabajo"
@@ -1237,7 +1282,6 @@ export default function EquipoPage({ params }) {
                 <Briefcase className="h-4 w-4 shrink-0" />
                 {!isSidebarCollapsed && <span className="animate-fade-in">Equipo de Trabajo</span>}
               </Link>
-            )}
             <Link 
               href={`/${tenantSlug}/programa`} 
               title="Programa de Gestión Anual"
@@ -1388,13 +1432,15 @@ export default function EquipoPage({ params }) {
                       />
                     </div>
  
-                    <button
-                      onClick={handleAddNew}
-                      className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0 w-full md:w-auto"
-                    >
-                      <PlusCircle className="h-3.5 w-3.5" />
-                      Agregar Integrante
-                    </button>
+                    {canEdit && (
+                      <button
+                        onClick={handleAddNew}
+                        className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0 w-full md:w-auto"
+                      >
+                        <PlusCircle className="h-3.5 w-3.5" />
+                        Agregar Integrante
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1406,13 +1452,15 @@ export default function EquipoPage({ params }) {
                   <h4 className="text-base font-bold text-slate-800">No hay integrantes cargados</h4>
                   <p className="text-xs text-slate-500 max-w-sm mx-auto mt-2 leading-relaxed">
                     Carga el personal técnico de higiene, seguridad y ambiente que trabaja en tu equipo para asignarlos como responsables.
+                    {canEdit && (
+                      <button
+                        onClick={handleAddNew}
+                        className="mt-6 block mx-auto py-2 px-4 rounded-xl border border-slate-350 hover:border-slate-450 text-slate-700 hover:text-slate-900 text-xs font-bold transition-all inline-flex items-center gap-2 bg-slate-50 shadow-sm"
+                      >
+                        Agregar mi primer miembro
+                      </button>
+                    )}
                   </p>
-                  <button
-                    onClick={handleAddNew}
-                    className="mt-6 py-2 px-4 rounded-xl border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-800 text-xs font-bold transition-all inline-flex items-center gap-2 bg-slate-50 shadow-sm"
-                  >
-                    Agregar mi primer miembro
-                  </button>
                 </div>
               ) : (
                 <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden">
@@ -1425,13 +1473,13 @@ export default function EquipoPage({ params }) {
                           <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Contacto</th>
                           <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Ubicación</th>
                           <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Acceso Login</th>
-                          <th className="px-6 py-4 text-right sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Acciones</th>
+                          {canEdit && <th className="px-6 py-4 text-right sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Acciones</th>}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
                         {filteredMiembros.length === 0 ? (
                           <tr>
-                            <td colSpan="6" className="py-12 px-6 text-center text-slate-400 italic">
+                            <td colSpan={canEdit ? 6 : 5} className="py-12 px-6 text-center text-slate-400 italic">
                               No se encontraron integrantes que coincidan con la búsqueda.
                             </td>
                           </tr>
@@ -1479,24 +1527,26 @@ export default function EquipoPage({ params }) {
                                   {m.tiene_acceso ? 'Con Acceso' : 'Sin Acceso'}
                                 </span>
                               </td>
-                              <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
-                                <div className="flex items-center justify-end gap-2">
-                                  <button
-                                    onClick={() => handleEdit(m.id)}
-                                    className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                    title="Editar"
-                                  >
-                                    <Edit className="h-4.5 w-4.5" />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDelete(m.id, m.full_name, m.profile_id)}
-                                    className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                    title="Eliminar"
-                                  >
-                                    <Trash2 className="h-4.5 w-4.5" />
-                                  </button>
-                                </div>
-                              </td>
+                              {canEdit && (
+                                <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                                  <div className="flex items-center justify-end gap-2">
+                                    <button
+                                      onClick={() => handleEdit(m.id)}
+                                      className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                      title="Editar"
+                                    >
+                                      <Edit className="h-4.5 w-4.5" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDelete(m.id, m.full_name, m.profile_id)}
+                                      className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                      title="Eliminar"
+                                    >
+                                      <Trash2 className="h-4.5 w-4.5" />
+                                    </button>
+                                  </div>
+                                </td>
+                              )}
                             </tr>
                           ))
                         )}
@@ -1536,9 +1586,9 @@ export default function EquipoPage({ params }) {
               </div>
 
               <form onSubmit={handleSave} className="p-6 md:p-8 space-y-8 overflow-y-auto flex-1 scrollbar-thin">
-                
-                {/* 1. INFORMACIÓN PERSONAL */}
-                <div className="bg-white rounded-2xl border border-slate-150 p-6 md:p-8 shadow-sm space-y-6">
+                <fieldset disabled={!canEdit} className="space-y-8">
+                  {/* 1. INFORMACIÓN PERSONAL */}
+                  <div className="bg-white rounded-2xl border border-slate-150 p-6 md:p-8 shadow-sm space-y-6">
                   <h4 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
                     <User className="text-[#468DFF] h-4.5 w-4.5" />
                     Información Personal
@@ -1642,7 +1692,7 @@ export default function EquipoPage({ params }) {
                           setPartido('');
                           setLocalidad('');
                         }}
-                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 cursor-pointer"
+                        className="w-full max-w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 cursor-pointer"
                       >
                         <option value="" disabled>Selecciona una provincia</option>
                         {PROVINCIAS_ARGENTINAS.map((prov) => (
@@ -1665,7 +1715,7 @@ export default function EquipoPage({ params }) {
                           setPartido(e.target.value);
                           setLocalidad('');
                         }}
-                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 cursor-pointer disabled:opacity-50"
+                        className="w-full max-w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 cursor-pointer disabled:opacity-50"
                       >
                         <option value="" disabled>{!provincia ? 'Selecciona provincia primero' : 'Selecciona un partido'}</option>
                         {partidosList.map((p) => (
@@ -1684,7 +1734,7 @@ export default function EquipoPage({ params }) {
                         disabled={!partido || localidadesList.length === 0}
                         value={localidad}
                         onChange={(e) => setLocalidad(e.target.value)}
-                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 cursor-pointer disabled:opacity-50"
+                        className="w-full max-w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 cursor-pointer disabled:opacity-50"
                       >
                         <option value="">{!partido ? 'Selecciona partido primero' : 'Selecciona localidad (Opcional)'}</option>
                         {localidadesList.map((loc) => (
@@ -1787,6 +1837,131 @@ export default function EquipoPage({ params }) {
                   </div>
                 </div>
 
+                {/* PERMISOS DE EDICIÓN (Se muestra si tiene acceso habilitado) */}
+                {tieneAcceso && (
+                  <div className="bg-white rounded-2xl border border-slate-150 p-6 md:p-8 shadow-sm space-y-6 animate-fade-in">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <h4 className="font-outfit text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                        <Lock className="text-[#468DFF] h-4.5 w-4.5" />
+                        Permisos de Edición por Sección
+                      </h4>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const allSelected = Object.values(permisos).every(v => v);
+                          setPermisos({
+                            empresas: !allSelected,
+                            equipo: !allSelected,
+                            programa: !allSelected,
+                            capacitacion: !allSelected,
+                            correctivas: !allSelected,
+                            extintores: !allSelected,
+                            visitas: !allSelected
+                          });
+                        }}
+                        className="text-[10px] font-bold text-[#468DFF] hover:underline cursor-pointer bg-transparent border-none outline-none"
+                      >
+                        {Object.values(permisos).every(v => v) ? 'Deseleccionar Todos' : 'Seleccionar Todos'}
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                      
+                      <div className="flex items-center gap-2.5 p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-all select-none">
+                        <input
+                          type="checkbox"
+                          id="permiso_empresas"
+                          checked={permisos.empresas}
+                          onChange={(e) => setPermisos(prev => ({ ...prev, empresas: e.target.checked }))}
+                          className="h-4.5 w-4.5 rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF] cursor-pointer"
+                        />
+                        <label htmlFor="permiso_empresas" className="text-xs font-bold text-slate-700 cursor-pointer select-none">
+                          Clientes / Empresas
+                        </label>
+                      </div>
+
+                      <div className="flex items-center gap-2.5 p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-all select-none">
+                        <input
+                          type="checkbox"
+                           id="permiso_equipo"
+                          checked={permisos.equipo}
+                          onChange={(e) => setPermisos(prev => ({ ...prev, equipo: e.target.checked }))}
+                          className="h-4.5 w-4.5 rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF] cursor-pointer"
+                        />
+                        <label htmlFor="permiso_equipo" className="text-xs font-bold text-slate-700 cursor-pointer select-none">
+                          Equipo de Trabajo
+                        </label>
+                      </div>
+
+                      <div className="flex items-center gap-2.5 p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-all select-none">
+                        <input
+                          type="checkbox"
+                          id="permiso_programa"
+                          checked={permisos.programa}
+                          onChange={(e) => setPermisos(prev => ({ ...prev, programa: e.target.checked }))}
+                          className="h-4.5 w-4.5 rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF] cursor-pointer"
+                        />
+                        <label htmlFor="permiso_programa" className="text-xs font-bold text-slate-700 cursor-pointer select-none">
+                          Prog. de Gestión Anual
+                        </label>
+                      </div>
+
+                      <div className="flex items-center gap-2.5 p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-all select-none">
+                        <input
+                          type="checkbox"
+                          id="permiso_capacitacion"
+                          checked={permisos.capacitacion}
+                          onChange={(e) => setPermisos(prev => ({ ...prev, capacitacion: e.target.checked }))}
+                          className="h-4.5 w-4.5 rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF] cursor-pointer"
+                        />
+                        <label htmlFor="permiso_capacitacion" className="text-xs font-bold text-slate-700 cursor-pointer select-none">
+                          Prog. de Capacitación
+                        </label>
+                      </div>
+
+                      <div className="flex items-center gap-2.5 p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-all select-none">
+                        <input
+                          type="checkbox"
+                          id="permiso_correctivas"
+                          checked={permisos.correctivas}
+                          onChange={(e) => setPermisos(prev => ({ ...prev, correctivas: e.target.checked }))}
+                          className="h-4.5 w-4.5 rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF] cursor-pointer"
+                        />
+                        <label htmlFor="permiso_correctivas" className="text-xs font-bold text-slate-700 cursor-pointer select-none">
+                          Acciones Correctivas
+                        </label>
+                      </div>
+
+                      <div className="flex items-center gap-2.5 p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-all select-none">
+                        <input
+                          type="checkbox"
+                          id="permiso_extintores"
+                          checked={permisos.extintores}
+                          onChange={(e) => setPermisos(prev => ({ ...prev, extintores: e.target.checked }))}
+                          className="h-4.5 w-4.5 rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF] cursor-pointer"
+                        />
+                        <label htmlFor="permiso_extintores" className="text-xs font-bold text-slate-700 cursor-pointer select-none">
+                          Control de Extintores
+                        </label>
+                      </div>
+
+                      <div className="flex items-center gap-2.5 p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-all select-none">
+                        <input
+                          type="checkbox"
+                          id="permiso_visitas"
+                          checked={permisos.visitas}
+                          onChange={(e) => setPermisos(prev => ({ ...prev, visitas: e.target.checked }))}
+                          className="h-4.5 w-4.5 rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF] cursor-pointer"
+                        />
+                        <label htmlFor="permiso_visitas" className="text-xs font-bold text-slate-700 cursor-pointer select-none">
+                          Constancias de Visita
+                        </label>
+                      </div>
+
+                    </div>
+                  </div>
+                )}
+
                 {/* 3. MATRÍCULAS PROFESIONALES */}
                 <div className="bg-white rounded-2xl border border-slate-150 p-6 md:p-8 shadow-sm space-y-6">
                   <div className="flex justify-between items-center border-b border-slate-100 pb-3">
@@ -1794,14 +1969,16 @@ export default function EquipoPage({ params }) {
                       <Award className="text-[#468DFF] h-4.5 w-4.5" />
                       Matrículas Profesionales
                     </h4>
-                    <button
-                      type="button"
-                      onClick={handleAddMatricula}
-                      className="py-2 px-3.5 rounded-xl border border-[#468DFF]/40 hover:bg-[#468DFF] hover:text-white text-center text-[#468DFF] font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer shadow-sm bg-white hover:border-[#468DFF] active:scale-[0.98]"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                      Agregar Matrícula
-                    </button>
+                    {canEdit && (
+                      <button
+                        type="button"
+                        onClick={handleAddMatricula}
+                        className="py-2 px-3.5 rounded-xl border border-[#468DFF]/40 hover:bg-[#468DFF] hover:text-white text-center text-[#468DFF] font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer shadow-sm bg-white hover:border-[#468DFF] active:scale-[0.98]"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        Agregar Matrícula
+                      </button>
+                    )}
                   </div>
 
                   <div className="space-y-8 divide-y divide-slate-100">
@@ -1811,7 +1988,7 @@ export default function EquipoPage({ params }) {
                           <span className="text-xs font-bold text-[#468DFF] bg-[#468DFF]/10 border border-[#468DFF]/15 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
                             Matrícula #{idx + 1}
                           </span>
-                          {matriculas.length > 1 && (
+                          {canEdit && matriculas.length > 1 && (
                             <button
                               type="button"
                               onClick={() => handleRemoveMatricula(idx)}
@@ -1873,22 +2050,26 @@ export default function EquipoPage({ params }) {
                             {mat.fotoFrentePreview ? (
                               <div className="relative aspect-[3/2] w-full max-w-[280px] bg-slate-100 rounded-lg overflow-hidden border border-slate-300 mx-auto">
                                 <img src={mat.fotoFrentePreview} alt="Frente" className="w-full h-full object-cover" />
-                                <button
-                                  type="button"
-                                  onClick={() => handleMatriculaFileClear(idx, 'Frente')}
-                                  className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors cursor-pointer"
-                                >
-                                  <X className="h-3.5 w-3.5" />
-                                </button>
+                                {canEdit && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleMatriculaFileClear(idx, 'Frente')}
+                                    className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors cursor-pointer"
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                  </button>
+                                )}
                               </div>
                             ) : (
                               <div className="relative border-2 border-dashed border-slate-200 hover:border-slate-300 rounded-xl p-6 text-center cursor-pointer transition-colors max-w-[280px] mx-auto bg-white">
-                                <input
-                                  type="file"
-                                  accept="image/jpeg,image/jpg,image/png"
-                                  onChange={(e) => handleMatriculaFileChange(idx, 'fotoFrente', 'fotoFrentePreview', e)}
-                                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                />
+                                {canEdit && (
+                                  <input
+                                    type="file"
+                                    accept="image/jpeg,image/jpg,image/png"
+                                    onChange={(e) => handleMatriculaFileChange(idx, 'fotoFrente', 'fotoFrentePreview', e)}
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                  />
+                                )}
                                 <Upload className="h-6 w-6 text-slate-400 mx-auto mb-2" />
                                 <span className="text-[10px] font-bold text-slate-600 block">Subir Foto Frente</span>
                                 <span className="text-[8px] text-slate-400 block mt-1">Formatos JPG, PNG</span>
@@ -1904,22 +2085,26 @@ export default function EquipoPage({ params }) {
                             {mat.fotoDorsoPreview ? (
                               <div className="relative aspect-[3/2] w-full max-w-[280px] bg-slate-100 rounded-lg overflow-hidden border border-slate-300 mx-auto">
                                 <img src={mat.fotoDorsoPreview} alt="Dorso" className="w-full h-full object-cover" />
-                                <button
-                                  type="button"
-                                  onClick={() => handleMatriculaFileClear(idx, 'Dorso')}
-                                  className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors cursor-pointer"
-                                >
-                                  <X className="h-3.5 w-3.5" />
-                                </button>
+                                {canEdit && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleMatriculaFileClear(idx, 'Dorso')}
+                                    className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors cursor-pointer"
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                  </button>
+                                )}
                               </div>
                             ) : (
                               <div className="relative border-2 border-dashed border-slate-200 hover:border-slate-300 rounded-xl p-6 text-center cursor-pointer transition-colors max-w-[280px] mx-auto bg-white">
-                                <input
-                                  type="file"
-                                  accept="image/jpeg,image/jpg,image/png"
-                                  onChange={(e) => handleMatriculaFileChange(idx, 'fotoDorso', 'fotoDorsoPreview', e)}
-                                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                />
+                                {canEdit && (
+                                  <input
+                                    type="file"
+                                    accept="image/jpeg,image/jpg,image/png"
+                                    onChange={(e) => handleMatriculaFileChange(idx, 'fotoDorso', 'fotoDorsoPreview', e)}
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                  />
+                                )}
                                 <Upload className="h-6 w-6 text-slate-400 mx-auto mb-2" />
                                 <span className="text-[10px] font-bold text-slate-600 block">Subir Foto Dorso</span>
                                 <span className="text-[8px] text-slate-400 block mt-1">Formatos JPG, PNG</span>
@@ -1946,25 +2131,29 @@ export default function EquipoPage({ params }) {
                     {fotoFirmaPreview ? (
                       <div className="relative aspect-[4/2] w-full bg-white rounded-lg overflow-hidden border border-slate-300 mx-auto flex items-center justify-center p-4">
                         <img src={fotoFirmaPreview} alt="Firma digital" className="max-w-full max-h-full object-contain" />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setFotoFirma(null);
-                            setFotoFirmaPreview('');
-                          }}
-                          className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors cursor-pointer"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
+                        {canEdit && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFotoFirma(null);
+                              setFotoFirmaPreview('');
+                            }}
+                            className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors cursor-pointer"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                       </div>
                     ) : (
                       <div className="relative border-2 border-dashed border-slate-200 hover:border-slate-300 rounded-xl p-6 text-center cursor-pointer transition-colors bg-white">
-                        <input
-                          type="file"
-                          accept="image/jpeg,image/jpg,image/png"
-                          onChange={(e) => handleImageChange(e, setFotoFirma, setFotoFirmaPreview)}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        />
+                        {canEdit && (
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/jpg,image/png"
+                            onChange={(e) => handleImageChange(e, setFotoFirma, setFotoFirmaPreview)}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          />
+                        )}
                         <Upload className="h-6 w-6 text-slate-400 mx-auto mb-2" />
                         <span className="text-[10px] font-bold text-slate-600 block">Subir Firma</span>
                         <span className="text-[8px] text-slate-400 block mt-1">Formatos JPG, PNG con fondo blanco o transparente</span>
@@ -1972,6 +2161,8 @@ export default function EquipoPage({ params }) {
                     )}
                   </div>
                 </div>
+
+                </fieldset>
 
                 {/* BOTÓN UNIFICADO DE ACCIÓN */}
                 <div className="flex justify-between items-center pt-6 border-t border-slate-100">
@@ -1982,31 +2173,33 @@ export default function EquipoPage({ params }) {
                   >
                     Salir
                   </button>
-                  <div className="flex items-center gap-3">
-                    {editingId && (
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(editingId, fullName, miembros.find(m => m.id === editingId)?.profile_id || null)}
-                        className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-red-600/10"
-                      >
-                        Eliminar
-                      </button>
-                    )}
-                    <button
-                      type="submit"
-                      disabled={saving}
-                      className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
-                    >
-                      {saving ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin text-white" />
-                          Guardando...
-                        </>
-                      ) : (
-                        'Guardar'
+                  {canEdit && (
+                    <div className="flex items-center gap-3">
+                      {editingId && (
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(editingId, fullName, miembros.find(m => m.id === editingId)?.profile_id || null)}
+                          className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-red-600/10"
+                        >
+                          Eliminar
+                        </button>
                       )}
-                    </button>
-                  </div>
+                      <button
+                        type="submit"
+                        disabled={saving}
+                        className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
+                      >
+                        {saving ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin text-white" />
+                            Guardando...
+                          </>
+                        ) : (
+                          'Guardar'
+                        )}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </form>
             </div>

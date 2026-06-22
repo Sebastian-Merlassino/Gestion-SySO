@@ -51,6 +51,9 @@ export default function CapacitacionPage({ params }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
+  // Permisos granulares de edición
+  const canEdit = !profile || profile.role === 'owner' || profile.role === 'admin' || profile.permisos?.capacitacion !== false;
+
   // Datos principales del programa de capacitaciones
   const [capacitaciones, setCapacitaciones] = useState([]);
   const [temasList, setTemasList] = useState([]);
@@ -845,12 +848,10 @@ export default function CapacitacionPage({ params }) {
                   <Users className="h-4 w-4" />
                   Clientes
                 </Link>
-                {(!profile || profile?.role === 'owner' || profile?.role === 'admin') && (
                   <Link href={`/${tenantSlug}/equipo`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/equipo`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                     <Briefcase className="h-4 w-4" />
                     Equipo de Trabajo
                   </Link>
-                )}
                 <Link href={`/${tenantSlug}/programa`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/programa`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <Calendar className="h-4 w-4" />
                   Programa de Gestión Anual
@@ -942,7 +943,6 @@ export default function CapacitacionPage({ params }) {
               <Users className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
             </Link>
-            {(!profile || profile?.role === 'owner' || profile?.role === 'admin') && (
               <Link 
                 href={`/${tenantSlug}/equipo`} 
                 title="Equipo de Trabajo"
@@ -952,7 +952,6 @@ export default function CapacitacionPage({ params }) {
                 <Briefcase className="h-4 w-4 shrink-0" />
                 {!isSidebarCollapsed && <span className="animate-fade-in">Equipo de Trabajo</span>}
               </Link>
-            )}
             <Link 
               href={`/${tenantSlug}/programa`} 
               title="Programa de Gestión Anual"
@@ -1085,6 +1084,7 @@ export default function CapacitacionPage({ params }) {
                 </div>
 
                 <form onSubmit={handleSaveCapacitacion} className="p-6 space-y-6 overflow-y-auto flex-1 scrollbar-thin">
+                  <fieldset disabled={!canEdit} className="space-y-6">
                   
                   {/* Sección 1: Cliente e Ubicación */}
                   <div className="space-y-4">
@@ -1372,7 +1372,7 @@ export default function CapacitacionPage({ params }) {
                       <div className="flex flex-wrap items-center gap-3 flex-1">
                         <label
                           htmlFor="multi-photo-upload"
-                          className="inline-flex items-center gap-2 py-2.5 px-4 rounded-xl border border-slate-350 text-slate-700 hover:bg-slate-100 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer"
+                          className={`inline-flex items-center gap-2 py-2.5 px-4 rounded-xl border border-slate-350 text-slate-700 hover:bg-slate-100 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer ${!canEdit ? 'opacity-50 pointer-events-none' : ''}`}
                         >
                           <Upload className="h-4 w-4 text-slate-500" />
                           Seleccionar fotos
@@ -1388,7 +1388,7 @@ export default function CapacitacionPage({ params }) {
 
                         <label
                           htmlFor="camera-photo-capture"
-                          className="inline-flex items-center gap-2 py-2.5 px-4 rounded-xl border border-slate-350 text-slate-700 hover:bg-slate-100 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer"
+                          className={`inline-flex items-center gap-2 py-2.5 px-4 rounded-xl border border-slate-350 text-slate-700 hover:bg-slate-100 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer ${!canEdit ? 'opacity-50 pointer-events-none' : ''}`}
                         >
                           <Camera className="h-4 w-4 text-slate-500" />
                           Sacar foto (Cámara)
@@ -1444,6 +1444,7 @@ export default function CapacitacionPage({ params }) {
                       </div>
                     )}
                   </div>
+                  </fieldset>
 
                   {/* Botones del Formulario */}
                   <div className="flex justify-between items-center pt-6 border-t border-slate-100">
@@ -1454,31 +1455,33 @@ export default function CapacitacionPage({ params }) {
                     >
                       Salir
                     </button>
-                    <div className="flex items-center gap-3">
-                      {editingId && (
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteClick(editingId)}
-                          className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-red-600/10"
-                        >
-                          Eliminar
-                        </button>
-                      )}
-                      <button
-                        type="submit"
-                        disabled={saveLoading}
-                        className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
-                      >
-                        {saveLoading ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            Guardando...
-                          </>
-                        ) : (
-                          'Guardar'
+                    {canEdit && (
+                      <div className="flex items-center gap-3">
+                        {editingId && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteClick(editingId)}
+                            className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-red-600/10"
+                          >
+                            Eliminar
+                          </button>
                         )}
-                      </button>
-                    </div>
+                        <button
+                          type="submit"
+                          disabled={saveLoading}
+                          className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
+                        >
+                          {saveLoading ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Guardando...
+                            </>
+                          ) : (
+                            'Guardar'
+                          )}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </form>
               </div>
@@ -1507,13 +1510,15 @@ export default function CapacitacionPage({ params }) {
                         />
                       </div>
                       
-                      <button
-                        onClick={() => setIsFormOpen(true)}
-                        className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0 w-full md:w-auto"
-                      >
-                        <PlusCircle className="h-3.5 w-3.5" />
-                        Registrar Capacitación
-                      </button>
+                      {canEdit && (
+                        <button
+                          onClick={() => setIsFormOpen(true)}
+                          className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0 w-full md:w-auto"
+                        >
+                          <PlusCircle className="h-3.5 w-3.5" />
+                          Registrar Capacitación
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -1609,7 +1614,7 @@ export default function CapacitacionPage({ params }) {
                   <div className="overflow-auto" style={{ maxHeight: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
                     <table className="w-full text-left border-collapse">
                       <thead>
-                        <tr>
+                        <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider">
                           <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[20%] sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('cliente')}>
                             <div className="flex items-center gap-1">
                               Cliente / Establecimiento
@@ -1646,13 +1651,13 @@ export default function CapacitacionPage({ params }) {
                               {sortField === 'progreso' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                             </div>
                           </th>
-                          <th className="px-6 py-4 text-right w-[5%] sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Acciones</th>
+                          {canEdit && <th className="px-6 py-4 text-right w-[5%] sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Acciones</th>}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-xs font-normal text-slate-700">
                         {sortedCapacitaciones.length === 0 ? (
                           <tr>
-                            <td colSpan="7" className="py-12 px-6 text-center text-slate-400 italic">
+                            <td colSpan={canEdit ? 7 : 6} className="py-12 px-6 text-center text-slate-400 italic">
                               No se encontraron registros de capacitaciones programadas.
                             </td>
                           </tr>
@@ -1711,33 +1716,35 @@ export default function CapacitacionPage({ params }) {
                                     </div>
                                   </div>
                                 </td>
-                                <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
-                                  <div className="flex items-center justify-end gap-2">
-                                    {cap.fotos_urls && cap.fotos_urls.length > 0 && (
+                                {canEdit && (
+                                  <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                                    <div className="flex items-center justify-end gap-2">
+                                      {cap.fotos_urls && cap.fotos_urls.length > 0 && (
+                                        <button
+                                          onClick={() => handleViewFotosClick(cap)}
+                                          title="Ver Registros de Capacitación (Fotos)"
+                                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer inline-flex items-center"
+                                        >
+                                          <ImageIcon className="h-4.5 w-4.5" />
+                                        </button>
+                                      )}
                                       <button
-                                        onClick={() => handleViewFotosClick(cap)}
-                                        title="Ver Registros de Capacitación (Fotos)"
-                                        className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer inline-flex items-center"
+                                        onClick={() => handleEditClick(cap)}
+                                        title="Editar"
+                                        className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer inline-flex items-center"
                                       >
-                                        <ImageIcon className="h-4.5 w-4.5" />
+                                        <Edit className="h-4.5 w-4.5" />
                                       </button>
-                                    )}
-                                    <button
-                                      onClick={() => handleEditClick(cap)}
-                                      title="Editar"
-                                      className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer inline-flex items-center"
-                                    >
-                                      <Edit className="h-4.5 w-4.5" />
-                                    </button>
-                                    <button
-                                      onClick={() => handleDeleteClick(cap.id)}
-                                      title="Eliminar"
-                                      className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center"
-                                    >
-                                      <Trash2 className="h-4.5 w-4.5" />
-                                    </button>
-                                  </div>
-                                </td>
+                                      <button
+                                        onClick={() => handleDeleteClick(cap.id)}
+                                        title="Eliminar"
+                                        className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center"
+                                      >
+                                        <Trash2 className="h-4.5 w-4.5" />
+                                      </button>
+                                    </div>
+                                  </td>
+                                )}
                               </tr>
                             );
                           })
