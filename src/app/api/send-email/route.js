@@ -57,11 +57,45 @@ export async function POST(request) {
 
     const mailSubject = `Constancia de Visita de Higiene y Seguridad - ${companyName || 'Cliente'}`;
 
+    // Inline attachments list
+    const attachments = [];
+
+    // Add main PDF attachment
+    const cleanBase64 = pdfBase64.replace(/^data:application\/pdf;.*base64,/, '');
+    const pdfBuffer = Buffer.from(cleanBase64, 'base64');
+    attachments.push({
+      filename: `Constancia_Visita_${(companyName || 'Cliente').replace(/\s+/g, '_')}_${date || 'visita'}.pdf`,
+      content: pdfBuffer,
+      contentType: 'application/pdf'
+    });
+
+    // Handle tenant logo as CID inline attachment to bypass webmail block (Gmail)
+    let logoCid = null;
+    if (tenantLogoBase64 && tenantLogoBase64.startsWith('data:image/')) {
+      try {
+        const mimeMatch = tenantLogoBase64.match(/^data:(image\/[a-zA-Z+.-]+);base64,/);
+        if (mimeMatch) {
+          const contentType = mimeMatch[1];
+          const base64Data = tenantLogoBase64.substring(mimeMatch[0].length);
+          const logoBuffer = Buffer.from(base64Data, 'base64');
+          logoCid = 'tenantlogo';
+          attachments.push({
+            filename: `logo.${contentType.split('/')[1] || 'png'}`,
+            content: logoBuffer,
+            contentType: contentType,
+            cid: logoCid,
+          });
+        }
+      } catch (logoErr) {
+        console.error('[Email Route] Error al procesar el adjunto del logo:', logoErr);
+      }
+    }
+
     const mailHtml = `
       <div style="font-family: 'Segoe UI', Inter, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1e293b; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px;">
         <div style="text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">
-          ${tenantLogoBase64
-            ? `<img src="${tenantLogoBase64}" alt="${tenantName || 'Logo'}" style="max-height: 72px; max-width: 240px; object-fit: contain; display: block; margin: 0 auto 8px auto;" />`
+          ${logoCid
+            ? `<img src="cid:${logoCid}" alt="${tenantName || 'Logo'}" style="max-height: 72px; max-width: 240px; object-fit: contain; display: block; margin: 0 auto 8px auto;" />`
             : `<h2 style="margin: 0 0 8px 0; font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.025em;">${tenantName || 'Gestión SySO'}</h2>`
           }
           <p style="margin: 0; font-size: 13px; font-weight: 600; color: #468DFF; text-transform: uppercase; letter-spacing: 0.05em;">Constancia de Visita</p>
@@ -72,7 +106,7 @@ export async function POST(request) {
             Estimado cliente,
           </p>
           <p style="font-size: 15px; line-height: 1.6; color: #334155;">
-            Se adjunta la <strong>Constancia de Visita de Higiene y Seguridad</strong> correspondiente a la inspección técnica realizada en sus instalaciones.
+            Se adjunta la <strong>Constancia de Visita de Higiene y Seguridad</strong> correspondiente a la visita técnica realizada en sus instalaciones.
           </p>
 
           <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px;">
@@ -102,15 +136,8 @@ export async function POST(request) {
       </div>
     `;
 
-    // Attach PDF from base64
-    const cleanBase64 = pdfBase64.replace(/^data:application\/pdf;.*base64,/, '');
-    const pdfBuffer = Buffer.from(cleanBase64, 'base64');
-
-    const attachment = {
-      filename: `Constancia_Visita_${(companyName || 'Cliente').replace(/\s+/g, '_')}_${date || 'visita'}.pdf`,
-      content: pdfBuffer,
-      contentType: 'application/pdf'
-    };
+    // Attachment helper setup is done above.
+    const pdfBufferLength = pdfBuffer.length;
 
     if (host && user_smtp && pass) {
       console.log(`[Email Route] Enviando correo real a ${emailList.join(', ')} via ${host}:${port} — usuario: ${user.email}`);
@@ -126,11 +153,11 @@ export async function POST(request) {
       });
 
       await transporter.sendMail({
-        from: `"${process.env.SMTP_SENDER_NAME || 'Gestión SySO'}" <${from}>`,
+        from: `"${tenantName || process.env.SMTP_SENDER_NAME || 'Gestión SySO'}" <${from}>`,
         to: emailList.join(', '),
         subject: mailSubject,
         html: mailHtml,
-        attachments: [attachment],
+        attachments: attachments,
       });
 
       return NextResponse.json({
@@ -141,9 +168,9 @@ export async function POST(request) {
       // SMTP no configurado — modo simulación (solo en desarrollo)
       console.log('================= SIMULACIÓN DE ENVÍO DE CORREO =================');
       console.log(`Para: ${emailList.join(', ')}`);
-      console.log(`De: ${from}`);
+      console.log(`De: "${tenantName || process.env.SMTP_SENDER_NAME || 'Gestión SySO'}" <${from}>`);
       console.log(`Asunto: ${mailSubject}`);
-      console.log(`Adjunto: ${attachment.filename} (${pdfBuffer.length} bytes)`);
+      console.log(`Adjuntos: ${attachments.map(a => `${a.filename} (${a.content.length} bytes)`).join(', ')}`);
       console.log('================================================================');
 
       return NextResponse.json({

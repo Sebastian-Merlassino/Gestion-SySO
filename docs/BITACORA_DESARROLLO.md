@@ -2,6 +2,22 @@
 
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
+
+## [2026-06-21] Optimización de Email de Visitas: Fix para Gmail Web y Remitente Personalizado
+
+### Resumen de Cambios
+- **Resolución de Bloqueo de Imagen en Gmail Web**: Se modificó la inyección del logotipo del tenant en la plantilla HTML del correo para usar **Content-ID (CID) inline attachments** en lugar de inyección Base64 directa. El logo se decodifica en el servidor a un búfer binario y se adjunta con la clave `tenantlogo`, resolviendo la restricción estricta de Gmail Web que impedía su visualización en navegadores.
+- **Alineación de Mensaje de Correo**: Se cambió el término `"inspección técnica"` por `"visita técnica"` en el texto del cuerpo del correo electrónico para mantener consistencia terminológica con el módulo de Constancias de Visita.
+- **Alias Dinámico en Remitente**: Se configuró el remitente (`From` header) para usar el nombre del tenant (`tenantName` o `SMTP_SENDER_NAME`) como alias visible, resolviendo que la cuenta base de Gmail (`sebastian.merlassino@gestionsyso.com`) pueda enmascararse apropiadamente ante los clientes.
+
+### Decisiones Clave
+- **Uso de CID Inline en Nodemailer**: Utilizar attachments referenciados por `cid:` es el estándar más robusto para emails comerciales, asegurando compatibilidad nativa tanto en aplicaciones móviles como en clientes web (Gmail, Outlook) sin depender de la carga o bloqueo de imágenes externas o Base64.
+
+### Archivos Modificados
+- `[MODIFY] src/app/api/send-email/route.js`
+
+---
+
 ## [2026-06-21] Inicialización de Filtros Colapsados y Estandarización de Altura de Tablas
 
 ### Resumen de Cambios
