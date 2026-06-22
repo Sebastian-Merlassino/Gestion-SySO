@@ -3,6 +3,291 @@
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
 
+## [2026-06-22] Implementación de Vista de Solo Lectura al Hacer Clic en Renglones de Tabla
+
+### Resumen de Cambios
+- **Vista de Solo Lectura en Listados**: Se implementó una nueva interacción de usuario a lo largo de las 7 secciones operativas de la plataforma (`empresas`, `equipo`, `programa`, `capacitacion`, `correctivas`, `extintores`, `visitas`). Ahora, al hacer clic en cualquier renglón de las tablas (`<tr>`), el formulario lateral o inline se abre en modo de solo lectura (`isReadOnlyView = true`), deshabilitando de forma segura todos los inputs, textareas y canvas mediante un `<fieldset disabled>`.
+- **Botón Condicional de Edición**: Se agregó un botón `"Editar"` (con color ámbar) en el footer de los formularios cuando están en modo solo lectura. Si el usuario tiene permisos (`canEditar === true`), al presionar este botón se desbloquean dinámicamente los campos para permitir modificaciones sin cerrar la ventana.
+- **Bypass de Alerta de Cierre**: Al cerrar un formulario (vía botón "Salir", cruz o flecha) o al navegar por el sidebar estando en modo solo lectura, se omite el modal de confirmación `"Salir sin guardar"`, permitiendo una navegación más ágil ya que no hubo cambios en los datos.
+- **Retrocompatibilidad**: Los botones de acción rápida en la columna "Acciones" (lápiz para editar) continúan abriendo los registros directamente en modo editable (`isReadOnlyView = false`), tal como operaban anteriormente.
+
+### Decisiones Clave
+- **Control Declarativo vía State**: Mantener el estado `isReadOnlyView` a nivel de componente principal permite heredar la deshabilitación de forma declarativa sin inyectar lógica compleja por cada campo individual.
+- **Salida Directa sin Fricciones**: Bypassear la confirmación modal de salida únicamente cuando no se ha modificado nada (en modo lectura) mejora drásticamente la experiencia de navegación (UX).
+
+### Skills Utilizadas
+- `next-best-practices`
+- `gestion-syso-bitacora`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción exitosa: Se ejecutó `cmd.exe /c "npm run build"`, completando de manera exitosa y optimizando todas las páginas dinámicas y estáticas del proyecto sin errores.
+
+### Riesgos Detectados / Remanentes
+- Ninguno.
+
+---
+
+## [2026-06-22] Corrección de Alerta de Salida No Arrojada en Perfil de Usuario
+
+### Resumen de Cambios
+- **Refactorización de handleExitWithoutSave**: Se simplificó la función de salida sin guardar `handleExitWithoutSave` en la edición de perfil del usuario ([profile/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/profile/page.js)). Se removió el bloque de validación de campos obligatorios mínimos y la verificación del estado `isDirty` al abandonar el formulario mediante los botones explícitos "Volver al Dashboard" y "Salir". Ahora se muestra el modal de alerta `"Salir sin guardar"` incondicionalmente, unificando el comportamiento con el resto de formularios del sistema y previniendo bloqueos de navegación hostiles por validaciones de entrada incompletas.
+
+### Decisiones Clave
+- **Salida Incondicional de Formulario**: El proceso de salida/cancelación de formulario debe priorizar el control del usuario sobre su navegación, permitiendo abandonar el mismo libremente (previa confirmación) sin forzar validaciones de obligatoriedad server-side o client-side destinadas únicamente al guardado efectivo de la información.
+
+### Skills Utilizadas
+- `next-best-practices`
+- `gestion-syso-bitacora`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción Next.js (`npm run build`) verificada y finalizada con éxito.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. Las alertas de los botones de salida operan ahora de forma robusta y consistente con los lineamientos del proyecto.
+
+### Próximo Paso Recomendado
+- Validar el comportamiento de navegación del sidebar (que sigue utilizando `isDirty` para mayor comodidad al navegar de forma casual sin interactuar).
+
+---
+
+## [2026-06-22] Resolución de ReferenceError de Inicialización de Variables de Estado en Páginas Operativas
+
+### Resumen de Cambios
+- **Corrección de Inicialización (Temporal Dead Zone)**: Se elevó la declaración `const [editingId, setEditingId] = useState(null);` en el cuerpo del componente en los 6 módulos operativos (`equipo`, `empresas`, `programa`, `capacitacion`, `correctivas`, `extintores`). Esto resuelve el error en tiempo de ejecución `ReferenceError: Cannot access 'editingId' before initialization` que ocurría al evaluarse la expresión condicional de permisos `const isFormDisabled = editingId ? !canEditar : !canCargar;` antes de que el estado estuviese inicializado por React.
+
+### Decisiones Clave
+- **Elevación de Hooks al Bloque Superior**: Agrupar todas las declaraciones de estado (`useState`) al comienzo de la función del componente, garantizando consistencia, legibilidad y previniendo errores de alcance o temporalidad al evaluar variables derivadas durante la fase de inicialización.
+
+### Skills Utilizadas
+- `next-best-practices`
+- `gestion-syso-bitacora`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción exitosa: Se ejecutó `cmd.exe /c "npm run build"`, completando de manera exitosa y optimizando todas las páginas dinámicas y estáticas del proyecto sin errores.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. Las variables de estado fueron reubicadas respetando las reglas de Hooks de React.
+
+### Próximo Paso Recomendado
+- Realizar pruebas de extremo a extremo de carga y edición de miembros del equipo con roles restringidos para re-validar que la interfaz se bloquee/habilite según los permisos guardados.
+
+---
+
+## [2026-06-22] Implementación de Permisos de Edición Granulares por Sección
+
+### Resumen de Cambios
+- **Permisos Granulares de Edición por Sección**: Se implementó una grilla de configuración de permisos con tres niveles de granularidad (**Cargar**, **Editar** y **Eliminar**) para cada una de las secciones operativas del sistema en el formulario de edición de miembros del equipo ([equipo/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/equipo/page.js)).
+- **Validación y Soporte de RLS en Base de Datos**: Se actualizaron e implementaron nuevas políticas de Row Level Security (RLS) en las tablas operativas de Supabase vinculándolas a la función helper de base de datos `public.user_has_action_permission(section, action)`. Se rediseñó la función `user_has_edit_permission` para conservar la compatibilidad de retroceso en caso de JSONs de permisos con valores booleanos puros.
+- **Adecuación de la Interfaz de Usuario en las 6 Secciones Operativas**: Se actualizaron las vistas principales de la aplicación ([visitas/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/visitas/page.js), [programa/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/programa/page.js), [extintores/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/extintores/page.js), [empresas/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/empresas/page.js), [correctivas/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/correctivas/page.js), [capacitacion/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/capacitacion/page.js)) para consumir el helper de extracción de permisos `getSectionPermissions`. 
+  - Si un usuario no posee el permiso de **Cargar** en un módulo, se oculta el botón "Nuevo" / "Agregar".
+  - Si un usuario no posee el permiso de **Editar**, el botón de la fila del listado cambia del icono de lápiz al icono de ojo (`Eye`) de solo lectura ("Ver Detalle"), se deshabilita todo el formulario mediante `<fieldset disabled>` y se remueve el botón de guardar cambios.
+  - Si un usuario no posee el permiso de **Eliminar**, se ocultan todos los botones de borrado ("Eliminar" / "Quitar" / "Trash") en el listado y en el formulario de edición.
+
+### Decisiones Clave
+- **Icono de Ojo como Fallback de Sólo Lectura**: Cuando un técnico carece del permiso de modificación sobre una entidad, conservar el botón de acceso con una variante visual de solo lectura (icono de ojo) permite mantener la visibilidad general de la información corporativa sin comprometer la integridad de los datos.
+- **Deshabilitación Unificada vía Fieldset**: Emplear `<fieldset disabled={isFormDisabled}>` sigue siendo la forma más declarativa y limpia en React/HTML5 para forzar estado de solo lectura en formularios completos sin requerir lógica redundante por cada input individual.
+
+### Skills Utilizadas
+- `next-best-practices`
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `supabase`
+
+### Archivos Modificados
+- `[NEW]` [20260622185458_granular_permissions.sql](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/supabase/migrations/20260622185458_granular_permissions.sql) (creada y ejecutada en fase previa)
+- `[MODIFY]` [equipo/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/equipo/page.js)
+- `[MODIFY]` [empresas/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/empresas/page.js)
+- `[MODIFY]` [programa/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/programa/page.js)
+- `[MODIFY]` [capacitacion/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/capacitacion/page.js)
+- `[MODIFY]` [correctivas/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/correctivas/page.js)
+- `[MODIFY]` [extintores/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/extintores/page.js)
+- `[MODIFY]` [visitas/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/visitas/page.js)
+
+### Validaciones Ejecutadas
+- Compilación de producción (`npm run build`) verificada y finalizada con éxito.
+
+---
+
+## [2026-06-22] Corrección de Botones de Salida en Formulario de Equipo de Trabajo
+
+### Resumen de Cambios
+- **Corrección de Eventos onClick**: Se cambió la asignación directa de `onClick={handleExitWithoutSave}` por `onClick={() => handleExitWithoutSave()}` en los dos botones de la parte superior del formulario de edición de integrantes (la flecha hacia atrás y la cruz de cierre). Esto previene que el objeto de evento sintético de React sea recibido como callback, resolviendo un error de tipo `TypeError` al intentar evaluar si el formulario es dirty para disparar la confirmación de salida.
+- **Estandarización de Alerta de Salida**: Se refactorizó la función `handleExitWithoutSave` para que invoque incondicionalmente a `showAlert` con tipo `'warning'`, eliminando la validación del estado `isDirty`. Esto alinea el comportamiento de salida de esta sección con las otras 6 secciones de la plataforma, que muestran siempre el modal de advertencia al abandonar el formulario.
+
+### Decisiones Clave
+- **Llamadas Explícitas en Handlers**: Evitar el paso implícito de parámetros a funciones utilitarias de UI que aceptan parámetros opcionales por defecto (como `onConfirmOverride`), previniendo errores donde los objetos del evento de React son interpretados erróneamente como funciones callback.
+- **Unificación de UX**: Homogeneizar las alertas de salida en toda la aplicación de manera que todos los botones de retorno ("volver atrás", cruz superior y botón "Salir") actúen bajo el mismo flujo de confirmación.
+
+### Skills Utilizadas
+- `next-best-practices`
+- `gestion-syso-bitacora`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción (`npm run build`) verificada y finalizada con éxito.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. La funcionalidad de control de cambios no guardados (el modal de confirmación) ahora opera de forma consistente e incondicional.
+
+### Próximo Paso Recomendado
+- Ninguno. El flujo de salida está estandarizado y libre de excepciones sintácticas.
+
+---
+
+## [2026-06-22] Unificación de Roles a Nivel de Aplicación y Base de Datos
+
+### Resumen de Cambios
+- **Unificación de Roles**: Se unificaron los roles de usuario en la plataforma. Los roles `owner` y `admin` se consolidaron en un único rol llamado **Administrador** (internamente `'admin'`), y los roles `supervisor` e `inspector` se consolidaron en el rol **Miembro de equipo** (internamente `'miembro'`).
+- **Actualización de Secciones Operativas**: Se modificaron las 6 secciones operativas de la plataforma (`visitas`, `programa`, `extintores`, `empresas`, `correctivas`, `capacitacion`) y el `dashboard` para actualizar la lógica de validación de permisos `canEdit` y el mapeo de mock data, reemplazando las antiguas referencias a `owner`, `supervisor` e `inspector` por `'admin'` y `'miembro'`.
+
+### Decisiones Clave
+- **Simplificación del Modelo de Permisos**: Reducir el número de roles simplifica tanto la administración de la base de datos como las comprobaciones en el frontend, garantizando al mismo tiempo que la aplicación esté lista para aplicar cuotas y límites por suscripción a nivel de administrador.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `supabase`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+
+### Validaciones Ejecutadas
+- Compilación del proyecto (`npm run build`) completada con éxito.
+
+---
+
+## [2026-06-22] Corrección de Ámbito para Helper getSignedUrl en Perfil de Usuario
+
+### Resumen de Cambios
+- **Corrección de Ámbito en Helper**: Se extrajo la función `getSignedUrl` de adentro del hook `useEffect` en `src/app/[tenant-slug]/profile/page.js` y se reubicó al nivel del componente React. Esto soluciona la alerta `getSignedUrl is not defined` lanzada por el manejador `handleSaveChanges` cuando los usuarios guardan cambios en su perfil (como adjuntar una firma digital).
+
+### Decisiones Clave
+- **Helper Compartido**: Elevar la función de utilidad privada al nivel del componente evita la duplicación de código y permite que tanto los hooks de ciclo de vida (`useEffect`) como los manejadores de eventos asíncronos (`handleSaveChanges`) compartan la misma lógica de generación de URLs firmadas temporales para buckets privados de Supabase Storage.
+
+### Skills Utilizadas
+- `next-best-practices`
+- `gestion-syso-bitacora`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+
+### Validaciones Ejecutadas
+- Compilación del proyecto (`npm run build`) completada con éxito.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. La firma digital ya se sube correctamente y su refresco posterior a través de la URL firmada ahora se completa sin lanzar excepciones de referencia.
+
+### Próximo Paso Recomendado
+- Ninguno. El flujo de guardado de perfil del personal técnico está completamente saneado.
+
+---
+
+## [2026-06-22] Resolución de Recursión Infinita en Triggers de Sincronización
+
+### Resumen de Cambios
+- **Protección contra Bucles en Triggers**: Se incorporó la validación condicional `IS DISTINCT FROM` en las funciones trigger `public.sync_miembro_to_profile()` y `public.sync_profile_to_miembro()`. Esto previene la recursión infinita (`stack depth limit exceeded`) al actualizar o guardar miembros del equipo/perfiles, asegurando que la actualización solo ocurra cuando existan diferencias reales en los datos de las columnas.
+- **Sincronización en Supabase**: Se aplicaron los triggers corregidos en la base de datos de Supabase.
+
+### Decisiones Clave
+- **Validación de Cambios Mínimos**: Utilizar `IS DISTINCT FROM` es el patrón más limpio y seguro para sincronizaciones bidireccionales en PostgreSQL, cortando de raíz la propagación de actualizaciones si el payload no representa modificaciones efectivas de los datos.
+
+### Skills Utilizadas
+- `supabase`
+- `gestion-syso-bitacora`
+
+### Archivos Modificados
+- `[MODIFY] supabase/migrations/20260630010000_add_permisos_to_profiles_and_members.sql`
+
+### Validaciones Ejecutadas
+- Ejecución de consultas de actualización DDL en Supabase con éxito.
+- Verificación del build de producción Next.js (`npm run build`) completada con éxito.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. La recursión infinita queda totalmente controlada por los filtros a nivel de trigger.
+
+### Próximo Paso Recomendado
+- Proceder a validar la experiencia completa de guardado y edición de perfil desde la UI de la aplicación.
+
+---
+
+## [2026-06-22] Corrección de Sincronización de Partido en Triggers de Perfil
+
+### Resumen de Cambios
+- **Corrección en Trigger**: Se corrigió el mapeo de la columna en la función de trigger `public.sync_miembro_to_profile()`. Se cambió `partido = NEW.partido` a `departamento_partido = NEW.partido`, ya que la columna en la tabla `public.profiles` es `departamento_partido` (definida en migraciones previas) y no `partido`. Esto resuelve el error `column "partido" of relation "profiles" does not exist` al intentar guardar el perfil de un miembro del equipo.
+- **Sincronización en Supabase**: Se actualizó la función trigger mediante ejecución SQL directa en la base de datos de Supabase.
+
+### Decisiones Clave
+- **Consistencia de Esquema**: Se ajustó la función trigger para respetar el nombre del campo físico `departamento_partido` en `public.profiles`.
+
+### Skills Utilizadas
+- `supabase`
+- `gestion-syso-bitacora`
+
+### Archivos Modificados
+- `[MODIFY] supabase/migrations/20260630010000_add_permisos_to_profiles_and_members.sql`
+
+### Validaciones Ejecutadas
+- Ejecución de la corrección SQL en la base de datos de Supabase con éxito.
+- Compilación completa de producción (`npm run build`) verificada y finalizada con éxito.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. La corrección normaliza el trigger al esquema existente.
+
+### Próximo Paso Recomendado
+- Realizar pruebas funcionales editando y guardando perfiles de equipo desde la UI.
+
+---
+
+## [2026-06-22] Resolución de Dependencia clsx y Validación de Compilación
+
+### Resumen de Cambios
+- **Sincronización de Dependencias**: Se ejecutó `npm install` para instalar los paquetes `clsx` y `tailwind-merge` en el entorno local (que producían el error `Module not found: Can't resolve 'clsx'`).
+- **Verificación de Compilación**: Se ejecutó la compilación de producción `npm run build` confirmando que todas las páginas se generan correctamente y sin errores de resolución de módulos.
+
+### Decisiones Clave
+- **Uso de CMD para npm**: Debido a las políticas de ejecución restrictivas de PowerShell en el entorno local (`UnauthorizedAccess` en scripts `.ps1`), se ejecutó la instalación y compilación invocando explícitamente `cmd.exe /c`, asegurando la compatibilidad de herramientas de build.
+
+---
+
+## [2026-06-22] Aplicación de Migración de Permisos y Estructura en Base de Datos
+
+### Resumen de Cambios
+- **Ejecución de Migración de Base de Datos**: Se aplicó la migración `20260630010000_add_permisos_to_profiles_and_members.sql` en la base de datos remota de Supabase. Esto resuelve el error de caché del esquema (`Could not find the 'permisos' column of 'miembros_equipo'`).
+- **Verificación de Esquema**: Se verificó mediante un script con el SDK de Supabase que la columna `permisos` JSONB se encuentra creada y accesible en la tabla `public.miembros_equipo`, con RLS políticas y triggers correctamente enlazados.
+
+### Decisiones Clave
+- **Actualización Directa de Esquema en Supabase**: Dado que el frontend y las políticas RLS ya hacían referencia a la columna `permisos` desde los cambios del 21 de junio, aplicar la migración pendiente restablece la consistencia entre el código fuente y el estado del servidor remoto de la base de datos.
+
+---
+
 ## [2026-06-21] Control de Accesos y Permisos de Edición Granulares por Sección
 
 ### Resumen de Cambios

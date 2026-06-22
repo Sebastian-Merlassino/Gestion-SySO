@@ -55,10 +55,9 @@ export async function POST(request) {
       );
     }
 
-    // Prefer owner, admin, or first user
-    const owner = profiles.find(p => p.role === 'owner');
+    // Prefer admin or first user
     const admin = profiles.find(p => p.role === 'admin');
-    const userId = owner ? owner.id : (admin ? admin.id : profiles[0].id);
+    const userId = admin ? admin.id : profiles[0].id;
 
     // Build RLS-compliant path
     const fileId = crypto.randomUUID();

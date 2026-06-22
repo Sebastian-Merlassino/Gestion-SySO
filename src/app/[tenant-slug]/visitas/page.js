@@ -117,6 +117,7 @@ export default function VisitasPage({ params }) {
   // Estados del CRUD / Vista Formulario
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [isReadOnlyView, setIsReadOnlyView] = useState(false);
 
   // Refs de Canvas para firmas
   const firmaRespCanvasRef = useRef(null);
@@ -200,7 +201,26 @@ export default function VisitasPage({ params }) {
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
   const [saveLoading, setSaveLoading] = useState(false);
-  const canEdit = !profile || profile.role === 'owner' || profile.role === 'admin' || profile.permisos?.visitas !== false;
+  // Permisos granulares de edición
+  const getSectionPermissions = (userProfile, sectionName) => {
+    if (!userProfile) return { cargar: true, editar: true, eliminar: true };
+    if (userProfile.role === 'admin') return { cargar: true, editar: true, eliminar: true };
+    const perm = userProfile.permisos?.[sectionName];
+    if (perm === true || perm === undefined) return { cargar: true, editar: true, eliminar: true };
+    if (perm === false) return { cargar: false, editar: false, eliminar: false };
+    return {
+      cargar: perm.cargar === true,
+      editar: perm.editar === true,
+      eliminar: perm.eliminar === true
+    };
+  };
+
+  const sectionPerms = getSectionPermissions(profile, 'visitas');
+  const canCargar = sectionPerms.cargar;
+  const canEditar = sectionPerms.editar;
+  const canEliminar = sectionPerms.eliminar;
+  const isFormDisabled = (editingId ? !canEditar : !canCargar) || isReadOnlyView;
+  const canEdit = !isFormDisabled; // Maintain compatibility
 
   // Modal para enviar correo
   const [isMailModalOpen, setIsMailModalOpen] = useState(false);
@@ -324,7 +344,7 @@ export default function VisitasPage({ params }) {
 
   // Cargar datos ficticios (Mock)
   const loadMockData = () => {
-    setProfile({ full_name: 'Profesional de SySO (Mock)', role: 'owner' });
+    setProfile({ full_name: 'Profesional de SySO (Mock)', role: 'admin' });
     setTenant({ id: 'mock-tenant', name: 'Consultora de Prueba' });
     setEmpresas([
       { id: 'mock-empresa-1', razon_social: 'Acme Argentina S.A.', cuit: '30712345678', contactos_correos: [{ valor: 'contacto@acme.com', descripcion: 'Contacto Comercial' }, { valor: 'higiene@acme.com', descripcion: 'Responsable SySO' }] },
@@ -549,6 +569,10 @@ export default function VisitasPage({ params }) {
 
   // Cierre de formulario con advertencia
   const handleExitForm = () => {
+    if (isReadOnlyView) {
+      handleCloseForm();
+      return;
+    }
     setModalAlert({
       show: true,
       title: 'Salir sin guardar',
@@ -563,6 +587,14 @@ export default function VisitasPage({ params }) {
 
   const handleSidebarNavigation = (e, path) => {
     if (isFormOpen) {
+      if (isReadOnlyView) {
+        if (path.endsWith('/visitas')) {
+          handleCloseForm();
+        } else {
+          window.location.href = path;
+        }
+        return;
+      }
       e.preventDefault();
       setModalAlert({
         show: true,
@@ -1969,12 +2001,13 @@ export default function VisitasPage({ params }) {
                         />
                       </div>
 
-                      {canEdit && (
+                      {canCargar && (
                         <button 
                           onClick={() => {
+                            setIsReadOnlyView(false);
                             setFecha(new Date().toISOString().split('T')[0]);
                             setProfesionalTipo('miembro');
-                            if (profile?.role !== 'inspector') {
+                            if (profile?.role !== 'miembro') {
                               setProfesionalId(profile?.id || '');
                             }
                             setIsFormOpen(true);
@@ -2084,7 +2117,7 @@ export default function VisitasPage({ params }) {
                             const emp = empresas.find(e => e.id === v.empresa_id);
                             const est = allEstablecimientos.find(e => e.id === v.establecimiento_id);
                             return (
-                              <tr key={v.id} className="hover:bg-slate-50/50 cursor-pointer" onClick={() => handleEditClick(v)}>
+                              <tr key={v.id} className="hover:bg-slate-50/50 cursor-pointer" onClick={() => { setIsReadOnlyView(true); handleEditClick(v); }}>
                                 <td className="px-6 py-4 font-semibold text-slate-900">{emp ? emp.razon_social : 'N/A'}</td>
                                 <td className="px-6 py-4 font-medium text-slate-600">{est ? est.denominacion : 'N/A'}</td>
                                 <td className="px-6 py-4 font-semibold text-slate-600">{formatDate(v.fecha)}</td>
@@ -2113,14 +2146,24 @@ export default function VisitasPage({ params }) {
                                     >
                                       <Mail className="h-4.5 w-4.5" />
                                     </button>
-                                    <button 
-                                      onClick={() => handleEditClick(v)}
-                                      className={`p-1.5 rounded-lg transition-all cursor-pointer ${canEdit ? 'bg-amber-50 hover:bg-amber-100 text-amber-600' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}
-                                      title={canEdit ? "Editar Constancia" : "Ver Detalle"}
-                                    >
-                                      {canEdit ? <Edit className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
-                                    </button>
-                                    {canEdit && (
+                                    {canEditar ? (
+                                      <button 
+                                        onClick={() => { setIsReadOnlyView(false); handleEditClick(v); }}
+                                        className="p-1.5 rounded-lg transition-all cursor-pointer bg-amber-50 hover:bg-amber-100 text-amber-600"
+                                        title="Editar Constancia"
+                                      >
+                                        <Edit className="h-4.5 w-4.5" />
+                                      </button>
+                                    ) : (
+                                      <button 
+                                        onClick={() => { setIsReadOnlyView(true); handleEditClick(v); }}
+                                        className="p-1.5 rounded-lg transition-all cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-600"
+                                        title="Ver Detalle"
+                                      >
+                                        <Eye className="h-4.5 w-4.5" />
+                                      </button>
+                                    )}
+                                    {canEliminar && (
                                       <button 
                                         onClick={() => handleDeleteClick(v.id)}
                                         className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer"
@@ -2991,24 +3034,38 @@ export default function VisitasPage({ params }) {
                       Salir
                     </button>
                     <div className="flex items-center gap-3">
-                      {canEdit && editingId && (
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteClick(editingId)}
-                          className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-red-600/10"
-                        >
-                          Eliminar
-                        </button>
-                      )}
-                      {canEdit && (
-                        <button
-                          type="submit"
-                          disabled={saveLoading}
-                          className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
-                        >
-                          {saveLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                          {editingId ? 'Guardar Cambios' : 'Registrar Constancia'}
-                        </button>
+                      {isReadOnlyView ? (
+                        canEditar && (
+                          <button
+                            type="button"
+                            onClick={() => setIsReadOnlyView(false)}
+                            className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-amber-500/10"
+                          >
+                            Editar
+                          </button>
+                        )
+                      ) : (
+                        <>
+                          {editingId && canEliminar && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteClick(editingId)}
+                              className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-red-600/10"
+                            >
+                              Eliminar
+                            </button>
+                          )}
+                          {canEdit && (
+                            <button
+                              type="submit"
+                              disabled={saveLoading}
+                              className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
+                            >
+                              {saveLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                              {editingId ? 'Guardar Cambios' : 'Registrar Constancia'}
+                            </button>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>

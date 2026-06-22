@@ -184,6 +184,37 @@ const [partidosList, setPartidosList] = useState([]);
     }, 3500);
   };
 
+  const getSignedUrl = async (bucket, pathOrUrl) => {
+    if (!pathOrUrl) return '';
+    if (pathOrUrl.startsWith('data:') || pathOrUrl.startsWith('blob:') || pathOrUrl.startsWith('http://localhost') || pathOrUrl.includes('placeholder')) {
+      return pathOrUrl;
+    }
+    
+    let path = pathOrUrl;
+    if (pathOrUrl.includes('/storage/v1/object/')) {
+      const parts = pathOrUrl.split(`/storage/v1/object/public/${bucket}/`);
+      if (parts.length > 1) {
+        path = parts[1];
+      } else {
+        const partsAuthenticated = pathOrUrl.split(`/storage/v1/object/authenticated/${bucket}/`);
+        if (partsAuthenticated.length > 1) {
+          path = partsAuthenticated[1];
+        }
+      }
+    }
+    
+    try {
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .createSignedUrl(path, 3600, { download: false });
+      if (error) throw error;
+      return data.signedUrl;
+    } catch (err) {
+      console.error('Error generating signed URL for:', bucket, path, err);
+      return pathOrUrl;
+    }
+  };
+
   useEffect(() => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -191,37 +222,6 @@ const [partidosList, setPartidosList] = useState([]);
       setIsDevMode(true);
       setInitialLoading(false);
     }
-
-    const getSignedUrl = async (bucket, pathOrUrl) => {
-      if (!pathOrUrl) return '';
-      if (pathOrUrl.startsWith('data:') || pathOrUrl.startsWith('blob:') || pathOrUrl.startsWith('http://localhost') || pathOrUrl.includes('placeholder')) {
-        return pathOrUrl;
-      }
-      
-      let path = pathOrUrl;
-      if (pathOrUrl.includes('/storage/v1/object/')) {
-        const parts = pathOrUrl.split(`/storage/v1/object/public/${bucket}/`);
-        if (parts.length > 1) {
-          path = parts[1];
-        } else {
-          const partsAuthenticated = pathOrUrl.split(`/storage/v1/object/authenticated/${bucket}/`);
-          if (partsAuthenticated.length > 1) {
-            path = partsAuthenticated[1];
-          }
-        }
-      }
-      
-      try {
-        const { data, error } = await supabase.storage
-          .from(bucket)
-          .createSignedUrl(path, 3600, { download: false });
-        if (error) throw error;
-        return data.signedUrl;
-      } catch (err) {
-        console.error('Error generating signed URL for:', bucket, path, err);
-        return pathOrUrl;
-      }
-    };
 
     const loadProfileAndTenant = async () => {
       try {
@@ -713,7 +713,7 @@ const [partidosList, setPartidosList] = useState([]);
       if (!logo2Preview) logo2Url = '';
 
       // 2. Actualizar Tenant
-      if (tenantId && (profileData?.role === 'owner' || profileData?.role === 'admin')) {
+      if (tenantId && profileData?.role === 'admin') {
         const { error: tenantErr } = await supabase
           .from('tenants')
           .update({
@@ -841,73 +841,16 @@ const [partidosList, setPartidosList] = useState([]);
   };
 
   const handleExitWithoutSave = () => {
-    // Validar requeridos en local antes de salir para no romper el multi-tenancy (localidad es opcional)
-    if (!fullName || !email || !phone || !cuit || !provincia || !partido || !birthDate) {
-      triggerToast('No puedes salir sin haber completado los datos obligatorios mínimos.', 'error');
-      return;
-    }
-
-    // Verificar si las matriculas cambiaron
-    const areMatriculasEqual = (a, b) => {
-      if (!a || !b || a.length !== b.length) return false;
-      for (let i = 0; i < a.length; i++) {
-        if (
-          a[i].institucion !== b[i].institucion ||
-          a[i].numero !== b[i].numero ||
-          a[i].vencimiento !== b[i].vencimiento ||
-          a[i].fotoFrentePreview !== b[i].fotoFrentePreview ||
-          a[i].fotoDorsoPreview !== b[i].fotoDorsoPreview
-        ) return false;
+    setModalAlert({
+      show: true,
+      title: 'Salir sin guardar',
+      message: '¿Estás seguro de que deseas salir del formulario de perfil? Todos los cambios no guardados se perderán.',
+      confirmText: 'Confirmar',
+      onConfirm: () => {
+        closeAlert();
+        window.location.href = `/${tenantSlug}/dashboard`;
       }
-      return true;
-    };
-
-    // Verificar si el formulario está sucio
-    const isDirty = 
-      fullName !== (initialValues?.fullName || '') ||
-      phone !== (initialValues?.phone || '') ||
-      cuit !== (initialValues?.cuit || '') ||
-      provincia !== (initialValues?.provincia || '') ||
-      partido !== (initialValues?.partido || '') ||
-      localidad !== (initialValues?.localidad || '') ||
-      birthDate !== (initialValues?.birthDate || '') ||
-      !areMatriculasEqual(
-        matriculas.map(m => ({
-          institucion: m.institucion,
-          numero: m.numero,
-          vencimiento: m.vencimiento,
-          fotoFrentePreview: m.fotoFrentePreview,
-          fotoDorsoPreview: m.fotoDorsoPreview
-        })),
-        initialValues?.matriculas
-      ) ||
-      companyName !== (initialValues?.companyName || '') ||
-      website !== (initialValues?.website || '') ||
-      linkedin !== (initialValues?.linkedin || '') ||
-      instagram !== (initialValues?.instagram || '') ||
-      facebook !== (initialValues?.facebook || '') ||
-      tiktok !== (initialValues?.tiktok || '') ||
-      youtube !== (initialValues?.youtube || '') ||
-      selectedPlan !== (initialValues?.planId || 'free') ||
-      matriculas.some(m => m.fotoFrente !== null || m.fotoDorso !== null) ||
-      fotoFirma !== null ||
-      logo1 !== null ||
-      logo2 !== null;
-
-    if (isDirty) {
-      setModalAlert({
-        show: true,
-        title: 'Salir sin guardar',
-        message: 'Tienes cambios sin guardar. ¿Deseas salir sin guardar los cambios?',
-        confirmText: 'Confirmar',
-        onConfirm: () => {
-          closeAlert();
-          window.location.href = `/${tenantSlug}/dashboard`;
-        }
-      });
-    } else {
-      window.location.href = `/${tenantSlug}/dashboard`;
-    }
+    });
   };
 
   const handleSidebarNavigation = (e, path) => {
@@ -1034,7 +977,7 @@ const [partidosList, setPartidosList] = useState([]);
       return;
     }
 
-    const isOwner = profileData?.role === 'owner';
+    const isOwner = profileData?.role === 'admin';
     const messageConfirm = isOwner
       ? '¿Estás ABSOLUTAMENTE seguro de que deseas eliminar tu cuenta? Esta acción destruirá por completo tu organización y todos sus datos.'
       : '¿Estás seguro de que deseas eliminar tu cuenta de usuario y revocar tu acceso a la organización?';
@@ -1818,7 +1761,7 @@ const [partidosList, setPartidosList] = useState([]);
             </div>
           </div>
 
-          {(profileData?.role === 'owner' || profileData?.role === 'admin') && (
+          {profileData?.role === 'admin' && (
             <>
               {/* SECCIÓN 2: IDENTIDAD DE LA EMPRESA */}
               <div className="bg-white border border-slate-150 rounded-2xl p-8 shadow-sm space-y-6">
@@ -2070,7 +2013,7 @@ const [partidosList, setPartidosList] = useState([]);
                   className="py-2.5 px-4 rounded-xl border border-red-200 hover:bg-red-50 text-red-600 text-xs font-bold transition-all cursor-pointer flex items-center gap-2 active:scale-[0.98]"
                 >
                   <AlertTriangle className="h-4 w-4" />
-                  {profileData?.role === 'owner' ? 'Eliminar Cuenta y Organización' : 'Eliminar Cuenta de Acceso'}
+                  {profileData?.role === 'admin' ? 'Eliminar Cuenta y Organización' : 'Eliminar Cuenta de Acceso'}
                 </button>
               </div>
             ) : (
@@ -2078,7 +2021,7 @@ const [partidosList, setPartidosList] = useState([]);
                 <div className="flex items-center justify-between border-b border-red-100 pb-3">
                   <h3 className="text-base font-bold text-red-600 flex items-center gap-2">
                     <AlertTriangle className="h-4.5 w-4.5 text-red-600" />
-                    {profileData?.role === 'owner' ? 'Eliminar Cuenta y Organización' : 'Eliminar Cuenta de Acceso'}
+                    {profileData?.role === 'admin' ? 'Eliminar Cuenta y Organización' : 'Eliminar Cuenta de Acceso'}
                   </h3>
                   <button
                     type="button"
@@ -2089,7 +2032,7 @@ const [partidosList, setPartidosList] = useState([]);
                   </button>
                 </div>
                 
-                {profileData?.role === 'owner' ? (
+                {profileData?.role === 'admin' ? (
                   <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-red-800 text-sm space-y-3 leading-relaxed">
                     <p className="font-bold">¡ADVERTENCIA DE SEGURIDAD CRÍTICA!</p>
                     <p>
@@ -2158,7 +2101,7 @@ const [partidosList, setPartidosList] = useState([]);
                       ) : (
                         <>
                           <AlertTriangle className="h-4 w-4" />
-                          {profileData?.role === 'owner' ? 'Eliminar Cuenta y Organización Permanente' : 'Eliminar Mi Acceso Permanentemente'}
+                          {profileData?.role === 'admin' ? 'Eliminar Cuenta y Organización Permanente' : 'Eliminar Mi Acceso Permanentemente'}
                         </>
                       )}
                     </button>

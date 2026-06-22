@@ -37,7 +37,8 @@ import {
   Flame,
   ClipboardCheck,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Eye
 } from 'lucide-react';
 
 const MONTH_NAMES = [
@@ -60,9 +61,29 @@ export default function ProgramaGestion({ params }) {
   const [profile, setProfile] = useState(null);
   const [tenant, setTenant] = useState(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [isReadOnlyView, setIsReadOnlyView] = useState(false);
 
   // Permisos granulares de edición
-  const canEdit = !profile || profile.role === 'owner' || profile.role === 'admin' || profile.permisos?.programa !== false;
+  const getSectionPermissions = (userProfile, sectionName) => {
+    if (!userProfile) return { cargar: true, editar: true, eliminar: true };
+    if (userProfile.role === 'admin') return { cargar: true, editar: true, eliminar: true };
+    const perm = userProfile.permisos?.[sectionName];
+    if (perm === true || perm === undefined) return { cargar: true, editar: true, eliminar: true };
+    if (perm === false) return { cargar: false, editar: false, eliminar: false };
+    return {
+      cargar: perm.cargar === true,
+      editar: perm.editar === true,
+      eliminar: perm.eliminar === true
+    };
+  };
+
+  const sectionPerms = getSectionPermissions(profile, 'programa');
+  const canCargar = sectionPerms.cargar;
+  const canEditar = sectionPerms.editar;
+  const canEliminar = sectionPerms.eliminar;
+  const isFormDisabled = (editingId ? !canEditar : !canCargar) || isReadOnlyView;
+  const canEdit = !isFormDisabled; // Maintain compatibility
 
   // Colecciones cargadas
   const [empresas, setEmpresas] = useState([]);
@@ -109,7 +130,6 @@ export default function ProgramaGestion({ params }) {
 
   // Formulario Slide-over
   const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState(null);
   const [empresaId, setEmpresaId] = useState('');
   const [establecimientoId, setEstablecimientoId] = useState('');
   const [catalogoId, setCatalogoId] = useState('');
@@ -280,7 +300,7 @@ export default function ProgramaGestion({ params }) {
   };
 
   const loadMockData = () => {
-    setProfile({ full_name: 'Profesional de SySO (Mock)', role: 'owner' });
+    setProfile({ full_name: 'Profesional de SySO (Mock)', role: 'admin' });
     setTenant({ id: 'mock-tenant', name: 'Consultora de Prueba', plan_id: 'free' });
 
     const mockEmpresas = [
@@ -607,6 +627,7 @@ export default function ProgramaGestion({ params }) {
 
   // Abrir formulario nuevo
   const handleAddNew = (preselectedDate = '') => {
+    setIsReadOnlyView(false);
     setEditingId(null);
     setEmpresaId('');
     setEstablecimientoId('');
@@ -797,6 +818,10 @@ export default function ProgramaGestion({ params }) {
   };
 
   const handleExitForm = () => {
+    if (isReadOnlyView) {
+      setShowForm(false);
+      return;
+    }
     setConfirmModal({
       show: true,
       title: 'Salir sin guardar',
@@ -811,6 +836,14 @@ export default function ProgramaGestion({ params }) {
 
   const handleSidebarNavigation = (e, path) => {
     if (showForm) {
+      if (isReadOnlyView) {
+        if (path.endsWith('/programa')) {
+          setShowForm(false);
+        } else {
+          window.location.href = path;
+        }
+        return;
+      }
       e.preventDefault();
       setConfirmModal({
         show: true,
@@ -1504,33 +1537,47 @@ export default function ProgramaGestion({ params }) {
                     >
                       Salir
                     </button>
-                    {canEdit && (
-                      <div className="flex items-center gap-3">
-                        {editingId && (
+                    <div className="flex items-center gap-3">
+                      {isReadOnlyView ? (
+                        canEditar && (
                           <button
                             type="button"
-                            onClick={() => handleDelete(editingId)}
-                            className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-red-600/10"
+                            onClick={() => setIsReadOnlyView(false)}
+                            className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-amber-500/10"
                           >
-                            Eliminar
+                            Editar
                           </button>
-                        )}
-                        <button
-                          type="submit"
-                          disabled={saving}
-                          className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
-                        >
-                          {saving ? (
-                            <>
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              Guardando...
-                            </>
-                          ) : (
-                            'Guardar'
+                        )
+                      ) : (
+                        <>
+                          {editingId && canEliminar && (
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(editingId)}
+                              className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-red-600/10"
+                            >
+                              Eliminar
+                            </button>
                           )}
-                        </button>
-                      </div>
-                    )}
+                          {canEdit && (
+                            <button
+                              type="submit"
+                              disabled={saving}
+                              className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
+                            >
+                              {saving ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                  Guardando...
+                                </>
+                              ) : (
+                                'Guardar'
+                              )}
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
                 </form>
               </div>
@@ -1575,7 +1622,7 @@ export default function ProgramaGestion({ params }) {
                         />
                       </div>
 
-                      {canEdit && (
+                      {canCargar && (
                         <button
                           onClick={() => handleAddNew()}
                           className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0 w-full md:w-auto"
@@ -1763,7 +1810,7 @@ export default function ProgramaGestion({ params }) {
                           <div
                             key={`day-${day}`}
                             className={`bg-white rounded-2xl border p-2 flex flex-col justify-between group min-h-[70px] md:min-h-[85px] transition-all hover:shadow-md cursor-pointer ${isToday ? 'border-[#468DFF] ring-1 ring-[#468DFF]/30' : 'border-slate-150'}`}
-                            onClick={() => canEdit && handleAddNew(dateStr)}
+                            onClick={() => canCargar && handleAddNew(dateStr)}
                           >
                             {/* Indicador del número de día */}
                             <div className="flex items-center justify-between mb-1.5">
@@ -1772,7 +1819,7 @@ export default function ProgramaGestion({ params }) {
                               </span>
 
                               {/* Botón rápido de agregar */}
-                              {canEdit && (
+                              {canCargar && (
                                 <span className="opacity-0 group-hover:opacity-100 text-[10px] text-[#468DFF] hover:text-[#0511F2] font-bold transition-all transition-opacity">
                                   + Añadir
                                 </span>
@@ -1861,13 +1908,13 @@ export default function ProgramaGestion({ params }) {
                               </div>
                             </th>
                             <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 px-6 py-4 text-center">Doc</th>
-                            {canEdit && <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 px-6 py-4 text-right">Acciones</th>}
+                            {(canEditar || canEliminar) && <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 px-6 py-4 text-right">Acciones</th>}
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-xs">
                           {sortedActividades.length === 0 ? (
                             <tr>
-                              <td colSpan={canEdit ? 8 : 7} className="px-6 py-10 text-center text-slate-400 font-semibold">
+                              <td colSpan={(canEditar || canEliminar) ? 8 : 7} className="px-6 py-10 text-center text-slate-400 font-semibold">
                                 No se encontraron actividades de gestión anual.
                               </td>
                             </tr>
@@ -1890,7 +1937,7 @@ export default function ProgramaGestion({ params }) {
                               return (
                                 <tr
                                   key={act.id}
-                                  onClick={() => handleEdit(act)}
+                                  onClick={() => { setIsReadOnlyView(true); handleEdit(act); }}
                                   className="hover:bg-slate-50/50 cursor-pointer transition-colors"
                                 >
                                   <td className="px-6 py-4">
@@ -1966,23 +2013,35 @@ export default function ProgramaGestion({ params }) {
                                     )}
                                   </td>
 
-                                  {canEdit && (
+                                  {(canEditar || canEliminar) && (
                                     <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                                       <div className="flex items-center justify-end gap-2">
-                                        <button
-                                          onClick={(e) => { e.stopPropagation(); handleEdit(act); }}
-                                          className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                          title="Editar actividad"
-                                        >
-                                          <Edit className="h-4.5 w-4.5" />
-                                        </button>
-                                        <button
-                                          onClick={(e) => { e.stopPropagation(); handleDelete(act.id); }}
-                                          className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                          title="Eliminar actividad"
-                                        >
-                                          <Trash2 className="h-4.5 w-4.5" />
-                                        </button>
+                                        {canEditar ? (
+                                          <button
+                                            onClick={(e) => { e.stopPropagation(); setIsReadOnlyView(false); handleEdit(act); }}
+                                            className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                            title="Editar actividad"
+                                          >
+                                            <Edit className="h-4.5 w-4.5" />
+                                          </button>
+                                        ) : (
+                                          <button
+                                            onClick={(e) => { e.stopPropagation(); setIsReadOnlyView(true); handleEdit(act); }}
+                                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                            title="Ver Detalle"
+                                          >
+                                            <Eye className="h-4.5 w-4.5" />
+                                          </button>
+                                        )}
+                                        {canEliminar && (
+                                          <button
+                                            onClick={(e) => { e.stopPropagation(); handleDelete(act.id); }}
+                                            className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                            title="Eliminar actividad"
+                                          >
+                                            <Trash2 className="h-4.5 w-4.5" />
+                                          </button>
+                                        )}
                                       </div>
                                     </td>
                                   )}

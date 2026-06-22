@@ -121,9 +121,29 @@ export default function EmpresasClientes({ params }) {
   // Datos del Tenant y Perfil
   const [profile, setProfile] = useState(null);
   const [tenant, setTenant] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [isReadOnlyView, setIsReadOnlyView] = useState(false);
 
   // Permisos granulares de edición
-  const canEdit = !profile || profile.role === 'owner' || profile.role === 'admin' || profile.permisos?.empresas !== false;
+  const getSectionPermissions = (userProfile, sectionName) => {
+    if (!userProfile) return { cargar: true, editar: true, eliminar: true };
+    if (userProfile.role === 'admin') return { cargar: true, editar: true, eliminar: true };
+    const perm = userProfile.permisos?.[sectionName];
+    if (perm === true || perm === undefined) return { cargar: true, editar: true, eliminar: true };
+    if (perm === false) return { cargar: false, editar: false, eliminar: false };
+    return {
+      cargar: perm.cargar === true,
+      editar: perm.editar === true,
+      eliminar: perm.eliminar === true
+    };
+  };
+
+  const sectionPerms = getSectionPermissions(profile, 'empresas');
+  const canCargar = sectionPerms.cargar;
+  const canEditar = sectionPerms.editar;
+  const canEliminar = sectionPerms.eliminar;
+  const isFormDisabled = (editingId ? !canEditar : !canCargar) || isReadOnlyView;
+  const canEdit = !isFormDisabled; // Maintain compatibility
 
   // Listados de datos
   const [empresas, setEmpresas] = useState([]);
@@ -182,7 +202,6 @@ export default function EmpresasClientes({ params }) {
   const [ciiuResults, setCiiuResults] = useState([]);
 
   // ID de la empresa en edición (null si es nueva)
-  const [editingId, setEditingId] = useState(null);
 
   // Estado del Formulario Principal (Empresa)
   const [razonSocial, setRazonSocial] = useState('');
@@ -268,7 +287,7 @@ export default function EmpresasClientes({ params }) {
   };
 
   const loadMockData = () => {
-    setProfile({ full_name: 'Profesional de SySO (Mock)', role: 'owner' });
+    setProfile({ full_name: 'Profesional de SySO (Mock)', role: 'admin' });
     setTenant({ id: 'mock-tenant', name: 'Consultora de Prueba', plan_id: 'free' });
     setEmpresas([
       {
@@ -467,6 +486,7 @@ export default function EmpresasClientes({ params }) {
   };
 
   const handleAddNew = () => {
+    setIsReadOnlyView(false);
     if (!checkPlanLimits()) return;
 
     setEditingId(null);
@@ -907,6 +927,10 @@ export default function EmpresasClientes({ params }) {
   };
 
   const handleExitForm = () => {
+    if (isReadOnlyView) {
+      setView('list');
+      return;
+    }
     showAlert(
       'Salir sin guardar',
       '¿Estás seguro de que deseas salir del formulario? Perderás todos los cambios cargados que no se hayan guardado.',
@@ -921,6 +945,14 @@ export default function EmpresasClientes({ params }) {
 
   const handleSidebarNavigation = (e, path) => {
     if (view === 'form') {
+      if (isReadOnlyView) {
+        if (path === 'list') {
+          setView('list');
+        } else {
+          window.location.href = path;
+        }
+        return;
+      }
       e.preventDefault();
       showAlert(
         'Salir sin guardar',
@@ -1413,7 +1445,7 @@ export default function EmpresasClientes({ params }) {
                   <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
                     Comienza a cargar los datos de tus clientes para realizar diagnósticos y planes de adecuación según Decreto 351/79.
                   </p>
-                  {canEdit && (
+                  {canCargar && (
                     <button
                       onClick={handleAddNew}
                       className="py-2 px-4 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold transition-all inline-block shadow-sm"
@@ -1446,7 +1478,7 @@ export default function EmpresasClientes({ params }) {
                         </div>
 
                         {/* Botón de Agregar */}
-                        {canEdit && (
+                        {canCargar && (
                           <button
                             onClick={handleAddNew}
                             className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0 w-full md:w-auto"
@@ -1537,13 +1569,13 @@ export default function EmpresasClientes({ params }) {
                               </div>
                             </th>
                             <th className="px-6 py-4 text-center w-[12%] sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Establecimientos</th>
-                            {canEdit && <th className="px-6 py-4 text-right w-[12%] sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Acciones</th>}
+                            {(canEditar || canEliminar) && <th className="px-6 py-4 text-right w-[12%] sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Acciones</th>}
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
                           {sortedEmpresas.length === 0 ? (
                             <tr>
-                              <td colSpan={canEdit ? 5 : 4} className="px-6 py-10 text-center text-slate-400 font-semibold">
+                              <td colSpan={(canEditar || canEliminar) ? 5 : 4} className="px-6 py-10 text-center text-slate-400 font-semibold">
                                 No se encontraron clientes con los filtros aplicados.
                               </td>
                             </tr>
@@ -1551,7 +1583,7 @@ export default function EmpresasClientes({ params }) {
                             sortedEmpresas.map((emp) => (
                               <tr 
                                 key={emp.id} 
-                                onClick={() => handleEdit(emp.id)}
+                                onClick={() => { setIsReadOnlyView(true); handleEdit(emp.id); }}
                                 className="hover:bg-slate-50/50 cursor-pointer transition-colors"
                               >
                                 <td className="px-6 py-4">
@@ -1570,23 +1602,35 @@ export default function EmpresasClientes({ params }) {
                                     {emp.establecimientos_count}
                                   </span>
                                 </td>
-                                {canEdit && (
+                                {(canEditar || canEliminar) && (
                                   <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                                     <div className="flex items-center justify-end gap-2">
-                                      <button
-                                        onClick={() => handleEdit(emp.id)}
-                                        className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                        title="Editar ficha de cliente"
-                                      >
-                                        <Edit className="h-4.5 w-4.5" />
-                                      </button>
-                                      <button
-                                        onClick={() => handleDelete(emp.id, emp.razon_social)}
-                                        className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                        title="Borrar cliente"
-                                      >
-                                        <Trash2 className="h-4.5 w-4.5" />
-                                      </button>
+                                      {canEditar ? (
+                                        <button
+                                          onClick={() => { setIsReadOnlyView(false); handleEdit(emp.id); }}
+                                          className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                          title="Editar ficha de cliente"
+                                        >
+                                          <Edit className="h-4.5 w-4.5" />
+                                        </button>
+                                      ) : (
+                                        <button
+                                          onClick={() => { setIsReadOnlyView(true); handleEdit(emp.id); }}
+                                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                          title="Ver Detalle"
+                                        >
+                                          <Eye className="h-4.5 w-4.5" />
+                                        </button>
+                                      )}
+                                      {canEliminar && (
+                                        <button
+                                          onClick={() => handleDelete(emp.id, emp.razon_social)}
+                                          className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                          title="Borrar cliente"
+                                        >
+                                          <Trash2 className="h-4.5 w-4.5" />
+                                        </button>
+                                      )}
                                     </div>
                                   </td>
                                 )}
@@ -2580,33 +2624,47 @@ export default function EmpresasClientes({ params }) {
                 >
                   Salir
                 </button>
-                {canEdit && (
-                  <div className="flex items-center gap-3">
-                    {editingId && (
+                <div className="flex items-center gap-3">
+                  {isReadOnlyView ? (
+                    canEditar && (
                       <button
                         type="button"
-                        onClick={() => handleDelete(editingId, razonSocial)}
-                        className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-red-600/10"
+                        onClick={() => setIsReadOnlyView(false)}
+                        className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-amber-500/10"
                       >
-                        Eliminar
+                        Editar
                       </button>
-                    )}
-                    <button
-                      type="submit"
-                      disabled={saving}
-                      className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
-                    >
-                      {saving ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin text-white" />
-                          Guardando...
-                        </>
-                      ) : (
-                        'Guardar'
+                    )
+                  ) : (
+                    <>
+                      {canEliminar && editingId && (
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(editingId, razonSocial)}
+                          className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-red-600/10"
+                        >
+                          Eliminar
+                        </button>
                       )}
-                    </button>
-                  </div>
-                )}
+                      {!isFormDisabled && (
+                        <button
+                          type="submit"
+                          disabled={saving}
+                          className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
+                        >
+                          {saving ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin text-white" />
+                              Guardando...
+                            </>
+                          ) : (
+                            'Guardar'
+                          )}
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
 
             </form>

@@ -74,7 +74,7 @@ export default function RegisterPage() {
           emailRedirectTo: `${window.location.origin}/onboarding`,
           data: {
             full_name: fullName,
-            role: 'owner', // El primer usuario registrado es el dueño del workspace
+            role: 'admin', // El primer usuario registrado es el administrador/dueño del workspace
           },
         },
       });

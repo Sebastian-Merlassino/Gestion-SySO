@@ -630,10 +630,9 @@ export default function OnboardingPage() {
           signature_url: signatureUrl,
           matricula_institucion: firstMatricula.institucion || null,
           matricula_numero: firstMatricula.numero || null,
-          matricula_vencimiento: firstMatricula.vencimiento || null,
           matricula_foto_frente_url: firstMatricula.fotoFrentePreview || null,
           matricula_foto_dorso_url: firstMatricula.fotoDorsoPreview || null,
-          role: 'owner',
+          role: 'admin',
         })
         .eq('id', userId);
 
@@ -846,7 +845,7 @@ export default function OnboardingPage() {
           departamento_partido: partido,
           localidad: localidad,
           birth_date: birthDate,
-          role: 'owner',
+          role: 'admin',
           signature_url: null,
           matricula_institucion: null,
           matricula_numero: null,

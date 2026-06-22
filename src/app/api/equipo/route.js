@@ -46,8 +46,8 @@ export async function POST(request) {
       return NextResponse.json({ error: 'No se pudo obtener el perfil de usuario' }, { status: 403 });
     }
 
-    // Only owners and admins can manage team login credentials
-    if (profile.role !== 'owner' && profile.role !== 'admin') {
+    // Only admins can manage team login credentials
+    if (profile.role !== 'admin') {
       return NextResponse.json({ error: 'No tienes permisos para realizar esta acción' }, { status: 403 });
     }
 
@@ -58,7 +58,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 });
     }
 
-    const ALLOWED_ROLES = ['inspector', 'supervisor'];
+    const ALLOWED_ROLES = ['miembro'];
     if (role && !ALLOWED_ROLES.includes(role)) {
       return NextResponse.json({ error: 'Rol no permitido' }, { status: 400 });
     }
@@ -90,7 +90,7 @@ export async function POST(request) {
         email_confirm: true, // Auto-confirm email to bypass confirmation email flow
         user_metadata: {
           full_name,
-          role: role || 'inspector'
+          role: role || 'miembro'
         }
       });
 
@@ -107,7 +107,7 @@ export async function POST(request) {
         .from('profiles')
         .update({ 
           tenant_id: profile.tenant_id,
-          role: role || 'inspector'
+          role: role || 'miembro'
         })
         .eq('id', userId);
 
@@ -166,8 +166,8 @@ export async function DELETE(request) {
       return NextResponse.json({ error: 'No se pudo obtener el perfil de usuario' }, { status: 403 });
     }
 
-    // Only owners and admins can remove members
-    if (profile.role !== 'owner' && profile.role !== 'admin') {
+    // Only admins can remove members
+    if (profile.role !== 'admin') {
       return NextResponse.json({ error: 'No tienes permisos para realizar esta acción' }, { status: 403 });
     }
 
@@ -193,9 +193,9 @@ export async function DELETE(request) {
       return NextResponse.json({ error: 'No autorizado para borrar usuarios de otro tenant' }, { status: 403 });
     }
 
-    // Cannot delete the owner or yourself
-    if (targetProfile.role === 'owner') {
-      return NextResponse.json({ error: 'No se puede eliminar al dueño del tenant' }, { status: 400 });
+    // Cannot delete an admin or yourself
+    if (targetProfile.role === 'admin') {
+      return NextResponse.json({ error: 'No se puede eliminar a un administrador del tenant' }, { status: 400 });
     }
     if (userIdToDelete === user.id) {
       return NextResponse.json({ error: 'No puedes eliminarte a ti mismo de la plataforma' }, { status: 400 });
@@ -262,8 +262,8 @@ export async function PUT(request) {
       return NextResponse.json({ error: 'No se pudo obtener el perfil de usuario' }, { status: 403 });
     }
 
-    // Only owners and admins can update team login credentials
-    if (profile.role !== 'owner' && profile.role !== 'admin') {
+    // Only admins can update team login credentials
+    if (profile.role !== 'admin') {
       return NextResponse.json({ error: 'No tienes permisos para realizar esta acción' }, { status: 403 });
     }
 
@@ -274,7 +274,7 @@ export async function PUT(request) {
       return NextResponse.json({ error: 'Falta el parámetro userId' }, { status: 400 });
     }
 
-    const ALLOWED_ROLES = ['inspector', 'supervisor'];
+    const ALLOWED_ROLES = ['miembro'];
     if (role && !ALLOWED_ROLES.includes(role)) {
       return NextResponse.json({ error: 'Rol no permitido' }, { status: 400 });
     }

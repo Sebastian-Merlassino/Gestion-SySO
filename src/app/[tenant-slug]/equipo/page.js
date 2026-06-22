@@ -71,6 +71,26 @@ const PROVINCIAS_ARGENTINAS = [
   'TUCUMÁN'
 ];
 
+const normalizePermisos = (perms) => {
+  const sections = ['empresas', 'equipo', 'programa', 'capacitacion', 'correctivas', 'extintores', 'visitas'];
+  const normalized = {};
+  sections.forEach(sec => {
+    const val = perms?.[sec];
+    if (val === true || val === undefined) {
+      normalized[sec] = { cargar: true, editar: true, eliminar: true };
+    } else if (val === false) {
+      normalized[sec] = { cargar: false, editar: false, eliminar: false };
+    } else {
+      normalized[sec] = {
+        cargar: val.cargar === true,
+        editar: val.editar === true,
+        eliminar: val.eliminar === true
+      };
+    }
+  });
+  return normalized;
+};
+
 export default function EquipoPage({ params }) {
   const tenantSlug = params['tenant-slug'];
   
@@ -84,9 +104,30 @@ export default function EquipoPage({ params }) {
   const [profile, setProfile] = useState(null);
   const [tenant, setTenant] = useState(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [isReadOnlyView, setIsReadOnlyView] = useState(false);
 
   // Permisos granulares de edición
-  const canEdit = !profile || profile.role === 'owner' || profile.role === 'admin' || profile.permisos?.equipo !== false;
+  const getSectionPermissions = (userProfile, sectionName) => {
+    if (!userProfile) return { cargar: true, editar: true, eliminar: true };
+    if (userProfile.role === 'admin') return { cargar: true, editar: true, eliminar: true };
+    const perm = userProfile.permisos?.[sectionName];
+    if (perm === true || perm === undefined) return { cargar: true, editar: true, eliminar: true };
+    if (perm === false) return { cargar: false, editar: false, eliminar: false };
+    return {
+      cargar: perm.cargar === true,
+      editar: perm.editar === true,
+      eliminar: perm.eliminar === true
+    };
+  };
+
+  const sectionPerms = getSectionPermissions(profile, 'equipo');
+  const canCargar = sectionPerms.cargar;
+  const canEditar = sectionPerms.editar;
+  const canEliminar = sectionPerms.eliminar;
+  const isFormDisabled = (editingId ? !canEditar : !canCargar) || isReadOnlyView;
+  const canEdit = !isFormDisabled; // Maintain compatibility for general field interactions
+
 
   useEffect(() => {
     const collapsed = localStorage.getItem('sidebar-collapsed');
@@ -105,7 +146,6 @@ export default function EquipoPage({ params }) {
   const [miembros, setMiembros] = useState([]);
 
   // Form states
-  const [editingId, setEditingId] = useState(null);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [cuit, setCuit] = useState('');
@@ -130,13 +170,13 @@ export default function EquipoPage({ params }) {
 
   // Permisos de edición por sección
   const [permisos, setPermisos] = useState({
-    empresas: true,
-    equipo: true,
-    programa: true,
-    capacitacion: true,
-    correctivas: true,
-    extintores: true,
-    visitas: true
+    empresas: { cargar: true, editar: true, eliminar: true },
+    equipo: { cargar: true, editar: true, eliminar: true },
+    programa: { cargar: true, editar: true, eliminar: true },
+    capacitacion: { cargar: true, editar: true, eliminar: true },
+    correctivas: { cargar: true, editar: true, eliminar: true },
+    extintores: { cargar: true, editar: true, eliminar: true },
+    visitas: { cargar: true, editar: true, eliminar: true }
   });
 
   // Matrículas
@@ -226,7 +266,7 @@ export default function EquipoPage({ params }) {
   }, []);
 
   const loadMockData = () => {
-    setProfile({ full_name: 'Profesional de SySO (Mock)', role: 'owner' });
+    setProfile({ full_name: 'Profesional de SySO (Mock)', role: 'admin' });
     setTenant({ id: 'mock-tenant', name: 'Consultora de Prueba', plan_id: 'free' });
     setMiembros([
       {
@@ -239,7 +279,7 @@ export default function EquipoPage({ params }) {
         provincia: 'BUENOS AIRES',
         partido: 'PILAR',
         localidad: 'PILAR',
-        role: 'inspector'
+        role: 'miembro'
       },
       {
         id: 'mock-miembro-2',
@@ -251,7 +291,7 @@ export default function EquipoPage({ params }) {
         provincia: 'BUENOS AIRES',
         partido: 'TIGRE',
         localidad: 'TIGRE',
-        role: 'inspector'
+        role: 'miembro'
       }
     ]);
     setLoading(false);
@@ -530,6 +570,7 @@ export default function EquipoPage({ params }) {
   };
 
   const handleAddNew = () => {
+    setIsReadOnlyView(false);
     setEditingId(null);
     setFullName('');
     setEmail('');
@@ -549,13 +590,13 @@ export default function EquipoPage({ params }) {
     setFotoFirma(null);
     setFotoFirmaPreview('');
     setPermisos({
-      empresas: true,
-      equipo: true,
-      programa: true,
-      capacitacion: true,
-      correctivas: true,
-      extintores: true,
-      visitas: true
+      empresas: { cargar: true, editar: true, eliminar: true },
+      equipo: { cargar: true, editar: true, eliminar: true },
+      programa: { cargar: true, editar: true, eliminar: true },
+      capacitacion: { cargar: true, editar: true, eliminar: true },
+      correctivas: { cargar: true, editar: true, eliminar: true },
+      extintores: { cargar: true, editar: true, eliminar: true },
+      visitas: { cargar: true, editar: true, eliminar: true }
     });
     setMatriculas([
       {
@@ -583,13 +624,13 @@ export default function EquipoPage({ params }) {
       tieneAcceso: false,
       signatureUrl: '',
       permisos: {
-        empresas: true,
-        equipo: true,
-        programa: true,
-        capacitacion: true,
-        correctivas: true,
-        extintores: true,
-        visitas: true
+        empresas: { cargar: true, editar: true, eliminar: true },
+        equipo: { cargar: true, editar: true, eliminar: true },
+        programa: { cargar: true, editar: true, eliminar: true },
+        capacitacion: { cargar: true, editar: true, eliminar: true },
+        correctivas: { cargar: true, editar: true, eliminar: true },
+        extintores: { cargar: true, editar: true, eliminar: true },
+        visitas: { cargar: true, editar: true, eliminar: true }
       },
       matriculas: [{ institucion: '', numero: '', vencimiento: '', fotoFrentePreview: '', fotoDorsoPreview: '', fotoFrentePath: '', fotoDorsoPath: '' }]
     });
@@ -664,15 +705,7 @@ export default function EquipoPage({ params }) {
       setLocalidad(member.localidad || '');
 
       setTieneAcceso(member.tiene_acceso);
-      setPermisos(member.permisos || {
-        empresas: true,
-        equipo: true,
-        programa: true,
-        capacitacion: true,
-        correctivas: true,
-        extintores: true,
-        visitas: true
-      });
+      setPermisos(normalizePermisos(member.permisos));
       setPassword('');
       setConfirmPassword('');
       setShowPassword(false);
@@ -733,15 +766,7 @@ export default function EquipoPage({ params }) {
         localidad: member.localidad || '',
         tieneAcceso: member.tiene_acceso,
         signatureUrl: member.signature_url || '',
-        permisos: member.permisos || {
-          empresas: true,
-          equipo: true,
-          programa: true,
-          capacitacion: true,
-          correctivas: true,
-          extintores: true,
-          visitas: true
-        },
+        permisos: normalizePermisos(member.permisos),
         matriculas: loadedMatriculas.map(m => ({
           institucion: m.institucion,
           numero: m.numero,
@@ -875,7 +900,7 @@ export default function EquipoPage({ params }) {
         const response = await fetch('/api/equipo', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password, full_name: fullName, role: 'inspector' })
+          body: JSON.stringify({ email, password, full_name: fullName, role: 'miembro' })
         });
         const apiData = await response.json();
         
@@ -1039,73 +1064,41 @@ export default function EquipoPage({ params }) {
       return;
     }
 
-    // Checking dirty state
-    const areMatriculasEqual = (a, b) => {
-      if (!a || !b || a.length !== b.length) return false;
-      for (let i = 0; i < a.length; i++) {
-        if (
-          a[i].institucion !== b[i].institucion ||
-          a[i].numero !== b[i].numero ||
-          a[i].vencimiento !== b[i].vencimiento ||
-          a[i].fotoFrentePreview !== b[i].fotoFrentePreview ||
-          a[i].fotoDorsoPreview !== b[i].fotoDorsoPreview
-        ) return false;
-      }
-      return true;
-    };
-
-    const isDirty = 
-      fullName !== (initialValues?.fullName || '') ||
-      email !== (initialValues?.email || '') ||
-      cuit !== (initialValues?.cuit || '') ||
-      phone !== (initialValues?.phone || '') ||
-      birthDate !== (initialValues?.birthDate || '') ||
-      provincia !== (initialValues?.provincia || '') ||
-      partido !== (initialValues?.partido || '') ||
-      localidad !== (initialValues?.localidad || '') ||
-      tieneAcceso !== (initialValues?.tieneAcceso || false) ||
-      signatureUrl !== (initialValues?.signatureUrl || '') ||
-      JSON.stringify(permisos) !== JSON.stringify(initialValues?.permisos || {}) ||
-      !areMatriculasEqual(
-        matriculas.map(m => ({
-          institucion: m.institucion,
-          numero: m.numero,
-          vencimiento: m.vencimiento,
-          fotoFrentePreview: m.fotoFrentePreview,
-          fotoDorsoPreview: m.fotoDorsoPreview
-        })),
-        initialValues?.matriculas
-      ) ||
-      fotoFirma !== null ||
-      matriculas.some(m => m.fotoFrente !== null || m.fotoDorso !== null);
-
-    if (isDirty) {
-      setModalAlert({
-        show: true,
-        title: 'Salir sin guardar',
-        message: '¿Estás seguro de que deseas salir del formulario? Perderás todos los cambios cargados que no se hayan guardado.',
-        type: 'warning',
-        confirmText: 'Confirmar',
-        onConfirm: () => {
-          setModalAlert({ show: false, title: '', message: '', type: 'info', onConfirm: null, confirmText: 'Confirmar' });
-          if (onConfirmOverride) {
-            onConfirmOverride();
-          } else {
-            setView('list');
-          }
-        }
-      });
-    } else {
+    if (isReadOnlyView) {
       if (onConfirmOverride) {
         onConfirmOverride();
       } else {
         setView('list');
       }
+      return;
     }
+
+    showAlert(
+      'Salir sin guardar',
+      '¿Estás seguro de que deseas salir del formulario? Perderás todos los cambios cargados que no se hayan guardado.',
+      'warning',
+      () => {
+        closeAlert();
+        if (onConfirmOverride) {
+          onConfirmOverride();
+        } else {
+          setView('list');
+        }
+      },
+      'Confirmar'
+    );
   };
 
   const handleSidebarNavigation = (e, path) => {
     if (view === 'form') {
+      if (isReadOnlyView) {
+        if (path === 'list') {
+          setView('list');
+        } else {
+          window.location.href = path;
+        }
+        return;
+      }
       e.preventDefault();
       handleExitWithoutSave(() => {
         if (path === 'list') {
@@ -1432,7 +1425,7 @@ export default function EquipoPage({ params }) {
                       />
                     </div>
  
-                    {canEdit && (
+                    {canCargar && (
                       <button
                         onClick={handleAddNew}
                         className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0 w-full md:w-auto"
@@ -1452,7 +1445,7 @@ export default function EquipoPage({ params }) {
                   <h4 className="text-base font-bold text-slate-800">No hay integrantes cargados</h4>
                   <p className="text-xs text-slate-500 max-w-sm mx-auto mt-2 leading-relaxed">
                     Carga el personal técnico de higiene, seguridad y ambiente que trabaja en tu equipo para asignarlos como responsables.
-                    {canEdit && (
+                    {canCargar && (
                       <button
                         onClick={handleAddNew}
                         className="mt-6 block mx-auto py-2 px-4 rounded-xl border border-slate-350 hover:border-slate-450 text-slate-700 hover:text-slate-900 text-xs font-bold transition-all inline-flex items-center gap-2 bg-slate-50 shadow-sm"
@@ -1473,19 +1466,19 @@ export default function EquipoPage({ params }) {
                           <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Contacto</th>
                           <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Ubicación</th>
                           <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Acceso Login</th>
-                          {canEdit && <th className="px-6 py-4 text-right sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Acciones</th>}
+                          {(canEditar || canEliminar) && <th className="px-6 py-4 text-right sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Acciones</th>}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
                         {filteredMiembros.length === 0 ? (
                           <tr>
-                            <td colSpan={canEdit ? 6 : 5} className="py-12 px-6 text-center text-slate-400 italic">
+                            <td colSpan={(canEditar || canEliminar) ? 6 : 5} className="py-12 px-6 text-center text-slate-400 italic">
                               No se encontraron integrantes que coincidan con la búsqueda.
                             </td>
                           </tr>
                         ) : (
                           filteredMiembros.map((m) => (
-                            <tr key={m.id} className="hover:bg-slate-50/50 cursor-pointer transition-colors" onClick={() => handleEdit(m.id)}>
+                            <tr key={m.id} className="hover:bg-slate-50/50 cursor-pointer transition-colors" onClick={() => { setIsReadOnlyView(true); handleEdit(m.id); }}>
                               <td className="px-6 py-4">
                                 <div className="flex items-center gap-3">
                                   <div className="h-8 w-8 rounded-full bg-[#468DFF]/10 flex items-center justify-center text-[#468DFF] font-bold text-xs shrink-0">
@@ -1527,23 +1520,35 @@ export default function EquipoPage({ params }) {
                                   {m.tiene_acceso ? 'Con Acceso' : 'Sin Acceso'}
                                 </span>
                               </td>
-                              {canEdit && (
+                              {(canEditar || canEliminar) && (
                                 <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                                   <div className="flex items-center justify-end gap-2">
-                                    <button
-                                      onClick={() => handleEdit(m.id)}
-                                      className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                      title="Editar"
-                                    >
-                                      <Edit className="h-4.5 w-4.5" />
-                                    </button>
-                                    <button
-                                      onClick={() => handleDelete(m.id, m.full_name, m.profile_id)}
-                                      className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                      title="Eliminar"
-                                    >
-                                      <Trash2 className="h-4.5 w-4.5" />
-                                    </button>
+                                    {canEditar ? (
+                                      <button
+                                        onClick={() => { setIsReadOnlyView(false); handleEdit(m.id); }}
+                                        className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                        title="Editar"
+                                      >
+                                        <Edit className="h-4.5 w-4.5" />
+                                      </button>
+                                    ) : (
+                                      <button
+                                        onClick={() => { setIsReadOnlyView(true); handleEdit(m.id); }}
+                                        className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                        title="Ver Detalle"
+                                      >
+                                        <Eye className="h-4.5 w-4.5" />
+                                      </button>
+                                    )}
+                                    {canEliminar && (
+                                      <button
+                                        onClick={() => handleDelete(m.id, m.full_name, m.profile_id)}
+                                        className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                        title="Eliminar"
+                                      >
+                                        <Trash2 className="h-4.5 w-4.5" />
+                                      </button>
+                                    )}
                                   </div>
                                 </td>
                               )}
@@ -1567,7 +1572,7 @@ export default function EquipoPage({ params }) {
                 <div className="flex items-center gap-3">
                   <button 
                     type="button"
-                    onClick={handleExitWithoutSave}
+                    onClick={() => handleExitWithoutSave()}
                     className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 cursor-pointer"
                   >
                     <ArrowLeft className="h-5 w-5" />
@@ -1578,7 +1583,7 @@ export default function EquipoPage({ params }) {
                 </div>
                 <button 
                   type="button" 
-                  onClick={handleExitWithoutSave} 
+                  onClick={() => handleExitWithoutSave()} 
                   className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200 cursor-pointer"
                 >
                   <X className="h-5 w-5" />
@@ -1848,116 +1853,85 @@ export default function EquipoPage({ params }) {
                       <button
                         type="button"
                         onClick={() => {
-                          const allSelected = Object.values(permisos).every(v => v);
+                          const allSelected = Object.values(permisos).every(v => v.cargar && v.editar && v.eliminar);
+                          const targetVal = !allSelected;
                           setPermisos({
-                            empresas: !allSelected,
-                            equipo: !allSelected,
-                            programa: !allSelected,
-                            capacitacion: !allSelected,
-                            correctivas: !allSelected,
-                            extintores: !allSelected,
-                            visitas: !allSelected
+                            empresas: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
+                            equipo: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
+                            programa: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
+                            capacitacion: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
+                            correctivas: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
+                            extintores: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
+                            visitas: { cargar: targetVal, editar: targetVal, eliminar: targetVal }
                           });
                         }}
                         className="text-[10px] font-bold text-[#468DFF] hover:underline cursor-pointer bg-transparent border-none outline-none"
                       >
-                        {Object.values(permisos).every(v => v) ? 'Deseleccionar Todos' : 'Seleccionar Todos'}
+                        {Object.values(permisos).every(v => v.cargar && v.editar && v.eliminar) ? 'Deseleccionar Todos' : 'Seleccionar Todos'}
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                      
-                      <div className="flex items-center gap-2.5 p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-all select-none">
-                        <input
-                          type="checkbox"
-                          id="permiso_empresas"
-                          checked={permisos.empresas}
-                          onChange={(e) => setPermisos(prev => ({ ...prev, empresas: e.target.checked }))}
-                          className="h-4.5 w-4.5 rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF] cursor-pointer"
-                        />
-                        <label htmlFor="permiso_empresas" className="text-xs font-bold text-slate-700 cursor-pointer select-none">
-                          Clientes / Empresas
-                        </label>
+                    <div className="space-y-3">
+                      {/* Header row for larger screens */}
+                      <div className="hidden md:grid md:grid-cols-4 gap-4 px-4 py-2 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        <div>Sección</div>
+                        <div className="text-center">Cargar</div>
+                        <div className="text-center">Editar</div>
+                        <div className="text-center">Eliminar</div>
                       </div>
 
-                      <div className="flex items-center gap-2.5 p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-all select-none">
-                        <input
-                          type="checkbox"
-                           id="permiso_equipo"
-                          checked={permisos.equipo}
-                          onChange={(e) => setPermisos(prev => ({ ...prev, equipo: e.target.checked }))}
-                          className="h-4.5 w-4.5 rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF] cursor-pointer"
-                        />
-                        <label htmlFor="permiso_equipo" className="text-xs font-bold text-slate-700 cursor-pointer select-none">
-                          Equipo de Trabajo
-                        </label>
-                      </div>
+                      {[
+                        { key: 'empresas', name: 'Clientes / Empresas' },
+                        { key: 'equipo', name: 'Equipo de Trabajo' },
+                        { key: 'programa', name: 'Prog. de Gestión Anual' },
+                        { key: 'capacitacion', name: 'Prog. de Capacitación' },
+                        { key: 'correctivas', name: 'Acciones Correctivas' },
+                        { key: 'extintores', name: 'Control de Extintores' },
+                        { key: 'visitas', name: 'Constancias de Visita' }
+                      ].map((section) => (
+                        <div key={section.key} className="grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-4 items-center p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-all select-none">
+                          <div className="text-xs font-bold text-slate-700">{section.name}</div>
+                          
+                          <div className="flex items-center justify-between md:justify-center gap-2">
+                            <span className="md:hidden text-[10px] font-bold text-slate-400 uppercase">Cargar</span>
+                            <input
+                              type="checkbox"
+                              checked={permisos[section.key]?.cargar ?? false}
+                              onChange={(e) => setPermisos(prev => ({
+                                ...prev,
+                                [section.key]: { ...prev[section.key], cargar: e.target.checked }
+                              }))}
+                              className="h-4.5 w-4.5 rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF] cursor-pointer"
+                            />
+                          </div>
 
-                      <div className="flex items-center gap-2.5 p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-all select-none">
-                        <input
-                          type="checkbox"
-                          id="permiso_programa"
-                          checked={permisos.programa}
-                          onChange={(e) => setPermisos(prev => ({ ...prev, programa: e.target.checked }))}
-                          className="h-4.5 w-4.5 rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF] cursor-pointer"
-                        />
-                        <label htmlFor="permiso_programa" className="text-xs font-bold text-slate-700 cursor-pointer select-none">
-                          Prog. de Gestión Anual
-                        </label>
-                      </div>
+                          <div className="flex items-center justify-between md:justify-center gap-2">
+                            <span className="md:hidden text-[10px] font-bold text-slate-400 uppercase">Editar</span>
+                            <input
+                              type="checkbox"
+                              checked={permisos[section.key]?.editar ?? false}
+                              onChange={(e) => setPermisos(prev => ({
+                                ...prev,
+                                [section.key]: { ...prev[section.key], editar: e.target.checked }
+                              }))}
+                              className="h-4.5 w-4.5 rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF] cursor-pointer"
+                            />
+                          </div>
 
-                      <div className="flex items-center gap-2.5 p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-all select-none">
-                        <input
-                          type="checkbox"
-                          id="permiso_capacitacion"
-                          checked={permisos.capacitacion}
-                          onChange={(e) => setPermisos(prev => ({ ...prev, capacitacion: e.target.checked }))}
-                          className="h-4.5 w-4.5 rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF] cursor-pointer"
-                        />
-                        <label htmlFor="permiso_capacitacion" className="text-xs font-bold text-slate-700 cursor-pointer select-none">
-                          Prog. de Capacitación
-                        </label>
-                      </div>
-
-                      <div className="flex items-center gap-2.5 p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-all select-none">
-                        <input
-                          type="checkbox"
-                          id="permiso_correctivas"
-                          checked={permisos.correctivas}
-                          onChange={(e) => setPermisos(prev => ({ ...prev, correctivas: e.target.checked }))}
-                          className="h-4.5 w-4.5 rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF] cursor-pointer"
-                        />
-                        <label htmlFor="permiso_correctivas" className="text-xs font-bold text-slate-700 cursor-pointer select-none">
-                          Acciones Correctivas
-                        </label>
-                      </div>
-
-                      <div className="flex items-center gap-2.5 p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-all select-none">
-                        <input
-                          type="checkbox"
-                          id="permiso_extintores"
-                          checked={permisos.extintores}
-                          onChange={(e) => setPermisos(prev => ({ ...prev, extintores: e.target.checked }))}
-                          className="h-4.5 w-4.5 rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF] cursor-pointer"
-                        />
-                        <label htmlFor="permiso_extintores" className="text-xs font-bold text-slate-700 cursor-pointer select-none">
-                          Control de Extintores
-                        </label>
-                      </div>
-
-                      <div className="flex items-center gap-2.5 p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-all select-none">
-                        <input
-                          type="checkbox"
-                          id="permiso_visitas"
-                          checked={permisos.visitas}
-                          onChange={(e) => setPermisos(prev => ({ ...prev, visitas: e.target.checked }))}
-                          className="h-4.5 w-4.5 rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF] cursor-pointer"
-                        />
-                        <label htmlFor="permiso_visitas" className="text-xs font-bold text-slate-700 cursor-pointer select-none">
-                          Constancias de Visita
-                        </label>
-                      </div>
-
+                          <div className="flex items-center justify-between md:justify-center gap-2">
+                            <span className="md:hidden text-[10px] font-bold text-slate-400 uppercase">Eliminar</span>
+                            <input
+                              type="checkbox"
+                              checked={permisos[section.key]?.eliminar ?? false}
+                              onChange={(e) => setPermisos(prev => ({
+                                ...prev,
+                                [section.key]: { ...prev[section.key], eliminar: e.target.checked }
+                              }))}
+                              className="h-4.5 w-4.5 rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF] cursor-pointer"
+                            />
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -2173,33 +2147,47 @@ export default function EquipoPage({ params }) {
                   >
                     Salir
                   </button>
-                  {canEdit && (
-                    <div className="flex items-center gap-3">
-                      {editingId && (
+                  <div className="flex items-center gap-3">
+                    {isReadOnlyView ? (
+                      canEditar && (
                         <button
                           type="button"
-                          onClick={() => handleDelete(editingId, fullName, miembros.find(m => m.id === editingId)?.profile_id || null)}
-                          className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-red-600/10"
+                          onClick={() => setIsReadOnlyView(false)}
+                          className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-amber-500/10"
                         >
-                          Eliminar
+                          Editar
                         </button>
-                      )}
-                      <button
-                        type="submit"
-                        disabled={saving}
-                        className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
-                      >
-                        {saving ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin text-white" />
-                            Guardando...
-                          </>
-                        ) : (
-                          'Guardar'
+                      )
+                    ) : (
+                      <>
+                        {canEliminar && editingId && (
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(editingId, fullName, miembros.find(m => m.id === editingId)?.profile_id || null)}
+                            className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-red-600/10"
+                          >
+                            Eliminar
+                          </button>
                         )}
-                      </button>
-                    </div>
-                  )}
+                        {!isFormDisabled && (
+                          <button
+                            type="submit"
+                            disabled={saving}
+                            className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
+                          >
+                            {saving ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin text-white" />
+                                Guardando...
+                              </>
+                            ) : (
+                              'Guardar'
+                            )}
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
               </form>
             </div>

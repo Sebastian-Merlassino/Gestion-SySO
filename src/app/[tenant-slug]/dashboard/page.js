@@ -223,7 +223,7 @@ export default function TenantDashboard({ params }) {
 
     const setIsMockMode = () => {
       setCurrentUser({ email: 'profesional@gestion-syso.com' });
-      setProfile({ full_name: 'Profesional de SySO', role: 'owner' });
+      setProfile({ full_name: 'Profesional de SySO', role: 'admin' });
       setTenant({ name: 'Consultora de Seguridad e Higiene', plan_id: 'free' });
       setStats({
         clientsCount: 1,
