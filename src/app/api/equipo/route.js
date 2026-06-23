@@ -52,7 +52,7 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    const { email, password, full_name, role } = body;
+    const { email, password, full_name, role, cuit, tenant_id } = body;
 
     if (!email || !password || !full_name) {
       return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 });
@@ -90,7 +90,9 @@ export async function POST(request) {
         email_confirm: true, // Auto-confirm email to bypass confirmation email flow
         user_metadata: {
           full_name,
-          role: role || 'miembro'
+          role: role || 'miembro',
+          cuit,
+          tenant_id
         }
       });
 

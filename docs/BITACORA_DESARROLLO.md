@@ -2,7 +2,28 @@
 
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
+## [2026-06-23] Corrección de Error de Inserción de CUIT en Creación de Usuarios de Equipo
+
+### Resumen de Cambios
+- **Corrección de Trigger handle_new_user**: Se modificó la función trigger `public.handle_new_user()` para utilizar `NULLIF` en el campo `cuit` en lugar de `COALESCE` con valor vacío `''`. Esto evita que al crear usuarios nuevos sin metadatos de CUIT se intente registrar una cadena vacía en `public.profiles`, lo cual infringía la restricción de validación `CHECK (cuit ~ '^\d{11}$')` y bloqueaba la transacción de Auth en Supabase.
+- **Paso de Metadatos de CUIT y Tenant**: Se actualizaron la ruta de API `src/app/api/equipo/route.js` y el componente frontend `src/app/[tenant-slug]/equipo/page.js` para extraer y enviar el CUIT e ID de Tenant del miembro del equipo dentro de la propiedad `user_metadata` al invocar `createUser`. Esto asegura que los perfiles se enlacen y validen con datos correctos desde el momento de inserción de forma nativa en Postgres.
+
+### Decisiones Clave
+- **Uso de NULLIF para Valores Nullable**: En Postgres, un valor `NULL` es ignorado de forma exitosa por las validaciones de tipo CHECK constraint. Utilizar `NULLIF(..., '')` convierte cadenas vacías en `NULL`, lo cual soluciona la restricción de CUIT obligatoriamente de 11 dígitos para aquellos roles y usuarios (como administradores o miembros sin onboarding finalizado) que no disponen de un CUIT al momento del registro.
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260704000000_fix_handle_new_user_cuit.sql`
+- `[MODIFY] src/app/api/equipo/route.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+
+### Validaciones Ejecutadas
+- Ejecución exitosa de `node scripts/run-migrations.js` en base de datos remota a través del pooler.
+- Verificación de compilación exitosa de Next.js mediante `cmd.exe /c "npm run build"`.
+
+---
+
 ## [2026-06-23] Ajuste de Dashboard de Clientes y Resumen de Acciones Correctivas
+
 
 ### Resumen de Cambios
 - **Ocultamiento de Accesos Rápidos y Planes**: En el dashboard para usuarios con rol `cliente`, se ocultaron los accesos rápidos (que permitían crear nuevos clientes, acciones correctivas o editar perfiles profesionales) y la tarjeta de información del plan contratado, ya que corresponden a privilegios e información comercial exclusiva de los profesionales y la consultora.

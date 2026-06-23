@@ -909,7 +909,14 @@ export default function EquipoPage({ params }) {
         const response = await fetch('/api/equipo', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password, full_name: fullName, role: 'miembro' })
+          body: JSON.stringify({ 
+            email, 
+            password, 
+            full_name: fullName, 
+            role: 'miembro',
+            cuit,
+            tenant_id: tenant.id
+          })
         });
         const apiData = await response.json();
         
