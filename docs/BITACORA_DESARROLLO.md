@@ -2,6 +2,206 @@
 
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
+## [2026-06-23] Ajuste de Dashboard de Clientes y Resumen de Acciones Correctivas
+
+### Resumen de Cambios
+- **Ocultamiento de Accesos Rápidos y Planes**: En el dashboard para usuarios con rol `cliente`, se ocultaron los accesos rápidos (que permitían crear nuevos clientes, acciones correctivas o editar perfiles profesionales) y la tarjeta de información del plan contratado, ya que corresponden a privilegios e información comercial exclusiva de los profesionales y la consultora.
+- **Ocultamiento del Plan en Header**: Se restringió la visualización del plan de suscripción en el encabezado superior para que no sea visible al rol `cliente`.
+- **Integración de Resumen de Acciones Correctivas (Contadores)**: Se reemplazó la tabla de hallazgos del dashboard por un panel informativo estructurado con **exactamente 5 contadores clave** de acciones correctivas:
+    1. *Cantidad Total*: Número total de acciones correctivas en el legajo técnico.
+    2. *Cerradas*: Acciones con fecha de implementación registrada.
+    3. *En Análisis*: Acciones pendientes sin fecha de planificación definida.
+    4. *En Tiempo*: Acciones pendientes vigentes a término (fecha planificada futura o del día).
+    5. *Vencidas*: Acciones pendientes cuyo plazo de planificación ya venció.
+- **Ocultamiento de Contenedores de Métricas**: Se eliminaron por completo las 4 tarjetas de métricas superiores (*Tu Empresa*, *Acciones Correctivas*, *% Cumplimiento* y *Pendientes*) para los usuarios con el rol `cliente`, evitando redundancia de datos.
+
+### Decisiones Clave
+- **Seguridad e Aislamiento**: Limitar la UI previene que el cliente intente navegar a acciones de escritura o visualice detalles comerciales de facturación de la consultora (Multi-Tenancy).
+- **Métricas Simplificadas de Legajo**: Agrupar los estados de las acciones correctivas en 5 contadores estandarizados ofrece un panorama rápido de la situación de higiene y seguridad de la empresa sin saturar visualmente la pantalla principal.
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción en Next.js (`cmd.exe /c "npm run build"`) en ejecución y verificada.
+
+---
+
+## [2026-06-23] Ajuste de Textos y Etiquetas en el Login Unificado
+
+### Resumen de Cambios
+- **Actualización de Subtítulo de Clientes**: Se cambió la descripción en la pestaña de ingreso de clientes de `"Ingresá para visualizar tus informes y programas de higiene y seguridad"` a `"Ingresa para visualizar tu legajo técnico de higiene y seguridad"` para reflejar de forma más precisa el contenido al que acceden (su legajo técnico).
+- **Simplificación del Selector de Clientes**: Se removió la aclaración de `"(CUIT)"` de la pestaña de ingreso de clientes (cambiando de `"Clientes (CUIT)"` a `"Clientes"`).
+
+### Decisiones Clave
+- **Corrección Ortográfica**: Se implementó "visualizar" en lugar de "viasualizar" (mencionado en la solicitud) para evitar erratas en la UI del portal.
+- **Simplificación del Selector**: Quitar el sufijo de CUIT permite que el selector de roles mantenga una apariencia más simétrica y pulida, sin descuidar que el input interior sigue indicando e instruyendo el ingreso mediante el número de CUIT.
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/login/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción en Next.js (`cmd.exe /c "npm run build"`) en ejecución y verificada.
+
+---
+
+## [2026-06-23] Restricción de Acciones de Cliente y Mitigación de Flickering de Sidebar
+
+### Resumen de Cambios
+- **Restricción de Acciones de Cliente en Tablas**: En las vistas de listado de Constancia de Visita (`visitas/page.js`) y Aviso de Riesgo (`avisos/page.js`), se limitaron los controles de acción disponibles por renglón para usuarios con rol `cliente` exclusivamente a "Visualizar PDF" (icono de ojo) y "Descargar PDF" (icono de descarga), ocultando los botones de edición (lápiz), ver detalle del formulario, envío por correo electrónico (Mail) y eliminación (Trash).
+- **Mitigación de Flickering en Sidebar**: Se normalizó el comportamiento de renderizado de la barra lateral (tanto en su versión móvil como de escritorio) en las 10 secciones de la plataforma. Se actualizaron las condiciones de evaluación del rol de usuario de `profile?.role !== 'cliente'` a la expresión lógica estricta `profile && profile.role !== 'cliente'` (y `profileData && profileData.role !== 'cliente'` en el perfil). Esto previene que las opciones de menú administrativo "Clientes" y "Equipo de Trabajo" se muestren brevemente durante la inicialización asíncrona del cliente antes de cargarse el perfil.
+- **Aislamiento de Datos por Cliente en Frontend**: Se modificaron las funciones `loadRealData` de los módulos operacionales (`visitas`, `programa`, `capacitacion`, `correctivas`, `extintores` y `dashboard`) para inyectar filtros condicionales `.eq('empresa_id', prof.empresa_id)` sobre todas las consultas a Supabase (empresas, establecimientos, y registros operativos principales) en caso de que el perfil activo corresponda a un cliente. Esto garantiza que la información y las métricas mostradas en el dashboard correspondan únicamente a su respectiva empresa.
+- **Vistas de Solo Lectura y Permisos**: Se agregó la validación del rol `'cliente'` en la función `getSectionPermissions` en todas las secciones operativas para denegar de forma server-side y de interfaz cualquier capacidad de escritura (`{ cargar: false, editar: false, eliminar: false }`). Además, se fuerza la inicialización de `isReadOnlyView = true` al cargar el perfil del cliente.
+
+### Decisiones Clave
+- **Control Lógico Estricto de Sidebar**: Usar `profile && profile.role !== 'cliente'` en lugar de optional chaining evita que la expresión resuelva a `true` cuando `profile` es temporalmente `null` al montarse el componente, eliminando de raíz el parpadeo de UI.
+- **Alineación de Filtros en Cliente**: Aplicar filtros por `empresa_id` directamente en las llamadas del cliente previene descargas de datos innecesarias y se sincroniza con el Row Level Security (RLS) configurado en la base de datos de Supabase.
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+
+### Validaciones Ejecutadas
+- Compilación del proyecto de producción exitosa mediante `cmd /c "npm run build"`.
+- Inspección del flujo lógico y coherencia del sidebar en todos los archivos modificados.
+
+---
+
+## [2026-06-23] Corrección en el Script de Migraciones y Aplicación de Esquema en Supabase
+
+### Resumen de Cambios
+- **Corrección del Procesador de Migraciones**: Se refactorizó la lógica de división de sentencias en `scripts/run-migrations.js`. Se reemplazó el método `split(';')` ciego por un parser robusto carácter por carácter que omite la división cuando los puntos y comas se encuentran dentro de bloques de comentarios de una sola línea (`--`), comentarios de bloque (`/* ... */`), cadenas entre comillas simples/dobles, o bloques de código dollar-quoted (`$$`).
+- **Conectividad a la Base de Datos**: Se resolvió la limitación de conexión con IPv6 del host directo de base de datos (`db.wbykmdexenparduosadj.supabase.co`) en Node.js, configurando la cadena de conexión para utilizar el pooler de conexión IPv4 de AWS (`aws-1-us-east-2.pooler.supabase.com:6543`) con el nombre de usuario de tenant correspondiente (`postgres.wbykmdexenparduosadj`).
+- **Aplicación de Migraciones**: Se ejecutaron con éxito todas las migraciones acumuladas del esquema en el servidor de Supabase, incluyendo la migración `20260703000000_client_portal_access.sql` que crea la función `public.get_email_by_cuit` y las políticas de acceso de RLS.
+
+### Decisiones Clave
+- **Parser SQL a Nivel de Carácter**: Implementar un analizador a nivel de carácter en lugar de usar bibliotecas de terceros pesadas solucionó el problema de ruptura de funciones PL/pgSQL y triggers de forma simple y autocontenida.
+- **Uso del Pooler en IPv4**: Cambiar el host y configurar las credenciales correctas del pooler permite ejecutar migraciones desde entornos sin soporte de enrutamiento IPv6.
+
+### Archivos Modificados / Creados
+- `[MODIFY] scripts/run-migrations.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Ejecución completa del script `run-migrations.js` contra la base de datos de producción con resultado 100% exitoso.
+- Verificación directa mediante consulta SQL de que las funciones `get_email_by_cuit`, `is_client_user` y `get_current_user_empresa_id` están presentes y listas para usarse.
+
+---
+
+## [2026-06-23] Unificación de Pantallas de Login (Profesionales y Clientes)
+
+### Resumen de Cambios
+- **Inicio de Sesión Unificado**: Se integró la funcionalidad de inicio de sesión de clientes (acceso por CUIT) directamente en la página de login estándar (`src/app/login/page.js`), eliminando la ruta `/login-cliente` y su archivo correspondiente.
+- **Selector de Roles con Pestañas (Tabs)**: Se implementó un control interactivo (tipo toggle/tabs) en la tarjeta de login que permite al usuario seleccionar entre "Profesionales" (inicio con Correo Electrónico) y "Clientes" (inicio con CUIT y contraseña).
+- **Recuperación Dinámica de Clave**: El modal de recuperación de contraseña ("¿La olvidaste?") se adapta dinámicamente según la pestaña seleccionada: solicita el email para profesionales, o el CUIT para clientes (resolviéndolo mediante la función RPC `get_email_by_cuit` de forma segura).
+- **Limpieza de Middleware**: Se actualizaron las reglas de rutas públicas y redireccionamientos en `src/middleware.js` eliminando las referencias a `/login-cliente`.
+
+### Decisiones Clave
+- **Unificación de UX**: Centralizar los accesos en la ruta `/login` simplifica la navegación y el onboarding de usuarios y clientes, eliminando URLs separadas y mejorando la consistencia del flujo de autenticación del SaaS.
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/login/page.js`
+- `[MODIFY] src/middleware.js`
+- `[DELETE] src/app/login-cliente/page.js`
+
+---
+
+## [2026-06-23] Scroll Vertical Individual en Barra Lateral (Sidebar)
+
+### Resumen de Cambios
+- **Barra Lateral Scrollable**: Se incorporó un contenedor scrollable con la clase `flex-1 overflow-y-auto min-h-0` para envolver la sección superior (Logotipo y Enlaces de Navegación) del Sidebar tanto en su versión móvil como de escritorio.
+- **Footer Fijo**: Al delegar el comportamiento scrollable únicamente a los enlaces de navegación superiores, la sección inferior (el footer del Sidebar con los datos del usuario y botón de cerrar sesión) permanece fija y siempre visible en pantalla.
+- **Scrollbar Personalizado Oscuro**: Se definió e implementó la clase `.sidebar-scrollbar` en `src/app/globals.css` para renderizar un scrollbar extremadamente fino (6px) con track transparente y color de thumb sutil que cambia a azul `#468DFF` al pasar el ratón. Esto ofrece una estética premium en consonancia con la paleta oscura de la barra.
+- **Paridad de Interfaz**: Se aplicó este comportamiento de scroll individual a las 10 secciones principales de la aplicación.
+
+### Decisiones Clave
+- **Scroll de Navegación vs Scroll Completo**: Mantener el logotipo y el footer fijos previene que elementos esenciales del diseño se desplacen fuera de la vista en pantallas pequeñas, optimizando la usabilidad y conservando una jerarquía visual limpia.
+
+### Archivos Modificados
+- `[MODIFY] src/app/globals.css`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+
+---
+
+## [2026-06-23] Implementación del Portal de Acceso y Login para Clientes (CUIT)
+
+### Resumen de Cambios
+- **Portal de Acceso para Clientes**: Implementación de una interfaz segura y de solo lectura para los clientes, quienes se autentican con su CUIT (usuario) y contraseña.
+- **Página de Login Especializada**: Creación de `/login-cliente` con paridad visual total a `/login` pero adaptado para ingreso por CUIT, resolviendo de forma segura el email del cliente a través del RPC `get_email_by_cuit`.
+- **Aislamiento Multi-Tenant RLS**: Actualización de políticas RLS en tablas operativas (`empresas`, `establecimientos`, `programa_anual`, `programa_capacitacion`, `acciones_correctivas`, `extintores`, `visitas`, `avisos_riesgo`) para que los usuarios con rol `'cliente'` solo puedan ver datos de su propia empresa (`empresa_id`).
+- **Sidebar y Vistas Filtradas**: Ocultación de secciones administrativas ("Clientes" y "Equipo de Trabajo") en el Sidebar para perfiles de tipo `'cliente'`.
+- **Restricciones de Solo Lectura**: Configuración forzada de `isReadOnlyView = true` y ocultación de botones de acción rápida, guardado y eliminación en las vistas operativas.
+- **Restricción de Perfil de Cliente**: Limitación del formulario en `profile/page.js` para usuarios con rol `'cliente'`, bloqueando campos profesionales, firmas y matrículas, deshabilitando el botón de guardado general y ocultando la eliminación de cuenta, manteniendo habilitado únicamente el cambio seguro de contraseña.
+- **Administración de Accesos**: Inclusión de la pestaña "Portal de Cliente" en la gestión de empresas para permitir habilitar/deshabilitar cuentas con endpoints de API asíncronos `/api/clientes`.
+
+### Decisiones Clave
+- **Resolución Transparente de Email**: Utilizar un RPC seguro para convertir el CUIT del cliente en su correo de login permite mantener el flujo de autenticación estándar de Supabase Auth sin exponer públicamente las direcciones de correo de los clientes.
+- **Roles y Permisos Centralizados**: El bloqueo server-side mediante RLS y la denegación en `user_has_action_permission` asegura que, aun si se salta la UI, los clientes no puedan realizar escrituras en la base de datos.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `gestion-syso-brand-guidelines`
+- `supabase`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260703000000_client_portal_access.sql`
+- `[NEW] src/app/api/clientes/route.js`
+- `[NEW] src/app/login-cliente/page.js`
+- `[MODIFY] src/middleware.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción en Next.js (`npm run build`) verificada y exitosa de punta a punta.
+
+---
+
+## [2026-06-23] Ajuste de Pie de Página y Ampliación de Observaciones en PDF de Constancia de Visita
+
+### Resumen de Cambios
+- **Reubicación de Footer en PDF de Visitas**: Se desplazó el pie de página (barra azul, texto de contacto y número de página) hacia abajo en 60 puntos (de Y=730.63 a Y=790.63 para la barra, y de Y=751 a Y=811 para el texto).
+- **Desplazamiento de Firmas**: Se bajó el bloque de firmas en 60 puntos, cambiando `sigY` de `675` a `735`.
+- **Ampliación de Observaciones**: Se expandió el cuadro de observaciones de `237.75` pt a `297.75` pt de altura (finalizando en Y=600.0). Se agregaron 2 líneas punteadas adicionales (para un total de 8 líneas, en Y=555 y Y=579) y se actualizó el bucle de impresión para renderizar hasta 8 líneas de observaciones.
+
+### Decisiones Clave
+- **Optimización de Espacio A4**: Aprovechar el margen inferior excedente de la hoja A4 (anteriormente de ~90 pt) permitió desplazar el pie de página e incrementar la capacidad de escritura del cuadro de observaciones sin riesgo de desborde ni superposición con el bloque de firmas.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción en Next.js (`npm run build`) verificada y exitosa.
+
+---
+
 ## [2026-06-23] Implementación de Filtros de Fecha, Año y Mes en Visitas y Avisos de Riesgo
 
 ### Resumen de Cambios

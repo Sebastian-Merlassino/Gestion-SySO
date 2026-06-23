@@ -3,10 +3,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Mail, Lock, ShieldAlert, ArrowRight, Loader2, X, CheckCircle, Eye, EyeOff } from 'lucide-react';
+import { Mail, Hash, Lock, ShieldAlert, ArrowRight, Loader2, X, CheckCircle, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
+  const [activeTab, setActiveTab] = useState('profesional'); // 'profesional' or 'cliente'
   const [email, setEmail] = useState('');
+  const [cuit, setCuit] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [isDevMode, setIsDevMode] = useState(false);
@@ -20,6 +22,7 @@ export default function LoginPage() {
   
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotCuit, setForgotCuit] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotSuccess, setForgotSuccess] = useState(false);
   const [forgotError, setForgotError] = useState(null);
@@ -42,18 +45,14 @@ export default function LoginPage() {
     }
   }, []);
 
+  const handleCuitChange = (e, setter) => {
+    const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 11);
+    setter(val);
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
-
-    if (isDevMode) {
-      console.log('Simulando login con:', email);
-      setTimeout(() => {
-        setLoading(false);
-        window.location.href = '/onboarding';
-      }, 1500);
-      return;
-    }
 
     if (cooldownSeconds > 0) {
       setErrorMessage(`Demasiados intentos fallidos. Por favor, espera ${cooldownSeconds} segundos antes de intentar nuevamente.`);
@@ -62,57 +61,139 @@ export default function LoginPage() {
       return;
     }
 
-    try {
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (authError) throw authError;
-
-      // Obtener perfil para redirigir
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('tenant_id, tenants(slug)')
-        .eq('id', data.user.id)
-        .single();
-
-      if (profileError && profileError.code !== 'PGRST116') {
-        throw profileError;
+    if (activeTab === 'profesional') {
+      // --- FLUJO DE LOGIN PARA PROFESIONALES (EMAIL) ---
+      if (isDevMode) {
+        console.log('Simulando login con:', email);
+        setTimeout(() => {
+          setLoading(false);
+          window.location.href = '/onboarding';
+        }, 1500);
+        return;
       }
 
-      setFailedAttempts(0); // Reset attempts on success
+      try {
+        const { data, error: authError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
 
-      if (profile?.tenant_id && profile?.tenants?.slug) {
-        window.location.href = `/${profile.tenants.slug}/dashboard`;
-      } else {
-        localStorage.setItem('onboarding_email', email);
-        window.location.href = '/onboarding';
-      }
-    } catch (err) {
-      console.error('Login error:', err);
-      let friendlyMessage = 'Error al iniciar sesión. Verifica tus credenciales.';
-      if (err.message === 'Invalid login credentials' || err.status === 400) {
-        friendlyMessage = 'Credenciales de inicio de sesión inválidas. Por favor, verifica tu correo y contraseña.';
-      } else if (err.message === 'Email not confirmed') {
-        friendlyMessage = 'El correo electrónico no ha sido verificado aún.';
-      }
+        if (authError) throw authError;
 
-      setFailedAttempts(prev => {
-        const next = prev + 1;
-        if (next >= 3) {
-          setCooldownSeconds(30);
-          setErrorMessage('Demasiados intentos fallidos consecutivos. Tu acceso ha sido temporalmente bloqueado por 30 segundos.');
-          setShowErrorModal(true);
-          return 0; // reset
-        } else {
-          setErrorMessage(friendlyMessage);
-          setShowErrorModal(true);
-          return next;
+        // Obtener perfil para redirigir
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('tenant_id, tenants(slug)')
+          .eq('id', data.user.id)
+          .single();
+
+        if (profileError && profileError.code !== 'PGRST116') {
+          throw profileError;
         }
-      });
-      setLoading(false);
+
+        setFailedAttempts(0); // Reset attempts on success
+
+        if (profile?.tenant_id && profile?.tenants?.slug) {
+          window.location.href = `/${profile.tenants.slug}/dashboard`;
+        } else {
+          localStorage.setItem('onboarding_email', email);
+          window.location.href = '/onboarding';
+        }
+      } catch (err) {
+        console.error('Login error:', err);
+        let friendlyMessage = 'Error al iniciar sesión. Verifica tus credenciales.';
+        if (err.message === 'Invalid login credentials' || err.status === 400) {
+          friendlyMessage = 'Credenciales de inicio de sesión inválidas. Por favor, verifica tu correo y contraseña.';
+        } else if (err.message === 'Email not confirmed') {
+          friendlyMessage = 'El correo electrónico no ha sido verificado aún.';
+        }
+
+        handleLoginFailure(friendlyMessage);
+      }
+    } else {
+      // --- FLUJO DE LOGIN PARA CLIENTES (CUIT) ---
+      const cleanCuit = cuit.replace(/[^0-9]/g, '');
+      if (cleanCuit.length !== 11) {
+        setErrorMessage('El CUIT debe contener exactamente 11 números enteros, sin puntos ni guiones.');
+        setShowErrorModal(true);
+        setLoading(false);
+        return;
+      }
+
+      if (isDevMode) {
+        console.log('Simulando login de cliente con CUIT:', cleanCuit);
+        setTimeout(() => {
+          setLoading(false);
+          window.location.href = '/demo/dashboard'; // Fallback link
+        }, 1500);
+        return;
+      }
+
+      try {
+        // 1. Obtener el email asociado al CUIT mediante el RPC en la base de datos
+        const { data: clientEmail, error: rpcError } = await supabase.rpc('get_email_by_cuit', {
+          p_cuit: cleanCuit
+        });
+
+        if (rpcError) throw rpcError;
+
+        if (!clientEmail) {
+          throw new Error('El CUIT ingresado no corresponde a ningún cliente registrado o con acceso habilitado.');
+        }
+
+        // 2. Autenticar en Supabase usando el email obtenido y la contraseña provista
+        const { data, error: authError } = await supabase.auth.signInWithPassword({
+          email: clientEmail,
+          password,
+        });
+
+        if (authError) throw authError;
+
+        // 3. Obtener el perfil y el tenant para redireccionar al dashboard
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('tenant_id, tenants(slug)')
+          .eq('id', data.user.id)
+          .single();
+
+        if (profileError) {
+          throw profileError;
+        }
+
+        setFailedAttempts(0); // Restablecer intentos al ingresar con éxito
+
+        if (profile?.tenant_id && profile?.tenants?.slug) {
+          window.location.href = `/${profile.tenants.slug}/dashboard`;
+        } else {
+          throw new Error('No se pudo encontrar la organización vinculada a tu cuenta de cliente.');
+        }
+      } catch (err) {
+        console.error('Login client error:', err);
+        let friendlyMessage = err.message || 'Error al iniciar sesión. Verifica tus credenciales.';
+        if (err.message === 'Invalid login credentials' || err.status === 400) {
+          friendlyMessage = 'Credenciales de inicio de sesión inválidas. Por favor, verifica tu CUIT y contraseña.';
+        }
+
+        handleLoginFailure(friendlyMessage);
+      }
     }
+  };
+
+  const handleLoginFailure = (friendlyMessage) => {
+    setFailedAttempts(prev => {
+      const next = prev + 1;
+      if (next >= 3) {
+        setCooldownSeconds(30);
+        setErrorMessage('Demasiados intentos fallidos consecutivos. Tu acceso ha sido temporalmente bloqueado por 30 segundos.');
+        setShowErrorModal(true);
+        return 0; // reset
+      } else {
+        setErrorMessage(friendlyMessage);
+        setShowErrorModal(true);
+        return next;
+      }
+    });
+    setLoading(false);
   };
 
   const handleForgotPassword = async (e) => {
@@ -121,28 +202,75 @@ export default function LoginPage() {
     setForgotError(null);
     setForgotSuccess(false);
 
-    if (isDevMode) {
-      console.log('Simulando recuperación de clave para:', forgotEmail);
-      setTimeout(() => {
+    if (activeTab === 'profesional') {
+      // --- RECUPERAR CONTRASEÑA PROFESIONAL (EMAIL) ---
+      if (isDevMode) {
+        console.log('Simulando recuperación de clave para:', forgotEmail);
+        setTimeout(() => {
+          setForgotLoading(false);
+          setForgotSuccess(true);
+        }, 1500);
+        return;
+      }
+
+      try {
+        const { error: resetErr } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+
+        if (resetErr) throw resetErr;
+
         setForgotLoading(false);
         setForgotSuccess(true);
-      }, 1500);
-      return;
-    }
+      } catch (err) {
+        console.error('Password reset error:', err);
+        setForgotError(err.message || 'Ocurrió un error al enviar el enlace. Por favor, verifica el correo ingresado.');
+        setForgotLoading(false);
+      }
+    } else {
+      // --- RECUPERAR CONTRASEÑA CLIENTE (CUIT) ---
+      const cleanCuit = forgotCuit.replace(/[^0-9]/g, '');
+      if (cleanCuit.length !== 11) {
+        setForgotError('El CUIT debe contener exactamente 11 números enteros.');
+        setForgotLoading(false);
+        return;
+      }
 
-    try {
-      const { error: resetErr } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
+      if (isDevMode) {
+        console.log('Simulando recuperación de clave de cliente para CUIT:', cleanCuit);
+        setTimeout(() => {
+          setForgotLoading(false);
+          setForgotSuccess(true);
+        }, 1500);
+        return;
+      }
 
-      if (resetErr) throw resetErr;
+      try {
+        // 1. Resolver el email asociado al CUIT
+        const { data: clientEmail, error: rpcError } = await supabase.rpc('get_email_by_cuit', {
+          p_cuit: cleanCuit
+        });
 
-      setForgotLoading(false);
-      setForgotSuccess(true);
-    } catch (err) {
-      console.error('Password reset error:', err);
-      setForgotError(err.message || 'Ocurrió un error al enviar el enlace. Por favor, verifica el correo ingresado.');
-      setForgotLoading(false);
+        if (rpcError) throw rpcError;
+
+        if (!clientEmail) {
+          throw new Error('El CUIT ingresado no corresponde a ningún cliente registrado o con acceso habilitado.');
+        }
+
+        // 2. Disparar el flujo de reset de contraseña
+        const { error: resetErr } = await supabase.auth.resetPasswordForEmail(clientEmail, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+
+        if (resetErr) throw resetErr;
+
+        setForgotLoading(false);
+        setForgotSuccess(true);
+      } catch (err) {
+        console.error('Password reset client error:', err);
+        setForgotError(err.message || 'Ocurrió un error al enviar el enlace de restablecimiento.');
+        setForgotLoading(false);
+      }
     }
   };
 
@@ -163,9 +291,46 @@ export default function LoginPage() {
             className="mx-auto object-contain mb-4"
           />
 
-          <p className="text-sm text-slate-600 font-medium text-center mb-6">
-            Ingresá a tu panel de Higiene y Seguridad laboral
+          <p className="text-sm text-slate-600 font-semibold text-center mb-1">
+            {activeTab === 'profesional' ? 'Portal Profesional' : 'Portal de Clientes'}
           </p>
+          <p className="text-xs text-slate-500 font-medium text-center mb-6">
+            {activeTab === 'profesional' 
+              ? 'Ingresá a tu panel de Higiene y Seguridad laboral' 
+              : 'Ingresa para visualizar tu legajo técnico de higiene y seguridad'}
+          </p>
+
+          {/* Tab Selector */}
+          <div className="flex bg-slate-100 p-1.5 rounded-xl mb-6">
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('profesional');
+                setPassword('');
+              }}
+              className={`flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                activeTab === 'profesional'
+                  ? 'bg-[#468DFF] text-white shadow-sm'
+                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/50'
+              }`}
+            >
+              Profesionales
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('cliente');
+                setPassword('');
+              }}
+              className={`flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                activeTab === 'cliente'
+                  ? 'bg-[#468DFF] text-white shadow-sm'
+                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/50'
+              }`}
+            >
+              Clientes
+            </button>
+          </div>
 
           {isDevMode && (
             <div className="mb-6 p-3 rounded-lg border border-amber-500/20 bg-amber-50 text-amber-700 text-xs">
@@ -174,24 +339,45 @@ export default function LoginPage() {
           )}
 
           <form onSubmit={handleLogin} className="space-y-6">
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                Correo Electrónico
-              </label>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                  <Mail className="h-5 w-5" />
-                </span>
-                <input
-                  type="email"
-                  required
-                  placeholder="nombre@empresa.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-slate-800 placeholder-slate-400 focus:outline-none transition-all"
-                />
+            {activeTab === 'profesional' ? (
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                  Correo Electrónico
+                </label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                    <Mail className="h-5 w-5" />
+                  </span>
+                  <input
+                    type="email"
+                    required
+                    placeholder="nombre@empresa.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-slate-800 placeholder-slate-400 focus:outline-none transition-all"
+                  />
+                </div>
               </div>
-            </div>
+            ) : (
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                  Número de CUIT
+                </label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                    <Hash className="h-5 w-5" />
+                  </span>
+                  <input
+                    type="text"
+                    required
+                    placeholder="CUIT sin puntos ni guiones (ej. 30712345678)"
+                    value={cuit}
+                    onChange={(e) => handleCuitChange(e, setCuit)}
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-slate-800 placeholder-slate-400 focus:outline-none transition-all"
+                  />
+                </div>
+              </div>
+            )}
 
             <div>
               <div className="flex justify-between items-center mb-2">
@@ -204,6 +390,7 @@ export default function LoginPage() {
                     setForgotSuccess(false);
                     setForgotError(null);
                     setForgotEmail('');
+                    setForgotCuit('');
                     setShowForgotModal(true);
                   }}
                   className="text-xs text-[#468DFF] hover:text-[#0511F2] font-semibold transition-colors"
@@ -226,7 +413,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700 cursor-pointer"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -257,13 +444,14 @@ export default function LoginPage() {
           </form>
         </div>
 
-        {/* Footer info */}
-        <p className="text-center text-xs text-slate-600 mt-8">
-          ¿No tenés una cuenta?{' '}
-          <a href="/register" className="text-[#468DFF] hover:text-[#0511F2] font-bold transition-colors">
-            Registrate gratis
-          </a>
-        </p>
+        {activeTab === 'profesional' && (
+          <p className="text-center text-xs text-slate-600 mt-8">
+            ¿No tenés una cuenta?{' '}
+            <a href="/register" className="text-[#468DFF] hover:text-[#0511F2] font-bold transition-colors">
+              Registrate gratis
+            </a>
+          </p>
+        )}
       </div>
 
       {/* ERROR MODAL POPUP */}
@@ -285,7 +473,7 @@ export default function LoginPage() {
             </p>
             <button
               onClick={() => setShowErrorModal(false)}
-              className="w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold transition-all"
+              className="w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold transition-all cursor-pointer"
             >
               Aceptar
             </button>
@@ -305,9 +493,13 @@ export default function LoginPage() {
             </button>
             
             <div className="text-center mb-6">
-              <h3 className="font-outfit text-lg font-bold text-slate-900 mb-2">Recuperar Contraseña</h3>
+              <h3 className="font-outfit text-lg font-bold text-slate-900 mb-2">
+                {activeTab === 'profesional' ? 'Recuperar Contraseña' : 'Recuperar Clave de Cliente'}
+              </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Ingresá tu correo electrónico para recibir un enlace seguro de restablecimiento.
+                {activeTab === 'profesional'
+                  ? 'Ingresá tu correo electrónico para recibir un enlace seguro de restablecimiento.'
+                  : 'Ingresá tu número de CUIT registrado para recibir un enlace seguro de restablecimiento en tu correo de contacto asignado.'}
               </p>
             </div>
 
@@ -322,7 +514,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowForgotModal(false)}
-                  className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-xs font-semibold transition-all mt-4"
+                  className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-xs font-semibold transition-all mt-4 cursor-pointer"
                 >
                   Cerrar Ventana
                 </button>
@@ -334,23 +526,39 @@ export default function LoginPage() {
                     {forgotError}
                   </div>
                 )}
-                <div className="text-left">
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-                    Correo de Usuario
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    placeholder="ejemplo@correo.com"
-                    value={forgotEmail}
-                    onChange={(e) => setForgotEmail(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] rounded-xl py-2.5 px-4 text-xs text-slate-800 focus:outline-none"
-                  />
-                </div>
+                {activeTab === 'profesional' ? (
+                  <div className="text-left">
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      Correo de Usuario
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="ejemplo@correo.com"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] rounded-xl py-2.5 px-4 text-xs text-slate-800 focus:outline-none"
+                    />
+                  </div>
+                ) : (
+                  <div className="text-left">
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      Número de CUIT
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="30712345678"
+                      value={forgotCuit}
+                      onChange={(e) => handleCuitChange(e, setForgotCuit)}
+                      className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] rounded-xl py-2.5 px-4 text-xs text-slate-800 focus:outline-none"
+                    />
+                  </div>
+                )}
                 <button
                   type="submit"
                   disabled={forgotLoading}
-                  className="w-full py-2.5 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-semibold transition-all flex items-center justify-center gap-2"
+                  className="w-full py-2.5 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   {forgotLoading ? (
                     <>
@@ -358,7 +566,7 @@ export default function LoginPage() {
                       Enviando enlace...
                     </>
                   ) : (
-                    <>Enviar correo</>
+                    <>Enviar enlace de recuperación</>
                   )}
                 </button>
               </form>

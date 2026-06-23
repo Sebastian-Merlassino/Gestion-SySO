@@ -1049,7 +1049,7 @@ const [partidosList, setPartidosList] = useState([]);
               </button>
             </div>
 
-            <div>
+            <div className="flex-1 overflow-y-auto min-h-0 sidebar-scrollbar pr-1">
               {/* Logo Brand */}
               <div className="flex items-center gap-3 mb-8">
                 <img 
@@ -1067,14 +1067,18 @@ const [partidosList, setPartidosList] = useState([]);
                   <Building className="h-4 w-4" />
                   Dashboard
                 </Link>
-                <Link href={`/${tenantSlug}/empresas`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-                  <Users className="h-4 w-4" />
-                  Clientes
-                </Link>
+                {profileData && profileData.role !== 'cliente' && (
+                  <Link href={`/${tenantSlug}/empresas`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                    <Users className="h-4 w-4" />
+                    Clientes
+                  </Link>
+                )}
+                {profileData && profileData.role !== 'cliente' && (
                   <Link href={`/${tenantSlug}/equipo`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/equipo`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                     <Briefcase className="h-4 w-4" />
                     Equipo de Trabajo
                   </Link>
+                )}
                  <Link href={`/${tenantSlug}/programa`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/programa`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <Calendar className="h-4 w-4" />
                   Programa de Gestión Anual
@@ -1130,7 +1134,7 @@ const [partidosList, setPartidosList] = useState([]);
 
       {/* Sidebar - Barra Lateral */}
       <aside className={`bg-[#0D0D0D] flex flex-col justify-between shrink-0 hidden md:flex transition-all duration-300 ${isSidebarCollapsed ? 'w-20' : 'w-64'}`}>
-        <div className="p-6">
+        <div className="p-6 flex-1 overflow-y-auto min-h-0 sidebar-scrollbar">
           {/* Logo Brand */}
           <div className={`flex items-center justify-between gap-3 mb-8 ${isSidebarCollapsed ? 'flex-col' : ''}`}>
             <div className="flex items-center gap-3">
@@ -1172,15 +1176,18 @@ const [partidosList, setPartidosList] = useState([]);
               <Building className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Dashboard</span>}
             </Link>
-            <Link 
-              href={`/${tenantSlug}/empresas`} 
-              title="Clientes"
-              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-            >
-              <Users className="h-4 w-4 shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
-            </Link>
+            {profileData && profileData.role !== 'cliente' && (
+              <Link 
+                href={`/${tenantSlug}/empresas`} 
+                title="Clientes"
+                onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+              >
+                <Users className="h-4 w-4 shrink-0" />
+                {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
+              </Link>
+            )}
+            {profileData && profileData.role !== 'cliente' && (
               <Link 
                 href={`/${tenantSlug}/equipo`} 
                 title="Equipo de Trabajo"
@@ -1190,6 +1197,7 @@ const [partidosList, setPartidosList] = useState([]);
                 <Briefcase className="h-4 w-4 shrink-0" />
                 {!isSidebarCollapsed && <span className="animate-fade-in">Equipo de Trabajo</span>}
               </Link>
+            )}
             <Link 
               href={`/${tenantSlug}/programa`} 
               title="Programa de Gestión Anual"
@@ -1345,6 +1353,8 @@ const [partidosList, setPartidosList] = useState([]);
               Información del usuario
             </h3>
 
+            <fieldset disabled={profileData?.role === 'cliente'} className="space-y-6">
+
             {/* Datos Personales */}
             <div className="grid md:grid-cols-2 gap-6">
               <div>
@@ -1495,8 +1505,11 @@ const [partidosList, setPartidosList] = useState([]);
               </div>
             </div>
 
+            </fieldset>
+
             {/* Matrículas Profesionales */}
-            <div className="pt-4 border-t border-slate-200 space-y-6">
+            {profileData?.role !== 'cliente' && (
+              <div className="pt-4 border-t border-slate-200 space-y-6">
               <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
                 <Briefcase className="h-4 w-4 text-[#468DFF]" />
                 Matrículas Profesionales
@@ -1674,6 +1687,7 @@ const [partidosList, setPartidosList] = useState([]);
                 </div>
               </div>
             </div>
+          )}
           </div>
 
           {/* SECCIÓN: SEGURIDAD (CAMBIAR CONTRASEÑA) */}
@@ -1994,29 +2008,31 @@ const [partidosList, setPartidosList] = useState([]);
               Salir
             </button>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Guardando...
-                </>
-              ) : (
-                <>
-                  Guardar
-                  <CheckCircle className="h-4 w-4 text-blue-100" />
-                </>
-              )}
-            </button>
+            {profileData?.role !== 'cliente' && (
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    Guardar
+                    <CheckCircle className="h-4 w-4 text-blue-100" />
+                  </>
+                )}
+              </button>
+            )}
           </div>
 
         </form>
 
         {/* ELIMINAR CUENTA (Disponible para todos los usuarios) */}
-        {profileData && (
+        {profileData && profileData.role !== 'cliente' && (
           <div className="mt-8 border-t border-slate-200 pt-6">
             {!showDeleteSection ? (
               <div className="flex justify-start">

@@ -111,6 +111,7 @@ export default function EquipoPage({ params }) {
   const getSectionPermissions = (userProfile, sectionName) => {
     if (!userProfile) return { cargar: true, editar: true, eliminar: true };
     if (userProfile.role === 'admin') return { cargar: true, editar: true, eliminar: true };
+    if (userProfile.role === 'cliente') return { cargar: false, editar: false, eliminar: false };
     const perm = userProfile.permisos?.[sectionName];
     if (perm === true || perm === undefined) return { cargar: true, editar: true, eliminar: true };
     if (perm === false) return { cargar: false, editar: false, eliminar: false };
@@ -315,6 +316,11 @@ export default function EquipoPage({ params }) {
       if (pErr) throw pErr;
       
       // Removido condicional limitante de carga: los inspectores con acceso ahora pueden visualizar el listado.
+      
+      if (prof.role === 'cliente') {
+        window.location.href = `/${tenantSlug}/dashboard`;
+        return;
+      }
       
       setProfile(prof);
 
@@ -1142,7 +1148,7 @@ export default function EquipoPage({ params }) {
               </button>
             </div>
 
-            <div>
+            <div className="flex-1 overflow-y-auto min-h-0 sidebar-scrollbar pr-1">
               {/* Logo Brand */}
               <div className="flex items-center gap-3 mb-8">
                 <img 
@@ -1160,14 +1166,18 @@ export default function EquipoPage({ params }) {
                   <Building className="h-4 w-4" />
                   Dashboard
                 </Link>
-                <Link href={`/${tenantSlug}/empresas`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-                  <Users className="h-4 w-4" />
-                  Clientes
-                </Link>
+                {profile && profile.role !== 'cliente' && (
+                  <Link href={`/${tenantSlug}/empresas`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                    <Users className="h-4 w-4" />
+                    Clientes
+                  </Link>
+                )}
+                {profile && profile.role !== 'cliente' && (
                   <Link href="#" onClick={(e) => handleSidebarNavigation(e, 'list')} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10">
                     <Briefcase className="h-4 w-4" />
                     Equipo de Trabajo
                   </Link>
+                )}
                 <Link href={`/${tenantSlug}/programa`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/programa`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <Calendar className="h-4 w-4" />
                   Programa de Gestión Anual
@@ -1223,7 +1233,7 @@ export default function EquipoPage({ params }) {
 
       {/* Sidebar - Barra Lateral (Idéntica al Dashboard para consistencia) */}
       <aside className={`bg-[#0D0D0D] flex flex-col justify-between shrink-0 hidden md:flex transition-all duration-300 ${isSidebarCollapsed ? 'w-20' : 'w-64'}`}>
-        <div className="p-6">
+        <div className="p-6 flex-1 overflow-y-auto min-h-0 sidebar-scrollbar">
           {/* Logo Brand */}
           <div className={`flex items-center justify-between gap-3 mb-8 ${isSidebarCollapsed ? 'flex-col' : ''}`}>
             <div className="flex items-center gap-3">
@@ -1264,15 +1274,18 @@ export default function EquipoPage({ params }) {
               <Building className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Dashboard</span>}
             </Link>
-            <Link 
-              href={`/${tenantSlug}/empresas`} 
-              title="Clientes"
-              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-            >
-              <Users className="h-4 w-4 shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
-            </Link>
+            {profile && profile.role !== 'cliente' && (
+              <Link 
+                href={`/${tenantSlug}/empresas`} 
+                title="Clientes"
+                onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+              >
+                <Users className="h-4 w-4 shrink-0" />
+                {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
+              </Link>
+            )}
+            {profile && profile.role !== 'cliente' && (
               <Link 
                 href="#" 
                 title="Equipo de Trabajo"
@@ -1282,6 +1295,7 @@ export default function EquipoPage({ params }) {
                 <Briefcase className="h-4 w-4 shrink-0" />
                 {!isSidebarCollapsed && <span className="animate-fade-in">Equipo de Trabajo</span>}
               </Link>
+            )}
             <Link 
               href={`/${tenantSlug}/programa`} 
               title="Programa de Gestión Anual"

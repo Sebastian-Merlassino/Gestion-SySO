@@ -236,6 +236,7 @@ export default function VisitasPage({ params }) {
   const getSectionPermissions = (userProfile, sectionName) => {
     if (!userProfile) return { cargar: true, editar: true, eliminar: true };
     if (userProfile.role === 'admin') return { cargar: true, editar: true, eliminar: true };
+    if (userProfile.role === 'cliente') return { cargar: false, editar: false, eliminar: false };
     const perm = userProfile.permisos?.[sectionName];
     if (perm === true || perm === undefined) return { cargar: true, editar: true, eliminar: true };
     if (perm === false) return { cargar: false, editar: false, eliminar: false };
@@ -494,6 +495,9 @@ export default function VisitasPage({ params }) {
         .single();
       if (pErr) throw pErr;
       setProfile(prof);
+      if (prof.role === 'cliente') {
+        setIsReadOnlyView(true);
+      }
 
       // Tenant
       const { data: ten, error: tErr } = await supabase
@@ -554,20 +558,26 @@ export default function VisitasPage({ params }) {
       setTenant(ten);
 
       // Empresas
-      const { data: emps, error: empErr } = await supabase
+      let empresasQuery = supabase
         .from('empresas')
         .select('id, razon_social, cuit, contactos_correos')
-        .eq('tenant_id', ten.id)
-        .order('razon_social');
+        .eq('tenant_id', ten.id);
+      if (prof.role === 'cliente') {
+        empresasQuery = empresasQuery.eq('id', prof.empresa_id);
+      }
+      const { data: emps, error: empErr } = await empresasQuery.order('razon_social');
       if (empErr) throw empErr;
       setEmpresas(emps || []);
 
       // Establecimientos
-      const { data: ests, error: estErr } = await supabase
+      let estsQuery = supabase
         .from('establecimientos')
         .select('id, empresa_id, denominacion, direccion')
-        .eq('tenant_id', ten.id)
-        .order('denominacion');
+        .eq('tenant_id', ten.id);
+      if (prof.role === 'cliente') {
+        estsQuery = estsQuery.eq('empresa_id', prof.empresa_id);
+      }
+      const { data: ests, error: estErr } = await estsQuery.order('denominacion');
       if (estErr) throw estErr;
       setAllEstablecimientos(ests || []);
 
@@ -589,11 +599,14 @@ export default function VisitasPage({ params }) {
       setTemasList(topics || []);
 
       // Visitas
-      const { data: vis, error: visErr } = await supabase
+      let visitasQuery = supabase
         .from('visitas')
         .select('*')
-        .eq('tenant_id', ten.id)
-        .order('fecha', { ascending: false });
+        .eq('tenant_id', ten.id);
+      if (prof.role === 'cliente') {
+        visitasQuery = visitasQuery.eq('empresa_id', prof.empresa_id);
+      }
+      const { data: vis, error: visErr } = await visitasQuery.order('fecha', { ascending: false });
       if (visErr) throw visErr;
 
       setVisitas(vis || []);
@@ -2072,14 +2085,18 @@ export default function VisitasPage({ params }) {
                   <Building className="h-4 w-4" />
                   Dashboard
                 </Link>
-                <Link href={`/${tenantSlug}/empresas`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-                  <Users className="h-4 w-4" />
-                  Clientes
-                </Link>
+                {profile && profile.role !== 'cliente' && (
+                  <Link href={`/${tenantSlug}/empresas`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                    <Users className="h-4 w-4" />
+                    Clientes
+                  </Link>
+                )}
+                {profile && profile.role !== 'cliente' && (
                   <Link href={`/${tenantSlug}/equipo`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/equipo`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                     <Briefcase className="h-4 w-4" />
                     Equipo de Trabajo
                   </Link>
+                )}
                 <Link href={`/${tenantSlug}/programa`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/programa`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <Calendar className="h-4 w-4" />
                   Programa de Gestión Anual
@@ -2161,15 +2178,18 @@ export default function VisitasPage({ params }) {
               <Building className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Dashboard</span>}
             </Link>
-            <Link 
-              href={`/${tenantSlug}/empresas`} 
-              title="Clientes"
-              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-            >
-              <Users className="h-4 w-4 shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
-            </Link>
+            {profile && profile.role !== 'cliente' && (
+              <Link 
+                href={`/${tenantSlug}/empresas`} 
+                title="Clientes"
+                onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+              >
+                <Users className="h-4 w-4 shrink-0" />
+                {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
+              </Link>
+            )}
+            {profile && profile.role !== 'cliente' && (
               <Link 
                 href={`/${tenantSlug}/equipo`} 
                 title="Equipo de Trabajo"
@@ -2179,6 +2199,7 @@ export default function VisitasPage({ params }) {
                 <Briefcase className="h-4 w-4 shrink-0" />
                 {!isSidebarCollapsed && <span className="animate-fade-in">Equipo de Trabajo</span>}
               </Link>
+            )}
             <Link 
               href={`/${tenantSlug}/programa`} 
               title="Programa de Gestión Anual"
@@ -2494,31 +2515,35 @@ export default function VisitasPage({ params }) {
                                     >
                                       <Download className="h-4.5 w-4.5" />
                                     </button>
-                                    <button 
-                                      onClick={() => handleOpenMailModal(v)}
-                                      className="p-1.5 rounded-lg bg-blue-50 hover:bg-[#468DFF]/25 text-[#468DFF] transition-all cursor-pointer"
-                                      title="Enviar por Correo"
-                                    >
-                                      <Mail className="h-4.5 w-4.5" />
-                                    </button>
-                                    {canEditar ? (
+                                    {profile && profile.role !== 'cliente' && (
                                       <button 
-                                        onClick={() => { setIsReadOnlyView(false); handleEditClick(v); }}
-                                        className="p-1.5 rounded-lg transition-all cursor-pointer bg-amber-50 hover:bg-amber-100 text-amber-600"
-                                        title="Editar Constancia"
+                                        onClick={() => handleOpenMailModal(v)}
+                                        className="p-1.5 rounded-lg bg-blue-50 hover:bg-[#468DFF]/25 text-[#468DFF] transition-all cursor-pointer"
+                                        title="Enviar por Correo"
                                       >
-                                        <Edit className="h-4.5 w-4.5" />
-                                      </button>
-                                    ) : (
-                                      <button 
-                                        onClick={() => { setIsReadOnlyView(true); handleEditClick(v); }}
-                                        className="p-1.5 rounded-lg transition-all cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-600"
-                                        title="Ver Detalle"
-                                      >
-                                        <Eye className="h-4.5 w-4.5" />
+                                        <Mail className="h-4.5 w-4.5" />
                                       </button>
                                     )}
-                                    {canEliminar && (
+                                    {profile && profile.role !== 'cliente' && (
+                                      canEditar ? (
+                                        <button 
+                                          onClick={() => { setIsReadOnlyView(false); handleEditClick(v); }}
+                                          className="p-1.5 rounded-lg transition-all cursor-pointer bg-amber-50 hover:bg-amber-100 text-amber-600"
+                                          title="Editar Constancia"
+                                        >
+                                          <Edit className="h-4.5 w-4.5" />
+                                        </button>
+                                      ) : (
+                                        <button 
+                                          onClick={() => { setIsReadOnlyView(true); handleEditClick(v); }}
+                                          className="p-1.5 rounded-lg transition-all cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-600"
+                                          title="Ver Detalle"
+                                        >
+                                          <Eye className="h-4.5 w-4.5" />
+                                        </button>
+                                      )
+                                    )}
+                                    {profile && profile.role !== 'cliente' && canEliminar && (
                                       <button 
                                         onClick={() => handleDeleteClick(v.id)}
                                         className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer"

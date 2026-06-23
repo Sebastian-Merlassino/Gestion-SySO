@@ -68,6 +68,7 @@ export default function ProgramaGestion({ params }) {
   const getSectionPermissions = (userProfile, sectionName) => {
     if (!userProfile) return { cargar: true, editar: true, eliminar: true };
     if (userProfile.role === 'admin') return { cargar: true, editar: true, eliminar: true };
+    if (userProfile.role === 'cliente') return { cargar: false, editar: false, eliminar: false };
     const perm = userProfile.permisos?.[sectionName];
     if (perm === true || perm === undefined) return { cargar: true, editar: true, eliminar: true };
     if (perm === false) return { cargar: false, editar: false, eliminar: false };
@@ -188,6 +189,9 @@ export default function ProgramaGestion({ params }) {
         .single();
       if (pErr) throw pErr;
       setProfile(prof);
+      if (prof.role === 'cliente') {
+        setIsReadOnlyView(true);
+      }
 
       // Cargar Tenant por slug de URL
       const { data: ten, error: tErr } = await supabase
@@ -248,20 +252,26 @@ export default function ProgramaGestion({ params }) {
       setTenant(ten);
 
       // Cargar Empresas Clientes
-      const { data: emps, error: empErr } = await supabase
+      let empresasQuery = supabase
         .from('empresas')
         .select('id, razon_social')
-        .eq('tenant_id', ten.id)
-        .order('razon_social');
+        .eq('tenant_id', ten.id);
+      if (prof.role === 'cliente') {
+        empresasQuery = empresasQuery.eq('id', prof.empresa_id);
+      }
+      const { data: emps, error: empErr } = await empresasQuery.order('razon_social');
       if (empErr) throw empErr;
       setEmpresas(emps || []);
 
       // Cargar Todos los Establecimientos del Tenant
-      const { data: ests, error: estErr } = await supabase
+      let estsQuery = supabase
         .from('establecimientos')
         .select('id, empresa_id, denominacion')
-        .eq('tenant_id', ten.id)
-        .order('denominacion');
+        .eq('tenant_id', ten.id);
+      if (prof.role === 'cliente') {
+        estsQuery = estsQuery.eq('empresa_id', prof.empresa_id);
+      }
+      const { data: ests, error: estErr } = await estsQuery.order('denominacion');
       if (estErr) throw estErr;
       setAllEstablecimientos(ests || []);
 
@@ -283,10 +293,14 @@ export default function ProgramaGestion({ params }) {
       setCatalogo(cats || []);
 
       // Cargar Programa Anual
-      const { data: progs, error: progErr } = await supabase
+      let progQuery = supabase
         .from('programa_anual')
         .select('*')
         .eq('tenant_id', ten.id);
+      if (prof.role === 'cliente') {
+        progQuery = progQuery.eq('empresa_id', prof.empresa_id);
+      }
+      const { data: progs, error: progErr } = await progQuery;
       if (progErr) throw progErr;
       setActividades(progs || []);
 
@@ -999,14 +1013,18 @@ export default function ProgramaGestion({ params }) {
                   <Building className="h-4 w-4" />
                   Dashboard
                 </Link>
-                <Link href={`/${tenantSlug}/empresas`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-                  <Users className="h-4 w-4" />
-                  Clientes
-                </Link>
-                <Link href={`/${tenantSlug}/equipo`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/equipo`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-                  <Briefcase className="h-4 w-4" />
-                  Equipo de Trabajo
-                </Link>
+                {profile && profile.role !== 'cliente' && (
+                  <Link href={`/${tenantSlug}/empresas`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                    <Users className="h-4 w-4" />
+                    Clientes
+                  </Link>
+                )}
+                {profile && profile.role !== 'cliente' && (
+                  <Link href={`/${tenantSlug}/equipo`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/equipo`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                    <Briefcase className="h-4 w-4" />
+                    Equipo de Trabajo
+                  </Link>
+                )}
                 <Link href={`/${tenantSlug}/programa`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/programa`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10">
                   <Calendar className="h-4 w-4" />
                   Programa de Gestión Anual
@@ -1091,24 +1109,28 @@ export default function ProgramaGestion({ params }) {
               <Building className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Dashboard</span>}
             </Link>
-            <Link
-              href={`/${tenantSlug}/empresas`}
-              title="Clientes"
-              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-            >
-              <Users className="h-4 w-4 shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
-            </Link>
-            <Link
-              href={`/${tenantSlug}/equipo`}
-              title="Equipo de Trabajo"
-              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/equipo`)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-            >
-              <Briefcase className="h-4 w-4 shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fade-in">Equipo de Trabajo</span>}
-            </Link>
+            {profile && profile.role !== 'cliente' && (
+              <Link
+                href={`/${tenantSlug}/empresas`}
+                title="Clientes"
+                onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+              >
+                <Users className="h-4 w-4 shrink-0" />
+                {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
+              </Link>
+            )}
+            {profile && profile.role !== 'cliente' && (
+              <Link
+                href={`/${tenantSlug}/equipo`}
+                title="Equipo de Trabajo"
+                onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/equipo`)}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+              >
+                <Briefcase className="h-4 w-4 shrink-0" />
+                {!isSidebarCollapsed && <span className="animate-fade-in">Equipo de Trabajo</span>}
+              </Link>
+            )}
             <Link
               href={`/${tenantSlug}/programa`}
               title="Programa de Gestión Anual"

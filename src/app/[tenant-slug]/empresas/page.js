@@ -128,6 +128,7 @@ export default function EmpresasClientes({ params }) {
   const getSectionPermissions = (userProfile, sectionName) => {
     if (!userProfile) return { cargar: true, editar: true, eliminar: true };
     if (userProfile.role === 'admin') return { cargar: true, editar: true, eliminar: true };
+    if (userProfile.role === 'cliente') return { cargar: false, editar: false, eliminar: false };
     const perm = userProfile.permisos?.[sectionName];
     if (perm === true || perm === undefined) return { cargar: true, editar: true, eliminar: true };
     if (perm === false) return { cargar: false, editar: false, eliminar: false };
@@ -245,6 +246,13 @@ export default function EmpresasClientes({ params }) {
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', type: 'info', onConfirm: null, confirmText: 'Confirmar' });
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
+  // Estados para el Portal de Cliente
+  const [clientProfile, setClientProfile] = useState(null);
+  const [clientEmail, setClientEmail] = useState('');
+  const [clientPassword, setClientPassword] = useState('');
+  const [clientName, setClientName] = useState('');
+  const [portalLoading, setPortalLoading] = useState(false);
+
   // Cargar datos iniciales
   useEffect(() => {
     const checkEnvAndLoad = async () => {
@@ -323,6 +331,12 @@ export default function EmpresasClientes({ params }) {
         .eq('id', user.id)
         .single();
       if (pErr) throw pErr;
+      
+      if (prof.role === 'cliente') {
+        window.location.href = `/${tenantSlug}/dashboard`;
+        return;
+      }
+      
       setProfile(prof);
 
       // Cargar Tenant por slug de URL
@@ -508,6 +522,12 @@ export default function EmpresasClientes({ params }) {
     setAmbienteClave('');
     setObservaciones('');
     
+    // Resetear estados del portal de cliente
+    setClientProfile(null);
+    setClientEmail('');
+    setClientPassword('');
+    setClientName('');
+
     setActiveTab('general');
     setView('form');
   };
@@ -566,6 +586,18 @@ export default function EmpresasClientes({ params }) {
       setAmbienteUsuario('acme_ambiente');
       setAmbienteClave('clave_ambiente');
       setObservaciones('Establecimiento crítico de alta exigencia.');
+      
+      // Mock del portal de cliente en modo desarrollo
+      setClientProfile({
+        id: 'mock-client-id',
+        email: 'cliente@acme.com',
+        full_name: 'Juan Pérez Acme',
+        cuit: '30712345678'
+      });
+      setClientEmail('cliente@acme.com');
+      setClientName('Juan Pérez Acme');
+      setClientPassword('');
+
       setView('form');
       setLoading(false);
       return;
@@ -662,6 +694,41 @@ export default function EmpresasClientes({ params }) {
       }));
 
       setEstablecimientos(mappedEsts);
+
+      // Cargar Perfil de portal del cliente si existe
+      if (isDevMode) {
+        setClientProfile({
+          id: 'mock-client-id',
+          email: 'cliente@acme.com',
+          full_name: 'Juan Pérez Acme',
+          cuit: emp.cuit || '30712345678'
+        });
+        setClientEmail('cliente@acme.com');
+        setClientName('Juan Pérez Acme');
+      } else {
+        const { data: clientProf, error: clientProfErr } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('empresa_id', empresaId)
+          .eq('role', 'cliente')
+          .maybeSingle();
+
+        if (!clientProfErr && clientProf) {
+          setClientProfile(clientProf);
+          setClientEmail(clientProf.email || '');
+          setClientName(clientProf.full_name || emp.razon_social);
+        } else {
+          setClientProfile(null);
+          // Pre-cargar email sugerido con el primer correo si existe
+          const primaryEmail = (emp.contactos_correos && emp.contactos_correos.length > 0) 
+            ? emp.contactos_correos[0].valor 
+            : '';
+          setClientEmail(primaryEmail);
+          setClientName(emp.razon_social);
+        }
+      }
+      setClientPassword('');
+
       setView('form');
       setLoading(false);
     } catch (err) {
@@ -706,6 +773,116 @@ export default function EmpresasClientes({ params }) {
         }
       },
       'Eliminar'
+    );
+  };
+
+  const handleEnablePortal = async () => {
+    if (!clientEmail || !clientName) {
+      triggerToast('Por favor completa todos los campos requeridos para habilitar el portal.', 'error');
+      return;
+    }
+
+    setPortalLoading(true);
+
+    if (isDevMode) {
+      setTimeout(() => {
+        setClientProfile({
+          id: 'mock-client-id',
+          email: clientEmail,
+          full_name: clientName,
+          cuit: cuit
+        });
+        setClientPassword('');
+        setPortalLoading(false);
+        triggerToast('Acceso al portal habilitado con éxito (Simulación).');
+      }, 1500);
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/clientes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          empresaId: editingId,
+          email: clientEmail,
+          password: clientPassword || cuit, // Si no se especifica, usa el CUIT
+          full_name: clientName,
+          cuit: cuit
+        })
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || 'Error al habilitar el portal de cliente');
+      }
+
+      // Volver a cargar el perfil de cliente creado
+      const { data: clientProf, error: clientProfErr } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', result.userId)
+        .single();
+
+      if (clientProfErr) throw clientProfErr;
+
+      setClientProfile(clientProf);
+      setClientPassword('');
+      triggerToast('Portal de cliente habilitado exitosamente.');
+    } catch (err) {
+      console.error('Error al habilitar portal:', err);
+      triggerToast(err.message || 'Error al habilitar el portal.', 'error');
+    } finally {
+      setPortalLoading(false);
+    }
+  };
+
+  const handleDisablePortal = async () => {
+    if (!clientProfile?.id) return;
+
+    showAlert(
+      'Deshabilitar Portal de Cliente',
+      '¿Estás seguro de que deseas revocar de manera permanente las credenciales de ingreso para el portal de cliente? El usuario ya no podrá iniciar sesión.',
+      'warning',
+      async () => {
+        setPortalLoading(true);
+
+        if (isDevMode) {
+          setTimeout(() => {
+            setClientProfile(null);
+            setClientEmail('');
+            setPortalLoading(false);
+            triggerToast('Acceso al portal deshabilitado con éxito (Simulación).');
+            closeAlert();
+          }, 1500);
+          return;
+        }
+
+        try {
+          const response = await fetch(`/api/clientes?userId=${clientProfile.id}`, {
+            method: 'DELETE'
+          });
+
+          const result = await response.json();
+          if (!response.ok) {
+            throw new Error(result.error || 'Error al deshabilitar el portal');
+          }
+
+          setClientProfile(null);
+          setClientEmail('');
+          setClientPassword('');
+          triggerToast('Portal de cliente deshabilitado exitosamente.');
+        } catch (err) {
+          console.error('Error al deshabilitar portal:', err);
+          triggerToast(err.message || 'Error al deshabilitar el portal.', 'error');
+        } finally {
+          setPortalLoading(false);
+          closeAlert();
+        }
+      },
+      'Deshabilitar'
     );
   };
 
@@ -1179,7 +1356,7 @@ export default function EmpresasClientes({ params }) {
               </button>
             </div>
 
-            <div>
+            <div className="flex-1 overflow-y-auto min-h-0 sidebar-scrollbar pr-1">
               {/* Logo Brand */}
               <div className="flex items-center gap-3 mb-8">
                 <img 
@@ -1197,14 +1374,18 @@ export default function EmpresasClientes({ params }) {
                   <Building className="h-4 w-4" />
                   Dashboard
                 </Link>
-                <Link href="#" onClick={(e) => handleSidebarNavigation(e, 'list')} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10">
-                  <Users className="h-4 w-4" />
-                  Clientes
-                </Link>
+                {profile && profile.role !== 'cliente' && (
+                  <Link href="#" onClick={(e) => handleSidebarNavigation(e, 'list')} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10">
+                    <Users className="h-4 w-4" />
+                    Clientes
+                  </Link>
+                )}
+                {profile && profile.role !== 'cliente' && (
                   <Link href={`/${tenantSlug}/equipo`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/equipo`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                     <Briefcase className="h-4 w-4" />
                     Equipo de Trabajo
                   </Link>
+                )}
                 <Link href={`/${tenantSlug}/programa`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/programa`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <Calendar className="h-4 w-4" />
                   Programa de Gestión Anual
@@ -1260,7 +1441,7 @@ export default function EmpresasClientes({ params }) {
 
       {/* Sidebar - Barra Lateral (Idéntica al Dashboard para consistencia) */}
       <aside className={`bg-[#0D0D0D] flex flex-col justify-between shrink-0 hidden md:flex transition-all duration-300 ${isSidebarCollapsed ? 'w-20' : 'w-64'}`}>
-        <div className="p-6">
+        <div className="p-6 flex-1 overflow-y-auto min-h-0 sidebar-scrollbar">
           {/* Logo Brand */}
           <div className={`flex items-center justify-between gap-3 mb-8 ${isSidebarCollapsed ? 'flex-col' : ''}`}>
             <div className="flex items-center gap-3">
@@ -1301,15 +1482,18 @@ export default function EmpresasClientes({ params }) {
               <Building className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Dashboard</span>}
             </Link>
-            <Link 
-              href="#" 
-              title="Clientes"
-              onClick={(e) => handleSidebarNavigation(e, 'list')}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10 ${isSidebarCollapsed ? 'justify-center' : ''}`}
-            >
-              <Users className="h-4 w-4 shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
-            </Link>
+            {profile && profile.role !== 'cliente' && (
+              <Link 
+                href="#" 
+                title="Clientes"
+                onClick={(e) => handleSidebarNavigation(e, 'list')}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10 ${isSidebarCollapsed ? 'justify-center' : ''}`}
+              >
+                <Users className="h-4 w-4 shrink-0" />
+                {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
+              </Link>
+            )}
+            {profile && profile.role !== 'cliente' && (
               <Link 
                 href={`/${tenantSlug}/equipo`} 
                 title="Equipo de Trabajo"
@@ -1319,6 +1503,7 @@ export default function EmpresasClientes({ params }) {
                 <Briefcase className="h-4 w-4 shrink-0" />
                 {!isSidebarCollapsed && <span className="animate-fade-in">Equipo de Trabajo</span>}
               </Link>
+            )}
             <Link 
               href={`/${tenantSlug}/programa`} 
               title="Programa de Gestión Anual"
@@ -1709,7 +1894,8 @@ export default function EmpresasClientes({ params }) {
                   {[
                     { id: 'general', label: 'Datos Generales' },
                     { id: 'establecimientos', label: `Establecimientos (${establecimientos.length})` },
-                    { id: 'credenciales', label: 'Plataformas & Credenciales' }
+                    { id: 'credenciales', label: 'Plataformas & Credenciales' },
+                    ...(editingId ? [{ id: 'portal', label: 'Portal de Cliente' }] : [])
                   ].map(tab => (
                     <button
                       key={tab.id}
@@ -2621,6 +2807,155 @@ export default function EmpresasClientes({ params }) {
                       </div>
                     </div>
 
+                  </div>
+                )}
+
+                {/* TAB 5: PORTAL DE CLIENTE */}
+                {activeTab === 'portal' && (
+                  <div className="space-y-6">
+                    <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-6">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2.5 rounded-xl ${clientProfile ? 'bg-emerald-50 text-emerald-500' : 'bg-slate-100 text-slate-400'}`}>
+                            <Users className="h-6 w-6" />
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-bold text-slate-900">Portal de Acceso del Cliente</h4>
+                            <p className="text-xs text-slate-500 mt-0.5">Configuración de credenciales y seguridad del portal.</p>
+                          </div>
+                        </div>
+                        <div>
+                          {clientProfile ? (
+                            <span className="px-2.5 py-1 rounded-full bg-emerald-100 border border-emerald-200 text-emerald-700 text-xs font-bold uppercase tracking-wider">
+                              Activo
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-wider">
+                              Inactivo
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {clientProfile ? (
+                        <div className="space-y-6">
+                          <div className="p-4 rounded-xl bg-slate-50/50 border border-slate-150 space-y-4">
+                            <div className="grid md:grid-cols-2 gap-4">
+                              <div>
+                                <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Nombre de Usuario (CUIT)</span>
+                                <span className="text-sm font-semibold text-slate-800 block bg-white border border-slate-150 rounded-xl px-3 py-2">{cuit}</span>
+                              </div>
+                              <div>
+                                <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Correo Electrónico de Acceso</span>
+                                <span className="text-sm font-semibold text-slate-800 block bg-white border border-slate-150 rounded-xl px-3 py-2">{clientProfile.email}</span>
+                              </div>
+                            </div>
+                            <div>
+                              <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Nombre del Responsable</span>
+                              <span className="text-sm font-semibold text-slate-800 block bg-white border border-slate-150 rounded-xl px-3 py-2">{clientProfile.full_name}</span>
+                            </div>
+                          </div>
+
+                          <div className="p-4 rounded-xl border border-red-200 bg-red-50 text-red-800 text-xs leading-relaxed">
+                            <strong>Atención:</strong> Si deshabilitas el acceso, las credenciales del cliente serán eliminadas de inmediato de manera permanente y éste ya no podrá iniciar sesión en la plataforma. Sus datos e informes de seguridad no serán borrados, sólo el acceso del usuario.
+                          </div>
+
+                          <div className="flex justify-start">
+                            <button
+                              type="button"
+                              disabled={portalLoading}
+                              onClick={handleDisablePortal}
+                              className="py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-red-500/10 active:scale-[0.98] disabled:opacity-50"
+                            >
+                              {portalLoading ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                  Deshabilitando...
+                                </>
+                              ) : (
+                                <>
+                                  <Trash2 className="h-4 w-4" />
+                                  Deshabilitar Acceso al Portal
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-6">
+                          <div className="text-xs text-slate-650 leading-relaxed max-w-xl">
+                            El portal de cliente permite que los directores o encargados de la empresa ingresen en modo **Solo Lectura** para visualizar sus planes anuales, constancias de visita, capacitaciones y acciones correctivas.
+                            El usuario del cliente será su número de CUIT (**{cuit || 'Sin CUIT asignado'}**) y la contraseña inicial será también su CUIT.
+                          </div>
+
+                          {(!cuit || cuit.length !== 11) ? (
+                            <div className="p-4 rounded-xl bg-amber-50 border border-amber-250 text-amber-800 text-xs flex items-start gap-2.5">
+                              <AlertTriangle className="h-4.5 w-4.5 text-amber-600 shrink-0 mt-0.5" />
+                              <div>
+                                <strong>CUIT no configurado o inválido:</strong> Para poder habilitar el portal de clientes, debes ingresar primero un número de CUIT válido de 11 dígitos en la pestaña <strong>Datos Generales</strong> y guardar la empresa.
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="space-y-4 max-w-xl">
+                              <div className="grid md:grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                  <label className="text-xs font-bold text-slate-600 block">Nombre del Contacto / Responsable <span className="text-[#468DFF]">*</span></label>
+                                  <input
+                                    type="text"
+                                    value={clientName}
+                                    onChange={(e) => setClientName(e.target.value)}
+                                    placeholder="Nombre del cliente"
+                                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <label className="text-xs font-bold text-slate-600 block">Correo Electrónico del Contacto <span className="text-[#468DFF]">*</span></label>
+                                  <input
+                                    type="email"
+                                    value={clientEmail}
+                                    onChange={(e) => setClientEmail(e.target.value)}
+                                    placeholder="correo@cliente.com"
+                                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="space-y-1">
+                                <label className="text-xs font-bold text-slate-600 block">Contraseña Inicial (Opcional - por defecto será el CUIT)</label>
+                                <input
+                                  type="password"
+                                  value={clientPassword}
+                                  onChange={(e) => setClientPassword(e.target.value)}
+                                  placeholder="Dejar vacío para usar el CUIT como clave"
+                                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
+                                />
+                              </div>
+
+                              <div className="flex justify-end pt-2">
+                                <button
+                                  type="button"
+                                  disabled={portalLoading}
+                                  onClick={handleEnablePortal}
+                                  className="py-2.5 px-5 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-blue-500/10 active:scale-[0.98] disabled:opacity-50"
+                                >
+                                  {portalLoading ? (
+                                    <>
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                      Habilitando Portal...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Check className="h-4 w-4" />
+                                      Habilitar Portal de Cliente
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
 

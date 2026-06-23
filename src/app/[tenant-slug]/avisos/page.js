@@ -96,6 +96,7 @@ export default function AvisosRiesgoPage({ params }) {
   // Permisos granulares
   const getSectionPermissions = (userProfile, sectionName) => {
     if (!userProfile) return { cargar: true, editar: true, eliminar: true };
+    if (userProfile.role === 'cliente') return { cargar: false, editar: false, eliminar: false };
     if (userProfile.role === 'admin') return { cargar: true, editar: true, eliminar: true };
     const perm = userProfile.permisos?.[sectionName];
     if (perm === true || perm === undefined) return { cargar: true, editar: true, eliminar: true };
@@ -283,6 +284,9 @@ export default function AvisosRiesgoPage({ params }) {
         .single();
       if (pErr) throw pErr;
       setProfile(prof);
+      if (prof.role === 'cliente') {
+        setIsReadOnlyView(true);
+      }
 
       // Cargar Tenant por slug
       const { data: ten, error: tErr } = await supabase
@@ -309,20 +313,26 @@ export default function AvisosRiesgoPage({ params }) {
       setTenant(ten);
 
       // Cargar Empresas Clientes
-      const { data: emps, error: empErr } = await supabase
+      let empresasQuery = supabase
         .from('empresas')
         .select('id, razon_social')
-        .eq('tenant_id', ten.id)
-        .order('razon_social');
+        .eq('tenant_id', ten.id);
+      if (prof.role === 'cliente') {
+        empresasQuery = empresasQuery.eq('id', prof.empresa_id);
+      }
+      const { data: emps, error: empErr } = await empresasQuery.order('razon_social');
       if (empErr) throw empErr;
       setEmpresas(emps || []);
 
       // Cargar Establecimientos
-      const { data: ests, error: estErr } = await supabase
+      let estsQuery = supabase
         .from('establecimientos')
         .select('id, empresa_id, denominacion, direccion')
-        .eq('tenant_id', ten.id)
-        .order('denominacion');
+        .eq('tenant_id', ten.id);
+      if (prof.role === 'cliente') {
+        estsQuery = estsQuery.eq('empresa_id', prof.empresa_id);
+      }
+      const { data: ests, error: estErr } = await estsQuery.order('denominacion');
       if (estErr) throw estErr;
       setAllEstablecimientos(ests || []);
 
@@ -336,11 +346,14 @@ export default function AvisosRiesgoPage({ params }) {
       setMiembros(mems || []);
 
       // Cargar Avisos de Riesgo
-      const { data: avs, error: avsErr } = await supabase
+      let avsQuery = supabase
         .from('avisos_riesgo')
         .select('*')
-        .eq('tenant_id', ten.id)
-        .order('created_at', { ascending: false });
+        .eq('tenant_id', ten.id);
+      if (prof.role === 'cliente') {
+        avsQuery = avsQuery.eq('empresa_id', prof.empresa_id);
+      }
+      const { data: avs, error: avsErr } = await avsQuery.order('created_at', { ascending: false });
       if (avsErr) throw avsErr;
       setAvisos(avs || []);
 
@@ -1737,7 +1750,7 @@ export default function AvisosRiesgoPage({ params }) {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <div>
+            <div className="flex-1 overflow-y-auto min-h-0 sidebar-scrollbar pr-1">
               <div className="flex items-center gap-3 mb-8">
                 <img src="/brand/logo-primary.png" alt="Logo" className="h-9 w-9 object-contain shrink-0" />
                 <span className="font-outfit text-base font-extrabold text-white tracking-tight">Gestión SySO</span>
@@ -1748,14 +1761,18 @@ export default function AvisosRiesgoPage({ params }) {
                   <Building className="h-4 w-4" />
                   Dashboard
                 </Link>
-                <Link href={`/${tenantSlug}/empresas`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-                  <Users className="h-4 w-4" />
-                  Clientes
-                </Link>
-                <Link href={`/${tenantSlug}/equipo`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/equipo`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-                  <Briefcase className="h-4 w-4" />
-                  Equipo de Trabajo
-                </Link>
+                {profile && profile.role !== 'cliente' && (
+                  <Link href={`/${tenantSlug}/empresas`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                    <Users className="h-4 w-4" />
+                    Clientes
+                  </Link>
+                )}
+                {profile && profile.role !== 'cliente' && (
+                  <Link href={`/${tenantSlug}/equipo`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/equipo`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                    <Briefcase className="h-4 w-4" />
+                    Equipo de Trabajo
+                  </Link>
+                )}
                 <Link href={`/${tenantSlug}/programa`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/programa`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <Calendar className="h-4 w-4" />
                   Programa de Gestión Anual
@@ -1804,7 +1821,7 @@ export default function AvisosRiesgoPage({ params }) {
 
       {/* Desktop Sidebar */}
       <aside className={`bg-[#0D0D0D] flex flex-col justify-between shrink-0 hidden md:flex transition-all duration-300 ${isSidebarCollapsed ? 'w-20' : 'w-64'}`}>
-        <div className="p-6">
+        <div className="p-6 flex-1 overflow-y-auto min-h-0 sidebar-scrollbar">
           <div className={`flex items-center justify-between gap-3 mb-8 ${isSidebarCollapsed ? 'flex-col' : ''}`}>
             <div className="flex items-center gap-3">
               <img src="/brand/logo-primary.png" alt="Logo" className="h-9 w-9 object-contain shrink-0" />
@@ -1820,14 +1837,18 @@ export default function AvisosRiesgoPage({ params }) {
               <Building className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Dashboard</span>}
             </Link>
-            <Link href={`/${tenantSlug}/empresas`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`} title="Clientes">
-              <Users className="h-4 w-4 shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
-            </Link>
-            <Link href={`/${tenantSlug}/equipo`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/equipo`)} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`} title="Equipo de Trabajo">
-              <Briefcase className="h-4 w-4 shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fade-in">Equipo de Trabajo</span>}
-            </Link>
+            {profile && profile.role !== 'cliente' && (
+              <Link href={`/${tenantSlug}/empresas`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`} title="Clientes">
+                <Users className="h-4 w-4 shrink-0" />
+                {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
+              </Link>
+            )}
+            {profile && profile.role !== 'cliente' && (
+              <Link href={`/${tenantSlug}/equipo`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/equipo`)} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`} title="Equipo de Trabajo">
+                <Briefcase className="h-4 w-4 shrink-0" />
+                {!isSidebarCollapsed && <span className="animate-fade-in">Equipo de Trabajo</span>}
+              </Link>
+            )}
             <Link href={`/${tenantSlug}/programa`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/programa`)} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`} title="Programa de Gestión Anual">
               <Calendar className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Programa de Gestión Anual</span>}
@@ -2420,31 +2441,35 @@ export default function AvisosRiesgoPage({ params }) {
                                     >
                                       <Download className="h-4.5 w-4.5" />
                                     </button>
-                                    <button
-                                      onClick={() => handleOpenEmailModal(av)}
-                                      title="Enviar por Correo"
-                                      className="p-1.5 rounded-lg bg-blue-50 hover:bg-[#468DFF]/25 text-[#468DFF] transition-all cursor-pointer"
-                                    >
-                                      <Mail className="h-4.5 w-4.5" />
-                                    </button>
-                                    {canEditar ? (
+                                    {profile && profile.role !== 'cliente' && (
                                       <button
-                                        onClick={() => { setIsReadOnlyView(false); handleEdit(av); }}
-                                        className="p-1.5 rounded-lg transition-all cursor-pointer bg-amber-50 hover:bg-amber-100 text-amber-600"
-                                        title="Editar Aviso"
+                                        onClick={() => handleOpenEmailModal(av)}
+                                        title="Enviar por Correo"
+                                        className="p-1.5 rounded-lg bg-blue-50 hover:bg-[#468DFF]/25 text-[#468DFF] transition-all cursor-pointer"
                                       >
-                                        <Edit className="h-4.5 w-4.5" />
-                                      </button>
-                                    ) : (
-                                      <button
-                                        onClick={() => { setIsReadOnlyView(true); handleEdit(av); }}
-                                        className="p-1.5 rounded-lg transition-all cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-600"
-                                        title="Ver Detalle"
-                                      >
-                                        <Eye className="h-4.5 w-4.5" />
+                                        <Mail className="h-4.5 w-4.5" />
                                       </button>
                                     )}
-                                    {canEliminar && (
+                                    {profile && profile.role !== 'cliente' && (
+                                      canEditar ? (
+                                        <button
+                                          onClick={() => { setIsReadOnlyView(false); handleEdit(av); }}
+                                          className="p-1.5 rounded-lg transition-all cursor-pointer bg-amber-50 hover:bg-amber-100 text-amber-600"
+                                          title="Editar Aviso"
+                                        >
+                                          <Edit className="h-4.5 w-4.5" />
+                                        </button>
+                                      ) : (
+                                        <button
+                                          onClick={() => { setIsReadOnlyView(true); handleEdit(av); }}
+                                          className="p-1.5 rounded-lg transition-all cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-600"
+                                          title="Ver Detalle"
+                                        >
+                                          <Eye className="h-4.5 w-4.5" />
+                                        </button>
+                                      )
+                                    )}
+                                    {profile && profile.role !== 'cliente' && canEliminar && (
                                       <button
                                         onClick={() => handleDelete(av.id)}
                                         className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer"

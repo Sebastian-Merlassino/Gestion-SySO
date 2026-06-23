@@ -56,6 +56,7 @@ export default function CapacitacionPage({ params }) {
   // Permisos granulares de edición
   const getSectionPermissions = (userProfile, sectionName) => {
     if (!userProfile) return { cargar: true, editar: true, eliminar: true };
+    if (userProfile.role === 'cliente') return { cargar: false, editar: false, eliminar: false };
     if (userProfile.role === 'admin') return { cargar: true, editar: true, eliminar: true };
     const perm = userProfile.permisos?.[sectionName];
     if (perm === true || perm === undefined) return { cargar: true, editar: true, eliminar: true };
@@ -187,6 +188,9 @@ export default function CapacitacionPage({ params }) {
         .single();
       if (pErr) throw pErr;
       setProfile(prof);
+      if (prof.role === 'cliente') {
+        setIsReadOnlyView(true);
+      }
 
       // 2. Tenant por slug de URL
       const { data: ten, error: tErr } = await supabase
@@ -247,20 +251,26 @@ export default function CapacitacionPage({ params }) {
       setTenant(ten);
 
       // 3. Clientes
-      const { data: emps, error: empErr } = await supabase
+      let empresasQuery = supabase
         .from('empresas')
         .select('id, razon_social')
-        .eq('tenant_id', ten.id)
-        .order('razon_social');
+        .eq('tenant_id', ten.id);
+      if (prof.role === 'cliente') {
+        empresasQuery = empresasQuery.eq('id', prof.empresa_id);
+      }
+      const { data: emps, error: empErr } = await empresasQuery.order('razon_social');
       if (empErr) throw empErr;
       setEmpresas(emps || []);
 
       // 4. Establecimientos
-      const { data: ests, error: estErr } = await supabase
+      let estsQuery = supabase
         .from('establecimientos')
         .select('id, empresa_id, denominacion')
-        .eq('tenant_id', ten.id)
-        .order('denominacion');
+        .eq('tenant_id', ten.id);
+      if (prof.role === 'cliente') {
+        estsQuery = estsQuery.eq('empresa_id', prof.empresa_id);
+      }
+      const { data: ests, error: estErr } = await estsQuery.order('denominacion');
       if (estErr) throw estErr;
       setAllEstablecimientos(ests || []);
 
@@ -282,11 +292,14 @@ export default function CapacitacionPage({ params }) {
       setTemasList(topics || []);
 
       // 7. Programa de Capacitación
-      const { data: capData, error: capErr } = await supabase
+      let capQuery = supabase
         .from('programa_capacitacion')
         .select('*')
-        .eq('tenant_id', ten.id)
-        .order('created_at', { ascending: false });
+        .eq('tenant_id', ten.id);
+      if (prof.role === 'cliente') {
+        capQuery = capQuery.eq('empresa_id', prof.empresa_id);
+      }
+      const { data: capData, error: capErr } = await capQuery.order('created_at', { ascending: false });
       if (capErr) throw capErr;
 
       // Resuelve URLs firmadas para las múltiples fotos de registro
@@ -875,14 +888,18 @@ export default function CapacitacionPage({ params }) {
                   <Building className="h-4 w-4" />
                   Dashboard
                 </Link>
-                <Link href={`/${tenantSlug}/empresas`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-                  <Users className="h-4 w-4" />
-                  Clientes
-                </Link>
+                {profile && profile.role !== 'cliente' && (
+                  <Link href={`/${tenantSlug}/empresas`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                    <Users className="h-4 w-4" />
+                    Clientes
+                  </Link>
+                )}
+                {profile && profile.role !== 'cliente' && (
                   <Link href={`/${tenantSlug}/equipo`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/equipo`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                     <Briefcase className="h-4 w-4" />
                     Equipo de Trabajo
                   </Link>
+                )}
                 <Link href={`/${tenantSlug}/programa`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/programa`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <Calendar className="h-4 w-4" />
                   Programa de Gestión Anual
@@ -969,15 +986,18 @@ export default function CapacitacionPage({ params }) {
               <Building className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Dashboard</span>}
             </Link>
-            <Link 
-              href={`/${tenantSlug}/empresas`} 
-              title="Clientes"
-              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-            >
-              <Users className="h-4 w-4 shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
-            </Link>
+            {profile && profile.role !== 'cliente' && (
+              <Link 
+                href={`/${tenantSlug}/empresas`} 
+                title="Clientes"
+                onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+              >
+                <Users className="h-4 w-4 shrink-0" />
+                {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
+              </Link>
+            )}
+            {profile && profile.role !== 'cliente' && (
               <Link 
                 href={`/${tenantSlug}/equipo`} 
                 title="Equipo de Trabajo"
@@ -987,6 +1007,7 @@ export default function CapacitacionPage({ params }) {
                 <Briefcase className="h-4 w-4 shrink-0" />
                 {!isSidebarCollapsed && <span className="animate-fade-in">Equipo de Trabajo</span>}
               </Link>
+            )}
             <Link 
               href={`/${tenantSlug}/programa`} 
               title="Programa de Gestión Anual"

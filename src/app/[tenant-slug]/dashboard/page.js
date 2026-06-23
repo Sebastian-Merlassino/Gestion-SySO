@@ -66,6 +66,7 @@ export default function TenantDashboard({ params }) {
   const [establecimientos, setEstablecimientos] = useState([]);
   const [miembros, setMiembros] = useState([]);
   const [actividades, setActividades] = useState([]);
+  const [accionesCorrectivas, setAccionesCorrectivas] = useState([]);
 
   // Estadísticas ficticias/reales
   const [stats, setStats] = useState({
@@ -153,29 +154,26 @@ export default function TenantDashboard({ params }) {
 
         setTenant(ten);
 
-          // Cargar cantidad real de clientes del tenant
-          const { count, error: countErr } = await supabase
-            .from('empresas') // Tabla de clientes
-            .select('*', { count: 'exact', head: true })
-            .eq('tenant_id', ten.id);
-          
-          let clientCountReal = 0;
-          if (!countErr && count !== null) {
-            clientCountReal = count;
-          }
-
           // Cargar Empresas del Tenant
-          const { data: emps } = await supabase
+          let empresasQuery = supabase
             .from('empresas')
             .select('id, razon_social')
             .eq('tenant_id', ten.id);
+          if (prof.role === 'cliente') {
+            empresasQuery = empresasQuery.eq('id', prof.empresa_id);
+          }
+          const { data: emps } = await empresasQuery;
           setEmpresas(emps || []);
 
           // Cargar Establecimientos del Tenant
-          const { data: ests } = await supabase
+          let estsQuery = supabase
             .from('establecimientos')
             .select('id, denominacion')
             .eq('tenant_id', ten.id);
+          if (prof.role === 'cliente') {
+            estsQuery = estsQuery.eq('empresa_id', prof.empresa_id);
+          }
+          const { data: ests } = await estsQuery;
           setEstablecimientos(ests || []);
 
           // Cargar Miembros del Equipo
@@ -186,18 +184,30 @@ export default function TenantDashboard({ params }) {
           setMiembros(mems || []);
 
           // Cargar Actividades de programa_anual
-          const { data: progs } = await supabase
+          let progQuery = supabase
             .from('programa_anual')
             .select('*')
             .eq('tenant_id', ten.id);
+          if (prof.role === 'cliente') {
+            progQuery = progQuery.eq('empresa_id', prof.empresa_id);
+          }
+          const { data: progs } = await progQuery;
           setActividades(progs || []);
 
           // Cargar cantidad real de acciones correctivas del tenant
-          const { count: correctivasCount, error: cErr } = await supabase
+          let correctivasQuery = supabase
             .from('acciones_correctivas')
-            .select('*', { count: 'exact', head: true })
+            .select('*')
             .eq('tenant_id', ten.id);
-          const realCorrectivasCount = !cErr && correctivasCount !== null ? correctivasCount : 0;
+          if (prof.role === 'cliente') {
+            correctivasQuery = correctivasQuery.eq('empresa_id', prof.empresa_id);
+          }
+          const { data: correctivasData, error: cErr } = await correctivasQuery;
+          const realCorrectivasCount = !cErr && correctivasData ? correctivasData.length : 0;
+          setAccionesCorrectivas(correctivasData || []);
+
+          // Cargar cantidad real de clientes
+          let clientCountReal = emps ? emps.length : 0;
 
           // Calcular cantidad de visitas pendientes
           const pendingCount = (progs || []).filter(a => !a.fecha_realizacion).length;
@@ -232,6 +242,28 @@ export default function TenantDashboard({ params }) {
         complianceRate: 92,
         pendingVisits: 2
       });
+
+      const mockCorrectivas = [
+        {
+          id: 'mock-acc-1',
+          descripcion_hallazgo: 'Falta de disyuntor en tablero eléctrico secundario.',
+          nivel_riesgo: 'Riesgo sustancial',
+          fecha_planificada: '2026-06-20',
+          fecha_implementacion: '',
+          area_sector: 'Cocina',
+          responsable: 'Carlos Gómez'
+        },
+        {
+          id: 'mock-acc-2',
+          descripcion_hallazgo: 'Ausencia de señalización en salidas de emergencia.',
+          nivel_riesgo: 'Riesgo moderado',
+          fecha_planificada: '2026-07-15',
+          fecha_implementacion: '2026-07-02',
+          area_sector: 'Depósito',
+          responsable: 'Carlos Gómez'
+        }
+      ];
+      setAccionesCorrectivas(mockCorrectivas);
 
       const mockEmps = [
         { id: 'mock-emp-1', razon_social: 'Acme Argentina S.A.' },
@@ -324,6 +356,40 @@ export default function TenantDashboard({ params }) {
       estadoColor,
       dateAlertColor
     };
+  };
+
+  const getCalculatedStatus = (fPlanificada, fImplementacion) => {
+    if (!fPlanificada) {
+      return { text: 'En análisis', color: 'bg-slate-100 text-slate-700 border-slate-200' };
+    }
+    if (fImplementacion) {
+      return { text: 'Cerrada', color: 'bg-[#00b050]/10 text-[#00b050] border-[#00b050]/20' };
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const planDate = new Date(fPlanificada + 'T00:00:00');
+    planDate.setHours(0, 0, 0, 0);
+
+    if (planDate >= today) {
+      return { text: 'En tiempo', color: 'bg-blue-500/10 text-[#468DFF] border-blue-500/20' };
+    } else {
+      return { text: 'Vencido', color: 'bg-red-500/10 text-red-600 border-red-500/20' };
+    }
+  };
+
+  const getRiskBadgeStyles = (risk) => {
+    const r = (risk || '').toLowerCase();
+    if (r.includes('crítico') || r.includes('critico')) {
+      return 'bg-red-100 text-red-700 border-red-200';
+    } else if (r.includes('sustancial') || r.includes('alto')) {
+      return 'bg-orange-100 text-orange-700 border-orange-200';
+    } else if (r.includes('moderado')) {
+      return 'bg-amber-100 text-amber-700 border-amber-200';
+    } else if (r.includes('leve') || r.includes('bajo')) {
+      return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+    }
+    return 'bg-slate-100 text-slate-700 border-slate-200';
   };
 
   // Funciones para el calendario compacto del dashboard
@@ -426,14 +492,18 @@ export default function TenantDashboard({ params }) {
                   <Building className="h-4 w-4" />
                   Dashboard
                 </Link>
-                <Link href={`/${tenantSlug}/empresas`} onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-                  <Users className="h-4 w-4" />
-                  Clientes
-                </Link>
+                {profile && profile.role !== 'cliente' && (
+                  <Link href={`/${tenantSlug}/empresas`} onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                    <Users className="h-4 w-4" />
+                    Clientes
+                  </Link>
+                )}
+                {profile && profile.role !== 'cliente' && (
                   <Link href={`/${tenantSlug}/equipo`} onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                     <Briefcase className="h-4 w-4" />
                     Equipo de Trabajo
                   </Link>
+                )}
                  <Link href={`/${tenantSlug}/programa`} onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <Calendar className="h-4 w-4" />
                   Programa de Gestión Anual
@@ -530,14 +600,17 @@ export default function TenantDashboard({ params }) {
               <Building className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Dashboard</span>}
             </Link>
-            <Link 
-              href={`/${tenantSlug}/empresas`} 
-              title="Clientes"
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-            >
-              <Users className="h-4 w-4 shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
-            </Link>
+            {profile && profile.role !== 'cliente' && (
+              <Link 
+                href={`/${tenantSlug}/empresas`} 
+                title="Clientes"
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+              >
+                <Users className="h-4 w-4 shrink-0" />
+                {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
+              </Link>
+            )}
+            {profile && profile.role !== 'cliente' && (
               <Link 
                 href={`/${tenantSlug}/equipo`} 
                 title="Equipo de Trabajo"
@@ -546,6 +619,7 @@ export default function TenantDashboard({ params }) {
                 <Briefcase className="h-4 w-4 shrink-0" />
                 {!isSidebarCollapsed && <span className="animate-fade-in">Equipo de Trabajo</span>}
               </Link>
+            )}
             <Link 
               href={`/${tenantSlug}/programa`} 
               title="Programa de Gestión Anual"
@@ -651,9 +725,11 @@ export default function TenantDashboard({ params }) {
             <span className="text-xs font-semibold text-slate-500 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-150 hidden sm:inline-block">
               {tenant?.name || 'Cargando...'}
             </span>
-            <span className="px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider">
-              {tenant?.plan_id ? (tenant.plan_id.toLowerCase() === 'libre' ? 'Plan Libre' : tenant.plan_id.toLowerCase().startsWith('standard') ? 'Plan Standard' : tenant.plan_id.toLowerCase().startsWith('basic') ? 'Plan Basic' : `Plan ${tenant.plan_id}`) : 'Plan Pro'}
-            </span>
+            {profile && profile.role !== 'cliente' && (
+              <span className="px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider">
+                {tenant?.plan_id ? (tenant.plan_id.toLowerCase() === 'libre' ? 'Plan Libre' : tenant.plan_id.toLowerCase().startsWith('standard') ? 'Plan Standard' : tenant.plan_id.toLowerCase().startsWith('basic') ? 'Plan Basic' : `Plan ${tenant.plan_id}`) : 'Plan Pro'}
+              </span>
+            )}
           </div>
         </header>
         {loading ? (
@@ -844,135 +920,234 @@ export default function TenantDashboard({ params }) {
           </div>
 
           {/* Cards de Métricas */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            
-            <div className="bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
-              <div className="text-slate-400 group-hover:text-[#468DFF] transition-colors mb-3">
-                <Users className="h-6 w-6" />
+          {profile && profile.role !== 'cliente' && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              
+              <div className="bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
+                <div className="text-slate-400 group-hover:text-[#468DFF] transition-colors mb-3">
+                  <Users className="h-6 w-6" />
+                </div>
+                <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-bold">Clientes</span>
+                <span className="font-outfit text-3xl font-extrabold text-slate-900 block mt-1">{stats.clientsCount}</span>
+                <span className="text-[10px] text-slate-400 block mt-2">
+                  {tenant?.plan_id === 'free' ? 'Límite: 1 empresa (Plan Gratis)' : 'Habilitado por tu plan'}
+                </span>
               </div>
-              <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-bold">Clientes</span>
-              <span className="font-outfit text-3xl font-extrabold text-slate-900 block mt-1">{stats.clientsCount}</span>
-              <span className="text-[10px] text-slate-400 block mt-2">
-                {tenant?.plan_id === 'free' ? 'Límite: 1 empresa (Plan Gratis)' : 'Habilitado por tu plan'}
-              </span>
-            </div>
 
-            <div className="bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
-              <div className="text-slate-400 group-hover:text-[#468DFF] transition-colors mb-3">
-                <ClipboardList className="h-6 w-6" />
+              <div className="bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
+                <div className="text-slate-400 group-hover:text-[#468DFF] transition-colors mb-3">
+                  <ClipboardList className="h-6 w-6" />
+                </div>
+                <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-bold">Acciones Correctivas</span>
+                <span className="font-outfit text-3xl font-extrabold text-slate-900 block mt-1">{stats.inspectionsCount}</span>
+                <span className="text-[10px] text-slate-400 block mt-2">Hallazgos registrados</span>
               </div>
-              <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-bold">Acciones Correctivas</span>
-              <span className="font-outfit text-3xl font-extrabold text-slate-900 block mt-1">{stats.inspectionsCount}</span>
-              <span className="text-[10px] text-slate-400 block mt-2">Hallazgos registrados</span>
-            </div>
 
-            <div className="bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
-              <div className="text-slate-400 group-hover:text-emerald-500 transition-colors mb-3">
-                <ShieldCheck className="h-6 w-6" />
+              <div className="bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
+                <div className="text-slate-400 group-hover:text-emerald-500 transition-colors mb-3">
+                  <ShieldCheck className="h-6 w-6" />
+                </div>
+                <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-bold">% Cumplimiento</span>
+                <span className="font-outfit text-3xl font-extrabold text-emerald-500 block mt-1">{stats.complianceRate}%</span>
+                <span className="text-[10px] text-slate-400 block mt-2">Nivel de cumplimiento global</span>
               </div>
-              <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-bold">% Cumplimiento</span>
-              <span className="font-outfit text-3xl font-extrabold text-emerald-500 block mt-1">{stats.complianceRate}%</span>
-              <span className="text-[10px] text-slate-400 block mt-2">Nivel de cumplimiento global</span>
-            </div>
 
-            <div className="bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
-              <div className="text-slate-400 group-hover:text-amber-500 transition-colors mb-3">
-                <Calendar className="h-6 w-6" />
+              <div className="bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
+                <div className="text-slate-400 group-hover:text-amber-500 transition-colors mb-3">
+                  <Calendar className="h-6 w-6" />
+                </div>
+                <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-bold">Pendientes</span>
+                <span className="font-outfit text-3xl font-extrabold text-slate-900 block mt-1">{stats.pendingVisits}</span>
+                <span className="text-[10px] text-slate-400 block mt-2">Visitas de control agendadas</span>
               </div>
-              <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-bold">Pendientes</span>
-              <span className="font-outfit text-3xl font-extrabold text-slate-900 block mt-1">{stats.pendingVisits}</span>
-              <span className="text-[10px] text-slate-400 block mt-2">Visitas de control agendadas</span>
-            </div>
 
-          </div>
+            </div>
+          )}
 
           {/* Secciones de Trabajo y Acciones Rápidas */}
-          <div className="grid md:grid-cols-3 gap-6">
-            
-            {/* Listado de accesos rápidos */}
-            <div className="md:col-span-2 bg-white border border-slate-150 rounded-2xl p-6 space-y-4 shadow-sm">
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <Sparkles className="h-4.5 w-4.5 text-[#468DFF]" />
-                Accesos rápidos
-              </h3>
+          {profile && profile.role === 'cliente' ? (
+            <div className="bg-white border border-slate-150 rounded-2xl p-6 space-y-6 shadow-sm">
+              <div className="flex items-center justify-between border-b border-slate-150 pb-3">
+                <h3 className="font-outfit text-base font-extrabold text-slate-900 flex items-center gap-2">
+                  <ClipboardList className="h-5 w-5 text-[#468DFF]" />
+                  Resumen de Acciones Correctivas
+                </h3>
+                <Link 
+                  href={`/${tenantSlug}/correctivas`} 
+                  className="text-xs font-bold text-[#468DFF] hover:text-[#0511F2] transition-colors inline-flex items-center gap-1"
+                >
+                  Ver planilla completa
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
+              {/* Grid de 5 Contadores */}
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 
-                <a href={`/${tenantSlug}/empresas?new=true`} className="p-4 rounded-xl border border-slate-150 bg-slate-50/50 hover:bg-[#468DFF]/5 hover:border-[#468DFF]/30 transition-all flex items-start gap-3 group">
-                  <div className="p-2 rounded-lg bg-blue-500/10 text-[#468DFF] shrink-0 mt-0.5">
-                    <PlusCircle className="h-4 w-4" />
+                {/* 1. Total */}
+                <div className="p-4 rounded-xl border border-slate-150 bg-slate-50/50 flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Cantidad Total</span>
+                    <ClipboardList className="h-4 w-4 text-[#468DFF]" />
                   </div>
-                  <div>
-                    <span className="text-xs font-bold text-slate-800 block group-hover:text-[#468DFF] transition-colors">Nuevo Cliente</span>
-                    <span className="text-[10px] text-slate-500 block mt-1">Registrar una empresa cliente en tu base de datos.</span>
-                  </div>
-                </a>
+                  <span className="font-outfit text-2xl font-extrabold text-slate-900 mt-1">
+                    {accionesCorrectivas.length}
+                  </span>
+                  <span className="text-[9px] text-slate-400 mt-2 block">Acciones correctivas</span>
+                </div>
 
-                <a href={`/${tenantSlug}/programa`} className="p-4 rounded-xl border border-slate-150 bg-slate-50/50 hover:bg-[#468DFF]/5 hover:border-[#468DFF]/30 transition-all flex items-start gap-3 group">
-                  <div className="p-2 rounded-lg bg-blue-500/10 text-[#468DFF] shrink-0 mt-0.5">
-                    <Calendar className="h-4 w-4" />
+                {/* 2. Cerradas */}
+                <div className="p-4 rounded-xl border border-slate-150 bg-slate-50/50 flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Cerradas</span>
+                    <ShieldCheck className="h-4 w-4 text-[#00b050]" />
                   </div>
-                  <div>
-                    <span className="text-xs font-bold text-slate-800 block group-hover:text-[#468DFF] transition-colors">Programa de Gestión</span>
-                    <span className="text-[10px] text-slate-500 block mt-1">Planificar y realizar seguimiento de actividades anuales.</span>
-                  </div>
-                </a>
+                  <span className="font-outfit text-2xl font-extrabold text-[#00b050] mt-1">
+                    {accionesCorrectivas.filter(a => !!a.fecha_implementacion).length}
+                  </span>
+                  <span className="text-[9px] text-slate-400 mt-2 block">Acciones cerradas</span>
+                </div>
 
-                <a href={`/${tenantSlug}/correctivas?new=true`} className="p-4 rounded-xl border border-slate-150 bg-slate-50/50 hover:bg-[#468DFF]/5 hover:border-[#468DFF]/30 transition-all flex items-start gap-3 group">
-                  <div className="p-2 rounded-lg bg-blue-500/10 text-[#468DFF] shrink-0 mt-0.5">
-                    <ClipboardList className="h-4 w-4" />
+                {/* 3. En Análisis */}
+                <div className="p-4 rounded-xl border border-slate-150 bg-slate-50/50 flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">En Análisis</span>
+                    <HelpCircle className="h-4 w-4 text-slate-500" />
                   </div>
-                  <div>
-                    <span className="text-xs font-bold text-slate-800 block group-hover:text-[#468DFF] transition-colors">Nueva Acción Correctiva</span>
-                    <span className="text-[10px] text-slate-500 block mt-1">Registrar hallazgos, cargar evidencias y plazos.</span>
-                  </div>
-                </a>
+                  <span className="font-outfit text-2xl font-extrabold text-slate-700 mt-1">
+                    {accionesCorrectivas.filter(a => !a.fecha_planificada).length}
+                  </span>
+                  <span className="text-[9px] text-slate-400 mt-2 block">Acciones en análisis</span>
+                </div>
 
-                <a href={`/${tenantSlug}/profile`} className="p-4 rounded-xl border border-slate-150 bg-slate-50/50 hover:bg-[#468DFF]/5 hover:border-[#468DFF]/30 transition-all flex items-start gap-3 group">
-                  <div className="p-2 rounded-lg bg-blue-500/10 text-[#468DFF] shrink-0 mt-0.5">
-                    <User className="h-4 w-4" />
+                {/* 4. En Tiempo */}
+                <div className="p-4 rounded-xl border border-slate-150 bg-slate-50/50 flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">En Tiempo</span>
+                    <Calendar className="h-4 w-4 text-[#468DFF]" />
                   </div>
-                  <div>
-                    <span className="text-xs font-bold text-slate-800 block group-hover:text-[#468DFF] transition-colors">Mi Perfil Profesional</span>
-                    <span className="text-[10px] text-slate-500 block mt-1">Configurar tu matrícula, firma digital y branding.</span>
+                  <span className="font-outfit text-2xl font-extrabold text-[#468DFF] mt-1">
+                    {accionesCorrectivas.filter(a => {
+                      if (a.fecha_implementacion || !a.fecha_planificada) return false;
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      const planDate = new Date(a.fecha_planificada + 'T00:00:00');
+                      planDate.setHours(0, 0, 0, 0);
+                      return planDate >= today;
+                    }).length}
+                  </span>
+                  <span className="text-[9px] text-slate-400 mt-2 block">Acciones en tiempo</span>
+                </div>
+
+                {/* 5. Vencidas */}
+                <div className="p-4 rounded-xl border border-slate-150 bg-slate-50/50 flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Vencidas</span>
+                    <AlertTriangle className="h-4 w-4 text-red-500" />
                   </div>
-                </a>
+                  <span className="font-outfit text-2xl font-extrabold text-red-500 mt-1">
+                    {accionesCorrectivas.filter(a => {
+                      if (a.fecha_implementacion || !a.fecha_planificada) return false;
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      const planDate = new Date(a.fecha_planificada + 'T00:00:00');
+                      planDate.setHours(0, 0, 0, 0);
+                      return planDate < today;
+                    }).length}
+                  </span>
+                  <span className="text-[9px] text-slate-400 mt-2 block">Acciones vencidas</span>
+                </div>
 
               </div>
             </div>
-
-            {/* Sidebar info plan */}
-            <div className="bg-white border border-slate-150 rounded-2xl p-6 flex flex-col justify-between space-y-6 shadow-sm">
-              <div className="space-y-4">
+          ) : (
+            <div className="grid md:grid-cols-3 gap-6">
+              
+              {/* Listado de accesos rápidos */}
+              <div className="md:col-span-2 bg-white border border-slate-150 rounded-2xl p-6 space-y-4 shadow-sm">
                 <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                  <Award className="h-4.5 w-4.5 text-[#468DFF]" />
-                  Tu plan contratado
+                  <Sparkles className="h-4.5 w-4.5 text-[#468DFF]" />
+                  Accesos rápidos
                 </h3>
 
-                <div className="rounded-xl border border-blue-500/15 bg-blue-50/40 p-4 space-y-3">
-                  <span className="px-2 py-0.5 rounded-full bg-blue-500/15 text-[#468DFF] text-[8px] font-bold uppercase tracking-wider">
-                    Suscripción Activa
-                  </span>
-                  <h4 className="text-sm font-bold text-slate-800">{planNames[tenant?.plan_id] || 'Plan Gratis'}</h4>
-                  <p className="text-[10px] text-slate-600 leading-normal">
-                    {tenant?.plan_id === 'free' && 'El Plan Gratis te permite cargar 1 empresa cliente para evaluar las herramientas del SaaS.'}
-                    {tenant?.plan_id === 'basic_5' && 'Tienes habilitado el soporte de hasta 5 empresas en simultáneo.'}
-                    {tenant?.plan_id === 'standard_25' && 'Tienes habilitado el soporte de hasta 25 empresas en simultáneo.'}
-                    {tenant?.plan_id === 'libre' && 'Tienes empresas y inspectores ilimitados habilitados.'}
-                  </p>
+                <div className="grid md:grid-cols-2 gap-4">
+                  
+                  <a href={`/${tenantSlug}/empresas?new=true`} className="p-4 rounded-xl border border-slate-150 bg-slate-50/50 hover:bg-[#468DFF]/5 hover:border-[#468DFF]/30 transition-all flex items-start gap-3 group">
+                    <div className="p-2 rounded-lg bg-blue-500/10 text-[#468DFF] shrink-0 mt-0.5">
+                      <PlusCircle className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-slate-800 block group-hover:text-[#468DFF] transition-colors">Nuevo Cliente</span>
+                      <span className="text-[10px] text-slate-500 block mt-1">Registrar una empresa cliente en tu base de datos.</span>
+                    </div>
+                  </a>
+
+                  <a href={`/${tenantSlug}/programa`} className="p-4 rounded-xl border border-slate-150 bg-slate-50/50 hover:bg-[#468DFF]/5 hover:border-[#468DFF]/30 transition-all flex items-start gap-3 group">
+                    <div className="p-2 rounded-lg bg-blue-500/10 text-[#468DFF] shrink-0 mt-0.5">
+                      <Calendar className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-slate-800 block group-hover:text-[#468DFF] transition-colors">Programa de Gestión</span>
+                      <span className="text-[10px] text-slate-500 block mt-1">Planificar y realizar seguimiento de actividades anuales.</span>
+                    </div>
+                  </a>
+
+                  <a href={`/${tenantSlug}/correctivas?new=true`} className="p-4 rounded-xl border border-slate-150 bg-slate-50/50 hover:bg-[#468DFF]/5 hover:border-[#468DFF]/30 transition-all flex items-start gap-3 group">
+                    <div className="p-2 rounded-lg bg-blue-500/10 text-[#468DFF] shrink-0 mt-0.5">
+                      <ClipboardList className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-slate-800 block group-hover:text-[#468DFF] transition-colors">Nueva Acción Correctiva</span>
+                      <span className="text-[10px] text-slate-500 block mt-1">Registrar hallazgos, cargar evidencias y plazos.</span>
+                    </div>
+                  </a>
+
+                  <a href={`/${tenantSlug}/profile`} className="p-4 rounded-xl border border-slate-150 bg-slate-50/50 hover:bg-[#468DFF]/5 hover:border-[#468DFF]/30 transition-all flex items-start gap-3 group">
+                    <div className="p-2 rounded-lg bg-blue-500/10 text-[#468DFF] shrink-0 mt-0.5">
+                      <User className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-slate-800 block group-hover:text-[#468DFF] transition-colors">Mi Perfil Profesional</span>
+                      <span className="text-[10px] text-slate-500 block mt-1">Configurar tu matrícula, firma digital y branding.</span>
+                    </div>
+                  </a>
+
                 </div>
               </div>
 
-              <a 
-                href={`/${tenantSlug}/profile`}
-                className="w-full py-2.5 px-4 rounded-xl border border-[#468DFF]/40 hover:bg-[#468DFF] hover:text-white text-center text-[#468DFF] font-semibold text-xs transition-all flex items-center justify-center gap-2 shrink-0"
-              >
-                <Sparkles className="h-3.5 w-3.5" />
-                Cambiar / Subir de Plan
-              </a>
-            </div>
+              {/* Sidebar info plan */}
+              <div className="bg-white border border-slate-150 rounded-2xl p-6 flex flex-col justify-between space-y-6 shadow-sm">
+                <div className="space-y-4">
+                  <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <Award className="h-4.5 w-4.5 text-[#468DFF]" />
+                    Tu plan contratado
+                  </h3>
 
-          </div>
+                  <div className="rounded-xl border border-blue-500/15 bg-blue-50/40 p-4 space-y-3">
+                    <span className="px-2 py-0.5 rounded-full bg-blue-500/15 text-[#468DFF] text-[8px] font-bold uppercase tracking-wider">
+                      Suscripción Activa
+                    </span>
+                    <h4 className="text-sm font-bold text-slate-800">{planNames[tenant?.plan_id] || 'Plan Gratis'}</h4>
+                    <p className="text-[10px] text-slate-600 leading-normal">
+                      {tenant?.plan_id === 'free' && 'El Plan Gratis te permite cargar 1 empresa cliente para evaluar las herramientas del SaaS.'}
+                      {tenant?.plan_id === 'basic_5' && 'Tienes habilitado el soporte de hasta 5 empresas en simultáneo.'}
+                      {tenant?.plan_id === 'standard_25' && 'Tienes habilitado el soporte de hasta 25 empresas en simultáneo.'}
+                      {tenant?.plan_id === 'libre' && 'Tienes empresas y inspectores ilimitados habilitados.'}
+                    </p>
+                  </div>
+                </div>
+
+                <a 
+                  href={`/${tenantSlug}/profile`}
+                  className="w-full py-2.5 px-4 rounded-xl border border-[#468DFF]/40 hover:bg-[#468DFF] hover:text-white text-center text-[#468DFF] font-semibold text-xs transition-all flex items-center justify-center gap-2 shrink-0"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Cambiar / Subir de Plan
+                </a>
+              </div>
+
+            </div>
+          )}
         </div>
       )}
 
