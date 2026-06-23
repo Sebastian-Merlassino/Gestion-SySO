@@ -1003,10 +1003,10 @@ export default function ProgramaGestion({ params }) {
                   <Users className="h-4 w-4" />
                   Clientes
                 </Link>
-                  <Link href={`/${tenantSlug}/equipo`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/equipo`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-                    <Briefcase className="h-4 w-4" />
-                    Equipo de Trabajo
-                  </Link>
+                <Link href={`/${tenantSlug}/equipo`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/equipo`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                  <Briefcase className="h-4 w-4" />
+                  Equipo de Trabajo
+                </Link>
                 <Link href={`/${tenantSlug}/programa`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/programa`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10">
                   <Calendar className="h-4 w-4" />
                   Programa de Gestión Anual
@@ -1026,6 +1026,10 @@ export default function ProgramaGestion({ params }) {
                 <Link href={`/${tenantSlug}/visitas`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/visitas`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
                   <ClipboardCheck className="h-4 w-4" />
                   Constancia de Visita
+                </Link>
+                <Link href={`/${tenantSlug}/avisos`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/avisos`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                  <AlertTriangle className="h-4 w-4" />
+                  Aviso de Riesgo
                 </Link>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
                 <Link href={`/${tenantSlug}/profile`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/profile`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
@@ -1150,6 +1154,15 @@ export default function ProgramaGestion({ params }) {
               <ClipboardCheck className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Constancia de Visita</span>}
             </Link>
+            <Link
+              href={`/${tenantSlug}/avisos`}
+              title="Aviso de Riesgo"
+              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/avisos`)}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Aviso de Riesgo</span>}
+            </Link>
 
             {!isSidebarCollapsed ? (
               <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
@@ -1240,291 +1253,291 @@ export default function ProgramaGestion({ params }) {
                 <form onSubmit={handleSave} className="p-6 space-y-6 overflow-y-auto flex-1 scrollbar-thin">
                   <fieldset disabled={!canEdit} className="space-y-6">
 
-                  {/* 1 y 2. Razón Social y Establecimiento */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Cliente / Razón Social */}
+                    {/* 1 y 2. Razón Social y Establecimiento */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Cliente / Razón Social */}
+                      <div>
+                        <label className="text-xs font-bold text-slate-600 block mb-1.5">
+                          Cliente / Razón Social <span className="text-[#468DFF]">*</span>
+                        </label>
+                        <select
+                          required
+                          value={empresaId}
+                          onChange={(e) => handleEmpresaChange(e.target.value)}
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
+                        >
+                          <option value="">Selecciona un cliente</option>
+                          {empresas.map(e => (
+                            <option key={e.id} value={e.id}>{e.razon_social}</option>
+                          ))}
+                        </select>
+                        {formErrors.empresaId && <p className="text-[10px] text-red-500 font-bold mt-1">{formErrors.empresaId}</p>}
+                      </div>
+
+                      {/* Establecimiento */}
+                      <div>
+                        <label className="text-xs font-bold text-slate-600 block mb-1.5">
+                          Establecimiento <span className="text-[#468DFF]">*</span>
+                        </label>
+                        <select
+                          value={establecimientoId}
+                          onChange={(e) => setEstablecimientoId(e.target.value)}
+                          disabled={!empresaId}
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <option value="">Selecciona un establecimiento</option>
+                          {filteredEstablecimientos.map(e => (
+                            <option key={e.id} value={e.id}>{e.denominacion}</option>
+                          ))}
+                        </select>
+                        {!empresaId && <p className="text-[9px] text-slate-400 mt-1 italic">Debes seleccionar una Razón Social primero.</p>}
+                        {formErrors.establecimientoId && <p className="text-[10px] text-red-500 font-bold mt-1">{formErrors.establecimientoId}</p>}
+                      </div>
+                    </div>
+
+                    {/* 3. Descripción (Catálogo o texto manual) */}
                     <div>
                       <label className="text-xs font-bold text-slate-600 block mb-1.5">
-                        Cliente / Razón Social <span className="text-[#468DFF]">*</span>
+                        Descripción / Actividad <span className="text-[#468DFF]">*</span>
                       </label>
                       <select
+                        value={catalogoId}
+                        onChange={(e) => handleDescripcionChange(e.target.value)}
+                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer mb-2"
+                      >
+                        <option value="">-- Selecciona del catálogo --</option>
+                        {catalogo.map(c => (
+                          <option key={c.id} value={c.id}>{c.descripcion}</option>
+                        ))}
+                        <option value="__custom__">Otra actividad (cargar manualmente)...</option>
+                      </select>
+
+                      {/* Textarea: siempre visible; pre-cargada desde catálogo o editable manualmente */}
+                      <textarea
                         required
-                        value={empresaId}
-                        onChange={(e) => handleEmpresaChange(e.target.value)}
-                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
-                      >
-                        <option value="">Selecciona un cliente</option>
-                        {empresas.map(e => (
-                          <option key={e.id} value={e.id}>{e.razon_social}</option>
-                        ))}
-                      </select>
-                      {formErrors.empresaId && <p className="text-[10px] text-red-500 font-bold mt-1">{formErrors.empresaId}</p>}
-                    </div>
-
-                    {/* Establecimiento */}
-                    <div>
-                      <label className="text-xs font-bold text-slate-600 block mb-1.5">
-                        Establecimiento <span className="text-[#468DFF]">*</span>
-                      </label>
-                      <select
-                        value={establecimientoId}
-                        onChange={(e) => setEstablecimientoId(e.target.value)}
-                        disabled={!empresaId}
-                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <option value="">Selecciona un establecimiento</option>
-                        {filteredEstablecimientos.map(e => (
-                          <option key={e.id} value={e.id}>{e.denominacion}</option>
-                        ))}
-                      </select>
-                      {!empresaId && <p className="text-[9px] text-slate-400 mt-1 italic">Debes seleccionar una Razón Social primero.</p>}
-                      {formErrors.establecimientoId && <p className="text-[10px] text-red-500 font-bold mt-1">{formErrors.establecimientoId}</p>}
-                    </div>
-                  </div>
-
-                  {/* 3. Descripción (Catálogo o texto manual) */}
-                  <div>
-                    <label className="text-xs font-bold text-slate-600 block mb-1.5">
-                      Descripción / Actividad <span className="text-[#468DFF]">*</span>
-                    </label>
-                    <select
-                      value={catalogoId}
-                      onChange={(e) => handleDescripcionChange(e.target.value)}
-                      className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer mb-2"
-                    >
-                      <option value="">-- Selecciona del catálogo --</option>
-                      {catalogo.map(c => (
-                        <option key={c.id} value={c.id}>{c.descripcion}</option>
-                      ))}
-                      <option value="__custom__">Otra actividad (cargar manualmente)...</option>
-                    </select>
-
-                    {/* Textarea: siempre visible; pre-cargada desde catálogo o editable manualmente */}
-                    <textarea
-                      required
-                      placeholder="Detalla la actividad a realizar..."
-                      value={descripcion}
-                      onChange={(e) => setDescripcion(e.target.value)}
-                      className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all h-20 resize-none"
-                    />
-                    {formErrors.descripcion && <p className="text-[10px] text-red-500 font-bold mt-1">{formErrors.descripcion}</p>}
-                  </div>
-
-                  {/* 4 y 5. Marco Legal y Responsable */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Marco Legal */}
-                    <div>
-                      <label className="text-xs font-bold text-slate-600 block mb-1.5">
-                        Marco Legal / Requisito Legal Aplicable
-                      </label>
-                      <input
-                        type="text"
-                        placeholder={catalogoId && catalogoId !== '__custom__' ? 'Completado automáticamente desde catálogo...' : 'Ingresá el requisito legal aplicable...'}
-                        value={marcoLegal}
-                        onChange={(e) => setMarcoLegal(e.target.value)}
-                        className={
-                          catalogoId && catalogoId !== '__custom__'
-                            ? "w-full border border-slate-150 rounded-xl px-3.5 py-2 text-sm bg-slate-100 text-slate-500 outline-none"
-                            : "w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
-                        }
-                        readOnly={!!(catalogoId && catalogoId !== '__custom__')}
+                        placeholder="Detalla la actividad a realizar..."
+                        value={descripcion}
+                        onChange={(e) => setDescripcion(e.target.value)}
+                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all h-20 resize-none"
                       />
-                      {(!catalogoId || catalogoId === '__custom__') && (
-                        <p className="text-[9px] text-slate-400 mt-1 italic">Podés ingresar la norma aplicable (ej: Dec. 351/79, Res. 905/15...)</p>
-                      )}
+                      {formErrors.descripcion && <p className="text-[10px] text-red-500 font-bold mt-1">{formErrors.descripcion}</p>}
                     </div>
 
-                    {/* Responsable */}
-                    <div>
-                      <label className="text-xs font-bold text-slate-600 block mb-1.5">
-                        Responsable Asignado
-                      </label>
-                      <select
-                        value={responsableId}
-                        onChange={(e) => setResponsableId(e.target.value)}
-                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
-                      >
-                        <option value="">Selecciona un responsable</option>
-                        {miembros.map(m => (
-                          <option key={m.id} value={m.id}>{m.full_name}</option>
-                        ))}
-                        <option value="__custom__">Otro (cargar manualmente)...</option>
-                      </select>
-
-                      {responsableId === '__custom__' && (
+                    {/* 4 y 5. Marco Legal y Responsable */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Marco Legal */}
+                      <div>
+                        <label className="text-xs font-bold text-slate-600 block mb-1.5">
+                          Marco Legal / Requisito Legal Aplicable
+                        </label>
                         <input
                           type="text"
-                          required
-                          placeholder="Escribe el nombre del responsable..."
-                          value={responsableCustom}
-                          onChange={(e) => setResponsableCustom(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 mt-2 transition-all"
+                          placeholder={catalogoId && catalogoId !== '__custom__' ? 'Completado automáticamente desde catálogo...' : 'Ingresá el requisito legal aplicable...'}
+                          value={marcoLegal}
+                          onChange={(e) => setMarcoLegal(e.target.value)}
+                          className={
+                            catalogoId && catalogoId !== '__custom__'
+                              ? "w-full border border-slate-150 rounded-xl px-3.5 py-2 text-sm bg-slate-100 text-slate-500 outline-none"
+                              : "w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
+                          }
+                          readOnly={!!(catalogoId && catalogoId !== '__custom__')}
                         />
+                        {(!catalogoId || catalogoId === '__custom__') && (
+                          <p className="text-[9px] text-slate-400 mt-1 italic">Podés ingresar la norma aplicable (ej: Dec. 351/79, Res. 905/15...)</p>
+                        )}
+                      </div>
+
+                      {/* Responsable */}
+                      <div>
+                        <label className="text-xs font-bold text-slate-600 block mb-1.5">
+                          Responsable Asignado
+                        </label>
+                        <select
+                          value={responsableId}
+                          onChange={(e) => setResponsableId(e.target.value)}
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
+                        >
+                          <option value="">Selecciona un responsable</option>
+                          {miembros.map(m => (
+                            <option key={m.id} value={m.id}>{m.full_name}</option>
+                          ))}
+                          <option value="__custom__">Otro (cargar manualmente)...</option>
+                        </select>
+
+                        {responsableId === '__custom__' && (
+                          <input
+                            type="text"
+                            required
+                            placeholder="Escribe el nombre del responsable..."
+                            value={responsableCustom}
+                            onChange={(e) => setResponsableCustom(e.target.value)}
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 mt-2 transition-all"
+                          />
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 6 y 7. Fechas y Progreso */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* F. Planificada */}
+                      <div>
+                        <label className="text-xs font-bold text-slate-600 block mb-1.5">
+                          F. Planificada
+                        </label>
+                        <input
+                          type="date"
+                          value={fechaPlanificada}
+                          onChange={(e) => setFechaPlanificada(e.target.value)}
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono"
+                        />
+                        <p className="text-[9px] text-slate-400 mt-1 italic">Opcional. Si no se carga, el estado será "En análisis".</p>
+                      </div>
+
+                      {/* F. Realización */}
+                      <div>
+                        <label className="text-xs font-bold text-slate-600 block mb-1.5">
+                          F. Realización
+                        </label>
+                        <input
+                          type="date"
+                          value={fechaRealizacion}
+                          onChange={(e) => handleRealizacionChange(e.target.value)}
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono"
+                        />
+                        <p className="text-[9px] text-slate-400 mt-1 italic">Si se carga, el progreso se fija al 100% y el estado a Vigente.</p>
+                      </div>
+
+                      {/* Progreso del Avance */}
+                      <div>
+                        <div className="flex justify-between items-center mb-1.5">
+                          <label className="text-xs font-bold text-slate-600">
+                            Progreso del Avance
+                          </label>
+                          <span className="text-xs font-bold text-[#468DFF]">{progreso}%</span>
+                        </div>
+                        <div className="flex items-center gap-3 py-1">
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            step="5"
+                            value={progreso}
+                            onChange={(e) => setProgreso(parseInt(e.target.value))}
+                            className="flex-1 accent-[#468DFF] h-2 bg-slate-200 rounded-lg cursor-pointer"
+                          />
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={progreso}
+                            onChange={(e) => {
+                              let val = parseInt(e.target.value) || 0;
+                              if (val > 100) val = 100;
+                              if (val < 0) val = 0;
+                              setProgreso(val);
+                            }}
+                            className="w-16 text-center text-sm bg-slate-50/50 border border-slate-200 rounded-xl py-1.5 focus:outline-none focus:border-[#468DFF]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 8. Carga de Documento */}
+                    <div>
+                      <label className="text-xs font-bold text-slate-600 block mb-1.5">
+                        Documento de Respaldo / Evidencia (PDF)
+                      </label>
+
+                      {documentoUrl ? (
+                        <div className="flex items-center justify-between border border-[#468DFF]/20 rounded-xl bg-blue-50/50 p-3 mb-2.5">
+                          <div className="flex items-center gap-2 truncate pr-2">
+                            <FileText className="h-5 w-5 text-[#468DFF] shrink-0" />
+                            <span className="text-xs text-slate-600 truncate font-semibold">
+                              PDF subido anteriormente
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleViewPdf(documentoUrl)}
+                              className="p-1.5 rounded-lg bg-slate-100 hover:bg-[#468DFF] text-slate-500 hover:text-white transition-all cursor-pointer inline-flex items-center shadow-sm"
+                              title="Ver PDF en otra pestaña"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDocumentoUrl('')}
+                              className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-50 text-red-400 hover:text-white transition-all cursor-pointer inline-flex items-center shadow-sm"
+                              title="Eliminar documento cargado"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ) : null}
+
+                      <div className="flex items-center gap-2 mb-2.5">
+                        <button
+                          type="button"
+                          onClick={() => handleSwitchUploadType('local')}
+                          className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer border ${uploadType === 'local'
+                            ? 'bg-[#468DFF]/10 text-[#468DFF] border-[#468DFF]/30'
+                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                            }`}
+                        >
+                          Archivo Local (PC/Celular)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSwitchUploadType('drive')}
+                          className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer border ${uploadType === 'drive'
+                            ? 'bg-[#468DFF]/10 text-[#468DFF] border-[#468DFF]/30'
+                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                            }`}
+                        >
+                          Enlace de Google Drive
+                        </button>
+                      </div>
+
+                      {uploadType === 'local' ? (
+                        <>
+                          <input
+                            type="file"
+                            accept=".pdf"
+                            onChange={(e) => handleFileChangeWithConfirm(e.target.files[0])}
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all file:mr-3.5 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-[#468DFF]/10 file:text-[#468DFF] hover:file:bg-[#468DFF]/20 file:cursor-pointer text-slate-600"
+                          />
+                          <p className="text-[9px] text-slate-400 mt-1 italic">Solo formato PDF. Tamaño máximo de 10 MB.</p>
+                        </>
+                      ) : (
+                        <>
+                          <input
+                            type="url"
+                            placeholder="Pega el enlace compartido de Google Drive..."
+                            value={driveLink}
+                            onChange={(e) => setDriveLink(e.target.value)}
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
+                          />
+                          <p className="text-[9px] text-slate-400 mt-1 italic">
+                            El archivo debe ser público en Drive ("Cualquier persona con el enlace"). Se convertirá y guardará automáticamente.
+                          </p>
+                        </>
                       )}
                     </div>
-                  </div>
 
-                  {/* 6 y 7. Fechas y Progreso */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* F. Planificada */}
+                    {/* 9. Observaciones */}
                     <div>
                       <label className="text-xs font-bold text-slate-600 block mb-1.5">
-                        F. Planificada
+                        Observaciones Generales
                       </label>
-                      <input
-                        type="date"
-                        value={fechaPlanificada}
-                        onChange={(e) => setFechaPlanificada(e.target.value)}
-                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono"
+                      <textarea
+                        placeholder="Escribe comentarios, novedades o detalles..."
+                        value={observaciones}
+                        onChange={(e) => setObservaciones(e.target.value)}
+                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all h-24 resize-none"
                       />
-                      <p className="text-[9px] text-slate-400 mt-1 italic">Opcional. Si no se carga, el estado será "En análisis".</p>
                     </div>
-
-                    {/* F. Realización */}
-                    <div>
-                      <label className="text-xs font-bold text-slate-600 block mb-1.5">
-                        F. Realización
-                      </label>
-                      <input
-                        type="date"
-                        value={fechaRealizacion}
-                        onChange={(e) => handleRealizacionChange(e.target.value)}
-                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono"
-                      />
-                      <p className="text-[9px] text-slate-400 mt-1 italic">Si se carga, el progreso se fija al 100% y el estado a Vigente.</p>
-                    </div>
-
-                    {/* Progreso del Avance */}
-                    <div>
-                      <div className="flex justify-between items-center mb-1.5">
-                        <label className="text-xs font-bold text-slate-600">
-                          Progreso del Avance
-                        </label>
-                        <span className="text-xs font-bold text-[#468DFF]">{progreso}%</span>
-                      </div>
-                      <div className="flex items-center gap-3 py-1">
-                        <input
-                          type="range"
-                          min="0"
-                          max="100"
-                          step="5"
-                          value={progreso}
-                          onChange={(e) => setProgreso(parseInt(e.target.value))}
-                          className="flex-1 accent-[#468DFF] h-2 bg-slate-200 rounded-lg cursor-pointer"
-                        />
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={progreso}
-                          onChange={(e) => {
-                            let val = parseInt(e.target.value) || 0;
-                            if (val > 100) val = 100;
-                            if (val < 0) val = 0;
-                            setProgreso(val);
-                          }}
-                          className="w-16 text-center text-sm bg-slate-50/50 border border-slate-200 rounded-xl py-1.5 focus:outline-none focus:border-[#468DFF]"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 8. Carga de Documento */}
-                  <div>
-                    <label className="text-xs font-bold text-slate-600 block mb-1.5">
-                      Documento de Respaldo / Evidencia (PDF)
-                    </label>
-
-                    {documentoUrl ? (
-                      <div className="flex items-center justify-between border border-[#468DFF]/20 rounded-xl bg-blue-50/50 p-3 mb-2.5">
-                        <div className="flex items-center gap-2 truncate pr-2">
-                          <FileText className="h-5 w-5 text-[#468DFF] shrink-0" />
-                          <span className="text-xs text-slate-600 truncate font-semibold">
-                            PDF subido anteriormente
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => handleViewPdf(documentoUrl)}
-                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-[#468DFF] text-slate-500 hover:text-white transition-all cursor-pointer inline-flex items-center shadow-sm"
-                            title="Ver PDF en otra pestaña"
-                          >
-                            <ExternalLink className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setDocumentoUrl('')}
-                            className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-50 text-red-400 hover:text-white transition-all cursor-pointer inline-flex items-center shadow-sm"
-                            title="Eliminar documento cargado"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    ) : null}
-
-                    <div className="flex items-center gap-2 mb-2.5">
-                      <button
-                        type="button"
-                        onClick={() => handleSwitchUploadType('local')}
-                        className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer border ${uploadType === 'local'
-                          ? 'bg-[#468DFF]/10 text-[#468DFF] border-[#468DFF]/30'
-                          : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                          }`}
-                      >
-                        Archivo Local (PC/Celular)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleSwitchUploadType('drive')}
-                        className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer border ${uploadType === 'drive'
-                          ? 'bg-[#468DFF]/10 text-[#468DFF] border-[#468DFF]/30'
-                          : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                          }`}
-                      >
-                        Enlace de Google Drive
-                      </button>
-                    </div>
-
-                    {uploadType === 'local' ? (
-                      <>
-                        <input
-                          type="file"
-                          accept=".pdf"
-                          onChange={(e) => handleFileChangeWithConfirm(e.target.files[0])}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all file:mr-3.5 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-[#468DFF]/10 file:text-[#468DFF] hover:file:bg-[#468DFF]/20 file:cursor-pointer text-slate-600"
-                        />
-                        <p className="text-[9px] text-slate-400 mt-1 italic">Solo formato PDF. Tamaño máximo de 10 MB.</p>
-                      </>
-                    ) : (
-                      <>
-                        <input
-                          type="url"
-                          placeholder="Pega el enlace compartido de Google Drive..."
-                          value={driveLink}
-                          onChange={(e) => setDriveLink(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
-                        />
-                        <p className="text-[9px] text-slate-400 mt-1 italic">
-                          El archivo debe ser público en Drive ("Cualquier persona con el enlace"). Se convertirá y guardará automáticamente.
-                        </p>
-                      </>
-                    )}
-                  </div>
-
-                  {/* 9. Observaciones */}
-                  <div>
-                    <label className="text-xs font-bold text-slate-600 block mb-1.5">
-                      Observaciones Generales
-                    </label>
-                    <textarea
-                      placeholder="Escribe comentarios, novedades o detalles..."
-                      value={observaciones}
-                      onChange={(e) => setObservaciones(e.target.value)}
-                      className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all h-24 resize-none"
-                    />
-                  </div>
 
                   </fieldset>
 
@@ -1984,13 +1997,12 @@ export default function ProgramaGestion({ params }) {
 
                                   <td className="px-6 py-4 text-center">
                                     <div className="flex flex-col items-center gap-1">
-                                      <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold ${
-                                        statusInfo.estadoText === 'Vencido'
-                                          ? 'bg-red-500/10 text-red-600 border-red-500/20'
-                                          : statusInfo.estadoText === 'En análisis'
-                                            ? 'bg-slate-100 text-slate-700 border-slate-200'
-                                            : 'bg-[#00b050]/10 text-[#00b050] border-[#00b050]/20'
-                                      }`}>
+                                      <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold ${statusInfo.estadoText === 'Vencido'
+                                        ? 'bg-red-500/10 text-red-600 border-red-500/20'
+                                        : statusInfo.estadoText === 'En análisis'
+                                          ? 'bg-slate-100 text-slate-700 border-slate-200'
+                                          : 'bg-[#00b050]/10 text-[#00b050] border-[#00b050]/20'
+                                        }`}>
                                         {statusInfo.estadoText} ({act.progreso}%)
                                       </span>
                                       <div className="w-16 h-1.5 bg-slate-100 border border-slate-150 rounded-full overflow-hidden">

@@ -2,6 +2,216 @@
 
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
+## [2026-06-23] Implementación de Filtros de Fecha, Año y Mes en Visitas y Avisos de Riesgo
+
+### Resumen de Cambios
+- **Filtros Avanzados por Fecha, Año y Mes**: Se incorporaron controles interactivos de filtrado por fecha exacta (selector de fecha), año (dropdown cargado dinámicamente) y mes (dropdown de meses en español) en los listados principales de Constancias de Visita y Avisos de Riesgo.
+- **Grilla de Filtros Unificada**: Se expandió la grilla del panel de filtros colapsable a 5 columnas (`lg:grid-cols-5`) en ambas vistas, distribuyendo proporcionalmente los filtros por Cliente/Razón Social, Establecimiento, Fecha, Año y Mes.
+- **Limpieza Completa de Filtros**: Se amplió el botón "Limpiar Filtros" para que restablezca en un solo clic los nuevos estados de fecha, año y mes además de los filtros preexistentes.
+- **Optimización y Paridad de Helpers**: Se definió y exportó la constante `MONTHS_OPTS` y la función helper `getAvailableYears(records)` en ambos archivos, asegurando la consistencia del listado de años y la extracción dinámica en base a los registros presentes.
+- **Simplificación del Título de Sección**: Se reemplazó el título de la sección de "Avisos de Riesgo por Condiciones Inseguras" a únicamente "Avisos de Riesgo", mejorando la legibilidad y simplificando el encabezado de navegación.
+- **Ajuste de Tamaño de Firma de Perfil en PDF de Visitas**: Se incrementó la dimensión máxima de la firma del profesional en el PDF de Constancias de Visita (`maxW = 240` y `maxH = 120`), logrando paridad de tamaño exacta con las firmas generadas en el reporte de Aviso de Riesgo.
+- **Reubicación de Firmas en PDF de Visitas**: Para evitar el encimamiento con el cuadro de observaciones al agrandar las dimensiones de la firma, se bajó la línea de firma a `sigY = 675` y se compactó la altura del cuadro de observaciones a `237.75` (finalizando en `y = 540`) con 6 líneas punteadas, garantizando una separación limpia y libre de superposiciones.
+
+### Decisiones Clave
+- **Extracción Dinámica de Años**: Utilizar una función utilitaria para generar los años disponibles a partir de la fecha de los registros en lugar de utilizar un rango estático previene que la interfaz quede obsoleta en años futuros, asegurando adaptabilidad automática.
+- **Reset Centralizado de Filtros**: Unificar la limpieza de filtros en el estado local asegura que al presionar "Limpiar Filtros" la grilla retorne inmediatamente al estado sin filtros de manera consistente y sin inconsistencias de UI.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción Next.js (`npm run build`) verificada y exitosa de punta a punta.
+
+### Riesgos Detectados / Remanentes
+- Ninguno.
+
+### Próximo Paso Recomendado
+- Validar visualmente en dispositivos móviles/tablets que la grilla colapsable de 5 columnas se pliegue correctamente en filas consecutivas sin desbordar los contenedores.
+
+---
+
+## [2026-06-23] Firma de Perfil y Optimización de Velocidad en Constancias de Visita
+
+### Resumen de Cambios
+- **Optimización de Carga del Listado (Carga Instantánea)**: Se removió la resolución en lote de URLs firmadas para todos los registros del listado de visitas en `loadRealData`, reduciendo el tiempo de carga del listado de segundos a milisegundos.
+- **Resolución Diferida Bajo Demanda**: Las URLs firmadas de firmas y fotos de cada registro se obtienen de forma asíncrona únicamente cuando se hace clic en Editar/Ver Detalle (`handleEditClick`) o al generar el reporte PDF.
+- **Opción de Firma de Perfil Profesional**: Se integró en la sección de Constancias de Visita la posibilidad de usar la firma guardada en el perfil del usuario (bucket `signatures`) o firmar a mano alzada (bucket `documents`), replicando el flujo implementado en Aviso de Riesgo.
+- **Función de Inicialización handleAddNew**: Se modularizó la creación de constancias para limpiar los estados locales y pre-seleccionar automáticamente al profesional técnico activo y su firma digital de perfil.
+- **Escalado Proporcional en PDF**: Se incorporó la función helper `getImgDimensions` y se rediseñó la sección de firmas en `handleGeneratePdf` para centrar y escalar proporcionalmente las firmas del profesional y del responsable sobre la línea del PDF sin deformarlas, aplicando procesamiento de alta calidad PNG para firmas digitales.
+
+### Decisiones Clave
+- **Resolución Bajo Demanda**: Evitar llamadas repetitivas y simultáneas a `createSignedUrl` durante el renderizado inicial del listado previene cuellos de botella de red y disminuye la carga en la base de datos de Supabase.
+- **Preservación de Aspect-Ratio en jsPDF**: Calcular las proporciones dinámicas en lugar de forzar dimensiones de imagen estáticas elimina las distorsiones visuales en firmas de diferentes proporciones.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `supabase`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260702000000_add_firma_tipo_to_visitas.sql`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+
+### Validaciones Ejecutadas
+- Migración DDL aplicada exitosamente en base de datos.
+- Compilación de optimización Next.js (`npm run build`) verificada y exitosa.
+
+---
+
+## [2026-06-23] Ajuste de Tamaño en Observaciones y Escalado Proporcional de Firma en PDF de Aviso de Riesgo
+
+### Resumen de Cambios
+- **Reducción del Cuadro de Observaciones**: Se achicó la altura del cuadro de observaciones en la página 4 de `400.0 pt` a `300.0 pt` (finalizando en `y=549.3 pt`). El límite de renderizado de observaciones se adaptó a `y < 540 pt`.
+- **Firma del Profesional Sin Deformación, Ampliada y con Alta Calidad**: Se incrementó el tamaño máximo del espacio de firma de `160 x 80 pt` a `240 x 120 pt` (el doble del tamaño original) y se reposicionó a partir de `y=600 pt` en la página 4. Se incrementó la resolución del pre-procesamiento de la firma con `resizeImage` a `1200 x 600 pt` habilitando la forzabilidad de formato PNG (`forcePng = true`). Esto previene que firmas con fondo transparente (tanto manuales como de perfil) se guarden o rendericen como JPEG (lo que causa pérdida de transparencia, colores negros de fondo o compresión ruidosa destructiva), logrando una nitidez absoluta en el PDF. Se redujo la longitud de la línea de firma a `140 pt` (de `377.07` a `517.07 pt`), centrándola debajo de la firma para evitar que se extienda demasiado a los lados.
+
+### Decisiones Clave
+- **Cálculo Proporcional en jsPDF**: En lugar de forzar un tamaño absoluto de 125x65 pt que deforma las firmas (especialmente firmas a mano muy horizontales o firmas cuadradas del perfil), calcular el ratio de aspecto dinámico y escalar la imagen asegura fidelidad visual.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción (`npm run build`) verificada y exitosa.
+
+### Riesgos Detectados / Remanentes
+- Ninguno.
+
+## [2026-06-23] Corrección en la Carga y Guardado de Firmas de Perfil en Avisos de Riesgo
+
+### Resumen de Cambios
+- **Auto-selección del Profesional Técnico**: Se incorporó la columna `profile_id` al consultar `miembros_equipo` desde Supabase. En `handleAddNew` se realiza una búsqueda de coincidencia automática con el `profile.id` del usuario logueado para pre-seleccionar al profesional interviniente de forma automática y cargar sus datos.
+- **Previsualización de la Firma de Perfil**: Se implementó el estado `firmaPerfilPreviewUrl` y un hook `useEffect` que detecta cambios en `signaturePath` y `firmaTipo`. Resuelve la URL firmada del bucket privado `signatures` de Supabase (o usa base64/fallback en desarrollo/mock) para mostrar una vista previa de la firma de perfil dentro del formulario.
+- **Sincronización y Validación de Firma**: En `handleSave` se reestructuró la asignación de `finalSignature` para guardar exactamente el path de la firma del perfil cuando `firmaTipo === 'perfil'`, y el canvas/firma manual previa cuando `firmaTipo === 'mano'`. Se añadieron validaciones server-side/client-side para evitar guardar con firma de perfil si no hay firma configurada o si el profesional es de tipo manual.
+
+### Decisiones Clave
+- **Separación de Estados de Firma**: Mantener `signaturePath` en sync con el perfil del profesional activo y delegar el guardado condicional en `handleSave` resolvió el error donde el cambio de tab entre manual y perfil guardaba paths del bucket equivocado.
+- **Pre-selección por profile_id**: Buscar e inicializar el profesional técnico logueado reduce fricción y asegura la disponibilidad inmediata de su firma digital de perfil en el formulario.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `supabase`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción en Next.js (`npm run build`) para verificar la ausencia de ReferenceError o de syntax/type errors.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. La firma del perfil del profesional se obtiene directamente de `miembros_equipo`, la cual se mantiene en sincronía automática con la tabla `profiles` mediante triggers Postgres.
+
+## [2026-06-23] Correcciones de Formato y Refinamientos Visuales en el PDF de Aviso de Riesgo
+
+### Resumen de Cambios
+- **Separación de Metadatos y Título**: Se incrementó el espaciado vertical de los bloques de metadatos (Razón Social, Establecimiento, Fecha, Aviso N°) alejándolos de la barra azul superior para evitar compresión (valores desplazados a `y=111.0` y `122.0` en páginas 1-3, y `105.0` y `116.0` en página 4).
+- **Cuadro de Observaciones Compactado**: Se redujo la altura del cuadro de observaciones en la página 4 de `425.7 pt` a `400.0 pt` (finalizando en `y=649.3 pt`), limitando la impresión de texto vertical a `640 pt` para asegurar que las firmas profesionales entren holgadamente abajo.
+- **Firma Profesional Externa**: Se reubicó el bloque de firma completamente fuera del cuadro de observaciones en el cuadrante inferior derecho (`y=660` a `752 pt`).
+- **Resolución de Firma Encimada**: Se estructuró de forma ordenada el pie de firma: la firma (drawn canvas or profile image) se plasma arriba de la línea de firma (`y=660` a `725`), la línea se traza a `y=730`, and el nombre del profesional y cargo se colocan por debajo de ella (`y=742` y `y=752` respectivamente), previniendo cualquier encimamiento de texto e imagen.
+- **Carga de Firma Robusta**: Se incorporó soporte para detectar y procesar firmas codificadas en base64 directamente, URLs firmadas de Supabase, URLs absolutas y fallback automático a logotipo si es una ruta de prueba (`'mock'`). Se corrigió específicamente la resolución de firmas de perfil del personal, extrayendo el path relativo del bucket a partir de la URL pública del perfil del miembro para posibilitar la correcta generación de URLs firmadas en buckets privados, evitando el error CORS/403 al fetcharla.
+- **Definición de getImgDimensions**: Se definió la función helper privada `getImgDimensions` que faltaba en el componente de la página de Avisos, resolviendo la excepción de referencia (`ReferenceError`) en la consola al procesar imágenes de hallazgos.
+- **Alineación de Tabla de Referencias**: Se ajustó la altura del rectángulo de borde exterior a `105.49 pt` y la línea vertical divisoria a `y=233.97` para acoplarse perfectamente al pie de la última fila, eliminando cualquier brecha o desalineado de bordes.
+- **Escalado Adaptativo Proporcional de Fotos**: Se rediseñó la inyección de imágenes en la columna "Imagen" de la grilla de hallazgos. Las fotos se adaptan al alto de la celda si son verticales (ratio < 1) o al ancho si son horizontales (ratio >= 1), con límites de seguridad cruzados para impedir que deformen o desborden la celda.
+
+### Decisiones Clave
+- **Límites de Seguridad en Escalado**: Aunque se adapte al alto o ancho de la celda según orientación, validar que el ancho escalado (para verticales) y el alto escalado (para horizontales) no superen el bounding box previene cualquier desborde horizontal que afecte columnas adyacentes.
+- **Mapeo de Rutas de Prueba**: Permitir que paths que empiezan con `'mock'` o `'data:'` esquiven el llamado a storage.createSignedUrl evita fallos catastróficos en entornos híbridos de base de datos local y remota.
+
+### Skills Utilizadas
+- `next-best-practices`
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción de Next.js exitosa (`npm run build`) verificada en consola.
+
+---
+
+## [2026-06-23] Estandarización de Interfaz y Alineamiento de Estilos en Avisos de Riesgo
+
+### Resumen de Cambios
+- **Refactorización de Contenedores de Búsqueda y Filtros**: Se aplicó el estilo estándar y responsivo (`space-y-3 shrink-0`) al contenedor superior de filtros en la página de Avisos de Riesgo. Se actualizó la etiqueta de filtrado a "Filtrar por Razón Social" y se añadió soporte para filtrado dinámico por fecha.
+- **Estandarización de la Tabla de Listado**: Se eliminó la doble columna de acciones y se unificó la tabla de Avisos en una única columna de **Acciones** al final de la grilla, alineándose con el formato estándar de la tabla de Constancias de Visita.
+- **Normalización de Iconos y Estilos**: Se incrementó el tamaño de los iconos de acción a `h-4.5 w-4.5` y se cambiaron los colores de fondo y pictogramas. El icono de envío de correo se cambió de `Send` a `Mail` con el color de fondo azul claro correspondiente. Se incrementó el tamaño de letra del listado a `text-sm`.
+- **Simplificación del Selector de Profesionales**: Se reemplazó la grilla de selección doble por un selector desplegable único que incluye la opción `"Otro (cargar manualmente)..."`, renderizando condicionalmente un input de texto para carga libre.
+- **Estandarización del Canvas de Firma**: Se ajustó el canvas de firma manual al contenedor estándar con relación de aspecto `aspect-[2/1]`, ancho de 400px y alto de 200px. Se incorporó la visualización de la firma a mano guardada (`firmaManoSavedUrl`) al editar o en modo lectura, junto con el texto de superposición de firma vacía y el botón de limpieza alineado al encabezado.
+- **Renombre de Campo de Observaciones**: Se renombró la etiqueta del textarea de observaciones en el formulario a `"Observaciones"`.
+- **Estandarización de Ventana Emergente de Correo**: Se adaptaron los textos del modal de envío de correo electrónico en la página de Avisos de Riesgo para referirse correctamente a "Aviso de Riesgo" y "el aviso de riesgo en PDF" en lugar de "Constancia" / "constancia de visita". Además, se eliminó la propiedad `resize-none` del textarea manual para asegurar la paridad exacta al 100% de clases e interfaz con el modal de visitas.
+- **Rediseño del Formato PDF de Aviso de Riesgo**: Se overhauló por completo la función `generateAvisoPdf` para adherir a una grilla rígida de coordenadas absolutas en puntos (A4 vertical de 595 x 842 pt). Se implementó un logo de tamaño proporcional, barras de título azules `#4472C4`, bloques de metadatos en dos columnas y una grilla de hallazgos de exactamente 6 filas de `102.4 pt` de alto por página con alternancia de fondo, ajuste de línea de `7.45 pt` de interlineado y alineamiento vertical centralizado. En la página 4 se implementó la tabla de referencias técnicas con colores semáforo, el cuadro de observaciones y la firma profesional con aclaración y cargo centrado a `5.92 pt` de tamaño de fuente.
+
+### Decisiones Clave
+- **Unificación de Interfaz de Firma**: Usar el contenedor reactivo de firma en relación de aspecto `aspect-[2/1]` garantiza la compatibilidad visual y simplifica el escalado entre pantallas táctiles y de escritorio.
+- **Simplificación del Formulario**: La transición a un único dropdown de profesionales simplifica la UX y normaliza el guardado de datos y firmas con el estándar del proyecto.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción Next.js exitosa (`npm run build`) verificada en consola mediante `cmd.exe /c`.
+
+### Riesgos Detectados / Remanentes
+- Ninguno.
+
+### Próximo Paso Recomendado
+- Realizar validaciones de extremo a extremo de la generación del PDF de Aviso de Riesgo en dispositivos móviles y tablets para comprobar el correcto escalado del canvas de firma de 400x200.
+
+---
+
+## [2026-06-22] Implementación de Sección "Aviso de Riesgo" y Normalización de Permisos RLS
+
+### Resumen de Cambios
+- **Sección de Aviso de Riesgo**: Se creó la página principal `src/app/[tenant-slug]/avisos/page.js` que permite listar, filtrar, previsualizar, descargar y enviar avisos de riesgo en PDF de 4 páginas de A4 vertical con colores semáforo correspondientes. Soporta firma manual (canvas) y digital del perfil.
+- **Normalización de Permisos RLS Granulares**: Se refactorizaron las políticas RLS en la tabla `public.avisos_riesgo` en `supabase/migrations/20260701000000_create_avisos_riesgo.sql` para dividir el acceso de escritura `FOR ALL` en políticas individuales para `INSERT`, `UPDATE` y `DELETE` validadas por `public.user_has_action_permission('avisos', 'cargar' | 'editar' | 'eliminar')`.
+- **Branding en Notificación por Correo**: Se mejoró el envío de correo desde la sección de avisos para extraer, redimensionar y enviar el logotipo del tenant en Base64 (`tenantLogoBase64`) al API `/api/send-email`, mostrando el logo correctamente en el cuerpo del correo.
+- **Barra Lateral y Permisos de Miembros**: Se normalizaron los selectores de permisos e incorporaron los checkboxes correspondientes para `"avisos"` en `equipo/page.js`, así como los enlaces en el Sidebar de las 9 secciones.
+
+### Decisiones Clave
+- **Políticas RLS Granulares Separadas**: Separar las políticas de escritura por cada verbo de SQL (`INSERT`, `UPDATE`, `DELETE`) en la base de datos previene la elevación de privilegios de usuarios con permisos limitados (por ejemplo, permitir guardar pero prohibir editar/eliminar).
+- **Carga y Compresión del Logotipo en Frontend**: Comprimir el logo a un ancho de 400px en el cliente antes de despachar el correo electrónico evita cargas de red innecesarias y previene el error HTTP 413 Payload Too Large en el Route Handler.
+
+### Skills Utilizadas
+- `next-best-practices`
+- `supabase`
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+
+### Archivos Modificados / Creados
+- `[NEW] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] supabase/migrations/20260701000000_create_avisos_riesgo.sql`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/api/send-email/route.js`
+- `[MODIFY] todas las 9 secciones (Sidebar)`
+
+### Validaciones Ejecutadas
+- Ejecución de `node scripts/run-migrations.js` en la base de datos Supabase con éxito.
+- Compilación de Next.js (`npm run build`) verificada y finalizada con éxito.
+
+### Riesgos Detectados / Remanentes
+- Ninguno.
+
+### Próximo Paso Recomendado
+- Realizar pruebas de extremo a extremo de carga y previsualización de firma de aviso con usuarios técnicos con permisos acotados.
+
+---
 
 ## [2026-06-22] Implementación de Vista de Solo Lectura al Hacer Clic en Renglones de Tabla
 

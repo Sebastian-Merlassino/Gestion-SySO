@@ -96,6 +96,31 @@ const DOCUMENTACION_OPTS = [
   'N/A'
 ];
 
+const MONTHS_OPTS = [
+  { value: '01', label: 'Enero' },
+  { value: '02', label: 'Febrero' },
+  { value: '03', label: 'Marzo' },
+  { value: '04', label: 'Abril' },
+  { value: '05', label: 'Mayo' },
+  { value: '06', label: 'Junio' },
+  { value: '07', label: 'Julio' },
+  { value: '08', label: 'Agosto' },
+  { value: '09', label: 'Septiembre' },
+  { value: '10', label: 'Octubre' },
+  { value: '11', label: 'Noviembre' },
+  { value: '12', label: 'Diciembre' }
+];
+
+const getAvailableYears = (records) => {
+  const years = records.map(r => r.fecha ? r.fecha.substring(0, 4) : '').filter(Boolean);
+  const uniqueYears = [...new Set(years)];
+  const currentYear = new Date().getFullYear().toString();
+  if (!uniqueYears.includes(currentYear)) {
+    uniqueYears.push(currentYear);
+  }
+  return uniqueYears.sort((a, b) => b.localeCompare(a));
+};
+
 export default function VisitasPage({ params }) {
   const tenantSlug = params['tenant-slug'];
 
@@ -130,6 +155,9 @@ export default function VisitasPage({ params }) {
   // URLs de previsualización para firmas guardadas (edición)
   const [firmaRespSavedUrl, setFirmaRespSavedUrl] = useState('');
   const [firmaProfSavedUrl, setFirmaProfSavedUrl] = useState('');
+  const [firmaTipo, setFirmaTipo] = useState('perfil'); // 'perfil' o 'mano'
+  const [signaturePath, setSignaturePath] = useState(''); // relative path of profile signature
+  const [firmaPerfilPreviewUrl, setFirmaPerfilPreviewUrl] = useState(''); // preview URL of profile signature
 
   // Campos del Formulario
   const [empresaId, setEmpresaId] = useState('');
@@ -185,6 +213,9 @@ export default function VisitasPage({ params }) {
   const [filterText, setFilterText] = useState('');
   const [filterEmpresa, setFilterEmpresa] = useState('');
   const [filterEstablecimiento, setFilterEstablecimiento] = useState('');
+  const [filterFecha, setFilterFecha] = useState('');
+  const [filterAnio, setFilterAnio] = useState('');
+  const [filterMes, setFilterMes] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
@@ -256,6 +287,56 @@ export default function VisitasPage({ params }) {
     };
     checkEnvAndLoad();
   }, []);
+
+  // Previsualización de firma de perfil técnica
+  useEffect(() => {
+    const resolveProfileSignaturePreview = async () => {
+      setFirmaPerfilPreviewUrl('');
+      if (!signaturePath || firmaTipo !== 'perfil') return;
+
+      if (signaturePath.startsWith('data:')) {
+        setFirmaPerfilPreviewUrl(signaturePath);
+      } else if (isDevMode || signaturePath.startsWith('mock')) {
+        setFirmaPerfilPreviewUrl('/brand/logo-primary.png');
+      } else {
+        try {
+          let relativePath = signaturePath;
+          let isExternal = false;
+          
+          if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
+            try {
+              const urlObj = new URL(relativePath);
+              const pathParts = urlObj.pathname.split('/');
+              const bucketIndex = pathParts.findIndex(part => part === 'signatures' || part === 'documents');
+              if (bucketIndex !== -1 && bucketIndex < pathParts.length - 1) {
+                relativePath = pathParts.slice(bucketIndex + 1).join('/');
+              } else {
+                isExternal = true;
+              }
+            } catch (urlErr) {
+              console.error('Error parseando URL de firma de perfil:', urlErr);
+              isExternal = true;
+            }
+          }
+
+          if (isExternal) {
+            setFirmaPerfilPreviewUrl(signaturePath);
+          } else {
+            const { data: sData, error: sErr } = await supabase.storage
+              .from('signatures')
+              .createSignedUrl(relativePath, 3600);
+            if (!sErr && sData?.signedUrl) {
+              setFirmaPerfilPreviewUrl(sData.signedUrl);
+            }
+          }
+        } catch (e) {
+          console.error('Error cargando previsualización de firma de perfil:', e);
+        }
+      }
+    };
+
+    resolveProfileSignaturePreview();
+  }, [signaturePath, firmaTipo, isDevMode]);
 
   // Setup de Canvas de dibujo para firmas
   useEffect(() => {
@@ -493,7 +574,7 @@ export default function VisitasPage({ params }) {
       // Miembros de equipo
       const { data: mems, error: memErr } = await supabase
         .from('miembros_equipo')
-        .select('id, full_name')
+        .select('id, full_name, signature_url, profile_id')
         .eq('tenant_id', ten.id)
         .order('full_name');
       if (memErr) throw memErr;
@@ -515,44 +596,7 @@ export default function VisitasPage({ params }) {
         .order('fecha', { ascending: false });
       if (visErr) throw visErr;
 
-      // Resolver URLs firmadas para fotos y firmas
-      const resolvedVisitas = await Promise.all((vis || []).map(async (v) => {
-        let previewUrls = [];
-        let signedFirmaResp = '';
-        let signedFirmaProf = '';
-
-        if (v.adjuntar_registros_urls && v.adjuntar_registros_urls.length > 0) {
-          previewUrls = await Promise.all(v.adjuntar_registros_urls.map(async (p) => {
-            const { data } = await supabase.storage
-              .from('documents')
-              .createSignedUrl(p, 3600, { download: false });
-            return data ? data.signedUrl : '';
-          }));
-        }
-
-        if (v.firma_responsable_empresa) {
-          const { data } = await supabase.storage
-            .from('documents')
-            .createSignedUrl(v.firma_responsable_empresa, 3600, { download: false });
-          if (data) signedFirmaResp = data.signedUrl;
-        }
-
-        if (v.firma_profesional) {
-          const { data } = await supabase.storage
-            .from('documents')
-            .createSignedUrl(v.firma_profesional, 3600, { download: false });
-          if (data) signedFirmaProf = data.signedUrl;
-        }
-
-        return {
-          ...v,
-          fotos_preview_urls: previewUrls.filter(Boolean),
-          firma_resp_preview_url: signedFirmaResp,
-          firma_prof_preview_url: signedFirmaProf
-        };
-      }));
-
-      setVisitas(resolvedVisitas);
+      setVisitas(vis || []);
       setLoading(false);
     } catch (err) {
       console.error('Error cargando datos reales:', err);
@@ -652,14 +696,79 @@ export default function VisitasPage({ params }) {
     setFirmaRespSavedUrl('');
     setFirmaProfSavedUrl('');
   };
+  const handleAddNew = () => {
+    setIsReadOnlyView(false);
+    setEditingId(null);
+    setEmpresaId('');
+    setEstablecimientoId('');
+    setFecha(new Date().toISOString().split('T')[0]);
+    setResponsablePresente('');
+    setOcurrieronIncidentes(false);
+    setAnalisisCorrespondiente('N/A');
+    setCausaRaiz('');
+    setAccionCorrectiva('');
+    setRelevamientoHigieneSeguridad('N/A');
+    setRelevamientoPracticasSeguras('N/A');
+    setRelevamientoEpp('N/A');
+    setRealizaronMediciones('N/A');
+    setSelectedMediciones([]);
+    setMedicionCustomText('');
+    setVerificoAccionesCorrectivas('N/A');
+    setDictaronCapacitaciones(false);
+    setSelectedTemas([]);
+    setIsTemasDropdownOpen(false);
+    setSearchTopicTerm('');
+    setRealizaronSimulacros(false);
+    setSelectedSimulacros([]);
+    setSimulacroCustomText('');
+    setEmiteAvisoRiesgo(false);
+    setSelectedDocumentacion([]);
+    setDocumentacionCustomText('');
+    setObservacionesRecomendaciones('');
+    setObservaciones('');
+    setFotosFiles([]);
+    setHasSignedResp(false);
+    setHasSignedProf(false);
+    setFirmaRespSavedUrl('');
+    setFirmaProfSavedUrl('');
+    
+    // Auto-select logged-in user if they exist in miembros list
+    const currentMember = miembrosList.find(m => m.profile_id === profile?.id);
+    if (currentMember) {
+      setProfesionalTipo('miembro');
+      setProfesionalId(currentMember.id);
+      setProfesionalNombre(currentMember.full_name);
+      setSignaturePath(currentMember.signature_url || '');
+      setFirmaTipo(currentMember.signature_url ? 'perfil' : 'mano');
+    } else {
+      setProfesionalTipo('miembro');
+      setProfesionalId('');
+      setProfesionalNombre('');
+      setSignaturePath('');
+      setFirmaTipo('perfil');
+    }
+    setIsFormOpen(true);
+  };
 
   const handleProfesionalChange = (value) => {
     setProfesionalId(value);
     if (value === '__custom__') {
       setProfesionalTipo('manual');
+      setProfesionalNombre('');
+      setSignaturePath('');
+      setFirmaTipo('mano');
     } else {
       setProfesionalTipo('miembro');
-      setProfesionalNombre('');
+      const m = miembrosList.find(mem => mem.id === value);
+      if (m) {
+        setProfesionalNombre(m.full_name);
+        setSignaturePath(m.signature_url || '');
+        setFirmaTipo(m.signature_url ? 'perfil' : 'mano');
+      } else {
+        setProfesionalNombre('');
+        setSignaturePath('');
+        setFirmaTipo('perfil');
+      }
     }
   };
 
@@ -790,13 +899,37 @@ export default function VisitasPage({ params }) {
 
       // Subir firmas si hay dibujos nuevos
       let finalFirmaResp = firmaRespSavedUrl;
-      let finalFirmaProf = firmaProfSavedUrl;
+      let finalFirmaProf = '';
 
       if (hasSignedResp && firmaRespCanvasRef.current) {
         finalFirmaResp = await uploadCanvasToStorage(firmaRespCanvasRef.current, 'firma_resp', tempId);
       }
-      if (hasSignedProf && firmaProfCanvasRef.current) {
-        finalFirmaProf = await uploadCanvasToStorage(firmaProfCanvasRef.current, 'firma_prof', tempId);
+
+      if (firmaTipo === 'perfil') {
+        finalFirmaProf = signaturePath;
+      } else {
+        // firmaTipo === 'mano'
+        if (hasSignedProf && firmaProfCanvasRef.current) {
+          finalFirmaProf = await uploadCanvasToStorage(firmaProfCanvasRef.current, 'firma_prof', tempId);
+        } else {
+          // Si no se volvió a firmar a mano, recuperar firma previa
+          const originalVisita = visitas.find(v => v.id === editingId);
+          if (originalVisita && originalVisita.firma_tipo === 'mano') {
+            finalFirmaProf = originalVisita.firma_profesional || '';
+          }
+        }
+      }
+
+      if (firmaTipo === 'perfil' && !finalFirmaProf) {
+        triggerToast('El profesional seleccionado no tiene una firma configurada en su perfil.', 'error');
+        setSaveLoading(false);
+        return;
+      }
+
+      if (firmaTipo === 'mano' && !finalFirmaProf) {
+        triggerToast('Debe firmar a mano en el panel para guardar.', 'error');
+        setSaveLoading(false);
+        return;
       }
 
       // Subir fotos
@@ -839,6 +972,7 @@ export default function VisitasPage({ params }) {
         documentacion_incorporada: selectedDocumentacion,
         observaciones_recomendaciones: observacionesRecomendaciones.trim() || null,
         adjuntar_registros_urls: finalFotosUrls,
+        firma_tipo: firmaTipo,
         firma_responsable_empresa: finalFirmaResp,
         firma_profesional: finalFirmaProf,
         observaciones: observaciones.trim() || null,
@@ -921,23 +1055,74 @@ export default function VisitasPage({ params }) {
     setObservacionesRecomendaciones(v.observaciones_recomendaciones || '');
     setObservaciones(v.observaciones || '');
 
-    // Cargar fotos guardadas
-    if (v.adjuntar_registros_urls && v.adjuntar_registros_urls.length > 0) {
-      const loadedFotos = v.adjuntar_registros_urls.map((p, idx) => ({
-        file: null,
-        preview: v.fotos_preview_urls?.[idx] || '/brand/logo-primary.png',
-        path: p
-      }));
-      setFotosFiles(loadedFotos);
-    } else {
-      setFotosFiles([]);
-    }
+    setFirmaTipo(v.firma_tipo || 'mano');
 
-    // Firmas guardadas
-    setFirmaRespSavedUrl(v.firma_resp_preview_url || '');
-    setFirmaProfSavedUrl(v.firma_prof_preview_url || '');
+    let latestProfileSig = '';
+    if (v.profesional_tipo === 'miembro' && v.profesional_id) {
+      const m = miembrosList.find(mem => mem.id === v.profesional_id);
+      if (m) {
+        latestProfileSig = m.signature_url || '';
+      }
+    }
+    setSignaturePath(latestProfileSig || (v.firma_tipo === 'perfil' ? (v.firma_profesional || '') : ''));
+
+    // Cargar fotos guardadas y firmas asíncronamente
+    setFirmaRespSavedUrl('');
+    setFirmaProfSavedUrl('');
+    setFotosFiles([]);
     setHasSignedResp(false);
     setHasSignedProf(false);
+
+    if (isDevMode) {
+      setFirmaRespSavedUrl(v.firma_responsable_empresa ? '/brand/logo-primary.png' : '');
+      setFirmaProfSavedUrl((v.firma_tipo || 'mano') === 'mano' && v.firma_profesional ? '/brand/logo-primary.png' : '');
+      if (v.adjuntar_registros_urls && v.adjuntar_registros_urls.length > 0) {
+        setFotosFiles(v.adjuntar_registros_urls.map(p => ({
+          file: null,
+          preview: '/brand/logo-primary.png',
+          path: p
+        })));
+      }
+    } else {
+      // Resolve Responsable Empresa Signature
+      if (v.firma_responsable_empresa) {
+        supabase.storage
+          .from('documents')
+          .createSignedUrl(v.firma_responsable_empresa, 3600)
+          .then(({ data }) => {
+            if (data?.signedUrl) setFirmaRespSavedUrl(data.signedUrl);
+          })
+          .catch(err => console.error('Error resolving Resp signature URL:', err));
+      }
+
+      // Resolve Profesional Signature (only if hand-drawn/mano)
+      if ((v.firma_tipo || 'mano') === 'mano' && v.firma_profesional) {
+        supabase.storage
+          .from('documents')
+          .createSignedUrl(v.firma_profesional, 3600)
+          .then(({ data }) => {
+            if (data?.signedUrl) setFirmaProfSavedUrl(data.signedUrl);
+          })
+          .catch(err => console.error('Error resolving Prof signature URL:', err));
+      }
+
+      // Resolve Photos
+      if (v.adjuntar_registros_urls && v.adjuntar_registros_urls.length > 0) {
+        Promise.all(v.adjuntar_registros_urls.map(async (p) => {
+          const { data } = await supabase.storage
+            .from('documents')
+            .createSignedUrl(p, 3600, { download: false });
+          return data ? data.signedUrl : '';
+        })).then(urls => {
+          const loadedFotos = v.adjuntar_registros_urls.map((path, idx) => ({
+            file: null,
+            preview: urls[idx] || '/brand/logo-primary.png',
+            path: path
+          }));
+          setFotosFiles(loadedFotos);
+        }).catch(err => console.error('Error resolving photo URLs:', err));
+      }
+    }
 
     setIsFormOpen(true);
   };
@@ -1087,6 +1272,23 @@ export default function VisitasPage({ params }) {
       };
       img.onerror = () => {
         resolve(base64Str);
+      };
+    });
+  };
+
+  const getImgDimensions = (base64Str) => {
+    return new Promise((resolve) => {
+      if (!base64Str) {
+        resolve({ width: 1, height: 1 });
+        return;
+      }
+      const img = new Image();
+      img.src = base64Str;
+      img.onload = () => {
+        resolve({ width: img.width, height: img.height });
+      };
+      img.onerror = () => {
+        resolve({ width: 1, height: 1 });
       };
     });
   };
@@ -1473,7 +1675,7 @@ export default function VisitasPage({ params }) {
       // Contenedor principal de observaciones
       doc.setDrawColor(0, 0, 0);
       doc.setLineWidth(1);
-      doc.rect(62.35, obsY, 486.75, 307.75); // Llega hasta la zona de firmas (y ~ 610)
+      doc.rect(62.35, obsY, 486.75, 237.75); // Llega hasta y ~ 540
 
       // Texto introductorio
       doc.setFont('helvetica', 'normal');
@@ -1482,11 +1684,11 @@ export default function VisitasPage({ params }) {
       doc.text('Se realiza la presente visita a efectos de verificar las condiciones de Higiene y Seguridad en el establecimiento, supervisar las prácticas laborales y dar seguimiento a las acciones correctivas recomendadas.', 68, obsY + 42, { maxWidth: 475 });
       doc.text('Se detallan a continuación las observaciones relevantes y sugerencias preventivas:', 68, obsY + 80);
 
-      // Dibujar 9 líneas punteadas
+      // Dibujar 6 líneas punteadas
       doc.setLineDash([1, 2], 0);
       doc.setLineWidth(1);
       doc.setDrawColor(128, 128, 128); // #808080
-      const lineYs = [412, 436, 459, 483, 507, 531, 555, 579, 603];
+      const lineYs = [412, 436, 459, 483, 507, 531];
       lineYs.forEach(lineY => {
         doc.line(61.875, lineY, 548.875, lineY);
       });
@@ -1503,13 +1705,13 @@ export default function VisitasPage({ params }) {
         doc.setFontSize(10);
         doc.setTextColor(0, 0, 0);
         const lines = doc.splitTextToSize(fullObsText, 475);
-        for (let i = 0; i < Math.min(lines.length, 9); i++) {
+        for (let i = 0; i < Math.min(lines.length, 6); i++) {
           doc.text(lines[i], 68, lineYs[i] - 4); // Alinear justo arriba de la línea
         }
       }
 
       // Sección de Firmas (tercio inferior)
-      const sigY = 645;
+      const sigY = 675;
       doc.setDrawColor(0, 0, 0);
       doc.setLineWidth(1);
 
@@ -1537,9 +1739,43 @@ export default function VisitasPage({ params }) {
       let imgRespBase64 = '';
       let imgProfBase64 = '';
 
-      if (v.firma_resp_preview_url) {
+      if (v.firma_responsable_empresa) {
         try {
-          imgRespBase64 = await getBase64ImageFromUrl(v.firma_resp_preview_url);
+          if (v.firma_responsable_empresa.startsWith('data:')) {
+            imgRespBase64 = v.firma_responsable_empresa;
+          } else if (isDevMode || v.firma_responsable_empresa.startsWith('mock')) {
+            imgRespBase64 = await getBase64ImageFromUrl('/brand/logo-primary.png');
+          } else {
+            let relativePath = v.firma_responsable_empresa;
+            let isExternal = false;
+            
+            if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
+              try {
+                const urlObj = new URL(relativePath);
+                const pathParts = urlObj.pathname.split('/');
+                const bucketIndex = pathParts.findIndex(part => part === 'documents');
+                if (bucketIndex !== -1 && bucketIndex < pathParts.length - 1) {
+                  relativePath = pathParts.slice(bucketIndex + 1).join('/');
+                } else {
+                  isExternal = true;
+                }
+              } catch (urlErr) {
+                console.error('Error parseando URL de firma responsable:', urlErr);
+                isExternal = true;
+              }
+            }
+
+            if (isExternal) {
+              imgRespBase64 = await getBase64ImageFromUrl(v.firma_responsable_empresa);
+            } else {
+              const { data: sData, error: sErr } = await supabase.storage
+                .from('documents')
+                .createSignedUrl(relativePath, 3600);
+              if (!sErr && sData?.signedUrl) {
+                imgRespBase64 = await getBase64ImageFromUrl(sData.signedUrl);
+              }
+            }
+          }
           if (imgRespBase64) {
             imgRespBase64 = await resizeImage(imgRespBase64, 200, 100);
           }
@@ -1547,28 +1783,94 @@ export default function VisitasPage({ params }) {
           console.error('Error fetching responsable signature:', err);
         }
       }
-      if (v.firma_prof_preview_url) {
+
+      if (v.firma_profesional) {
         try {
-          imgProfBase64 = await getBase64ImageFromUrl(v.firma_prof_preview_url);
+          if (v.firma_profesional.startsWith('data:')) {
+            imgProfBase64 = v.firma_profesional;
+          } else if (isDevMode || v.firma_profesional.startsWith('mock')) {
+            imgProfBase64 = await getBase64ImageFromUrl('/brand/logo-primary.png');
+          } else {
+            let relativePath = v.firma_profesional;
+            let isExternal = false;
+            
+            if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
+              try {
+                const urlObj = new URL(relativePath);
+                const pathParts = urlObj.pathname.split('/');
+                const bucketIndex = pathParts.findIndex(part => part === 'signatures' || part === 'documents');
+                if (bucketIndex !== -1 && bucketIndex < pathParts.length - 1) {
+                  relativePath = pathParts.slice(bucketIndex + 1).join('/');
+                } else {
+                  isExternal = true;
+                }
+              } catch (urlErr) {
+                console.error('Error parseando URL de firma profesional:', urlErr);
+                isExternal = true;
+              }
+            }
+
+            if (isExternal) {
+              imgProfBase64 = await getBase64ImageFromUrl(v.firma_profesional);
+            } else {
+              const bucketName = v.firma_tipo === 'perfil' ? 'signatures' : 'documents';
+              const { data: sData, error: sErr } = await supabase.storage
+                .from(bucketName)
+                .createSignedUrl(relativePath, 3600);
+              if (!sErr && sData?.signedUrl) {
+                imgProfBase64 = await getBase64ImageFromUrl(sData.signedUrl);
+              }
+            }
+          }
           if (imgProfBase64) {
-            imgProfBase64 = await resizeImage(imgProfBase64, 200, 100);
+            imgProfBase64 = await resizeImage(imgProfBase64, 1200, 600, true);
           }
         } catch (err) {
           console.error('Error fetching profesional signature:', err);
         }
       }
 
-      // Dibujar las imágenes sobre las líneas
+      // Dibujar las imágenes sobre las líneas de manera proporcional
       if (imgRespBase64 && imgRespBase64.startsWith('data:image/')) {
         try {
-          doc.addImage(imgRespBase64, 'PNG', 131, sigY - 35, 80, 32);
+          const dims = await getImgDimensions(imgRespBase64);
+          const imgRatio = dims.width / dims.height;
+          const maxW = 100;
+          const maxH = 40;
+          let imgW = maxW;
+          let imgH = maxH;
+          if (imgRatio > maxW / maxH) {
+            imgW = maxW;
+            imgH = maxW / imgRatio;
+          } else {
+            imgH = maxH;
+            imgW = maxH * imgRatio;
+          }
+          const imgX = 171 - imgW / 2;
+          const imgY = sigY - 5 - imgH;
+          doc.addImage(imgRespBase64, 'PNG', imgX, imgY, imgW, imgH);
         } catch (err) {
           console.error('Error rendering imgRespBase64:', err);
         }
       }
       if (imgProfBase64 && imgProfBase64.startsWith('data:image/')) {
         try {
-          doc.addImage(imgProfBase64, 'PNG', 398, sigY - 35, 80, 32);
+          const dims = await getImgDimensions(imgProfBase64);
+          const imgRatio = dims.width / dims.height;
+          const maxW = 240;
+          const maxH = 120;
+          let imgW = maxW;
+          let imgH = maxH;
+          if (imgRatio > maxW / maxH) {
+            imgW = maxW;
+            imgH = maxW / imgRatio;
+          } else {
+            imgH = maxH;
+            imgW = maxH * imgRatio;
+          }
+          const imgX = 438 - imgW / 2;
+          const imgY = sigY - 5 - imgH;
+          doc.addImage(imgProfBase64, 'PNG', imgX, imgY, imgW, imgH);
         } catch (err) {
           console.error('Error rendering imgProfBase64:', err);
         }
@@ -1706,6 +2008,10 @@ export default function VisitasPage({ params }) {
     if (filterEmpresa && v.empresa_id !== filterEmpresa) return false;
     if (filterEstablecimiento && v.establecimiento_id !== filterEstablecimiento) return false;
 
+    if (filterFecha && v.fecha !== filterFecha) return false;
+    if (filterAnio && v.fecha && v.fecha.substring(0, 4) !== filterAnio) return false;
+    if (filterMes && v.fecha && v.fecha.substring(5, 7) !== filterMes) return false;
+
     return true;
   });
 
@@ -1793,6 +2099,10 @@ export default function VisitasPage({ params }) {
                 <Link href={`/${tenantSlug}/visitas`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/visitas`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10">
                   <ClipboardCheck className="h-4 w-4" />
                   Constancia de Visita
+                </Link>
+                <Link href={`/${tenantSlug}/avisos`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/avisos`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                  <AlertTriangle className="h-4 w-4" />
+                  Aviso de Riesgo
                 </Link>
                 
                 <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
@@ -1914,6 +2224,15 @@ export default function VisitasPage({ params }) {
               <ClipboardCheck className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Constancia de Visita</span>}
             </Link>
+            <Link 
+              href={`/${tenantSlug}/avisos`} 
+              title="Aviso de Riesgo"
+              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/avisos`)}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Aviso de Riesgo</span>}
+            </Link>
 
             {!isSidebarCollapsed ? (
               <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
@@ -2003,15 +2322,7 @@ export default function VisitasPage({ params }) {
 
                       {canCargar && (
                         <button 
-                          onClick={() => {
-                            setIsReadOnlyView(false);
-                            setFecha(new Date().toISOString().split('T')[0]);
-                            setProfesionalTipo('miembro');
-                            if (profile?.role !== 'miembro') {
-                              setProfesionalId(profile?.id || '');
-                            }
-                            setIsFormOpen(true);
-                          }}
+                          onClick={handleAddNew}
                           className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0 w-full md:w-auto"
                         >
                           <PlusCircle className="h-3.5 w-3.5" />
@@ -2034,12 +2345,15 @@ export default function VisitasPage({ params }) {
                         {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                       </button>
 
-                      {(filterText || filterEmpresa || filterEstablecimiento) && (
+                      {(filterText || filterEmpresa || filterEstablecimiento || filterFecha || filterAnio || filterMes) && (
                         <button 
                           onClick={() => {
                             setFilterText('');
                             setFilterEmpresa('');
                             setFilterEstablecimiento('');
+                            setFilterFecha('');
+                            setFilterAnio('');
+                            setFilterMes('');
                           }}
                           className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[10px] font-semibold cursor-pointer transition-all border border-slate-200"
                         >
@@ -2049,7 +2363,7 @@ export default function VisitasPage({ params }) {
                     </div>
 
                     {showFilters && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pt-1 animate-fade-in">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 pt-1 animate-fade-in">
                         {/* Selector Cliente */}
                         <div className="space-y-1">
                           <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Cliente</label>
@@ -2084,6 +2398,47 @@ export default function VisitasPage({ params }) {
                                 <option key={est.id} value={est.id}>{est.denominacion}</option>
                               ))
                             }
+                          </select>
+                        </div>
+
+                        {/* Selector Fecha */}
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Fecha</label>
+                          <input 
+                            type="date"
+                            value={filterFecha}
+                            onChange={(e) => setFilterFecha(e.target.value)}
+                            className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer font-sans"
+                          />
+                        </div>
+
+                        {/* Selector Año */}
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Año</label>
+                          <select 
+                            value={filterAnio}
+                            onChange={(e) => setFilterAnio(e.target.value)}
+                            className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer"
+                          >
+                            <option value="">Todos los Años</option>
+                            {getAvailableYears(visitas).map(y => (
+                              <option key={y} value={y}>{y}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Selector Mes */}
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Mes</label>
+                          <select 
+                            value={filterMes}
+                            onChange={(e) => setFilterMes(e.target.value)}
+                            className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer"
+                          >
+                            <option value="">Todos los Meses</option>
+                            {MONTHS_OPTS.map(m => (
+                              <option key={m.value} value={m.value}>{m.label}</option>
+                            ))}
                           </select>
                         </div>
                       </div>
@@ -2990,7 +3345,7 @@ export default function VisitasPage({ params }) {
                       <div className="space-y-2 flex flex-col">
                         <div className="flex justify-between items-center">
                           <label className="text-xs font-bold text-slate-600">Firma del Profesional de Higiene y Seguridad</label>
-                          {canEdit && (hasSignedProf || firmaProfSavedUrl) && (
+                          {firmaTipo === 'mano' && canEdit && (hasSignedProf || firmaProfSavedUrl) && (
                             <button
                               type="button"
                               onClick={() => handleClearCanvas(firmaProfCanvasRef, setHasSignedProf, setFirmaProfSavedUrl)}
@@ -3001,20 +3356,61 @@ export default function VisitasPage({ params }) {
                           )}
                         </div>
 
-                        {/* Cuadro de Firma */}
-                        <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl aspect-[2/1] relative overflow-hidden flex items-center justify-center">
-                          {firmaProfSavedUrl && !hasSignedProf ? (
-                            <img src={firmaProfSavedUrl} alt="Firma Profesional" className="w-full h-full object-contain p-2" />
+                        <div className="space-y-3">
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setFirmaTipo('perfil')}
+                              className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all border ${firmaTipo === 'perfil' ? 'bg-[#468DFF]/10 text-[#468DFF] border-[#468DFF]/30' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}`}
+                            >
+                              Firma de Perfil
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setFirmaTipo('mano')}
+                              className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all border ${firmaTipo === 'mano' ? 'bg-[#468DFF]/10 text-[#468DFF] border-[#468DFF]/30' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}`}
+                            >
+                              Firmar a mano
+                            </button>
+                          </div>
+
+                          {firmaTipo === 'perfil' ? (
+                            <div className="border border-slate-200 bg-slate-50/30 rounded-xl p-3 text-center space-y-2 flex flex-col items-center justify-center min-h-[100px]">
+                              {signaturePath ? (
+                                <>
+                                  {firmaPerfilPreviewUrl ? (
+                                    <div className="bg-white border border-slate-200 rounded-lg p-2 max-w-[200px] h-[80px] flex items-center justify-center overflow-hidden">
+                                      <img 
+                                        src={firmaPerfilPreviewUrl} 
+                                        alt="Vista previa de firma de perfil" 
+                                        className="max-w-full max-h-full object-contain"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <Loader2 className="h-5 w-5 animate-spin text-[#468DFF]" />
+                                  )}
+                                  <p className="text-[10px] text-green-600 font-bold">✓ Firma del perfil cargada correctamente.</p>
+                                </>
+                              ) : (
+                                <p className="text-[10px] text-amber-600 font-bold">⚠ El profesional seleccionado no tiene una firma digital configurada.</p>
+                              )}
+                            </div>
                           ) : (
-                            <canvas
-                              ref={firmaProfCanvasRef}
-                              width={400}
-                              height={200}
-                              className={`w-full h-full bg-white block ${canEdit ? 'cursor-crosshair' : 'cursor-default'}`}
-                            />
-                          )}
-                          {!hasSignedProf && !firmaProfSavedUrl && (
-                            <span className="absolute pointer-events-none text-[10px] text-slate-400 font-bold uppercase tracking-wider">Dibuje la firma aquí</span>
+                            <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl aspect-[2/1] relative overflow-hidden flex items-center justify-center">
+                              {firmaProfSavedUrl && !hasSignedProf ? (
+                                <img src={firmaProfSavedUrl} alt="Firma Profesional" className="w-full h-full object-contain p-2" />
+                              ) : (
+                                <canvas
+                                  ref={firmaProfCanvasRef}
+                                  width={400}
+                                  height={200}
+                                  className={`w-full h-full bg-white block ${canEdit ? 'cursor-crosshair' : 'cursor-default'}`}
+                                />
+                              )}
+                              {!hasSignedProf && !firmaProfSavedUrl && (
+                                <span className="absolute pointer-events-none text-[10px] text-slate-400 font-bold uppercase tracking-wider">Dibuje la firma aquí</span>
+                              )}
+                            </div>
                           )}
                         </div>
                       </div>

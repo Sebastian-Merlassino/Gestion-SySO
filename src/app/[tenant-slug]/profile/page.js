@@ -1095,6 +1095,10 @@ const [partidosList, setPartidosList] = useState([]);
                   <ClipboardCheck className="h-4 w-4" />
                   Constancias de Visita
                 </Link>
+                <Link href={`/${tenantSlug}/avisos`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/avisos`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                  <AlertTriangle className="h-4 w-4" />
+                  Aviso de Riesgo
+                </Link>
                 
                 <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
                 <Link href={`/${tenantSlug}/profile`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/profile`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10">
@@ -1230,6 +1234,15 @@ const [partidosList, setPartidosList] = useState([]);
             >
               <ClipboardCheck className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Constancias de Visita</span>}
+            </Link>
+            <Link 
+              href={`/${tenantSlug}/avisos`} 
+              title="Aviso de Riesgo"
+              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/avisos`)}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Aviso de Riesgo</span>}
             </Link>
             
             {!isSidebarCollapsed ? (
