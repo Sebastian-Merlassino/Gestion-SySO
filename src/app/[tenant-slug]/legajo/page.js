@@ -14,6 +14,7 @@ import {
   PlusCircle, 
   X, 
   Check, 
+  AlertTriangle,
   Loader2, 
   Trash2, 
   Edit, 
@@ -594,15 +595,18 @@ export default function LegajoPage({ params }) {
 
   const handleDragOver = (e) => {
     e.preventDefault();
+    if (!canEdit) return;
     setIsDragging(true);
   };
 
   const handleDragLeave = () => {
+    if (!canEdit) return;
     setIsDragging(false);
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
+    if (!canEdit) return;
     setIsDragging(false);
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
@@ -1751,7 +1755,7 @@ export default function LegajoPage({ params }) {
                                   <tr
                                     key={doc.id}
                                     className="hover:bg-slate-50/50 cursor-pointer transition-colors"
-                                    onClick={() => handleEditClick(doc)}
+                                    onClick={() => { setIsReadOnlyView(true); handleEditClick(doc); }}
                                   >
                                     <td className="px-6 py-4 font-semibold text-slate-900">
                                       {emp ? emp.razon_social : 'Desconocido'}
@@ -1785,7 +1789,7 @@ export default function LegajoPage({ params }) {
                                         )}
                                         {canEditar && (
                                           <button
-                                            onClick={() => handleEditClick(doc)}
+                                            onClick={() => { setIsReadOnlyView(false); handleEditClick(doc); }}
                                             className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                                             title="Editar detalles"
                                           >

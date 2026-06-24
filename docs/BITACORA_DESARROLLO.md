@@ -2,6 +2,34 @@
 
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
+## [2026-06-24] Estabilización de Visualización de PDF, Drag & Drop y Navegación en Legajo Técnico y Programa Anual
+
+### Resumen de Cambios
+- **Visualización Homologada de PDFs en Programa Anual**: Se retiró la alteración de la URL firmada (`&download=` vacíos) que rompía la validación criptográfica en Supabase Storage. Ahora el Programa de Gestión Anual abre el enlace de visualización (`handleViewPdf`) de forma directa, tal como en Legajo Técnico.
+- **Bloqueo del Drag & Drop en Solo Lectura**: Se restringieron los eventos de arrastre y soltado (`handleDragOver`, `handleDragLeave`, `handleDrop`) en los componentes de carga de Legajo Técnico y Programa de Gestión para ignorar interacciones si la vista se encuentra en formato de solo lectura (`isReadOnlyView`). Esto evita que se alteren los estados del formulario en modo vista.
+- **Corrección de Excepción Client-Side (ReferenceError)**: Se solucionó el crash al salir del formulario de Legajo Técnico importando el icono `AlertTriangle` de Lucide React, que era invocado por el modal de confirmación pero no estaba definido.
+- **Limpieza de Estados en Programa Anual**: Se implementó la función `handleCloseForm()` en el Programa de Gestión Anual para limpiar centralizadamente todos los estados locales al guardar, eliminar, navegar o presionar "Salir" del formulario, previniendo estados residuales y excepciones en el cliente.
+- **Homologación de Clic en Tabla de Legajo Técnico**: Se modificó el listado de documentos de Legajo Técnico para que el clic sobre cualquier fila (`<tr>`) abra el formulario en modo de solo lectura por defecto, y el botón de editar (lápiz) lo abra en modo de edición directa, consistente con la experiencia global del SaaS.
+
+### Decisiones Clave
+- **Bloqueo a Nivel de Callback**: Dado que `<fieldset disabled>` en HTML no previene el disparo de eventos drag and drop en elementos contenedores `<div>`, es mandatorio interceptar la validación de permisos (`!canEdit`) directamente en los manejadores de JavaScript.
+- **Centralización del Cierre del Formulario**: Limpiar de forma síncrona y completa los estados temporales del formulario evita saltos y delaminación de estado en el render de las tablas al alternar vistas.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción (`npm run build`) verificada y exitosa de punta a punta.
+
+---
+
 ## [2026-06-24] Corrección de Excepción Client-Side en Programa de Gestión y Ajuste de Wrap en Sidebar
 
 ### Resumen de Cambios

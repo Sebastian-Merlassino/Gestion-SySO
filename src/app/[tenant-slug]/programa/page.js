@@ -77,15 +77,18 @@ export default function ProgramaGestion({ params }) {
 
   const handleDragOver = (e) => {
     e.preventDefault();
+    if (!canEdit) return;
     setIsDragging(true);
   };
 
   const handleDragLeave = () => {
+    if (!canEdit) return;
     setIsDragging(false);
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
+    if (!canEdit) return;
     setIsDragging(false);
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
@@ -839,7 +842,7 @@ export default function ProgramaGestion({ params }) {
         setActividades(progs || []);
       }
 
-      setShowForm(false);
+      handleCloseForm();
     } catch (err) {
       console.error('Error al guardar actividad:', err);
       triggerToast(err.message || 'Error al guardar la actividad.', 'error');
@@ -859,7 +862,7 @@ export default function ProgramaGestion({ params }) {
         try {
           if (isDevMode) {
             setActividades(prev => prev.filter(a => a.id !== id));
-            setShowForm(false);
+            handleCloseForm();
           } else {
             const { error } = await supabase
               .from('programa_anual')
@@ -867,7 +870,7 @@ export default function ProgramaGestion({ params }) {
               .eq('id', id);
             if (error) throw error;
             setActividades(prev => prev.filter(a => a.id !== id));
-            setShowForm(false);
+            handleCloseForm();
           }
           triggerToast('Actividad eliminada correctamente.', 'success');
         } catch (err) {
@@ -880,9 +883,30 @@ export default function ProgramaGestion({ params }) {
     });
   };
 
+  const handleCloseForm = () => {
+    setShowForm(false);
+    setEditingId(null);
+    setEmpresaId('');
+    setEstablecimientoId('');
+    setCatalogoId('');
+    setDescripcion('');
+    setMarcoLegal('');
+    setResponsableId('');
+    setResponsableCustom('');
+    setProgreso(0);
+    setFechaPlanificada('');
+    setFechaRealizacion('');
+    setDocumentoUrl('');
+    setDocumentoFile(null);
+    setUploadType('local');
+    setDriveLink('');
+    setObservaciones('');
+    setFormErrors({});
+  };
+
   const handleExitForm = () => {
     if (isReadOnlyView) {
-      setShowForm(false);
+      handleCloseForm();
       return;
     }
     setConfirmModal({
@@ -891,7 +915,7 @@ export default function ProgramaGestion({ params }) {
       message: '¿Estás seguro de que deseas salir? Los cambios no guardados se perderán.',
       confirmText: 'Confirmar',
       onConfirm: () => {
-        setShowForm(false);
+        handleCloseForm();
         setConfirmModal({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Eliminar' });
       }
     });
@@ -901,7 +925,7 @@ export default function ProgramaGestion({ params }) {
     if (showForm) {
       if (isReadOnlyView) {
         if (path.endsWith('/programa')) {
-          setShowForm(false);
+          handleCloseForm();
         } else {
           window.location.href = path;
         }
@@ -916,7 +940,7 @@ export default function ProgramaGestion({ params }) {
         onConfirm: () => {
           setConfirmModal({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Eliminar' });
           if (path.endsWith('/programa')) {
-            setShowForm(false);
+            handleCloseForm();
           } else {
             window.location.href = path;
           }
@@ -985,13 +1009,7 @@ export default function ProgramaGestion({ params }) {
         return;
       }
 
-      // Agregar ?download=false para pedir al servidor apertura inline
-      // (Supabase Storage respeta este parámetro en la signed URL)
-      const viewUrl = data.signedUrl.includes('?')
-        ? `${data.signedUrl}&download=`
-        : `${data.signedUrl}?download=`;
-
-      window.open(viewUrl, '_blank');
+      window.open(data.signedUrl, '_blank');
     } catch (err) {
       console.error('Error al abrir el documento:', err);
     }
