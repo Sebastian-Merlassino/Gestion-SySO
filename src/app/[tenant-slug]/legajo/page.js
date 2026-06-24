@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { formatDate } from '@/lib/utils';
 import { 
@@ -317,6 +318,11 @@ export default function LegajoPage({ params }) {
   const [documentoFile, setDocumentoFile] = useState(null);
   const [documentoUrl, setDocumentoUrl] = useState('');
 
+  // Estados y Refs para Drag and Drop
+  const fileInputRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [selectedFileName, setSelectedFileName] = useState('');
+
   // Filtros de listado
   const [filterText, setFilterText] = useState('');
   const [filterEmpresa, setFilterEmpresa] = useState('');
@@ -329,6 +335,11 @@ export default function LegajoPage({ params }) {
   // Alertas, Toast y Modales
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', type: 'info', onConfirm: null, confirmText: 'Confirmar' });
+
+  // Estados de ordenamiento
+  const [sortField, setSortField] = useState('fecha');
+  const [sortOrder, setSortOrder] = useState('desc');
+
 
   // Permisos granulares
   const getSectionPermissions = (userProfile, sectionName) => {
@@ -578,7 +589,32 @@ export default function LegajoPage({ params }) {
       return;
     }
     setDocumentoFile(file);
+    setSelectedFileName(file.name);
   };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      handleFileChange(files[0]);
+    }
+  };
+
+  useEffect(() => {
+    if (!documentoFile) {
+      setSelectedFileName('');
+    }
+  }, [documentoFile]);
 
   // Inicializar nuevo registro
   const handleAddNew = () => {
@@ -970,301 +1006,64 @@ export default function LegajoPage({ params }) {
     return true;
   });
 
+
+
+  // Ordenamiento de documentos
+  const sortedDocuments = [...filteredDocuments].sort((a, b) => {
+    if (!sortField) return 0;
+    let valA = a[sortField];
+    let valB = b[sortField];
+
+    if (sortField === 'cliente') {
+      const empA = empresas.find(e => e.id === a.empresa_id);
+      const empB = empresas.find(e => e.id === b.empresa_id);
+      valA = empA ? empA.razon_social.toLowerCase() : '';
+      valB = empB ? empB.razon_social.toLowerCase() : '';
+    } else if (sortField === 'establecimiento') {
+      const estA = allEstablecimientos.find(es => es.id === a.establecimiento_id);
+      const estB = allEstablecimientos.find(es => es.id === b.establecimiento_id);
+      valA = estA ? estA.denominacion.toLowerCase() : '';
+      valB = estB ? estB.denominacion.toLowerCase() : '';
+    } else if (sortField === 'documento_nombre') {
+      valA = (a.documento_nombre || '').toLowerCase();
+      valB = (b.documento_nombre || '').toLowerCase();
+    } else if (sortField === 'fecha') {
+      valA = a.fecha || '';
+      valB = b.fecha || '';
+    }
+
+    if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+    if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
   const yearsOptions = getAvailableYears(documents);
+
 
   return (
     <div className="h-screen overflow-hidden bg-syso-bg text-slate-700 flex font-sans">
       
-      {/* SIDEBAR ESCRITORIO */}
-      <aside className={`bg-[#0D0D0D] flex flex-col justify-between shrink-0 hidden md:flex transition-all duration-300 ${isSidebarCollapsed ? 'w-20' : 'w-64'}`}>
-        <div className="p-6 flex flex-col flex-1 min-h-0">
-          
-          {/* Logo */}
-          <div className={`flex items-center justify-between gap-3 mb-8 shrink-0 ${isSidebarCollapsed ? 'flex-col' : ''}`}>
-            <div className="flex items-center gap-3">
-              <img src="/brand/logo-primary.png" alt="Logo" className="h-9 w-9 object-contain shrink-0" />
-              {!isSidebarCollapsed && (
-                <span className="font-outfit text-base font-extrabold text-white tracking-tight block animate-fade-in">Gestión SySO</span>
-              )}
-            </div>
-            <button
-              onClick={toggleSidebar}
-              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all cursor-pointer"
-            >
-              {isSidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-            </button>
-          </div>
-
-          {/* Menú de Navegación */}
-          <nav className="flex-1 overflow-y-auto sidebar-scrollbar space-y-1.5 min-h-0">
-            <Link
-              href={`/${tenantSlug}/dashboard`}
-              title="Dashboard"
-              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/dashboard`)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-            >
-              <Building className="h-4 w-4 shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fade-in">Dashboard</span>}
-            </Link>
-
-            {profile && profile.role !== 'cliente' && (
-              <>
-                <Link
-                  href={`/${tenantSlug}/empresas`}
-                  title="Clientes"
-                  onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-                >
-                  <Users className="h-4 w-4 shrink-0" />
-                  {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
-                </Link>
-
-                <Link
-                  href={`/${tenantSlug}/equipo`}
-                  title="Equipo de Trabajo"
-                  onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/equipo`)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-                >
-                  <Contact className="h-4 w-4 shrink-0" />
-                  {!isSidebarCollapsed && <span className="animate-fade-in">Equipo de Trabajo</span>}
-                </Link>
-              </>
-            )}
-
-            <div className="h-px bg-white/10 my-4" />
-
-            <Link
-              href={`/${tenantSlug}/programa`}
-              title="Programa de Gestión Anual"
-              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/programa`)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-            >
-              <Calendar className="h-4 w-4 shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fade-in">Prog. Gestión Anual</span>}
-            </Link>
-
-            <Link
-              href={`/${tenantSlug}/capacitacion`}
-              title="Programa de Capacitación Anual"
-              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/capacitacion`)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-            >
-              <GraduationCap className="h-4 w-4 shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fade-in">Prog. Capacitación Anual</span>}
-            </Link>
-
-            <Link
-              href={`/${tenantSlug}/correctivas`}
-              title="Acciones Correctivas"
-              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/correctivas`)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-            >
-              <ClipboardList className="h-4 w-4 shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fade-in">Acciones Correctivas</span>}
-            </Link>
-
-            <Link
-              href={`/${tenantSlug}/extintores`}
-              title="Extintores"
-              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/extintores`)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-            >
-              <Flame className="h-4 w-4 shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fade-in">Extintores</span>}
-            </Link>
-
-            <Link
-              href={`/${tenantSlug}/visitas`}
-              title="Constancia de Visita"
-              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/visitas`)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-            >
-              <FileCheck className="h-4 w-4 shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fade-in">Constancia de Visita</span>}
-            </Link>
-
-            <Link
-              href={`/${tenantSlug}/avisos`}
-              title="Aviso de Riesgo"
-              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/avisos`)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-            >
-              <ShieldAlert className="h-4 w-4 shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fade-in">Aviso de Riesgo</span>}
-            </Link>
-
-            <Link
-              href={`/${tenantSlug}/legajo`}
-              title="Legajo Técnico"
-              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/legajo`)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10 ${isSidebarCollapsed ? 'justify-center' : ''}`}
-            >
-              <Folder className="h-4 w-4 shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fade-in">Legajo Técnico</span>}
-            </Link>
-
-            {!isSidebarCollapsed ? (
-              <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
-            ) : (
-              <div className="h-px bg-white/10 my-6" />
-            )}
-            <Link
-              href={`/${tenantSlug}/profile`}
-              title="Editar Perfil"
-              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/profile`)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-            >
-              <Settings className="h-4 w-4 shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fade-in">Editar Perfil</span>}
-            </Link>
-          </nav>
-        </div>
-
-        {/* Footer Sidebar */}
-        <div className="p-4 border-t border-white/10">
-          <div className={`flex items-center justify-between rounded-xl bg-black/40 p-3 border border-white/5 ${isSidebarCollapsed ? 'flex-col gap-2' : ''}`}>
-            {!isSidebarCollapsed && (
-              <div className="truncate pr-2">
-                <span className="text-xs font-bold text-white block truncate">{profile?.full_name || 'Usuario'}</span>
-                <span className="text-[10px] text-white/40 block truncate uppercase tracking-wider">{profile?.role || 'Profesional'}</span>
-              </div>
-            )}
-            <button onClick={handleLogout} className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-600 hover:text-white transition-all cursor-pointer shrink-0">
-              <LogOut className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      </aside>
-
-      {/* MOBILE HEADER & DRAWER */}
-      {isMobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 animate-fade-in">
-          <aside className="relative w-64 bg-[#0D0D0D] flex flex-col justify-between p-6 z-10 border-r border-white/5 animate-fade-in-right">
-            <div>
-              <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-3">
-                  <img src="/brand/logo-primary.png" alt="Logo" className="h-9 w-9 object-contain" />
-                  <span className="font-outfit text-base font-extrabold text-white tracking-tight">Gestión SySO</span>
-                </div>
-                <button onClick={() => setIsMobileMenuOpen(false)} className="p-1 rounded-lg text-white/50 hover:text-white hover:bg-white/10 cursor-pointer">
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-              <nav className="space-y-1.5">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block mb-2">Panel principal</span>
-                <Link
-                  href={`/${tenantSlug}/dashboard`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all"
-                >
-                  <Building className="h-4 w-4" />
-                  Dashboard
-                </Link>
-
-                {profile && profile.role !== 'cliente' && (
-                  <>
-                    <Link
-                      href={`/${tenantSlug}/empresas`}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all"
-                    >
-                      <Users className="h-4 w-4" />
-                      Clientes
-                    </Link>
-                    <Link
-                      href={`/${tenantSlug}/equipo`}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all"
-                    >
-                      <Contact className="h-4 w-4" />
-                      Equipo de Trabajo
-                    </Link>
-                  </>
-                )}
-
-                <div className="h-px bg-white/10 my-4" />
-
-                <Link
-                  href={`/${tenantSlug}/programa`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all"
-                >
-                  <Calendar className="h-4 w-4" />
-                  Prog. Gestión Anual
-                </Link>
-                <Link
-                  href={`/${tenantSlug}/capacitacion`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all"
-                >
-                  <GraduationCap className="h-4 w-4" />
-                  Prog. Capacitación Anual
-                </Link>
-                <Link
-                  href={`/${tenantSlug}/correctivas`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all"
-                >
-                  <ClipboardList className="h-4 w-4" />
-                  Acciones Correctivas
-                </Link>
-                <Link
-                  href={`/${tenantSlug}/extintores`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all"
-                >
-                  <Flame className="h-4 w-4" />
-                  Extintores
-                </Link>
-                <Link
-                  href={`/${tenantSlug}/visitas`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all"
-                >
-                  <FileCheck className="h-4 w-4" />
-                  Constancia de Visita
-                </Link>
-                <Link
-                  href={`/${tenantSlug}/avisos`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all"
-                >
-                  <ShieldAlert className="h-4 w-4" />
-                  Aviso de Riesgo
-                </Link>
-                <Link
-                  href={`/${tenantSlug}/legajo`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all"
-                >
-                  <Folder className="h-4 w-4" />
-                  Legajo Técnico
-                </Link>
-
-                <div className="h-px bg-white/10 my-4" />
-
-                <Link
-                  href={`/${tenantSlug}/profile`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all"
-                >
-                  <Settings className="h-4 w-4" />
-                  Editar Perfil
-                </Link>
-              </nav>
-            </div>
-            <div className="flex items-center justify-between rounded-xl bg-black/40 p-3 border border-white/5">
-              <div>
-                <span className="text-xs font-bold text-white block">{profile?.full_name}</span>
-                <span className="text-[10px] text-white/40 block uppercase tracking-wider">{profile?.role}</span>
-              </div>
-              <button onClick={handleLogout} className="p-2 rounded-lg bg-red-500/10 text-red-400">
-                <LogOut className="h-4 w-4" />
-              </button>
-            </div>
-          </aside>
-        </div>
-      )}
+      {/* Sidebar (Desktop & Mobile) */}
+      <Sidebar
+        tenantSlug={tenantSlug}
+        profile={profile}
+        currentSection="legajo"
+        isSidebarCollapsed={isSidebarCollapsed}
+        toggleSidebar={toggleSidebar}
+        isMobileMenuOpen={isMobileMenuOpen}
+        setIsMobileMenuOpen={setIsMobileMenuOpen}
+        handleLogout={handleLogout}
+        onNavigate={handleSidebarNavigation}
+      />
 
       {/* CONTAINER PRINCIPAL */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
@@ -1497,12 +1296,47 @@ export default function LegajoPage({ params }) {
 
                           {uploadType === 'local' ? (
                             <>
-                              <input
-                                type="file"
-                                accept=".pdf"
-                                onChange={(e) => handleFileChange(e.target.files[0])}
-                                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all file:mr-3.5 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-[#468DFF]/10 file:text-[#468DFF] hover:file:bg-[#468DFF]/20 file:cursor-pointer text-slate-600 animate-fade-in"
-                              />
+                              <div
+                                onDragOver={handleDragOver}
+                                onDragLeave={handleDragLeave}
+                                onDrop={handleDrop}
+                                className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${
+                                  isDragging 
+                                    ? 'border-[#468DFF] bg-[#468DFF]/5' 
+                                    : 'border-slate-200 bg-slate-50/50 hover:bg-slate-50'
+                                }`}
+                              >
+                                <input
+                                  type="file"
+                                  ref={fileInputRef}
+                                  onChange={(e) => {
+                                    const file = e.target.files[0];
+                                    if (file) {
+                                      handleFileChange(file);
+                                    }
+                                  }}
+                                  accept=".pdf"
+                                  className="hidden"
+                                />
+                                <div className="flex flex-col items-center justify-center gap-2">
+                                  <Upload className="h-8 w-8 text-slate-400 shrink-0" />
+                                  <span className="text-sm text-slate-600">
+                                    Arrastrá tu archivo aquí o
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current.click()}
+                                    className="bg-[#468DFF]/10 text-[#468DFF] hover:bg-[#468DFF]/20 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
+                                  >
+                                    seleccionar archivo
+                                  </button>
+                                  {selectedFileName && (
+                                    <span className="text-xs text-slate-500 font-semibold mt-2 truncate max-w-[200px] block">
+                                      Seleccionado: {selectedFileName}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
                               <p className="text-[9px] text-slate-400 mt-1 italic">Solo formato PDF. Tamaño máximo de 10 MB.</p>
                             </>
                           ) : (
@@ -1861,77 +1695,97 @@ export default function LegajoPage({ params }) {
                       <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                           <thead>
-                            <tr className="bg-slate-50/70 border-b border-slate-150 text-[10px] font-bold text-slate-400 uppercase tracking-wider select-none">
-                              <th className="py-3.5 px-4 font-bold">Razón Social</th>
-                              <th className="py-3.5 px-4 font-bold">Establecimiento</th>
-                              <th className="py-3.5 px-4 font-bold">Documento / Tipo</th>
-                              <th className="py-3.5 px-4 font-bold">Fecha</th>
-                              <th className="py-3.5 px-4 font-bold text-right">Acciones</th>
+                            <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider select-none">
+                              <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150 transition-colors" onClick={() => handleSort('cliente')}>
+                                <div className="flex items-center gap-1">
+                                  Razón Social
+                                  {sortField === 'cliente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                                </div>
+                              </th>
+                              <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150 transition-colors" onClick={() => handleSort('establecimiento')}>
+                                <div className="flex items-center gap-1">
+                                  Establecimiento
+                                  {sortField === 'establecimiento' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                                </div>
+                              </th>
+                              <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150 transition-colors" onClick={() => handleSort('documento_nombre')}>
+                                <div className="flex items-center gap-1">
+                                  Documento / Tipo
+                                  {sortField === 'documento_nombre' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                                </div>
+                              </th>
+                              <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150 transition-colors" onClick={() => handleSort('fecha')}>
+                                <div className="flex items-center gap-1">
+                                  Fecha
+                                  {sortField === 'fecha' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                                </div>
+                              </th>
+                              <th className="px-6 py-4 text-right sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Acciones</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 text-sm text-slate-700">
-                            {filteredDocuments.length === 0 ? (
+                            {sortedDocuments.length === 0 ? (
                               <tr>
-                                <td colSpan="5" className="py-12 text-center text-xs text-slate-400 font-semibold italic">
+                                <td colSpan="5" className="text-center py-10 text-slate-400 font-medium bg-slate-50/20 italic">
                                   No se encontraron registros cargados en esta ubicación.
                                 </td>
                               </tr>
                             ) : (
-                              filteredDocuments.map((doc) => {
+                              sortedDocuments.map((doc) => {
                                 const emp = empresas.find(e => e.id === doc.empresa_id);
                                 const est = allEstablecimientos.find(es => es.id === doc.establecimiento_id);
                                 return (
                                   <tr
                                     key={doc.id}
-                                    className="hover:bg-slate-50/50 transition-colors group cursor-pointer"
+                                    className="hover:bg-slate-50/50 cursor-pointer transition-colors"
                                     onClick={() => handleEditClick(doc)}
                                   >
-                                    <td className="py-3 px-4 font-semibold text-slate-900">
+                                    <td className="px-6 py-4 font-semibold text-slate-900">
                                       {emp ? emp.razon_social : 'Desconocido'}
                                     </td>
-                                    <td className="py-3 px-4 text-xs font-semibold text-slate-500">
+                                    <td className="px-6 py-4 font-medium text-slate-600">
                                       {est ? est.denominacion : 'N/A'}
                                     </td>
-                                    <td className="py-3 px-4 font-semibold text-slate-700 text-xs">
+                                    <td className="px-6 py-4 font-semibold text-slate-600 text-xs">
                                       {doc.documento_nombre}
                                     </td>
-                                    <td className="py-3 px-4 font-mono text-xs text-slate-500 font-semibold">
+                                    <td className="px-6 py-4 font-mono text-xs text-slate-500 font-semibold">
                                       {formatDate(doc.fecha)}
                                     </td>
-                                    <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
-                                      <div className="flex items-center justify-end gap-1.5">
+                                    <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                                      <div className="flex items-center justify-end gap-2">
                                         <button
                                           onClick={() => handleViewPdf(doc.documento_url)}
-                                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-[#468DFF] text-slate-500 hover:text-white transition-all cursor-pointer shadow-sm"
+                                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                                           title="Visualizar PDF"
                                         >
-                                          <Eye className="h-4 w-4" />
+                                          <Eye className="h-4.5 w-4.5" />
                                         </button>
                                         {!doc.documento_url.startsWith('http') && (
                                           <button
                                             onClick={() => handleDownloadPdf(doc.documento_url, `${doc.documento_nombre}.pdf`)}
-                                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer shadow-sm"
+                                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                                             title="Descargar PDF"
                                           >
-                                            <Download className="h-4 w-4" />
+                                            <Download className="h-4.5 w-4.5" />
                                           </button>
                                         )}
                                         {canEditar && (
                                           <button
                                             onClick={() => handleEditClick(doc)}
-                                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-amber-500 hover:text-white text-slate-500 transition-all cursor-pointer shadow-sm"
+                                            className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                                             title="Editar detalles"
                                           >
-                                            <Edit className="h-4 w-4" />
+                                            <Edit className="h-4.5 w-4.5" />
                                           </button>
                                         )}
                                         {canEliminar && (
                                           <button
                                             onClick={() => handleDelete(doc.id)}
-                                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-red-600 hover:text-white text-red-400 transition-all cursor-pointer shadow-sm"
+                                            className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                                             title="Eliminar"
                                           >
-                                            <Trash2 className="h-4 w-4" />
+                                            <Trash2 className="h-4.5 w-4.5" />
                                           </button>
                                         )}
                                       </div>
@@ -1944,6 +1798,7 @@ export default function LegajoPage({ params }) {
                         </table>
                       </div>
                     </div>
+
 
                   </div>
                 )}

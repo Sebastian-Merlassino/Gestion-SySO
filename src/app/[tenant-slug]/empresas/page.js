@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Sidebar from '@/components/Sidebar';
 import { supabase, fetchAllGeography } from '@/lib/supabase';
 import { 
   Building, 
@@ -120,7 +121,13 @@ export default function EmpresasClientes({ params }) {
   };
 
   // Datos del Tenant y Perfil
-  const [profile, setProfile] = useState(null);
+  const [profile, setProfile] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const cached = sessionStorage.getItem('user-profile');
+      return cached ? JSON.parse(cached) : null;
+    }
+    return null;
+  });
   const [tenant, setTenant] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [isReadOnlyView, setIsReadOnlyView] = useState(false);
@@ -339,6 +346,9 @@ export default function EmpresasClientes({ params }) {
       }
       
       setProfile(prof);
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('user-profile', JSON.stringify(prof));
+      }
 
       // Cargar Tenant por slug de URL
       const { data: ten, error: tErr } = await supabase
@@ -436,12 +446,11 @@ export default function EmpresasClientes({ params }) {
   };
 
   const handleLogout = async () => {
-    try {
-      await supabase.signOut();
-      window.location.href = '/login';
-    } catch (err) {
-      window.location.href = '/login';
+    await supabase.auth.signOut();
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('user-profile');
     }
+    window.location.href = '/login';
   };
 
   // Filtrar actividades CIIU al buscar
@@ -1337,277 +1346,18 @@ export default function EmpresasClientes({ params }) {
   return (
     <div className="h-screen overflow-hidden bg-syso-bg text-slate-700 flex font-sans">
       
-      {/* Mobile Sidebar (Drawer Overlay) */}
-      {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-40 flex md:hidden">
-          {/* Overlay background */}
-          <div 
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300"
-          />
+      <Sidebar
+        tenantSlug={tenantSlug}
+        profile={profile}
+        currentSection="empresas"
+        isSidebarCollapsed={isSidebarCollapsed}
+        toggleSidebar={toggleSidebar}
+        isMobileMenuOpen={isMobileMenuOpen}
+        setIsMobileMenuOpen={setIsMobileMenuOpen}
+        handleLogout={handleLogout}
+        onNavigate={handleSidebarNavigation}
+      />
 
-          {/* Drawer Panel */}
-          <aside className="relative flex-1 flex flex-col max-w-xs w-full bg-[#0D0D0D] p-6 justify-between animate-scaleUp">
-            <div className="absolute top-4 right-4">
-              <button 
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto min-h-0 sidebar-scrollbar pr-1">
-              {/* Logo Brand */}
-              <div className="flex items-center gap-3 mb-8">
-                <img 
-                  src="/brand/logo-primary.png" 
-                  alt="Logo Gestión SySO" 
-                  className="h-9 w-9 object-contain shrink-0" 
-                />
-                <span className="font-outfit text-base font-extrabold text-white tracking-tight block">Gestión SySO</span>
-              </div>
-
-              {/* Menú de navegación */}
-              <nav className="space-y-1.5">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block mb-2">Panel principal</span>
-                <Link href={`/${tenantSlug}/dashboard`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/dashboard`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-                  <Building className="h-4 w-4" />
-                  Dashboard
-                </Link>
-                {profile && profile.role !== 'cliente' && (
-                  <Link href="#" onClick={(e) => handleSidebarNavigation(e, 'list')} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10">
-                    <Users className="h-4 w-4" />
-                    Clientes
-                  </Link>
-                )}
-                {profile && profile.role !== 'cliente' && (
-                  <Link href={`/${tenantSlug}/equipo`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/equipo`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-                    <Briefcase className="h-4 w-4" />
-                    Equipo de Trabajo
-                  </Link>
-                )}
-                <Link href={`/${tenantSlug}/programa`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/programa`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-                  <Calendar className="h-4 w-4" />
-                  Programa de Gestión Anual
-                </Link>
-                <Link href={`/${tenantSlug}/capacitacion`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/capacitacion`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-                  <GraduationCap className="h-4 w-4" />
-                  Programa de Capacitación Anual
-                </Link>
-                <Link href={`/${tenantSlug}/correctivas`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/correctivas`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-                  <ClipboardList className="h-4 w-4" />
-                  Acciones Correctivas
-                </Link>
-                <Link href={`/${tenantSlug}/extintores`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/extintores`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-                  <Flame className="h-4 w-4" />
-                  Extintores
-                </Link>
-                <Link href={`/${tenantSlug}/visitas`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/visitas`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-                  <ClipboardCheck className="h-4 w-4" />
-                  Constancia de Visita
-                </Link>
-                <Link href={`/${tenantSlug}/avisos`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/avisos`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-                  <AlertTriangle className="h-4 w-4" />
-                  Aviso de Riesgo
-                </Link>
-                <Link href={`/${tenantSlug}/legajo`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/legajo`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-                  <Folder className="h-4 w-4" />
-                  Legajo Técnico
-                </Link>
-                
-                <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
-                <Link href={`/${tenantSlug}/profile`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/profile`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
-                  <Settings className="h-4 w-4" />
-                  Editar Perfil
-                </Link>
-              </nav>
-            </div>
-
-            {/* Footer Sidebar */}
-            <div className="pt-4 border-t border-white/10">
-              <div className="flex items-center justify-between rounded-xl bg-black/40 p-3 border border-white/5">
-                <div className="truncate pr-2">
-                  <span className="text-xs font-bold text-white block truncate">{profile?.full_name || 'Usuario'}</span>
-                  <span className="text-[10px] text-white/40 block truncate uppercase tracking-wider">{profile?.role || 'Profesional'}</span>
-                </div>
-                <button 
-                  onClick={handleLogout}
-                  title="Cerrar sesión"
-                  className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-600 hover:text-white transition-all cursor-pointer shrink-0"
-                >
-                  <LogOut className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          </aside>
-        </div>
-      )}
-
-      {/* Sidebar - Barra Lateral (Idéntica al Dashboard para consistencia) */}
-      <aside className={`bg-[#0D0D0D] flex flex-col justify-between shrink-0 hidden md:flex transition-all duration-300 ${isSidebarCollapsed ? 'w-20' : 'w-64'}`}>
-        <div className="p-6 flex-1 overflow-y-auto min-h-0 sidebar-scrollbar">
-          {/* Logo Brand */}
-          <div className={`flex items-center justify-between gap-3 mb-8 ${isSidebarCollapsed ? 'flex-col' : ''}`}>
-            <div className="flex items-center gap-3">
-              <img 
-                src="/brand/logo-primary.png" 
-                alt="Logo" 
-                className="h-9 w-9 object-contain shrink-0" 
-              />
-              {!isSidebarCollapsed && (
-                <span className="font-outfit text-base font-extrabold text-white tracking-tight block animate-fade-in">Gestión SySO</span>
-              )}
-            </div>
-            <button
-              onClick={toggleSidebar}
-              title={isSidebarCollapsed ? 'Expandir barra lateral' : 'Contraer barra lateral'}
-              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all cursor-pointer"
-            >
-              {isSidebarCollapsed ? (
-                <ChevronRight className="h-4 w-4" />
-              ) : (
-                <ChevronLeft className="h-4 w-4" />
-              )}
-            </button>
-          </div>
-
-          <nav className="space-y-1.5">
-            {!isSidebarCollapsed ? (
-              <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block mb-2">Panel principal</span>
-            ) : (
-              <div className="h-px bg-white/10 my-3" />
-            )}
-            <Link 
-              href={`/${tenantSlug}/dashboard`} 
-              title="Dashboard"
-              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/dashboard`)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-            >
-              <Building className="h-4 w-4 shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fade-in">Dashboard</span>}
-            </Link>
-            {profile && profile.role !== 'cliente' && (
-              <Link 
-                href="#" 
-                title="Clientes"
-                onClick={(e) => handleSidebarNavigation(e, 'list')}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10 ${isSidebarCollapsed ? 'justify-center' : ''}`}
-              >
-                <Users className="h-4 w-4 shrink-0" />
-                {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
-              </Link>
-            )}
-            {profile && profile.role !== 'cliente' && (
-              <Link 
-                href={`/${tenantSlug}/equipo`} 
-                title="Equipo de Trabajo"
-                onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/equipo`)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-              >
-                <Briefcase className="h-4 w-4 shrink-0" />
-                {!isSidebarCollapsed && <span className="animate-fade-in">Equipo de Trabajo</span>}
-              </Link>
-            )}
-            <Link 
-              href={`/${tenantSlug}/programa`} 
-              title="Programa de Gestión Anual"
-              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/programa`)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-            >
-              <Calendar className="h-4 w-4 shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fade-in">Programa de Gestión Anual</span>}
-            </Link>
-            <Link 
-              href={`/${tenantSlug}/capacitacion`} 
-              title="Programa de Capacitación Anual"
-              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/capacitacion`)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-            >
-              <GraduationCap className="h-4 w-4 shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fade-in">Programa de Capacitación Anual</span>}
-            </Link>
-            <Link 
-              href={`/${tenantSlug}/correctivas`} 
-              title="Acciones Correctivas"
-              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/correctivas`)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-            >
-              <ClipboardList className="h-4 w-4 shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fade-in">Acciones Correctivas</span>}
-            </Link>
-            <Link 
-              href={`/${tenantSlug}/extintores`} 
-              title="Extintores"
-              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/extintores`)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-            >
-              <Flame className="h-4 w-4 shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fade-in">Extintores</span>}
-            </Link>
-            <Link 
-              href={`/${tenantSlug}/visitas`} 
-              title="Constancia de Visita"
-              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/visitas`)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-            >
-              <ClipboardCheck className="h-4 w-4 shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fade-in">Constancia de Visita</span>}
-            </Link>
-            <Link 
-              href={`/${tenantSlug}/avisos`} 
-              title="Aviso de Riesgo"
-              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/avisos`)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-            >
-              <AlertTriangle className="h-4 w-4 shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fade-in">Aviso de Riesgo</span>}
-            </Link>
-            <Link 
-              href={`/${tenantSlug}/legajo`} 
-              title="Legajo Técnico"
-              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/legajo`)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-            >
-              <Folder className="h-4 w-4 shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fade-in">Legajo Técnico</span>}
-            </Link>
-            
-            {!isSidebarCollapsed ? (
-              <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
-            ) : (
-              <div className="h-px bg-white/10 my-6" />
-            )}
-            <Link 
-              href={`/${tenantSlug}/profile`} 
-              title="Editar Perfil"
-              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/profile`)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
-            >
-              <Settings className="h-4 w-4 shrink-0" />
-              {!isSidebarCollapsed && <span className="animate-fade-in">Editar Perfil</span>}
-            </Link>
-          </nav>
-        </div>
-
-        <div className="p-4 border-t border-white/10">
-          <div className={`flex items-center justify-between rounded-xl bg-black/40 p-3 border border-white/5 ${isSidebarCollapsed ? 'flex-col gap-2' : ''}`}>
-            {!isSidebarCollapsed && (
-              <div className="truncate pr-2">
-                <span className="text-xs font-bold text-white block truncate">{profile?.full_name || 'Usuario'}</span>
-                <span className="text-[10px] text-white/40 block truncate uppercase tracking-wider">{profile?.role || 'Profesional'}</span>
-              </div>
-            )}
-            <button 
-              onClick={handleLogout}
-              title="Cerrar sesión"
-              className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-600 hover:text-white transition-all cursor-pointer shrink-0"
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      </aside>
 
       {/* Area del Contenido Principal */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">

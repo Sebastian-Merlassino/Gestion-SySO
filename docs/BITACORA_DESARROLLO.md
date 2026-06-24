@@ -2,6 +2,107 @@
 
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
+## [2026-06-24] Estandarización de Tablas de Legajo Técnico y Separación de Acciones de Archivo en Programa Anual
+
+### Resumen de Cambios
+- **Estandarización de Tablas en Legajo Técnico**: Se adaptó el diseño y comportamiento de la tabla de documentos en `legajo/page.js` para cumplir con las guías de diseño y la paridad de tablas estándar.
+  - Se incorporó la ordenación por columnas en los encabezados Razón Social, Establecimiento, Documento / Tipo y Fecha (estados `sortField`/`sortOrder` y callbacks `onClick` con indicador visual de flechas).
+  - Se homogeneizó el padding de las celdas `<td>` a `px-6 py-4` y las clases de fuentes y colores.
+  - Se unificó el tamaño de los pictogramas de acción a `h-4.5 w-4.5` y los estilos/colores de botón (slate, amber, red).
+- **Separación de Acciones de Archivo en Programa Anual**: En la tabla de Actividades de `programa/page.js`, se reemplazó el botón de archivo genérico de la columna "Doc" por dos acciones independientes:
+  - **Visualizar**: Icono de ojo (`Eye`) que abre el PDF inline de forma segura en una nueva pestaña (usando `handleViewPdf`).
+  - **Descargar**: Icono de descarga (`Download`) que realiza la descarga directa a disco del binario desde Supabase Storage.
+  - Se implementó la función asíncrona `handleDownloadPdf` en el módulo de Programa. Se ocultó la opción de descarga en caso de enlaces externos de Google Drive para consistencia con el Legajo Técnico.
+
+### Decisiones Clave
+- **Paridad Visual y Funcional**: El comportamiento de ordenamiento interactivo y la separación de acciones de archivo homologan estas secciones con el resto de las herramientas de la plataforma (visitas, avisos).
+- **Control de Descargas en Enlaces Externos**: Evitar el botón de descarga nativa para Google Drive previene errores de descarga silenciosa de blobs y delega la visualización/descarga directamente a la interfaz nativa del visor de Drive.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `supabase`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción en Next.js (`npm run build`) verificada y exitosa de punta a punta.
+
+---
+
+## [2026-06-24] Mantenimiento de Sidebar y Drag & Drop en Legajo Técnico
+
+
+### Resumen de Cambios
+- **Scrollbar y Estandarización de Sidebar**: Se completó la estandarización del Sidebar móvil y de escritorio en las 11 vistas operativas. Se eliminó definitivamente el encabezado "Configuración", estableciendo en su lugar una línea divisoria unificada con clase `shrink-0`. En las vistas móviles, se modificaron los contenedores `<nav>` y sus clases CSS flexbox para asegurar que la navegación sea scrollable verticalmente de forma independiente y que el pie de página (con el perfil del usuario) permanezca fijo en la parte inferior de la pantalla sin desbordarse.
+- **Drag & Drop interactivo**: Se implementó una zona interactiva para arrastrar y soltar archivos PDF en el formulario de carga de **Legajo Técnico** (replicando la mejora de **Programa de Gestión Anual**). El botón de selección de archivos se renombró exactamente a `"seleccionar archivo"` y se disparó a través de `useRef` manteniendo oculto el input nativo.
+- **Limpieza Reactiva**: Se añadió un hook `useEffect` en Legajo Técnico para limpiar el nombre del archivo seleccionado localmente si el formulario se cancela o reinicia.
+- **Corrección en Programa de Gestión**: Se subsanó un error de sintaxis JSX que omitía el bloque condicional `{uploadType === 'local' ? ( <>` al procesar el Drag and Drop.
+
+### Decisiones Clave
+- **Paridad Funcional Completa**: Implementar exactamente el mismo componente de Drag and Drop en Legajo y Programa de Gestión para mantener la familiaridad y simplicidad de uso.
+- **Unificación de Scroll en Sidebar**: Al dar scroll individual a la navegación móvil, se garantiza una experiencia fluida en smartphones de baja resolución, previniendo que el botón de cerrar sesión quede inaccesible.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción Next.js (`npm run build`) completada con éxito.
+
+### Riesgos Detectados / Remanentes
+- Ninguno detectado.
+
+### Próximo Paso Recomendado
+- Validar visual y funcionalmente la carga Drag & Drop en dispositivos celulares y el comportamiento del scroll del menú en resoluciones estrechas.
+
+## [2026-06-24] Estandarización de Sidebar y Sincronización de Perfil (Flickering Fix)
+
+### Resumen de Cambios
+- **Mitigación Global de Flickering**: Se unificó la inicialización del estado `profile` (y `profileData` en el perfil) en las 11 páginas operativas del SaaS para recuperar sincrónicamente el perfil desde `sessionStorage` en el cliente. Esto elimina el parpadeo visual del pie de página del Sidebar (que temporalmente mostraba "Usuario" o "Profesional") y previene que los enlaces administrativos "Clientes" y "Equipo de Trabajo" aparezcan/desaparezcan intermitentemente durante el refresco asíncrono.
+- **Limpieza de Rótulo "Panel principal"**: Se removió definitivamente la etiqueta rígida de encabezado "Panel principal" tanto de la vista de escritorio como de la barra móvil de las 11 secciones.
+- **Consolidación de Línea Separadora**: Se estableció una línea divisoria horizontal estandarizada (`<div className="h-px bg-white/10 my-4" />`) que separa visualmente el grupo de navegación superior (Dashboard, Clientes, Equipo de Trabajo) de las restantes herramientas y secciones del legajo técnico en todos los sidebar layouts (desktop y mobile).
+
+### Decisiones Clave
+- **Sincronización por Almacenamiento Local**: Replicar la estrategia de almacenamiento local `sessionStorage` para el perfil en todas las páginas asegura consistencia de renderizado e inmunidad ante saltos de layout (CLS = 0) en toda la aplicación, independientemente de qué sección recargue el usuario.
+- **Paridad Visual Absoluta**: Consolidar la línea separadora y retirar "Panel principal" de todas las secciones garantiza un diseño sobrio, premium y consistente para los roles de Administrador, Miembro de Equipo y Cliente.
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción en Next.js (`npm run build`) verificada y exitosa.
+
+---
+
 ## [2026-06-24] Corrección de Barra Lateral y Flickering en Legajo Técnico
 
 ### Resumen de Cambios
