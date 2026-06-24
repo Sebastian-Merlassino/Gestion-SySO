@@ -322,7 +322,7 @@ export default function LegajoPage({ params }) {
 
   // Alertas, Toast y Modales
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
-  const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
+  const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', type: 'info', onConfirm: null, confirmText: 'Confirmar' });
 
   // Permisos granulares
   const getSectionPermissions = (userProfile, sectionName) => {
@@ -381,7 +381,7 @@ export default function LegajoPage({ params }) {
     }, 4000);
   };
 
-  const closeAlert = () => setModalAlert({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
+  const closeAlert = () => setModalAlert({ show: false, title: '', message: '', type: 'info', onConfirm: null, confirmText: 'Confirmar' });
 
   // Cargar datos Mock en Desarrollo
   const loadMockData = () => {
@@ -624,7 +624,8 @@ export default function LegajoPage({ params }) {
     setModalAlert({
       show: true,
       title: 'Salir sin guardar',
-      message: '¿Estás seguro de que deseas salir? Los cambios no guardados se perderán.',
+      message: '¿Estás seguro de que deseas salir del formulario? Perderás todos los cambios cargados que no se hayan guardado.',
+      type: 'warning',
       confirmText: 'Confirmar',
       onConfirm: () => {
         handleCloseForm();
@@ -683,6 +684,7 @@ export default function LegajoPage({ params }) {
       show: true,
       title: 'Eliminar Registro',
       message: '¿Estás seguro de que deseas eliminar permanentemente este registro del legajo técnico?',
+      type: 'warning',
       confirmText: 'Eliminar',
       onConfirm: async () => {
         closeAlert();
@@ -903,6 +905,7 @@ export default function LegajoPage({ params }) {
         show: true,
         title: 'Salir sin guardar',
         message: '¿Estás seguro de que deseas salir? Los cambios no guardados se perderán.',
+        type: 'warning',
         confirmText: 'Confirmar',
         onConfirm: () => {
           closeAlert();
@@ -1949,27 +1952,34 @@ export default function LegajoPage({ params }) {
 
       {/* MODAL DE ALERTA GENERAL */}
       {modalAlert.show && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 select-none animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-150 max-w-sm w-full p-6 shadow-2xl animate-scale-in text-center space-y-4">
-            <h3 className="font-outfit text-base font-extrabold text-slate-900">
-              {modalAlert.title}
-            </h3>
-            <p className="text-xs text-slate-500 font-semibold leading-relaxed">
-              {modalAlert.message}
-            </p>
-            <div className="flex gap-3 pt-2">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
+            {modalAlert.type === 'warning' && (
+              <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500">
+                <AlertTriangle className="h-6 w-6" />
+              </div>
+            )}
+            <div className="space-y-1">
+              <h4 className="font-outfit text-base font-bold text-slate-800">{modalAlert.title}</h4>
+              <p className="text-xs text-slate-500 leading-relaxed">{modalAlert.message}</p>
+            </div>
+            <div className="flex gap-2">
               <button
+                type="button"
                 onClick={closeAlert}
-                className="flex-1 py-2 border border-slate-350 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition-all cursor-pointer active:scale-[0.98]"
+                className="flex-1 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer"
               >
-                Cancelar
+                {modalAlert.onConfirm ? 'Cancelar' : 'Entendido'}
               </button>
-              <button
-                onClick={modalAlert.onConfirm || closeAlert}
-                className="flex-1 py-2 bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold rounded-xl transition-all cursor-pointer active:scale-[0.98] shadow-md shadow-[#468DFF]/15"
-              >
-                {modalAlert.confirmText}
-              </button>
+              {modalAlert.onConfirm && (
+                <button
+                  type="button"
+                  onClick={modalAlert.onConfirm}
+                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-red-600/10"
+                >
+                  {modalAlert.confirmText || 'Confirmar'}
+                </button>
+              )}
             </div>
           </div>
         </div>
