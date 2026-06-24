@@ -274,7 +274,13 @@ export default function LegajoPage({ params }) {
   const tenantSlug = params['tenant-slug'];
 
   // Estados estructurales
-  const [profile, setProfile] = useState(null);
+  const [profile, setProfile] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const cached = sessionStorage.getItem('user-profile');
+      return cached ? JSON.parse(cached) : null;
+    }
+    return null;
+  });
   const [tenant, setTenant] = useState(null);
   const [empresas, setEmpresas] = useState([]);
   const [allEstablecimientos, setAllEstablecimientos] = useState([]);
@@ -447,6 +453,9 @@ export default function LegajoPage({ params }) {
         .single();
       if (pErr) throw pErr;
       setProfile(prof);
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('user-profile', JSON.stringify(prof));
+      }
       if (prof.role === 'cliente') {
         setIsReadOnlyView(true);
       }
@@ -518,6 +527,9 @@ export default function LegajoPage({ params }) {
   };
 
   const handleLogout = async () => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('user-profile');
+    }
     await supabase.auth.signOut();
     window.location.href = '/login';
   };
@@ -964,28 +976,32 @@ export default function LegajoPage({ params }) {
     <div className="h-screen overflow-hidden bg-syso-bg text-slate-700 flex font-sans">
       
       {/* SIDEBAR ESCRITORIO */}
-      <aside className={`bg-[#0D0D0D] text-white flex flex-col justify-between transition-all duration-300 ease-in-out shrink-0 relative z-30 ${isSidebarCollapsed ? 'w-20' : 'w-64'} hidden md:flex h-full`}>
-        <div className="flex flex-col flex-1 min-h-0">
+      <aside className={`bg-[#0D0D0D] flex flex-col justify-between shrink-0 hidden md:flex transition-all duration-300 ${isSidebarCollapsed ? 'w-20' : 'w-64'}`}>
+        <div className="p-6 flex flex-col flex-1 min-h-0">
           
           {/* Logo */}
-          <div className="h-16 flex items-center px-4 border-b border-white/10 shrink-0 gap-3">
-            <div className="bg-[#468DFF] p-2 rounded-xl flex items-center justify-center shrink-0">
-              <FolderOpen className="h-5 w-5 text-white" />
+          <div className={`flex items-center justify-between gap-3 mb-8 shrink-0 ${isSidebarCollapsed ? 'flex-col' : ''}`}>
+            <div className="flex items-center gap-3">
+              <img src="/brand/logo-primary.png" alt="Logo" className="h-9 w-9 object-contain shrink-0" />
+              {!isSidebarCollapsed && (
+                <span className="font-outfit text-base font-extrabold text-white tracking-tight block animate-fade-in">Gestión SySO</span>
+              )}
             </div>
-            {!isSidebarCollapsed && (
-              <span className="font-extrabold text-sm tracking-wider uppercase animate-fade-in truncate">
-                Gestión SySO
-              </span>
-            )}
+            <button
+              onClick={toggleSidebar}
+              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all cursor-pointer"
+            >
+              {isSidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            </button>
           </div>
 
           {/* Menú de Navegación */}
-          <nav className="flex-1 overflow-y-auto sidebar-scrollbar py-4 px-3 space-y-1.5 min-h-0">
+          <nav className="flex-1 overflow-y-auto sidebar-scrollbar space-y-1.5 min-h-0">
             <Link
               href={`/${tenantSlug}/dashboard`}
               title="Dashboard"
               onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/dashboard`)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
             >
               <Building className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Dashboard</span>}
@@ -997,7 +1013,7 @@ export default function LegajoPage({ params }) {
                   href={`/${tenantSlug}/empresas`}
                   title="Clientes"
                   onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/empresas`)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all"
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
                 >
                   <Users className="h-4 w-4 shrink-0" />
                   {!isSidebarCollapsed && <span className="animate-fade-in">Clientes</span>}
@@ -1007,7 +1023,7 @@ export default function LegajoPage({ params }) {
                   href={`/${tenantSlug}/equipo`}
                   title="Equipo de Trabajo"
                   onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/equipo`)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all"
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
                 >
                   <Contact className="h-4 w-4 shrink-0" />
                   {!isSidebarCollapsed && <span className="animate-fade-in">Equipo de Trabajo</span>}
@@ -1021,7 +1037,7 @@ export default function LegajoPage({ params }) {
               href={`/${tenantSlug}/programa`}
               title="Programa de Gestión Anual"
               onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/programa`)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
             >
               <Calendar className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Prog. Gestión Anual</span>}
@@ -1031,7 +1047,7 @@ export default function LegajoPage({ params }) {
               href={`/${tenantSlug}/capacitacion`}
               title="Programa de Capacitación Anual"
               onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/capacitacion`)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
             >
               <GraduationCap className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Prog. Capacitación Anual</span>}
@@ -1041,7 +1057,7 @@ export default function LegajoPage({ params }) {
               href={`/${tenantSlug}/correctivas`}
               title="Acciones Correctivas"
               onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/correctivas`)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
             >
               <ClipboardList className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Acciones Correctivas</span>}
@@ -1051,7 +1067,7 @@ export default function LegajoPage({ params }) {
               href={`/${tenantSlug}/extintores`}
               title="Extintores"
               onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/extintores`)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
             >
               <Flame className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Extintores</span>}
@@ -1061,7 +1077,7 @@ export default function LegajoPage({ params }) {
               href={`/${tenantSlug}/visitas`}
               title="Constancia de Visita"
               onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/visitas`)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
             >
               <FileCheck className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Constancia de Visita</span>}
@@ -1071,7 +1087,7 @@ export default function LegajoPage({ params }) {
               href={`/${tenantSlug}/avisos`}
               title="Aviso de Riesgo"
               onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/avisos`)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
             >
               <ShieldAlert className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Aviso de Riesgo</span>}
@@ -1081,7 +1097,7 @@ export default function LegajoPage({ params }) {
               href={`/${tenantSlug}/legajo`}
               title="Legajo Técnico"
               onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/legajo`)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#468DFF] text-white font-semibold text-sm transition-all shadow-md shadow-[#468DFF]/10 ${isSidebarCollapsed ? 'justify-center' : ''}`}
             >
               <Folder className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Legajo Técnico</span>}
@@ -1096,7 +1112,7 @@ export default function LegajoPage({ params }) {
               href={`/${tenantSlug}/profile`}
               title="Editar Perfil"
               onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/profile`)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
             >
               <Settings className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Editar Perfil</span>}
@@ -1123,15 +1139,19 @@ export default function LegajoPage({ params }) {
       {/* MOBILE HEADER & DRAWER */}
       {isMobileMenuOpen && (
         <div className="md:hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 animate-fade-in">
-          <aside className="w-64 bg-[#0D0D0D] text-white h-full flex flex-col justify-between p-4 animate-slide-in">
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <span className="font-extrabold tracking-wider uppercase">Gestión SySO</span>
-                <button onClick={() => setIsMobileMenuOpen(false)} className="p-1 rounded-lg hover:bg-white/10">
+          <aside className="relative w-64 bg-[#0D0D0D] flex flex-col justify-between p-6 z-10 border-r border-white/5 animate-fade-in-right">
+            <div>
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <img src="/brand/logo-primary.png" alt="Logo" className="h-9 w-9 object-contain" />
+                  <span className="font-outfit text-base font-extrabold text-white tracking-tight">Gestión SySO</span>
+                </div>
+                <button onClick={() => setIsMobileMenuOpen(false)} className="p-1 rounded-lg text-white/50 hover:text-white hover:bg-white/10 cursor-pointer">
                   <X className="h-5 w-5" />
                 </button>
               </div>
-              <nav className="space-y-1">
+              <nav className="space-y-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block mb-2">Panel principal</span>
                 <Link
                   href={`/${tenantSlug}/dashboard`}
                   onClick={() => setIsMobileMenuOpen(false)}

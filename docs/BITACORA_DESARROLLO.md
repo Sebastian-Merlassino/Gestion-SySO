@@ -2,6 +2,32 @@
 
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
+## [2026-06-24] Corrección de Barra Lateral y Flickering en Legajo Técnico
+
+### Resumen de Cambios
+- **Barra Lateral Estandarizada**: Se reemplazó el contenedor estático de carpeta en el header del Sidebar de escritorio y móvil por el isotipo oficial del proyecto (`/brand/logo-primary.png`) y tipografía `font-outfit`. Se integró el botón colapsable (`toggleSidebar`) con iconos Chevron.
+- **Centrado de Enlaces Colapsados**: Se añadió la clase `${isSidebarCollapsed ? 'justify-center' : ''}` a los elementos de menú para centrar los iconos en vista contraída.
+- **Mitigación de Layout Shift (Flickering)**: Implementación de caché local del perfil de usuario en `sessionStorage` para inicializar sincrónicamente el estado `profile` en el cliente. Esto previene que los enlaces administrativos "Clientes" y "Equipo de Trabajo" aparezcan/desaparezcan bruscamente durante el refresco asíncrono.
+
+### Decisiones Clave
+- **Caché en sessionStorage para CLS**: Inicializar sincrónicamente el perfil usando sessionStorage elimina el salto visual (CLS = 0) en recargas sin requerir un estado global pesado o reescribir la estructura de Layouts de Next.js.
+- **Unificación del Design System**: El Sidebar del Legajo Técnico ahora exhibe el mismo comportamiento responsive y de colapso que el resto de las 10 secciones del SaaS.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción en Next.js (`npm run build`) verificada y exitosa.
+- Validación de flujo de estado de sesión, inicio, guardado y cierre en sessionStorage.
+
+---
+
 ## [2026-06-24] Implementación del Módulo Legajo Técnico
 
 ### Resumen de Cambios
