@@ -700,8 +700,8 @@ export default function LegajoPage({ params }) {
     setDocumentoUrl('');
   };
 
-  const handleEditClick = async (doc) => {
-    setIsReadOnlyView(profile?.role === 'cliente');
+  const handleEditClick = async (doc, forceReadOnly = false) => {
+    setIsReadOnlyView(forceReadOnly || profile?.role === 'cliente');
     setEditingId(doc.id);
     setEmpresaId(doc.empresa_id);
     setEstablecimientoId(doc.establecimiento_id || '');
@@ -1755,7 +1755,7 @@ export default function LegajoPage({ params }) {
                                   <tr
                                     key={doc.id}
                                     className="hover:bg-slate-50/50 cursor-pointer transition-colors"
-                                    onClick={() => { setIsReadOnlyView(true); handleEditClick(doc); }}
+                                    onClick={() => handleEditClick(doc, true)}
                                   >
                                     <td className="px-6 py-4 font-semibold text-slate-900">
                                       {emp ? emp.razon_social : 'Desconocido'}
@@ -1789,7 +1789,7 @@ export default function LegajoPage({ params }) {
                                         )}
                                         {canEditar && (
                                           <button
-                                            onClick={() => { setIsReadOnlyView(false); handleEditClick(doc); }}
+                                            onClick={() => handleEditClick(doc, false)}
                                             className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                                             title="Editar detalles"
                                           >
