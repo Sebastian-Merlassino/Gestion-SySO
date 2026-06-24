@@ -2,6 +2,25 @@
 
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
+## [2026-06-23] Rediseño UX del Login para Estabilización de Altura en Selección de Roles
+
+### Resumen de Cambios
+- **Reubicación de Enlace de Registro**: Se movió el bloque de registro "¿No tenés una cuenta? Registrate gratis" al interior de la tarjeta de inicio de sesión (`bg-white` card), posicionándose debajo del botón de ingreso.
+- **Estabilización de Altura en Pestañas**: Se aplicó una altura constante y transiciones en CSS al contenedor del enlace de registro (`min-h-[20px]` y opacidad condicional asíncrona) en lugar de un renderizado condicional destructivo en React. Esto mantiene ocupado el espacio en la interfaz para la pestaña "Clientes" (donde no está habilitado el auto-registro), impidiendo que la tarjeta cambie de dimensiones o sufra saltos bruscos ("layout jumping") al alternar roles.
+- **Normalización de Contenedor de Subtítulos**: Se envolvió el subtítulo explicativo en un contenedor con altura mínima `min-h-[32px]` para absorber cualquier variación en la cantidad de líneas o empaquetamiento del texto descriptivo de profesionales y clientes.
+
+### Decisiones Clave
+- **Prevención de Layout Shifts (CLS)**: Agrupar elementos dinámicos dentro de contenedores estáticos con alturas fijas o mínimas garantiza la estabilidad visual, alineándose con las mejores prácticas de UX de Google Lighthouse (Cumulative Layout Shift = 0).
+- **Stitch como Herramienta de Maquetación**: Se creó un proyecto de diseño en Stitch para evaluar variantes visuales del login unificado de cara a la consistencia del design system.
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/login/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción Next.js (`npm run build`) verificada y exitosa.
+
+---
+
 ## [2026-06-23] Configuración de PWA y Visualización Standalone (Pantalla Completa) en Celulares
 
 ### Resumen de Cambios

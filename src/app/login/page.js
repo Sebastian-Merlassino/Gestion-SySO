@@ -291,14 +291,16 @@ export default function LoginPage() {
             className="mx-auto object-contain mb-4"
           />
 
-          <p className="text-sm text-slate-600 font-semibold text-center mb-1">
+           <p className="text-sm text-slate-600 font-semibold text-center mb-1">
             {activeTab === 'profesional' ? 'Portal Profesional' : 'Portal de Clientes'}
           </p>
-          <p className="text-xs text-slate-500 font-medium text-center mb-6">
-            {activeTab === 'profesional' 
-              ? 'Ingresá a tu panel de Higiene y Seguridad laboral' 
-              : 'Ingresa para visualizar tu legajo técnico de higiene y seguridad'}
-          </p>
+          <div className="min-h-[32px] flex items-center justify-center mb-6">
+            <p className="text-xs text-slate-500 font-medium text-center">
+              {activeTab === 'profesional' 
+                ? 'Ingresá a tu panel de Higiene y Seguridad laboral' 
+                : 'Ingresa para visualizar tu legajo técnico de higiene y seguridad'}
+            </p>
+          </div>
 
           {/* Tab Selector */}
           <div className="flex bg-slate-100 p-1.5 rounded-xl mb-6">
@@ -442,16 +444,19 @@ export default function LoginPage() {
               )}
             </button>
           </form>
-        </div>
 
-        {activeTab === 'profesional' && (
-          <p className="text-center text-xs text-slate-600 mt-8">
-            ¿No tenés una cuenta?{' '}
-            <a href="/register" className="text-[#468DFF] hover:text-[#0511F2] font-bold transition-colors">
-              Registrate gratis
-            </a>
-          </p>
-        )}
+          {/* Registro link inside the card container with stable layout height to prevent jumping */}
+          <div className="mt-6 text-center text-xs text-slate-600 min-h-[20px] flex items-center justify-center">
+            <span className={`transition-all duration-200 ${
+              activeTab === 'profesional' ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none select-none'
+            }`}>
+              ¿No tenés una cuenta?{' '}
+              <a href="/register" className="text-[#468DFF] hover:text-[#0511F2] font-bold transition-colors">
+                Registrate gratis
+              </a>
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* ERROR MODAL POPUP */}
