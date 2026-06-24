@@ -2,7 +2,7 @@
 export default function manifest() {
   return {
     name: 'Gestión SySO',
-    short_name: 'SySO',
+    short_name: 'Gestión SySO',
     description: 'Plataforma SaaS de Higiene y Seguridad Ocupacional',
     start_url: '/',
     display: 'standalone',
