@@ -5,8 +5,8 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 ## [2026-06-23] Rediseño UX del Login para Estabilización de Altura en Selección de Roles
 
 ### Resumen de Cambios
-- **Reubicación de Enlace de Registro**: Se movió el bloque de registro "¿No tenés una cuenta? Registrate gratis" al interior de la tarjeta de inicio de sesión (`bg-white` card), posicionándose debajo del botón de ingreso.
-- **Estabilización de Altura en Pestañas**: Se aplicó una altura constante y transiciones en CSS al contenedor del enlace de registro (`min-h-[20px]` y opacidad condicional asíncrona) en lugar de un renderizado condicional destructivo en React. Esto mantiene ocupado el espacio en la interfaz para la pestaña "Clientes" (donde no está habilitado el auto-registro), impidiendo que la tarjeta cambie de dimensiones o sufra saltos bruscos ("layout jumping") al alternar roles.
+- **Reubicación de Enlace de Registro**: Se movió el bloque de registro "¿No tenés una cuenta? Registrate gratis" al interior de la tarjeta de inicio de sesión (`bg-white` card), posicionándose debajo del botón de ingreso. Se aumentó su tamaño a `text-sm` (14px) y su altura reservada en el contenedor a `min-h-[24px]` para mejorar significativamente su legibilidad.
+- **Estabilización de Altura en Pestañas**: Se aplicó una altura constante y transiciones en CSS al contenedor del enlace de registro (`min-h-[24px]` y opacidad condicional asíncrona) en lugar de un renderizado condicional destructivo en React. Esto mantiene ocupado el espacio en la interfaz para la pestaña "Clientes" (donde no está habilitado el auto-registro), impidiendo que la tarjeta cambie de dimensiones o sufra saltos bruscos ("layout jumping") al alternar roles.
 - **Normalización de Contenedor de Subtítulos**: Se envolvió el subtítulo explicativo en un contenedor con altura mínima `min-h-[32px]` para absorber cualquier variación en la cantidad de líneas o empaquetamiento del texto descriptivo de profesionales y clientes.
 
 ### Decisiones Clave

@@ -446,7 +446,7 @@ export default function LoginPage() {
           </form>
 
           {/* Registro link inside the card container with stable layout height to prevent jumping */}
-          <div className="mt-6 text-center text-xs text-slate-600 min-h-[20px] flex items-center justify-center">
+          <div className="mt-6 text-center text-sm text-slate-600 min-h-[24px] flex items-center justify-center">
             <span className={`transition-all duration-200 ${
               activeTab === 'profesional' ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none select-none'
             }`}>
