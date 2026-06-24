@@ -2,6 +2,46 @@
 
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
+## [2026-06-24] Implementación del Módulo Legajo Técnico
+
+### Resumen de Cambios
+- **Base de Datos y RLS**: Creación de la tabla `public.legajo_tecnico` con aislamiento de multi-tenancy (`tenant_id`, `empresa_id`, `establecimiento_id`) y políticas RLS granulares que restringen la subida/edición de registros de acuerdo a los permisos del perfil de usuario (`cargar`, `editar`, `eliminar`).
+- **Portal de Clientes de Solo Lectura**: Control de lectura en la tabla `legajo_tecnico` configurado para dar acceso de lectura (`SELECT`) a clientes únicamente de los registros pertenecientes a su `empresa_id`, deshabilitando todas las opciones de carga, edición y borrado en el frontend.
+- **Frontend Interactivo**: Creación de la interfaz modular de exploración y carga `src/app/[tenant-slug]/legajo/page.js`, con navegación interactiva por carpetas y subcarpetas configuradas estáticamente, y un formulario de carga doble que permite subir archivos PDF locales (hasta 10MB) o registrar enlaces a documentos de Google Drive.
+- **Integración de Permisos**: Registro del permiso `'legajo'` en la pantalla de gestión del equipo para permitir a la consultora delegar roles de carga, edición o eliminación de legajos.
+- **Barra Lateral Unificada**: Actualización de la barra lateral (sidebar) en las 11 secciones operativas de la plataforma, importando el icono `Folder` e incorporando el enlace al legajo técnico de forma consistente en el drawer móvil y el menú colapsable de escritorio.
+
+### Decisiones Clave
+- **Jerarquía Estática en React**: Definir la estructura de carpetas y subcarpetas (`LEGAJO_FOLDERS`) directamente en el frontend agiliza las consultas a la base de datos, mapeando dinámicamente los tipos de documentos correspondientes a la tabla `public.registros`.
+- **Carga de Archivos e Importación por URL**: Soporte de almacenamiento de PDFs en el bucket privado `documents` de Supabase y registro alternativo de enlaces directos de Google Drive.
+- **Control RLS Granular**: Sincronización estricta del Row Level Security de Supabase con los permisos de usuario server-side (`user_has_action_permission`), asegurando un aislamiento total entre empresas del tenant y denegando cualquier operación de escritura al rol `cliente`.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `supabase`
+- `next-best-practices`
+- `shadcn`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260706000000_create_legajo_tecnico_table.sql`
+- `[NEW] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Aplicación de migración SQL en Supabase verificada y funcional.
+- Compilación de producción Next.js (`npm run build`) exitosa y sin errores.
+
 ## [2026-06-23] Creación e Importación de Tabla de Catálogo de Registros en Supabase
 
 ### Resumen de Cambios

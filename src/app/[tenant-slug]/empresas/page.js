@@ -38,7 +38,8 @@ import {
   Search,
   Sliders,
   Flame,
-  ClipboardCheck
+  ClipboardCheck,
+  Folder
 } from 'lucide-react';
 
 const PROVINCIAS_ARGENTINAS = [
@@ -1410,6 +1411,10 @@ export default function EmpresasClientes({ params }) {
                   <AlertTriangle className="h-4 w-4" />
                   Aviso de Riesgo
                 </Link>
+                <Link href={`/${tenantSlug}/legajo`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/legajo`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                  <Folder className="h-4 w-4" />
+                  Legajo Técnico
+                </Link>
                 
                 <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
                 <Link href={`/${tenantSlug}/profile`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/profile`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
@@ -1557,6 +1562,15 @@ export default function EmpresasClientes({ params }) {
             >
               <AlertTriangle className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Aviso de Riesgo</span>}
+            </Link>
+            <Link 
+              href={`/${tenantSlug}/legajo`} 
+              title="Legajo Técnico"
+              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/legajo`)}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <Folder className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Legajo Técnico</span>}
             </Link>
             
             {!isSidebarCollapsed ? (

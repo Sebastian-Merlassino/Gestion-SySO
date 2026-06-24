@@ -42,7 +42,8 @@ import {
   ChevronDown,
   ChevronUp,
   Search,
-  Sliders
+  Sliders,
+  Folder
 } from 'lucide-react';
 
 const PROVINCIAS_ARGENTINAS = [
@@ -72,7 +73,7 @@ const PROVINCIAS_ARGENTINAS = [
 ];
 
 const normalizePermisos = (perms) => {
-  const sections = ['empresas', 'equipo', 'programa', 'capacitacion', 'correctivas', 'extintores', 'visitas', 'avisos'];
+  const sections = ['empresas', 'equipo', 'programa', 'capacitacion', 'correctivas', 'extintores', 'visitas', 'avisos', 'legajo'];
   const normalized = {};
   sections.forEach(sec => {
     const val = perms?.[sec];
@@ -178,7 +179,8 @@ export default function EquipoPage({ params }) {
     correctivas: { cargar: true, editar: true, eliminar: true },
     extintores: { cargar: true, editar: true, eliminar: true },
     visitas: { cargar: true, editar: true, eliminar: true },
-    avisos: { cargar: true, editar: true, eliminar: true }
+    avisos: { cargar: true, editar: true, eliminar: true },
+    legajo: { cargar: true, editar: true, eliminar: true }
   });
 
   // Matrículas
@@ -604,7 +606,8 @@ export default function EquipoPage({ params }) {
       correctivas: { cargar: true, editar: true, eliminar: true },
       extintores: { cargar: true, editar: true, eliminar: true },
       visitas: { cargar: true, editar: true, eliminar: true },
-      avisos: { cargar: true, editar: true, eliminar: true }
+      avisos: { cargar: true, editar: true, eliminar: true },
+      legajo: { cargar: true, editar: true, eliminar: true }
     });
     setMatriculas([
       {
@@ -639,7 +642,8 @@ export default function EquipoPage({ params }) {
         correctivas: { cargar: true, editar: true, eliminar: true },
         extintores: { cargar: true, editar: true, eliminar: true },
         visitas: { cargar: true, editar: true, eliminar: true },
-        avisos: { cargar: true, editar: true, eliminar: true }
+        avisos: { cargar: true, editar: true, eliminar: true },
+        legajo: { cargar: true, editar: true, eliminar: true }
       },
       matriculas: [{ institucion: '', numero: '', vencimiento: '', fotoFrentePreview: '', fotoDorsoPreview: '', fotoFrentePath: '', fotoDorsoPath: '' }]
     });
@@ -1209,6 +1213,10 @@ export default function EquipoPage({ params }) {
                   <AlertTriangle className="h-4 w-4" />
                   Aviso de Riesgo
                 </Link>
+                <Link href={`/${tenantSlug}/legajo`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/legajo`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
+                  <Folder className="h-4 w-4" />
+                  Legajo Técnico
+                </Link>
                 
                 <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-3 block pt-6 mb-2">Configuración</span>
                 <Link href={`/${tenantSlug}/profile`} onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/profile`)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all">
@@ -1356,6 +1364,15 @@ export default function EquipoPage({ params }) {
             >
               <AlertTriangle className="h-4 w-4 shrink-0" />
               {!isSidebarCollapsed && <span className="animate-fade-in">Aviso de Riesgo</span>}
+            </Link>
+            <Link 
+              href={`/${tenantSlug}/legajo`} 
+              title="Legajo Técnico"
+              onClick={(e) => handleSidebarNavigation(e, `/${tenantSlug}/legajo`)}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-[#468DFF] font-semibold text-sm transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+            >
+              <Folder className="h-4 w-4 shrink-0" />
+              {!isSidebarCollapsed && <span className="animate-fade-in">Legajo Técnico</span>}
             </Link>
             
             {!isSidebarCollapsed ? (
@@ -1900,7 +1917,8 @@ export default function EquipoPage({ params }) {
                             correctivas: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
                             extintores: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
                             visitas: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
-                            avisos: { cargar: targetVal, editar: targetVal, eliminar: targetVal }
+                            avisos: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
+                            legajo: { cargar: targetVal, editar: targetVal, eliminar: targetVal }
                           });
                         }}
                         className="text-[10px] font-bold text-[#468DFF] hover:underline cursor-pointer bg-transparent border-none outline-none"
@@ -1926,7 +1944,8 @@ export default function EquipoPage({ params }) {
                         { key: 'correctivas', name: 'Acciones Correctivas' },
                         { key: 'extintores', name: 'Control de Extintores' },
                         { key: 'visitas', name: 'Constancias de Visita' },
-                        { key: 'avisos', name: 'Avisos de Riesgo' }
+                        { key: 'avisos', name: 'Avisos de Riesgo' },
+                        { key: 'legajo', name: 'Legajo Técnico' }
                       ].map((section) => (
                         <div key={section.key} className="grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-4 items-center p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-all select-none">
                           <div className="text-xs font-bold text-slate-700">{section.name}</div>
