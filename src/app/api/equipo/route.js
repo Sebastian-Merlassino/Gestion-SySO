@@ -3,6 +3,28 @@ import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+
+const createMiembroSchema = z.object({
+  email: z.string().email('Dirección de correo electrónico inválida.'),
+  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres.'),
+  full_name: z.string().min(1, 'El nombre completo es requerido.'),
+  role: z.literal('miembro').optional(),
+  cuit: z.string().regex(/^\d{11}$/, 'El CUIT debe ser una cadena numérica de exactamente 11 dígitos.').or(z.string().length(0)).optional(),
+  tenant_id: z.string().uuid().optional()
+});
+
+const updateMiembroSchema = z.object({
+  userId: z.string().uuid('userId debe ser un UUID válido.'),
+  email: z.string().email('Dirección de correo electrónico inválida.').optional(),
+  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres.').optional(),
+  full_name: z.string().min(1, 'El nombre completo es requerido.').optional(),
+  role: z.literal('miembro').optional()
+});
+
+const deleteMiembroSchema = z.object({
+  userId: z.string().uuid('userId debe ser un UUID válido.')
+});
 
 export async function POST(request) {
   try {
@@ -52,16 +74,48 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    const { email, password, full_name, role, cuit, tenant_id } = body;
+    const parseResult = createMiembroSchema.safeParse(body);
+    if (!parseResult.success) {
+      return NextResponse.json({ 
+        error: 'Parámetros inválidos.', 
+        details: parseResult.error.format() 
+      }, { status: 400 });
+    }
+    const { email, password, full_name, role, cuit, tenant_id } = parseResult.data;
 
-    if (!email || !password || !full_name) {
-      return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 });
+    // --- Validación de Límites de Plan Comercial (Miembros de Equipo) ---
+    const { data: tenant, error: tenantErr } = await serverClient
+      .from('tenants')
+      .select('plan_id')
+      .eq('id', profile.tenant_id)
+      .single();
+
+    if (tenantErr || !tenant) {
+      return NextResponse.json({ error: 'No se pudo obtener la información de suscripción del tenant' }, { status: 403 });
     }
 
-    const ALLOWED_ROLES = ['miembro'];
-    if (role && !ALLOWED_ROLES.includes(role)) {
-      return NextResponse.json({ error: 'Rol no permitido' }, { status: 400 });
+    const { count: memberCount, error: countErr } = await serverClient
+      .from('profiles')
+      .select('*', { count: 'exact', head: true })
+      .eq('tenant_id', profile.tenant_id)
+      .eq('role', 'miembro');
+
+    if (countErr) {
+      return NextResponse.json({ error: 'Error al verificar límites del plan' }, { status: 500 });
     }
+
+    let maxMembers = Infinity;
+    if (tenant.plan_id === 'free') maxMembers = 1;
+    else if (tenant.plan_id === 'basic_5') maxMembers = 2; // Plan básico permite 2 técnicos adicionales
+    else if (tenant.plan_id === 'standard_25') maxMembers = 5; // Plan standard permite 5 técnicos adicionales
+    else if (tenant.plan_id === 'trial') maxMembers = 5;
+
+    if (memberCount >= maxMembers) {
+      return NextResponse.json({ 
+        error: `Límite de plan excedido. Tu plan actual (${tenant.plan_id}) permite un máximo de ${maxMembers} miembros de equipo técnico.` 
+      }, { status: 403 });
+    }
+    // --------------------------------------------------------------------
 
     // Initialize Admin client with service role key to write to auth.users
     const adminClient = createClient(supabaseUrl, supabaseSecretKey, {
@@ -92,7 +146,7 @@ export async function POST(request) {
           full_name,
           role: role || 'miembro',
           cuit,
-          tenant_id
+          tenant_id: profile.tenant_id
         }
       });
 
@@ -176,8 +230,12 @@ export async function DELETE(request) {
     const url = new URL(request.url);
     const userIdToDelete = url.searchParams.get('userId');
 
-    if (!userIdToDelete) {
-      return NextResponse.json({ error: 'Falta el parámetro userId' }, { status: 400 });
+    const parseResult = deleteMiembroSchema.safeParse({ userId: userIdToDelete });
+    if (!parseResult.success) {
+      return NextResponse.json({ 
+        error: 'Parámetro userId inválido.', 
+        details: parseResult.error.format() 
+      }, { status: 400 });
     }
 
     // Check if the user to delete belongs to the same tenant to prevent cross-tenant deleting
@@ -270,16 +328,14 @@ export async function PUT(request) {
     }
 
     const body = await request.json();
-    const { userId, email, password, full_name, role } = body;
-
-    if (!userId) {
-      return NextResponse.json({ error: 'Falta el parámetro userId' }, { status: 400 });
+    const parseResult = updateMiembroSchema.safeParse(body);
+    if (!parseResult.success) {
+      return NextResponse.json({ 
+        error: 'Parámetros inválidos.', 
+        details: parseResult.error.format() 
+      }, { status: 400 });
     }
-
-    const ALLOWED_ROLES = ['miembro'];
-    if (role && !ALLOWED_ROLES.includes(role)) {
-      return NextResponse.json({ error: 'Rol no permitido' }, { status: 400 });
-    }
+    const { userId, email, password, full_name, role } = parseResult.data;
 
     // Check if the user to update belongs to the same tenant
     const { data: targetProfile, error: targetError } = await serverClient

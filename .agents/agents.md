@@ -435,6 +435,12 @@ Leé primero estos archivos si existen:
 - `.agents/skills/webapp-testing/SKILL.md`
 - `.agents/skills/gestion-syso-bitacora/SKILL.md`
 
+Documentos obligatorios a leer:
+
+- `docs/security/SECURITY_BASELINE.md`
+- `docs/security/MULTI_TENANT_MODEL.md`
+- `.agents/RULES_WORKSPACE.md`
+
 Skills comunitarias recomendadas a buscar e instalar:
 - `rate-limit-security`
 - `threat-modeling`

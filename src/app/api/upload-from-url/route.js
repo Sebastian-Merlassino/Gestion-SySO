@@ -1,11 +1,16 @@
 // src/app/api/upload-from-url/route.js
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
+import { z } from 'zod';
 
-// Setup Supabase admin client
+const uploadSchema = z.object({
+  url: z.string().url('URL inválida.'),
+  tenantId: z.string().uuid('tenantId debe ser un UUID válido.')
+});
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SECRET_KEY; // Admin key to bypass RLS in script context
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 function getGoogleDriveDownloadUrl(url) {
   const fileIdMatch = url.match(/\/file\/d\/([^/]+)/) || url.match(/id=([^&]+)/);
@@ -18,20 +23,86 @@ function getGoogleDriveDownloadUrl(url) {
 
 export async function POST(request) {
   try {
-    const { url, tenantId } = await request.json();
-
-    if (!url || !tenantId) {
+    const body = await request.json();
+    const parseResult = uploadSchema.safeParse(body);
+    if (!parseResult.success) {
       return NextResponse.json(
-        { error: 'Parámetros url y tenantId requeridos.' },
+        { error: 'Parámetros inválidos.', details: parseResult.error.format() },
+        { status: 400 }
+      );
+    }
+    const { url, tenantId } = parseResult.data;
+
+    // 1. Autenticación y Autorización a nivel de Tenant
+    const cookieStore = cookies();
+    const serverClient = createServerClient(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        get(name) {
+          return cookieStore.get(name)?.value;
+        },
+        set(name, value, options) {
+          cookieStore.set({ name, value, ...options });
+        },
+        remove(name, options) {
+          cookieStore.set({ name, value: '', ...options });
+        },
+      },
+    });
+
+    const { data: { user }, error: authError } = await serverClient.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'No autorizado. Debe iniciar sesión.' },
+        { status: 401 }
+      );
+    }
+
+    const { data: profile, error: profError } = await serverClient
+      .from('profiles')
+      .select('tenant_id')
+      .eq('id', user.id)
+      .single();
+
+    if (profError || !profile || profile.tenant_id !== tenantId) {
+      return NextResponse.json(
+        { error: 'No autorizado a operar sobre este tenant.' },
+        { status: 403 }
+      );
+    }
+
+    // 2. Prevención de SSRF (Solo dominios autorizados de Google Drive)
+    let parsedUrl;
+    try {
+      parsedUrl = new URL(url);
+    } catch (e) {
+      return NextResponse.json({ error: 'URL inválida.' }, { status: 400 });
+    }
+
+    const allowedHosts = ['docs.google.com', 'drive.google.com', 'drive.usercontent.google.com'];
+    if (!allowedHosts.includes(parsedUrl.hostname)) {
+      return NextResponse.json(
+        { error: 'Dominio no permitido. Solo se permiten descargas desde Google Drive.' },
         { status: 400 }
       );
     }
 
-    // Translate URL if it is Google Drive
     const downloadUrl = getGoogleDriveDownloadUrl(url);
+    let parsedDownloadUrl;
+    try {
+      parsedDownloadUrl = new URL(downloadUrl);
+    } catch (e) {
+      return NextResponse.json({ error: 'URL de descarga inválida.' }, { status: 400 });
+    }
+
+    if (!allowedHosts.includes(parsedDownloadUrl.hostname)) {
+      return NextResponse.json(
+        { error: 'Dominio de descarga no permitido.' },
+        { status: 400 }
+      );
+    }
 
     console.log(`[API Upload] Downloading from: ${downloadUrl}`);
-    const res = await fetch(downloadUrl);
+    const res = await fetch(downloadUrl, { signal: AbortSignal.timeout(30000) });
     if (!res.ok) {
       return NextResponse.json(
         { error: `No se pudo descargar el archivo. Código de estado HTTP: ${res.status}` },
@@ -39,32 +110,53 @@ export async function POST(request) {
       );
     }
 
-    const buffer = Buffer.from(await res.arrayBuffer());
-    console.log(`[API Upload] Download complete. Size: ${buffer.length} bytes`);
-
-    // Find a valid profile of this tenant to construct RLS path
-    const { data: profiles, error: profErr } = await supabase
-      .from('profiles')
-      .select('id, role')
-      .eq('tenant_id', tenantId);
-
-    if (profErr || !profiles || profiles.length === 0) {
+    // 3. Control de tamaño máximo de descarga (10 MB) para prevenir DoS
+    const contentLength = res.headers.get('content-length');
+    if (contentLength && parseInt(contentLength) > 10 * 1024 * 1024) {
       return NextResponse.json(
-        { error: 'No se encontró un perfil de usuario asociado para el tenant.' },
-        { status: 400 }
+        { error: 'El archivo excede el tamaño máximo permitido de 10 MB.' },
+        { status: 413 }
       );
     }
 
-    // Prefer admin or first user
-    const admin = profiles.find(p => p.role === 'admin');
-    const userId = admin ? admin.id : profiles[0].id;
+    // Descarga por streams para evitar OOM si no hay cabecera de tamaño
+    const reader = res.body.getReader();
+    const chunks = [];
+    let receivedLength = 0;
 
-    // Build RLS-compliant path
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      chunks.push(value);
+      receivedLength += value.length;
+
+      if (receivedLength > 10 * 1024 * 1024) {
+        await reader.cancel();
+        return NextResponse.json(
+          { error: 'El archivo excede el tamaño máximo permitido de 10 MB.' },
+          { status: 413 }
+        );
+      }
+    }
+
+    const buffer = Buffer.concat(chunks);
+    console.log(`[API Upload] Download complete. Size: ${buffer.length} bytes`);
+
+    // 4. Validación de tipo de archivo mediante magic number (PDF)
+    if (buffer.length < 4 || buffer.toString('ascii', 0, 4) !== '%PDF') {
+      return NextResponse.json(
+        { error: 'El archivo no es un documento PDF válido.' },
+        { status: 415 }
+      );
+    }
+
+    // 5. Carga a storage utilizando el contexto del usuario autenticado (RLS)
     const fileId = crypto.randomUUID();
-    const storagePath = `${userId}/programa_${fileId}.pdf`;
+    const storagePath = `${user.id}/programa_${fileId}.pdf`;
 
     console.log(`[API Upload] Uploading to Storage documents bucket: ${storagePath}`);
-    const { error: uploadErr } = await supabase.storage
+    const { error: uploadErr } = await serverClient.storage
       .from('documents')
       .upload(storagePath, buffer, {
         contentType: 'application/pdf',

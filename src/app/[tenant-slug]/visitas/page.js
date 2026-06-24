@@ -1911,6 +1911,8 @@ export default function VisitasPage({ params }) {
       } else if (shouldDownload === 'bloburl') {
         const blob = doc.output('blob');
         return URL.createObjectURL(blob);
+      } else if (shouldDownload === 'blob') {
+        return doc.output('blob');
       } else {
         // Retornar en base64 para enviar por correo
         return doc.output('datauristring');
@@ -1969,10 +1971,25 @@ export default function VisitasPage({ params }) {
 
     setMailLoading(true);
     try {
-      // 1. Generar PDF como base64 string
-      const pdfBase64 = await handleGeneratePdf(mailTargetVisita, false);
-      if (!pdfBase64) {
+      // 1. Generar PDF como Blob
+      const pdfBlob = await handleGeneratePdf(mailTargetVisita, 'blob');
+      if (!pdfBlob) {
         throw new Error('No se pudo estructurar el PDF adjunto.');
+      }
+
+      // Subir archivo al storage en la carpeta del usuario (RSL lo valida)
+      const fileId = crypto.randomUUID();
+      const filePath = `${profile?.id || 'anonymous'}/visita_${mailTargetVisita.id}_${fileId}.pdf`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, pdfBlob, {
+          contentType: 'application/pdf',
+          upsert: true
+        });
+
+      if (uploadError) {
+        throw new Error(`Error al subir el adjunto a Storage: ${uploadError.message}`);
       }
 
       const emp = empresas.find(e => e.id === mailTargetVisita.empresa_id);
@@ -1997,7 +2014,7 @@ export default function VisitasPage({ params }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           emails: recipients,
-          pdfBase64,
+          filePath,
           companyName: emp ? emp.razon_social : 'Cliente',
           establishmentName: est ? est.denominacion : 'Establecimiento',
           date: formatDate(mailTargetVisita.fecha),

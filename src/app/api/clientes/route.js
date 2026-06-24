@@ -3,6 +3,19 @@ import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+
+const createClienteSchema = z.object({
+  empresaId: z.string().uuid('empresaId debe ser un UUID válido.'),
+  email: z.string().email('Dirección de correo electrónico inválida.'),
+  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres.'),
+  full_name: z.string().min(1, 'El nombre completo es requerido.'),
+  cuit: z.string().regex(/^\d{11}$/, 'El CUIT debe ser una cadena numérica de exactamente 11 dígitos.')
+});
+
+const deleteClienteSchema = z.object({
+  userId: z.string().uuid('userId debe ser un UUID válido.')
+});
 
 export async function POST(request) {
   try {
@@ -52,11 +65,14 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    const { empresaId, email, password, full_name, cuit } = body;
-
-    if (!empresaId || !email || !password || !full_name || !cuit) {
-      return NextResponse.json({ error: 'Faltan campos obligatorios (empresaId, email, password, full_name, cuit)' }, { status: 400 });
+    const parseResult = createClienteSchema.safeParse(body);
+    if (!parseResult.success) {
+      return NextResponse.json({ 
+        error: 'Parámetros inválidos.', 
+        details: parseResult.error.format() 
+      }, { status: 400 });
     }
+    const { empresaId, email, password, full_name, cuit } = parseResult.data;
 
     // Verificar que la empresa pertenece al mismo tenant para evitar cruce de tenants
     const { data: targetEmpresa, error: empError } = await serverClient
@@ -73,6 +89,40 @@ export async function POST(request) {
       return NextResponse.json({ error: 'No autorizado para configurar accesos de empresas de otro tenant' }, { status: 403 });
     }
 
+    // --- Validación de Límites de Plan Comercial ---
+    const { data: tenant, error: tenantErr } = await serverClient
+      .from('tenants')
+      .select('plan_id')
+      .eq('id', profile.tenant_id)
+      .single();
+
+    if (tenantErr || !tenant) {
+      return NextResponse.json({ error: 'No se pudo obtener la información de suscripción del tenant' }, { status: 403 });
+    }
+
+    const { count: clientCount, error: countErr } = await serverClient
+      .from('profiles')
+      .select('*', { count: 'exact', head: true })
+      .eq('tenant_id', profile.tenant_id)
+      .eq('role', 'cliente');
+
+    if (countErr) {
+      return NextResponse.json({ error: 'Error al verificar límites del plan' }, { status: 500 });
+    }
+
+    let maxClients = Infinity;
+    if (tenant.plan_id === 'free') maxClients = 1;
+    else if (tenant.plan_id === 'basic_5') maxClients = 5;
+    else if (tenant.plan_id === 'standard_25') maxClients = 25;
+    else if (tenant.plan_id === 'trial') maxClients = 25;
+
+    if (clientCount >= maxClients) {
+      return NextResponse.json({ 
+        error: `Límite de plan excedido. Tu plan actual (${tenant.plan_id}) permite un máximo de ${maxClients} usuarios clientes.` 
+      }, { status: 403 });
+    }
+    // ------------------------------------------------
+
     // Inicializar cliente admin con service role key para escribir en auth.users
     const adminClient = createClient(supabaseUrl, supabaseSecretKey, {
       auth: {
@@ -81,16 +131,17 @@ export async function POST(request) {
       }
     });
 
-    // Verificar si el CUIT ya está en uso por otro cliente
+    // Verificar si el CUIT ya está en uso por otro cliente en el mismo tenant
     const { data: existingProfile } = await adminClient
       .from('profiles')
-      .select('id, email')
+      .select('id')
       .eq('cuit', cuit)
+      .eq('tenant_id', profile.tenant_id)
       .eq('role', 'cliente')
       .maybeSingle();
 
     if (existingProfile) {
-      return NextResponse.json({ error: `El CUIT ${cuit} ya tiene un usuario de portal activo (${existingProfile.email})` }, { status: 400 });
+      return NextResponse.json({ error: `El CUIT ${cuit} ya tiene un usuario de portal activo en este tenant.` }, { status: 400 });
     }
 
     // Crear usuario en auth.users
@@ -187,8 +238,12 @@ export async function DELETE(request) {
     const url = new URL(request.url);
     const userIdToDelete = url.searchParams.get('userId');
 
-    if (!userIdToDelete) {
-      return NextResponse.json({ error: 'Falta el parámetro userId' }, { status: 400 });
+    const parseResult = deleteClienteSchema.safeParse({ userId: userIdToDelete });
+    if (!parseResult.success) {
+      return NextResponse.json({ 
+        error: 'Parámetro userId inválido.', 
+        details: parseResult.error.format() 
+      }, { status: 400 });
     }
 
     // Verificar que el usuario destino pertenece al mismo tenant y es cliente para evitar IDORs cruzados

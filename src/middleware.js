@@ -1,8 +1,39 @@
 // src/middleware.js
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
+import { checkRateLimit, getRateLimitHeaders } from './lib/rateLimit';
 
 export async function middleware(request) {
+  const url = request.nextUrl.clone();
+  const pathname = url.pathname;
+
+  // 1. Rate Limiting para APIs (se ejecuta antes de cualquier consulta a base de datos/auth)
+  if (pathname.startsWith('/api/')) {
+    const ipHeader = request.headers.get('x-forwarded-for');
+    const ip = request.ip || (ipHeader ? ipHeader.split(',')[0].trim() : '127.0.0.1');
+
+    let limit = 100;
+    let windowMs = 15 * 60 * 1000; // 15 minutos
+
+    if (pathname.startsWith('/api/send-email')) {
+      limit = 10;
+    } else if (pathname.startsWith('/api/clientes') || pathname.startsWith('/api/equipo')) {
+      limit = 15;
+    }
+
+    const rateLimitResult = await checkRateLimit(ip, pathname, limit, windowMs);
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'Demasiadas solicitudes. Intente más tarde.' },
+        { 
+          status: 429, 
+          headers: getRateLimitHeaders(rateLimitResult.limit, rateLimitResult.remaining, rateLimitResult.resetTime) 
+        }
+      );
+    }
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -62,18 +93,15 @@ export async function middleware(request) {
     },
   });
 
-  // 1. Obtener el usuario autenticado
+  // 2. Obtener el usuario autenticado
   const { data: { user } } = await supabase.auth.getUser();
 
-  const url = request.nextUrl.clone();
-  const pathname = url.pathname;
 
-  // Definir rutas públicas
+  // Definir rutas públicas (Las APIs operativas ya no son públicas por defecto)
   const isPublicRoute = 
     pathname === '/login' || 
     pathname === '/register' || 
     pathname === '/reset-password' ||
-    pathname.startsWith('/api/') ||
     pathname.startsWith('/_next/') ||
     pathname.includes('.') || // archivos estáticos en public/
     pathname.startsWith('/brand/');
@@ -82,8 +110,14 @@ export async function middleware(request) {
 
   // Si no está autenticado
   if (!user) {
-    // Si intenta acceder a una ruta privada, redirigir a /login
+    // Si intenta acceder a una ruta privada
     if (!isPublicRoute && !isOnboardingRoute) {
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json(
+          { error: 'No autorizado. Debe iniciar sesión.' },
+          { status: 401 }
+        );
+      }
       url.pathname = '/login';
       return NextResponse.redirect(url);
     }
@@ -101,8 +135,14 @@ export async function middleware(request) {
 
   // Si el usuario no tiene Tenant (onboarding incompleto)
   if (!hasTenant) {
-    // Si intenta navegar en cualquier sitio excepto /onboarding, forzar redirección
+    // Si intenta navegar en cualquier sitio excepto /onboarding
     if (!isOnboardingRoute && !isPublicRoute) {
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json(
+          { error: 'Onboarding incompleto. Se requiere registrar una organización.' },
+          { status: 403 }
+        );
+      }
       url.pathname = '/onboarding';
       return NextResponse.redirect(url);
     }

@@ -3,6 +3,22 @@ import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import nodemailer from 'nodemailer';
+import { z } from 'zod';
+
+const sendEmailSchema = z.object({
+  emails: z.union([
+    z.string().min(1, 'El destinatario es requerido.'),
+    z.array(z.string().email('Dirección de correo electrónico inválida.'))
+  ]),
+  filePath: z.string().min(1, 'El path del archivo adjunto es requerido.'),
+  companyName: z.string().optional(),
+  establishmentName: z.string().optional(),
+  date: z.string().optional(),
+  inspectorName: z.string().optional(),
+  tenantLogoBase64: z.string().nullable().optional(),
+  tenantName: z.string().optional(),
+  documentType: z.string().optional() // can be 'aviso_riesgo' or others
+});
 
 export async function POST(request) {
   try {
@@ -26,16 +42,38 @@ export async function POST(request) {
         { status: 401 }
       );
     }
-    // ─────────────────────────────────────────────────────────────────────────
 
-    const { emails, pdfBase64, companyName, establishmentName, date, inspectorName, tenantLogoBase64, tenantName, documentType } = await request.json();
+    // Obtener perfil para verificar rol (sólo admin o miembro del tenant pueden enviar mails)
+    const { data: profile, error: profError } = await serverClient
+      .from('profiles')
+      .select('role, tenant_id')
+      .eq('id', user.id)
+      .single();
 
-    if (!emails || !pdfBase64) {
+    if (profError || !profile) {
       return NextResponse.json(
-        { error: 'Parámetros emails y pdfBase64 son requeridos.' },
-        { status: 400 }
+        { error: 'No se pudo verificar el perfil del usuario.' },
+        { status: 403 }
       );
     }
+
+    if (profile.role !== 'admin' && profile.role !== 'miembro') {
+      return NextResponse.json(
+        { error: 'No autorizado. Solo el personal técnico o administradores del tenant pueden enviar constancias por email.' },
+        { status: 403 }
+      );
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
+    const body = await request.json();
+    const parseResult = sendEmailSchema.safeParse(body);
+    if (!parseResult.success) {
+      return NextResponse.json({ 
+        error: 'Parámetros inválidos.', 
+        details: parseResult.error.format() 
+      }, { status: 400 });
+    }
+    const { emails, filePath, companyName, establishmentName, date, inspectorName, tenantLogoBase64, tenantName, documentType } = parseResult.data;
 
     // Convert comma-separated string to array if necessary
     const emailList = Array.isArray(emails)
@@ -46,6 +84,48 @@ export async function POST(request) {
       return NextResponse.json(
         { error: 'Debe especificar al menos un destinatario válido.' },
         { status: 400 }
+      );
+    }
+
+    // Validar formato de correos destinatarios
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const invalidEmails = emailList.filter(email => !emailRegex.test(email));
+    if (invalidEmails.length > 0) {
+      return NextResponse.json(
+        { error: `Se detectaron correos electrónicos inválidos: ${invalidEmails.join(', ')}` },
+        { status: 400 }
+      );
+    }
+
+    // Descargar el PDF desde Supabase Storage (RLS valida el acceso)
+    console.log(`[API Send-Email] Downloading PDF from Storage: ${filePath}`);
+    const { data: fileData, error: downloadErr } = await serverClient.storage
+      .from('documents')
+      .download(filePath);
+
+    if (downloadErr || !fileData) {
+      console.error('[API Send-Email] Failed to download PDF from storage:', downloadErr);
+      return NextResponse.json(
+        { error: 'El archivo adjunto no existe o no se tienen permisos para acceder a él.' },
+        { status: 403 }
+      );
+    }
+
+    const pdfBuffer = Buffer.from(await fileData.arrayBuffer());
+
+    // Validar tamaño máximo del PDF adjunto (5 MB)
+    if (pdfBuffer.length > 5 * 1024 * 1024) {
+      return NextResponse.json(
+        { error: 'El archivo PDF adjunto excede el tamaño máximo permitido de 5 MB.' },
+        { status: 413 }
+      );
+    }
+
+    // Validar firma mágica del PDF
+    if (pdfBuffer.length < 4 || pdfBuffer.toString('ascii', 0, 4) !== '%PDF') {
+      return NextResponse.json(
+        { error: 'El archivo adjunto no es un documento PDF válido.' },
+        { status: 415 }
       );
     }
 
@@ -60,12 +140,11 @@ export async function POST(request) {
       ? `Aviso de Riesgo de Higiene y Seguridad - ${companyName || 'Cliente'}`
       : `Constancia de Visita de Higiene y Seguridad - ${companyName || 'Cliente'}`;
 
+    console.log(`[API Send-Email] Tenant: ${profile.tenant_id} | Sender: ${user.email} | To: ${emailList.join(', ')} | Subject: ${mailSubject} | Size: ${pdfBuffer.length} bytes`);
+
     // Inline attachments list
     const attachments = [];
 
-    // Add main PDF attachment
-    const cleanBase64 = pdfBase64.replace(/^data:application\/pdf;.*base64,/, '');
-    const pdfBuffer = Buffer.from(cleanBase64, 'base64');
     attachments.push({
       filename: isAvisoRiesgo
         ? `Aviso_Riesgo_${(companyName || 'Cliente').replace(/\s+/g, '_')}_${date || 'aviso'}.pdf`

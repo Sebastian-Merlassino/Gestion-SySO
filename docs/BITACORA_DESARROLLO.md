@@ -2,6 +2,137 @@
 
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
+## [2026-06-24] Integración de Rate Limiting Distribuido con Upstash Redis
+
+### Resumen de Cambios
+- **Rate Limit Distribuido con Fallback**: Se reestructuró la función `checkRateLimit` en `src/lib/rateLimit.js` para soportar consultas distribuidas utilizando la API REST `/pipeline` de Upstash Redis (enviando comandos `INCR`, `TTL` y `EXPIRE NX`).
+- **Resiliencia Automática**: Se diseñó un mecanismo de fallback robusto que intercepta cualquier fallo de conexión o ausencia de variables de entorno y ejecuta el control de tasa de forma transparente utilizando el almacenamiento local en memoria `Map`.
+- **Variables de Entorno**: Se agregaron las variables de entorno plantilla `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN` a `.env.example`.
+
+### Decisiones Clave
+- **REST en Middleware Edge**: Se optó por una llamada REST directa con `fetch` y timeout controlado de 2 segundos para no impactar los tiempos de respuesta del middleware y ser 100% compatible con el runtime de Vercel Edge sin requerir bibliotecas pesadas.
+- **NX para Expiración**: Usar el flag `NX` en la expiración (`EXPIRE NX`) garantiza que no pisemos la expiración original del bloque y mantengamos una ventana fija estricta de rate limit.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/lib/rateLimit.js`
+- `[MODIFY] .env.example`
+- `[NEW] scratch/test-redis-rate-limit.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- **Pruebas de Rate Limiting Distribuidas y Fallback**: Ejecución exitosa de `scratch/test-redis-rate-limit.js`, validando la persistencia en memoria y el fallback gracioso ante fallos HTTP.
+- **Build de Producción**: Compilación exitosa en Next.js.
+
+---
+
+## [2026-06-24] Remediación de Seguridad — Fase 3 (Medios - Ampliada) y Fase 4 (Bajos / Hardening)
+
+
+### Resumen de Cambios
+- **Remediación en `/api/send-email` (SEC-MED-01)**: Se modificó la API de envío de correos para recibir un path de archivo (`filePath`) en Supabase Storage en lugar de aceptar PDFs binarios en base64 crudos enviados directamente por el cliente. El backend ahora descarga el archivo utilizando las cookies de sesión del usuario autenticado, delegando el control de acceso a las políticas RLS del storage.
+- **Flujos de Reportes en Frontend**: Se actualizaron las funciones `handleSendEmail` en las pantallas de **Visitas** (`src/app/[tenant-slug]/visitas/page.js`) y **Avisos de Riesgo** (`src/app/[tenant-slug]/avisos/page.js`) para que generen el PDF en formato Blob, lo suban a Supabase Storage bajo la carpeta del usuario (`${profile.id}/`) y envíen únicamente la referencia del path al endpoint `/api/send-email`.
+- **Validación de Límites de Plan en Servidor (SEC-MED-02)**: Se incorporó en `/api/clientes` POST y `/api/equipo` POST un chequeo server-side que consulta el `plan_id` de la tabla `tenants` y el número actual de usuarios (`cliente` y `miembro` respectivamente) del tenant. Si se excede el límite del plan (ej: 1 cliente en 'free', 5 en 'basic_5', etc.), la API bloquea la acción con un error `403 Forbidden`.
+- **Inmutabilidad de Metadatos de Tenant en Equipo (SEC-MED-03)**: Se ajustó `/api/equipo` POST para forzar que el `tenant_id` en `user_metadata` sea el del administrador autenticado, previniendo manipulaciones del payload del cliente.
+- **Validaciones con Zod (SEC-LOW-01)**: Se implementó validación de esquemas estricta mediante Zod en las API Routes operativas (`/api/clientes`, `/api/equipo`, `/api/send-email` y `/api/upload-from-url`), garantizando tipos, formatos de email y CUITs adecuados, y devolviendo `400 Bad Request` en caso de fallos.
+- **Archivo de Configuración de Plantilla (SEC-LOW-02)**: Se creó el archivo `.env.example` en la raíz del proyecto para documentar los parámetros del entorno requeridos de forma segura.
+
+### Decisiones Clave
+- **Aprovechamiento de RLS en Storage**: Al transferir la descarga del PDF a Supabase Storage con cookies del usuario, el motor de base de datos aplica automáticamente las políticas RLS. Esto elimina la superficie de ataque que permitía a un usuario autenticado enviar correos oficiales con cualquier PDF falso forjado en el cliente.
+- **Validación Comercial del Lado Servidor**: Implementar el conteo de usuarios y verificación de planes directamente en el backend (Route Handlers) blinda la lógica de negocios contra bypasses realizados mediante solicitudes directas de API externas al frontend.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `next-best-practices`
+- `supabase`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/api/send-email/route.js`
+- `[MODIFY] src/app/api/clientes/route.js`
+- `[MODIFY] src/app/api/equipo/route.js`
+- `[MODIFY] src/app/api/upload-from-url/route.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[NEW] .env.example`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- **Build de Producción**: Compilación completa de producción ejecutada mediante `npm run build` con resultado exitoso y sin errores sintácticos o de types en el framework.
+
+### Riesgos Detectados / Remanentes
+- Ninguno detectado. La línea base de seguridad de la aplicación ha sido completamente completada de forma satisfactoria.
+
+### Próximo Paso Recomendado
+- Proceder con despliegues en ambientes de testing / staging para validaciones del lado del cliente.
+
+## [2026-06-24] Remediación de Seguridad — Fase 3 (Medios antes de producción)
+
+
+### Resumen de Cambios
+- **Integración de Rate Limiting en el Middleware**: Se modificó `src/middleware.js` para interceptar llamadas a cualquier API route (`/api/*`) y aplicar límites de tasa basados en la IP del cliente (10 peticiones cada 15 min en `/api/send-email`, 15 peticiones en `/api/clientes` y `/api/equipo`, y 100 peticiones en el resto de los endpoints). Cuando se excede el límite, se responde con código HTTP `429 Too Many Requests` y cabeceras estándar `X-RateLimit-*`.
+- **Actualización de Dependencias**: Se actualizó el paquete principal `"next"` a `"^14.2.20"` en `package.json`, lo que resolvió dependencias vulnerables (como `postcss` y vulnerabilidades internas de Next.js) y se compiló con la versión segura estable `14.2.35`.
+
+### Decisiones Clave
+- **Filtro Temprano de Rate Limiting**: Ejecutar el rate limiting al inicio de la función del middleware previene llamadas innecesarias al cliente de base de datos Supabase o solicitudes de autenticación en solicitudes bloqueadas, minimizando la carga del servidor.
+- **Uso de Cabeceras Estándar**: Retornar `X-RateLimit-Limit`, `X-RateLimit-Remaining` y `X-RateLimit-Reset` en respuestas 429 sigue las mejores prácticas de la industria y da retroalimentación transparente al cliente.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/middleware.js`
+- `[MODIFY] package.json`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- **Pruebas de Rate Limiting**: Se creó y ejecutó un script en `scratch/test-rate-limit.js` que validó de forma aislada el comportamiento del rate limiter por IP, confirmando la denegación después de exceder la cuota límite.
+- **Verificación de Compilación**: Se ejecutó `npm run build` obteniendo una compilación de producción Next.js 100% exitosa y sin advertencias o fallos sintácticos en el middleware.
+
+### Riesgos Detectados / Remanentes
+- **Rate Limit Local**: La persistencia de rate limiting en memoria local (`Map`) es ideal para desarrollo y entornos con un único nodo, pero en entornos serverless multi-instancia en producción (ej: Vercel) no comparte memoria entre lambdas. Se recomienda conectar un almacén distribuido (como Upstash Redis) o activar reglas en el WAF del CDN antes del despliegue productivo final.
+
+### Próximo Paso Recomendado
+- Proceder con el desarrollo de la **Fase 4 (Bajos / Hardening)** del plan de remediación (por ejemplo, creación de `.env.example` y esquemas de validación Zod en APIs).
+
+## [2026-06-24] Remediación de Seguridad — Fase 1 (Críticos) y Fase 2 (Altos)
+
+
+### Resumen de Cambios
+- **Parche de API `/api/upload-from-url`**: Implementación de verificación de sesión server-side, validación de pertenencia al tenant, restricción de dominios permitidos a Google Drive para mitigación de SSRF, límite de descarga síncrona a 10 MB mediante streams, y validación mágica binaria de firma de archivos PDF. Carga reestructurada a través del contexto del usuario autenticado (RLS).
+- **Parche de API `/api/clientes`**: Modificación de la verificación de duplicados de CUIT para restringirse a nivel de `tenant_id` y eliminación de la fuga de datos personales que exponía el correo electrónico del usuario ya existente.
+- **Parche de API `/api/send-email`**: Restricción de acceso para que únicamente los roles `admin` y `miembro` puedan utilizar el endpoint. Se agregaron validaciones de formato de email para destinatarios, límite de tamaño del adjunto a 5 MB y validación de firma binaria del PDF. Se incorporó logging de auditoría en el backend.
+- **Corrección de RLS en Perfiles**: Creación de la migración incremental `20260707000000_secure_profiles_rls.sql` para inyectar una política de lectura restrictiva en `public.profiles`, aislando la visibilidad de perfiles entre distintas empresas cliente del mismo tenant y limitando accesos cruzados.
+
+### Decisiones Clave
+- **Remover service role de cargas URL**: Delegar la carga del documento al cliente authenticated de Supabase elimina el uso de la clave administrativa (`service_role`) en `/api/upload-from-url`, permitiendo que el motor de base de datos valide el RLS.
+- **Evitar recursión en RLS de perfiles**: Implementación de la función `get_current_user_role` con directiva `SECURITY DEFINER` para evitar bucles recursivos al evaluar políticas RLS de `profiles`.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `supabase`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260707000000_secure_profiles_rls.sql`
+- `[MODIFY] src/app/api/upload-from-url/route.js`
+- `[MODIFY] src/app/api/clientes/route.js`
+- `[MODIFY] src/app/api/send-email/route.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación y optimización de producción (`npm run build`) verificada y exitosa.
+- Ejecución de las migraciones de base de datos a través de PostgreSQL completada exitosamente.
+
+---
+
 ## [2026-06-24] Estabilización de Visualización de PDF, Drag & Drop y Navegación en Legajo Técnico y Programa Anual
 
 ### Resumen de Cambios

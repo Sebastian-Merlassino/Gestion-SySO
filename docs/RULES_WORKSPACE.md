@@ -104,6 +104,16 @@ Obligatorio en todo cambio técnico:
 - validación de tipo, tamaño y destino de archivos;
 - no exponer secretos al cliente.
 
+## Documentación de seguridad obligatoria
+
+Antes de crear o modificar endpoints, Server Actions, autenticación, Supabase, storage, Mercado Pago, formularios o carga de archivos, leer y aplicar:
+
+- `docs/security/SECURITY_BASELINE.md`
+- `docs/security/MULTI_TENANT_MODEL.md`
+
+Estas reglas son obligatorias para todo cambio técnico del SaaS.
+
+
 ## Rate limiting y anti abuso
 
 Todo endpoint sensible debe contemplar:

@@ -1639,7 +1639,23 @@ export default function AvisosRiesgoPage({ params }) {
       const doc = await generateAvisoPdf(mailTargetAviso, false);
       if (!doc) throw new Error('No se pudo generar el PDF del aviso.');
       
-      const pdfBase64 = doc.output('datauristring');
+      const pdfBlob = doc.output('blob');
+      
+      // Subir archivo al storage en la carpeta del usuario (RSL lo valida)
+      const fileId = crypto.randomUUID();
+      const filePath = `${profile?.id || 'anonymous'}/aviso_${mailTargetAviso.id}_${fileId}.pdf`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, pdfBlob, {
+          contentType: 'application/pdf',
+          upsert: true
+        });
+
+      if (uploadError) {
+        throw new Error(`Error al subir el adjunto a Storage: ${uploadError.message}`);
+      }
+
       const emp = empresas.find(e => e.id === mailTargetAviso.empresa_id);
       const est = allEstablecimientos.find(e => e.id === mailTargetAviso.establecimiento_id);
 
@@ -1658,7 +1674,7 @@ export default function AvisosRiesgoPage({ params }) {
 
       const payload = {
         emails: recipients,
-        pdfBase64: pdfBase64,
+        filePath,
         companyName: emp ? emp.razon_social : 'N/A',
         establishmentName: est ? est.denominacion : 'N/A',
         date: formatDate(mailTargetAviso.fecha),
