@@ -2,6 +2,25 @@
 
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
+## [2026-06-23] Configuración de PWA y Visualización Standalone (Pantalla Completa) en Celulares
+
+### Resumen de Cambios
+- **Creación de manifest.js**: Se implementó el archivo dinámico `src/app/manifest.js` en el App Router de Next.js para declarar la aplicación como una PWA. Se configuró el modo `display: 'standalone'` para habilitar la apertura en pantalla completa (ocultando la interfaz del navegador). Se asociaron los iconos de 192x192 y 512x512 ubicados en la carpeta de marca.
+- **Configuración de Metadatos en Layout Raíz**: Se actualizó `src/app/layout.js` para añadir las etiquetas específicas de Apple (`appleWebApp`) y referenciar el icono táctil (`apple-touch-icon.png`) desde el directorio de marca `/brand/`, habilitando así el correcto renderizado standalone en Safari/iOS.
+
+### Decisiones Clave
+- **Estructuración en Carpeta Brand**: Se definió ubicar los recursos de iconos en `public/brand/` alineado con los lineamientos visuales del proyecto para mantener el orden, actualizando las rutas de acceso en el manifiesto y metadatos.
+- **Modo Standalone**: Utilizar `display: 'standalone'` en lugar de `fullscreen` para mantener la accesibilidad de la barra de estado superior nativa (batería, hora) pero ocultando toda la barra del navegador, lo cual es la mejor práctica de usabilidad PWA.
+
+### Archivos Modificados / Creados
+- `[NEW] src/app/manifest.js`
+- `[MODIFY] src/app/layout.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción en Next.js (`npm run build`) verificada y exitosa de punta a punta.
+
+---
+
 ## [2026-06-23] Corrección de Error de Inserción de CUIT en Creación de Usuarios de Equipo
 
 ### Resumen de Cambios

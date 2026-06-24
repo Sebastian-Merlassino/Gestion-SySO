@@ -6,7 +6,13 @@ export const metadata = {
   title: 'Gestión SySO | SaaS de Seguridad y Salud Ocupacional',
   description: 'Plataforma SaaS profesional para la gestión de seguridad, salud ocupacional e higiene industrial multi-tenant.',
   icons: {
-    icon: '/favicon.ico',
+    icon: '/brand/favicon.ico',
+    apple: '/brand/apple-touch-icon.png',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Gestión SySO',
   },
 };
 
