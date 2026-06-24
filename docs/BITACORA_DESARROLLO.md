@@ -8,6 +8,7 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 - **Rate Limit Distribuido con Fallback**: Se reestructuró la función `checkRateLimit` en `src/lib/rateLimit.js` para soportar consultas distribuidas utilizando la API REST `/pipeline` de Upstash Redis (enviando comandos `INCR`, `TTL` y `EXPIRE NX`).
 - **Resiliencia Automática**: Se diseñó un mecanismo de fallback robusto que intercepta cualquier fallo de conexión o ausencia de variables de entorno y ejecuta el control de tasa de forma transparente utilizando el almacenamiento local en memoria `Map`.
 - **Variables de Entorno**: Se agregaron las variables de entorno plantilla `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN` a `.env.example`.
+- **Cabeceras de Rate Limit en Respuesta Exitosa**: Se modificó `src/middleware.js` para inyectar las cabeceras `X-RateLimit-*` en todas las respuestas de APIs, incluyendo los estados exitosos `200 OK` (pasadas mediante `NextResponse.next()`) y errores `401`/`403`, en lugar de mostrarlas únicamente en respuestas bloqueadas `429`.
 
 ### Decisiones Clave
 - **REST en Middleware Edge**: Se optó por una llamada REST directa con `fetch` y timeout controlado de 2 segundos para no impactar los tiempos de respuesta del middleware y ser 100% compatible con el runtime de Vercel Edge sin requerir bibliotecas pesadas.
@@ -20,6 +21,7 @@ Este documento registra las decisiones técnicas, cambios de arquitectura y prog
 
 ### Archivos Modificados / Creados
 - `[MODIFY] src/lib/rateLimit.js`
+- `[MODIFY] src/middleware.js`
 - `[MODIFY] .env.example`
 - `[NEW] scratch/test-redis-rate-limit.js`
 - `[MODIFY] docs/BITACORA_DESARROLLO.md`

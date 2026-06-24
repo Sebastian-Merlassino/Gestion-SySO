@@ -6,6 +6,16 @@ import { checkRateLimit, getRateLimitHeaders } from './lib/rateLimit';
 export async function middleware(request) {
   const url = request.nextUrl.clone();
   const pathname = url.pathname;
+  let rateLimitHeaders = null;
+
+  const withRateLimit = (res) => {
+    if (rateLimitHeaders && res) {
+      for (const [key, value] of Object.entries(rateLimitHeaders)) {
+        res.headers.set(key, value);
+      }
+    }
+    return res;
+  };
 
   // 1. Rate Limiting para APIs (se ejecuta antes de cualquier consulta a base de datos/auth)
   if (pathname.startsWith('/api/')) {
@@ -22,13 +32,14 @@ export async function middleware(request) {
     }
 
     const rateLimitResult = await checkRateLimit(ip, pathname, limit, windowMs);
+    rateLimitHeaders = getRateLimitHeaders(rateLimitResult.limit, rateLimitResult.remaining, rateLimitResult.resetTime);
 
     if (!rateLimitResult.success) {
       return NextResponse.json(
         { error: 'Demasiadas solicitudes. Intente más tarde.' },
         { 
           status: 429, 
-          headers: getRateLimitHeaders(rateLimitResult.limit, rateLimitResult.remaining, rateLimitResult.resetTime) 
+          headers: rateLimitHeaders 
         }
       );
     }
@@ -45,7 +56,7 @@ export async function middleware(request) {
 
   // Si no hay variables de Supabase configuradas, saltamos el middleware en desarrollo
   if (!supabaseUrl || !supabaseAnonKey) {
-    return response;
+    return withRateLimit(response);
   }
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
@@ -113,15 +124,15 @@ export async function middleware(request) {
     // Si intenta acceder a una ruta privada
     if (!isPublicRoute && !isOnboardingRoute) {
       if (pathname.startsWith('/api/')) {
-        return NextResponse.json(
+        return withRateLimit(NextResponse.json(
           { error: 'No autorizado. Debe iniciar sesión.' },
           { status: 401 }
-        );
+        ));
       }
       url.pathname = '/login';
       return NextResponse.redirect(url);
     }
-    return response;
+    return withRateLimit(response);
   }
 
   // Si está autenticado, obtener su perfil para ver si completó el onboarding (tiene tenant_id)
@@ -138,15 +149,15 @@ export async function middleware(request) {
     // Si intenta navegar en cualquier sitio excepto /onboarding
     if (!isOnboardingRoute && !isPublicRoute) {
       if (pathname.startsWith('/api/')) {
-        return NextResponse.json(
+        return withRateLimit(NextResponse.json(
           { error: 'Onboarding incompleto. Se requiere registrar una organización.' },
           { status: 403 }
-        );
+        ));
       }
       url.pathname = '/onboarding';
       return NextResponse.redirect(url);
     }
-    return response;
+    return withRateLimit(response);
   }
 
   // Si el usuario ya tiene Tenant y trata de entrar a /onboarding, /login o /register
@@ -172,7 +183,7 @@ export async function middleware(request) {
     }
   }
 
-  return response;
+  return withRateLimit(response);
 }
 
 export const config = {
