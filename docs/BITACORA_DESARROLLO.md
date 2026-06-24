@@ -2,6 +2,30 @@
 
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
+## [2026-06-23] Creación e Importación de Tabla de Catálogo de Registros en Supabase
+
+### Resumen de Cambios
+- **Creación de Tabla de Catálogo**: Se diseñó e implementó la tabla `public.registros` para actuar como catálogo estático de registros y documentos legales del legajo técnico de Higiene y Seguridad.
+- **Inserción de Registros**: Se poblaron de forma idempotente los 59 registros provistos por el usuario en la base de datos de producción mediante una migración de base de datos SQL.
+- **Seguridad RLS Pública**: Se configuró la política de seguridad RLS `Permitir lectura publica de registros` para habilitar el acceso de lectura (`SELECT`) abierto de forma consistente con otros catálogos del sistema.
+- **Script de Validación**: Se creó el script `scripts/validate-registros.js` que realiza una validación completa y segura consultando la base de datos con la clave pública `anon` para verificar la existencia e integridad de los 59 elementos importados.
+
+### Decisiones Clave
+- **Paridad de Catálogos**: Nombrar la columna de datos como `nombre` en lugar de `descripcion` (que suele usarse para textos más largos o explicativos) o `tema` (específico de capacitaciones).
+- **Seguridad en Lectura Pública**: Permitir la lectura pública (`SELECT`) abierta a nivel de RLS simplifica las operaciones de frontend del SaaS y restringe la edición/escritura únicamente a administradores desde el backend, asegurando la inmutabilidad de los catálogos en producción.
+- **Carga Idempotente**: El uso de la cláusula `ON CONFLICT (nombre) DO NOTHING` previene la duplicación de datos al ejecutar las migraciones repetidas veces.
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260705000000_create_registros_table.sql`
+- `[NEW] scripts/validate-registros.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Aplicación exitosa de la migración utilizando `node scripts/run-migrations.js` en el pooler IPv4 de Supabase.
+- Verificación de carga exitosa ejecutando `node scripts/validate-registros.js` que comprobó el conteo exacto de 59 registros y su recuperabilidad con clave pública anonizada.
+
+---
+
 ## [2026-06-23] Rediseño UX del Login para Estabilización de Altura en Selección de Roles
 
 ### Resumen de Cambios
