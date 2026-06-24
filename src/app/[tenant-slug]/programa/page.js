@@ -98,12 +98,6 @@ export default function ProgramaGestion({ params }) {
       }
     }
   };
-
-  useEffect(() => {
-    if (!documentoFile) {
-      setSelectedFileName('');
-    }
-  }, [documentoFile]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [isReadOnlyView, setIsReadOnlyView] = useState(false);
@@ -191,6 +185,13 @@ export default function ProgramaGestion({ params }) {
   const [formErrors, setFormErrors] = useState({});
   const [uploadType, setUploadType] = useState('local'); // 'local' or 'drive'
   const [driveLink, setDriveLink] = useState('');
+
+  useEffect(() => {
+    if (!documentoFile) {
+      setSelectedFileName('');
+    }
+  }, [documentoFile]);
+
 
   // Modales y Toasts
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });

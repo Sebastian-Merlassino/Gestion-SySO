@@ -1535,159 +1535,172 @@ export default function LegajoPage({ params }) {
                 {/* 3. VISTA DE ARCHIVOS (TABLA DE REGISTROS) */}
                 {currentFolder && (!currentFolder.subfolders || currentSubfolder) && (
                   <div className="space-y-4">
-                    
-                    {/* Botón atrás e información de la carpeta activa */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => {
-                            if (currentSubfolder) {
-                              setCurrentSubfolder(null);
-                            } else {
-                              setCurrentFolder(null);
-                            }
-                          }}
-                          className="px-3 py-1.5 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 text-xs font-bold transition-all cursor-pointer text-slate-600 flex items-center gap-1 shrink-0"
-                        >
-                          <ChevronLeft className="h-4 w-4" />
-                          Atrás
-                        </button>
-                        <h2 className="font-outfit text-sm font-bold text-slate-800 truncate">
-                          Registros de: {currentSubfolder ? currentSubfolder.name : currentFolder.name}
-                        </h2>
-                      </div>
 
-                      {canCargar && (
-                        <button
-                          onClick={handleAddNew}
-                          className="px-4 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0 self-start sm:self-auto"
-                        >
-                          <PlusCircle className="h-3.5 w-3.5" />
-                          Cargar Registro
-                        </button>
-                      )}
-                    </div>
+                    {/* Herramientas, Búsqueda y Filtros */}
+                    <div className="bg-white rounded-2xl border border-slate-150 p-3 shadow-sm space-y-3 shrink-0">
 
-                    {/* Toolbar y Filtros */}
-                    <div className="bg-white rounded-2xl border border-slate-150 p-4 shadow-sm space-y-4">
-                      
-                      {/* Búsqueda rápida */}
-                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="relative w-full md:w-80">
-                          <span className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 pointer-events-none">
-                            <Search className="h-3.5 w-3.5" />
-                          </span>
-                          <input
-                            type="text"
-                            placeholder="Buscar por documento, cliente..."
-                            value={filterText}
-                            onChange={(e) => setFilterText(e.target.value)}
-                            className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400"
-                          />
+                      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                        
+                        {/* Botón Atrás e información de la carpeta activa (arriba a la izquierda) */}
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <button
+                            onClick={() => {
+                              if (currentSubfolder) {
+                                setCurrentSubfolder(null);
+                              } else {
+                                setCurrentFolder(null);
+                              }
+                            }}
+                            className="px-3 py-1.5 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 text-xs font-bold transition-all cursor-pointer text-slate-600 flex items-center gap-1 shrink-0 shadow-sm"
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                            Atrás
+                          </button>
+                          <h2 className="font-outfit text-sm font-bold text-slate-800 truncate" title={currentSubfolder ? currentSubfolder.name : currentFolder.name}>
+                            Registros de: {currentSubfolder ? currentSubfolder.name : currentFolder.name}
+                          </h2>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() => setShowFilters(!showFilters)}
-                          className="font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px] hover:text-slate-600 transition-colors cursor-pointer self-start md:self-auto"
-                        >
-                          <SlidersHorizontal className="h-3 w-3" />
-                          Filtros de Búsqueda
-                          {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                        </button>
+                        {/* Buscador y Botón agrupados (arriba a la derecha) */}
+                        <div className="flex flex-col md:flex-row md:items-center gap-3 w-full lg:w-auto">
+                          <div className="relative w-full md:w-72">
+                            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 pointer-events-none" />
+                            <input
+                              type="text"
+                              placeholder="Buscar por documento, cliente..."
+                              value={filterText}
+                              onChange={(e) => setFilterText(e.target.value)}
+                              className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400"
+                            />
+                          </div>
+
+                          {canCargar && (
+                            <button
+                              onClick={handleAddNew}
+                              className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0 w-full md:w-auto text-center"
+                            >
+                              <PlusCircle className="h-3.5 w-3.5" />
+                              Cargar Registro
+                            </button>
+                          )}
+                        </div>
                       </div>
 
-                      {/* Panel de filtros expandido */}
-                      {showFilters && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 pt-2 border-t border-slate-100 animate-fade-in">
-                          
-                          {/* Cliente */}
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Cliente</label>
-                            <select
-                              value={filterEmpresa}
-                              onChange={(e) => {
-                                setFilterEmpresa(e.target.value);
+                      {/* Filtros avanzados colapsables */}
+                      <div className="pt-2 border-t border-slate-100 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <button
+                            type="button"
+                            onClick={() => setShowFilters(!showFilters)}
+                            className="font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px] hover:text-slate-600 transition-colors cursor-pointer"
+                          >
+                            <Sliders className="h-3 w-3" />
+                            Filtros de Búsqueda
+                            {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                          </button>
+
+                          {(filterText || filterEmpresa || filterEstablecimiento || filterFecha || filterAnio || filterMes) && (
+                            <button
+                              onClick={() => {
+                                setFilterText('');
+                                setFilterEmpresa('');
                                 setFilterEstablecimiento('');
+                                setFilterFecha('');
+                                setFilterAnio('');
+                                setFilterMes('');
                               }}
-                              disabled={profile?.role === 'cliente'}
-                              className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer disabled:opacity-85"
+                              className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[10px] font-semibold cursor-pointer transition-all border border-slate-200"
                             >
-                              <option value="">Todos los clientes</option>
-                              {empresas.map(e => (
-                                <option key={e.id} value={e.id}>{e.razon_social}</option>
-                              ))}
-                            </select>
-                          </div>
-
-                          {/* Establecimiento */}
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Establecimiento</label>
-                            <select
-                              value={filterEstablecimiento}
-                              onChange={(e) => setFilterEstablecimiento(e.target.value)}
-                              disabled={!filterEmpresa}
-                              className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer disabled:bg-slate-50 disabled:text-slate-400"
-                            >
-                              <option value="">Todos los establecimientos</option>
-                              {allEstablecimientos.filter(est => est.empresa_id === filterEmpresa).map(e => (
-                                <option key={e.id} value={e.id}>{e.denominacion}</option>
-                              ))}
-                            </select>
-                          </div>
-
-                          {/* Mes */}
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Mes</label>
-                            <select
-                              value={filterMes}
-                              onChange={(e) => setFilterMes(e.target.value)}
-                              className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer"
-                            >
-                              <option value="">Todos los meses</option>
-                              {MONTHS_OPTS.map(m => (
-                                <option key={m.value} value={m.value}>{m.label}</option>
-                              ))}
-                            </select>
-                          </div>
-
-                          {/* Año */}
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Año</label>
-                            <select
-                              value={filterAnio}
-                              onChange={(e) => setFilterAnio(e.target.value)}
-                              className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer"
-                            >
-                              <option value="">Todos los años</option>
-                              {yearsOptions.map(y => (
-                                <option key={y} value={y}>{y}</option>
-                              ))}
-                            </select>
-                          </div>
-
-                          {/* Limpiar Filtros */}
-                          <div className="flex items-end">
-                            {(filterEmpresa || filterEstablecimiento || filterFecha || filterAnio || filterMes || filterText) && (
-                              <button
-                                onClick={() => {
-                                  setFilterEmpresa('');
-                                  setFilterEstablecimiento('');
-                                  setFilterFecha('');
-                                  setFilterAnio('');
-                                  setFilterMes('');
-                                  setFilterText('');
-                                }}
-                                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-semibold cursor-pointer transition-all border border-slate-200 w-full text-center"
-                              >
-                                Limpiar Filtros
-                              </button>
-                            )}
-                          </div>
-
+                              Limpiar Filtros
+                            </button>
+                          )}
                         </div>
-                      )}
 
+                        {showFilters && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 pt-1 animate-fade-in">
+                            
+                            {/* Selector Cliente */}
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Cliente</label>
+                              <select
+                                value={filterEmpresa}
+                                onChange={(e) => {
+                                  setFilterEmpresa(e.target.value);
+                                  setFilterEstablecimiento('');
+                                }}
+                                disabled={profile?.role === 'cliente'}
+                                className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer disabled:opacity-85"
+                              >
+                                <option value="">Todos los Clientes</option>
+                                {empresas.map(e => (
+                                  <option key={e.id} value={e.id}>{e.razon_social}</option>
+                                ))}
+                              </select>
+                            </div>
+
+                            {/* Selector Establecimiento */}
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Establecimiento</label>
+                              <select
+                                value={filterEstablecimiento}
+                                onChange={(e) => setFilterEstablecimiento(e.target.value)}
+                                disabled={!filterEmpresa}
+                                className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer disabled:bg-slate-50 disabled:text-slate-400"
+                              >
+                                <option value="">Todos los Establecimientos</option>
+                                {allEstablecimientos
+                                  .filter(est => est.empresa_id === filterEmpresa)
+                                  .map(est => (
+                                    <option key={est.id} value={est.id}>{est.denominacion}</option>
+                                  ))
+                                }
+                              </select>
+                            </div>
+
+                            {/* Selector Fecha */}
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Fecha</label>
+                              <input
+                                type="date"
+                                value={filterFecha}
+                                onChange={(e) => setFilterFecha(e.target.value)}
+                                className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer font-sans"
+                              />
+                            </div>
+
+                            {/* Selector Año */}
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Año</label>
+                              <select
+                                value={filterAnio}
+                                onChange={(e) => setFilterAnio(e.target.value)}
+                                className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer"
+                              >
+                                <option value="">Todos los Años</option>
+                                {yearsOptions.map(y => (
+                                  <option key={y} value={y}>{y}</option>
+                                ))}
+                              </select>
+                            </div>
+
+                            {/* Selector Mes */}
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Mes</label>
+                              <select
+                                value={filterMes}
+                                onChange={(e) => setFilterMes(e.target.value)}
+                                className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer"
+                              >
+                                <option value="">Todos los Meses</option>
+                                {MONTHS_OPTS.map(m => (
+                                  <option key={m.value} value={m.value}>{m.label}</option>
+                                ))}
+                              </select>
+                            </div>
+
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     {/* Tabla de Documentos */}

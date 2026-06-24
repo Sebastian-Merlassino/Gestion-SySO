@@ -82,8 +82,9 @@ export default function Sidebar({
       >
         <Icon className="h-4 w-4 shrink-0" />
         {(!isCollapsed) && (
-          <span className="animate-fade-in truncate">{item.label}</span>
+          <span className="animate-fade-in leading-tight">{item.label}</span>
         )}
+
       </Link>
     );
   };

@@ -2,7 +2,62 @@
 
 Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
 
+## [2026-06-24] Corrección de Excepción Client-Side en Programa de Gestión y Ajuste de Wrap en Sidebar
+
+### Resumen de Cambios
+- **Corrección de Excepción en Cliente**: Se resolvió un error de tipo `ReferenceError` ("Cannot access 'documentoFile' before initialization") al cargar la sección de **Programa de Gestión Anual** (`src/app/[tenant-slug]/programa/page.js`). Esto ocurría debido a que el hook `useEffect` dependiente de `documentoFile` estaba declarado antes del hook `useState` que definía dicha variable (Temporal Dead Zone). Se reubicó el `useEffect` después de todas las declaraciones de estado iniciales.
+- **Ajuste de Enlaces en Sidebar**: Se modificó `src/components/Sidebar.js` reemplazando la clase `truncate` por `leading-tight` en el texto de los enlaces. Esto permite que los nombres de las secciones que sean demasiado largos se envuelvan (wrap) en otro renglón en lugar de cortarse abruptamente, mejorando la legibilidad sin alterar el tamaño, letra, texto y pictogramas estándar.
+
+### Decisiones Clave
+- **Prevención de TDZ (Temporal Dead Zone)**: Asegurar que los hooks de React que evalúan dependencias se ubiquen físicamente después de las declaraciones de estado correspondientes.
+- **Legibilidad sin truncamiento**: Permitir el wrap de texto en la barra lateral mantiene la consistencia del tamaño del sidebar pero da soporte a textos descriptivos más extensos.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/components/Sidebar.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción (`npm run build`) verificada y exitosa de punta a punta.
+
+---
+
+## [2026-06-24] Rediseño y Homologación de Contenedor de Filtros y Navegación en Legajo Técnico
+
+### Resumen de Cambios
+- **Contenedor de Filtros Unificado**: Se reestructuró el área superior de navegación y filtros en `legajo/page.js` para agrupar todas las interacciones dentro de una única tarjeta blanca con bordes estándar, alineándose visualmente al 100% con `visitas/page.js` y `avisos/page.js`.
+- **Integración de Navegación "Atrás"**: Se movió el botón "Atrás" y el título de la carpeta activa (`Registros de: [Nombre]`) al interior del contenedor de herramientas, posicionándose arriba a la izquierda.
+- **Botón de Cargar Integrado**: Se reubicó el botón "Cargar Registro" (icono `PlusCircle`) dentro de la caja de filtros en la esquina superior derecha, agrupándose simétricamente junto al buscador rápido.
+- **Grilla de 5 Columnas y Filtro por Fecha**:
+  - Se homogeneizó el panel de filtros colapsable con el botón "Limpiar Filtros" renderizándose condicionalmente en la cabecera.
+  - Se utilizó el icono estándar `Sliders` para la opción de colapso.
+  - Se configuró la grilla de filtros a 5 columnas, incorporando el filtro de **Fecha** (input `type="date"`) junto a los filtros preexistentes de Cliente, Establecimiento, Año y Mes.
+
+### Decisiones Clave
+- **Paridad Operativa Global**: Homologar el layout de herramientas y los filtros de Legajo Técnico garantiza que todas las secciones operativas del SaaS compartan la misma estructura y experiencia de usuario.
+- **Activación de Búsqueda por Fecha**: Exponer el input de fecha exacta en el panel de filtros unifica la simetría de la grilla a 5 columnas y habilita una funcionalidad de filtrado latente en el backend.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción en Next.js (`npm run build`) verificada y exitosa de punta a punta.
+
+---
+
 ## [2026-06-24] Estandarización de Tablas de Legajo Técnico y Separación de Acciones de Archivo en Programa Anual
+
 
 ### Resumen de Cambios
 - **Estandarización de Tablas en Legajo Técnico**: Se adaptó el diseño y comportamiento de la tabla de documentos en `legajo/page.js` para cumplir con las guías de diseño y la paridad de tablas estándar.
