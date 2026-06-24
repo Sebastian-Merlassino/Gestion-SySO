@@ -958,7 +958,7 @@ export default function LegajoPage({ params }) {
   const yearsOptions = getAvailableYears(documents);
 
   return (
-    <div className="flex h-screen bg-slate-100 overflow-hidden font-outfit text-slate-800">
+    <div className="h-screen overflow-hidden bg-syso-bg text-slate-700 flex font-sans">
       
       {/* SIDEBAR ESCRITORIO */}
       <aside className={`bg-[#0D0D0D] text-white flex flex-col justify-between transition-all duration-300 ease-in-out shrink-0 relative z-30 ${isSidebarCollapsed ? 'w-20' : 'w-64'} hidden md:flex h-full`}>
