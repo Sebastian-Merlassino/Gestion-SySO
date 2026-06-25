@@ -1,6 +1,133 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica
+## [2026-06-25] Prevención de Carga de Duplicados en Nómina y Corrección de Modal de Salida al Guardar
+
+### Resumen de Cambios
+- **Corrección de Modal Innecesario al Guardar**: Se reemplazó el uso de `handleExitForm()` por `handleCloseForm()` en el guardado exitoso para evitar que aparezca la ventana emergente de "Salir sin guardar" una vez completada la persistencia.
+- **Control y Prevención de Duplicados**: Se implementó una verificación de duplicados de Nombre/Apellido y CUIL para la Razón Social seleccionada dentro del mismo año de la `fecha_carga`.
+- **Flujo de Sobreescritura Interactiva**:
+  - Al cargar personal de forma manual o mediante plantilla Excel, si se detectan duplicados, se muestra una ventana emergente (`modalAlert`) que detalla la cantidad de repetidos y pregunta si se desea **"Sobreescribir"**.
+  - Si el usuario confirma, actualiza (`update`) los registros correspondientes y realiza la inserción (`insert`) de los registros nuevos de manera fluida.
+  - Al editar un empleado individual, si su nuevo nombre o CUIL coincide con otro empleado existente del mismo año, se emite una advertencia de error y se bloquea la acción.
+
+### Decisiones Clave
+- **Validación del Lado del Cliente con Consulta Previa**: Consultar en lote los empleados existentes del mismo año y empresa antes del guardado permite una interacción fluida con el usuario y evita validaciones complejas o constraints ruidosas a nivel de Postgres.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `supabase`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/nomina/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js completa y exitosa sin advertencias sintácticas.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. Las consultas e inserciones respetan en su totalidad el aislamiento multi-tenant y las políticas RLS.
+
+### Próximo Paso Recomendado
+- Realizar pruebas de carga duplicada con un archivo Excel de ejemplo para corroborar que el modal de sobreescritura se muestre y opere correctamente.
+
+## [2026-06-25] Corrección de Visibilidad en Filtros y Selector de Fecha en Cabecera de Nómina
+
+### Resumen de Cambios
+- **Corrección de Visibilidad de Texto en Selects**: Se añadió la clase `text-slate-700` a las listas desplegables (Razón Social y Establecimiento) de la Cabecera de la Nómina para solucionar el problema de texto en blanco que impedía su visualización.
+- **Implementación del Selector de Fecha (Datepicker)**: Se reemplazó el input de máscara de texto en "Fecha de Carga" por un `<input type="date">` nativo para proveer un selector de fecha calendario. Se adaptaron el estado y el guardado para operar directamente con el formato `YYYY-MM-DD`.
+
+### Decisiones Clave
+- **Uso de Formato Nativo de Fecha**: El elemento `<input type="date">` requiere y devuelve fechas en formato `YYYY-MM-DD`. Modificar el estado interno `fechaCarga` para almacenar `YYYY-MM-DD` evita la necesidad de conversiones durante la carga y el guardado, reduciendo la complejidad.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/nomina/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js exitosa de punta a punta.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. El selector de fecha nativo es altamente compatible y la base de datos ya espera formato `YYYY-MM-DD`.
+
+### Próximo Paso Recomendado
+- Validar el comportamiento interactivo del selector en el ambiente de pruebas.
+
+## [2026-06-25] Fase 3: Alineación de UI/UX y Estandarización del Módulo "Nómina de Personal"
+
+### Resumen de Cambios
+- **Ajustes de UI/UX en Nómina**:
+  - Se rediseñó el header del módulo incorporando el pictograma de `Users`, tipografía Outfit en h1 y las insignias dinámicas del Plan y Tenant en el extremo derecho.
+  - Se homogeneizó el contenedor principal a `max-w-[95%] mx-auto w-full` y se alineó la disposición del panel de búsqueda y filtros.
+  - Se comprimió y rediseñó la tabla combinando celdas (Cliente/Establecimiento, Área/Puesto, Alta/Carga) e inyectando estilos de colores y fuentes de la marca.
+  - Se añadió la acción por fila en la tabla para abrir el registro en modo lectura (`isReadOnlyView`).
+  - Se envolvió el formulario y el visor de previsualización en un `<fieldset>` reactivo que obedece al estado de solo lectura.
+  - Se reestructuraron los botones inferiores del formulario (estilo Hover para "Salir" y botones dinámicos de Editar, Eliminar y Guardar).
+  - Se integró el modal de confirmación `modalAlert` para validar salidas con cambios o eliminaciones, y se estandarizaron las alertas de notificaciones Toast.
+  - Se actualizó el color de fondo general detrás de la sección para usar `#D9D9D9` (respetando los fondos blancos de los contenedores y tablas).
+  - Se simplificó la etiqueta del botón de envío a "Guardar" y se corroboró el hover de realce `#0511F2`.
+
+### Decisiones Clave
+- **Fusión de Celdas en Tablas**: Reducir de 8 a 6 las columnas mediante celdas combinadas optimiza enormemente el espacio horizontal de la tabla y da coherencia con el diseño del módulo de Acciones Correctivas.
+- **Acceso por Fila**: Homologar el clic de fila a modo lectura previene modificaciones accidentales y promueve consistencia interactiva con el resto del sistema.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/nomina/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- **Compilación de Producción**: Compilación de Next.js (`cmd /c npm run build`) completada con total éxito y cero advertencias de hidratación o webpack.
+
+---
+
+## [2026-06-25] Fase 3: Módulo "Nómina de Personal" con Importación de Planilla Excel
+
+### Resumen de Cambios
+- **Módulo Nómina de Personal**:
+  - Se desarrolló la nueva pantalla operativa `nomina` para administrar el personal por Razón Social y Establecimiento de forma manual o masiva.
+  - Implementación de formulario manual con máscara automática de fecha (`DD/MM/YYYY`), validación numérica de CUIL (11 dígitos) y selector de fecha de carga.
+  - Se definió la función `handleLogout` en la página de Nómina para evitar un error de referencia en tiempo de ejecución al renderizar el Sidebar.
+  - Se incorporaron filtros de búsqueda, selector por cliente, establecimiento y fecha de carga en el listado de personal.
+- **Importador Masivo de Excel**:
+  - Se integró la biblioteca `xlsx` (SheetJS) en la aplicación cliente para el procesamiento del archivo Excel.
+  - Se agregaron tres pestañas de origen: Archivo Local (con zona interactiva Drag & Drop), Enlace Google Drive (descarga en vivo) y desde archivos del Legajo Técnico.
+  - Se implementó un generador dinámico de plantilla Excel oficial para su descarga inmediata.
+  - Creación de una grilla de vista previa (Preview) con validación estricta fila por fila (errores de CUIL, fecha, cliente o sucursal no existentes en el tenant) antes de persistir la nómina en lote.
+- **API Segura de Descarga**:
+  - Nueva ruta `/api/download-excel` para resolver enlaces compartidos de Google Drive de forma segura (mitigando ataques SSRF restringiendo a dominios oficiales de Drive y validando tamaño a 10 MB).
+- **Esquema de Base de Datos y Políticas RLS**:
+  - Creación de la tabla `public.nomina_personal` vinculada a tenants, empresas y establecimientos.
+  - Configuración de políticas de aislamiento Row Level Security (RLS) para segregación multi-tenant y visibilidad restringida para usuarios tipo `cliente`.
+  - Actualización retrospectiva de permisos de usuarios para inyectar la sección `"nomina"` a perfiles y miembros de equipo.
+
+### Decisiones Clave
+- **Procesamiento de Planilla en Cliente**: Utilizar SheetJS en el frontend permite validar la información e informar errores específicos por número de fila antes de hacer peticiones de escritura a la base de datos, optimizando la performance y experiencia del usuario.
+- **Exclusión de Archivos Binarios en Git**: Generar la planilla de Excel modelo de forma reactiva y en memoria usando Javascript evita la necesidad de mantener y actualizar archivos binarios estáticos en el repositorio.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `gestion-syso-brand-guidelines`
+- `supabase`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260708000000_create_nomina_personal.sql`
+- `[NEW] src/app/[tenant-slug]/nomina/page.js`
+- `[NEW] src/app/api/download-excel/route.js`
+- `[MODIFY] src/components/Sidebar.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- **Base de datos:** Migraciones aplicadas con éxito en Supabase Postgres.
+- **Build de Producción:** Compilación optimizada del proyecto Next.js (`npm run build`) completada con éxito.
+
+---
 
 ## [2026-06-25] Fase 3: Estandarización de Hidratación de Cabeceras y Optimización de Supabase Storage mediante Firma en Lote
 

@@ -74,7 +74,7 @@ const PROVINCIAS_ARGENTINAS = [
 ];
 
 const normalizePermisos = (perms) => {
-  const sections = ['empresas', 'equipo', 'programa', 'capacitacion', 'correctivas', 'extintores', 'visitas', 'avisos', 'legajo'];
+  const sections = ['empresas', 'equipo', 'programa', 'capacitacion', 'correctivas', 'extintores', 'visitas', 'avisos', 'legajo', 'nomina'];
   const normalized = {};
   sections.forEach(sec => {
     const val = perms?.[sec];
@@ -616,7 +616,8 @@ export default function EquipoPage({ params }) {
       extintores: { cargar: true, editar: true, eliminar: true },
       visitas: { cargar: true, editar: true, eliminar: true },
       avisos: { cargar: true, editar: true, eliminar: true },
-      legajo: { cargar: true, editar: true, eliminar: true }
+      legajo: { cargar: true, editar: true, eliminar: true },
+      nomina: { cargar: true, editar: true, eliminar: true }
     });
     setMatriculas([
       {
@@ -652,7 +653,8 @@ export default function EquipoPage({ params }) {
         extintores: { cargar: true, editar: true, eliminar: true },
         visitas: { cargar: true, editar: true, eliminar: true },
         avisos: { cargar: true, editar: true, eliminar: true },
-        legajo: { cargar: true, editar: true, eliminar: true }
+        legajo: { cargar: true, editar: true, eliminar: true },
+        nomina: { cargar: true, editar: true, eliminar: true }
       },
       matriculas: [{ institucion: '', numero: '', vencimiento: '', fotoFrentePreview: '', fotoDorsoPreview: '', fotoFrentePath: '', fotoDorsoPath: '' }]
     });
@@ -1668,7 +1670,8 @@ export default function EquipoPage({ params }) {
                             extintores: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
                             visitas: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
                             avisos: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
-                            legajo: { cargar: targetVal, editar: targetVal, eliminar: targetVal }
+                            legajo: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
+                            nomina: { cargar: targetVal, editar: targetVal, eliminar: targetVal }
                           });
                         }}
                         className="text-[10px] font-bold text-[#468DFF] hover:underline cursor-pointer bg-transparent border-none outline-none"
@@ -1695,7 +1698,8 @@ export default function EquipoPage({ params }) {
                         { key: 'extintores', name: 'Control de Extintores' },
                         { key: 'visitas', name: 'Constancias de Visita' },
                         { key: 'avisos', name: 'Avisos de Riesgo' },
-                        { key: 'legajo', name: 'Legajo Técnico' }
+                        { key: 'legajo', name: 'Legajo Técnico' },
+                        { key: 'nomina', name: 'Nómina de Personal' }
                       ].map((section) => (
                         <div key={section.key} className="grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-4 items-center p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-all select-none">
                           <div className="text-xs font-bold text-slate-700">{section.name}</div>
