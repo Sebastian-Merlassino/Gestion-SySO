@@ -1486,7 +1486,7 @@ export default function OnboardingPage() {
               type="button"
               disabled={loading}
               onClick={handleExitWithoutSaving}
-              className="py-3 px-6 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-800 font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50"
+              className="py-3 px-6 rounded-xl border border-slate-300 bg-white hover:bg-[#468DFF] text-slate-600 hover:text-white hover:border-[#468DFF] font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50"
             >
               Salir
             </button>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   Building, 
@@ -18,6 +18,8 @@ import {
   X
 } from 'lucide-react';
 
+let isHydratedGlobal = false;
+
 export default function Sidebar({
   tenantSlug,
   profile,
@@ -29,6 +31,15 @@ export default function Sidebar({
   handleLogout,
   onNavigate
 }) {
+  const [mounted, setMounted] = useState(isHydratedGlobal);
+
+  useEffect(() => {
+    if (!isHydratedGlobal) {
+      isHydratedGlobal = true;
+      setMounted(true);
+    }
+  }, []);
+
   
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', path: `/${tenantSlug}/dashboard`, icon: Building },
@@ -53,8 +64,11 @@ export default function Sidebar({
   };
 
   const renderLink = (item, isMobile = false) => {
-    if (item.adminOnly && profile && profile.role === 'cliente') {
-      return null;
+    if (item.adminOnly) {
+      if (!mounted) return null;
+      if (profile && profile.role === 'cliente') {
+        return null;
+      }
     }
 
     if (item.type === 'divider') {
@@ -123,8 +137,8 @@ export default function Sidebar({
           <div className={`flex items-center justify-between rounded-xl bg-black/40 p-3 border border-white/5 ${isSidebarCollapsed ? 'flex-col gap-2' : ''}`}>
             {!isSidebarCollapsed && (
               <div className="truncate pr-2">
-                <span className="text-xs font-bold text-white block truncate">{profile?.full_name || 'Usuario'}</span>
-                <span className="text-[10px] text-white/40 block truncate uppercase tracking-wider">{profile?.role || 'Profesional'}</span>
+                <span className="text-xs font-bold text-white block truncate" suppressHydrationWarning>{mounted && profile?.full_name ? profile.full_name : 'Usuario'}</span>
+                <span className="text-[10px] text-white/40 block truncate uppercase tracking-wider" suppressHydrationWarning>{mounted && profile?.role ? profile.role : 'Profesional'}</span>
               </div>
             )}
             <button onClick={handleLogout} className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-600 hover:text-white transition-all cursor-pointer shrink-0" title="Cerrar Sesión">
@@ -164,8 +178,8 @@ export default function Sidebar({
             <div className="pt-4 border-t border-white/10 shrink-0">
               <div className="flex items-center justify-between rounded-xl bg-black/40 p-3 border border-white/5">
                 <div className="truncate pr-2">
-                  <span className="text-xs font-bold text-white block truncate">{profile?.full_name || 'Usuario'}</span>
-                  <span className="text-[10px] text-white/40 block truncate uppercase tracking-wider">{profile?.role || 'Profesional'}</span>
+                  <span className="text-xs font-bold text-white block truncate" suppressHydrationWarning>{mounted && profile?.full_name ? profile.full_name : 'Usuario'}</span>
+                  <span className="text-[10px] text-white/40 block truncate uppercase tracking-wider" suppressHydrationWarning>{mounted && profile?.role ? profile.role : 'Profesional'}</span>
                 </div>
                 <button onClick={handleLogout} className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-600 hover:text-white transition-all cursor-pointer shrink-0">
                   <LogOut className="h-4 w-4" />

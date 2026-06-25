@@ -192,7 +192,7 @@ const [partidosList, setPartidosList] = useState([]);
   };
 
   const getSignedUrl = async (bucket, pathOrUrl) => {
-    if (!pathOrUrl) return '';
+    if (!pathOrUrl || pathOrUrl === 'N/A') return '';
     if (pathOrUrl.startsWith('data:') || pathOrUrl.startsWith('blob:') || pathOrUrl.startsWith('http://localhost') || pathOrUrl.includes('placeholder')) {
       return pathOrUrl;
     }
@@ -1781,7 +1781,7 @@ const [partidosList, setPartidosList] = useState([]);
             <button
               type="button"
               onClick={handleExitWithoutSave}
-              className="px-5 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer"
+              className="px-5 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-white hover:border-[#468DFF] transition-all active:scale-[0.98] cursor-pointer"
             >
               Salir
             </button>

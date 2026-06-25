@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
-import { formatDate } from '@/lib/utils';
+import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import { 
   PlusCircle, 
   Search, 
@@ -313,26 +313,58 @@ export default function CapacitacionPage({ params }) {
       const { data: capData, error: capErr } = await capQuery.order('created_at', { ascending: false });
       if (capErr) throw capErr;
 
+      // Recopilar paths de Supabase para firmar en lote (en una sola llamada de red)
+      const pathsToSign = [];
+      (capData || []).forEach(cap => {
+        if (cap.fotos_urls && cap.fotos_urls.length > 0) {
+          cap.fotos_urls.forEach(fpath => {
+            if (fpath && fpath !== 'N/A' && fpath !== '') {
+              if (!fpath.startsWith('http://') && !fpath.startsWith('https://')) {
+                pathsToSign.push(fpath);
+              }
+            }
+          });
+        }
+      });
+
+      // Deduplicar paths
+      const uniquePaths = Array.from(new Set(pathsToSign));
+
+      let signedUrlsMap = {};
+      if (uniquePaths.length > 0) {
+        try {
+          const { data: signedData, error: signErr } = await supabase.storage
+            .from('documents')
+            .createSignedUrls(uniquePaths, 3600);
+          if (!signErr && signedData) {
+            signedData.forEach(item => {
+              if (item.signedUrl) {
+                signedUrlsMap[item.path] = item.signedUrl;
+              }
+            });
+          }
+        } catch (e) {
+          console.error('Error al firmar URLs de capacitación en lote:', e);
+        }
+      }
+
       // Resuelve URLs firmadas para las múltiples fotos de registro
-      const resolvedCapacitaciones = await Promise.all((capData || []).map(async (cap) => {
+      const resolvedCapacitaciones = (capData || []).map((cap) => {
         let signedUrls = [];
         if (cap.fotos_urls && cap.fotos_urls.length > 0) {
-          try {
-            signedUrls = await Promise.all(cap.fotos_urls.map(async (fpath) => {
-              const { data, error: signErr } = await supabase.storage
-                .from('documents')
-                .createSignedUrl(fpath, 3600, { download: false });
-              return !signErr && data ? data.signedUrl : '';
-            }));
-          } catch (e) {
-            console.error('Error resolviendo URLs firmadas de capacitación:', e);
-          }
+          const validUrls = cap.fotos_urls.filter(fpath => fpath && fpath !== 'N/A' && fpath !== '');
+          signedUrls = validUrls.map((fpath) => {
+            if (fpath.startsWith('http://') || fpath.startsWith('https://')) {
+              return fpath;
+            }
+            return signedUrlsMap[fpath] || '';
+          });
         }
         return {
           ...cap,
           fotos_preview_urls: signedUrls.filter(Boolean)
         };
-      }));
+      });
       setCapacitaciones(resolvedCapacitaciones);
 
       setLoading(false);
@@ -648,8 +680,8 @@ export default function CapacitacionPage({ params }) {
         capacitador: dbCapacitador,
         capacitador_id: capacitadorId,
         progreso: Number(progreso),
-        fecha_inicio_planificada: fechaInicioPlanificada,
-        fecha_fin_planificada: fechaFinPlanificada,
+        fecha_inicio_planificada: convertToDbDate(fechaInicioPlanificada) || null,
+        fecha_fin_planificada: convertToDbDate(fechaFinPlanificada) || null,
         observaciones: observaciones.trim() || null,
         fotos_urls: finalFotosUrls,
         updated_at: new Date().toISOString()
@@ -703,8 +735,8 @@ export default function CapacitacionPage({ params }) {
     setPuesto(cap.puesto || '');
     setContenido(cap.contenido || '');
     setProgreso(cap.progreso || 0);
-    setFechaInicioPlanificada(cap.fecha_inicio_planificada);
-    setFechaFinPlanificada(cap.fecha_fin_planificada);
+    setFechaInicioPlanificada(formatDate(cap.fecha_inicio_planificada) || '');
+    setFechaFinPlanificada(formatDate(cap.fecha_fin_planificada) || '');
     setObservaciones(cap.observaciones || '');
 
     // Vincular Temas (opción múltiple)
@@ -909,7 +941,7 @@ export default function CapacitacionPage({ params }) {
             <span className="text-xs font-semibold text-slate-500 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-150 hidden sm:inline-block">
               {tenant?.name || 'Cargando...'}
             </span>
-            <span className="px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider">
+            <span className={`px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider ${(!profile || profile.role === 'cliente') ? 'hidden' : ''}`} suppressHydrationWarning>
               {tenant?.plan_id ? (tenant.plan_id.toLowerCase() === 'libre' ? 'Plan Libre' : tenant.plan_id.toLowerCase().startsWith('standard') ? 'Plan Standard' : tenant.plan_id.toLowerCase().startsWith('basic') ? 'Plan Basic' : `Plan ${tenant.plan_id}`) : 'Plan Pro'}
             </span>
           </div>
@@ -1154,11 +1186,13 @@ export default function CapacitacionPage({ params }) {
                           Fecha Inicio Planificada <span className="text-[#468DFF]">*</span>
                         </label>
                         <input
-                          type="date"
+                          type="text"
                           required
+                          placeholder="DD/MM/YYYY"
+                          maxLength={10}
                           value={fechaInicioPlanificada}
-                          onChange={(e) => setFechaInicioPlanificada(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
+                          onChange={(e) => setFechaInicioPlanificada(formatAsDateInput(e.target.value))}
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 font-mono"
                         />
                       </div>
 
@@ -1167,11 +1201,13 @@ export default function CapacitacionPage({ params }) {
                           Fecha Fin Planificada <span className="text-[#468DFF]">*</span>
                         </label>
                         <input
-                          type="date"
+                          type="text"
                           required
+                          placeholder="DD/MM/YYYY"
+                          maxLength={10}
                           value={fechaFinPlanificada}
-                          onChange={(e) => setFechaFinPlanificada(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
+                          onChange={(e) => setFechaFinPlanificada(formatAsDateInput(e.target.value))}
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 font-mono"
                         />
                       </div>
 
@@ -1311,7 +1347,7 @@ export default function CapacitacionPage({ params }) {
                     <button
                       type="button"
                       onClick={handleExitForm}
-                      className="px-5 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer"
+                      className="px-5 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-white hover:border-[#468DFF] transition-all active:scale-[0.98] cursor-pointer"
                     >
                       Salir
                     </button>

@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
-import { formatDate } from '@/lib/utils';
+import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import { 
   PlusCircle, 
   Search, 
@@ -301,7 +301,7 @@ export default function VisitasPage({ params }) {
   useEffect(() => {
     const resolveProfileSignaturePreview = async () => {
       setFirmaPerfilPreviewUrl('');
-      if (!signaturePath || firmaTipo !== 'perfil') return;
+      if (!signaturePath || signaturePath === 'N/A' || firmaTipo !== 'perfil') return;
 
       if (signaturePath.startsWith('data:')) {
         setFirmaPerfilPreviewUrl(signaturePath);
@@ -728,7 +728,7 @@ export default function VisitasPage({ params }) {
     setEditingId(null);
     setEmpresaId('');
     setEstablecimientoId('');
-    setFecha(new Date().toISOString().split('T')[0]);
+    setFecha(formatDate(new Date().toISOString().split('T')[0]));
     setResponsablePresente('');
     setOcurrieronIncidentes(false);
     setAnalisisCorrespondiente('N/A');
@@ -976,7 +976,7 @@ export default function VisitasPage({ params }) {
         tenant_id: tenant.id,
         empresa_id: empresaId,
         establecimiento_id: establecimientoId,
-        fecha,
+        fecha: convertToDbDate(fecha) || null,
         profesional_tipo: profesionalTipo,
         profesional_nombre: finalProfNombre,
         profesional_id: profesionalTipo === 'miembro' ? profesionalId : null,
@@ -1053,7 +1053,7 @@ export default function VisitasPage({ params }) {
     setEditingId(v.id);
     setEmpresaId(v.empresa_id);
     setEstablecimientoId(v.establecimiento_id);
-    setFecha(v.fecha);
+    setFecha(formatDate(v.fecha) || '');
     setProfesionalTipo(v.profesional_tipo || 'miembro');
     if (v.profesional_tipo === 'miembro') {
       setProfesionalId(v.profesional_id || '');
@@ -1111,44 +1111,86 @@ export default function VisitasPage({ params }) {
         })));
       }
     } else {
-      // Resolve Responsable Empresa Signature
-      if (v.firma_responsable_empresa) {
-        supabase.storage
-          .from('documents')
-          .createSignedUrl(v.firma_responsable_empresa, 3600)
-          .then(({ data }) => {
-            if (data?.signedUrl) setFirmaRespSavedUrl(data.signedUrl);
-          })
-          .catch(err => console.error('Error resolving Resp signature URL:', err));
+      // Recopilar paths a firmar en un solo lote
+      const pathsToSign = [];
+      if (v.firma_responsable_empresa && v.firma_responsable_empresa !== 'N/A') {
+        if (!v.firma_responsable_empresa.startsWith('http://') && !v.firma_responsable_empresa.startsWith('https://')) {
+          pathsToSign.push(v.firma_responsable_empresa);
+        }
       }
-
-      // Resolve Profesional Signature (only if hand-drawn/mano)
-      if ((v.firma_tipo || 'mano') === 'mano' && v.firma_profesional) {
-        supabase.storage
-          .from('documents')
-          .createSignedUrl(v.firma_profesional, 3600)
-          .then(({ data }) => {
-            if (data?.signedUrl) setFirmaProfSavedUrl(data.signedUrl);
-          })
-          .catch(err => console.error('Error resolving Prof signature URL:', err));
+      if ((v.firma_tipo || 'mano') === 'mano' && v.firma_profesional && v.firma_profesional !== 'N/A') {
+        if (!v.firma_profesional.startsWith('http://') && !v.firma_profesional.startsWith('https://')) {
+          pathsToSign.push(v.firma_profesional);
+        }
       }
-
-      // Resolve Photos
       if (v.adjuntar_registros_urls && v.adjuntar_registros_urls.length > 0) {
-        Promise.all(v.adjuntar_registros_urls.map(async (p) => {
-          const { data } = await supabase.storage
-            .from('documents')
-            .createSignedUrl(p, 3600, { download: false });
-          return data ? data.signedUrl : '';
-        })).then(urls => {
-          const loadedFotos = v.adjuntar_registros_urls.map((path, idx) => ({
-            file: null,
-            preview: urls[idx] || '/brand/logo-primary.png',
-            path: path
-          }));
-          setFotosFiles(loadedFotos);
-        }).catch(err => console.error('Error resolving photo URLs:', err));
+        v.adjuntar_registros_urls.forEach(p => {
+          if (p && p !== 'N/A' && p !== '') {
+            if (!p.startsWith('http://') && !p.startsWith('https://')) {
+              pathsToSign.push(p);
+            }
+          }
+        });
       }
+
+      const loadDataAndResolve = async () => {
+        let signedUrlsMap = {};
+        if (pathsToSign.length > 0) {
+          try {
+            const { data: signedData, error: signErr } = await supabase.storage
+              .from('documents')
+              .createSignedUrls(pathsToSign, 3600);
+            if (!signErr && signedData) {
+              signedData.forEach(item => {
+                if (item.signedUrl) {
+                  signedUrlsMap[item.path] = item.signedUrl;
+                }
+              });
+            }
+          } catch (e) {
+            console.error('Error al firmar URLs de visita en lote:', e);
+          }
+        }
+
+        // 1. Firma Responsable Empresa
+        if (v.firma_responsable_empresa && v.firma_responsable_empresa !== 'N/A') {
+          if (v.firma_responsable_empresa.startsWith('http://') || v.firma_responsable_empresa.startsWith('https://')) {
+            setFirmaRespSavedUrl(v.firma_responsable_empresa);
+          } else {
+            setFirmaRespSavedUrl(signedUrlsMap[v.firma_responsable_empresa] || '');
+          }
+        }
+
+        // 2. Firma Profesional
+        if ((v.firma_tipo || 'mano') === 'mano' && v.firma_profesional && v.firma_profesional !== 'N/A') {
+          if (v.firma_profesional.startsWith('http://') || v.firma_profesional.startsWith('https://')) {
+            setFirmaProfSavedUrl(v.firma_profesional);
+          } else {
+            setFirmaProfSavedUrl(signedUrlsMap[v.firma_profesional] || '');
+          }
+        }
+
+        // 3. Fotos
+        if (v.adjuntar_registros_urls && v.adjuntar_registros_urls.length > 0) {
+          const validUrls = v.adjuntar_registros_urls.filter(p => p && p !== 'N/A' && p !== '');
+          const loadedFotos = validUrls.map(path => {
+            let preview = '/brand/logo-primary.png';
+            if (path.startsWith('http://') || path.startsWith('https://')) {
+              preview = path;
+            } else {
+              preview = signedUrlsMap[path] || '/brand/logo-primary.png';
+            }
+            return {
+              file: null,
+              preview,
+              path
+            };
+          });
+          setFotosFiles(loadedFotos);
+        }
+      };
+
+      loadDataAndResolve();
     }
 
     setIsFormOpen(true);
@@ -1766,7 +1808,7 @@ export default function VisitasPage({ params }) {
       let imgRespBase64 = '';
       let imgProfBase64 = '';
 
-      if (v.firma_responsable_empresa) {
+      if (v.firma_responsable_empresa && v.firma_responsable_empresa !== 'N/A') {
         try {
           if (v.firma_responsable_empresa.startsWith('data:')) {
             imgRespBase64 = v.firma_responsable_empresa;
@@ -1811,7 +1853,7 @@ export default function VisitasPage({ params }) {
         }
       }
 
-      if (v.firma_profesional) {
+      if (v.firma_profesional && v.firma_profesional !== 'N/A') {
         try {
           if (v.firma_profesional.startsWith('data:')) {
             imgProfBase64 = v.firma_profesional;
@@ -2129,7 +2171,7 @@ export default function VisitasPage({ params }) {
             <span className="text-xs font-semibold text-slate-500 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-150 hidden sm:inline-block">
               {tenant?.name || 'Cargando...'}
             </span>
-            <span className="px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider">
+            <span className={`px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider ${(!profile || profile.role === 'cliente') ? 'hidden' : ''}`} suppressHydrationWarning>
               {tenant?.plan_id ? (tenant.plan_id.toLowerCase() === 'libre' ? 'Plan Libre' : tenant.plan_id.toLowerCase().startsWith('standard') ? 'Plan Standard' : tenant.plan_id.toLowerCase().startsWith('basic') ? 'Plan Basic' : `Plan ${tenant.plan_id}`) : 'Plan Pro'}
             </span>
           </div>
@@ -2485,11 +2527,13 @@ export default function VisitasPage({ params }) {
                       <div className="flex flex-col gap-1.5">
                         <label className="text-xs font-bold text-slate-600">Fecha *</label>
                         <input
-                          type="date"
+                          type="text"
+                          placeholder="DD/MM/YYYY"
+                          maxLength={10}
                           value={fecha}
-                          onChange={(e) => setFecha(e.target.value)}
+                          onChange={(e) => setFecha(formatAsDateInput(e.target.value))}
                           required
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 font-mono"
                         />
                       </div>
 
@@ -3270,7 +3314,7 @@ export default function VisitasPage({ params }) {
                     <button
                       type="button"
                       onClick={handleExitForm}
-                      className="px-5 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer"
+                      className="px-5 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-white hover:border-[#468DFF] transition-all active:scale-[0.98] cursor-pointer"
                     >
                       Salir
                     </button>

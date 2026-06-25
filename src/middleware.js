@@ -174,7 +174,7 @@ export async function middleware(request) {
     // Lista de rutas raíz reservadas de Next.js
     const reservedRoutes = ['login', 'register', 'onboarding', 'api', 'brand', 'assets'];
     
-    if (!reservedRoutes.includes(routeTenantSlug)) {
+    if (!reservedRoutes.includes(routeTenantSlug) && !routeTenantSlug.includes('.')) {
       // Si el slug en la URL no coincide con el slug del tenant del usuario, redirigir a su propio dashboard
       if (routeTenantSlug !== profile.tenants.slug) {
         url.pathname = `/${profile.tenants.slug}/dashboard`;

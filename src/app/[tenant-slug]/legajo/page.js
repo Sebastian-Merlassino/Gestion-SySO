@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
-import { formatDate } from '@/lib/utils';
+import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import { 
   Folder, 
   FolderOpen, 
@@ -628,7 +628,7 @@ export default function LegajoPage({ params }) {
     setEditingId(null);
     setEmpresaId(profile?.role === 'cliente' ? profile.empresa_id : '');
     setEstablecimientoId('');
-    setFecha(new Date().toISOString().split('T')[0]);
+    setFecha(formatDate(new Date().toISOString().split('T')[0]));
     setUploadType('local');
     setDriveLink('');
     setDocumentoFile(null);
@@ -705,7 +705,7 @@ export default function LegajoPage({ params }) {
     setEditingId(doc.id);
     setEmpresaId(doc.empresa_id);
     setEstablecimientoId(doc.establecimiento_id || '');
-    setFecha(doc.fecha);
+    setFecha(formatDate(doc.fecha) || '');
     
     const regMatch = registrosList.find(r => r.nombre === doc.documento_nombre);
     if (regMatch) {
@@ -847,7 +847,7 @@ export default function LegajoPage({ params }) {
         categoria: currentFolder.name,
         subcategoria: currentSubfolder?.name || null,
         documento_nombre: finalDocName,
-        fecha: fecha,
+        fecha: convertToDbDate(fecha) || null,
         documento_url: finalDocUrl,
         updated_at: new Date().toISOString()
       };
@@ -891,7 +891,7 @@ export default function LegajoPage({ params }) {
   };
 
   const handleViewPdf = async (url) => {
-    if (!url) return;
+    if (!url || url === 'N/A') return;
     if (url.startsWith('http://') || url.startsWith('https://')) {
       window.open(url, '_blank');
     } else {
@@ -913,7 +913,7 @@ export default function LegajoPage({ params }) {
   };
 
   const handleDownloadPdf = async (url, filename) => {
-    if (!url) return;
+    if (!url || url === 'N/A') return;
     if (url.startsWith('http://') || url.startsWith('https://')) {
       window.open(url, '_blank');
     } else {
@@ -1090,7 +1090,7 @@ export default function LegajoPage({ params }) {
             <span className="text-xs font-semibold text-slate-500 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-150 hidden sm:inline-block">
               {tenant?.name || 'Cargando...'}
             </span>
-            <span className="px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider">
+            <span className={`px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider ${(!profile || profile.role === 'cliente') ? 'hidden' : ''}`} suppressHydrationWarning>
               {tenant?.plan_id ? `Plan ${tenant.plan_id}` : 'Plan Pro'}
             </span>
           </div>
@@ -1228,10 +1228,12 @@ export default function LegajoPage({ params }) {
                         Fecha del Registro <span className="text-[#468DFF]">*</span>
                       </label>
                       <input
-                        type="date"
-                        required
+                        type="text"
+                        placeholder="DD/MM/YYYY"
+                        maxLength={10}
                         value={fecha}
-                        onChange={(e) => setFecha(e.target.value)}
+                        onChange={(e) => setFecha(formatAsDateInput(e.target.value))}
+                        required
                         className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono"
                       />
                     </div>
@@ -1368,7 +1370,7 @@ export default function LegajoPage({ params }) {
                     <button
                       type="button"
                       onClick={handleExitForm}
-                      className="px-5 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer"
+                      className="px-5 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-white hover:border-[#468DFF] transition-all active:scale-[0.98] cursor-pointer"
                     >
                       Salir
                     </button>

@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
-import { formatDate } from '@/lib/utils';
+import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import { 
   PlusCircle, 
   Search, 
@@ -312,26 +312,48 @@ export default function ExtintoresPage({ params }) {
       const { data: exts, error: extErr } = await extsQuery.order('created_at', { ascending: false });
       if (extErr) throw extErr;
 
-      // Resuelve URLs firmadas para las imágenes
-      const resolvedExtintores = await Promise.all((exts || []).map(async (ext) => {
+      // Recopilar paths de Supabase para firmar en lote (en una sola llamada de red)
+      const pathsToSign = [];
+      (exts || []).forEach(ext => {
+        if (ext.imagen_url && ext.imagen_url !== 'N/A') {
+          if (!ext.imagen_url.startsWith('http://') && !ext.imagen_url.startsWith('https://')) {
+            pathsToSign.push(ext.imagen_url);
+          }
+        }
+      });
+
+      let signedUrlsMap = {};
+      if (pathsToSign.length > 0) {
+        try {
+          const { data: signedData, error: signErr } = await supabase.storage
+            .from('documents')
+            .createSignedUrls(pathsToSign, 3600);
+          if (!signErr && signedData) {
+            signedData.forEach(item => {
+              if (item.signedUrl) {
+                signedUrlsMap[item.path] = item.signedUrl;
+              }
+            });
+          }
+        } catch (e) {
+          console.error('Error al firmar URLs de extintores en lote:', e);
+        }
+      }
+
+      const resolvedExtintores = (exts || []).map(ext => {
         let signedUrl = '';
-        if (ext.imagen_url) {
-          try {
-            const { data, error: signErr } = await supabase.storage
-              .from('documents')
-              .createSignedUrl(ext.imagen_url, 3600, { download: false });
-            if (!signErr && data) {
-              signedUrl = data.signedUrl;
-            }
-          } catch (e) {
-            console.error('Error resolviendo URL firmada:', e);
+        if (ext.imagen_url && ext.imagen_url !== 'N/A') {
+          if (ext.imagen_url.startsWith('http://') || ext.imagen_url.startsWith('https://')) {
+            signedUrl = ext.imagen_url;
+          } else {
+            signedUrl = signedUrlsMap[ext.imagen_url] || '';
           }
         }
         return {
           ...ext,
           imagen_preview_url: signedUrl
         };
-      }));
+      });
 
       setExtintores(resolvedExtintores);
       setLoading(false);
@@ -522,8 +544,8 @@ export default function ExtintoresPage({ params }) {
         n_extintor: nExtintor || null,
         tipo: dbTipo || null,
         capacidad: capacidad ? parseInt(capacidad) : null,
-        venc_recarga: vencRecarga || null,
-        venc_ph: vencPh || null,
+        venc_recarga: convertToDbDate(vencRecarga) || null,
+        venc_ph: convertToDbDate(vencPh) || null,
         presion: presion || null,
         precinto: precinto || null,
         marbete: marbete || null,
@@ -532,7 +554,7 @@ export default function ExtintoresPage({ params }) {
         cilindro: cilindro || null,
         senalizacion: senalizacion || null,
         imagen_url: finalImagenUrl || null,
-        fecha_control: fechaControl || null,
+        fecha_control: convertToDbDate(fechaControl) || null,
         observaciones: observaciones || null,
         updated_at: new Date().toISOString()
       };
@@ -598,8 +620,8 @@ export default function ExtintoresPage({ params }) {
     }
 
     setCapacidad(ext.capacidad || '');
-    setVencRecarga(ext.venc_recarga || '');
-    setVencPh(ext.venc_ph || '');
+    setVencRecarga(formatDate(ext.venc_recarga) || '');
+    setVencPh(formatDate(ext.venc_ph) || '');
     setPresion(ext.presion || 'N/A');
     setPrecinto(ext.precinto || 'N/A');
     setMarbete(ext.marbete || 'N/A');
@@ -612,7 +634,7 @@ export default function ExtintoresPage({ params }) {
     setImagenPreview(ext.imagen_preview_url || '');
     setImagenPath(ext.imagen_url || '');
     
-    setFechaControl(ext.fecha_control || '');
+    setFechaControl(formatDate(ext.fecha_control) || '');
     setObservaciones(ext.observaciones || '');
 
     setIsFormOpen(true);
@@ -835,7 +857,7 @@ export default function ExtintoresPage({ params }) {
             <span className="text-xs font-semibold text-slate-500 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-150 hidden sm:inline-block">
               {tenant?.name || 'Cargando...'}
             </span>
-            <span className="px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider">
+            <span className={`px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider ${(!profile || profile.role === 'cliente') ? 'hidden' : ''}`} suppressHydrationWarning>
               {tenant?.plan_id ? (tenant.plan_id.toLowerCase() === 'libre' ? 'Plan Libre' : tenant.plan_id.toLowerCase().startsWith('standard') ? 'Plan Standard' : tenant.plan_id.toLowerCase().startsWith('basic') ? 'Plan Basic' : `Plan ${tenant.plan_id}`) : 'Plan Pro'}
             </span>
           </div>
@@ -1015,20 +1037,24 @@ export default function ExtintoresPage({ params }) {
                       <div className="flex flex-col gap-1.5">
                         <label className="text-xs font-bold text-slate-600">Vencimiento de Recarga</label>
                         <input
-                          type="date"
+                          type="text"
+                          placeholder="DD/MM/YYYY"
+                          maxLength={10}
                           value={vencRecarga}
-                          onChange={(e) => setVencRecarga(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
+                          onChange={(e) => setVencRecarga(formatAsDateInput(e.target.value))}
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono"
                         />
                       </div>
 
                       <div className="flex flex-col gap-1.5">
                         <label className="text-xs font-bold text-slate-600">Vencimiento P.H. (Prueba Hidráulica)</label>
                         <input
-                          type="date"
+                          type="text"
+                          placeholder="DD/MM/YYYY"
+                          maxLength={10}
                           value={vencPh}
-                          onChange={(e) => setVencPh(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
+                          onChange={(e) => setVencPh(formatAsDateInput(e.target.value))}
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono"
                         />
                       </div>
                     </div>
@@ -1191,10 +1217,12 @@ export default function ExtintoresPage({ params }) {
                       <div className="flex flex-col gap-1.5">
                         <label className="text-xs font-bold text-slate-600">Fecha de Control</label>
                         <input
-                          type="date"
+                          type="text"
+                          placeholder="DD/MM/YYYY"
+                          maxLength={10}
                           value={fechaControl}
-                          onChange={(e) => setFechaControl(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
+                          onChange={(e) => setFechaControl(formatAsDateInput(e.target.value))}
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono"
                         />
                       </div>
                     </div>
@@ -1218,7 +1246,7 @@ export default function ExtintoresPage({ params }) {
                         <button
                           type="button"
                           onClick={handleExitForm}
-                          className="px-5 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer"
+                          className="px-5 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-white hover:border-[#468DFF] transition-all active:scale-[0.98] cursor-pointer"
                         >
                           Salir
                         </button>

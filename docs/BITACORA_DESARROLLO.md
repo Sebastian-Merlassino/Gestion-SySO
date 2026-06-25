@@ -1,6 +1,261 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica.
+Este documento registra las decisiones técnicas, cambios de arquitectura y progresos del proyecto de manera cronológica
+
+## [2026-06-25] Fase 3: Estandarización de Hidratación de Cabeceras y Optimización de Supabase Storage mediante Firma en Lote
+
+### Resumen de Cambios
+- **Estandarización de Hidratación en Cabeceras**:
+  - Se aplicó la renderización estructural fija de la etiqueta de plan en los headers de 10 pantallas operativas (`dashboard`, `empresas`, `equipo`, `programa`, `capacitacion`, `correctivas`, `extintores`, `visitas`, `avisos`, y `legajo`).
+  - Se utilizaron clases dinámicas `hidden` en lugar de condicionales de React para ocultar/mostrar la etiqueta según el perfil/rol de cliente, y se añadió el atributo `suppressHydrationWarning` para erradicar las discrepancias en el renderizado inicial (SSR vs. Cliente).
+- **Firma en Lote en Supabase Storage**:
+  - Se reestructuraron las vistas operativas de `correctivas`, `extintores`, `avisos` (incluyendo la resolución de imágenes para la generación de PDFs), `capacitacion` y `visitas` para agrupar todas las firmas de imágenes y firmas digitales en un solo array, invocando el método `.createSignedUrls(paths, 3600)` en lugar de realizar llamadas paralelas concurrentes.
+  - Esto resolvió el límite de peticiones (Rate Limits / 429 Too Many Requests) y optimizó la carga y performance en listados con grandes volúmenes de datos.
+  - Se blindó la lógica para ignorar URLs absolutas externas que inician con `http://` o `https://`.
+- **Corrección de Consulta por Fecha en Avisos de Riesgo**:
+  - Se corrigió el error `22008` (date/time field value out of range) al visualizar o editar un aviso de riesgo. Al estar la fecha del estado en formato de máscara `DD/MM/YYYY`, la consulta a la base de datos de hallazgos (`acciones_correctivas`) fallaba. Se implementó la conversión a formato `YYYY-MM-DD` mediante `convertToDbDate(fecha)` antes de ejecutar la consulta.
+  - Se añadió una validación de longitud mínima (`fecha.length < 10`) para evitar que se ejecuten consultas a la base de datos mientras el usuario tipea o modifica la fecha de forma incompleta.
+
+### Decisiones Clave
+- **Clases en lugar de Condicionales Estructurales**: React requiere que la estructura del DOM de la página devuelta por el servidor coincida exactamente con la primera renderización en el cliente. Al renderizar el elemento `span` del plan de manera fija y ocultarlo vía CSS dinámico (`hidden`), evitamos diferencias en la cantidad y orden de elementos hijos del header.
+- **Firma Previa y Mapeo Síncrono**: Rediseñar las pantallas para realizar un paso de firma único en lote (`createSignedUrls`) y luego mapear las URLs firmadas de manera síncrona en el array de datos disminuye drásticamente el tiempo de carga del componente y previene bloqueos por rate limiting.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `supabase`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción completa y exitosa con Next.js (`cmd /c npm run build`), verificando la consistencia operacional del enrutador y componentes.
+
+---
+
+## [2026-06-25] Corrección de Hydration Mismatches, Recargas de Sidebar y Prevención de Firmas para URLs Externas
+
+### Resumen de Cambios
+- **Mitigación de Hydration Warning y Cero Flickering en Sidebar**:
+  - Se implementó una variable de módulo global `isHydratedGlobal` en `src/components/Sidebar.js` que registra si la hidratación inicial del cliente ya se completó.
+  - Al cambiar de sección, la nueva instancia de `Sidebar` se inicializa con `mounted = isHydratedGlobal`. Como ya se completó la hidratación en las navegaciones internas del cliente, el `Sidebar` dibuja directamente el nombre y los enlaces de administración reales, eliminando por completo la sensación visual de parpadeo ("recarga" del sidebar).
+  - En la carga inicial de la página (hard refresh), `isHydratedGlobal` empieza en `false` garantizando que el DOM inicial coincida con el servidor de Next.js (SSR), eliminando las advertencias de hidratación de React.
+- **Resolución de Redirección de manifest.webmanifest en Middleware**:
+  - Se modificó la validación de slugs de tenants en `src/middleware.js` para descartar del flujo de redirección a cualquier ruta de archivo estático o dinámico que contenga un punto (`.`) en su segmento inicial (por ejemplo, `/manifest.webmanifest`). Esto corrige el warning "Line: 1, column: 1, Syntax error" al impedir que el middleware devuelva la página HTML del dashboard en peticiones del manifest.
+- **Alerta de Deprecación de Meta Etiqueta en Safari**:
+  - Se agregó la meta etiqueta estándar recomendada `<meta name="mobile-web-app-capable" content="yes" />` en el `<head>` de `src/app/layout.js`.
+- **Prevención de Errores 400 en Supabase por URLs Externas**:
+  - Se blindó la obtención de URLs firmadas en todos los listados de la plataforma (`correctivas`, `avisos`, `extintores`, `capacitacion`, `visitas`) para omitir la llamada a `.createSignedUrl` de Supabase Storage cuando el recurso ya sea una URL absoluta externa que empieza con `http://` o `https://` (por ejemplo, URLs de AppSheet o Google Drive), usando los enlaces de manera directa.
+
+### Decisiones Clave
+- **Control de Hydration mediante Módulo Global**: El uso de una variable externa a la clase del componente de React permite que el estado de hidratación persista en el ciclo de vida del bundle cargado en el cliente sin depender del montaje y desmontaje de los componentes de página individuales.
+- **Estandarización de Rutas Reservadas con Puntos**: Excluir paths con puntos en el middleware evita tener que listar cada ruta de recurso técnico una por una y protege de redireccionamientos erróneos.
+- **Compatibilidad con Enlaces Externos e Históricos**: La base de datos contiene URLs absolutas cargadas históricamente. Al verificar si la URL contiene esquema de protocolo, el cliente decide de manera inteligente si solicitar firma del storage privado o consumir directamente.
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/components/Sidebar.js`
+- `[MODIFY] src/middleware.js`
+- `[MODIFY] src/app/layout.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-06-25] Personalización de Estilo Hover en Botones "Salir"
+
+### Resumen de Cambios
+- **Estandarización de Hover para "Salir"**: Se actualizó el comportamiento en estado hover de todos los botones con texto exacto "Salir" en los formularios y secciones de la aplicación (11 en total).
+- **Personalización de Colores**: Al pasar el cursor por encima (hover), los botones ahora cambian de color blanco con texto gris a fondo azul de marca (`#468DFF`), con letras blancas (`#FFFFFF`) y borde azul `#468DFF`. Esto garantiza un fuerte contraste visual alineado al design system del SaaS.
+- **Respeto a Clases Estructurales**: Se mantuvieron intactas las demás propiedades originales del botón (bordes redondeados, tamaño, tipografía, transiciones y comportamiento de click activo).
+
+### Decisiones Clave
+- **Homogeneización del Borde**: Se incorporó explícitamente el cambio de borde (`hover:border-[#468DFF]`) en conjunto con el color de fondo para evitar que un borde grisáceo residual rompiera la continuidad del botón al activarse el fondo azul.
+
+### Skills Utilizadas
+- `gestion-syso-brand-guidelines`
+- `gestion-syso-bitacora`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/onboarding/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js exitosa de extremo a extremo sin errores de importación o linting.
+
+---
+
+## [2026-06-25] Pictograma Informativo y Modal de Nivel de Riesgo (Método BS 8800)
+
+### Resumen de Cambios
+- **Visualización Informativa de Nivel de Riesgo**: Se añadió un pictograma de ayuda (ícono `HelpCircle`) junto a la etiqueta "Nivel de Riesgo *" en el formulario de carga y edición de Acciones Correctivas.
+- **Ventana Emergente (Modal)**: Al hacer clic en el pictograma, se abre un modal responsivo que presenta la imagen informativa `Nivel de riesgo-Método BS 8800` (ubicada en `/assets/nivel-riesgo-bs-8800.png`), proporcionando asistencia visual e inmediata al usuario sobre las clasificaciones de riesgo.
+- **Consistencia Visual**: Se respetaron los lineamientos de marca y diseño utilizando las fuentes del sistema, los bordes redondeados y los estilos de botones de la aplicación.
+
+### Decisiones Clave
+- **Ubicación de Asset**: Se ubicó la imagen bajo `public/assets/nivel-riesgo-bs-8800.png` con un nombre en minúsculas y sin caracteres especiales para asegurar máxima compatibilidad de URLs y evitar errores de codificación.
+- **Modal Integrado**: El modal se controla mediante el estado reactivo local `showRiskMatrix` en la misma pantalla de acciones correctivas, reduciendo la complejidad y manteniendo la reactividad.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js exitosa de extremo a extremo.
+
+---
+
+## [2026-06-25] Estandarización de Entrada de Fechas en Formularios mediante Máscara de Texto (Fase Definitiva)
+
+### Resumen de Cambios
+- **Entrada de Fechas Homogénea**: Se migró la entrada de fechas en todos los formularios de carga y edición de la aplicación (7 secciones) de `<input type="date">` a campos de tipo texto (`type="text"`) con formato de máscara automático (`DD/MM/YYYY`), asegurando una experiencia visual idéntica y estandarizada en cualquier navegador e idioma.
+- **Máscara en Tiempo Real**: Se incorporó el helper `formatAsDateInput` en `src/lib/utils.js` para añadir automáticamente las barras (`/`) a medida que el usuario tipea los dígitos.
+- **Conversión Bidireccional**: Se implementó el helper `convertToDbDate` para transformar la fecha con formato `DD/MM/YYYY` provista por el formulario al formato estándar de persistencia de PostgreSQL (`YYYY-MM-DD`) de forma transparente durante los inserts/updates de Supabase.
+- **Secciones Adaptadas**:
+  1. **Programa Anual**: Campos de F. Planificada y F. Realización.
+  2. **Capacitación**: Campos de F. Inicio Planificada y F. Fin Planificada.
+  3. **Correctivas**: Campos de Fecha de Registro, Fecha Planificada y Fecha de Realización.
+  4. **Extintores**: Campos de Vencimiento Recarga, Vencimiento P.H. y Fecha de Control.
+  5. **Visitas**: Campo de Fecha de visita.
+  6. **Avisos**: Campo de Fecha de aviso.
+  7. **Legajo**: Campo de Fecha del documento.
+
+### Decisiones Clave
+- **Elusión de Controles Regionales**: El uso de `<input type="date">` tiene restricciones nativas que impiden forzar un formato específico independientemente del idioma del navegador del usuario. El patrón de input de texto con máscara manual es la única alternativa para garantizar la uniformidad visual.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+- `supabase`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+
+### Validaciones Ejecutadas
+- **Compilación de Producción**: Se corrió `npm run build` con Next.js y finalizó exitosamente sin advertencias sintácticas ni errores.
+
+---
+
+## [2026-06-25] Auditoría y Estandarización de Visualización de Fechas (DD/MM/YYYY)
+
+### Resumen de Cambios
+- **Auditoría de Fechas**: Se auditó todo el codebase para verificar que las fechas presentadas al usuario se visualicen siempre en formato `DD/MM/YYYY`.
+- **Uso Consistente de Helpers**: Se constató que todas las vistas operativas (Visitas, Avisos, Legajo Técnico, Extintores, Programa Anual, Programa de Capacitación, Acciones Correctivas y Dashboard) formatean correctamente las fechas usando la función `formatDate` antes de renderizarlas en las tablas.
+- **Unificación de Código**: Se removió el helper local `formatDate` duplicado en `src/app/[tenant-slug]/programa/page.js` y se reemplazó por la importación de la utilidad común `formatDate` de `src/lib/utils.js`, previniendo deriva técnica.
+- **Formularios de Carga**: Se ratificó que los campos de tipo fecha en los formularios de carga utilizan `<input type="date">`. Esto permite que el navegador formatee automáticamente la fecha según el locale del sistema del usuario, a la vez que mantiene compatibilidad con la persistencia estándar en formato `YYYY-MM-DD` de PostgreSQL.
+
+### Decisiones Clave
+- **Helper Centralizado**: Eliminar código duplicado y concentrar el formateo de fecha en `src/lib/utils.js` mejora la mantenibilidad de la aplicación.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js exitosa.
+
+### Riesgos Detectados / Remanentes
+- Ninguno.
+
+### Próximo Paso Recomendado
+- Continuar con el ciclo normal de desarrollo del proyecto.
+
+---
+
+## [2026-06-25] Reutilización de Documentos del Legajo Técnico en el Programa Anual
+
+### Resumen de Cambios
+- **Vincular Legajo Técnico a Programa Anual**: Se implementó una nueva opción de carga de documentos en el formulario de actividades del Programa Anual. Ahora los usuarios pueden elegir "Legajo Técnico" como método de carga.
+- **Dropdown Dinámico de Documentos**: Se incorporó un selector dinámico que consulta la tabla `public.legajo_tecnico` utilizando la sesión autenticada. Los documentos mostrados corresponden a la Razón Social y el Establecimiento seleccionados (incluyendo documentos generales de la empresa sin establecimiento asignado).
+- **Evitar Duplicidad en Almacenamiento**: Al guardar, se asocia el path del documento de legajo técnico seleccionado directamente al registro de la actividad en la columna `documento_url` de la tabla `public.programa_anual`, evitando la resubida y duplicidad de recursos.
+- **Limpieza de Estados**: Se actualizó la función `handleCloseForm()` y los cambios de tabs de carga para limpiar sincrónicamente los estados de carga de legajo técnico.
+
+### Decisiones Clave
+- **Consulta Reactiva mediante useEffect**: El listado de documentos de legajo se recarga automáticamente al cambiar el cliente, establecimiento o al seleccionar la opción correspondiente, garantizando coherencia en la interfaz.
+- **Inclusión de Documentos Generales**: Si el usuario selecciona un establecimiento, listamos los documentos del legajo correspondientes a este y además aquellos generales del cliente (`establecimiento_id` es `NULL`), mejorando la accesibilidad y reusabilidad de registros comunes.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `supabase`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js exitosa de punta a punta.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. Las consultas al legajo técnico se ejecutan a través de cookies de sesión autenticada del usuario, por lo que heredan todas las políticas RLS y aislamiento multi-tenant del backend.
+
+### Próximo Paso Recomendado
+- Realizar pruebas en ambiente de preview / staging subiendo un documento al Legajo Técnico y seleccionándolo posteriormente al crear una actividad del Programa Anual.
+
+---
+
+## [2026-06-25] Ajuste del Título de la Aplicación en la Ventana del Navegador
+
+### Resumen de Cambios
+- **Modificación de Título Global**: Se actualizó el valor del título (`title`) dentro del objeto `metadata` en el archivo de diseño raíz `src/app/layout.js` de `'Gestión SySO | SaaS de Seguridad y Salud Ocupacional'` a `'Gestión SySO | App'`.
+- **Propósito**: Cumplir con el requerimiento del usuario de simplificar el nombre expuesto en la pestaña del navegador a `"Gestión SySO | App"`.
+
+### Decisiones Clave
+- **Definición Estática de Metadata**: Mantener la definición en el layout principal asegura que todas las páginas hereden esta estructura y muestren `'Gestión SySO | App'` por defecto, a menos que definan metadatos específicos.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/layout.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js (`npm run build`) completada con éxito. Todas las rutas estáticas y dinámicas se compilaron satisfactoriamente.
+
+### Riesgos Detectados / Remanentes
+- Ninguno.
+
+### Próximo Paso Recomendado
+- Iniciar la aplicación y verificar que la pestaña del navegador muestre el nuevo título.
+
+---
 
 ## [2026-06-24] Integración de Rate Limiting Distribuido con Upstash Redis
 

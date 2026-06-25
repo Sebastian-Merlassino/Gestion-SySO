@@ -5,6 +5,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
+import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import {
   Calendar,
   List,
@@ -186,14 +187,23 @@ export default function ProgramaGestion({ params }) {
   const [documentoUrl, setDocumentoUrl] = useState('');
   const [observaciones, setObservaciones] = useState('');
   const [formErrors, setFormErrors] = useState({});
-  const [uploadType, setUploadType] = useState('local'); // 'local' or 'drive'
+  const [uploadType, setUploadType] = useState('local'); // 'local', 'drive' or 'legajo'
   const [driveLink, setDriveLink] = useState('');
+  const [legajoDocuments, setLegajoDocuments] = useState([]);
+  const [selectedLegajoDocUrl, setSelectedLegajoDocUrl] = useState('');
+  const [loadingLegajoDocs, setLoadingLegajoDocs] = useState(false);
 
   useEffect(() => {
     if (!documentoFile) {
       setSelectedFileName('');
     }
   }, [documentoFile]);
+
+  useEffect(() => {
+    if (showForm && empresaId && uploadType === 'legajo') {
+      loadLegajoDocuments(empresaId, establecimientoId);
+    }
+  }, [showForm, empresaId, establecimientoId, uploadType]);
 
 
   // Modales y Toasts
@@ -448,6 +458,80 @@ export default function ProgramaGestion({ params }) {
     setLoading(false);
   };
 
+  const loadLegajoDocuments = async (empId, estId) => {
+    if (!empId) {
+      setLegajoDocuments([]);
+      return;
+    }
+    setLoadingLegajoDocs(true);
+    try {
+      if (isDevMode) {
+        // Mock de documentos en el legajo técnico para pruebas
+        const mockDocs = [
+          {
+            id: 'mock-legajo-1',
+            empresa_id: 'mock-empresa-1',
+            establecimiento_id: 'mock-est-1',
+            documento_nombre: 'Relevamiento General de Riesgos Laborales',
+            documento_url: 'mock-pdf-url',
+            fecha: '2026-06-10'
+          },
+          {
+            id: 'mock-legajo-2',
+            empresa_id: 'mock-empresa-1',
+            establecimiento_id: 'mock-est-1',
+            documento_nombre: 'Estudio de Ruido Ocupacional',
+            documento_url: 'mock-pdf-url',
+            fecha: '2026-06-12'
+          },
+          {
+            id: 'mock-legajo-3',
+            empresa_id: 'mock-empresa-1',
+            establecimiento_id: null,
+            documento_nombre: 'Plan de Capacitación Anual General',
+            documento_url: 'mock-pdf-url',
+            fecha: '2026-06-01'
+          },
+          {
+            id: 'mock-legajo-4',
+            empresa_id: 'mock-empresa-2',
+            establecimiento_id: 'mock-est-3',
+            documento_nombre: 'Certificado de Carga de Fuego',
+            documento_url: 'mock-pdf-url',
+            fecha: '2026-06-15'
+          }
+        ];
+        // Filtrar por empresa y (opcionalmente) por establecimiento
+        const filtered = mockDocs.filter(d => 
+          d.empresa_id === empId && 
+          (!estId || d.establecimiento_id === estId || d.establecimiento_id === null)
+        );
+        setLegajoDocuments(filtered);
+      } else {
+        // Consulta real a Supabase
+        const { data, error } = await supabase
+          .from('legajo_tecnico')
+          .select('id, documento_nombre, documento_url, fecha, establecimiento_id')
+          .eq('empresa_id', empId)
+          .order('fecha', { ascending: false });
+        
+        if (error) throw error;
+
+        // Filtrar en memoria para incluir los del establecimiento o los globales (null)
+        const filtered = (data || []).filter(d => 
+          !estId || d.establecimiento_id === estId || d.establecimiento_id === null
+        );
+
+        setLegajoDocuments(filtered);
+      }
+    } catch (err) {
+      console.error('Error al cargar documentos del legajo:', err);
+      triggerToast('Error al cargar documentos del legajo técnico.', 'error');
+    } finally {
+      setLoadingLegajoDocs(false);
+    }
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     if (typeof window !== 'undefined') {
@@ -456,13 +540,7 @@ export default function ProgramaGestion({ params }) {
     window.location.href = '/login';
   };
 
-  // Helper: formatear fecha YYYY-MM-DD → DD/MM/YYYY
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '';
-    const parts = dateStr.split('-');
-    if (parts.length !== 3) return dateStr;
-    return `${parts[2]}/${parts[1]}/${parts[0]}`;
-  };
+
 
   // 2. Lógica de cálculo dinámico de estados y alertas
   const getItemStatusAndColor = (item) => {
@@ -627,6 +705,7 @@ export default function ProgramaGestion({ params }) {
           setUploadType(newType);
           setDocumentoFile(null);
           setDriveLink('');
+          setSelectedLegajoDocUrl('');
           setConfirmModal({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Eliminar' });
         }
       });
@@ -634,6 +713,7 @@ export default function ProgramaGestion({ params }) {
       setUploadType(newType);
       setDocumentoFile(null);
       setDriveLink('');
+      setSelectedLegajoDocUrl('');
     }
   };
 
@@ -680,8 +760,8 @@ export default function ProgramaGestion({ params }) {
       setResponsableCustom('');
     }
     setProgreso(item.progreso || 0);
-    setFechaPlanificada(item.fecha_planificada || '');
-    setFechaRealizacion(item.fecha_realizacion || '');
+    setFechaPlanificada(formatDate(item.fecha_planificada) || '');
+    setFechaRealizacion(formatDate(item.fecha_realizacion) || '');
     setDocumentoUrl(item.documento_url || '');
     setDocumentoFile(null);
     setUploadType('local');
@@ -703,7 +783,7 @@ export default function ProgramaGestion({ params }) {
     setResponsableId('');
     setResponsableCustom('');
     setProgreso(0);
-    setFechaPlanificada(preselectedDate || new Date().toISOString().split('T')[0]);
+    setFechaPlanificada(formatDate(preselectedDate || new Date().toISOString().split('T')[0]));
     setFechaRealizacion('');
     setDocumentoUrl('');
     setDocumentoFile(null);
@@ -756,6 +836,11 @@ export default function ProgramaGestion({ params }) {
           }
           finalDocUrl = uploadData.filePath;
         }
+      } else if (uploadType === 'legajo') {
+        if (!selectedLegajoDocUrl) {
+          throw new Error('Debes seleccionar un documento del legajo técnico.');
+        }
+        finalDocUrl = selectedLegajoDocUrl;
       } else if (documentoFile) {
         if (isDevMode) {
           finalDocUrl = 'mock-uploaded-pdf-path';
@@ -796,8 +881,8 @@ export default function ProgramaGestion({ params }) {
         responsable_id: responsableId && responsableId !== '__custom__' ? responsableId : null,
         responsable: responsableId === '__custom__' ? responsableCustom.trim() : (miembros.find(m => m.id === responsableId)?.full_name || null),
         progreso: parseInt(progreso),
-        fecha_planificada: fechaPlanificada,
-        fecha_realizacion: fechaRealizacion || null,
+        fecha_planificada: convertToDbDate(fechaPlanificada) || null,
+        fecha_realizacion: convertToDbDate(fechaRealizacion) || null,
         documento_url: finalDocUrl || null,
         observaciones: observaciones || null,
         updated_at: new Date().toISOString()
@@ -902,6 +987,9 @@ export default function ProgramaGestion({ params }) {
     setDriveLink('');
     setObservaciones('');
     setFormErrors({});
+    setLegajoDocuments([]);
+    setSelectedLegajoDocUrl('');
+    setLoadingLegajoDocs(false);
   };
 
   const handleExitForm = () => {
@@ -951,7 +1039,7 @@ export default function ProgramaGestion({ params }) {
 
   // 8. Visualizar documento (PDF Storage o link externo)
   const handleViewPdf = async (path) => {
-    if (!path) return;
+    if (!path || path === 'N/A') return;
     if (isDevMode || path === 'mock-pdf-url' || path === 'mock-uploaded-pdf-path' || path === 'mock-drive-uploaded-pdf-path') {
       alert('Simulación: Abriendo documento en nueva pestaña.');
       return;
@@ -1016,7 +1104,7 @@ export default function ProgramaGestion({ params }) {
   };
 
   const handleDownloadPdf = async (url, filename) => {
-    if (!url) return;
+    if (!url || url === 'N/A') return;
     if (url.startsWith('http://') || url.startsWith('https://')) {
       window.open(url, '_blank');
     } else {
@@ -1114,7 +1202,7 @@ export default function ProgramaGestion({ params }) {
             <span className="text-xs font-semibold text-slate-500 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-150 hidden sm:inline-block">
               {tenant?.name || 'Cargando...'}
             </span>
-            <span className="px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider">
+            <span className={`px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider ${(!profile || profile.role === 'cliente') ? 'hidden' : ''}`} suppressHydrationWarning>
               {tenant?.plan_id ? (tenant.plan_id.toLowerCase() === 'libre' ? 'Plan Libre' : tenant.plan_id.toLowerCase().startsWith('standard') ? 'Plan Standard' : tenant.plan_id.toLowerCase().startsWith('basic') ? 'Plan Basic' : `Plan ${tenant.plan_id}`) : 'Plan Pro'}
             </span>
           </div>
@@ -1285,9 +1373,11 @@ export default function ProgramaGestion({ params }) {
                           F. Planificada
                         </label>
                         <input
-                          type="date"
+                          type="text"
+                          placeholder="DD/MM/YYYY"
+                          maxLength={10}
                           value={fechaPlanificada}
-                          onChange={(e) => setFechaPlanificada(e.target.value)}
+                          onChange={(e) => setFechaPlanificada(formatAsDateInput(e.target.value))}
                           className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono"
                         />
                         <p className="text-[9px] text-slate-400 mt-1 italic">Opcional. Si no se carga, el estado será "En análisis".</p>
@@ -1299,9 +1389,11 @@ export default function ProgramaGestion({ params }) {
                           F. Realización
                         </label>
                         <input
-                          type="date"
+                          type="text"
+                          placeholder="DD/MM/YYYY"
+                          maxLength={10}
                           value={fechaRealizacion}
-                          onChange={(e) => handleRealizacionChange(e.target.value)}
+                          onChange={(e) => handleRealizacionChange(formatAsDateInput(e.target.value))}
                           className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono"
                         />
                         <p className="text-[9px] text-slate-400 mt-1 italic">Si se carga, el progreso se fija al 100% y el estado a Vigente.</p>
@@ -1377,7 +1469,7 @@ export default function ProgramaGestion({ params }) {
                         </div>
                       ) : null}
 
-                      <div className="flex items-center gap-2 mb-2.5">
+                      <div className="flex items-center gap-2 mb-2.5 flex-wrap">
                         <button
                           type="button"
                           onClick={() => handleSwitchUploadType('local')}
@@ -1386,7 +1478,7 @@ export default function ProgramaGestion({ params }) {
                             : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                             }`}
                         >
-                          Archivo Local (PC/Celular)
+                          Archivo Local
                         </button>
                         <button
                           type="button"
@@ -1396,7 +1488,17 @@ export default function ProgramaGestion({ params }) {
                             : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                             }`}
                         >
-                          Enlace de Google Drive
+                          Enlace Drive
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSwitchUploadType('legajo')}
+                          className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer border ${uploadType === 'legajo'
+                            ? 'bg-[#468DFF]/10 text-[#468DFF] border-[#468DFF]/30'
+                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                            }`}
+                        >
+                          Legajo Técnico
                         </button>
                       </div>
 
@@ -1445,7 +1547,7 @@ export default function ProgramaGestion({ params }) {
                           </div>
                           <p className="text-[9px] text-slate-400 mt-1 italic">Solo formato PDF. Tamaño máximo de 10 MB.</p>
                         </>
-                      ) : (
+                      ) : uploadType === 'drive' ? (
                         <>
                           <input
                             type="url"
@@ -1458,6 +1560,38 @@ export default function ProgramaGestion({ params }) {
                             El archivo debe ser público en Drive ("Cualquier persona con el enlace"). Se convertirá y guardará automáticamente.
                           </p>
                         </>
+                      ) : (
+                        <div className="space-y-2">
+                          {!empresaId ? (
+                            <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-xl p-3 font-semibold">
+                              ⚠️ Debes seleccionar un Cliente / Razón Social para listar los documentos del legajo técnico.
+                            </p>
+                          ) : loadingLegajoDocs ? (
+                            <div className="flex items-center gap-2 text-xs text-slate-500 py-2">
+                              <Loader2 className="h-4 w-4 animate-spin text-[#468DFF] shrink-0" />
+                              Cargando documentos del legajo técnico...
+                            </div>
+                          ) : legajoDocuments.length === 0 ? (
+                            <p className="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-xl p-3 italic">
+                              No se encontraron documentos en el legajo técnico para este cliente.
+                            </p>
+                          ) : (
+                            <div>
+                              <select
+                                value={selectedLegajoDocUrl}
+                                onChange={(e) => setSelectedLegajoDocUrl(e.target.value)}
+                                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
+                              >
+                                <option value="">-- Selecciona un documento del legajo --</option>
+                                {legajoDocuments.map(doc => (
+                                  <option key={doc.id} value={doc.documento_url}>
+                                    {doc.documento_nombre} ({formatDate(doc.fecha)})
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
 
@@ -1481,7 +1615,7 @@ export default function ProgramaGestion({ params }) {
                     <button
                       type="button"
                       onClick={handleExitForm}
-                      className="px-5 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer"
+                      className="px-5 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-white hover:border-[#468DFF] transition-all active:scale-[0.98] cursor-pointer"
                     >
                       Salir
                     </button>

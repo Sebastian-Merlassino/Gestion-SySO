@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
-import { formatDate } from '@/lib/utils';
+import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import { 
   PlusCircle, 
   Search, 
@@ -38,7 +38,8 @@ import {
   ClipboardCheck,
   ChevronDown,
   ChevronUp,
-  Folder
+  Folder,
+  HelpCircle
 } from 'lucide-react';
 
 const FUENTE_OPTIONS = [
@@ -142,6 +143,7 @@ export default function AccionesCorrectivasPage({ params }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [isReadOnlyView, setIsReadOnlyView] = useState(false);
+  const [showRiskMatrix, setShowRiskMatrix] = useState(false);
 
   // Permisos granulares de edición
   const getSectionPermissions = (userProfile, sectionName) => {
@@ -392,26 +394,48 @@ export default function AccionesCorrectivasPage({ params }) {
       const { data: accs, error: accErr } = await accsQuery.order('created_at', { ascending: false });
       if (accErr) throw accErr;
 
-      // Resuelve URLs firmadas para las imágenes
-      const resolvedAcciones = await Promise.all((accs || []).map(async (acc) => {
+      // Recopilar paths de Supabase para firmar en lote (en una sola llamada de red)
+      const pathsToSign = [];
+      (accs || []).forEach(acc => {
+        if (acc.imagen_url && acc.imagen_url !== 'N/A') {
+          if (!acc.imagen_url.startsWith('http://') && !acc.imagen_url.startsWith('https://')) {
+            pathsToSign.push(acc.imagen_url);
+          }
+        }
+      });
+
+      let signedUrlsMap = {};
+      if (pathsToSign.length > 0) {
+        try {
+          const { data: signedData, error: signErr } = await supabase.storage
+            .from('documents')
+            .createSignedUrls(pathsToSign, 3600);
+          if (!signErr && signedData) {
+            signedData.forEach(item => {
+              if (item.signedUrl) {
+                signedUrlsMap[item.path] = item.signedUrl;
+              }
+            });
+          }
+        } catch (e) {
+          console.error('Error al firmar URLs en lote:', e);
+        }
+      }
+
+      const resolvedAcciones = (accs || []).map(acc => {
         let signedUrl = '';
-        if (acc.imagen_url) {
-          try {
-            const { data, error: signErr } = await supabase.storage
-              .from('documents')
-              .createSignedUrl(acc.imagen_url, 3600, { download: false }); // 1 hora de validez
-            if (!signErr && data) {
-              signedUrl = data.signedUrl;
-            }
-          } catch (e) {
-            console.error('Error resolviendo URL firmada:', e);
+        if (acc.imagen_url && acc.imagen_url !== 'N/A') {
+          if (acc.imagen_url.startsWith('http://') || acc.imagen_url.startsWith('https://')) {
+            signedUrl = acc.imagen_url;
+          } else {
+            signedUrl = signedUrlsMap[acc.imagen_url] || '';
           }
         }
         return {
           ...acc,
           imagen_preview_url: signedUrl
         };
-      }));
+      });
 
       setAcciones(resolvedAcciones);
       setLoading(false);
@@ -567,7 +591,7 @@ export default function AccionesCorrectivasPage({ params }) {
         empresa_id: empresaId,
         establecimiento_id: establecimientoId,
         fuente: dbFuente,
-        fecha: fecha,
+        fecha: convertToDbDate(fecha) || null,
         area_sector: areaSector || null,
         puesto_operacion: puestoOperacion || null,
         tipo_hallazgo: dbTipoHallazgo,
@@ -579,8 +603,8 @@ export default function AccionesCorrectivasPage({ params }) {
         causa_raiz: causaRaiz || null,
         accion_correctiva: accionCorrectiva || null,
         responsable: responsable || null,
-        fecha_planificada: fechaPlanificada || null,
-        fecha_implementacion: fechaImplementacion || null,
+        fecha_planificada: convertToDbDate(fechaPlanificada) || null,
+        fecha_implementacion: convertToDbDate(fechaImplementacion) || null,
         observaciones: observaciones || null,
         updated_at: new Date().toISOString()
       };
@@ -642,7 +666,7 @@ export default function AccionesCorrectivasPage({ params }) {
       setFuenteOtra(acc.fuente);
     }
 
-    setFecha(acc.fecha);
+    setFecha(formatDate(acc.fecha) || '');
     setAreaSector(acc.area_sector || '');
     setPuestoOperacion(acc.puesto_operacion || '');
 
@@ -667,8 +691,8 @@ export default function AccionesCorrectivasPage({ params }) {
     setCausaRaiz(acc.causa_raiz || '');
     setAccionCorrectiva(acc.accion_correctiva || '');
     setResponsable(acc.responsable || '');
-    setFechaPlanificada(acc.fecha_planificada || '');
-    setFechaImplementacion(acc.fecha_implementacion || '');
+    setFechaPlanificada(formatDate(acc.fecha_planificada) || '');
+    setFechaImplementacion(formatDate(acc.fecha_implementacion) || '');
     setObservaciones(acc.observaciones || '');
 
     setIsFormOpen(true);
@@ -897,7 +921,7 @@ export default function AccionesCorrectivasPage({ params }) {
             <span className="text-xs font-semibold text-slate-500 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-150 hidden sm:inline-block">
               {tenant?.name || 'Cargando...'}
             </span>
-            <span className="px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider">
+            <span className={`px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider ${(!profile || profile.role === 'cliente') ? 'hidden' : ''}`} suppressHydrationWarning>
               {tenant?.plan_id ? (tenant.plan_id.toLowerCase() === 'libre' ? 'Plan Libre' : tenant.plan_id.toLowerCase().startsWith('standard') ? 'Plan Standard' : tenant.plan_id.toLowerCase().startsWith('basic') ? 'Plan Basic' : `Plan ${tenant.plan_id}`) : 'Plan Pro'}
             </span>
           </div>
@@ -1019,18 +1043,30 @@ export default function AccionesCorrectivasPage({ params }) {
                           Fecha del Registro <span className="text-[#468DFF]">*</span>
                         </label>
                         <input
-                          type="date"
+                          type="text"
                           required
+                          placeholder="DD/MM/YYYY"
+                          maxLength={10}
                           value={fecha}
-                          onChange={(e) => setFecha(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
+                          onChange={(e) => setFecha(formatAsDateInput(e.target.value))}
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono"
                         />
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-600 block mb-1">
-                          Nivel de Riesgo <span className="text-[#468DFF]">*</span>
-                        </label>
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <label className="text-xs font-bold text-slate-600">
+                            Nivel de Riesgo <span className="text-[#468DFF]">*</span>
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => setShowRiskMatrix(true)}
+                            className="text-slate-400 hover:text-[#468DFF] transition-colors focus:outline-none flex items-center"
+                            title="Ver Método BS 8800"
+                          >
+                            <HelpCircle className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                         <select
                           required
                           value={nivelRiesgo}
@@ -1251,20 +1287,24 @@ export default function AccionesCorrectivasPage({ params }) {
                       <div className="space-y-1">
                         <label className="text-xs font-bold text-slate-600 block mb-1">Fecha Planificada (Plazo)</label>
                         <input
-                          type="date"
+                          type="text"
+                          placeholder="DD/MM/YYYY"
+                          maxLength={10}
                           value={fechaPlanificada}
-                          onChange={(e) => setFechaPlanificada(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
+                          onChange={(e) => setFechaPlanificada(formatAsDateInput(e.target.value))}
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono"
                         />
                       </div>
 
                       <div className="space-y-1">
                         <label className="text-xs font-bold text-slate-600 block mb-1">Fecha de Realización / Implementación</label>
                         <input
-                          type="date"
+                          type="text"
+                          placeholder="DD/MM/YYYY"
+                          maxLength={10}
                           value={fechaImplementacion}
-                          onChange={(e) => setFechaImplementacion(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
+                          onChange={(e) => setFechaImplementacion(formatAsDateInput(e.target.value))}
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono"
                         />
                       </div>
                     </div>
@@ -1288,7 +1328,7 @@ export default function AccionesCorrectivasPage({ params }) {
                         <button
                           type="button"
                           onClick={handleExitForm}
-                          className="px-5 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer"
+                          className="px-5 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-white hover:border-[#468DFF] transition-all active:scale-[0.98] cursor-pointer"
                         >
                           Salir
                         </button>
@@ -1668,6 +1708,47 @@ export default function AccionesCorrectivasPage({ params }) {
                   {modalAlert.confirmText || 'Confirmar'}
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Informativo Nivel de Riesgo (Método BS 8800) */}
+      {showRiskMatrix && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl border border-slate-150 shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-scale-up">
+            {/* Cabecera */}
+            <div className="px-6 py-4 bg-slate-50 border-b border-slate-150 flex items-center justify-between">
+              <h3 className="font-outfit text-base font-bold text-slate-900">
+                Nivel de Riesgo - Método BS 8800
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowRiskMatrix(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            {/* Cuerpo */}
+            <div className="p-6 overflow-y-auto flex items-center justify-center bg-slate-50/50">
+              <img
+                src="/assets/nivel-riesgo-bs-8800.png"
+                alt="Método BS 8800"
+                className="max-w-full max-h-[60vh] object-contain rounded-lg border border-slate-200 shadow-sm"
+              />
+            </div>
+            
+            {/* Pie de página */}
+            <div className="px-6 py-3 bg-slate-50 border-t border-slate-150 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowRiskMatrix(false)}
+                className="px-4 py-2 bg-slate-200 hover:bg-slate-350 text-slate-700 font-bold text-xs rounded-xl transition-all active:scale-[0.98] cursor-pointer"
+              >
+                Cerrar
+              </button>
             </div>
           </div>
         </div>

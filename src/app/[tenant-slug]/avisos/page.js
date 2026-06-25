@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
-import { formatDate } from '@/lib/utils';
+import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import { 
   PlusCircle, 
   Search, 
@@ -521,7 +521,7 @@ export default function AvisosRiesgoPage({ params }) {
   // Carga Automática de Hallazgos
   // ----------------------------------------------------
   useEffect(() => {
-    if (!empresaId || !establecimientoId || !fecha) {
+    if (!empresaId || !establecimientoId || !fecha || fecha.length < 10) {
       setLoadedFindings([]);
       return;
     }
@@ -529,11 +529,17 @@ export default function AvisosRiesgoPage({ params }) {
     const fetchFindings = async () => {
       setIsLoadingFindings(true);
       try {
+        const dbDate = convertToDbDate(fecha);
+        if (!dbDate) {
+          setLoadedFindings([]);
+          return;
+        }
+
         if (isDevMode) {
           const match = correctivas.filter(c => 
             c.empresa_id === empresaId && 
             c.establecimiento_id === establecimientoId && 
-            c.fecha === fecha
+            c.fecha === dbDate
           );
           setLoadedFindings(match);
         } else {
@@ -542,31 +548,53 @@ export default function AvisosRiesgoPage({ params }) {
             .select('*')
             .eq('empresa_id', empresaId)
             .eq('establecimiento_id', establecimientoId)
-            .eq('fecha', fecha);
+            .eq('fecha', dbDate);
           
           if (error) throw error;
           
-          // Resolver URLs de vista previa de imágenes
-          const resolvedData = await Promise.all((data || []).map(async (acc) => {
+          // Recopilar paths de Supabase para firmar en lote
+          const pathsToSign = [];
+          (data || []).forEach(acc => {
+            if (acc.imagen_url && acc.imagen_url !== 'N/A') {
+              if (!acc.imagen_url.startsWith('http://') && !acc.imagen_url.startsWith('https://')) {
+                pathsToSign.push(acc.imagen_url);
+              }
+            }
+          });
+
+          let signedUrlsMap = {};
+          if (pathsToSign.length > 0) {
+            try {
+              const { data: sData, error: sErr } = await supabase.storage
+                .from('documents')
+                .createSignedUrls(pathsToSign, 3600);
+              if (!sErr && sData) {
+                sData.forEach(item => {
+                  if (item.signedUrl) {
+                    signedUrlsMap[item.path] = item.signedUrl;
+                  }
+                });
+              }
+            } catch (e) {
+              console.error('Error al firmar URLs de hallazgos en lote:', e);
+            }
+          }
+
+          const resolvedData = (data || []).map(acc => {
             let signedUrl = '';
-            if (acc.imagen_url) {
-              try {
-                const { data: sData, error: sErr } = await supabase.storage
-                  .from('documents')
-                  .createSignedUrl(acc.imagen_url, 3600, { download: false });
-                if (!sErr && sData) {
-                  signedUrl = sData.signedUrl;
-                }
-              } catch (e) {
-                console.error('Error resolviendo url firmada de hallazgo:', e);
+            if (acc.imagen_url && acc.imagen_url !== 'N/A') {
+              if (acc.imagen_url.startsWith('http://') || acc.imagen_url.startsWith('https://')) {
+                signedUrl = acc.imagen_url;
+              } else {
+                signedUrl = signedUrlsMap[acc.imagen_url] || '';
               }
             }
             return {
               ...acc,
               imagen_preview_url: signedUrl
             };
-          }));
-          
+          });
+
           setLoadedFindings(resolvedData);
         }
       } catch (err) {
@@ -611,7 +639,7 @@ export default function AvisosRiesgoPage({ params }) {
     setEditingId(null);
     setEmpresaId('');
     setEstablecimientoId('');
-    setFecha(new Date().toISOString().split('T')[0]);
+    setFecha(formatDate(new Date().toISOString().split('T')[0]));
     // Auto-increment aviso_numero
     let nextNum = '0001';
     if (avisos.length > 0) {
@@ -649,7 +677,7 @@ export default function AvisosRiesgoPage({ params }) {
     setEditingId(av.id);
     setEmpresaId(av.empresa_id);
     setEstablecimientoId(av.establecimiento_id);
-    setFecha(av.fecha);
+    setFecha(formatDate(av.fecha) || '');
     setAvisoNumero(av.aviso_numero || '');
     setProfesionalTipo(av.profesional_tipo || 'miembro');
     setProfesionalNombre(av.profesional_nombre || '');
@@ -812,7 +840,7 @@ export default function AvisosRiesgoPage({ params }) {
         tenant_id: isDevMode ? 'mock-tenant' : tenant.id,
         empresa_id: empresaId,
         establecimiento_id: establecimientoId,
-        fecha,
+        fecha: convertToDbDate(fecha) || null,
         aviso_numero: avisoNumero,
         profesional_tipo: profesionalTipo,
         profesional_nombre: profesionalTipo === 'miembro' 
@@ -994,19 +1022,48 @@ export default function AvisosRiesgoPage({ params }) {
       }
 
       // Convertir imágenes de hallazgos a base64 firmadas
+      const pathsToSign = [];
+      if (!isDevMode) {
+        findings.forEach(f => {
+          if (f.imagen_url && f.imagen_url !== 'N/A') {
+            if (!f.imagen_url.startsWith('http://') && !f.imagen_url.startsWith('https://')) {
+              pathsToSign.push(f.imagen_url);
+            }
+          }
+        });
+      }
+
+      let signedUrlsMap = {};
+      if (pathsToSign.length > 0) {
+        try {
+          const { data: signedData, error: signErr } = await supabase.storage
+            .from('documents')
+            .createSignedUrls(pathsToSign, 3600);
+          if (!signErr && signedData) {
+            signedData.forEach(item => {
+              if (item.signedUrl) {
+                signedUrlsMap[item.path] = item.signedUrl;
+              }
+            });
+          }
+        } catch (e) {
+          console.error('Error al firmar URLs de hallazgos en lote para PDF:', e);
+        }
+      }
+
       const resolvedFindings = await Promise.all(findings.map(async (f) => {
         let base64 = '';
         let imgRatio = 1;
-        if (f.imagen_url) {
+        if (f.imagen_url && f.imagen_url !== 'N/A') {
           try {
             if (isDevMode) {
               base64 = await getBase64ImageFromUrl('/brand/logo-primary.png');
+            } else if (f.imagen_url.startsWith('http://') || f.imagen_url.startsWith('https://')) {
+              base64 = await getBase64ImageFromUrl(f.imagen_url);
             } else {
-              const { data: sData, error: sErr } = await supabase.storage
-                .from('documents')
-                .createSignedUrl(f.imagen_url, 3600);
-              if (!sErr && sData?.signedUrl) {
-                base64 = await getBase64ImageFromUrl(sData.signedUrl);
+              const signedUrl = signedUrlsMap[f.imagen_url];
+              if (signedUrl) {
+                base64 = await getBase64ImageFromUrl(signedUrl);
               }
             }
             if (base64) {
@@ -1794,7 +1851,7 @@ export default function AvisosRiesgoPage({ params }) {
             <span className="text-xs font-semibold text-slate-500 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-150 hidden sm:inline-block">
               {tenant?.name || 'Cargando...'}
             </span>
-            <span className="px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider">
+            <span className={`px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider ${(!profile || profile.role === 'cliente') ? 'hidden' : ''}`} suppressHydrationWarning>
               {tenant?.plan_id ? (tenant.plan_id.toLowerCase() === 'libre' ? 'Plan Libre' : tenant.plan_id.toLowerCase().startsWith('standard') ? 'Plan Standard' : tenant.plan_id.toLowerCase().startsWith('basic') ? 'Plan Basic' : `Plan ${tenant.plan_id}`) : 'Plan Pro'}
             </span>
           </div>
@@ -1891,11 +1948,13 @@ export default function AvisosRiesgoPage({ params }) {
                           Fecha <span className="text-[#468DFF]">*</span>
                         </label>
                         <input
-                          type="date"
-                          required
+                          type="text"
+                          placeholder="DD/MM/YYYY"
+                          maxLength={10}
                           value={fecha}
-                          onChange={(e) => setFecha(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50"
+                          onChange={(e) => setFecha(formatAsDateInput(e.target.value))}
+                          required
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 font-mono"
                         />
                       </div>
                     </div>
@@ -2082,7 +2141,7 @@ export default function AvisosRiesgoPage({ params }) {
                     <button
                       type="button"
                       onClick={handleExitForm}
-                      className="px-5 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all cursor-pointer"
+                      className="px-5 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-white hover:border-[#468DFF] transition-all cursor-pointer"
                     >
                       Salir
                     </button>

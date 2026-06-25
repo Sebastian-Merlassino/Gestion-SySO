@@ -3,7 +3,7 @@ import './globals.css';
 import Providers from './providers';
 
 export const metadata = {
-  title: 'Gestión SySO | SaaS de Seguridad y Salud Ocupacional',
+  title: 'Gestión SySO | App',
   description: 'Plataforma SaaS profesional para la gestión de seguridad, salud ocupacional e higiene industrial multi-tenant.',
   icons: {
     icon: '/brand/favicon.ico',
@@ -24,6 +24,7 @@ export default function RootLayout({ children }) {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+        <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body className="min-h-screen bg-slate-950 font-sans text-slate-100 antialiased selection:bg-slate-500/30">
         <Providers>
