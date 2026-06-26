@@ -1,5 +1,47 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-06-26] Reinstauración de Selectores de Fecha Híbridos en Formularios
+
+### Resumen de Cambios
+- **Entrada de Fecha Híbrida con Máscara e Icono**: Se implementó un patrón de diseño híbrido para inputs de fecha en todos los formularios de carga de datos (9 secciones). Este patrón conserva la máscara de texto `DD/MM/YYYY` en tiempo real (evitando problemas de locale de navegador) y agrega un icono de Lucide `Calendar` posicionado a la derecha que tiene un `<input type="date">` nativo invisible superpuesto.
+- **Acceso Directo al Datepicker del Sistema**: Al hacer clic sobre el icono de calendario, el usuario interactúa con el input nativo de tipo date, abriendo el selector de calendario propio del dispositivo. Al elegir la fecha, esta se inyecta en el campo de texto formateada automáticamente en `DD/MM/YYYY`.
+- **Estandarización de Accidentes y Nómina**: Se migraron los formularios de estas secciones que utilizaban inputs nativos directos `type="date"` a este nuevo patrón unificado con máscara, logrando homogeneidad visual y de comportamiento en todo el SaaS.
+- **Adaptación en Mapeos**:
+  - En [accidentes/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/accidentes/page.js) se actualizó `handleEditClick` para formatear los valores con `formatDate` antes de cargarlos.
+  - En [nomina/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/nomina/page.js) se adaptaron `resetForm` (formato local con padStart), `handleOpenEditForm` (`formatDate`) y `handleSaveForm` (conversión con `convertToDbDate`).
+
+### Decisiones Clave
+- **Mantener Experiencia Multidispositivo y Uniforme**: El truco del input date de opacidad cero superpuesto al icono permite utilizar los selectores de fecha nativos y eficientes de cada navegador/sistema operativo (incluyendo teclados móviles) sin incorporar librerías pesadas ni states de popover complejos, salvaguardando la máscara del input de texto.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+- `supabase`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+- `[MODIFY] src/app/[tenant-slug]/nomina/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación del proyecto (`cmd /c npm run build`) completada con éxito.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. El comportamiento se basa íntegramente en la plataforma web estándar y respeta la consistencia de tipos esperados por PostgreSQL.
+
+### Próximo Paso Recomendado
+- Realizar pruebas funcionales interactuando con los selectores tanto en escritorio como en dispositivos móviles (Android/iOS) para validar la responsividad y usabilidad.
+
+---
+
 ## [2026-06-25] Estandarización de Estados Vacíos, Selectores de Fecha y Corrección de Compilación
 
 ### Resumen de Cambios

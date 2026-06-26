@@ -303,7 +303,7 @@ export default function NominaPage({ params }) {
     setEmpresaId(profile?.role === 'cliente' ? (profile.empresa_id || '') : '');
     setEstablecimientoId('');
     const today = new Date();
-    setFechaCarga(`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`);
+    setFechaCarga(`${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`);
     setManualRows([{ id: 'temp-1', nombre_apellido: '', cuil: '', fecha_alta: '', area_sector: '', puesto: '' }]);
     setPreviewRows([]);
     setSelectedFileName('');
@@ -331,10 +331,10 @@ export default function NominaPage({ params }) {
     
     let cargaDate = '';
     if (item.fecha_carga) {
-      cargaDate = item.fecha_carga;
+      cargaDate = formatDate(item.fecha_carga);
     } else {
       const today = new Date();
-      cargaDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      cargaDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
     }
 
     setFechaCarga(cargaDate);
@@ -607,7 +607,7 @@ export default function NominaPage({ params }) {
       return;
     }
 
-    const dbFechaCarga = fechaCarga;
+    const dbFechaCarga = convertToDbDate(fechaCarga);
 
     setSaving(true);
     let payload = [];
@@ -1048,14 +1048,35 @@ export default function NominaPage({ params }) {
                       <label className="text-xs font-bold text-slate-600 block mb-1.5">
                         Fecha de Carga <span className="text-[#468DFF]">*</span>
                       </label>
-                      <input
-                        type="date"
-                        required
-                        value={fechaCarga}
-                        onChange={(e) => setFechaCarga(e.target.value)}
-                        disabled={editingId !== null}
-                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white text-slate-700 transition-all font-semibold disabled:opacity-80 disabled:text-slate-400"
-                      />
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="DD/MM/YYYY"
+                          maxLength={10}
+                          required
+                          value={fechaCarga}
+                          onChange={(e) => setFechaCarga(formatAsDateInput(e.target.value))}
+                          disabled={editingId !== null}
+                          className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white text-slate-700 transition-all font-mono disabled:opacity-80 disabled:text-slate-400"
+                        />
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
+                          <Calendar className="h-4 w-4" />
+                          <input
+                            type="date"
+                            disabled={editingId !== null}
+                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val) {
+                                const parts = val.split('-');
+                                if (parts.length === 3) {
+                                  setFechaCarga(`${parts[2]}/${parts[1]}/${parts[0]}`);
+                                }
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
                     </div>
 
                   </div>

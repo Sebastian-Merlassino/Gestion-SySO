@@ -743,9 +743,9 @@ export default function AccidentesPage({ params }) {
     setPuestoOperacion(acc.puesto_operacion || '');
     setNombreApellido(acc.nombre_apellido || '');
     setCuil(acc.cuil || '');
-    setFechaSiniestro(acc.fecha_siniestro || '');
+    setFechaSiniestro(formatDate(acc.fecha_siniestro) || '');
     setHora(acc.hora || '');
-    setFechaDenuncia(acc.fecha_denuncia || '');
+    setFechaDenuncia(formatDate(acc.fecha_denuncia) || '');
     setNroSiniestro(acc.nro_siniestro || '');
     setTipo(acc.tipo || '');
     setGravedad(acc.gravedad || '');
@@ -755,7 +755,7 @@ export default function AccidentesPage({ params }) {
     setZonaCuerpoId(acc.zona_cuerpo_id || '');
     setAgenteMaterialId(acc.agente_material_id || '');
     setDiagnostico(acc.diagnostico || '');
-    setFechaAltaRechazo(acc.fecha_alta_rechazo || '');
+    setFechaAltaRechazo(formatDate(acc.fecha_alta_rechazo) || '');
     setObservaciones(acc.observaciones || '');
     // Archivos
     setDenunciaUrl(acc.denuncia_accidente_url || '');
@@ -1019,12 +1019,34 @@ export default function AccidentesPage({ params }) {
                         {/* Fecha siniestro */}
                         <div>
                           <label className="block text-xs font-bold text-slate-600 mb-1.5">Fecha siniestro / reingreso</label>
-                          <input
-                            type="date"
-                            value={fechaSiniestro}
-                            onChange={e => setFechaSiniestro(e.target.value)}
-                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all disabled:opacity-70 disabled:bg-slate-50/50 text-slate-700"
-                          />
+                          <div className="relative">
+                            <input
+                              type="text"
+                              placeholder="DD/MM/YYYY"
+                              maxLength={10}
+                              value={fechaSiniestro}
+                              onChange={e => setFechaSiniestro(formatAsDateInput(e.target.value))}
+                              disabled={isFormDisabled}
+                              className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all disabled:opacity-70 disabled:bg-slate-50/50 font-mono"
+                            />
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
+                              <Calendar className="h-4 w-4" />
+                              <input
+                                type="date"
+                                disabled={isFormDisabled}
+                                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                onChange={e => {
+                                  const val = e.target.value;
+                                  if (val) {
+                                    const parts = val.split('-');
+                                    if (parts.length === 3) {
+                                      setFechaSiniestro(`${parts[2]}/${parts[1]}/${parts[0]}`);
+                                    }
+                                  }
+                                }}
+                              />
+                            </div>
+                          </div>
                         </div>
 
                         {/* Hora */}
@@ -1041,12 +1063,34 @@ export default function AccidentesPage({ params }) {
                         {/* Fecha de denuncia */}
                         <div>
                           <label className="block text-xs font-bold text-slate-600 mb-1.5">Fecha de denuncia</label>
-                          <input
-                            type="date"
-                            value={fechaDenuncia}
-                            onChange={e => setFechaDenuncia(e.target.value)}
-                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all disabled:opacity-70 disabled:bg-slate-50/50 text-slate-700"
-                          />
+                          <div className="relative">
+                            <input
+                              type="text"
+                              placeholder="DD/MM/YYYY"
+                              maxLength={10}
+                              value={fechaDenuncia}
+                              onChange={e => setFechaDenuncia(formatAsDateInput(e.target.value))}
+                              disabled={isFormDisabled}
+                              className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all disabled:opacity-70 disabled:bg-slate-50/50 font-mono"
+                            />
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
+                              <Calendar className="h-4 w-4" />
+                              <input
+                                type="date"
+                                disabled={isFormDisabled}
+                                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                onChange={e => {
+                                  const val = e.target.value;
+                                  if (val) {
+                                    const parts = val.split('-');
+                                    if (parts.length === 3) {
+                                      setFechaDenuncia(`${parts[2]}/${parts[1]}/${parts[0]}`);
+                                    }
+                                  }
+                                }}
+                              />
+                            </div>
+                          </div>
                         </div>
 
                         {/* N° de siniestro */}
@@ -1205,12 +1249,34 @@ export default function AccidentesPage({ params }) {
                         {/* Fecha de alta / rechazo */}
                         <div>
                           <label className="block text-xs font-bold text-slate-600 mb-1.5">Fecha de alta / rechazo</label>
-                          <input
-                            type="date"
-                            value={fechaAltaRechazo}
-                            onChange={e => setFechaAltaRechazo(e.target.value)}
-                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all disabled:opacity-70 disabled:bg-slate-50/50 text-slate-700"
-                          />
+                          <div className="relative">
+                            <input
+                              type="text"
+                              placeholder="DD/MM/YYYY"
+                              maxLength={10}
+                              value={fechaAltaRechazo}
+                              onChange={e => setFechaAltaRechazo(formatAsDateInput(e.target.value))}
+                              disabled={isFormDisabled}
+                              className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all disabled:opacity-70 disabled:bg-slate-50/50 font-mono"
+                            />
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
+                              <Calendar className="h-4 w-4" />
+                              <input
+                                type="date"
+                                disabled={isFormDisabled}
+                                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                onChange={e => {
+                                  const val = e.target.value;
+                                  if (val) {
+                                    const parts = val.split('-');
+                                    if (parts.length === 3) {
+                                      setFechaAltaRechazo(`${parts[2]}/${parts[1]}/${parts[0]}`);
+                                    }
+                                  }
+                                }}
+                              />
+                            </div>
+                          </div>
                         </div>
 
                         {/* Días de baja (calculado) */}

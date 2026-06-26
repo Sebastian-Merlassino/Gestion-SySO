@@ -1185,30 +1185,66 @@ export default function CapacitacionPage({ params }) {
                         <label className="text-xs font-bold text-slate-600 block mb-1">
                           Fecha Inicio Planificada <span className="text-[#468DFF]">*</span>
                         </label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="DD/MM/YYYY"
-                          maxLength={10}
-                          value={fechaInicioPlanificada}
-                          onChange={(e) => setFechaInicioPlanificada(formatAsDateInput(e.target.value))}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 font-mono"
-                        />
+                        <div className="relative">
+                          <input
+                            type="text"
+                            required
+                            placeholder="DD/MM/YYYY"
+                            maxLength={10}
+                            value={fechaInicioPlanificada}
+                            onChange={(e) => setFechaInicioPlanificada(formatAsDateInput(e.target.value))}
+                            className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 font-mono"
+                          />
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
+                            <Calendar className="h-4 w-4" />
+                            <input
+                              type="date"
+                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val) {
+                                  const parts = val.split('-');
+                                  if (parts.length === 3) {
+                                    setFechaInicioPlanificada(`${parts[2]}/${parts[1]}/${parts[0]}`);
+                                  }
+                                }
+                              }}
+                            />
+                          </div>
+                        </div>
                       </div>
 
                       <div className="space-y-1">
                         <label className="text-xs font-bold text-slate-600 block mb-1">
                           Fecha Fin Planificada <span className="text-[#468DFF]">*</span>
                         </label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="DD/MM/YYYY"
-                          maxLength={10}
-                          value={fechaFinPlanificada}
-                          onChange={(e) => setFechaFinPlanificada(formatAsDateInput(e.target.value))}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 font-mono"
-                        />
+                        <div className="relative">
+                          <input
+                            type="text"
+                            required
+                            placeholder="DD/MM/YYYY"
+                            maxLength={10}
+                            value={fechaFinPlanificada}
+                            onChange={(e) => setFechaFinPlanificada(formatAsDateInput(e.target.value))}
+                            className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 font-mono"
+                          />
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
+                            <Calendar className="h-4 w-4" />
+                            <input
+                              type="date"
+                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val) {
+                                  const parts = val.split('-');
+                                  if (parts.length === 3) {
+                                    setFechaFinPlanificada(`${parts[2]}/${parts[1]}/${parts[0]}`);
+                                  }
+                                }
+                              }}
+                            />
+                          </div>
+                        </div>
                       </div>
 
                       <div className="space-y-1">
