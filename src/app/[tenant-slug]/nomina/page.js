@@ -7,6 +7,7 @@ import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import * as XLSX from 'xlsx';
+import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
 import {
   PlusCircle,
   Search,
@@ -104,13 +105,9 @@ export default function NominaPage({ params }) {
   // Modality B: Excel source & parsed rows
   const [uploadType, setUploadType] = useState('local'); // 'local', 'drive', 'legajo'
   const [selectedFileName, setSelectedFileName] = useState('');
-  const [driveLink, setDriveLink] = useState('');
   const [selectedLegajoPath, setSelectedLegajoPath] = useState('');
-  const [importingDrive, setImportingDrive] = useState(false);
   const [loadingLegajoFile, setLoadingLegajoFile] = useState(false);
   const [previewRows, setPreviewRows] = useState([]);
-  const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (tenantSlug) {
@@ -307,7 +304,6 @@ export default function NominaPage({ params }) {
     setManualRows([{ id: 'temp-1', nombre_apellido: '', cuil: '', fecha_alta: '', area_sector: '', puesto: '' }]);
     setPreviewRows([]);
     setSelectedFileName('');
-    setDriveLink('');
     setSelectedLegajoPath('');
   };
 
@@ -391,32 +387,7 @@ export default function NominaPage({ params }) {
     setManualRows(prev => prev.map(r => r.id === id ? { ...r, [field]: value } : r));
   };
 
-  // DRAG & DROP HANDLERS
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-        setSelectedFileName(file.name);
-        parseExcelFile(file);
-      } else {
-        triggerToast('Solo se permiten archivos de Excel (.xlsx, .xls).', 'error');
-      }
-    }
-  };
-
-  const handleLocalFileChange = (e) => {
-    const file = e.target.files[0];
+  const handleLocalFileChange = (file) => {
     if (!file) return;
     setSelectedFileName(file.name);
     parseExcelFile(file);
@@ -528,40 +499,33 @@ export default function NominaPage({ params }) {
     triggerToast('Plantilla Excel descargada.');
   };
 
-  const handleDriveImport = async () => {
-    if (!driveLink) {
+  const handleDriveImport = async (link) => {
+    if (!link) {
       triggerToast('Ingresa un enlace de Google Drive.', 'error');
       return;
     }
-    setImportingDrive(true);
-    try {
-      const res = await fetch('/api/download-excel', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: driveLink, tenantId: tenant.id })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Error al descargar de Drive.');
+    const res = await fetch('/api/download-excel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: link, tenantId: tenant.id })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al descargar de Drive.');
 
-      const binaryString = window.atob(data.fileBase64);
-      const len = binaryString.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
-
-      const workbook = XLSX.read(bytes.buffer, { type: 'array', cellDates: true });
-      const sheetName = workbook.SheetNames[0];
-      const sheet = workbook.Sheets[sheetName];
-      const rows = XLSX.utils.sheet_to_json(sheet);
-      processExcelRows(rows);
-      triggerToast('Planilla de Drive descargada y analizada.');
-    } catch (err) {
-      console.error(err);
-      triggerToast(err.message || 'Error al procesar Google Drive.', 'error');
-    } finally {
-      setImportingDrive(false);
+    const binaryString = window.atob(data.fileBase64);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
     }
+
+    const workbook = XLSX.read(bytes.buffer, { type: 'array', cellDates: true });
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(sheet);
+    processExcelRows(rows);
+    setSelectedFileName('Plantilla de Drive importada');
+    triggerToast('Planilla de Drive descargada y analizada.', 'success');
   };
 
   const handleLegajoSelect = async (path) => {
@@ -1222,107 +1186,32 @@ export default function NominaPage({ params }) {
                       </button>
                     </div>
 
-                    {/* Source selection */}
-                    <div className="flex gap-2 border-b border-slate-100">
-                      {[
+                    <DocumentUploadZone
+                      label="Planilla de Personal"
+                      file={null}
+                      fileName={selectedFileName}
+                      onFileChange={handleLocalFileChange}
+                      onDriveImport={handleDriveImport}
+                      disabled={isFormDisabled}
+                      accept=".xlsx,.xls"
+                      onToast={triggerToast}
+                      uploadType={uploadType}
+                      setUploadType={(newType) => {
+                        setUploadType(newType);
+                        setPreviewRows([]);
+                        setSelectedFileName('');
+                        setSelectedLegajoPath('');
+                      }}
+                      showTabs={true}
+                      tabs={[
                         { id: 'local', name: 'Archivo Local' },
                         { id: 'drive', name: 'Enlace Drive' },
                         { id: 'legajo', name: 'Desde Legajo Técnico' }
-                      ].map(tab => (
-                        <button
-                          key={tab.id}
-                          type="button"
-                          onClick={() => {
-                            setUploadType(tab.id);
-                            setPreviewRows([]);
-                            setSelectedFileName('');
-                            setDriveLink('');
-                            setSelectedLegajoPath('');
-                          }}
-                          className={`pb-2 px-3 text-[11px] font-bold border-b-2 transition-all cursor-pointer ${
-                            uploadType === tab.id
-                              ? 'border-[#468DFF] text-[#468DFF]'
-                              : 'border-transparent text-slate-400 hover:text-slate-600'
-                          }`}
-                        >
-                          {tab.name}
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Source panels */}
-                    <div>
-                      {uploadType === 'local' ? (
-                        <>
-                          <div
-                            onDragOver={handleDragOver}
-                            onDragLeave={handleDragLeave}
-                            onDrop={handleDrop}
-                            className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${
-                              isDragging 
-                                ? 'border-[#468DFF] bg-[#468DFF]/5' 
-                                : 'border-slate-200 bg-slate-50/50 hover:bg-slate-50'
-                            }`}
-                          >
-                            <input
-                              type="file"
-                              ref={fileInputRef}
-                              onChange={handleLocalFileChange}
-                              accept=".xlsx,.xls"
-                              className="hidden"
-                            />
-                            <div className="flex flex-col items-center justify-center gap-2">
-                              <Upload className="h-8 w-8 text-slate-400 shrink-0" />
-                              <span className="text-sm text-slate-600 font-semibold">
-                                Arrastrá tu archivo Excel aquí o
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => fileInputRef.current.click()}
-                                className="bg-[#468DFF]/10 text-[#468DFF] hover:bg-[#468DFF]/20 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
-                              >
-                                seleccionar archivo
-                              </button>
-                              {selectedFileName && (
-                                <span className="text-xs text-slate-500 font-semibold mt-2 truncate max-w-[250px] block">
-                                  Seleccionado: {selectedFileName}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <p className="text-[9px] text-slate-400 mt-1 italic">Formatos permitidos: .xlsx, .xls. Tamaño máximo de 10 MB.</p>
-                        </>
-                      ) : uploadType === 'drive' ? (
+                      ]}
+                    >
+                      {uploadType === 'legajo' && (
                         <div className="space-y-2">
-                          <label className="text-xs font-bold text-slate-600 block">Pegar enlace compartido de Google Drive</label>
-                          <div className="flex gap-2">
-                            <input
-                              type="text"
-                              placeholder="https://docs.google.com/spreadsheets/d/... o https://drive.google.com/file/d/..."
-                              value={driveLink}
-                              onChange={(e) => setDriveLink(e.target.value)}
-                              className="flex-grow border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-semibold"
-                            />
-                            <button
-                              type="button"
-                              onClick={handleDriveImport}
-                              disabled={importingDrive || !driveLink}
-                              className="bg-[#468DFF] hover:bg-[#0511F2] text-white px-4 py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-50 cursor-pointer flex items-center gap-1.5 shrink-0"
-                            >
-                              {importingDrive ? (
-                                <>
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                  <span>Descargando...</span>
-                                </>
-                              ) : (
-                                <span>Importar</span>
-                              )}
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-slate-600 block">Elegir planilla desde el Legajo Técnico</label>
+                          <label className="text-xs font-bold text-slate-600 block mb-1">Elegir planilla desde el Legajo Técnico</label>
                           {legajoFiles.length === 0 ? (
                             <div className="border border-slate-150 rounded-2xl p-6 text-center text-xs font-bold text-slate-400 bg-slate-50/30 flex flex-col items-center justify-center gap-2">
                               <FolderOpen className="h-8 w-8 text-slate-300" />
@@ -1352,7 +1241,7 @@ export default function NominaPage({ params }) {
                           )}
                         </div>
                       )}
-                    </div>
+                    </DocumentUploadZone>
 
                     {/* Excel rows preview */}
                     {previewRows.length > 0 && (

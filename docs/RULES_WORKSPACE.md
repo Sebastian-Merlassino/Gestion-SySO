@@ -82,6 +82,7 @@ Respetar siempre:
 - una sola familia tipográfica definida en `docs/brand/TYPOGRAPHY.md`
 - diseño responsive para web, tablet y celular
 - referencia estructural de dashboard en `docs/design/reference/dashboard-reference.jpg`
+- diseño estándar de carga de documentos (`DocumentUploadZone`): contenedor de bordes redondeados (`rounded-xl border border-slate-200 bg-slate-50`), pestañas de alternancia superior para local/Drive (`flex border-b border-slate-200 bg-white text-xs font-semibold`), y zona de arrastre punteada reactiva.
 
 No alterar:
 - proporciones de logos;

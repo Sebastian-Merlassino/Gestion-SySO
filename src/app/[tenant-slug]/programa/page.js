@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
+import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
 import {
   Calendar,
   List,
@@ -71,37 +72,8 @@ export default function ProgramaGestion({ params }) {
   });
   const [tenant, setTenant] = useState(null);
 
-  // Estados y Refs para Drag and Drop
-  const fileInputRef = useRef(null);
-  const [isDragging, setIsDragging] = useState(false);
+  // Estados y Refs para Carga de Archivos
   const [selectedFileName, setSelectedFileName] = useState('');
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    if (!canEdit) return;
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    if (!canEdit) return;
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    if (!canEdit) return;
-    setIsDragging(false);
-    const files = e.dataTransfer.files;
-    if (files && files.length > 0) {
-      const file = files[0];
-      if (file.type === "application/pdf") {
-        handleFileChangeWithConfirm(file);
-        setSelectedFileName(file.name);
-      } else {
-        triggerToast('Solo se permiten archivos PDF', 'error');
-      }
-    }
-  };
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [isReadOnlyView, setIsReadOnlyView] = useState(false);
@@ -693,50 +665,15 @@ export default function ProgramaGestion({ params }) {
     }
   };
 
-  // Cambiar tipo de carga con aviso si ya hay documento guardado
   const handleSwitchUploadType = (newType) => {
-    if (documentoUrl && newType !== uploadType) {
-      setConfirmModal({
-        show: true,
-        title: 'Reemplazar documento existente',
-        message: 'Ya hay un documento guardado. Si cambiás el método de carga y guardás, el documento actual será reemplazado. ¿Querés continuar?',
-        confirmText: 'Continuar',
-        onConfirm: () => {
-          setUploadType(newType);
-          setDocumentoFile(null);
-          setDriveLink('');
-          setSelectedLegajoDocUrl('');
-          setConfirmModal({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Eliminar' });
-        }
-      });
-    } else {
-      setUploadType(newType);
-      setDocumentoFile(null);
-      setDriveLink('');
-      setSelectedLegajoDocUrl('');
-    }
+    setUploadType(newType);
+    setDocumentoFile(null);
+    setSelectedLegajoDocUrl('');
   };
 
-  // Seleccionar archivo local con aviso si ya hay documento guardado
-  const handleFileChangeWithConfirm = (file) => {
-    if (!file) return;
-    if (documentoUrl) {
-      setConfirmModal({
-        show: true,
-        title: 'Reemplazar documento existente',
-        message: `Ya hay un documento guardado. Al guardar el formulario con este nuevo archivo ("${file.name}"), el documento anterior será reemplazado. ¿Confirmás el reemplazo?`,
-        confirmText: 'Reemplazar',
-        onConfirm: () => {
-          setDocumentoFile(file);
-          setSelectedFileName(file.name);
-          setDocumentoUrl(''); // Limpiar la URL anterior para reflejar el reemplazo
-          setConfirmModal({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Eliminar' });
-        }
-      });
-    } else {
-      setDocumentoFile(file);
-      setSelectedFileName(file.name);
-    }
+  const handleFileChange = (file) => {
+    setDocumentoFile(file);
+    setSelectedFileName(file ? file.name : '');
   };
 
   // 5. Cargar para Editar
@@ -764,8 +701,6 @@ export default function ProgramaGestion({ params }) {
     setFechaRealizacion(formatDate(item.fecha_realizacion) || '');
     setDocumentoUrl(item.documento_url || '');
     setDocumentoFile(null);
-    setUploadType('local');
-    setDriveLink('');
     setObservaciones(item.observaciones || '');
     setFormErrors({});
     setShowForm(true);
@@ -787,8 +722,6 @@ export default function ProgramaGestion({ params }) {
     setFechaRealizacion('');
     setDocumentoUrl('');
     setDocumentoFile(null);
-    setUploadType('local');
-    setDriveLink('');
     setObservaciones('');
     setFormErrors({});
     setShowForm(true);
@@ -815,28 +748,7 @@ export default function ProgramaGestion({ params }) {
       let finalDocUrl = documentoUrl;
 
       // 1. Si hay un nuevo archivo cargado, subirlo
-      if (uploadType === 'drive' && driveLink) {
-        if (isDevMode) {
-          finalDocUrl = 'mock-drive-uploaded-pdf-path';
-        } else {
-          // Call server-side API to download and upload Drive URL
-          const uploadRes = await fetch('/api/upload-from-url', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              url: driveLink,
-              tenantId: tenant.id
-            })
-          });
-          const uploadData = await uploadRes.json();
-          if (!uploadRes.ok || uploadData.error) {
-            throw new Error(uploadData.error || 'Error al importar desde Google Drive.');
-          }
-          finalDocUrl = uploadData.filePath;
-        }
-      } else if (uploadType === 'legajo') {
+      if (uploadType === 'legajo') {
         if (!selectedLegajoDocUrl) {
           throw new Error('Debes seleccionar un documento del legajo técnico.');
         }
@@ -845,15 +757,6 @@ export default function ProgramaGestion({ params }) {
         if (isDevMode) {
           finalDocUrl = 'mock-uploaded-pdf-path';
         } else {
-          // Validar formato PDF
-          if (documentoFile.type !== 'application/pdf') {
-            throw new Error('Solo se permiten archivos en formato PDF.');
-          }
-          // Validar tamaño (10MB)
-          if (documentoFile.size > 10 * 1024 * 1024) {
-            throw new Error('El archivo PDF no debe superar los 10 MB.');
-          }
-
           const fileExt = 'pdf';
           const fileId = editingId || crypto.randomUUID();
           const filePath = `${profile.id}/programa_${fileId}.${fileExt}`;
@@ -983,8 +886,6 @@ export default function ProgramaGestion({ params }) {
     setFechaRealizacion('');
     setDocumentoUrl('');
     setDocumentoFile(null);
-    setUploadType('local');
-    setDriveLink('');
     setObservaciones('');
     setFormErrors({});
     setLegajoDocuments([]);
@@ -1505,130 +1406,63 @@ export default function ProgramaGestion({ params }) {
                         </div>
                       ) : null}
 
-                      <div className="flex items-center gap-2 mb-2.5 flex-wrap">
-                        <button
-                          type="button"
-                          onClick={() => handleSwitchUploadType('local')}
-                          className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer border ${uploadType === 'local'
-                            ? 'bg-[#468DFF]/10 text-[#468DFF] border-[#468DFF]/30'
-                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                            }`}
-                        >
-                          Archivo Local
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleSwitchUploadType('drive')}
-                          className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer border ${uploadType === 'drive'
-                            ? 'bg-[#468DFF]/10 text-[#468DFF] border-[#468DFF]/30'
-                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                            }`}
-                        >
-                          Enlace Drive
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleSwitchUploadType('legajo')}
-                          className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer border ${uploadType === 'legajo'
-                            ? 'bg-[#468DFF]/10 text-[#468DFF] border-[#468DFF]/30'
-                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                            }`}
-                        >
-                          Legajo Técnico
-                        </button>
-                      </div>
-
-                      {uploadType === 'local' ? (
-                        <>
-                          <div
-                            onDragOver={handleDragOver}
-                            onDragLeave={handleDragLeave}
-                            onDrop={handleDrop}
-                            className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${
-                              isDragging 
-                                ? 'border-[#468DFF] bg-[#468DFF]/5' 
-                                : 'border-slate-200 bg-slate-50/50 hover:bg-slate-50'
-                            }`}
-                          >
-                            <input
-                              type="file"
-                              ref={fileInputRef}
-                              onChange={(e) => {
-                                const file = e.target.files[0];
-                                if (file) {
-                                  handleFileChangeWithConfirm(file);
-                                }
-                              }}
-                              accept=".pdf"
-                              className="hidden"
-                            />
-                            <div className="flex flex-col items-center justify-center gap-2">
-                              <Upload className="h-8 w-8 text-slate-400 shrink-0" />
-                              <span className="text-sm text-slate-600">
-                                Arrastrá tu archivo aquí o
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => fileInputRef.current.click()}
-                                className="bg-[#468DFF]/10 text-[#468DFF] hover:bg-[#468DFF]/20 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
-                              >
-                                seleccionar archivo
-                              </button>
-                              {selectedFileName && (
-                                <span className="text-xs text-slate-500 font-semibold mt-2 truncate max-w-[200px] block">
-                                  Seleccionado: {selectedFileName}
-                                </span>
-                              )}
-                            </div>
+                      <DocumentUploadZone
+                        label="Documento de Respaldo"
+                        file={documentoFile}
+                        fileName={selectedFileName}
+                        url={documentoUrl}
+                        onFileChange={handleFileChange}
+                        onDriveImportSuccess={(filePath) => {
+                          setDocumentoUrl(filePath);
+                          setSelectedFileName('Archivo de Drive importado');
+                        }}
+                        onViewPdf={handleViewPdf}
+                        disabled={!canEdit}
+                        tenantId={tenant?.id}
+                        onToast={triggerToast}
+                        uploadType={uploadType}
+                        setUploadType={handleSwitchUploadType}
+                        showTabs={true}
+                        tabs={[
+                          { id: 'local', name: 'Archivo Local' },
+                          { id: 'drive', name: 'Enlace Drive' },
+                          { id: 'legajo', name: 'Legajo Técnico' }
+                        ]}
+                      >
+                        {uploadType === 'legajo' && (
+                          <div className="space-y-2">
+                            {!empresaId ? (
+                              <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-xl p-3 font-semibold">
+                                ⚠️ Debes seleccionar un Cliente / Razón Social para listar los documentos del legajo técnico.
+                              </p>
+                            ) : loadingLegajoDocs ? (
+                              <div className="flex items-center gap-2 text-xs text-slate-500 py-2">
+                                <Loader2 className="h-4 w-4 animate-spin text-[#468DFF] shrink-0" />
+                                Cargando documentos del legajo técnico...
+                              </div>
+                            ) : legajoDocuments.length === 0 ? (
+                              <p className="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-xl p-3 italic">
+                                No se encontraron documentos en el legajo técnico para este cliente.
+                              </p>
+                            ) : (
+                              <div>
+                                <select
+                                  value={selectedLegajoDocUrl}
+                                  onChange={(e) => setSelectedLegajoDocUrl(e.target.value)}
+                                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer font-semibold"
+                                >
+                                  <option value="">-- Selecciona un documento del legajo --</option>
+                                  {legajoDocuments.map(doc => (
+                                    <option key={doc.id} value={doc.documento_url}>
+                                      {doc.documento_nombre} ({formatDate(doc.fecha)})
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
                           </div>
-                          <p className="text-[9px] text-slate-400 mt-1 italic">Solo formato PDF. Tamaño máximo de 10 MB.</p>
-                        </>
-                      ) : uploadType === 'drive' ? (
-                        <>
-                          <input
-                            type="url"
-                            placeholder="Pega el enlace compartido de Google Drive..."
-                            value={driveLink}
-                            onChange={(e) => setDriveLink(e.target.value)}
-                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
-                          />
-                          <p className="text-[9px] text-slate-400 mt-1 italic">
-                            El archivo debe ser público en Drive ("Cualquier persona con el enlace"). Se convertirá y guardará automáticamente.
-                          </p>
-                        </>
-                      ) : (
-                        <div className="space-y-2">
-                          {!empresaId ? (
-                            <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-xl p-3 font-semibold">
-                              ⚠️ Debes seleccionar un Cliente / Razón Social para listar los documentos del legajo técnico.
-                            </p>
-                          ) : loadingLegajoDocs ? (
-                            <div className="flex items-center gap-2 text-xs text-slate-500 py-2">
-                              <Loader2 className="h-4 w-4 animate-spin text-[#468DFF] shrink-0" />
-                              Cargando documentos del legajo técnico...
-                            </div>
-                          ) : legajoDocuments.length === 0 ? (
-                            <p className="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-xl p-3 italic">
-                              No se encontraron documentos en el legajo técnico para este cliente.
-                            </p>
-                          ) : (
-                            <div>
-                              <select
-                                value={selectedLegajoDocUrl}
-                                onChange={(e) => setSelectedLegajoDocUrl(e.target.value)}
-                                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
-                              >
-                                <option value="">-- Selecciona un documento del legajo --</option>
-                                {legajoDocuments.map(doc => (
-                                  <option key={doc.id} value={doc.documento_url}>
-                                    {doc.documento_nombre} ({formatDate(doc.fecha)})
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                          )}
-                        </div>
-                      )}
+                        )}
+                      </DocumentUploadZone>
                     </div>
 
                     {/* 9. Observaciones */}

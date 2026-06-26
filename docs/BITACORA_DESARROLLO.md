@@ -1,5 +1,75 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-06-26] Estructura de Legajo Técnico: Incorporación de ATS, Nómina de Personal e Índice Interactiva
+
+### Resumen de Cambios
+- **Incorporación de ATS en Programa de Higiene y Seguridad**: Se incorporó la subcarpeta "Análisis de trabajo seguro (ATS)" dentro del Programa de Higiene y Seguridad en el Trabajo en la configuración jerárquica del explorador de Legajo Técnico. Esto habilita a los usuarios a clasificar y subir documentos correspondientes a esta tipología.
+- **Nueva Carpeta "Nómina de Personal"**: Se añadió una nueva carpeta a nivel raíz en el Legajo Técnico denominada "Nómina de Personal" con el pictograma de `Users`, permitiendo archivar constancias de nómina en este directorio de forma aislada y organizada.
+- **Pictograma de Ayuda e Índice Completo**: Se incorporó un botón con el icono de ayuda `HelpCircle` directamente en el contenedor de las migas de pan (breadcrumbs) que dice "Legajo Técnico", posicionado justo encima de la grilla de carpetas. Al hacer clic, abre un modal responsivo que presenta en dos columnas la estructura jerárquica total de carpetas y subcarpetas activas, sirviendo de guía para el usuario.
+
+### Decisiones Clave
+- **Definición de Categorías Flexibles**: Al estructurar las carpetas en frontend (`LEGAJO_FOLDERS`) sin restricciones rígidas a nivel de Postgres en Supabase (donde `categoria` y `subcategoria` son simples textos), se garantiza la retrocompatibilidad y la rapidez al añadir nuevos nodos a la taxonomía documental.
+- **Uso de Help Modal vs Tooltip**: Para un índice extenso de más de 20 carpetas y subcarpetas, un modal flotante centralizado y estructurado en cuadrículas proporciona una legibilidad y usabilidad infinitamente superior a un tooltip clásico.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación completa de producción (`cmd /c npm run build`) ejecutada con total éxito y cero advertencias de empaquetado ni errores sintácticos en Next.js.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. El almacenamiento de archivos y la base de datos operan de forma nativa con los nuevos nombres de categoría y subcategoría bajo RLS.
+
+### Próximo Paso Recomendado
+- Realizar pruebas manuales de carga de un documento de prueba en la nueva subcarpeta "Análisis de trabajo seguro (ATS)" y en la carpeta "Nómina de Personal" para confirmar el flujo de guardado y visualización.
+
+---
+
+## [2026-06-26] Estandarización Global del Contenedor de Carga de Documentos (DocumentUploadZone)
+
+### Resumen de Cambios
+- **Estandarización de Interfaz de Carga**: Se estableció un diseño estándar para las zonas de carga de archivos basado en el contenedor del módulo de Accidentes. Se deﬁnió la estética unificada con bordes dashed, estados de arrastre (drag-and-drop), pestañas de origen (Local / Google Drive) e indicadores de previsualización.
+- **Componente Reutilizable `DocumentUploadZone`**: Se extrajo la lógica en un componente común y configurable en [DocumentUploadZone.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/components/ui/DocumentUploadZone.js). Soporta validación de tipo de archivo y tamaño límite en el cliente, importación asincrónica de Google Drive (o reenvío al manejador del padre), y control bidireccional del tipo de pestaña activa.
+- **Integración de Tres Pestañas**: Se extendió `DocumentUploadZone` para admitir de forma nativa pestañas adicionales (como "Legajo Técnico" / "Desde Legajo Técnico") y paneles personalizados pasados como `children`, logrando que todo el contenedor y su cabecera compartan la misma estética uniforme.
+- **Migración de Módulos Operativos**:
+  - **Accidentes**: Migrado a [DocumentUploadZone](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/components/ui/DocumentUploadZone.js) simplificando el control de estados locales.
+  - **Legajo Técnico**: Reemplazó la carga personalizada de PDFs. Se corrigió un error de sintaxis en el flujo de guardado (`} else if (documentoFile) {` residual) en [legajo/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/legajo/page.js) restableciendo el condicional a un `if` directo tras remover la importación de Drive en submit.
+  - **Programa Anual**: Integrado con el componente en [programa/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/programa/page.js), unificando las pestañas (Local, Drive y Legajo Técnico) dentro de la misma interfaz gráfica estándar del cargador.
+  - **Nómina de Personal**: Integrado con el componente en [nomina/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/nomina/page.js), unificando las pestañas (Local, Drive y Desde Legajo Técnico) e importando archivos Excel locales/remotos mediante la grilla de procesamiento.
+- **Documentación de Estándares**: Se documentó el estándar y sus clases de estilos CSS de marca en [RULES_WORKSPACE.md](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/docs/RULES_WORKSPACE.md), [BRAND_GUIDELINES.md](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/docs/brand/BRAND_GUIDELINES.md), y la skill [.agents/skills/gestion-syso-brand-guidelines/SKILL.md](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/.agents/skills/gestion-syso-brand-guidelines/SKILL.md).
+
+### Decisiones Clave
+- **Reducción de Código Redundante**: Extraer las políticas de validación en el cliente (extensiones, tipos mime, tamaño) evita lógica repetida en 4 pantallas distintas y asegura un comportamiento coherente ante errores de carga.
+- **Abstracción de Children y Tabs Custom**: Al permitir definir un array de `tabs` personalizado y capturar opciones adicionales mediante `children` de React, el componente es sumamente flexible y asume la unificación visual de toda la barra de pestañas, logrando consistencia visual absoluta en todo el SaaS.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+- `webapp-testing`
+
+### Archivos Modificados / Creados
+- `[NEW] src/components/ui/DocumentUploadZone.js`
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/nomina/page.js`
+- `[MODIFY] docs/RULES_WORKSPACE.md`
+- `[MODIFY] docs/brand/BRAND_GUIDELINES.md`
+- `[MODIFY] .agents/skills/gestion-syso-brand-guidelines/SKILL.md`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación completa de producción (`cmd /c npm run build`) finalizada con éxito de extremo a extremo sin errores de empaquetado ni de sintaxis.
+
+---
+
 ## [2026-06-26] Reinstauración de Selectores de Fecha Híbridos en Formularios
 
 ### Resumen de Cambios

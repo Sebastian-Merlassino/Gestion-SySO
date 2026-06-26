@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
+import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
 import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import {
@@ -90,110 +91,7 @@ const GRAVEDAD_GUIA = [
   },
 ];
 
-// ── Componente de zona de carga de PDF ───────────────────────────────────
-const PdfUploadZone = ({
-  label, uploadType, setUploadType,
-  file, fileName, url, driveLink, setDriveLink,
-  isDragging,
-  onDragOver, onDragLeave, onDrop,
-  onFileChange, inputRef,
-  onDriveImport, uploading,
-  onViewPdf, signedUrl,
-  disabled,
-}) => (
-  <div className="rounded-xl border border-slate-200 bg-slate-50 overflow-hidden">
-    <div className="flex border-b border-slate-200 bg-white text-xs font-semibold">
-      <button
-        type="button"
-        onClick={() => setUploadType('local')}
-        className={`flex-1 py-2 transition-colors ${uploadType === 'local' ? 'bg-[#468DFF] text-white' : 'text-slate-500 hover:text-slate-700'}`}
-      >
-        Archivo Local
-      </button>
-      <button
-        type="button"
-        onClick={() => setUploadType('drive')}
-        className={`flex-1 py-2 transition-colors ${uploadType === 'drive' ? 'bg-[#468DFF] text-white' : 'text-slate-500 hover:text-slate-700'}`}
-      >
-        Enlace Drive
-      </button>
-    </div>
-
-    <div className="p-3">
-      {uploadType === 'local' ? (
-        <div
-          onDragOver={onDragOver}
-          onDragLeave={onDragLeave}
-          onDrop={onDrop}
-          onClick={() => !disabled && inputRef.current?.click()}
-          className={`relative border-2 border-dashed rounded-xl p-4 text-center transition-all
-            ${isDragging ? 'border-[#468DFF] bg-blue-50' : 'border-slate-200 bg-white hover:border-[#468DFF] hover:bg-blue-50/30'}
-            ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
-        >
-          <input
-            ref={inputRef}
-            type="file"
-            accept="application/pdf"
-            className="hidden"
-            disabled={disabled}
-            onChange={e => onFileChange(e.target.files?.[0])}
-          />
-          {fileName ? (
-            <div className="flex items-center gap-2 justify-center text-sm text-slate-700">
-              <FileText className="h-4 w-4 text-[#468DFF]" />
-              <span className="font-medium truncate max-w-[200px]">{fileName}</span>
-              {(url || signedUrl) && (
-                <button
-                  type="button"
-                  onClick={e => { e.stopPropagation(); onViewPdf(signedUrl || url); }}
-                  className="text-[#468DFF] hover:text-[#0511F2] flex items-center gap-1"
-                >
-                  <Eye className="h-3.5 w-3.5" />
-                </button>
-              )}
-            </div>
-          ) : (
-            <div>
-              <Upload className="h-6 w-6 text-slate-400 mx-auto mb-1" />
-              <p className="text-xs text-slate-500">
-                {isDragging ? 'Soltá el archivo aquí' : 'Arrastrá o hacé clic para seleccionar un PDF'}
-              </p>
-              <p className="text-[10px] text-slate-400 mt-0.5">Máx. 10 MB</p>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="space-y-2">
-          <div className="flex gap-2">
-            <input
-              type="url"
-              value={driveLink}
-              onChange={e => setDriveLink(e.target.value)}
-              disabled={disabled}
-              placeholder="https://drive.google.com/..."
-              className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#468DFF] disabled:opacity-60"
-            />
-            <button
-              type="button"
-              onClick={onDriveImport}
-              disabled={disabled || uploading || !driveLink}
-              className="px-3 py-2 bg-[#468DFF] text-white rounded-lg text-xs font-semibold hover:bg-[#0511F2] transition-colors disabled:opacity-50 flex items-center gap-1"
-            >
-              {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <ExternalLink className="h-3 w-3" />}
-              Importar
-            </button>
-          </div>
-          {fileName && (
-            <div className="flex items-center gap-2 text-xs text-slate-600">
-              <Check className="h-3.5 w-3.5 text-green-500" />
-              <span>{fileName}</span>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  </div>
-);
+// PdfUploadZone removed in favor of reusable DocumentUploadZone component
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 function calcDiasBaja(fechaSiniestro, fechaAlta) {
@@ -263,24 +161,14 @@ export default function AccidentesPage({ params }) {
   const [observaciones, setObservaciones] = useState('');
 
   // ── Archivos PDF — Denuncia ───────────────────────────────────────────────
-  const [denunciaUploadType, setDenunciaUploadType] = useState('local');
   const [denunciaFile, setDenunciaFile] = useState(null);
   const [denunciaFileName, setDenunciaFileName] = useState('');
   const [denunciaUrl, setDenunciaUrl] = useState('');
-  const [denunciaDriveLink, setDenunciaDriveLink] = useState('');
-  const [isDraggingDenuncia, setIsDraggingDenuncia] = useState(false);
-  const [uploadingDenuncia, setUploadingDenuncia] = useState(false);
-  const denunciaInputRef = useRef(null);
 
   // ── Archivos PDF — Informe Investigación ─────────────────────────────────
-  const [informeUploadType, setInformeUploadType] = useState('local');
   const [informeFile, setInformeFile] = useState(null);
   const [informeFileName, setInformeFileName] = useState('');
   const [informeUrl, setInformeUrl] = useState('');
-  const [informeDriveLink, setInformeDriveLink] = useState('');
-  const [isDraggingInforme, setIsDraggingInforme] = useState(false);
-  const [uploadingInforme, setUploadingInforme] = useState(false);
-  const informeInputRef = useRef(null);
 
   // ── Filtros ───────────────────────────────────────────────────────────────
   const [filterText, setFilterText] = useState('');
@@ -558,77 +446,14 @@ export default function AccidentesPage({ params }) {
   const getAgenteName = (id) => agentesMateriales.find(a => a.id === id)?.nombre || '—';
 
   // ── Manejo de archivos PDF ────────────────────────────────────────────────
-  const validatePdfFile = (file) => {
-    if (!file) return false;
-    if (file.type !== 'application/pdf') { triggerToast('Solo se permiten archivos PDF.', 'error'); return false; }
-    if (file.size > 10 * 1024 * 1024) { triggerToast('El PDF no debe superar los 10 MB.', 'error'); return false; }
-    return true;
-  };
-
-  // Denuncia handlers
   const handleDenunciaFileChange = (file) => {
-    if (!validatePdfFile(file)) return;
     setDenunciaFile(file);
-    setDenunciaFileName(file.name);
-  };
-  const handleDenunciaDragOver = (e) => { e.preventDefault(); if (!isFormDisabled) setIsDraggingDenuncia(true); };
-  const handleDenunciaDragLeave = () => setIsDraggingDenuncia(false);
-  const handleDenunciaDrop = (e) => {
-    e.preventDefault(); setIsDraggingDenuncia(false);
-    if (!isFormDisabled && e.dataTransfer.files[0]) handleDenunciaFileChange(e.dataTransfer.files[0]);
-  };
-  const handleDenunciaDriveImport = async () => {
-    if (!denunciaDriveLink) { triggerToast('Ingresá un enlace de Google Drive.', 'error'); return; }
-    setUploadingDenuncia(true);
-    try {
-      const res = await fetch('/api/upload-from-url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: denunciaDriveLink, tenantId: tenant?.id }),
-      });
-      const data = await res.json();
-      if (!res.ok || data.error) throw new Error(data.error || 'Error al importar desde Drive.');
-      setDenunciaUrl(data.filePath);
-      setDenunciaFileName('Archivo de Drive importado');
-      triggerToast('Denuncia importada desde Google Drive.', 'success');
-    } catch (err) {
-      triggerToast(err.message || 'Error al importar desde Drive.', 'error');
-    } finally {
-      setUploadingDenuncia(false);
-    }
+    setDenunciaFileName(file ? file.name : '');
   };
 
-  // Informe handlers
   const handleInformeFileChange = (file) => {
-    if (!validatePdfFile(file)) return;
     setInformeFile(file);
-    setInformeFileName(file.name);
-  };
-  const handleInformeDragOver = (e) => { e.preventDefault(); if (!isFormDisabled) setIsDraggingInforme(true); };
-  const handleInformeDragLeave = () => setIsDraggingInforme(false);
-  const handleInformeDrop = (e) => {
-    e.preventDefault(); setIsDraggingInforme(false);
-    if (!isFormDisabled && e.dataTransfer.files[0]) handleInformeFileChange(e.dataTransfer.files[0]);
-  };
-  const handleInformeDriveImport = async () => {
-    if (!informeDriveLink) { triggerToast('Ingresá un enlace de Google Drive.', 'error'); return; }
-    setUploadingInforme(true);
-    try {
-      const res = await fetch('/api/upload-from-url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: informeDriveLink, tenantId: tenant?.id }),
-      });
-      const data = await res.json();
-      if (!res.ok || data.error) throw new Error(data.error || 'Error al importar desde Drive.');
-      setInformeUrl(data.filePath);
-      setInformeFileName('Archivo de Drive importado');
-      triggerToast('Informe importado desde Google Drive.', 'success');
-    } catch (err) {
-      triggerToast(err.message || 'Error al importar desde Drive.', 'error');
-    } finally {
-      setUploadingInforme(false);
-    }
+    setInformeFileName(file ? file.name : '');
   };
 
   // Subir PDF a storage
@@ -821,8 +646,8 @@ export default function AccidentesPage({ params }) {
     setNroSiniestro(''); setTipo(''); setGravedad(''); setDescripcionHechos('');
     setFormaAccidenteId(''); setDescripcionLesionId(''); setZonaCuerpoId(''); setAgenteMaterialId('');
     setDiagnostico(''); setFechaAltaRechazo(''); setDiasBaja(null); setObservaciones('');
-    setDenunciaFile(null); setDenunciaFileName(''); setDenunciaUrl(''); setDenunciaDriveLink(''); setDenunciaUploadType('local');
-    setInformeFile(null); setInformeFileName(''); setInformeUrl(''); setInformeDriveLink(''); setInformeUploadType('local');
+    setDenunciaFile(null); setDenunciaFileName(''); setDenunciaUrl('');
+    setInformeFile(null); setInformeFileName(''); setInformeUrl('');
   };
 
   // ── Navegación del sidebar ────────────────────────────────────────────────
@@ -1317,52 +1142,42 @@ export default function AccidentesPage({ params }) {
                         {/* Denuncia de accidente */}
                         <div>
                           <label className="block text-xs font-bold text-slate-600 mb-2">Denuncia de accidente</label>
-                          <PdfUploadZone
+                          <DocumentUploadZone
                             label="Denuncia de accidente"
-                            uploadType={denunciaUploadType}
-                            setUploadType={setDenunciaUploadType}
                             file={denunciaFile}
                             fileName={denunciaFileName}
                             url={denunciaUrl}
-                            driveLink={denunciaDriveLink}
-                            setDriveLink={setDenunciaDriveLink}
-                            isDragging={isDraggingDenuncia}
-                            onDragOver={handleDenunciaDragOver}
-                            onDragLeave={handleDenunciaDragLeave}
-                            onDrop={handleDenunciaDrop}
-                            onFileChange={handleDenunciaFileChange}
-                            inputRef={denunciaInputRef}
-                            onDriveImport={handleDenunciaDriveImport}
-                            uploading={uploadingDenuncia}
-                            onViewPdf={handleViewPdf}
                             signedUrl={editingId ? accidentes.find(a => a.id === editingId)?.denuncia_signed_url : ''}
+                            onFileChange={handleDenunciaFileChange}
+                            onDriveImportSuccess={(filePath) => {
+                              setDenunciaUrl(filePath);
+                              setDenunciaFileName('Archivo de Drive importado');
+                            }}
+                            onViewPdf={handleViewPdf}
                             disabled={isFormDisabled}
+                            tenantId={tenant?.id}
+                            onToast={triggerToast}
                           />
                         </div>
 
                         {/* Informe de investigación */}
                         <div>
                           <label className="block text-xs font-bold text-slate-600 mb-2">Informe de investigación de accidente</label>
-                          <PdfUploadZone
+                          <DocumentUploadZone
                             label="Informe de investigación"
-                            uploadType={informeUploadType}
-                            setUploadType={setInformeUploadType}
                             file={informeFile}
                             fileName={informeFileName}
                             url={informeUrl}
-                            driveLink={informeDriveLink}
-                            setDriveLink={setInformeDriveLink}
-                            isDragging={isDraggingInforme}
-                            onDragOver={handleInformeDragOver}
-                            onDragLeave={handleInformeDragLeave}
-                            onDrop={handleInformeDrop}
-                            onFileChange={handleInformeFileChange}
-                            inputRef={informeInputRef}
-                            onDriveImport={handleInformeDriveImport}
-                            uploading={uploadingInforme}
-                            onViewPdf={handleViewPdf}
                             signedUrl={editingId ? accidentes.find(a => a.id === editingId)?.informe_signed_url : ''}
+                            onFileChange={handleInformeFileChange}
+                            onDriveImportSuccess={(filePath) => {
+                              setInformeUrl(filePath);
+                              setInformeFileName('Archivo de Drive importado');
+                            }}
+                            onViewPdf={handleViewPdf}
                             disabled={isFormDisabled}
+                            tenantId={tenant?.id}
+                            onToast={triggerToast}
                           />
                         </div>
                       </div>

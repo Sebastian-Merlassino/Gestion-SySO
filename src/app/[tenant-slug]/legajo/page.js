@@ -6,9 +6,11 @@ import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
+import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
 import { 
   Folder, 
   FolderOpen, 
+  HelpCircle,
   FileText, 
   Search, 
   PlusCircle, 
@@ -137,7 +139,8 @@ const LEGAJO_FOLDERS = [
       { id: 'inspecciones_auditorias', name: 'Check List, Inspecciones y Auditorías internas', docTypes: ['Inspección Visual de Instalaciones Eléctricas (trimestral)', 'Control trimestral de Extintores', 'Programa de mantenimiento preventivo y correctivo de instalaciones eléctricas', 'Programa de mantenimiento preventivo y correctivo de máquinas y equipos (Aparatos para izar, Ascensores y Montacargas, Calderas y recipientes a presión, etc.)', 'Programa de mantenimiento preventivo y correctivo de sistema de extracción, ductos cañerías, filtros, campanas, etc.'] },
       { id: 'constancias_visita_prog', name: 'Constancias de visita', docTypes: ['Constancia de visita'] },
       { id: 'avisos_riesgo_prog', name: 'Avisos de riesgo', docTypes: ['Aviso de riesgo'] },
-      { id: 'seguimiento_correctivas', name: 'Seguimiento de acciones correctivas', docTypes: ['Plan de Acciones Correctivas'] }
+      { id: 'seguimiento_correctivas', name: 'Seguimiento de acciones correctivas', docTypes: ['Plan de Acciones Correctivas'] },
+      { id: 'ats', name: 'Análisis de trabajo seguro (ATS)', docTypes: ['Análisis de trabajo seguro (ATS)', 'ATS'] }
     ]
   },
   {
@@ -234,6 +237,12 @@ const LEGAJO_FOLDERS = [
     name: 'Actas de inspección',
     icon: 'FileCheck',
     docTypes: []
+  },
+  {
+    id: 'nomina_personal',
+    name: 'Nómina de Personal',
+    icon: 'Users',
+    docTypes: ['Nómina de Personal']
   }
 ];
 
@@ -314,14 +323,8 @@ export default function LegajoPage({ params }) {
   const [fecha, setFecha] = useState('');
   
   // Subida de archivos
-  const [uploadType, setUploadType] = useState('local'); // 'local' o 'drive'
-  const [driveLink, setDriveLink] = useState('');
   const [documentoFile, setDocumentoFile] = useState(null);
   const [documentoUrl, setDocumentoUrl] = useState('');
-
-  // Estados y Refs para Drag and Drop
-  const fileInputRef = useRef(null);
-  const [isDragging, setIsDragging] = useState(false);
   const [selectedFileName, setSelectedFileName] = useState('');
 
   // Filtros de listado
@@ -336,6 +339,7 @@ export default function LegajoPage({ params }) {
   // Alertas, Toast y Modales
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', type: 'info', onConfirm: null, confirmText: 'Confirmar' });
+  const [showIndexModal, setShowIndexModal] = useState(false);
 
   // Estados de ordenamiento
   const [sortField, setSortField] = useState('fecha');
@@ -574,51 +578,10 @@ export default function LegajoPage({ params }) {
     return list.filter(d => d.categoria === folder.name && d.subcategoria === subfolder.name).length;
   };
 
-  // Switch de tipo de subida
-  const handleSwitchUploadType = (type) => {
-    setUploadType(type);
-  };
-
   const handleFileChange = (file) => {
-    if (!file) return;
-    if (file.type !== 'application/pdf') {
-      triggerToast('Solo se permiten archivos en formato PDF.', 'error');
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      triggerToast('El archivo PDF no debe superar los 10 MB.', 'error');
-      return;
-    }
     setDocumentoFile(file);
-    setSelectedFileName(file.name);
+    setSelectedFileName(file ? file.name : '');
   };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    if (!canEdit) return;
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    if (!canEdit) return;
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    if (!canEdit) return;
-    setIsDragging(false);
-    const files = e.dataTransfer.files;
-    if (files && files.length > 0) {
-      handleFileChange(files[0]);
-    }
-  };
-
-  useEffect(() => {
-    if (!documentoFile) {
-      setSelectedFileName('');
-    }
-  }, [documentoFile]);
 
   // Inicializar nuevo registro
   const handleAddNew = () => {
@@ -629,8 +592,6 @@ export default function LegajoPage({ params }) {
     setEmpresaId(profile?.role === 'cliente' ? profile.empresa_id : '');
     setEstablecimientoId('');
     setFecha(formatDate(new Date().toISOString().split('T')[0]));
-    setUploadType('local');
-    setDriveLink('');
     setDocumentoFile(null);
     setDocumentoUrl('');
     setDocumentoCustom('');
@@ -695,7 +656,6 @@ export default function LegajoPage({ params }) {
     setDocumentoNombre('');
     setDocumentoCustom('');
     setFecha('');
-    setDriveLink('');
     setDocumentoFile(null);
     setDocumentoUrl('');
   };
@@ -718,15 +678,7 @@ export default function LegajoPage({ params }) {
       setDocumentoCustom(doc.documento_nombre);
     }
 
-    if (doc.documento_url.startsWith('http://') || doc.documento_url.startsWith('https://')) {
-      setUploadType('drive');
-      setDriveLink(doc.documento_url);
-      setDocumentoUrl(doc.documento_url);
-    } else {
-      setUploadType('local');
-      setDriveLink('');
-      setDocumentoUrl(doc.documento_url);
-    }
+    setDocumentoUrl(doc.documento_url);
     setDocumentoFile(null);
     setIsFormOpen(true);
   };
@@ -789,7 +741,7 @@ export default function LegajoPage({ params }) {
       return;
     }
 
-    if (!documentoUrl && !documentoFile && !(uploadType === 'drive' && driveLink)) {
+    if (!documentoUrl && !documentoFile) {
       triggerToast('Debes adjuntar un archivo PDF o ingresar un enlace de Google Drive.', 'error');
       return;
     }
@@ -797,30 +749,7 @@ export default function LegajoPage({ params }) {
     setSaving(true);
     try {
       let finalDocUrl = documentoUrl;
-
-      // Subida de archivos
-      if (uploadType === 'drive' && driveLink) {
-        if (isDevMode) {
-          finalDocUrl = 'mock-drive-uploaded-pdf-path';
-        } else {
-          // Utilizar API de subida desde URL existente
-          const uploadRes = await fetch('/api/upload-from-url', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              url: driveLink,
-              tenantId: tenant.id
-            })
-          });
-          const uploadData = await uploadRes.json();
-          if (!uploadRes.ok || uploadData.error) {
-            throw new Error(uploadData.error || 'Error al importar desde Google Drive.');
-          }
-          finalDocUrl = uploadData.filePath;
-        }
-      } else if (documentoFile) {
+      if (documentoFile) {
         if (isDevMode) {
           finalDocUrl = 'mock-uploaded-pdf-path';
         } else {
@@ -1294,90 +1223,21 @@ export default function LegajoPage({ params }) {
                       ) : null}
 
                       {!documentoUrl && (
-                        <>
-                          <div className="flex items-center gap-2 mb-3">
-                            <button
-                              type="button"
-                              onClick={() => handleSwitchUploadType('local')}
-                              className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer border ${uploadType === 'local'
-                                ? 'bg-[#468DFF]/10 text-[#468DFF] border-[#468DFF]/30'
-                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                                }`}
-                            >
-                              Archivo Local (PC/Celular)
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleSwitchUploadType('drive')}
-                              className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer border ${uploadType === 'drive'
-                                ? 'bg-[#468DFF]/10 text-[#468DFF] border-[#468DFF]/30'
-                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                                }`}
-                            >
-                              Enlace de Google Drive
-                            </button>
-                          </div>
-
-                          {uploadType === 'local' ? (
-                            <>
-                              <div
-                                onDragOver={handleDragOver}
-                                onDragLeave={handleDragLeave}
-                                onDrop={handleDrop}
-                                className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${
-                                  isDragging 
-                                    ? 'border-[#468DFF] bg-[#468DFF]/5' 
-                                    : 'border-slate-200 bg-slate-50/50 hover:bg-slate-50'
-                                }`}
-                              >
-                                <input
-                                  type="file"
-                                  ref={fileInputRef}
-                                  onChange={(e) => {
-                                    const file = e.target.files[0];
-                                    if (file) {
-                                      handleFileChange(file);
-                                    }
-                                  }}
-                                  accept=".pdf"
-                                  className="hidden"
-                                />
-                                <div className="flex flex-col items-center justify-center gap-2">
-                                  <Upload className="h-8 w-8 text-slate-400 shrink-0" />
-                                  <span className="text-sm text-slate-600">
-                                    Arrastrá tu archivo aquí o
-                                  </span>
-                                  <button
-                                    type="button"
-                                    onClick={() => fileInputRef.current.click()}
-                                    className="bg-[#468DFF]/10 text-[#468DFF] hover:bg-[#468DFF]/20 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
-                                  >
-                                    seleccionar archivo
-                                  </button>
-                                  {selectedFileName && (
-                                    <span className="text-xs text-slate-500 font-semibold mt-2 truncate max-w-[200px] block">
-                                      Seleccionado: {selectedFileName}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                              <p className="text-[9px] text-slate-400 mt-1 italic">Solo formato PDF. Tamaño máximo de 10 MB.</p>
-                            </>
-                          ) : (
-                            <>
-                              <input
-                                type="url"
-                                placeholder="Pega el enlace compartido de Google Drive..."
-                                value={driveLink}
-                                onChange={(e) => setDriveLink(e.target.value)}
-                                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all animate-fade-in"
-                              />
-                              <p className="text-[9px] text-slate-400 mt-1 italic">
-                                El archivo debe ser público en Drive ("Cualquier persona con el enlace"). Se importará automáticamente.
-                              </p>
-                            </>
-                          )}
-                        </>
+                        <DocumentUploadZone
+                          label="Documento"
+                          file={documentoFile}
+                          fileName={selectedFileName}
+                          url={documentoUrl}
+                          onFileChange={handleFileChange}
+                          onDriveImportSuccess={(filePath) => {
+                            setDocumentoUrl(filePath);
+                            setSelectedFileName('Archivo de Drive importado');
+                          }}
+                          onViewPdf={handleViewPdf}
+                          disabled={!canEdit}
+                          tenantId={tenant?.id}
+                          onToast={triggerToast}
+                        />
                       )}
                     </div>
 
@@ -1448,6 +1308,14 @@ export default function LegajoPage({ params }) {
                   >
                     <Archive className="h-4 w-4 text-[#468DFF]" />
                     <span>Legajo Técnico</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowIndexModal(true)}
+                    className="p-1 rounded-lg text-slate-400 hover:text-[#468DFF] hover:bg-slate-50 transition-all cursor-pointer shrink-0 flex items-center justify-center"
+                    title="Ver índice de carpetas"
+                  >
+                    <HelpCircle className="h-3.5 w-3.5" />
                   </button>
 
                   {currentFolder && (
@@ -1903,6 +1771,68 @@ export default function LegajoPage({ params }) {
                   {modalAlert.confirmText || 'Confirmar'}
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DEL ÍNDICE DE CARPETAS Y SUBCARPETAS */}
+      {showIndexModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xl max-w-2xl w-full animate-scale-up flex flex-col max-h-[85vh]">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 shrink-0">
+              <div className="flex items-center gap-2">
+                <HelpCircle className="h-5 w-5 text-[#468DFF]" />
+                <h3 className="font-outfit text-base md:text-lg font-bold text-slate-900">
+                  Índice de Carpetas y Subcarpetas
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowIndexModal(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto py-4 flex-1 space-y-4 pr-1 scrollbar-thin">
+              <p className="text-xs text-slate-500">
+                A continuación se detalla la estructura jerárquica de carpetas y subcarpetas definida para el Legajo Técnico de la plataforma:
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {LEGAJO_FOLDERS.map((folder) => (
+                  <div key={folder.id} className="border border-slate-150 rounded-xl p-3 bg-slate-50/50">
+                    <div className="flex items-center gap-2 font-bold text-slate-900 text-xs">
+                      <FolderIconHelper name={folder.icon} className="h-4 w-4 text-[#468DFF] shrink-0" />
+                      <span>{folder.name}</span>
+                    </div>
+                    {folder.subfolders ? (
+                      <ul className="mt-1.5 pl-6 space-y-1 list-disc text-slate-600 text-[11px]">
+                        {folder.subfolders.map((sub) => (
+                          <li key={sub.id} className="leading-snug">
+                            {sub.name}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="mt-1 pl-6 text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
+                        Carpeta Directa
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-100 shrink-0 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowIndexModal(false)}
+                className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer shadow-md"
+              >
+                Cerrar
+              </button>
             </div>
           </div>
         </div>
