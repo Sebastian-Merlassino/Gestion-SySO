@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
+import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import { 
   PlusCircle, 
   Search, 
@@ -449,7 +450,7 @@ export default function AccionesCorrectivasPage({ params }) {
 
   const loadMockData = () => {
     setProfile({ full_name: 'Profesional de SySO (Mock)', role: 'admin' });
-    setTenant({ id: 'mock-tenant', name: 'Consultora de Prueba' });
+    setTenant({ id: 'mock-tenant', name: 'Consultora de Prueba', plan_id: 'free' });
     setEmpresas([
       { id: 'mock-empresa-1', razon_social: 'Ams Inversiones S.A.' },
       { id: 'mock-empresa-2', razon_social: 'Argento Via Publica' }
@@ -1172,63 +1173,27 @@ export default function AccionesCorrectivasPage({ params }) {
                     </div>
 
                     {/* Imagen de Respaldo */}
-                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-150">
-                      <span className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-3 flex items-center gap-1">
-                        <ImageIcon className="h-4 w-4 text-[#468DFF]" />
-                        Imagen de Evidencia (Hallazgo)
-                      </span>
-                      <div className="flex flex-col sm:flex-row items-center gap-4">
-                        {imagenPreview ? (
-                          <div className="relative h-32 w-32 rounded-xl overflow-hidden border border-slate-150 bg-white group shrink-0">
-                            <img src={imagenPreview} alt="Vista previa" className="h-full w-full object-cover" />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setImagenFile(null);
-                                setImagenPreview('');
-                                setImagenPath('');
-                              }}
-                              className="absolute top-1 right-1 p-1 rounded-full bg-red-600 text-white shadow hover:bg-red-700 cursor-pointer transition-colors"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="h-32 w-32 rounded-xl border-2 border-dashed border-slate-200 bg-white flex flex-col items-center justify-center text-slate-400 shrink-0">
-                            <ImageIcon className="h-8 w-8 mb-1 opacity-50" />
-                            <span className="text-[9px] font-bold text-center">Sin imagen</span>
-                          </div>
-                        )}
-
-                        <div className="flex flex-wrap items-center gap-3 flex-1">
-                          <label className="inline-flex items-center gap-2 py-2.5 px-4 rounded-xl border border-slate-350 text-slate-700 hover:bg-slate-100 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer">
-                            <Upload className="h-4 w-4 text-slate-500" />
-                            Seleccionar imagen
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={handleImagenChange}
-                              className="hidden"
-                            />
-                          </label>
-
-                          <label className="inline-flex items-center gap-2 py-2.5 px-4 rounded-xl border border-slate-350 text-slate-700 hover:bg-slate-100 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer">
-                            <Camera className="h-4 w-4 text-slate-500" />
-                            Sacar foto (Cámara)
-                            <input
-                              type="file"
-                              accept="image/*"
-                              capture="environment"
-                              onChange={handleImagenChange}
-                              className="hidden"
-                            />
-                          </label>
-
-                          <p className="text-[9px] text-slate-400 w-full mt-1">
-                            Formatos soportados: JPG, PNG, GIF, WEBP. Tamaño máximo recomendado: 5 MB.
-                          </p>
-                        </div>
-                      </div>
+                    <div>
+                      <ImageUploadZone
+                        label="Imagen de Evidencia (Hallazgo)"
+                        preview={imagenPreview}
+                        onFileChange={(file) => {
+                          setImagenFile(file);
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setImagenPreview(reader.result);
+                          };
+                          reader.readAsDataURL(file);
+                        }}
+                        onClear={() => {
+                          setImagenFile(null);
+                          setImagenPreview('');
+                          setImagenPath('');
+                        }}
+                        disabled={!canEdit}
+                        maxSizeMB={5}
+                        onToast={triggerToast}
+                      />
                     </div>
                   </div>
 
@@ -1382,7 +1347,7 @@ export default function AccionesCorrectivasPage({ params }) {
                         <button
                           type="button"
                           onClick={handleExitForm}
-                          className="px-5 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-white hover:border-[#468DFF] transition-all active:scale-[0.98] cursor-pointer"
+                          className="px-5 py-2.5 bg-[#FFFFFF] text-[#468DFF] border border-[#468DFF] rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-[#FFFFFF] hover:border-[#FFFFFF] transition-all active:scale-[0.98] cursor-pointer"
                         >
                           Salir
                         </button>

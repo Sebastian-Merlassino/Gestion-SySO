@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
+import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import { supabase, fetchAllGeography } from '@/lib/supabase';
 import { 
   User, 
@@ -227,6 +228,8 @@ const [partidosList, setPartidosList] = useState([]);
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('placeholder')) {
       setIsDevMode(true);
+      setTenantData({ name: 'Consultora de Prueba', plan_id: 'basic_5' });
+      setProfileData({ full_name: 'Profesional de SySO (Mock)', role: 'admin' });
       setInitialLoading(false);
     }
 
@@ -497,8 +500,8 @@ const [partidosList, setPartidosList] = useState([]);
     }
   };
 
-  const handleImageChange = (e, setFile, setPreview) => {
-    const file = e.target.files[0];
+  const handleImageChange = (fileOrEvent, setFile, setPreview) => {
+    const file = fileOrEvent?.target ? fileOrEvent.target.files[0] : fileOrEvent;
     if (!file) return;
 
     if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
@@ -544,8 +547,8 @@ const [partidosList, setPartidosList] = useState([]);
     setMatriculas(prev => prev.map((m, idx) => idx === index ? { ...m, [field]: value } : m));
   };
 
-  const handleMatriculaFileChange = (index, fileField, previewField, e) => {
-    const file = e.target.files[0];
+  const handleMatriculaFileChange = (index, fileField, previewField, fileOrEvent) => {
+    const file = fileOrEvent?.target ? fileOrEvent.target.files[0] : fileOrEvent;
     if (!file) return;
 
     if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
@@ -1092,14 +1095,14 @@ const [partidosList, setPartidosList] = useState([]);
             <span className="text-xs font-semibold text-slate-500 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-150 hidden sm:inline-block">
               {tenantData?.name || 'Cargando...'}
             </span>
-            <span className="px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider">
+            <span className={`px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider ${(!profileData || profileData.role === 'cliente') ? 'hidden' : ''}`} suppressHydrationWarning>
               {tenantData?.plan_id ? (tenantData.plan_id.toLowerCase() === 'libre' ? 'Plan Libre' : tenantData.plan_id.toLowerCase().startsWith('standard') ? 'Plan Standard' : tenantData.plan_id.toLowerCase().startsWith('basic') ? 'Plan Basic' : `Plan ${tenantData.plan_id}`) : 'Plan Pro'}
             </span>
           </div>
         </header>
 
         {initialLoading ? (
-          <div className="flex-1 flex items-center justify-center p-8 bg-white">
+          <div className="flex-1 flex items-center justify-center p-8">
             <div className="text-center space-y-4">
               <Loader2 className="h-10 w-10 animate-spin text-[#468DFF] mx-auto" />
               <p className="text-xs text-slate-500 font-medium">Cargando datos del perfil...</p>
@@ -1108,20 +1111,6 @@ const [partidosList, setPartidosList] = useState([]);
         ) : (
           <div className="p-6 md:p-8 space-y-8 max-w-[95%] mx-auto w-full z-10">
         
-        {/* Back Link and Header */}
-        <div className="flex items-center justify-between mb-8 border-b border-slate-300 pb-5">
-          <button
-            onClick={handleExitWithoutSave}
-            className="flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-slate-800 transition-colors py-2.5 px-4 rounded-xl border border-slate-300 bg-white shadow-sm"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Volver al Dashboard
-          </button>
-          <h1 className="font-outfit text-2xl font-extrabold tracking-tight text-slate-900">
-            Perfil de usuario
-          </h1>
-        </div>
-
         <form onSubmit={handleSaveChanges} className="space-y-8">
           
           {/* SECCIÓN 1: INFORMACIÓN DEL USUARIO */}
@@ -1349,65 +1338,31 @@ const [partidosList, setPartidosList] = useState([]);
 
                   {/* Uploads de la matrícula actual */}
                   <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">
-                        Foto Frente Matrícula #{index + 1}
-                      </label>
-                      <div className="relative border-2 border-dashed border-slate-200 hover:border-slate-300 rounded-xl p-6 text-center cursor-pointer transition-colors bg-white h-28 flex flex-col items-center justify-center overflow-hidden group">
-                        {m.fotoFrentePreview ? (
-                          <div className="relative w-full h-full flex items-center justify-center">
-                            <img src={m.fotoFrentePreview} alt={`Frente matrícula ${index+1}`} className="w-full h-full object-contain" />
-                            <button
-                              type="button"
-                              onClick={() => handleMatriculaFileClear(index, 'Frente')}
-                              className="z-25 absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-lg px-2.5 py-1 text-[10px] font-bold cursor-pointer shadow-md transition-all active:scale-95"
-                            >
-                              Quitar
-                            </button>
-                          </div>
-                        ) : (
-                          <>
-                            <Upload className="h-5 w-5 text-slate-400 group-hover:text-[#468DFF] mb-1" />
-                            <span className="text-[10px] text-slate-500 font-medium">Frente (JPG/PNG)</span>
-                            <input
-                              type="file"
-                              accept=".png, .jpg, .jpeg"
-                              onChange={(e) => handleMatriculaFileChange(index, 'fotoFrente', 'fotoFrentePreview', e)}
-                              className="absolute inset-0 opacity-0 cursor-pointer"
-                            />
-                          </>
-                        )}
+                    <div className="flex flex-col justify-center">
+                      <div className="w-full">
+                        <ImageUploadZone
+                          label={`Foto Frente Matrícula #${index + 1}`}
+                          preview={m.fotoFrentePreview}
+                          onFileChange={(file) => handleMatriculaFileChange(index, 'fotoFrente', 'fotoFrentePreview', file)}
+                          onClear={() => handleMatriculaFileClear(index, 'Frente')}
+                          disabled={profileData?.role === 'cliente'}
+                          maxSizeMB={5}
+                          onToast={triggerToast}
+                        />
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">
-                        Foto Dorso Matrícula #{index + 1}
-                      </label>
-                      <div className="relative border-2 border-dashed border-slate-200 hover:border-slate-300 rounded-xl p-6 text-center cursor-pointer transition-colors bg-white h-28 flex flex-col items-center justify-center overflow-hidden group">
-                        {m.fotoDorsoPreview ? (
-                          <div className="relative w-full h-full flex items-center justify-center">
-                            <img src={m.fotoDorsoPreview} alt={`Dorso matrícula ${index+1}`} className="w-full h-full object-contain" />
-                            <button
-                              type="button"
-                              onClick={() => handleMatriculaFileClear(index, 'Dorso')}
-                              className="z-25 absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-lg px-2.5 py-1 text-[10px] font-bold cursor-pointer shadow-md transition-all active:scale-95"
-                            >
-                              Quitar
-                            </button>
-                          </div>
-                        ) : (
-                          <>
-                            <Upload className="h-5 w-5 text-slate-400 group-hover:text-[#468DFF] mb-1" />
-                            <span className="text-[10px] text-slate-500 font-medium">Dorso (JPG/PNG)</span>
-                            <input
-                              type="file"
-                              accept=".png, .jpg, .jpeg"
-                              onChange={(e) => handleMatriculaFileChange(index, 'fotoDorso', 'fotoDorsoPreview', e)}
-                              className="absolute inset-0 opacity-0 cursor-pointer"
-                            />
-                          </>
-                        )}
+                    <div className="flex flex-col justify-center">
+                      <div className="w-full">
+                        <ImageUploadZone
+                          label={`Foto Dorso Matrícula #${index + 1}`}
+                          preview={m.fotoDorsoPreview}
+                          onFileChange={(file) => handleMatriculaFileChange(index, 'fotoDorso', 'fotoDorsoPreview', file)}
+                          onClear={() => handleMatriculaFileClear(index, 'Dorso')}
+                          disabled={profileData?.role === 'cliente'}
+                          maxSizeMB={5}
+                          onToast={triggerToast}
+                        />
                       </div>
                     </div>
                   </div>
@@ -1432,34 +1387,20 @@ const [partidosList, setPartidosList] = useState([]);
                   Firma Digital
                 </h4>
                 <div className="grid md:grid-cols-3 gap-6">
-                  <div className="space-y-2 md:col-span-1">
-                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">
-                      Firma Digital (Imagen)
-                    </label>
-                    <div className="relative border border-dashed border-slate-200 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-50/50 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
-                      {fotoFirmaPreview ? (
-                        <div className="relative w-full h-full flex items-center justify-center">
-                          <img src={fotoFirmaPreview} alt="Firma" className="w-full h-full object-contain" />
-                          <button
-                            type="button"
-                            onClick={() => { setFotoFirma(null); setFotoFirmaPreview(''); }}
-                            className="z-25 absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-lg px-2.5 py-1 text-[10px] font-bold cursor-pointer shadow-md transition-all active:scale-95"
-                          >
-                            Quitar
-                          </button>
-                        </div>
-                      ) : (
-                        <>
-                          <ImageIcon className="h-5 w-5 text-slate-400 group-hover:text-[#468DFF] mb-1" />
-                          <span className="text-[11px] text-slate-500 font-medium">Subir Firma</span>
-                          <input
-                            type="file"
-                            accept=".png, .jpg, .jpeg"
-                            onChange={(e) => handleImageChange(e, setFotoFirma, setFotoFirmaPreview)}
-                            className="absolute inset-0 opacity-0 cursor-pointer"
-                          />
-                        </>
-                      )}
+                  <div className="md:col-span-1 flex flex-col justify-center">
+                    <div className="w-full">
+                      <ImageUploadZone
+                        label="Firma Digital (Imagen)"
+                        preview={fotoFirmaPreview}
+                        onFileChange={(file) => handleImageChange(file, setFotoFirma, setFotoFirmaPreview)}
+                        onClear={() => {
+                          setFotoFirma(null);
+                          setFotoFirmaPreview('');
+                        }}
+                        disabled={profileData?.role === 'cliente'}
+                        maxSizeMB={5}
+                        onToast={triggerToast}
+                      />
                     </div>
                   </div>
                 </div>
@@ -1660,65 +1601,37 @@ const [partidosList, setPartidosList] = useState([]);
 
             {/* Logos */}
             <div className="grid md:grid-cols-2 gap-6 pt-4">
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  Logo Principal (Logo 1)
-                </label>
-                <div className="relative border border-dashed border-slate-200 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-50/50 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
-                  {logo1Preview ? (
-                    <div className="relative w-full h-full flex items-center justify-center">
-                      <img src={logo1Preview} alt="Logo 1" className="w-full h-full object-contain" />
-                      <button
-                        type="button"
-                        onClick={() => { setLogo1(null); setLogo1Preview(''); }}
-                        className="z-25 absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-lg px-2.5 py-1 text-[10px] font-bold cursor-pointer shadow-md transition-all active:scale-95"
-                      >
-                        Quitar
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <ImageIcon className="h-5 w-5 text-slate-400 group-hover:text-[#468DFF] mb-1" />
-                      <span className="text-[11px] text-slate-500 font-medium">Subir Logo 1</span>
-                      <input
-                        type="file"
-                        accept=".png, .jpg, .jpeg"
-                        onChange={(e) => handleImageChange(e, setLogo1, setLogo1Preview)}
-                        className="absolute inset-0 opacity-0 cursor-pointer"
-                      />
-                    </>
-                  )}
+              <div className="flex flex-col justify-center">
+                <div className="w-full">
+                  <ImageUploadZone
+                    label="Logo Principal (Logo 1)"
+                    preview={logo1Preview}
+                    onFileChange={(file) => handleImageChange(file, setLogo1, setLogo1Preview)}
+                    onClear={() => {
+                      setLogo1(null);
+                      setLogo1Preview('');
+                    }}
+                    disabled={profileData?.role === 'cliente'}
+                    maxSizeMB={5}
+                    onToast={triggerToast}
+                  />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  Logo Secundario (Logo 2)
-                </label>
-                <div className="relative border border-dashed border-slate-200 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-50/50 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
-                  {logo2Preview ? (
-                    <div className="relative w-full h-full flex items-center justify-center">
-                      <img src={logo2Preview} alt="Logo 2" className="w-full h-full object-contain" />
-                      <button
-                        type="button"
-                        onClick={() => { setLogo2(null); setLogo2Preview(''); }}
-                        className="z-25 absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-lg px-2.5 py-1 text-[10px] font-bold cursor-pointer shadow-md transition-all active:scale-95"
-                      >
-                        Quitar
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <ImageIcon className="h-5 w-5 text-slate-400 group-hover:text-[#468DFF] mb-1" />
-                      <span className="text-[11px] text-slate-500 font-medium">Subir Logo 2</span>
-                      <input
-                        type="file"
-                        accept=".png, .jpg, .jpeg"
-                        onChange={(e) => handleImageChange(e, setLogo2, setLogo2Preview)}
-                        className="absolute inset-0 opacity-0 cursor-pointer"
-                      />
-                    </>
-                  )}
+              <div className="flex flex-col justify-center">
+                <div className="w-full">
+                  <ImageUploadZone
+                    label="Logo Secundario (Logo 2)"
+                    preview={logo2Preview}
+                    onFileChange={(file) => handleImageChange(file, setLogo2, setLogo2Preview)}
+                    onClear={() => {
+                      setLogo2(null);
+                      setLogo2Preview('');
+                    }}
+                    disabled={profileData?.role === 'cliente'}
+                    maxSizeMB={5}
+                    onToast={triggerToast}
+                  />
                 </div>
               </div>
             </div>
@@ -1781,7 +1694,7 @@ const [partidosList, setPartidosList] = useState([]);
             <button
               type="button"
               onClick={handleExitWithoutSave}
-              className="px-5 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-white hover:border-[#468DFF] transition-all active:scale-[0.98] cursor-pointer"
+              className="px-5 py-2.5 bg-[#FFFFFF] text-[#468DFF] border border-[#468DFF] rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-[#FFFFFF] hover:border-[#FFFFFF] transition-all active:scale-[0.98] cursor-pointer"
             >
               Salir
             </button>
@@ -1800,7 +1713,6 @@ const [partidosList, setPartidosList] = useState([]);
                 ) : (
                   <>
                     Guardar
-                    <CheckCircle className="h-4 w-4 text-blue-100" />
                   </>
                 )}
               </button>

@@ -61,3 +61,39 @@ Para mantener homogeneidad estética en todos los formularios que requieren subi
 4. **Zona de Importación (Drive Link)**:
    - Input de tipo texto elegante (`flex-1 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#468DFF]`).
    - Botón azul corporativo con iconos consistentes de `ExternalLink` o de carga (`Loader2` animado).
+
+## 6. Estándar de Botones
+Para mantener la coherencia y profesionalismo en la interfaz, todos los botones de acción primarios y secundarios deben cumplir con las siguientes especificaciones:
+
+### 1. Botón Primario
+- **Estado Pasivo**:
+  - Fondo (Relleno): `#468DFF` (Azul corporativo)
+  - Texto y Borde: `#FFFFFF` (Blanco)
+- **Estado Hover**:
+  - Fondo (Relleno): `#0511F2` (Azul resaltado/profundo)
+  - Texto y Borde: `#FFFFFF` (Blanco)
+
+### 2. Botón Secundario (y Botón "Salir")
+- **Estado Pasivo**:
+  - Fondo (Relleno): `#FFFFFF` (Blanco)
+  - Borde y Texto: `#468DFF` (Azul corporativo)
+- **Estado Hover**:
+  - Fondo (Relleno): `#468DFF` (Azul corporativo)
+  - Borde y Texto: `#FFFFFF` (Blanco)
+
+### 3. Botón "Editar" (Modificar / Cambiar)
+- **Formulario (Botón Estándar)**:
+  - **Estado Pasivo**: Fondo `#F59E0B` (Amber-500), texto/borde `#FFFFFF`.
+  - **Estado Hover**: Fondo `#D97706` (Amber-600), texto/borde `#FFFFFF`.
+- **Tabla (Icono de Acción)**:
+  - **Estado Pasivo**: Fondo `#FEF3C7` (Amber-50), texto `#D97706` (`text-amber-600`).
+  - **Estado Hover**: Fondo `#FEEB99` (Amber-100/200), texto `#B45309` (`text-amber-800`).
+
+### 4. Botón "Eliminar" (Borrar / Remover)
+- **Formulario (Botón Estándar)**:
+  - **Estado Pasivo**: Fondo `#EF4444` (Red-500), texto/borde `#FFFFFF`.
+  - **Estado Hover**: Fondo `#DC2626` (Red-600), texto/borde `#FFFFFF`.
+- **Tabla (Icono de Acción)**:
+  - **Estado Pasivo**: Fondo `#FEE2E2` (Red-50), texto `#DC2626` (`text-red-600`).
+  - **Estado Hover**: Fondo `#FCA5A5` (Red-200), texto `#B91C1C` (`text-red-800`).
+

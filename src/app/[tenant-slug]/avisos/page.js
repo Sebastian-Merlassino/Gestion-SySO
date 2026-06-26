@@ -2027,8 +2027,8 @@ export default function AvisosRiesgoPage({ params }) {
                     </div>
 
                     {/* Profesional Interviniente */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="space-y-4 md:col-span-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
                         <span className="font-outfit text-xs font-extrabold text-slate-800 block uppercase tracking-wider">
                           Profesional Técnico Interviniente
                         </span>
@@ -2097,11 +2097,11 @@ export default function AvisosRiesgoPage({ params }) {
                           </div>
 
                           {firmaTipo === 'perfil' ? (
-                            <div className="border border-slate-200 bg-slate-50/30 rounded-xl p-3 text-center space-y-2 flex flex-col items-center justify-center min-h-[100px]">
+                            <div className="border border-slate-200 bg-slate-50/30 rounded-xl p-3 text-center space-y-2 flex flex-col items-center justify-center h-48 md:h-56">
                               {signaturePath ? (
                                 <>
                                   {firmaPerfilPreviewUrl ? (
-                                    <div className="bg-white border border-slate-200 rounded-lg p-2 max-w-[200px] h-[80px] flex items-center justify-center overflow-hidden">
+                                    <div className="bg-white border border-slate-200 rounded-lg p-2 max-w-[240px] md:max-w-[280px] h-[110px] md:h-[130px] flex items-center justify-center overflow-hidden">
                                       <img 
                                         src={firmaPerfilPreviewUrl} 
                                         alt="Vista previa de firma de perfil" 
@@ -2118,7 +2118,7 @@ export default function AvisosRiesgoPage({ params }) {
                               )}
                             </div>
                           ) : (
-                            <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl aspect-[2/1] relative overflow-hidden flex items-center justify-center">
+                            <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl h-48 md:h-56 relative overflow-hidden flex items-center justify-center w-full">
                               {firmaManoSavedUrl && !hasSignedMano ? (
                                 <img src={firmaManoSavedUrl} alt="Firma Profesional" className="w-full h-full object-contain p-2" />
                               ) : (
@@ -2159,7 +2159,7 @@ export default function AvisosRiesgoPage({ params }) {
                     <button
                       type="button"
                       onClick={handleExitForm}
-                      className="px-5 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-white hover:border-[#468DFF] transition-all cursor-pointer"
+                      className="px-5 py-2.5 bg-[#FFFFFF] text-[#468DFF] border border-[#468DFF] rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-[#FFFFFF] hover:border-[#FFFFFF] transition-all active:scale-[0.98] cursor-pointer"
                     >
                       Salir
                     </button>

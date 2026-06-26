@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
+import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import { 
   PlusCircle, 
   Search, 
@@ -435,7 +436,7 @@ export default function VisitasPage({ params }) {
   // Cargar datos ficticios (Mock)
   const loadMockData = () => {
     setProfile({ full_name: 'Profesional de SySO (Mock)', role: 'admin' });
-    setTenant({ id: 'mock-tenant', name: 'Consultora de Prueba' });
+    setTenant({ id: 'mock-tenant', name: 'Consultora de Prueba', plan_id: 'free' });
     setEmpresas([
       { id: 'mock-empresa-1', razon_social: 'Acme Argentina S.A.', cuit: '30712345678', contactos_correos: [{ valor: 'contacto@acme.com', descripcion: 'Contacto Comercial' }, { valor: 'higiene@acme.com', descripcion: 'Responsable SySO' }] },
       { id: 'mock-empresa-2', razon_social: 'Argento Via Publica', cuit: '30543210987', contactos_correos: [{ valor: 'admin@argento.com', descripcion: 'Administración' }] }
@@ -3155,62 +3156,32 @@ export default function VisitasPage({ params }) {
                         />
                       </div>
 
-                      {/* Adjuntar registros fotográficos */}
                       <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold text-slate-600">Adjuntar registros fotográficos (Mediciones, constancia física, firmas escritas, etc.)</label>
-                        
-                        {canEdit && (
-                          <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-6 text-center space-y-4">
-                            <div className="flex justify-center gap-4">
-                              
-                              {/* Cámara */}
-                              <label className="px-4 py-2 bg-slate-150 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer transition-all">
-                                <Camera className="h-4 w-4 text-[#468DFF]" />
-                                Capturar Foto (Cámara)
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  capture="environment"
-                                  onChange={handleCapturePhoto}
-                                  className="hidden"
-                                />
-                              </label>
-
-                              {/* Archivos */}
-                              <label className="px-4 py-2 bg-slate-150 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer transition-all">
-                                <Upload className="h-4 w-4 text-[#468DFF]" />
-                                Seleccionar Archivos
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  multiple
-                                  onChange={handleAddPhotos}
-                                  className="hidden"
-                                />
-                              </label>
-                            </div>
-                            
-                            <p className="text-[10px] text-slate-400 font-medium">PNG, JPG o JPEG de hasta 5 MB por archivo</p>
-                          </div>
-                        )}
-
-                        {/* Grid de previsualización */}
-                        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 pt-2">
-                          {fotosFiles.map((foto, idx) => (
-                            <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-100 group shadow-sm">
-                              <img src={foto.preview} alt="Vista previa" className="w-full h-full object-cover" />
-                              {canEdit && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemovePhoto(idx)}
-                                  className="absolute top-1.5 right-1.5 p-1 bg-red-600 text-white rounded-lg opacity-90 hover:bg-red-700 transition-all cursor-pointer"
-                                >
-                                  <Trash className="h-3.5 w-3.5" />
-                                </button>
-                              )}
-                            </div>
-                          ))}
-                        </div>
+                        <ImageUploadZone
+                          label="Adjuntar registros fotográficos (Mediciones, constancia física, firmas escritas, etc.)"
+                          multiple={true}
+                          images={fotosFiles}
+                          onAddPhotos={(validFiles) => {
+                            const newPhotos = validFiles.map(file => ({
+                              file,
+                              preview: URL.createObjectURL(file),
+                              path: ''
+                            }));
+                            setFotosFiles(prev => [...prev, ...newPhotos]);
+                          }}
+                          onRemovePhoto={(index) => {
+                            setFotosFiles(prev => {
+                              const target = prev[index];
+                              if (target && target.preview && target.preview.startsWith('blob:')) {
+                                URL.revokeObjectURL(target.preview);
+                              }
+                              return prev.filter((_, idx) => idx !== index);
+                            });
+                          }}
+                          disabled={!canEdit}
+                          maxSizeMB={5}
+                          onToast={triggerToast}
+                        />
                       </div>
 
                       
@@ -3343,7 +3314,7 @@ export default function VisitasPage({ params }) {
                     <button
                       type="button"
                       onClick={handleExitForm}
-                      className="px-5 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-white hover:border-[#468DFF] transition-all active:scale-[0.98] cursor-pointer"
+                      className="px-5 py-2.5 bg-[#FFFFFF] text-[#468DFF] border border-[#468DFF] rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-[#FFFFFF] hover:border-[#FFFFFF] transition-all active:scale-[0.98] cursor-pointer"
                     >
                       Salir
                     </button>

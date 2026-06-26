@@ -48,6 +48,8 @@ export default function DocumentUploadZone({
     { id: 'drive', name: 'Enlace Drive' }
   ],
   children,
+  minHeightClass = '',
+  borderless = false,
 }) {
   const [internalUploadType, setInternalUploadType] = useState('local');
   const uploadType = propUploadType !== undefined ? propUploadType : internalUploadType;
@@ -142,10 +144,10 @@ export default function DocumentUploadZone({
   };
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50 overflow-hidden">
+    <div className={`overflow-hidden flex flex-col h-full w-full ${borderless ? '' : 'rounded-xl border border-slate-200 bg-slate-50'}`}>
       {/* Selector de Pestañas */}
       {showTabs && (
-        <div className="flex border-b border-slate-200 bg-white text-xs font-semibold">
+        <div className="flex border-b border-slate-200 bg-white text-xs font-semibold shrink-0">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -165,14 +167,14 @@ export default function DocumentUploadZone({
       )}
 
       {/* Contenido de la Pestaña */}
-      <div className="p-3">
+      <div className="p-3 flex-1 flex flex-col justify-center">
         {uploadType === 'local' && (
           <div
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             onClick={() => !disabled && inputRef.current?.click()}
-            className={`relative border-2 border-dashed rounded-xl p-4 text-center transition-all
+            className={`relative border-2 border-dashed rounded-xl p-4 text-center transition-all flex-1 flex flex-col items-center justify-center ${minHeightClass}
               ${isDragging ? 'border-[#468DFF] bg-blue-50' : 'border-slate-200 bg-white hover:border-[#468DFF] hover:bg-blue-50/30'}
               ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
           >
@@ -184,8 +186,8 @@ export default function DocumentUploadZone({
               disabled={disabled}
               onChange={(e) => handleFileChange(e.target.files?.[0])}
             />
-            {fileName ? (
-              <div className="flex items-center gap-2 justify-center text-sm text-slate-700">
+             {fileName ? (
+              <div className="flex items-center gap-2 justify-center text-sm text-slate-700 flex-wrap my-auto">
                 <FileText className="h-4 w-4 text-[#468DFF]" />
                 <span className="font-medium truncate max-w-[200px]">{fileName}</span>
                 {(url || signedUrl) && onViewPdf && (
@@ -203,7 +205,7 @@ export default function DocumentUploadZone({
                 )}
               </div>
             ) : (
-              <div>
+              <div className="my-auto flex flex-col items-center justify-center">
                 <Upload className="h-6 w-6 text-slate-400 mx-auto mb-1" />
                 <p className="text-xs text-slate-500">
                   {isDragging ? 'Soltá el archivo aquí' : `Arrastrá o hacé clic para seleccionar un ${accept.includes('pdf') ? 'PDF' : 'archivo'}`}

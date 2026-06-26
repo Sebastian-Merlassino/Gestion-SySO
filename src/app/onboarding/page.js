@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import { supabase, fetchAllGeography } from '@/lib/supabase';
 import { 
   User, 
@@ -316,8 +317,8 @@ export default function OnboardingPage() {
   };
 
   // Manejar selección y preview de imágenes
-  const handleImageChange = (e, setFile, setPreview) => {
-    const file = e.target.files[0];
+  const handleImageChange = (fileOrEvent, setFile, setPreview) => {
+    const file = fileOrEvent?.target ? fileOrEvent.target.files[0] : fileOrEvent;
     if (!file) return;
 
     if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
@@ -363,8 +364,8 @@ export default function OnboardingPage() {
     setMatriculas(prev => prev.map((m, idx) => idx === index ? { ...m, [field]: value } : m));
   };
 
-  const handleMatriculaFileChange = (index, fileField, previewField, e) => {
-    const file = e.target.files[0];
+  const handleMatriculaFileChange = (index, fileField, previewField, fileOrEvent) => {
+    const file = fileOrEvent?.target ? fileOrEvent.target.files[0] : fileOrEvent;
     if (!file) return;
 
     if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
@@ -1160,65 +1161,31 @@ export default function OnboardingPage() {
                         </div>
                       </div>
 
-                      <div className="space-y-2">
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
-                          Foto Matrícula (Frente)
-                        </label>
-                        <div className="relative border border-dashed border-slate-300 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-white flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
-                          {mat.fotoFrentePreview ? (
-                            <div className="relative w-full h-full">
-                              <img src={mat.fotoFrentePreview} alt="Frente" className="w-full h-full object-contain" />
-                              <button
-                                type="button"
-                                onClick={() => handleMatriculaFileClear(idx, 'Frente')}
-                                className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
-                              >
-                                Remover
-                              </button>
-                            </div>
-                          ) : (
-                            <>
-                              <ImageIcon className="h-5 w-5 text-slate-400 group-hover:text-[#468DFF] mb-1" />
-                              <span className="text-[11px] text-slate-500 font-medium">Subir Frente (JPG/PNG)</span>
-                              <input
-                                type="file"
-                                accept=".png, .jpg, .jpeg"
-                                onChange={(e) => handleMatriculaFileChange(idx, 'fotoFrente', 'fotoFrentePreview', e)}
-                                className="absolute inset-0 opacity-0 cursor-pointer"
-                              />
-                            </>
-                          )}
+                      <div className="flex flex-col justify-center">
+                        <div className="max-w-[280px] w-full mx-auto">
+                          <ImageUploadZone
+                            label="Foto Matrícula (Frente)"
+                            preview={mat.fotoFrentePreview}
+                            onFileChange={(file) => handleMatriculaFileChange(idx, 'fotoFrente', 'fotoFrentePreview', file)}
+                            onClear={() => handleMatriculaFileClear(idx, 'Frente')}
+                            disabled={loading}
+                            maxSizeMB={5}
+                            onToast={triggerToast}
+                          />
                         </div>
                       </div>
 
-                      <div className="space-y-2">
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
-                          Foto Matrícula (Dorso)
-                        </label>
-                        <div className="relative border border-dashed border-slate-300 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-white flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
-                          {mat.fotoDorsoPreview ? (
-                            <div className="relative w-full h-full">
-                              <img src={mat.fotoDorsoPreview} alt="Dorso" className="w-full h-full object-contain" />
-                              <button
-                                type="button"
-                                onClick={() => handleMatriculaFileClear(idx, 'Dorso')}
-                                className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
-                              >
-                                Remover
-                              </button>
-                            </div>
-                          ) : (
-                            <>
-                              <ImageIcon className="h-5 w-5 text-slate-400 group-hover:text-[#468DFF] mb-1" />
-                              <span className="text-[11px] text-slate-500 font-medium">Subir Dorso (JPG/PNG)</span>
-                              <input
-                                type="file"
-                                accept=".png, .jpg, .jpeg"
-                                onChange={(e) => handleMatriculaFileChange(idx, 'fotoDorso', 'fotoDorsoPreview', e)}
-                                className="absolute inset-0 opacity-0 cursor-pointer"
-                              />
-                            </>
-                          )}
+                      <div className="flex flex-col justify-center">
+                        <div className="max-w-[280px] w-full mx-auto">
+                          <ImageUploadZone
+                            label="Foto Matrícula (Dorso)"
+                            preview={mat.fotoDorsoPreview}
+                            onFileChange={(file) => handleMatriculaFileChange(idx, 'fotoDorso', 'fotoDorsoPreview', file)}
+                            onClear={() => handleMatriculaFileClear(idx, 'Dorso')}
+                            disabled={loading}
+                            maxSizeMB={5}
+                            onToast={triggerToast}
+                          />
                         </div>
                       </div>
                     </div>
@@ -1228,46 +1195,30 @@ export default function OnboardingPage() {
             )}
           </div>
 
-          {/* SECCIÓN 3: FIRMA DIGITALIZADA (OPCIONAL) */}
-          <div className="bg-white border border-slate-150 rounded-2xl p-8 shadow-sm space-y-6">
-            <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
-              <Upload className="text-[#468DFF] h-5 w-5" />
-              Firma digitalizada (opcional)
-            </h3>
-            <p className="text-xs text-slate-500 leading-relaxed font-medium">
-              Subí tu firma digitalizada en formato JPG o PNG. Esta firma se utilizará para firmar automáticamente los reportes y documentos generados en la plataforma.
-            </p>
-            <div className="max-w-md">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                Firma Digitalizada (para reportes en PDF)
-              </label>
-              <div className="relative border border-dashed border-slate-300 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-50 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
-                {fotoFirmaPreview ? (
-                  <div className="relative w-full h-full">
-                    <img src={fotoFirmaPreview} alt="Firma" className="w-full h-full object-contain" />
-                    <button
-                      type="button"
-                      onClick={() => { setFotoFirma(null); setFotoFirmaPreview(''); }}
-                      className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
-                    >
-                      Remover
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <Upload className="h-5 w-5 text-slate-400 group-hover:text-[#468DFF] mb-1" />
-                    <span className="text-[11px] text-slate-500 font-medium">Subir firma escaneada (JPG/PNG)</span>
-                    <input
-                      type="file"
-                      accept=".png, .jpg, .jpeg"
-                      onChange={(e) => handleImageChange(e, setFotoFirma, setFotoFirmaPreview)}
-                      className="absolute inset-0 opacity-0 cursor-pointer"
-                    />
-                  </>
-                )}
+            {/* SECCIÓN 3: FIRMA DIGITALIZADA (OPCIONAL) */}
+            <div className="bg-white border border-slate-150 rounded-2xl p-8 shadow-sm space-y-6">
+              <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
+                <Upload className="text-[#468DFF] h-5 w-5" />
+                Firma digitalizada (opcional)
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed font-medium">
+                Subí tu firma digitalizada en formato JPG o PNG. Esta firma se utilizará para firmar automáticamente los reportes y documentos generados en la plataforma.
+              </p>
+              <div className="max-w-[320px] w-full">
+                <ImageUploadZone
+                  label="Firma Digitalizada (para reportes en PDF)"
+                  preview={fotoFirmaPreview}
+                  onFileChange={(file) => handleImageChange(file, setFotoFirma, setFotoFirmaPreview)}
+                  onClear={() => {
+                    setFotoFirma(null);
+                    setFotoFirmaPreview('');
+                  }}
+                  disabled={loading}
+                  maxSizeMB={5}
+                  onToast={triggerToast}
+                />
               </div>
             </div>
-          </div>
 
           {/* SECCIÓN 4: IDENTIDAD DE MARCA (OPCIONAL) */}
           <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
@@ -1359,65 +1310,37 @@ export default function OnboardingPage() {
 
             {/* Carga de Logos */}
             <div className="grid md:grid-cols-2 gap-6 pt-4">
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  Logo Principal (Logo 1)
-                </label>
-                <div className="relative border border-dashed border-slate-300 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-50 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
-                  {logo1Preview ? (
-                    <div className="relative w-full h-full">
-                      <img src={logo1Preview} alt="Logo 1" className="w-full h-full object-contain" />
-                      <button
-                        type="button"
-                        onClick={() => { setLogo1(null); setLogo1Preview(''); }}
-                        className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
-                      >
-                        Remover
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <ImageIcon className="h-5 w-5 text-slate-400 group-hover:text-[#468DFF] mb-1" />
-                      <span className="text-[11px] text-slate-500 font-medium">Subir Logo 1 (JPG/PNG)</span>
-                      <input
-                        type="file"
-                        accept=".png, .jpg, .jpeg"
-                        onChange={(e) => handleImageChange(e, setLogo1, setLogo1Preview)}
-                        className="absolute inset-0 opacity-0 cursor-pointer"
-                      />
-                    </>
-                  )}
+              <div className="flex flex-col justify-center">
+                <div className="max-w-[320px] w-full mx-auto">
+                  <ImageUploadZone
+                    label="Logo Principal (Logo 1)"
+                    preview={logo1Preview}
+                    onFileChange={(file) => handleImageChange(file, setLogo1, setLogo1Preview)}
+                    onClear={() => {
+                      setLogo1(null);
+                      setLogo1Preview('');
+                    }}
+                    disabled={loading}
+                    maxSizeMB={5}
+                    onToast={triggerToast}
+                  />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  Logo Secundario (Logo 2)
-                </label>
-                <div className="relative border border-dashed border-slate-300 hover:border-[#468DFF]/40 rounded-xl p-2 transition-all bg-slate-50 flex flex-col items-center justify-center text-center h-28 overflow-hidden group">
-                  {logo2Preview ? (
-                    <div className="relative w-full h-full">
-                      <img src={logo2Preview} alt="Logo 2" className="w-full h-full object-contain" />
-                      <button
-                        type="button"
-                        onClick={() => { setLogo2(null); setLogo2Preview(''); }}
-                        className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-md p-1 text-[9px] font-bold"
-                      >
-                        Remover
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <ImageIcon className="h-5 w-5 text-slate-400 group-hover:text-[#468DFF] mb-1" />
-                      <span className="text-[11px] text-slate-500 font-medium">Subir Logo 2 (JPG/PNG)</span>
-                      <input
-                        type="file"
-                        accept=".png, .jpg, .jpeg"
-                        onChange={(e) => handleImageChange(e, setLogo2, setLogo2Preview)}
-                        className="absolute inset-0 opacity-0 cursor-pointer"
-                      />
-                    </>
-                  )}
+              <div className="flex flex-col justify-center">
+                <div className="max-w-[320px] w-full mx-auto">
+                  <ImageUploadZone
+                    label="Logo Secundario (Logo 2)"
+                    preview={logo2Preview}
+                    onFileChange={(file) => handleImageChange(file, setLogo2, setLogo2Preview)}
+                    onClear={() => {
+                      setLogo2(null);
+                      setLogo2Preview('');
+                    }}
+                    disabled={loading}
+                    maxSizeMB={5}
+                    onToast={triggerToast}
+                  />
                 </div>
               </div>
             </div>
@@ -1486,7 +1409,7 @@ export default function OnboardingPage() {
               type="button"
               disabled={loading}
               onClick={handleExitWithoutSaving}
-              className="py-3 px-6 rounded-xl border border-slate-300 bg-white hover:bg-[#468DFF] text-slate-600 hover:text-white hover:border-[#468DFF] font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50"
+              className="py-3 px-6 rounded-xl bg-white border border-[#468DFF] text-[#468DFF] hover:bg-[#468DFF] hover:text-[#FFFFFF] hover:border-[#FFFFFF] font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50"
             >
               Salir
             </button>

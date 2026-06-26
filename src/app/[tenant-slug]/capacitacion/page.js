@@ -6,6 +6,8 @@ import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
+import ImageUploadZone from '@/components/ui/ImageUploadZone';
+import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
 import { 
   PlusCircle, 
   Search, 
@@ -37,7 +39,9 @@ import {
   Eye,
   ChevronDown,
   ChevronUp,
-  Folder
+  Folder,
+  FileText,
+  ExternalLink
 } from 'lucide-react';
 
 export default function CapacitacionPage({ params }) {
@@ -118,8 +122,15 @@ export default function CapacitacionPage({ params }) {
   const [isTemasDropdownOpen, setIsTemasDropdownOpen] = useState(false);
   const [searchTopicTerm, setSearchTopicTerm] = useState('');
   const [fotosFiles, setFotosFiles] = useState([]); // array de { file: File | null, preview: string, path: string }
+  const [pdfFiles, setPdfFiles] = useState([]); // array de { file: File | null, fileName: string, path: string, url: string }
   const [viewingFotosCap, setViewingFotosCap] = useState(null); // capacitación para el modal de ver fotos
   const [viewingFotosUrls, setViewingFotosUrls] = useState([]); // urls firmadas para el modal de ver fotos
+
+  // Estados para Carga desde Legajo Técnico
+  const [uploadType, setUploadType] = useState('local'); // 'local', 'drive' or 'legajo'
+  const [legajoDocuments, setLegajoDocuments] = useState([]);
+  const [selectedLegajoDocUrl, setSelectedLegajoDocUrl] = useState('');
+  const [loadingLegajoDocs, setLoadingLegajoDocs] = useState(false);
 
   // Filtros
   const [filterText, setFilterText] = useState('');
@@ -378,7 +389,7 @@ export default function CapacitacionPage({ params }) {
 
   const loadMockData = () => {
     setProfile({ full_name: 'Profesional de SySO (Mock)', role: 'admin' });
-    setTenant({ id: 'mock-tenant', name: 'Consultora de Prueba' });
+    setTenant({ id: 'mock-tenant', name: 'Consultora de Prueba', plan_id: 'free' });
     setEmpresas([
       { id: 'mock-empresa-1', razon_social: 'Ams Inversiones S.A.' },
       { id: 'mock-empresa-2', razon_social: 'Argento Via Publica' }
@@ -428,6 +439,72 @@ export default function CapacitacionPage({ params }) {
   const filteredEstablecimientos = allEstablecimientos.filter(
     (est) => est.empresa_id === empresaId
   );
+
+  const loadLegajoDocuments = async (empId, estId) => {
+    if (!empId) {
+      setLegajoDocuments([]);
+      return;
+    }
+    setLoadingLegajoDocs(true);
+    try {
+      if (isDevMode) {
+        const mockDocs = [
+          {
+            id: 'mock-legajo-1',
+            empresa_id: 'mock-empresa-1',
+            establecimiento_id: 'mock-est-1',
+            documento_nombre: 'Relevamiento General de Riesgos Laborales',
+            documento_url: 'mock-pdf-url',
+            fecha: '2026-06-10'
+          },
+          {
+            id: 'mock-legajo-2',
+            empresa_id: 'mock-empresa-1',
+            establecimiento_id: 'mock-est-1',
+            documento_nombre: 'Estudio de Ruido Ocupacional',
+            documento_url: 'mock-pdf-url',
+            fecha: '2026-06-12'
+          },
+          {
+            id: 'mock-legajo-3',
+            empresa_id: 'mock-empresa-1',
+            establecimiento_id: null,
+            documento_nombre: 'Plan de Capacitación Anual General',
+            documento_url: 'mock-pdf-url',
+            fecha: '2026-06-01'
+          }
+        ];
+        const filtered = mockDocs.filter(d => 
+          d.empresa_id === empId && 
+          (!estId || d.establecimiento_id === estId || d.establecimiento_id === null)
+        );
+        setLegajoDocuments(filtered);
+      } else {
+        const { data, error } = await supabase
+          .from('legajo_tecnico')
+          .select('id, documento_nombre, documento_url, fecha, establecimiento_id')
+          .eq('empresa_id', empId)
+          .order('fecha', { ascending: false });
+        
+        if (error) throw error;
+        const filtered = (data || []).filter(d => 
+          !estId || d.establecimiento_id === estId || d.establecimiento_id === null
+        );
+        setLegajoDocuments(filtered);
+      }
+    } catch (err) {
+      console.error('Error al cargar documentos del legajo:', err);
+      triggerToast('Error al cargar documentos del legajo técnico.', 'error');
+    } finally {
+      setLoadingLegajoDocs(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isFormOpen && empresaId && uploadType === 'legajo') {
+      loadLegajoDocuments(empresaId, establecimientoId);
+    }
+  }, [isFormOpen, empresaId, establecimientoId, uploadType]);
 
   // Manejo de cambio de Tema
   const handleTemaChange = (e) => {
@@ -593,6 +670,11 @@ export default function CapacitacionPage({ params }) {
     setSelectedTemas([]);
     setIsTemasDropdownOpen(false);
     setFotosFiles([]);
+    setPdfFiles([]);
+    setUploadType('local');
+    setLegajoDocuments([]);
+    setSelectedLegajoDocUrl('');
+    setLoadingLegajoDocs(false);
   };
 
   const uploadFotoToStorage = async (file, index) => {
@@ -656,14 +738,27 @@ export default function CapacitacionPage({ params }) {
 
     setSaveLoading(true);
     try {
-      // Subir fotos
       const finalFotosUrls = [];
+
+      // 1. Subir fotos
       for (const foto of fotosFiles) {
         if (foto.file) {
           const uploadedPath = await uploadFotoToStorage(foto.file, finalFotosUrls.length);
           finalFotosUrls.push(uploadedPath);
         } else if (foto.path) {
           finalFotosUrls.push(foto.path);
+        }
+      }
+
+      // 2. Subir PDFs locales / Guardar enlaces de Drive
+      for (const doc of pdfFiles) {
+        if (doc.file) {
+          const uploadedPath = await uploadFotoToStorage(doc.file, finalFotosUrls.length);
+          finalFotosUrls.push(uploadedPath);
+        } else if (doc.path) {
+          finalFotosUrls.push(doc.path);
+        } else if (doc.url) {
+          finalFotosUrls.push(doc.url);
         }
       }
 
@@ -786,15 +881,29 @@ export default function CapacitacionPage({ params }) {
       setCapacitadorCustom(cap.capacitador || '');
     }
 
-    // Vincular Fotos
+    // Vincular Fotos y PDFs
     if (cap.fotos_urls && cap.fotos_urls.length > 0) {
-      const loadedFotos = cap.fotos_urls.map((fpath, idx) => {
+      const loadedFotos = [];
+      const loadedPdfs = [];
+      cap.fotos_urls.forEach((fpath, idx) => {
         const previewUrl = cap.fotos_preview_urls?.[idx] || '';
-        return { file: null, preview: previewUrl || '/brand/logo-primary.png', path: fpath };
+        const isPdf = fpath.toLowerCase().endsWith('.pdf') || fpath.includes('pdf') || fpath.includes('drive.google.com');
+        if (isPdf) {
+          loadedPdfs.push({
+            file: null,
+            fileName: fpath.includes('drive.google.com') ? 'Enlace Google Drive' : fpath.split('/').pop(),
+            path: fpath,
+            url: fpath.startsWith('http') ? fpath : previewUrl
+          });
+        } else {
+          loadedFotos.push({ file: null, preview: previewUrl || '/brand/logo-primary.png', path: fpath });
+        }
       });
       setFotosFiles(loadedFotos);
+      setPdfFiles(loadedPdfs);
     } else {
       setFotosFiles([]);
+      setPdfFiles([]);
     }
 
     setIsFormOpen(true);
@@ -1294,87 +1403,196 @@ export default function CapacitacionPage({ params }) {
                   </div>
 
                   {/* Sección 4: Registros de capacitación */}
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     <span className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
                       <ImageIcon className="h-4 w-4 text-[#468DFF]" />
                       Registros de capacitación
                     </span>
                     
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-slate-50 p-4 border border-slate-150 rounded-xl">
-                      <div className="flex flex-wrap items-center gap-3 flex-1">
-                        <label
-                          htmlFor="multi-photo-upload"
-                          className={`inline-flex items-center gap-2 py-2.5 px-4 rounded-xl border border-slate-350 text-slate-700 hover:bg-slate-100 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer ${!canEdit ? 'opacity-50 pointer-events-none' : ''}`}
-                        >
-                          <Upload className="h-4 w-4 text-slate-500" />
-                          Seleccionar fotos
-                          <input
-                            id="multi-photo-upload"
-                            type="file"
-                            multiple
-                            accept="image/*"
-                            onChange={handleAddPhotos}
-                            className="hidden"
+                    <div className="grid md:grid-cols-2 gap-6">
+                      {/* Subsección Fotos */}
+                      <div className="rounded-xl border border-slate-200 bg-slate-50 overflow-hidden flex flex-col h-full shadow-sm">
+                        <div className="flex border-b border-slate-200 bg-white text-xs font-bold text-slate-500 h-[33px] items-center px-4 shrink-0">
+                          Fotos de Registro (Galería)
+                        </div>
+                        <div className="p-3 flex-1 flex flex-col justify-center">
+                          <ImageUploadZone
+                            multiple={true}
+                            images={fotosFiles}
+                            onAddPhotos={(validFiles) => {
+                              const newPhotos = validFiles.map(file => ({
+                                file,
+                                preview: URL.createObjectURL(file),
+                                path: ''
+                              }));
+                              setFotosFiles(prev => [...prev, ...newPhotos]);
+                            }}
+                            onRemovePhoto={(index) => {
+                              setFotosFiles(prev => {
+                                const target = prev[index];
+                                if (target && target.preview && target.preview.startsWith('blob:')) {
+                                  URL.revokeObjectURL(target.preview);
+                                }
+                                return prev.filter((_, idx) => idx !== index);
+                              });
+                            }}
+                            disabled={!canEdit}
+                            maxSizeMB={5}
+                            onToast={triggerToast}
                           />
-                        </label>
+                        </div>
+                      </div>
 
-                        <label
-                          htmlFor="camera-photo-capture"
-                          className={`inline-flex items-center gap-2 py-2.5 px-4 rounded-xl border border-slate-350 text-slate-700 hover:bg-slate-100 font-bold text-xs bg-white shadow-sm transition-all cursor-pointer ${!canEdit ? 'opacity-50 pointer-events-none' : ''}`}
+                      {/* Subsección Documentos PDF, Enlaces Drive y Legajo */}
+                      <div className="rounded-xl border border-slate-200 bg-slate-50 overflow-hidden flex flex-col h-full shadow-sm">
+                        <DocumentUploadZone
+                          label="Agregar Registro PDF / Drive / Legajo"
+                          file={null}
+                          fileName=""
+                          onFileChange={(file) => {
+                            setPdfFiles(prev => [...prev, {
+                              file,
+                              fileName: file.name,
+                              path: '',
+                              url: URL.createObjectURL(file)
+                            }]);
+                          }}
+                          onDriveImportSuccess={(filePath) => {
+                            setPdfFiles(prev => [...prev, {
+                              file: null,
+                              fileName: 'Enlace Google Drive',
+                              path: filePath,
+                              url: filePath
+                            }]);
+                          }}
+                          disabled={!canEdit}
+                          tenantId={tenant?.id}
+                          onToast={triggerToast}
+                          uploadType={uploadType}
+                          setUploadType={(type) => {
+                            setUploadType(type);
+                            setSelectedLegajoDocUrl('');
+                          }}
+                          showTabs={true}
+                          tabs={[
+                            { id: 'local', name: 'Archivo Local' },
+                            { id: 'drive', name: 'Enlace Drive' },
+                            { id: 'legajo', name: 'Legajo Técnico' }
+                          ]}
+                          minHeightClass="min-h-[148px] flex flex-col justify-center"
+                          borderless={true}
                         >
-                          <Camera className="h-4 w-4 text-slate-500" />
-                          Sacar foto (Cámara)
-                          <input
-                            id="camera-photo-capture"
-                            type="file"
-                            accept="image/*"
-                            capture="environment"
-                            onChange={handleCapturePhoto}
-                            className="hidden"
-                          />
-                        </label>
-                        
-                        <p className="text-[9px] text-slate-400 w-full mt-1">
-                          Formatos soportados: JPG, PNG, GIF, WEBP. Tamaño máximo recomendado: 5 MB.
-                        </p>
-                      </div>
-                    </div>
+                          {uploadType === 'legajo' && (
+                            <div className="space-y-2">
+                              {!empresaId ? (
+                                <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-xl p-3 font-semibold">
+                                  ⚠️ Debes seleccionar un Cliente / Razón Social para listar los documentos del legajo técnico.
+                                </p>
+                              ) : loadingLegajoDocs ? (
+                                <div className="flex items-center gap-2 text-xs text-slate-500 py-2">
+                                  <Loader2 className="h-4 w-4 animate-spin text-[#468DFF] shrink-0" />
+                                  Cargando documentos del legajo...
+                                </div>
+                              ) : legajoDocuments.length === 0 ? (
+                                <p className="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-xl p-3 italic">
+                                  No se encontraron documentos en el legajo técnico para este cliente.
+                                </p>
+                              ) : (
+                                <div className="flex flex-col sm:flex-row gap-2">
+                                  <select
+                                    value={selectedLegajoDocUrl}
+                                    onChange={(e) => setSelectedLegajoDocUrl(e.target.value)}
+                                    className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#468DFF] bg-white text-slate-700 font-semibold"
+                                  >
+                                    <option value="">-- Selecciona del legajo --</option>
+                                    {legajoDocuments.map(doc => (
+                                      <option key={doc.id} value={doc.documento_url}>
+                                        {doc.documento_nombre} ({formatDate(doc.fecha)})
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (!selectedLegajoDocUrl) {
+                                        triggerToast('Selecciona un documento primero.', 'error');
+                                        return;
+                                      }
+                                      const matchedDoc = legajoDocuments.find(d => d.documento_url === selectedLegajoDocUrl);
+                                      const docName = matchedDoc ? matchedDoc.documento_nombre : 'Documento Legajo Técnico';
 
-                    {/* Grid de previsualización */}
-                    {fotosFiles.length === 0 ? (
-                      <div className="border border-slate-150 rounded-2xl p-6 text-center text-slate-400 italic text-xs bg-slate-50/50">
-                        No hay fotos de registros cargadas.
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 pt-2">
-                        {fotosFiles.map((foto, idx) => (
-                          <div key={idx} className="relative group rounded-xl overflow-hidden border border-slate-150 bg-slate-50 aspect-video flex items-center justify-center shadow-sm">
-                            <img src={foto.preview} alt={`Previsualización ${idx + 1}`} className="max-h-full max-w-full object-contain" />
-                            
-                            {/* Hover overlay with action buttons */}
-                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
-                              <a
-                                href={foto.preview}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                title="Ver en pantalla completa"
-                                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </a>
-                              <button
-                                type="button"
-                                onClick={() => handleRemovePhoto(idx)}
-                                title="Eliminar"
-                                className="p-1.5 rounded-lg bg-red-600/80 hover:bg-red-600 text-white transition-colors cursor-pointer"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
+                                      if (pdfFiles.some(f => f.path === selectedLegajoDocUrl || f.url === selectedLegajoDocUrl)) {
+                                        triggerToast('Este documento ya se encuentra adjunto.', 'error');
+                                        return;
+                                      }
+
+                                      setPdfFiles(prev => [...prev, {
+                                        file: null,
+                                        fileName: `${docName} (Legajo)`,
+                                        path: selectedLegajoDocUrl,
+                                        url: selectedLegajoDocUrl
+                                      }]);
+                                      triggerToast('Documento del legajo técnico agregado.');
+                                      setSelectedLegajoDocUrl('');
+                                    }}
+                                    className="px-3 py-2 bg-[#468DFF] text-white rounded-xl text-xs font-semibold hover:bg-[#0511F2] transition-colors cursor-pointer shrink-0"
+                                  >
+                                    + Agregar
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </DocumentUploadZone>
+
+                        {/* Lista de PDFs / Links cargados */}
+                        {pdfFiles.length > 0 && (
+                          <div className="p-3 pt-0 border-t border-slate-200">
+                            <div className="space-y-2 max-h-48 overflow-y-auto border border-slate-150 rounded-xl p-3 bg-white shadow-sm">
+                              {pdfFiles.map((doc, idx) => (
+                                <div key={idx} className="flex items-center justify-between text-xs p-2 bg-slate-50 rounded-lg border border-slate-200 animate-scaleUp">
+                                  <div className="flex items-center gap-2 truncate flex-1 pr-2">
+                                    <FileText className="h-4 w-4 text-[#468DFF] shrink-0" />
+                                    <span className="font-semibold text-slate-700 truncate" title={doc.fileName}>{doc.fileName}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5 shrink-0">
+                                    {doc.url && (
+                                      <a
+                                        href={doc.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="p-1 text-[#468DFF] hover:text-[#0511F2] transition-colors"
+                                        title="Ver documento"
+                                      >
+                                        <Eye className="h-3.5 w-3.5" />
+                                      </a>
+                                    )}
+                                    {canEdit && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setPdfFiles(prev => {
+                                            const target = prev[idx];
+                                            if (target && target.url && target.url.startsWith('blob:')) {
+                                              URL.revokeObjectURL(target.url);
+                                            }
+                                            return prev.filter((_, i) => i !== idx);
+                                          });
+                                        }}
+                                        className="p-1 text-red-500 hover:text-red-700 transition-colors cursor-pointer"
+                                        title="Quitar"
+                                      >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
                             </div>
                           </div>
-                        ))}
+                        )}
                       </div>
-                    )}
+                    </div>
                   </div>
                   </fieldset>
 
@@ -1383,7 +1601,7 @@ export default function CapacitacionPage({ params }) {
                     <button
                       type="button"
                       onClick={handleExitForm}
-                      className="px-5 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-white hover:border-[#468DFF] transition-all active:scale-[0.98] cursor-pointer"
+                      className="px-5 py-2.5 bg-[#FFFFFF] text-[#468DFF] border border-[#468DFF] rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-[#FFFFFF] hover:border-[#FFFFFF] transition-all active:scale-[0.98] cursor-pointer"
                     >
                       Salir
                     </button>
@@ -1789,23 +2007,64 @@ export default function CapacitacionPage({ params }) {
             <div className="overflow-y-auto flex-1 p-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
               {viewingFotosUrls.length === 0 ? (
                 <div className="col-span-full py-12 text-center text-slate-400 italic text-xs">
-                  Cargando imágenes de registro...
+                  Cargando registros...
                 </div>
               ) : (
-                viewingFotosUrls.map((url, i) => (
-                  <div key={i} className="relative group rounded-xl overflow-hidden border border-slate-200 bg-slate-50 aspect-video flex items-center justify-center shadow-sm">
-                    <img src={url} alt={`Registro ${i+1}`} className="max-h-full max-w-full object-contain" />
-                    <a 
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-xs font-bold gap-1.5"
-                    >
-                      <Eye className="h-4 w-4" />
-                      Ampliar Imagen
-                    </a>
-                  </div>
-                ))
+                viewingFotosUrls.map((url, i) => {
+                  const isPdf = url.toLowerCase().includes('.pdf') || url.toLowerCase().includes('pdf') || url.includes('/documents/');
+                  const isDrive = url.toLowerCase().includes('drive.google.com') || (url.startsWith('http') && !isPdf && !url.match(/\.(jpeg|jpg|gif|png|webp)/i));
+
+                  if (isPdf) {
+                    return (
+                      <div key={i} className="relative group rounded-xl border border-slate-200 bg-white p-4 flex flex-col items-center justify-center text-center shadow-sm aspect-video gap-2">
+                        <FileText className="h-10 w-10 text-red-500" />
+                        <span className="text-xs font-bold text-slate-700">Documento PDF Adjunto</span>
+                        <a 
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2 py-1 px-3 bg-[#468DFF]/15 hover:bg-[#468DFF]/25 text-[#468DFF] rounded-lg text-xs font-bold transition-all flex items-center gap-1.5"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          Abrir PDF
+                        </a>
+                      </div>
+                    );
+                  }
+
+                  if (isDrive) {
+                    return (
+                      <div key={i} className="relative group rounded-xl border border-slate-200 bg-white p-4 flex flex-col items-center justify-center text-center shadow-sm aspect-video gap-2">
+                        <ExternalLink className="h-10 w-10 text-[#468DFF]" />
+                        <span className="text-xs font-bold text-slate-700">Google Drive Compartido</span>
+                        <a 
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2 py-1 px-3 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1.5"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                           Ir a Drive
+                        </a>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div key={i} className="relative group rounded-xl overflow-hidden border border-slate-200 bg-slate-50 aspect-video flex items-center justify-center shadow-sm">
+                      <img src={url} alt={`Registro ${i+1}`} className="max-h-full max-w-full object-contain" />
+                      <a 
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-xs font-bold gap-1.5"
+                      >
+                        <Eye className="h-4 w-4" />
+                        Ampliar Imagen
+                      </a>
+                    </div>
+                  );
+                })
               )}
             </div>
             

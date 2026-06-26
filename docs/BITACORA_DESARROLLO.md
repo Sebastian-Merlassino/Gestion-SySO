@@ -1,5 +1,229 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-06-26] Rediseño de Botones "Salir" y Estandarización de "Editar" / "Eliminar"
+
+### Resumen de Cambios
+- **Rediseño del Botón "Salir"**: Se actualizó el estilo de los botones "Salir" en los formularios de las 13 secciones operativas del proyecto (`visitas`, `programa`, `profile`, `nomina`, `legajo`, `extintores`, `equipo`, `empresas`, `correctivas`, `capacitacion`, `avisos`, `accidentes` y `onboarding`), asignándoles la estética unificada de **Botón Secundario** (relleno blanco, borde y letras azul `#468DFF`, con hover en relleno azul y letras/borde blanco) y agregando la animación activa `active:scale-[0.98]`.
+- **Estandarización y Registro de "Editar" y "Eliminar"**: Se definieron y documentaron formalmente las especificaciones de diseño y hover para los botones de Edición (Amber) y Eliminación (Red), tanto para botones de formulario como para iconos de fila en tablas, en los siguientes documentos normativos:
+  - Habilidad de Marca: [.agents/skills/gestion-syso-brand-guidelines/SKILL.md](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/.agents/skills/gestion-syso-brand-guidelines/SKILL.md)
+  - Reglas Globales: [docs/RULES_WORKSPACE.md](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/docs/RULES_WORKSPACE.md)
+  - Reglas del Agente: [.agents/agents.md](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/.agents/agents.md)
+  - Guía de Marca: [docs/brand/BRAND_GUIDELINES.md](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/docs/brand/BRAND_GUIDELINES.md)
+
+### Decisiones Clave
+- **Unificación de la Acción de Salida**: Asignar el diseño de botón secundario a "Salir" proporciona un contraste visual claro frente a la acción primaria de "Guardar" o "Registrar", reduciendo errores accidentales de pérdida de datos.
+- **Registro Preventivo**: Documentar los estilos de "Editar" y "Eliminar" evita que futuros agentes introduzcan variaciones incorrectas (por ejemplo, tonos de rojo o ámbar no oficiales).
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados / Creados
+- `[MODIFY] .agents/skills/gestion-syso-brand-guidelines/SKILL.md`
+- `[MODIFY] docs/RULES_WORKSPACE.md`
+- `[MODIFY] .agents/agents.md`
+- `[MODIFY] docs/brand/BRAND_GUIDELINES.md`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] src/app/[tenant-slug]/nomina/page.js`
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+- `[MODIFY] src/app/onboarding/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con optimización de Next.js (`cmd /c npm run build`) completada con total éxito y cero advertencias.
+
+### Riesgos Detectados / Remanentes
+- Ninguno.
+
+### Próximo Paso Recomendado
+- Realizar pruebas funcionales en dispositivos móviles de los formularios operacionales modificados.
+
+---
+
+## [2026-06-26] Estandarización y Definición de Reglas de Colores para Botones
+
+### Resumen de Cambios
+- **Habilidades de Marca y UI Actualizadas**: Se integró la sección `## Estándar de Botones` en [SKILL.md](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/.agents/skills/gestion-syso-brand-guidelines/SKILL.md) para instruir a los agentes sobre el diseño y colores correspondientes a los botones primarios y secundarios.
+- **Reglas del Workspace Formalizadas**: Se agregaron los lineamientos cromáticos de botones bajo la sección `## Reglas de marca y diseño` en [RULES_WORKSPACE.md](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/docs/RULES_WORKSPACE.md) para guiar desarrollos futuros.
+- **Manual de Identidad de Agentes Sincronizado**: Se actualizó la sección de frontend de `Agente — Frontend, UI y Design System` en [agents.md](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/.agents/agents.md) para reflejar las restricciones visuales.
+- **Manual de Marca Actualizado**: Se redactó la sección `## 6. Estándar de Botones` en [BRAND_GUIDELINES.md](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/docs/brand/BRAND_GUIDELINES.md).
+- **Alineación de Código en Componente Button**: Se actualizaron las clases CSS de Tailwind en [button.jsx](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/components/ui/button.jsx) para las variantes `default` (primario) y `secondary` (secundario):
+  - Primario: Fondo `#468DFF`, texto y borde `#FFFFFF` (hover background `#0511F2`, hover border `#0511F2`).
+  - Secundario: Fondo `#FFFFFF`, borde y texto `#468DFF` (hover background `#468DFF`, hover text y border `#FFFFFF`).
+
+### Decisiones Clave
+- **Consistencia Multicapa**: Mapear de manera unificada las reglas visuales tanto a nivel instruccional (agents, workspace, skill) como en el código fuente (`button.jsx`) previene desvíos de diseño y asegura que cualquier agente futuro respete estrictamente la paleta de la marca.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados / Creados
+- `[MODIFY] .agents/skills/gestion-syso-brand-guidelines/SKILL.md`
+- `[MODIFY] docs/RULES_WORKSPACE.md`
+- `[MODIFY] .agents/agents.md`
+- `[MODIFY] docs/brand/BRAND_GUIDELINES.md`
+- `[MODIFY] src/components/ui/button.jsx`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción completa exitosa (`cmd /c npm run build`) sin advertencias ni rotura de páginas del proyecto.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. El componente común propaga los estilos de manera segura a toda la plataforma.
+
+### Próximo Paso Recomendado
+- Validar el comportamiento de los botones en el flujo de Onboarding e inicios de sesión en dispositivos táctiles móviles.
+
+---
+
+## [2026-06-26] Limpieza de Cabecera en Perfil de Usuario y Estandarización de Datos de Tenant/Plan en Secciones
+
+### Resumen de Cambios
+- **Remoción de Cabecera Redundante en Perfil:** Se eliminó la barra secundaria interna en el formulario de perfil ("Volver al Dashboard" y "Perfil de usuario") en [profile/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/profile/page.js), ya que la barra Navbar superior persistente contiene el título del perfil y los detalles de la organización, y el formulario cuenta con un botón "Salir" funcional al pie del mismo.
+- **Estabilidad de Carga en Dev Mode:** Se inicializaron los objetos de estado `tenantData` y `profileData` con valores mockeados cuando `isDevMode = true` en el perfil, previniendo que la página se mantenga con textos de "Cargando..." permanentemente por falta de conexión local a Supabase.
+- **Estandarización de Datos Mock en Secciones:** Se actualizó `loadMockData()` en 6 páginas de módulos operativos (`visitas`, `legajo`, `extintores`, `correctivas`, `capacitacion`, `nomina`) para inyectar correctamente `plan_id: 'free'` en el estado del tenant y evitar que la insignia de suscripción muestre valores por defecto o rompa la consistencia visual.
+- **Homologación de Leyendas de Plan:** Se unificó la expresión de formato condicional del plan comercial en [legajo/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/legajo/page.js) para que coincida con la traducción de slugs de plan (`Plan Libre`, `Plan Standard`, `Plan Basic`, etc.) presente en el resto de la aplicación.
+- **Seguridad en Visualización de Suscripción:** Se agregó el filtro de roles en el plan del perfil (`profile/page.js`) para que, al igual que en las demás vistas, se oculte la insignia si el usuario activo tiene rol de `cliente`.
+- **Corrección de Color de Fondo de Carga en Perfil:** Se removió la clase `bg-white` en el contenedor del spinner de carga inicial (`initialLoading`) en [profile/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/profile/page.js). Esto soluciona la transición abrupta de color blanco a gris al cargar y asegura la consistencia con el color de fondo establecido de la sección (`bg-syso-bg`).
+- **Rediseño Equitativo de Cargadores de Imagen en Perfil:** Se removieron las restricciones de ancho máximo rígido (`max-w-[280px]` y `max-w-[320px]`) en los contenedores de los cargadores `ImageUploadZone` en [profile/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/profile/page.js) (Matrículas, Firma Digital y Logos). Ahora los componentes se expanden a `w-full` dentro de sus columnas de cuadrícula, logrando una distribución equitativa de ancho y una alineación fluida con los inputs de texto superiores.
+- **Remoción de Icono de Tilde en Botón Guardar:** Se retiró el icono de marca de verificación (`CheckCircle`) del botón de guardado en [profile/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/profile/page.js) para simplificar la visualización de la acción de envío.
+
+### Decisiones Clave
+- **Unificación de Componentes de Cabecera:** Al delegar la visualización del plan y la organización en el `<header>` superior, se aligera el cuerpo del formulario de perfil, eliminando redundancia y maximizando el espacio de visualización móvil y de escritorio.
+- **Consistencia de Datos en Desarrollo Local:** Asegurar que los mocks de todas las secciones tengan un `plan_id` idéntco y que el perfil se inicialice correctamente en local previene inconsistencias de UI y depuraciones falsas de desarrollo.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/nomina/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación completa de producción (`cmd /c npm run build`) finalizada con total éxito y cero advertencias de empaquetado o hidratación.
+
+### Riesgos Detectados / Remanentes
+- Ninguno.
+
+### Próximo Paso Recomendado
+- Seguir con el desarrollo de subcarpetas o flujos definidos en los legajos técnicos o vistas operativas.
+
+---
+
+## [2026-06-26] Rediseño y Equiparación del Módulo de Profesional y Firma en Avisos de Riesgo
+
+### Resumen de Cambios
+- **Ancho Equitativo (50% / 50%)**: Se modificó la disposición de la grilla en la sección de asignación del profesional interviniente de `grid-cols-1 md:grid-cols-3` a `grid-cols-1 md:grid-cols-2`, removiendo la clase `md:col-span-2` del primer bloque. Con esto, tanto la tarjeta de selección del profesional como el contenedor del método de firma tienen el mismo ancho.
+- **Aumento de Alturas**:
+  - Se incrementó la altura física de los dos contenedores de firma (digital de perfil y manual) a `h-48 md:h-56` (192px en dispositivos móviles / 224px en escritorio), igualando sus dimensiones verticales.
+  - La caja interna de previsualización para la firma del perfil se amplió a `max-w-[240px] md:max-w-[280px] h-[110px] md:h-[130px]` para mejorar la nitidez del trazo digital cargado.
+  - El lienzo de dibujo a mano alzada (`canvas`) ahora usa una altura fija responsiva en lugar de `aspect-[2/1]`, proporcionando una zona táctil significativamente más cómoda en celulares y tabletas.
+
+### Decisiones Clave
+- **Uso de Altura Fija Responsiva vs Relación de Aspecto Fija**: Al dibujar una firma manual en dispositivos móviles de pantalla estrecha, una relación de aspecto plana como `aspect-[2/1]` reduce demasiado la altura de la caja (ej. a menos de 130px), dificultando el trazo manual con dedos o lápices ópticos. Implementar `h-48 md:h-56` garantiza espacio vertical óptimo en todo dispositivo sin sacrificar la responsividad.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js completa y exitosa sin advertencias.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. La detección y el cálculo de coordenadas de firma manual son proporcionales a las dimensiones físicas de la caja mediante `getBoundingClientRect()`, evitando cualquier desfase.
+
+### Próximo Paso Recomendado
+- Realizar pruebas táctiles de firma manual en teléfonos móviles o tabletas para asegurar la comodidad en el trazo.
+
+---
+
+## [2026-06-26] Estandarización e Integración de Registros de Capacitación (PDFs, Drive y Legajo Técnico)
+
+### Resumen de Cambios
+- **Carga Multiformato en Capacitación (`capacitacion/page.js`)**: Se incorporó el componente estandarizado `DocumentUploadZone` en la sección "Registros de capacitación" del formulario de capacitaciones anuales, permitiendo subir archivos locales, importar enlaces de Google Drive y asociar documentos existentes del **Legajo Técnico**.
+- **Homologación Absoluta de Tamaños y Estilos (Cards)**:
+  - Se implementó la propiedad `borderless={true}` en `DocumentUploadZone.js` para omitir sus propios bordes y fondo gris cuando está integrado en tarjetas externas, adaptando además sus subcontenedores a clases flex de estiramiento y centrado vertical (`flex-1 flex flex-col justify-center`).
+  - Se envolvieron ambas columnas de carga en el mismo contenedor de tarjeta externa (`rounded-xl border border-slate-200 bg-slate-50 overflow-hidden flex flex-col h-full shadow-sm`), garantizando que mantengan el mismo alto y ancho de manera sincrónica bajo cualquier estado.
+  - Se igualó la altura del cargador de fotos (`ImageUploadZone`) y de documentos PDF locales (`DocumentUploadZone` local) mediante la propiedad `minHeightClass` ajustada a `min-h-[148px]`.
+  - Se reubicó la lista interactiva de adjuntos (PDFs y links a Drive) dentro de la misma tarjeta del cargador de documentos, en un pie con borde superior (`p-3 pt-0 border-t border-slate-200`), evitando desalineaciones cuando se agregan archivos.
+- **Asociación desde Legajo Técnico**:
+  - Se implementó la carga y filtrado en Supabase de los documentos del Legajo Técnico del cliente/establecimiento activo.
+  - El selector permite a los profesionales de SySO asociar un documento técnico en PDF a la capacitación anual con un botón "+ Agregar" e incorporarlo a la lista de adjuntos.
+- **Soporte de Múltiples PDFs y Enlaces Drive**: Los usuarios ahora pueden adjuntar múltiples archivos PDF locales, remotos y enlaces de Google Drive en una lista interactiva de adjuntos con acciones para previsualizar (Eye) y eliminar (Trash) los elementos correspondientes.
+- **Persistencia Unificada en Base de Datos**: Se utiliza el array `fotos_urls` de la tabla `programa_capacitacion` de forma polimórfica para persistir tanto las rutas de imágenes como las de documentos locales de Supabase y enlaces absolutos de Google Drive.
+- **Previsualización Inteligente de Adjuntos**: Se adaptó el modal de previsualización de registros de capacitación para identificar el tipo de archivo (imagen, PDF o enlace a Drive) y renderizar componentes específicos (tarjeta roja con enlace de descarga para PDFs, tarjeta azul para accesos directos a Google Drive) evitando imágenes rotas en el cliente.
+
+### Decisiones Clave
+- **Soporte Borderless para Reusabilidad**: Diseñar `DocumentUploadZone` con la propiedad `borderless` permite que delegue la responsabilidad visual de la tarjeta (borde, fondo, sombras, paddings) a un contenedor superior. Esto nos otorga libertad total de maquetación en layouts complejos sin perder la funcionalidad base del cargador en vistas tradicional del proyecto.
+- **Aprovechamiento de Columna Polimórfica**: Utilizar la columna `fotos_urls` existente evita requerir cambios o migraciones en la base de datos de PostgreSQL, permitiendo almacenar strings de rutas Supabase (bucket `documents`) y URLs absolutas a la vez, discriminándolos por patrón de cadena (`.pdf`, `documents/`, `drive.google.com`) al renderizar y firmar las URLs.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+- `supabase`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/components/ui/DocumentUploadZone.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción completa (`cmd /c npm run build`) ejecutada con total éxito y cero advertencias o errores sintácticos en Next.js.
+
+---
+
+## [2026-06-26] Estandarización Global de Zonas de Carga de Imágenes (ImageUploadZone)
+
+### Resumen de Cambios
+- **Refactorización de Entradas de Imágenes**: Se completó la migración de todas las zonas de carga de imágenes restantes de la aplicación a la interfaz unificada del componente `ImageUploadZone`.
+- **Actualización de Gestión de Equipo (`equipo/page.js`)**: Se integró `ImageUploadZone` para la Foto de Matrícula Frente, Foto de Matrícula Dorso, y la Firma Digitalizada de los miembros del equipo, mejorando la coherencia y aplicando restricciones de tamaño (5MB) en el cliente.
+- **Actualización de Mi Perfil (`profile/page.js`)**: Se migraron los cargadores de matrículas profesionales, firmas escaneadas y logotipos de la empresa (Logo 1 y Logo 2) al componente común con soporte para arrastrar y soltar, cámara integrada y validación visual.
+- **Actualización de Registro y Onboarding (`onboarding/page.js`)**: Se adaptaron todos los cargadores de imágenes del asistente de onboarding para usar `ImageUploadZone`, corrigiendo además un anidamiento sintáctico del bloque JSX que impedía su correcto agrupamiento y resolviendo las advertencias de compilación.
+- **Soporte Polimórfico en Controladores**: Se ajustaron las funciones `handleImageChange` y `handleMatriculaFileChange` para ser polimórficas (admitir tanto el objeto `File` directo provisto por `ImageUploadZone` como los eventos nativos `e` del navegador), previniendo cualquier rotura de compatibilidad.
+
+### Decisiones Clave
+- **Límites de Dimensionamiento en Layouts**: Se envolvieron las zonas de carga de imágenes más compactas (firmas, matrículas y logos) dentro de contenedores con clases de ancho máximo (`max-w-[280px]` o `max-w-[320px]`) para que las cuadrículas y las vistas de columnas del formulario se mantengan consistentes y proporcionadas en dispositivos de escritorio y móviles.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] src/app/onboarding/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación completa de producción (`cmd /c npm run build`) finalizada de extremo a extremo de forma exitosa y sin errores de sintaxis o hidratación en Next.js.
+
+---
+
 ## [2026-06-26] Estructura de Legajo Técnico: Incorporación de ATS, Nómina de Personal e Índice Interactiva
 
 ### Resumen de Cambios

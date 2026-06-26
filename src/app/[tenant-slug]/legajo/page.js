@@ -408,7 +408,7 @@ export default function LegajoPage({ params }) {
   // Cargar datos Mock en Desarrollo
   const loadMockData = () => {
     setProfile({ full_name: 'Profesional de SySO (Mock)', role: 'admin' });
-    setTenant({ id: 'mock-tenant', name: 'Consultora de Prueba' });
+    setTenant({ id: 'mock-tenant', name: 'Consultora de Prueba', plan_id: 'free' });
     setEmpresas([
       { id: 'mock-empresa-1', razon_social: 'Acme Argentina S.A.', cuit: '30712345678' },
       { id: 'mock-empresa-2', razon_social: 'Argento Via Publica', cuit: '30543210987' }
@@ -1020,7 +1020,7 @@ export default function LegajoPage({ params }) {
               {tenant?.name || 'Cargando...'}
             </span>
             <span className={`px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider ${(!profile || profile.role === 'cliente') ? 'hidden' : ''}`} suppressHydrationWarning>
-              {tenant?.plan_id ? `Plan ${tenant.plan_id}` : 'Plan Pro'}
+              {tenant?.plan_id ? (tenant.plan_id.toLowerCase() === 'libre' ? 'Plan Libre' : tenant.plan_id.toLowerCase().startsWith('standard') ? 'Plan Standard' : tenant.plan_id.toLowerCase().startsWith('basic') ? 'Plan Basic' : `Plan ${tenant.plan_id}`) : 'Plan Pro'}
             </span>
           </div>
         </header>
@@ -1248,7 +1248,7 @@ export default function LegajoPage({ params }) {
                     <button
                       type="button"
                       onClick={handleExitForm}
-                      className="px-5 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-white hover:border-[#468DFF] transition-all active:scale-[0.98] cursor-pointer"
+                      className="px-5 py-2.5 bg-[#FFFFFF] text-[#468DFF] border border-[#468DFF] rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-[#FFFFFF] hover:border-[#FFFFFF] transition-all active:scale-[0.98] cursor-pointer"
                     >
                       Salir
                     </button>

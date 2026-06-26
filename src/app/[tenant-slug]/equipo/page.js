@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
+import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import { supabase, fetchAllGeography } from '@/lib/supabase';
 import { 
   Users, 
@@ -484,8 +485,8 @@ export default function EquipoPage({ params }) {
   }, [provincia, partido, isDevMode]);
 
   // Image Upload handler
-  const handleImageChange = (e, setFile, setPreview) => {
-    const file = e.target.files[0];
+  const handleImageChange = (fileOrEvent, setFile, setPreview) => {
+    const file = fileOrEvent?.target ? fileOrEvent.target.files[0] : fileOrEvent;
     if (!file) return;
 
     if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
@@ -518,9 +519,7 @@ export default function EquipoPage({ params }) {
         fotoFrente: null,
         fotoFrentePreview: '',
         fotoDorso: null,
-        fotoDorsoPreview: '',
-        fotoFrentePath: '',
-        fotoDorsoPath: ''
+        fotoDorsoPreview: ''
       }
     ]);
   };
@@ -533,8 +532,8 @@ export default function EquipoPage({ params }) {
     setMatriculas(prev => prev.map((m, idx) => idx === index ? { ...m, [field]: value } : m));
   };
 
-  const handleMatriculaFileChange = (index, fileField, previewField, e) => {
-    const file = e.target.files[0];
+  const handleMatriculaFileChange = (index, fileField, previewField, fileOrEvent) => {
+    const file = fileOrEvent?.target ? fileOrEvent.target.files[0] : fileOrEvent;
     if (!file) return;
 
     if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
@@ -1827,73 +1826,33 @@ export default function EquipoPage({ params }) {
                         {/* Photos of License (Frente and Dorso) */}
                         <div className="grid md:grid-cols-2 gap-6">
                           {/* Frente */}
-                          <div className="border border-slate-150 rounded-2xl p-4 bg-slate-50/50">
-                            <label className="text-xs font-bold text-slate-600 block mb-2">
-                              Foto de Matrícula (Frente)
-                            </label>
-                            {mat.fotoFrentePreview ? (
-                              <div className="relative aspect-[3/2] w-full max-w-[280px] bg-slate-100 rounded-lg overflow-hidden border border-slate-300 mx-auto">
-                                <img src={mat.fotoFrentePreview} alt="Frente" className="w-full h-full object-cover" />
-                                {canEdit && (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleMatriculaFileClear(idx, 'Frente')}
-                                    className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors cursor-pointer"
-                                  >
-                                    <X className="h-3.5 w-3.5" />
-                                  </button>
-                                )}
-                              </div>
-                            ) : (
-                              <div className="relative border-2 border-dashed border-slate-200 hover:border-slate-300 rounded-xl p-6 text-center cursor-pointer transition-colors max-w-[280px] mx-auto bg-white">
-                                {canEdit && (
-                                  <input
-                                    type="file"
-                                    accept="image/jpeg,image/jpg,image/png"
-                                    onChange={(e) => handleMatriculaFileChange(idx, 'fotoFrente', 'fotoFrentePreview', e)}
-                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                  />
-                                )}
-                                <Upload className="h-6 w-6 text-slate-400 mx-auto mb-2" />
-                                <span className="text-[10px] font-bold text-slate-600 block">Subir Foto Frente</span>
-                                <span className="text-[8px] text-slate-400 block mt-1">Formatos JPG, PNG</span>
-                              </div>
-                            )}
+                          <div className="border border-slate-150 rounded-2xl p-4 bg-slate-50/50 flex flex-col justify-center">
+                            <div className="max-w-[280px] w-full mx-auto">
+                              <ImageUploadZone
+                                label="Foto de Matrícula (Frente)"
+                                preview={mat.fotoFrentePreview}
+                                onFileChange={(file) => handleMatriculaFileChange(idx, 'fotoFrente', 'fotoFrentePreview', file)}
+                                onClear={() => handleMatriculaFileClear(idx, 'Frente')}
+                                disabled={!canEdit}
+                                maxSizeMB={5}
+                                onToast={triggerToast}
+                              />
+                            </div>
                           </div>
 
                           {/* Dorso */}
-                          <div className="border border-slate-150 rounded-2xl p-4 bg-slate-50/50">
-                            <label className="text-xs font-bold text-slate-600 block mb-2">
-                              Foto de Matrícula (Dorso)
-                            </label>
-                            {mat.fotoDorsoPreview ? (
-                              <div className="relative aspect-[3/2] w-full max-w-[280px] bg-slate-100 rounded-lg overflow-hidden border border-slate-300 mx-auto">
-                                <img src={mat.fotoDorsoPreview} alt="Dorso" className="w-full h-full object-cover" />
-                                {canEdit && (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleMatriculaFileClear(idx, 'Dorso')}
-                                    className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors cursor-pointer"
-                                  >
-                                    <X className="h-3.5 w-3.5" />
-                                  </button>
-                                )}
-                              </div>
-                            ) : (
-                              <div className="relative border-2 border-dashed border-slate-200 hover:border-slate-300 rounded-xl p-6 text-center cursor-pointer transition-colors max-w-[280px] mx-auto bg-white">
-                                {canEdit && (
-                                  <input
-                                    type="file"
-                                    accept="image/jpeg,image/jpg,image/png"
-                                    onChange={(e) => handleMatriculaFileChange(idx, 'fotoDorso', 'fotoDorsoPreview', e)}
-                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                  />
-                                )}
-                                <Upload className="h-6 w-6 text-slate-400 mx-auto mb-2" />
-                                <span className="text-[10px] font-bold text-slate-600 block">Subir Foto Dorso</span>
-                                <span className="text-[8px] text-slate-400 block mt-1">Formatos JPG, PNG</span>
-                              </div>
-                            )}
+                          <div className="border border-slate-150 rounded-2xl p-4 bg-slate-50/50 flex flex-col justify-center">
+                            <div className="max-w-[280px] w-full mx-auto">
+                              <ImageUploadZone
+                                label="Foto de Matrícula (Dorso)"
+                                preview={mat.fotoDorsoPreview}
+                                onFileChange={(file) => handleMatriculaFileChange(idx, 'fotoDorso', 'fotoDorsoPreview', file)}
+                                onClear={() => handleMatriculaFileClear(idx, 'Dorso')}
+                                disabled={!canEdit}
+                                maxSizeMB={5}
+                                onToast={triggerToast}
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1908,41 +1867,21 @@ export default function EquipoPage({ params }) {
                     Firma Digital
                   </h4>
 
-                  <div className="border border-slate-150 rounded-2xl p-4 bg-slate-50/50 max-w-[320px] mx-auto">
-                    <label className="text-xs font-bold text-slate-600 block mb-2 text-center">
-                      Imagen de Firma Digital <span className="text-slate-400">(Opcional)</span>
-                    </label>
-                    {fotoFirmaPreview ? (
-                      <div className="relative aspect-[4/2] w-full bg-white rounded-lg overflow-hidden border border-slate-300 mx-auto flex items-center justify-center p-4">
-                        <img src={fotoFirmaPreview} alt="Firma digital" className="max-w-full max-h-full object-contain" />
-                        {canEdit && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setFotoFirma(null);
-                              setFotoFirmaPreview('');
-                            }}
-                            className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors cursor-pointer"
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="relative border-2 border-dashed border-slate-200 hover:border-slate-300 rounded-xl p-6 text-center cursor-pointer transition-colors bg-white">
-                        {canEdit && (
-                          <input
-                            type="file"
-                            accept="image/jpeg,image/jpg,image/png"
-                            onChange={(e) => handleImageChange(e, setFotoFirma, setFotoFirmaPreview)}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                          />
-                        )}
-                        <Upload className="h-6 w-6 text-slate-400 mx-auto mb-2" />
-                        <span className="text-[10px] font-bold text-slate-600 block">Subir Firma</span>
-                        <span className="text-[8px] text-slate-400 block mt-1">Formatos JPG, PNG con fondo blanco o transparente</span>
-                      </div>
-                    )}
+                  <div className="border border-slate-150 rounded-2xl p-4 bg-slate-50/50 max-w-[320px] mx-auto flex flex-col justify-center">
+                    <div className="w-full mx-auto">
+                      <ImageUploadZone
+                        label="Imagen de Firma Digital (Opcional)"
+                        preview={fotoFirmaPreview}
+                        onFileChange={(file) => handleImageChange(file, setFotoFirma, setFotoFirmaPreview)}
+                        onClear={() => {
+                          setFotoFirma(null);
+                          setFotoFirmaPreview('');
+                        }}
+                        disabled={!canEdit}
+                        maxSizeMB={5}
+                        onToast={triggerToast}
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -1953,7 +1892,7 @@ export default function EquipoPage({ params }) {
                   <button
                     type="button"
                     onClick={() => handleExitWithoutSave()}
-                    className="px-5 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-white hover:border-[#468DFF] transition-all active:scale-[0.98] cursor-pointer"
+                    className="px-5 py-2.5 bg-[#FFFFFF] text-[#468DFF] border border-[#468DFF] rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-[#FFFFFF] hover:border-[#FFFFFF] transition-all active:scale-[0.98] cursor-pointer"
                   >
                     Salir
                   </button>

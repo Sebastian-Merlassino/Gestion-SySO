@@ -218,6 +218,8 @@ export default function NominaPage({ params }) {
   };
 
   const loadMockData = () => {
+    setProfile({ full_name: 'Profesional de SySO (Mock)', role: 'admin' });
+    setTenant({ id: 'mock-tenant', name: 'Consultora de Prueba', plan_id: 'free' });
     setEmpresas([
       { id: '1', razon_social: 'Empresa Test S.A.', cuit: '30711122233' },
       { id: '2', razon_social: 'Logística Norte SRL', cuit: '33722233344' }
@@ -1317,7 +1319,7 @@ export default function NominaPage({ params }) {
                   <button
                     type="button"
                     onClick={handleExitForm}
-                    className="px-5 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-white hover:border-[#468DFF] transition-all active:scale-[0.98] cursor-pointer bg-white"
+                    className="px-5 py-2.5 bg-[#FFFFFF] text-[#468DFF] border border-[#468DFF] rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-[#FFFFFF] hover:border-[#FFFFFF] transition-all active:scale-[0.98] cursor-pointer"
                   >
                     Salir
                   </button>

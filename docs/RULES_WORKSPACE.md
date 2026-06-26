@@ -81,6 +81,11 @@ Respetar siempre:
 - secundarios: `#D9D9D9`, `#FFFFFF`, `#000000`
 - una sola familia tipográfica definida en `docs/brand/TYPOGRAPHY.md`
 - diseño responsive para web, tablet y celular
+- botones estandarizados:
+  - Botón primario: relleno `#468DFF`, texto/borde `#FFFFFF`. Hover: relleno `#0511F2` y texto/borde `#FFFFFF`.
+  - Botón secundario y "Salir": relleno `#FFFFFF`, borde/texto `#468DFF`. Hover: relleno `#468DFF` y texto/borde `#FFFFFF`.
+  - Botón "Editar": relleno `#F59E0B` (Amber-500), texto/borde `#FFFFFF`. Hover: relleno `#D97706` (Amber-600). En tabla (icono): relleno `#FEF3C7`, texto `#D97706`, hover relleno `#FEEB99`, texto `#B45309`.
+  - Botón "Eliminar": relleno `#EF4444` (Red-500), texto/borde `#FFFFFF`. Hover: relleno `#DC2626` (Red-600). En tabla (icono): relleno `#FEE2E2`, texto `#DC2626`, hover relleno `#FCA5A5`, texto `#B91C1C`.
 - referencia estructural de dashboard en `docs/design/reference/dashboard-reference.jpg`
 - diseño estándar de carga de documentos (`DocumentUploadZone`): contenedor de bordes redondeados (`rounded-xl border border-slate-200 bg-slate-50`), pestañas de alternancia superior para local/Drive (`flex border-b border-slate-200 bg-white text-xs font-semibold`), y zona de arrastre punteada reactiva.
 
