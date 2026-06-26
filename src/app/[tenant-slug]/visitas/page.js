@@ -2346,8 +2346,19 @@ export default function VisitasPage({ params }) {
                       <tbody className="divide-y divide-slate-100 text-sm">
                         {sortedVisitas.length === 0 ? (
                           <tr>
-                            <td colSpan="6" className="text-center py-10 text-slate-400 font-medium bg-slate-50/20">
-                              No se encontraron constancias de visita cargadas.
+                            <td colSpan="6" className="text-center py-20 text-slate-400 font-bold bg-slate-50/10">
+                              <ClipboardCheck className="h-10 w-10 mx-auto mb-2 text-slate-350 shrink-0" />
+                              <p className="font-outfit text-sm text-slate-700">No hay constancias de visita registradas</p>
+                              <p className="text-[11px] text-slate-400 font-normal mt-1">Registra una nueva constancia de visita para comenzar.</p>
+                              {canCargar && (
+                                <button
+                                  type="button"
+                                  onClick={handleAddNew}
+                                  className="mt-3 text-xs text-[#468DFF] hover:underline font-bold block mx-auto"
+                                >
+                                  + Registrar la primera
+                                </button>
+                              )}
                             </td>
                           </tr>
                         ) : (

@@ -1468,8 +1468,24 @@ export default function ExtintoresPage({ params }) {
                       <tbody className="divide-y divide-slate-100 text-sm">
                         {sortedExtintores.length === 0 ? (
                           <tr>
-                            <td colSpan={(canEditar || canEliminar) ? 7 : 6} className="text-center py-10 text-slate-400 font-medium bg-slate-50/20">
-                              No se encontraron registros de extintores.
+                            <td colSpan={(canEditar || canEliminar) ? 7 : 6} className="text-center py-20 text-slate-400 font-bold bg-slate-50/10">
+                              <Flame className="h-10 w-10 mx-auto mb-2 text-slate-350 shrink-0" />
+                              <p className="font-outfit text-sm text-slate-700">No hay extintores registrados</p>
+                              <p className="text-[11px] text-slate-400 font-normal mt-1">Registra un nuevo extintor para comenzar.</p>
+                              {canCargar && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setIsReadOnlyView(false);
+                                    setEditingId(null);
+                                    handleCloseForm();
+                                    setTimeout(() => setIsFormOpen(true), 0);
+                                  }}
+                                  className="mt-3 text-xs text-[#468DFF] hover:underline font-bold block mx-auto"
+                                >
+                                  + Registrar el primero
+                                </button>
+                              )}
                             </td>
                           </tr>
                         ) : (

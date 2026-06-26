@@ -1743,13 +1743,24 @@ export default function LegajoPage({ params }) {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 text-sm text-slate-700">
-                            {sortedDocuments.length === 0 ? (
-                              <tr>
-                                <td colSpan="5" className="text-center py-10 text-slate-400 font-medium bg-slate-50/20 italic">
-                                  No se encontraron registros cargados en esta ubicación.
-                                </td>
-                              </tr>
-                            ) : (
+                             {sortedDocuments.length === 0 ? (
+                               <tr>
+                                 <td colSpan="5" className="text-center py-20 text-slate-400 font-bold bg-slate-50/10">
+                                   <FileText className="h-10 w-10 mx-auto mb-2 text-slate-350 shrink-0" />
+                                   <p className="font-outfit text-sm text-slate-700">No hay documentos registrados</p>
+                                   <p className="text-[11px] text-slate-400 font-normal mt-1">Registra un nuevo documento para comenzar.</p>
+                                   {canCargar && (
+                                     <button
+                                       type="button"
+                                       onClick={handleAddNew}
+                                       className="mt-3 text-xs text-[#468DFF] hover:underline font-bold block mx-auto"
+                                     >
+                                       + Registrar el primero
+                                     </button>
+                                   )}
+                                 </td>
+                               </tr>
+                             ) : (
                               sortedDocuments.map((doc) => {
                                 const emp = empresas.find(e => e.id === doc.empresa_id);
                                 const est = allEstablecimientos.find(es => es.id === doc.establecimiento_id);

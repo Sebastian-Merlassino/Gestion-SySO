@@ -1571,12 +1571,19 @@ export default function NominaPage({ params }) {
               {/* Listado / Tabla */}
               <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden">
                 {filteredPersonal.length === 0 ? (
-                  <div className="flex-grow flex flex-col items-center justify-center py-20 text-center px-4">
-                    <Users className="h-10 w-10 text-slate-300 mb-3" />
-                    <h3 className="font-outfit text-sm font-bold text-slate-700">No se encontraron registros de personal</h3>
-                    <p className="text-xs text-slate-400 mt-1 max-w-sm">
-                      Carga personal de forma manual o importa una planilla Excel para comenzar.
-                    </p>
+                  <div className="flex-grow flex flex-col items-center justify-center py-20 text-center px-4 bg-slate-50/10">
+                    <Users className="h-10 w-10 text-slate-350 mb-2 shrink-0" />
+                    <p className="font-outfit text-sm text-slate-700 font-bold">No hay empleados registrados</p>
+                    <p className="text-[11px] text-slate-400 font-normal mt-1">Registra un nuevo empleado para comenzar.</p>
+                    {canCreate && (
+                      <button
+                        type="button"
+                        onClick={handleOpenCreateForm}
+                        className="mt-3 text-xs text-[#468DFF] hover:underline font-bold"
+                      >
+                        + Registrar el primero
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <div className="overflow-auto" style={{ maxHeight: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>

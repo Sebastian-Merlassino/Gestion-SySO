@@ -1246,20 +1246,18 @@ export default function EquipoPage({ params }) {
 
               {/* Members Grid/List */}
               {miembros.length === 0 ? (
-                <div className="bg-white border border-slate-200/80 rounded-2xl p-16 text-center shadow-sm">
-                  <Briefcase className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                  <h4 className="text-base font-bold text-slate-800">No hay integrantes cargados</h4>
-                  <p className="text-xs text-slate-500 max-w-sm mx-auto mt-2 leading-relaxed">
-                    Carga el personal técnico de higiene, seguridad y ambiente que trabaja en tu equipo para asignarlos como responsables.
-                    {canCargar && (
-                      <button
-                        onClick={handleAddNew}
-                        className="mt-6 block mx-auto py-2 px-4 rounded-xl border border-slate-350 hover:border-slate-450 text-slate-700 hover:text-slate-900 text-xs font-bold transition-all inline-flex items-center gap-2 bg-slate-50 shadow-sm"
-                      >
-                        Agregar mi primer miembro
-                      </button>
-                    )}
-                  </p>
+                <div className="bg-white rounded-2xl border border-slate-150 p-20 text-center shadow-sm bg-slate-50/10">
+                  <Briefcase className="h-10 w-10 text-slate-350 mx-auto mb-2 shrink-0" />
+                  <p className="font-outfit text-sm text-slate-700 font-bold">No hay miembros de equipo registrados</p>
+                  <p className="text-[11px] text-slate-400 font-normal mt-1">Registra un nuevo miembro de equipo para comenzar.</p>
+                  {canCargar && (
+                    <button
+                      onClick={handleAddNew}
+                      className="mt-3 text-xs text-[#468DFF] hover:underline font-bold block mx-auto"
+                    >
+                      + Registrar el primero
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden">

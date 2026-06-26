@@ -1,5 +1,223 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-06-25] Estandarización de Estados Vacíos, Selectores de Fecha y Corrección de Compilación
+
+### Resumen de Cambios
+- **Selectores de Fecha en Accidentes**: Se modificaron los campos de fecha en el formulario de [accidentes/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/accidentes/page.js) (Fecha siniestro / reingreso, Fecha de denuncia y Fecha de alta / rechazo) de inputs de tipo texto con máscara a inputs nativos de tipo `date` (`type="date"`). Esto provee el selector de fecha calendario (datepicker) solicitado, mapeando el estado de forma directa en formato `YYYY-MM-DD` sin realizar conversiones redundantes en el guardado.
+- **Estandarización de Estados Vacíos**: Se actualizó el estado vacío de la tabla en [avisos/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/avisos/page.js) para usar la estética común (ícono `AlertTriangle`, mensaje centralizado "No hay avisos de riesgo registrados", subtítulo descriptivo y botón de acción "+ Registrar el primero" controlado por permisos `canCargar`).
+- **Remediación de JSX Syntax Error**: Se corrigió un error de compilación de webpack en [correctivas/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/correctivas/page.js) donde faltaba la etiqueta de apertura `<tbody>` en el renderizado de la tabla de acciones correctivas, lo que impedía compilar el proyecto.
+- **Validación del Proyecto**: Se ejecutó `npm run build` completándose con total éxito y cero advertencias de compilación para todas las rutas estáticas y dinámicas.
+
+### Decisiones Clave
+- **Consistencia Visual**: Centralizar y homologar la estructura y los textos (respetando concordancia de género y número) de las pantallas ante ausencia de registros.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción exitosa: `cmd /c npm run build` completada correctamente.
+
+---
+
+## [2026-06-25] Corrección de Diseño y Alineación UX/UI del Módulo "Accidentes"
+
+### Resumen de Cambios
+- **Encabezado Estático Estándar**: Se removió el header móvil negro duplicado y se reemplazó el encabezado interno scrollable por una barra fija superior (`h-16`) con botón de menú hamburguesa responsivo (`md:hidden`) y badges de plan/tenant.
+- **Formulario en Tarjeta Unificada**: Se unificaron las 4 tarjetas independientes del formulario en una sola tarjeta blanca (`bg-white rounded-2xl border border-slate-150 shadow-sm`) con su respectivo header gris (`bg-slate-50 border-b border-slate-150 h-16`) que incluye botón de retroceso (`ArrowLeft`), título Outfit y botón de cerrar (`X`).
+- **Botón de Acción Reubicado**: El botón "Nuevo Accidente" se desplazó del encabezado de la página al interior del panel de búsqueda y filtros colapsables, igual al estándar de las secciones `correctivas` y `nomina`.
+- **Refinamiento de Estilos en Controles**: Se adecuó el padding y fondo de los inputs y selects al estándar de la plataforma (`px-3.5 py-2`, `bg-slate-50/50`, focus en border-color), manteniendo la funcionalidad dinámica de color semántico del selector de Gravedad.
+- **Espaciado y Altura de la Tabla**: Se incrementó el padding de las celdas a `px-6 py-4` y se limitó la altura de la tabla con scroll interno y cabeceras pegajosas (`sticky top-0 z-10 bg-slate-50 border-b border-slate-150`).
+- **Optimización en React (Remounts)**: Se movió la definición del componente `PdfUploadZone` fuera del cuerpo de `AccidentesPage` a nivel de módulo, evitando el anti-patrón de remounts cíclicos en cada re-renderizado de React.
+
+### Decisiones Clave
+- **Consistencia Visual Absoluta**: Se unificó el diseño de Accidentes para que use las mismas clases estéticas y flujos de layouts que las pantallas principales del proyecto SaaS.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+- `shadcn`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción exitosa: `cmd /c npm run build` completado sin errores. La ruta `/[tenant-slug]/accidentes` se compiló con un peso de 15.2 kB.
+
+---
+
+## [2026-06-25] Implementación del Módulo "Accidentes"
+
+
+### Resumen de Cambios
+- **Nuevo módulo frontend `accidentes`**: Se creó la página operativa `src/app/[tenant-slug]/accidentes/page.js` con CRUD completo para el registro, edición, visualización y eliminación de accidentes de trabajo, accidentes in itinere, incidentes, enfermedades profesionales y rechazos/reingresos.
+- **Formulario completo**: Incluye todos los campos del modelo definido: razón social, establecimiento (dependiente), área/sector, puesto/operación, nombre/apellido del accidentado, CUIL, fecha siniestro (máscara DD/MM/YYYY), hora, fecha denuncia, N° siniestro, tipo, gravedad con badge semántico, descripción de hechos, forma de accidente, descripción de lesión, zona del cuerpo afectada, agente material, diagnóstico, fecha de alta/rechazo, días de baja y observaciones.
+- **Cálculo automático de días de baja**: Se calcula en tiempo real a partir de la diferencia entre `fecha_siniestro` y `fecha_alta_rechazo` mediante `useEffect`.
+- **Dos zonas de carga de archivos PDF**: Denuncia de accidente e Informe de investigación implementados con pestañas "Archivo Local" (Drag & Drop) y "Enlace Drive" (importación vía `/api/upload-from-url`), siguiendo el mismo patrón del Legajo Técnico.
+- **Badge de gravedad semántico**: Verde (Leve), Amarillo (Grave), Rojo (Mortal) en tabla y formulario. El selector de gravedad cambia de color en tiempo real al seleccionar.
+- **Pictograma de guía de clasificación de gravedad**: Ícono `HelpCircle` junto al campo "Gravedad" que abre un modal con los criterios de clasificación, colores y ejemplos para las tres categorías.
+- **Filtros de listado**: Razón social, establecimiento (dependiente), fecha, tipo y gravedad con panel colapsable.
+- **Catálogos desde Supabase**: Se cargan en paralelo `formas_accidente`, `descripciones_lesion`, `zonas_cuerpo_afectadas` y `agentes_materiales_asociados` al inicializar la página.
+- **Firma en lote de URLs**: Los archivos de denuncia e informe se firman en lote con `createSignedUrls` al cargar el listado.
+- **Seguridad multi-tenant**: Aislamiento por `tenant_id` y filtro adicional por `empresa_id` para usuarios de rol `cliente`.
+- **Instalación de dependencia**: Se instaló el paquete `xlsx` que estaba ausente del entorno local y era requerido por `nomina/page.js`.
+
+### Decisiones Clave
+- **No se requirió nueva migración**: La tabla `public.accidentes`, sus políticas RLS y la actualización de permisos en `profiles` y `miembros_equipo` ya habían sido aplicadas mediante la migración `20260713000000_create_accidentes.sql`.
+- **Sidebar ya preparado**: El ítem "Accidentes" con ícono `ShieldAlert` ya existía en `src/components/Sidebar.js`.
+- **Patrón de archivos dobles**: Se encapsuló la lógica de carga PDF en el componente inline `PdfUploadZone` para evitar duplicación de código entre Denuncia e Informe dentro del mismo formulario.
+- **Máscara de fechas**: Se respetó el patrón estándar del sistema usando `formatAsDateInput` + `convertToDbDate` para todas las fechas del formulario.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `gestion-syso-multitenant-security`
+- `next-best-practices`
+- `supabase`
+
+### Archivos Modificados / Creados
+- `[NEW] src/app/[tenant-slug]/accidentes/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- **Compilación de producción**: `cmd /c npm run build` completado con éxito — ruta `/[tenant-slug]/accidentes` (14.4 kB) incluida en el bundle de Next.js 14.2.35 sin errores ni advertencias.
+- **Dependencia `xlsx`**: Instalada y verificada (resuelve error preexistente en `nomina/page.js`).
+
+### Riesgos Detectados / Remanentes
+- Ninguno nuevo. El módulo hereda las políticas RLS y el sistema de permisos granulares ya validados en la migración anterior.
+
+### Próximo Paso Recomendado
+- Realizar pruebas funcionales en ambiente de preview: crear un accidente, adjuntar una denuncia PDF, verificar el cálculo automático de días de baja y confirmar que la guía de gravedad se muestra correctamente.
+
+---
+
+## [2026-06-25] Creación del Catálogo de Agentes Materiales Asociados en Supabase
+
+### Resumen de Cambios
+- **Tabla de Agentes Materiales Asociados**: Creación de la tabla `public.agentes_materiales_asociados` con identificador UUID, campo `nombre` único no nulo y fecha de creación.
+- **Políticas RLS**: Habilitación de Row Level Security (RLS) y definición de la política `Permitir lectura publica de agentes_materiales_asociados` para lectura global abierta.
+- **Datos Semilla**: Carga de 183 registros correspondientes a agentes materiales normalizados para clasificar causas físicas u objetos involucrados en accidentes laborales.
+
+### Decisiones Clave
+- **Esquema de Catálogo Global**: Al tratarse de un catálogo maestro estático y común a todos los clientes, se optó por un diseño global sin columna `tenant_id`, con acceso público de lectura por RLS, alineado al patrón de las tablas `geografia`, `formas_accidente`, `descripciones_lesion` y `zonas_cuerpo_afectadas`.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `supabase`
+- `gestion-syso-multitenant-security`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260712000000_create_agentes_materiales_asociados.sql`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Ejecución exitosa de la migración utilizando el pooler de conexión a Supabase y validación de la inserción y del conteo de registros (183 filas encontradas).
+
+### Riesgos Detectados / Remanentes
+- Ninguno. La tabla de catálogo está protegida contra escrituras no autorizadas mediante políticas RLS de solo lectura para el rol público.
+
+### Próximo Paso Recomendado
+- Integrar la selección de Agentes Materiales Asociados en el formulario de registro de incidentes o avisos de riesgo cuando se requiera.
+
+---
+
+## [2026-06-25] Creación del Catálogo de Zonas del Cuerpo Afectadas en Supabase
+
+### Resumen de Cambios
+- **Tabla de Zonas del Cuerpo Afectadas**: Creación de la tabla `public.zonas_cuerpo_afectadas` con identificador UUID, campo `nombre` único no nulo y fecha de creación.
+- **Políticas RLS**: Habilitación de Row Level Security (RLS) y definición de la política `Permitir lectura publica de zonas_cuerpo_afectadas` para lectura global abierta.
+- **Datos Semilla**: Carga de 127 registros correspondientes a zonas del cuerpo humano para clasificar localizaciones de lesiones por accidentes laborales.
+
+### Decisiones Clave
+- **Esquema de Catálogo Global**: Al tratarse de un catálogo maestro estático y común a todos los clientes, se optó por un diseño global sin columna `tenant_id`, con acceso público de lectura por RLS, alineado al patrón de las tablas `geografia`, `formas_accidente` y `descripciones_lesion`.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `supabase`
+- `gestion-syso-multitenant-security`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260711000000_create_zonas_cuerpo_afectadas.sql`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Ejecución exitosa de la migración utilizando el pooler de conexión a Supabase y validación de la inserción y del conteo de registros (127 filas encontradas).
+
+### Riesgos Detectados / Remanentes
+- Ninguno. La tabla de catálogo está protegida contra escrituras no autorizadas mediante políticas RLS de solo lectura para el rol público.
+
+### Próximo Paso Recomendado
+- Integrar la selección de Zonas del Cuerpo Afectadas en el formulario de registro de incidentes o avisos de riesgo cuando se requiera.
+
+---
+
+## [2026-06-25] Creación del Catálogo de Descripciones de Lesión en Supabase
+
+### Resumen de Cambios
+- **Tabla de Descripciones de Lesión**: Creación de la tabla `public.descripciones_lesion` con identificador UUID, campo `nombre` único no nulo y fecha de creación.
+- **Políticas RLS**: Habilitación de Row Level Security (RLS) y definición de la política `Permitir lectura publica de descripciones_lesion` para lectura global abierta.
+- **Datos Semilla**: Carga de 45 registros correspondientes a descripciones de lesión normalizadas para clasificar consecuencias de accidentes laborales.
+
+### Decisiones Clave
+- **Esquema de Catálogo Global**: Al tratarse de un catálogo maestro estático y común a todos los clientes, se optó por un diseño global sin columna `tenant_id`, con acceso público de lectura por RLS, alineado al patrón de las tablas `geografia` y `formas_accidente`.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `supabase`
+- `gestion-syso-multitenant-security`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260710000000_create_descripciones_lesion.sql`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Ejecución exitosa de la migración utilizando el pooler de conexión a Supabase y validación de la inserción y del conteo de registros (45 filas encontradas).
+
+### Riesgos Detectados / Remanentes
+- Ninguno. La tabla de catálogo está protegida contra escrituras no autorizadas mediante políticas RLS de solo lectura para el rol público.
+
+### Próximo Paso Recomendado
+- Integrar la selección de Descripciones de Lesión en el formulario de registro de incidentes o avisos de riesgo cuando se requiera.
+
+---
+
+## [2026-06-25] Creación del Catálogo de Formas de Accidente en Supabase
+
+### Resumen de Cambios
+- **Tabla de Formas de Accidente**: Creación de la tabla `public.formas_accidente` con identificador UUID, campo `nombre` único no nulo y fecha de creación.
+- **Políticas RLS**: Habilitación de Row Level Security (RLS) y definición de la política `Permitir lectura publica de formas_accidente` para lectura global abierta.
+- **Datos Semilla**: Carga de 68 registros correspondientes a formas de accidente normalizadas para clasificar incidentes laborales.
+
+### Decisiones Clave
+- **Esquema de Catálogo Global**: Al tratarse de un catálogo maestro estático y común a todos los clientes, se optó por un diseño global sin columna `tenant_id`, con acceso público de lectura por RLS, alineado al patrón de las tablas `geografia` y `registros`.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `supabase`
+- `gestion-syso-multitenant-security`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260709000000_create_formas_accidente.sql`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Ejecución exitosa de la migración utilizando el pooler de conexión a Supabase y validación de la inserción y del conteo de registros (68 filas encontradas).
+
+### Riesgos Detectados / Remanentes
+- Ninguno. La tabla de catálogo está protegida contra escrituras no autorizadas mediante políticas RLS de solo lectura para el rol público.
+
+### Próximo Paso Recomendado
+- Integrar la selección de Formas de Accidente en el formulario de registro de incidentes o avisos de riesgo cuando se requiera.
+
+---
+
 ## [2026-06-25] Prevención de Carga de Duplicados en Nómina y Corrección de Modal de Salida al Guardar
 
 ### Resumen de Cambios

@@ -1567,8 +1567,24 @@ export default function CapacitacionPage({ params }) {
                       <tbody className="divide-y divide-slate-100 text-xs font-normal text-slate-700">
                         {sortedCapacitaciones.length === 0 ? (
                           <tr>
-                            <td colSpan={(canEditar || canEliminar) ? 7 : 6} className="py-12 px-6 text-center text-slate-400 italic">
-                              No se encontraron registros de capacitaciones programadas.
+                            <td colSpan={(canEditar || canEliminar) ? 7 : 6} className="text-center py-20 text-slate-400 font-bold bg-slate-50/10">
+                              <GraduationCap className="h-10 w-10 mx-auto mb-2 text-slate-350 shrink-0" />
+                              <p className="font-outfit text-sm text-slate-700">No hay capacitaciones registradas</p>
+                              <p className="text-[11px] text-slate-400 font-normal mt-1">Registra una nueva capacitación para comenzar.</p>
+                              {canCargar && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setIsReadOnlyView(false);
+                                    setEditingId(null);
+                                    handleCloseForm();
+                                    setTimeout(() => setIsFormOpen(true), 0);
+                                  }}
+                                  className="mt-3 text-xs text-[#468DFF] hover:underline font-bold block mx-auto"
+                                >
+                                  + Registrar la primera
+                                </button>
+                              )}
                             </td>
                           </tr>
                         ) : (

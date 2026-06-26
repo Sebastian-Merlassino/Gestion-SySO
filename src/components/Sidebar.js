@@ -15,7 +15,8 @@ import {
   LogOut, 
   ChevronLeft, 
   ChevronRight, 
-  X
+  X,
+  ShieldAlert
 } from 'lucide-react';
 
 let isHydratedGlobal = false;
@@ -54,6 +55,7 @@ export default function Sidebar({
     { id: 'avisos', label: 'Aviso de Riesgo', path: `/${tenantSlug}/avisos`, icon: AlertTriangle },
     { id: 'legajo', label: 'Legajo Técnico', path: `/${tenantSlug}/legajo`, icon: Folder },
     { id: 'nomina', label: 'Nómina de Personal', path: `/${tenantSlug}/nomina`, icon: Users },
+    { id: 'accidentes', label: 'Accidentes', path: `/${tenantSlug}/accidentes`, icon: ShieldAlert },
     { id: 'divider-2', type: 'divider' },
     { id: 'profile', label: 'Editar Perfil', path: `/${tenantSlug}/profile`, icon: Settings, shrink: true }
   ];
