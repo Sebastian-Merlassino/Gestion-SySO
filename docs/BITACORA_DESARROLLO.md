@@ -1,5 +1,36 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-06-26] Incorporación del Catálogo de Peligros, Riesgos y Contramedidas a Supabase
+
+### Resumen de Cambios
+- **Tabla de Catálogo de Peligros, Riesgos y Contramedidas**: Creación e incorporación de la tabla `public.peligros_riesgos_contramedidas` para almacenar la matriz estática de Higiene y Seguridad Laboral.
+- **Políticas RLS**: Habilitación del Row Level Security (RLS) y definición de la política de lectura pública `Permitir lectura publica de peligros_riesgos_contramedidas` para lectura global abierta por cualquier rol (público o autenticado).
+- **Carga de Datos Semilla**: Carga de 327 registros de peligros, riesgos, consecuencias, medidas de control administrativas, de ingeniería y EPP's a partir del archivo de referencia.
+
+### Decisiones Clave
+- **Catálogo Global Sin Multi-tenant**: Se definió un esquema global sin columna `tenant_id` puesto que es una matriz de referencia estática universal en la industria de la seguridad laboral, optimizando espacio y consultas cruzadas.
+- **Preservación Fiel de Textos**: Se conservaron de manera idéntica los textos originales con su respectiva puntuación y formatos para garantizar conformidad con los requerimientos del usuario.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `supabase`
+- `gestion-syso-multitenant-security`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260714000000_create_peligros_riesgos_contramedidas.sql`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Script de procesamiento `parse_table.js` ejecutado con éxito procesando las 327 filas de datos.
+- Validación de sintaxis SQL del archivo de migración generado.
+- Ejecución exitosa de la migración utilizando el pooler de conexión a Supabase y validación del procesamiento de todas las 327 sentencias de inserción de forma correcta.
+- Ejecución exitosa de la compilación de producción del proyecto (`cmd /c npm run build`).
+
+### Riesgos Detectados / Remanentes
+- Ninguno. La tabla de catálogo está protegida contra escrituras no autorizadas mediante políticas RLS de solo lectura para el rol público.
+
+---
+
 ## [2026-06-26] Rediseño de Botones "Salir" y Estandarización de "Editar" / "Eliminar"
 
 ### Resumen de Cambios
