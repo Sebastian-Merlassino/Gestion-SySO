@@ -948,7 +948,7 @@ export default function TenantDashboard({ params }) {
               {/* Barra Año Anterior */}
               <div className="flex-1 flex flex-col justify-end items-center h-full group relative">
                 {/* Tooltip personalizado */}
-                <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col items-center z-30 pointer-events-none animate-fade-in">
+                <div className="absolute top-2 hidden group-hover:flex flex-col items-center z-30 pointer-events-none animate-fade-in">
                   <div className="bg-slate-900/95 text-white text-[10px] py-1.5 px-2.5 rounded-lg shadow-xl font-sans whitespace-nowrap text-center flex flex-col gap-0.5 border border-slate-700/50">
                     <span className="font-extrabold text-slate-300 uppercase tracking-wider text-[8px]">{chartData.prevYear.label}</span>
                     <span className="font-outfit text-xs font-black text-[#468DFF]">{chartData.prevYear.value}</span>
@@ -965,7 +965,6 @@ export default function TenantDashboard({ params }) {
                       <span className="text-[8px] text-slate-400 font-semibold italic">Días promedio de baja</span>
                     )}
                   </div>
-                  <div className="w-2 h-2 bg-slate-900 rotate-45 -mt-1 border-r border-b border-slate-700/50" />
                 </div>
 
                 <span className="text-[9px] font-bold text-slate-500 mb-1 select-none">
@@ -988,7 +987,7 @@ export default function TenantDashboard({ params }) {
               {/* Barra YTD */}
               <div className="flex-1 flex flex-col justify-end items-center h-full group relative">
                 {/* Tooltip personalizado */}
-                <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col items-center z-30 pointer-events-none animate-fade-in">
+                <div className="absolute top-2 hidden group-hover:flex flex-col items-center z-30 pointer-events-none animate-fade-in">
                   <div className="bg-slate-900/95 text-white text-[10px] py-1.5 px-2.5 rounded-lg shadow-xl font-sans whitespace-nowrap text-center flex flex-col gap-0.5 border border-slate-700/50">
                     <span className="font-extrabold text-slate-300 uppercase tracking-wider text-[8px]">{chartData.ytd.label}</span>
                     <span className="font-outfit text-xs font-black text-[#468DFF]">{chartData.ytd.value}</span>
@@ -1005,7 +1004,6 @@ export default function TenantDashboard({ params }) {
                       <span className="text-[8px] text-slate-400 font-semibold italic">Días promedio de baja</span>
                     )}
                   </div>
-                  <div className="w-2 h-2 bg-slate-900 rotate-45 -mt-1 border-r border-b border-slate-700/50" />
                 </div>
 
                 <span className="text-[9px] font-extrabold text-[#0511F2] mb-1 select-none">
@@ -1029,7 +1027,7 @@ export default function TenantDashboard({ params }) {
               {chartData.months.map((mVal, idx) => (
                 <div key={idx} className="flex-1 flex flex-col justify-end items-center h-full group relative">
                   {/* Tooltip personalizado */}
-                  <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col items-center z-30 pointer-events-none animate-fade-in">
+                  <div className="absolute top-2 hidden group-hover:flex flex-col items-center z-30 pointer-events-none animate-fade-in">
                     <div className="bg-slate-900/95 text-white text-[10px] py-1.5 px-2.5 rounded-lg shadow-xl font-sans whitespace-nowrap text-center flex flex-col gap-0.5 border border-slate-700/50">
                       <span className="font-extrabold text-slate-300 uppercase tracking-wider text-[8px]">{mVal.label}</span>
                       <span className="font-outfit text-xs font-black text-[#468DFF]">{mVal.value}</span>
@@ -1046,7 +1044,6 @@ export default function TenantDashboard({ params }) {
                         <span className="text-[8px] text-slate-400 font-semibold italic">Días promedio de baja</span>
                       )}
                     </div>
-                    <div className="w-2 h-2 bg-slate-900 rotate-45 -mt-1 border-r border-b border-slate-700/50" />
                   </div>
 
                   <span className="text-[9px] font-bold text-[#468DFF] mb-1 select-none group-hover:opacity-100 transition-opacity">
