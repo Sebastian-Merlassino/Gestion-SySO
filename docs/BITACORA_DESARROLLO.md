@@ -1,5 +1,31 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-06-27] Corrección de Responsividad en Dashboard y Constancias de Visita (Mobile First Android/iOS)
+
+### Resumen de Cambios
+- **Apilado de Filtros de Siniestralidad (Dashboard)**: Se modificaron los filtros selectores del gráfico comparativo de accidentes. Se reemplazó el contenedor por una grilla responsiva (`grid-cols-1 sm:flex`) y se dispuso que la etiqueta quede arriba del dropdown (`flex flex-col`) con un ancho del 100% en pantallas de celular, evitando que se desborden de los márgenes de la tarjeta.
+- **Paddings de Visitas de Obra**: Se cambió el padding fijo `p-6` a responsivo `p-3 sm:p-6` en el cuerpo del listado y a `p-4 sm:p-6` en el formulario, liberando espacio útil horizontal en celulares.
+- **Truncado de Título Adaptativo**: El título del formulario ahora se reduce y trunca en pantallas de móvil (`text-xs sm:text-sm truncate max-w-[55vw]`), impidiendo que se superponga con los botones de cierre.
+- **Footer de Acciones Apilable**: Los botones del pie de formulario ("Salir", "Eliminar", "Registrar Constancia") ahora se organizan en una columna flexible inversa en móviles (`flex-col-reverse sm:flex-row items-stretch gap-3`) y toman el 100% de ancho del dispositivo.
+- **Firmas a Prueba de Desbordamientos**: Se incorporó la clase `shrink-0` a los botones de "Limpiar Firma" y márgenes a los labels correspondientes para prevenir colisiones en pantallas angostas.
+
+### Decisiones Clave
+- **Apilar sobre Alinear Horizontalmente**: En pantallas de menos de 400px de ancho, cualquier alineación horizontal de etiquetas y selectores / botones extensos resulta en desbordamiento. Apilarlos verticalmente y darles el 100% del ancho del contenedor en móvil es el patrón de diseño responsivo más estable y consistente.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js exitosa.
+
+---
+
 ## [2026-06-27] Estandarización Responsiva Integral (Mobile First) de Tablas y Gráfico de Siniestralidad
 
 ### Resumen de Cambios

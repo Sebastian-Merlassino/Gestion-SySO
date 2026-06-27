@@ -766,10 +766,10 @@ export default function TenantDashboard({ params }) {
           </div>
           
           {/* Contenedor de Filtros (Establecimiento y Año, y opcional Razón Social para Admin/Miembro) */}
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-end gap-3 w-full">
             {/* Filtro Razón Social (sólo visible para Admin/Miembro) */}
             {profile && profile.role !== 'cliente' && (
-              <div className="flex items-center gap-1.5">
+              <div className="flex flex-col gap-1 w-full sm:w-auto">
                 <span className="text-[10px] font-bold text-slate-400 uppercase">Cliente / Razón Social</span>
                 <select
                   value={accidentFilterEmpresa}
@@ -777,7 +777,7 @@ export default function TenantDashboard({ params }) {
                     setAccidentFilterEmpresa(e.target.value);
                     setAccidentFilterEstablecimiento(''); // reset establecimiento al cambiar de empresa
                   }}
-                  className="border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50/50 focus:outline-none focus:border-[#468DFF] transition-colors cursor-pointer min-w-[140px]"
+                  className="border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50/50 focus:outline-none focus:border-[#468DFF] transition-colors cursor-pointer w-full sm:min-w-[140px]"
                 >
                   <option value="">Selecciona una empresa</option>
                   {empresas.map(emp => (
@@ -788,14 +788,19 @@ export default function TenantDashboard({ params }) {
             )}
 
             {/* Filtro Establecimiento */}
-            <div className="flex items-center gap-1.5">
+            <div className="flex flex-col gap-1 w-full sm:w-auto">
               <span className="text-[10px] font-bold text-slate-400 uppercase">Establecimiento</span>
               <select
                 value={accidentFilterEstablecimiento}
                 onChange={e => setAccidentFilterEstablecimiento(e.target.value)}
-                className="border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50/50 focus:outline-none focus:border-[#468DFF] transition-colors cursor-pointer min-w-[140px]"
+                disabled={profile && profile.role !== 'cliente' && !accidentFilterEmpresa}
+                className="border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50/50 focus:outline-none focus:border-[#468DFF] transition-colors cursor-pointer w-full sm:min-w-[140px] disabled:bg-slate-100 disabled:text-slate-450 disabled:cursor-not-allowed"
               >
-                <option value="">Todos los establecimientos</option>
+                <option value="">
+                  {profile && profile.role !== 'cliente' && !accidentFilterEmpresa 
+                    ? 'Seleccione una empresa primero...' 
+                    : 'Todos los establecimientos'}
+                </option>
                 {establecimientos
                   .filter(est => !accidentFilterEmpresa || est.empresa_id === accidentFilterEmpresa)
                   .map(est => (
@@ -805,12 +810,12 @@ export default function TenantDashboard({ params }) {
             </div>
 
             {/* Filtro Año */}
-            <div className="flex items-center gap-1.5">
+            <div className="flex flex-col gap-1 w-full sm:w-auto">
               <span className="text-[10px] font-bold text-slate-400 uppercase">Año</span>
               <select
                 value={accidentFilterAnio}
                 onChange={e => setAccidentFilterAnio(e.target.value)}
-                className="border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50/50 focus:outline-none focus:border-[#468DFF] transition-colors cursor-pointer"
+                className="border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50/50 focus:outline-none focus:border-[#468DFF] transition-colors cursor-pointer w-full sm:w-auto"
               >
                 {getAccidentYears().map(year => (
                   <option key={year} value={String(year)}>{year}</option>

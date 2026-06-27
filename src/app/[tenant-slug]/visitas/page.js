@@ -2179,7 +2179,7 @@ export default function VisitasPage({ params }) {
         </header>
 
         {/* Content Body */}
-        <div className="flex-1 overflow-y-auto p-6 bg-syso-bg">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6 bg-syso-bg">
           <div className="max-w-[95%] mx-auto space-y-6">
 
             {/* LISTADO DE VISITAS */}
@@ -2453,7 +2453,7 @@ export default function VisitasPage({ params }) {
                     >
                       <ArrowLeft className="h-5 w-5" />
                     </button>
-                    <span className="font-outfit text-base font-bold text-slate-900">
+                    <span className="font-outfit text-xs sm:text-sm md:text-base font-bold text-slate-900 truncate max-w-[55vw] sm:max-w-none">
                       {editingId ? 'Editar Constancia de Visita' : 'Registrar Nueva Constancia de Visita'}
                     </span>
                   </div>
@@ -2463,7 +2463,7 @@ export default function VisitasPage({ params }) {
                 </div>
 
                 {/* Formulario */}
-                <form onSubmit={handleSaveVisita} className="p-6 space-y-6">
+                <form onSubmit={handleSaveVisita} className="p-4 sm:p-6 space-y-4 sm:space-y-6">
                   <fieldset disabled={!canEdit} className="space-y-6">
                   
                   {/* SECCIÓN 1: DATOS GENERALES */}
@@ -3199,13 +3199,13 @@ export default function VisitasPage({ params }) {
                       
                       {/* Firma 1: Responsable Empresa */}
                       <div className="space-y-2 flex flex-col">
-                        <div className="flex justify-between items-center">
-                          <label className="text-xs font-bold text-slate-600">Firma del Responsable de la Empresa</label>
+                        <div className="flex flex-row justify-between items-end gap-2">
+                          <label className="text-xs font-bold text-slate-600 pr-2">Firma del Responsable de la Empresa</label>
                           {canEdit && (hasSignedResp || firmaRespSavedUrl) && (
                             <button
                               type="button"
                               onClick={() => handleClearCanvas(firmaRespCanvasRef, setHasSignedResp, setFirmaRespSavedUrl)}
-                              className="text-[10px] font-bold text-red-500 hover:text-red-700 cursor-pointer"
+                              className="text-[10px] font-bold text-red-500 hover:text-red-700 cursor-pointer shrink-0"
                             >
                               Limpiar Firma
                             </button>
@@ -3232,13 +3232,13 @@ export default function VisitasPage({ params }) {
 
                       {/* Firma 2: Profesional Higiene y Seguridad */}
                       <div className="space-y-2 flex flex-col">
-                        <div className="flex justify-between items-center">
-                          <label className="text-xs font-bold text-slate-600">Firma del Profesional de Higiene y Seguridad</label>
+                        <div className="flex flex-row justify-between items-end gap-2">
+                          <label className="text-xs font-bold text-slate-600 pr-2">Firma del Profesional de Higiene y Seguridad</label>
                           {firmaTipo === 'mano' && canEdit && (hasSignedProf || firmaProfSavedUrl) && (
                             <button
                               type="button"
                               onClick={() => handleClearCanvas(firmaProfCanvasRef, setHasSignedProf, setFirmaProfSavedUrl)}
-                              className="text-[10px] font-bold text-red-500 hover:text-red-700 cursor-pointer"
+                              className="text-[10px] font-bold text-red-500 hover:text-red-700 cursor-pointer shrink-0"
                             >
                               Limpiar Firma
                             </button>
@@ -3310,21 +3310,21 @@ export default function VisitasPage({ params }) {
                   </fieldset>
 
                   {/* Acciones del formulario */}
-                  <div className="flex justify-between items-center pt-6 border-t border-slate-100">
+                  <div className="flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center gap-3 pt-6 border-t border-slate-100">
                     <button
                       type="button"
                       onClick={handleExitForm}
-                      className="px-5 py-2.5 bg-[#FFFFFF] text-[#468DFF] border border-[#468DFF] rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-[#FFFFFF] hover:border-[#FFFFFF] transition-all active:scale-[0.98] cursor-pointer"
+                      className="px-5 py-2.5 bg-[#FFFFFF] text-[#468DFF] border border-[#468DFF] rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-[#FFFFFF] hover:border-[#FFFFFF] transition-all active:scale-[0.98] cursor-pointer text-center w-full sm:w-auto"
                     >
                       Salir
                     </button>
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                       {isReadOnlyView ? (
                         canEditar && (
                           <button
                             type="button"
                             onClick={() => setIsReadOnlyView(false)}
-                            className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-amber-500/10"
+                            className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-amber-500/10 text-center w-full sm:w-auto"
                           >
                             Editar
                           </button>
@@ -3335,7 +3335,7 @@ export default function VisitasPage({ params }) {
                             <button
                               type="button"
                               onClick={() => handleDeleteClick(editingId)}
-                              className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-red-600/10"
+                              className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-red-600/10 text-center w-full sm:w-auto"
                             >
                               Eliminar
                             </button>
@@ -3344,7 +3344,7 @@ export default function VisitasPage({ params }) {
                             <button
                               type="submit"
                               disabled={saveLoading}
-                              className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
+                              className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50 w-full sm:w-auto"
                             >
                               {saveLoading && <Loader2 className="h-4 w-4 animate-spin" />}
                               {editingId ? 'Guardar Cambios' : 'Registrar Constancia'}
