@@ -42,6 +42,7 @@ import {
   Download,
   Send,
   Trash,
+  FileText,
   Folder
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
@@ -2377,10 +2378,10 @@ export default function VisitasPage({ params }) {
                                   <div className="flex items-center justify-end gap-2">
                                     <button 
                                       onClick={() => handlePreviewPdf(v)}
-                                      className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer"
+                                      className="p-1.5 rounded-lg bg-[#EFF6FF] hover:bg-[#DBEAFE] text-[#468DFF] hover:text-[#0511F2] transition-all cursor-pointer"
                                       title="Visualizar PDF"
                                     >
-                                      <Eye className="h-4.5 w-4.5" />
+                                      <FileText className="h-4.5 w-4.5" />
                                     </button>
                                     <button 
                                       onClick={() => handleGeneratePdf(v)}

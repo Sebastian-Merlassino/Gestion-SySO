@@ -851,7 +851,7 @@ export default function ExtintoresPage({ params }) {
             </button>
             <Flame className="h-5 w-5 text-[#468DFF] shrink-0" />
             <h1 className="font-outfit text-base md:text-lg font-bold text-slate-900 truncate leading-none">
-              Programa de Control de Extintores
+              Control de Extintores
             </h1>
           </div>
           <div className="flex items-center gap-3 shrink-0">
