@@ -1,5 +1,114 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-06-27] Estandarización Responsiva Integral (Mobile First) de Tablas y Gráfico de Siniestralidad
+
+### Resumen de Cambios
+- **Ancho Mínimo de Tablas**: Se aplicaron clases de ancho mínimo (`min-w-[800px]` o `min-w-[850px]`) en todas las tablas principales y de previsualización interna en los 12 módulos principales del sistema. Esto permite un scroll horizontal nativo y suave, evitando que las columnas se amontonen y los textos/botones de acción se solapen en pantallas móviles.
+- **Módulos Optimizados**: *Visitas, Programa Anual de Gestión, Nómina de Personal (incluyendo previsualización de importación de Excel), Legajo Técnico, Extintores, Equipo de Trabajo, Clientes/Empresas, Dashboard (tabla de vencimientos), Acciones Correctivas, Capacitación, Avisos de Riesgo (incluyendo la tabla de hallazgos cargados), y Accidentes*.
+- **Responsividad del Gráfico de Siniestralidad**: Se adaptó el gráfico comparativo de barras de siniestralidad en el dashboard. Se envolvió en un contenedor con desbordamiento (`overflow-x-auto`) y se le asignó un ancho mínimo (`min-w-[650px]`) a la fila interna de las barras, garantizando la perfecta legibilidad de los tooltips reactivos y los valores de índices float en pantallas de 320px a 480px.
+
+### Decisiones Clave
+- **Scroll Horizontal Nativo**: Asignar un ancho mínimo (`min-w`) al elemento `<table>` en combinación con `overflow-x-auto` en el contenedor padre es la mejor práctica de CSS para mantener tablas complejas con más de 5 columnas completamente usables en móviles, sin tener que rediseñarlas como tarjetas apiladas que incrementan el scroll vertical drásticamente.
+- **Gráfico de Barras con Desbordamiento**: Evitar que el gráfico reduzca el ancho de sus barras por debajo de un tamaño legible garantiza que la experiencia del usuario sea premium en dispositivos portátiles.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/nomina/page.js`
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js exitosa.
+
+---
+
+## [2026-06-27] Dashboard de Administrador y Miembros: Integración del Panel de Siniestralidad
+
+### Resumen de Cambios
+- **Duplicación e Integración de Siniestralidad**: Se incorporó el panel interactivo completo de seguimiento de accidentes e índices de siniestralidad al dashboard de los usuarios con roles de `administrador` (owner/admin) y `miembro de equipo`.
+- **Filtro de Razón Social**: Se agregó un menú desplegable de Razón Social (empresa) exclusivo para estos roles en la cabecera del panel de siniestralidad, cargando dinámicamente las empresas del tenant.
+- **Establecimientos Reactivos**: Se adaptó el selector de establecimientos de modo que esté deshabilitado si no hay empresa seleccionada, y muestre únicamente los establecimientos correspondientes a la Razón Social seleccionada una vez elegida.
+- **Carga Global de Datos**: Se modificó `fetchDashboardData` para consultar accidentes y personal cubierto de todas las empresas del tenant en las sesiones de administración. El RLS sigue restringiendo de manera autónoma las consultas en las sesiones de clientes finales.
+- **Estructuración y Layout Simétrico**: Se reestructuró la columna izquierda del grid principal (`lg:col-span-2 space-y-6`) para apilar de forma armoniosa el contenedor de "Próximos Vencimientos" y el de "Seguimiento de Accidentes". El calendario compacto se mantuvo a la derecha con un diseño simétrico.
+
+### Decisiones Clave
+- **Carga Desacoplada y RLS**: Consultar accidentes y nómina sin filtro de empresa inicial en backend es seguro debido a que las políticas RLS restringen de forma nativa las consultas para clientes finales, mientras que otorgan acceso global a administradores y miembros sin duplicación de lógica ni riesgo cross-tenant.
+- **UX de Establecimientos Dependientes**: Deshabilitar el selector de establecimientos hasta que se seleccione una Razón Social previene selecciones inconsistentes o errores de consulta cruzados.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `gestion-syso-multitenant-security`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+
+### Validaciones Ejecutadas
+- Validación del build de producción y análisis estático de Next.js (`npm run build`) completada con éxito.
+
+---
+
+## [2026-06-27] Dashboard para Clientes: Seguimiento de Accidentes y Enfermedades Profesionales
+
+### Resumen de Cambios
+- **Modificación Condicional del Dashboard**: Se ocultó la sección superior del Programa de Gestión (Próximos Vencimientos y Calendario Compacto) para los usuarios con rol `cliente` (`profile.role === 'cliente'`).
+- **Seguimiento de Siniestralidad**: Se integró en su lugar un contenedor interactivo para el seguimiento de accidentes y enfermedades profesionales, manteniendo la consistencia cromática y formal del resto de secciones.
+- **Filtros por Establecimiento y Año**: Se incorporaron menús desplegables para filtrar dinámicamente los registros de siniestros por año (calculado a partir de los datos existentes) y establecimiento.
+- **Contadores de Acontecimientos**: Se implementaron contadores para clasificar los accidentes según su tipo: *Accidente de Trabajo, Accidente in itinere, Enfermedad Profesional, Reingreso*, incluyendo un contador *Total* calculado a partir de la suma de estos.
+- **Contadores por Gravedad**: Se agregaron contadores específicos para clasificar por gravedad (*Leve, Grave, Mortal*) únicamente los *Accidentes de Trabajo* y *Enfermedades Profesionales*.
+- **Datos Reales y Mocks**: Se configuró la consulta asíncrona a Supabase para cargar accidentes de la base de datos para la empresa asociada, y se definieron 5 registros mockeados en desarrollo local para garantizar visualización y reactividad inmediatas.
+- **Ajuste Cromático de Gravedad**: Se homogeneizaron los colores de los niveles de gravedad (*Leve, Grave, Mortal*) eliminando transparencias en los bordes y reforzando los rellenos. Esto se aplicó en las tarjetas del dashboard, los badges de la tabla de listado, el selector del formulario y el modal explicativo de la guía.
+- **Interactividad en Vista Lectura (Clientes)**: Se reemplazó el botón de ayuda del selector de gravedad por un elemento interactivo `<span>` con `role="button"`. Esto evita que la directiva `<fieldset disabled>` de la vista de solo lectura/clientes inhabilite la acción, permitiendo que sea clickeable.
+- **Gráfico de Barras de Siniestralidad**: Se incorporó un panel interactivo con un gráfico de barras al pie del contenedor de accidentes del cliente. Este gráfico dibuja 14 barras proporcionales que representan el consolidado del año anterior ($Y-1$), el YTD (acumulado del año seleccionado hasta hoy/fin de año) y los 12 meses correspondientes a ese año.
+- **Botones Selector de Índices**: Se añadieron 4 botones para alternar el gráfico entre los siguientes índices: *Índice de Incidencia AT y EP*, *Índice de Incidencia de Casos Mortales*, *Índice de Pérdida (IP)*, y *Duración Media de las Bajas (DMB)*.
+- **Cálculo con Nómina Personal (Criterio Fecha Carga)**: Se integró la nómina de personal de Supabase (`nomina_personal`) para contar el número de personas cubiertas de forma dinámica. Se corrigió el criterio de conteo: ahora filtra aquellos registros cuyo año de la columna `fecha_carga` sea exactamente igual al año seleccionado en el filtro (tanto para el año seleccionado como para el año anterior).
+- **Remoción de Fórmulas en Gráfico**: Se eliminó la sección de explicación integrada en el cuerpo del gráfico, dejando el diseño visual de las estadísticas más limpio y enfocado.
+- **Pictograma de Ayuda y Modal de Fórmulas**: Se incorporó un icono clickable (`HelpCircle` de lucide-react) al lado del título principal "Estadísticas e Índices de Siniestralidad". Este icono abre un modal informativo que desglosa detalladamente la descripción y fórmulas matemáticas del *Índice de Incidencia AT y EP*, *Índice de Incidencia de Casos Mortales*, e índices de gravedad (*Índice de Pérdida (IP)* y *Duración Media de las Bajas (DMB)*).
+- **Valores sobre las Columnas**: Se incorporaron etiquetas de texto flotantes que muestran de manera inmediata el valor numérico exacto de cada índice por encima del tope de cada una de las 14 barras del gráfico.
+- **Tooltips Informativos**: Cada barra cuenta con un tooltip dinámico en hover que despliega la fórmula desglosada (numerador, denominador, valor final y descripción del cálculo actual).
+
+### Decisiones Clave
+- **Aislamiento Funcional por Rol**: Conservar el calendario y vencimientos para profesionales de SySO y mostrar exclusivamente métricas de siniestralidad al cliente final maximiza la utilidad del dashboard para cada perfil sin duplicar componentes ni rutas.
+- **Extracción Dinámica de Años**: Calcular dinámicamente los años disponibles a partir de la fecha de siniestro evita el mantenimiento manual de catálogos y previene opciones de filtrado vacías.
+- **Evitar Restricciones Nativas de Fieldset**: El uso de elementos semánticos interactivos alternativos (`span` con `role="button"`) permite esquivar la inhabilitación del navegador de todos los inputs dentro de un fieldset disabled en modo lectura, garantizando la accesibilidad del modal informativo.
+- **Gráficos Custom Responsivos**: Dibuja las barras dinámicamente mediante Tailwind y SVG/CSS nativos en lugar de utilizar librerías de gráficos basadas en Canvas. Esto optimiza el peso del bundle compartimentado y evita errores de hidratación cruzada en Next.js.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `gestion-syso-multitenant-security`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con optimización y empaquetado de Next.js (`cmd /c npm run build`) exitosa y libre de errores.
+
+### Riesgos Detectados / Remanentes
+- Ninguno.
+
+### Próximo Paso Recomendado
+- Realizar pruebas del filtrado dinámico en la vista de cliente con datos reales cargados.
+
+---
+
 ## [2026-06-27] Estabilización de Dimensiones de Filtros y Tablas (Evitar Layout Shift) en las 10 Secciones Principales
 
 ### Resumen de Cambios

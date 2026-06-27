@@ -51,15 +51,15 @@ const GRAVEDAD_OPTIONS = ['Leve', 'Grave', 'Mortal'];
 
 const GRAVEDAD_CONFIG = {
   Leve: {
-    badge: 'bg-green-100 text-green-700 border-green-200',
+    badge: 'bg-green-100 text-green-800 border-green-400 font-extrabold',
     dot: 'bg-green-500',
   },
   Grave: {
-    badge: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+    badge: 'bg-yellow-100 text-yellow-800 border-yellow-400 font-extrabold',
     dot: 'bg-yellow-500',
   },
   Mortal: {
-    badge: 'bg-red-100 text-red-700 border-red-200',
+    badge: 'bg-red-100 text-red-800 border-red-400 font-extrabold',
     dot: 'bg-red-500',
   },
 };
@@ -67,7 +67,7 @@ const GRAVEDAD_CONFIG = {
 const GRAVEDAD_GUIA = [
   {
     nivel: 'Leve',
-    color: 'bg-green-100 border-green-300',
+    color: 'bg-green-100 border-green-400',
     dot: 'bg-green-500',
     criterio:
       'Lesiones que permiten retomar el trabajo tras la asistencia. No requieren períodos prolongados de recuperación. Generalmente con primeros auxilios o atención médica básica. Requieren menos de 10 días de baja laboral. No generan incapacidad permanente.',
@@ -75,7 +75,7 @@ const GRAVEDAD_GUIA = [
   },
   {
     nivel: 'Grave',
-    color: 'bg-yellow-100 border-yellow-300',
+    color: 'bg-yellow-100 border-yellow-400',
     dot: 'bg-yellow-500',
     criterio:
       'Lesiones que requieren tratamiento médico prolongado. Generan incapacidad laboral temporal (ILT). Requieren más de 10 días de baja laboral. Pueden dejar secuelas o generar incapacidad parcial permanente.',
@@ -83,7 +83,7 @@ const GRAVEDAD_GUIA = [
   },
   {
     nivel: 'Mortal',
-    color: 'bg-red-100 border-red-300',
+    color: 'bg-red-100 border-red-400',
     dot: 'bg-red-500',
     criterio:
       'Provocan el fallecimiento del trabajador. Pueden ser inmediatas o posteriores como consecuencia del accidente o enfermedad profesional.',
@@ -967,24 +967,24 @@ export default function AccidentesPage({ params }) {
                         <div>
                           <label className="block text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1.5">
                             Gravedad <span className="text-red-500">*</span>
-                            <button
-                              type="button"
+                            <span
+                              role="button"
                               onClick={() => setShowGravedadGuide(true)}
-                              className="text-slate-400 hover:text-[#468DFF] transition-colors cursor-pointer"
+                              className="text-slate-400 hover:text-[#468DFF] transition-colors cursor-pointer inline-flex items-center"
                               title="Ver guía de clasificación de gravedad"
                             >
                               <HelpCircle className="h-3.5 w-3.5" />
-                            </button>
+                            </span>
                           </label>
                           <select
                             value={gravedad}
                             onChange={e => setGravedad(e.target.value)}
                             required
-                            className={`w-full border rounded-xl px-3.5 py-2 text-sm font-semibold focus:outline-none transition-colors disabled:opacity-70
-                              ${gravedad === 'Leve' ? 'border-green-300 bg-green-50/50 text-green-700 focus:border-green-500' : ''}
-                              ${gravedad === 'Grave' ? 'border-yellow-300 bg-yellow-50/50 text-yellow-700 focus:border-yellow-500' : ''}
-                              ${gravedad === 'Mortal' ? 'border-red-300 bg-red-50/50 text-red-700 focus:border-red-500' : ''}
-                              ${!gravedad ? 'border-slate-200 bg-slate-50/50 text-slate-700 focus:border-[#468DFF]' : ''}
+                            className={`w-full border rounded-xl px-3.5 py-2 text-sm font-bold focus:outline-none transition-colors disabled:opacity-70
+                              ${gravedad === 'Leve' ? 'border-green-400 bg-green-100 text-green-800 focus:border-green-500' : ''}
+                              ${gravedad === 'Grave' ? 'border-yellow-400 bg-yellow-100 text-yellow-800 focus:border-yellow-500' : ''}
+                              ${gravedad === 'Mortal' ? 'border-red-400 bg-red-100 text-red-800 focus:border-red-500' : ''}
+                              ${!gravedad ? 'border-slate-300 bg-slate-50 text-slate-700 focus:border-[#468DFF]' : ''}
                             `}
                           >
                             <option value="">Seleccioná la gravedad</option>
@@ -1418,7 +1418,7 @@ export default function AccidentesPage({ params }) {
                 {/* Listado / Tabla */}
                 <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
                   <div className="overflow-auto font-sans flex-grow h-full">
-                    <table className="w-full text-left border-collapse">
+                    <table className="w-full text-left border-collapse min-w-[850px]">
                       <thead>
                         <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider select-none">
                           <th

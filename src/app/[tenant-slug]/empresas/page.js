@@ -1496,7 +1496,7 @@ export default function EmpresasClientes({ params }) {
                   {/* Tabla */}
                   <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden flex flex-col" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
                     <div className="overflow-auto flex-grow">
-                      <table className="w-full text-left border-collapse">
+                      <table className="w-full text-left border-collapse min-w-[850px]">
                         <thead>
                           <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider font-outfit">
                             <th 

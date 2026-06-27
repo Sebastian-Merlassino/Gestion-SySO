@@ -1598,7 +1598,7 @@ export default function LegajoPage({ params }) {
                     {/* Tabla de Documentos */}
                     <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden">
                       <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+                        <table className="w-full text-left border-collapse min-w-[800px]">
                           <thead>
                             <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider select-none">
                               <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150 transition-colors" onClick={() => handleSort('cliente')}>

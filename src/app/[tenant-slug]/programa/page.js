@@ -1820,7 +1820,7 @@ export default function ProgramaGestion({ params }) {
                 {view === 'list' && (
                   <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden flex flex-col" style={{ height: showFilters ? 'calc(100vh - 360px)' : 'calc(100vh - 290px)' }}>
                     <div className="overflow-auto flex-grow">
-                      <table className="w-full border-collapse text-left">
+                      <table className="w-full border-collapse text-left min-w-[850px]">
                         <thead className="sticky top-0 z-10 bg-slate-50">
                           <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider">
                             <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('cliente')}>

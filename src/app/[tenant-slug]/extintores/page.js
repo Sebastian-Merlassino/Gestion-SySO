@@ -1457,7 +1457,7 @@ export default function ExtintoresPage({ params }) {
                 {/* Listado / Tabla */}
                 <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
                   <div className="overflow-auto flex-grow">
-                    <table className="w-full text-left border-collapse">
+                    <table className="w-full text-left border-collapse min-w-[850px]">
                       <thead>
                         <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider">
                           <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 py-4 px-6 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('cliente')}>

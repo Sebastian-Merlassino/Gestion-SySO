@@ -1270,7 +1270,7 @@ export default function NominaPage({ params }) {
                         </div>
 
                         <div className="border border-slate-200 rounded-xl overflow-hidden max-h-[30vh] overflow-y-auto">
-                          <table className="w-full text-left border-collapse text-[11px]">
+                          <table className="w-full text-left border-collapse text-[11px] min-w-[800px]">
                             <thead>
                               <tr className="bg-slate-50 border-b border-slate-150 font-bold text-slate-400 uppercase select-none">
                                 <th className="px-4 py-2 text-center w-12">Fila</th>
@@ -1515,7 +1515,7 @@ export default function NominaPage({ params }) {
                   </div>
                 ) : (
                   <div className="overflow-auto flex-grow">
-                    <table className="w-full text-left border-collapse">
+                    <table className="w-full text-left border-collapse min-w-[850px]">
                       <thead>
                         <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider select-none">
                           <th onClick={() => handleSort('empresa')} className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150">
