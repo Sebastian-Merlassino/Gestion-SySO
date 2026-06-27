@@ -1705,7 +1705,7 @@ export default function TenantDashboard({ params }) {
                   Aclaración Importante
                 </h5>
                 <p className="text-amber-700 text-[11px] font-medium leading-relaxed">
-                  Para que los indicadores de siniestralidad funcionen correctamente, es fundamental contar con datos previamente cargados tanto en la sección de <strong>Accidentes</strong> (registro de siniestros) como en la sección de <strong>Nómina de Personal</strong> (cantidad de trabajadores activos), asociados a la misma Razón Social y Establecimiento correspondientes.
+                  Para que los indicadores de siniestralidad funcionen correctamente, es fundamental contar con datos previamente cargados tanto en la sección de <strong>Accidentes</strong> (registro de siniestros) como en la sección de <strong>Nómina de Personal</strong> (cantidad de trabajadores activos), asociados a la misma Razón Social y Establecimiento correspondientes, <strong>y correspondientes al año que se desea calcular</strong>.
                 </p>
               </div>
 
