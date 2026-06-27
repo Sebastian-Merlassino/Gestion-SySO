@@ -1244,23 +1244,23 @@ export default function EquipoPage({ params }) {
               </div>
 
               {/* Members Grid/List */}
-              {miembros.length === 0 ? (
-                <div className="bg-white rounded-2xl border border-slate-150 p-20 text-center shadow-sm bg-slate-50/10">
-                  <Briefcase className="h-10 w-10 text-slate-350 mx-auto mb-2 shrink-0" />
-                  <p className="font-outfit text-sm text-slate-700 font-bold">No hay miembros de equipo registrados</p>
-                  <p className="text-[11px] text-slate-400 font-normal mt-1">Registra un nuevo miembro de equipo para comenzar.</p>
-                  {canCargar && (
-                    <button
-                      onClick={handleAddNew}
-                      className="mt-3 text-xs text-[#468DFF] hover:underline font-bold block mx-auto"
-                    >
-                      + Registrar el primero
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden">
-                  <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 240px)' }}>
+              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col" style={{ height: 'calc(100vh - 240px)' }}>
+                {miembros.length === 0 ? (
+                  <div className="flex-grow flex flex-col items-center justify-center p-20 text-center bg-slate-50/10 h-full">
+                    <Briefcase className="h-10 w-10 text-slate-350 mx-auto mb-2 shrink-0" />
+                    <p className="font-outfit text-sm text-slate-700 font-bold">No hay miembros de equipo registrados</p>
+                    <p className="text-[11px] text-slate-400 font-normal mt-1">Registra un nuevo miembro de equipo para comenzar.</p>
+                    {canCargar && (
+                      <button
+                        onClick={handleAddNew}
+                        className="mt-3 text-xs text-[#468DFF] hover:underline font-bold block mx-auto"
+                      >
+                        + Registrar el primero
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="overflow-auto flex-grow">
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider">
@@ -1361,8 +1361,8 @@ export default function EquipoPage({ params }) {
                       </tbody>
                     </table>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
             
           ) : (

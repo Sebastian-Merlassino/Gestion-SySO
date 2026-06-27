@@ -1450,7 +1450,7 @@ export default function EmpresasClientes({ params }) {
 
                     {/* Filtros rápidos */}
                     <div className="border-t border-slate-100 pt-2 space-y-2">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between min-h-[28px]">
                         <button
                           type="button"
                           onClick={() => setShowFilters(!showFilters)}
@@ -1494,8 +1494,8 @@ export default function EmpresasClientes({ params }) {
                   </div>
 
                   {/* Tabla */}
-                  <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden">
-                    <div className="overflow-auto" style={{ maxHeight: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
+                  <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden flex flex-col" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
+                    <div className="overflow-auto flex-grow">
                       <table className="w-full text-left border-collapse">
                         <thead>
                           <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider font-outfit">

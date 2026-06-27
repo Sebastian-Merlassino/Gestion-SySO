@@ -1588,7 +1588,7 @@ export default function ProgramaGestion({ params }) {
 
                   {/* Fila Inferior: Filtros rápidos */}
                   <div className="border-t border-slate-100 pt-2 space-y-2">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between min-h-[28px]">
                       <button
                         type="button"
                         onClick={() => setShowFilters(!showFilters)}
@@ -1707,7 +1707,7 @@ export default function ProgramaGestion({ params }) {
 
                 {/* VISTA CALENDARIO */}
                 {view === 'calendar' && (
-                  <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4 overflow-auto" style={{ maxHeight: showFilters ? 'calc(100vh - 360px)' : 'calc(100vh - 290px)' }}>
+                  <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4 overflow-auto flex flex-col" style={{ height: showFilters ? 'calc(100vh - 360px)' : 'calc(100vh - 290px)' }}>
 
                     {/* Cabecera del Mes del Calendario */}
                     <div className="flex items-center justify-between pb-3 border-b border-slate-200">
@@ -1818,8 +1818,8 @@ export default function ProgramaGestion({ params }) {
 
                 {/* VISTA DE TABLA / LISTADO */}
                 {view === 'list' && (
-                  <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden">
-                    <div className="overflow-auto" style={{ maxHeight: showFilters ? 'calc(100vh - 360px)' : 'calc(100vh - 290px)' }}>
+                  <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden flex flex-col" style={{ height: showFilters ? 'calc(100vh - 360px)' : 'calc(100vh - 290px)' }}>
+                    <div className="overflow-auto flex-grow">
                       <table className="w-full border-collapse text-left">
                         <thead className="sticky top-0 z-10 bg-slate-50">
                           <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider">

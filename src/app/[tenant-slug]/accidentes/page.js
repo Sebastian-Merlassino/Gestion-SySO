@@ -1302,7 +1302,7 @@ export default function AccidentesPage({ params }) {
 
                   {/* Selectores de Filtrado */}
                   <div className="pt-2 border-t border-slate-100 space-y-2">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between min-h-[28px]">
                       <button
                         type="button"
                         onClick={() => setShowFilters(!showFilters)}
@@ -1416,9 +1416,8 @@ export default function AccidentesPage({ params }) {
                 </div>
 
                 {/* Listado / Tabla */}
-                <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden">
-
-                  <div className="overflow-auto font-sans" style={{ maxHeight: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
+                <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
+                  <div className="overflow-auto font-sans flex-grow h-full">
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider select-none">
