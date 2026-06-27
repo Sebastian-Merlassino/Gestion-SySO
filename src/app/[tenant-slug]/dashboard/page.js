@@ -666,36 +666,39 @@ export default function TenantDashboard({ params }) {
   };
 
   const calculateIndexValue = (indexType, accList, personasCubiertas) => {
-    if (personasCubiertas <= 0) return 0;
-    
     const atEpList = accList.filter(a => a.tipo === 'Accidente de trabajo' || a.tipo === 'Enfermedad profesional');
+    const casosCount = atEpList.length;
+    const mortalesCount = atEpList.filter(a => a.gravedad === 'Mortal').length;
+    const totalDiasBaja = atEpList.reduce((sum, a) => sum + (a.dias_baja || 0), 0);
+    const casosConBaja = atEpList.filter(a => (a.dias_baja || 0) > 0).length;
     
-    switch (indexType) {
-      case 'incidencia': {
-        const casosCount = atEpList.length;
-        const val = (casosCount / personasCubiertas) * 1000;
-        return parseFloat(val.toFixed(2));
+    let val = 0;
+    if (personasCubiertas > 0) {
+      switch (indexType) {
+        case 'incidencia':
+          val = (casosCount / personasCubiertas) * 1000;
+          break;
+        case 'mortalidad':
+          val = (mortalesCount / personasCubiertas) * 1000000;
+          break;
+        case 'perdida':
+          val = (totalDiasBaja / personasCubiertas) * 1000;
+          break;
       }
-      case 'mortalidad': {
-        const mortalesCount = atEpList.filter(a => a.gravedad === 'Mortal').length;
-        const val = (mortalesCount / personasCubiertas) * 1000000;
-        return parseFloat(val.toFixed(2));
-      }
-      case 'perdida': {
-        const totalDiasBaja = atEpList.reduce((sum, a) => sum + (a.dias_baja || 0), 0);
-        const val = (totalDiasBaja / personasCubiertas) * 1000;
-        return parseFloat(val.toFixed(2));
-      }
-      case 'dmb': {
-        const totalDiasBaja = atEpList.reduce((sum, a) => sum + (a.dias_baja || 0), 0);
-        const casosConBaja = atEpList.filter(a => (a.dias_baja || 0) > 0).length;
-        if (casosConBaja === 0) return 0;
-        const val = totalDiasBaja / casosConBaja;
-        return parseFloat(val.toFixed(2));
-      }
-      default:
-        return 0;
     }
+    
+    if (indexType === 'dmb' && casosConBaja > 0) {
+      val = totalDiasBaja / casosConBaja;
+    }
+    
+    return {
+      value: parseFloat(val.toFixed(2)),
+      casosCount,
+      personasCubiertas: personasCubiertas > 0 ? personasCubiertas : 0,
+      mortalesCount,
+      totalDiasBaja,
+      casosConBaja
+    };
   };
 
   const getChartData = () => {
@@ -727,18 +730,18 @@ export default function TenantDashboard({ params }) {
       const monthValue = calculateIndexValue(activeChartIndex, monthAccs, currentPeople);
       monthData.push({
         label: MONTH_NAMES_SHORT[m],
-        value: monthValue
+        ...monthValue
       });
     }
     
     return {
       prevYear: {
         label: `Año ${Y - 1}`,
-        value: prevValue
+        ...prevValue
       },
       ytd: {
         label: `YTD ${Y}`,
-        value: ytdValue
+        ...ytdValue
       },
       months: monthData
     };
@@ -949,21 +952,43 @@ export default function TenantDashboard({ params }) {
               <div className="flex-1 flex flex-col justify-end items-center h-full group relative">
                 {/* Tooltip personalizado */}
                 <div className="absolute top-2 hidden group-hover:flex flex-col items-center z-30 pointer-events-none animate-fade-in">
-                  <div className="bg-slate-900/95 text-white text-[10px] py-1.5 px-2.5 rounded-lg shadow-xl font-sans whitespace-nowrap text-center flex flex-col gap-0.5 border border-slate-700/50">
+                  <div className="bg-slate-900/95 text-white text-[10px] py-2 px-3 rounded-xl shadow-xl font-sans whitespace-nowrap text-center flex flex-col gap-1 border border-slate-700/50">
                     <span className="font-extrabold text-slate-300 uppercase tracking-wider text-[8px]">{chartData.prevYear.label}</span>
-                    <span className="font-outfit text-xs font-black text-[#468DFF]">{chartData.prevYear.value}</span>
-                    {activeChartIndex === 'incidencia' && (
-                      <span className="text-[8px] text-slate-400 font-semibold italic">Casos por cada 1.000 trab.</span>
-                    )}
-                    {activeChartIndex === 'mortalidad' && (
-                      <span className="text-[8px] text-slate-400 font-semibold italic">Casos por cada 1.000.000 trab.</span>
-                    )}
-                    {activeChartIndex === 'perdida' && (
-                      <span className="text-[8px] text-slate-400 font-semibold italic">Jornadas perdidas por millón hs</span>
-                    )}
-                    {activeChartIndex === 'dmb' && (
-                      <span className="text-[8px] text-slate-400 font-semibold italic">Días promedio de baja</span>
-                    )}
+                    <div className="flex items-baseline justify-center gap-1">
+                      <span className="text-[10px] text-slate-400 font-medium">Índice:</span>
+                      <span className="font-outfit text-xs font-black text-[#468DFF]">{chartData.prevYear.value}</span>
+                    </div>
+                    {/* Operandos de cálculo */}
+                    <div className="flex flex-col gap-0.5 border-t border-slate-850 pt-1 text-[8px] text-slate-400 font-medium text-left">
+                      {activeChartIndex === 'incidencia' && (
+                        <>
+                          <div>Casos AT/EP: <span className="text-white font-bold">{chartData.prevYear.casosCount}</span></div>
+                          <div>Pers. Cubiertas: <span className="text-white font-bold">{chartData.prevYear.personasCubiertas}</span></div>
+                          <span className="text-[7px] text-slate-500 italic mt-0.5">(Casos / Personas) * 1.000</span>
+                        </>
+                      )}
+                      {activeChartIndex === 'mortalidad' && (
+                        <>
+                          <div>Casos Mortales: <span className="text-white font-bold">{chartData.prevYear.mortalesCount}</span></div>
+                          <div>Pers. Cubiertas: <span className="text-white font-bold">{chartData.prevYear.personasCubiertas}</span></div>
+                          <span className="text-[7px] text-slate-500 italic mt-0.5">(Mortales / Personas) * 1.000.000</span>
+                        </>
+                      )}
+                      {activeChartIndex === 'perdida' && (
+                        <>
+                          <div>Días de Baja: <span className="text-white font-bold">{chartData.prevYear.totalDiasBaja}</span></div>
+                          <div>Pers. Cubiertas: <span className="text-white font-bold">{chartData.prevYear.personasCubiertas}</span></div>
+                          <span className="text-[7px] text-slate-500 italic mt-0.5">(Días Baja / Personas) * 1.000</span>
+                        </>
+                      )}
+                      {activeChartIndex === 'dmb' && (
+                        <>
+                          <div>Días de Baja: <span className="text-white font-bold">{chartData.prevYear.totalDiasBaja}</span></div>
+                          <div>Casos con Baja: <span className="text-white font-bold">{chartData.prevYear.casosConBaja}</span></div>
+                          <span className="text-[7px] text-slate-500 italic mt-0.5">Días Baja / Casos con Baja</span>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -988,21 +1013,43 @@ export default function TenantDashboard({ params }) {
               <div className="flex-1 flex flex-col justify-end items-center h-full group relative">
                 {/* Tooltip personalizado */}
                 <div className="absolute top-2 hidden group-hover:flex flex-col items-center z-30 pointer-events-none animate-fade-in">
-                  <div className="bg-slate-900/95 text-white text-[10px] py-1.5 px-2.5 rounded-lg shadow-xl font-sans whitespace-nowrap text-center flex flex-col gap-0.5 border border-slate-700/50">
+                  <div className="bg-slate-900/95 text-white text-[10px] py-2 px-3 rounded-xl shadow-xl font-sans whitespace-nowrap text-center flex flex-col gap-1 border border-slate-700/50">
                     <span className="font-extrabold text-slate-300 uppercase tracking-wider text-[8px]">{chartData.ytd.label}</span>
-                    <span className="font-outfit text-xs font-black text-[#468DFF]">{chartData.ytd.value}</span>
-                    {activeChartIndex === 'incidencia' && (
-                      <span className="text-[8px] text-slate-400 font-semibold italic">Casos por cada 1.000 trab.</span>
-                    )}
-                    {activeChartIndex === 'mortalidad' && (
-                      <span className="text-[8px] text-slate-400 font-semibold italic">Casos por cada 1.000.000 trab.</span>
-                    )}
-                    {activeChartIndex === 'perdida' && (
-                      <span className="text-[8px] text-slate-400 font-semibold italic">Jornadas perdidas por millón hs</span>
-                    )}
-                    {activeChartIndex === 'dmb' && (
-                      <span className="text-[8px] text-slate-400 font-semibold italic">Días promedio de baja</span>
-                    )}
+                    <div className="flex items-baseline justify-center gap-1">
+                      <span className="text-[10px] text-slate-400 font-medium">Índice:</span>
+                      <span className="font-outfit text-xs font-black text-[#468DFF]">{chartData.ytd.value}</span>
+                    </div>
+                    {/* Operandos de cálculo */}
+                    <div className="flex flex-col gap-0.5 border-t border-slate-850 pt-1 text-[8px] text-slate-400 font-medium text-left">
+                      {activeChartIndex === 'incidencia' && (
+                        <>
+                          <div>Casos AT/EP: <span className="text-white font-bold">{chartData.ytd.casosCount}</span></div>
+                          <div>Pers. Cubiertas: <span className="text-white font-bold">{chartData.ytd.personasCubiertas}</span></div>
+                          <span className="text-[7px] text-slate-500 italic mt-0.5">(Casos / Personas) * 1.000</span>
+                        </>
+                      )}
+                      {activeChartIndex === 'mortalidad' && (
+                        <>
+                          <div>Casos Mortales: <span className="text-white font-bold">{chartData.ytd.mortalesCount}</span></div>
+                          <div>Pers. Cubiertas: <span className="text-white font-bold">{chartData.ytd.personasCubiertas}</span></div>
+                          <span className="text-[7px] text-slate-500 italic mt-0.5">(Mortales / Personas) * 1.000.000</span>
+                        </>
+                      )}
+                      {activeChartIndex === 'perdida' && (
+                        <>
+                          <div>Días de Baja: <span className="text-white font-bold">{chartData.ytd.totalDiasBaja}</span></div>
+                          <div>Pers. Cubiertas: <span className="text-white font-bold">{chartData.ytd.personasCubiertas}</span></div>
+                          <span className="text-[7px] text-slate-500 italic mt-0.5">(Días Baja / Personas) * 1.000</span>
+                        </>
+                      )}
+                      {activeChartIndex === 'dmb' && (
+                        <>
+                          <div>Días de Baja: <span className="text-white font-bold">{chartData.ytd.totalDiasBaja}</span></div>
+                          <div>Casos con Baja: <span className="text-white font-bold">{chartData.ytd.casosConBaja}</span></div>
+                          <span className="text-[7px] text-slate-500 italic mt-0.5">Días Baja / Casos con Baja</span>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -1028,21 +1075,43 @@ export default function TenantDashboard({ params }) {
                 <div key={idx} className="flex-1 flex flex-col justify-end items-center h-full group relative">
                   {/* Tooltip personalizado */}
                   <div className="absolute top-2 hidden group-hover:flex flex-col items-center z-30 pointer-events-none animate-fade-in">
-                    <div className="bg-slate-900/95 text-white text-[10px] py-1.5 px-2.5 rounded-lg shadow-xl font-sans whitespace-nowrap text-center flex flex-col gap-0.5 border border-slate-700/50">
+                    <div className="bg-slate-900/95 text-white text-[10px] py-2 px-3 rounded-xl shadow-xl font-sans whitespace-nowrap text-center flex flex-col gap-1 border border-slate-700/50">
                       <span className="font-extrabold text-slate-300 uppercase tracking-wider text-[8px]">{mVal.label}</span>
-                      <span className="font-outfit text-xs font-black text-[#468DFF]">{mVal.value}</span>
-                      {activeChartIndex === 'incidencia' && (
-                        <span className="text-[8px] text-slate-400 font-semibold italic">Casos por cada 1.000 trab.</span>
-                      )}
-                      {activeChartIndex === 'mortalidad' && (
-                        <span className="text-[8px] text-slate-400 font-semibold italic">Casos por cada 1.000.000 trab.</span>
-                      )}
-                      {activeChartIndex === 'perdida' && (
-                        <span className="text-[8px] text-slate-400 font-semibold italic">Jornadas perdidas por millón hs</span>
-                      )}
-                      {activeChartIndex === 'dmb' && (
-                        <span className="text-[8px] text-slate-400 font-semibold italic">Días promedio de baja</span>
-                      )}
+                      <div className="flex items-baseline justify-center gap-1">
+                        <span className="text-[10px] text-slate-400 font-medium">Índice:</span>
+                        <span className="font-outfit text-xs font-black text-[#468DFF]">{mVal.value}</span>
+                      </div>
+                      {/* Operandos de cálculo */}
+                      <div className="flex flex-col gap-0.5 border-t border-slate-850 pt-1 text-[8px] text-slate-400 font-medium text-left">
+                        {activeChartIndex === 'incidencia' && (
+                          <>
+                            <div>Casos AT/EP: <span className="text-white font-bold">{mVal.casosCount}</span></div>
+                            <div>Pers. Cubiertas: <span className="text-white font-bold">{mVal.personasCubiertas}</span></div>
+                            <span className="text-[7px] text-slate-500 italic mt-0.5">(Casos / Personas) * 1.000</span>
+                          </>
+                        )}
+                        {activeChartIndex === 'mortalidad' && (
+                          <>
+                            <div>Casos Mortales: <span className="text-white font-bold">{mVal.mortalesCount}</span></div>
+                            <div>Pers. Cubiertas: <span className="text-white font-bold">{mVal.personasCubiertas}</span></div>
+                            <span className="text-[7px] text-slate-500 italic mt-0.5">(Mortales / Personas) * 1.000.000</span>
+                          </>
+                        )}
+                        {activeChartIndex === 'perdida' && (
+                          <>
+                            <div>Días de Baja: <span className="text-white font-bold">{mVal.totalDiasBaja}</span></div>
+                            <div>Pers. Cubiertas: <span className="text-white font-bold">{mVal.personasCubiertas}</span></div>
+                            <span className="text-[7px] text-slate-500 italic mt-0.5">(Días Baja / Personas) * 1.000</span>
+                          </>
+                        )}
+                        {activeChartIndex === 'dmb' && (
+                          <>
+                            <div>Días de Baja: <span className="text-white font-bold">{mVal.totalDiasBaja}</span></div>
+                            <div>Casos con Baja: <span className="text-white font-bold">{mVal.casosConBaja}</span></div>
+                            <span className="text-[7px] text-slate-500 italic mt-0.5">Días Baja / Casos con Baja</span>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
 
