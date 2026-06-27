@@ -179,7 +179,8 @@ export default function TenantDashboard({ params }) {
           let empresasQuery = supabase
             .from('empresas')
             .select('id, razon_social')
-            .eq('tenant_id', ten.id);
+            .eq('tenant_id', ten.id)
+            .order('razon_social', { ascending: true });
           if (prof.role === 'cliente') {
             empresasQuery = empresasQuery.eq('id', prof.empresa_id);
           }
