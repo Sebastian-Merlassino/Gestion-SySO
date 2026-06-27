@@ -78,7 +78,7 @@ export default function NominaPage({ params }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterEmpresa, setFilterEmpresa] = useState('');
   const [filterEstablecimiento, setFilterEstablecimiento] = useState('');
-  const [filterFechaCarga, setFilterFechaCarga] = useState('');
+  const [filterAnio, setFilterAnio] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
   // Sorting
@@ -843,6 +843,18 @@ export default function NominaPage({ params }) {
     });
   };
 
+  // Años únicos disponibles en la nómina para el filtro
+  const uniqueYears = Array.from(
+    new Set(
+      personalList
+        .map(p => {
+          if (!p.fecha_carga) return null;
+          return p.fecha_carga.substring(0, 4);
+        })
+        .filter(Boolean)
+    )
+  ).sort((a, b) => b.localeCompare(a));
+
   // FILTERED & SORTED PERSONAL LIST
   const filteredPersonal = personalList
     .filter(p => {
@@ -855,12 +867,12 @@ export default function NominaPage({ params }) {
       const matchEmp = !filterEmpresa || p.empresa_id === filterEmpresa;
       const matchEst = !filterEstablecimiento || p.establecimiento_id === filterEstablecimiento;
       
-      let matchFecha = true;
-      if (filterFechaCarga) {
-        matchFecha = p.fecha_carga === filterFechaCarga;
+      let matchAnio = true;
+      if (filterAnio) {
+        matchAnio = p.fecha_carga && p.fecha_carga.substring(0, 4) === filterAnio;
       }
 
-      return matchSearch && matchEmp && matchEst && matchFecha;
+      return matchSearch && matchEmp && matchEst && matchAnio;
     })
     .sort((a, b) => {
       let valA = a[sortField] || '';
@@ -1416,12 +1428,12 @@ export default function NominaPage({ params }) {
                       Filtros de Búsqueda
                       {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                     </button>
-                    {(filterEmpresa || filterEstablecimiento || filterFechaCarga) && (
+                    {(filterEmpresa || filterEstablecimiento || filterAnio) && (
                       <button
                         onClick={() => {
                           setFilterEmpresa('');
                           setFilterEstablecimiento('');
-                          setFilterFechaCarga('');
+                          setFilterAnio('');
                         }}
                         className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[10px] font-semibold cursor-pointer transition-all border border-slate-200"
                       >
@@ -1467,13 +1479,17 @@ export default function NominaPage({ params }) {
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Fecha Carga</label>
-                        <input
-                          type="date"
-                          value={filterFechaCarga}
-                          onChange={(e) => setFilterFechaCarga(e.target.value)}
-                          className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer"
-                        />
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Año</label>
+                        <select
+                          value={filterAnio}
+                          onChange={(e) => setFilterAnio(e.target.value)}
+                          className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer font-semibold"
+                        >
+                          <option value="">Todos los años</option>
+                          {uniqueYears.map(year => (
+                            <option key={year} value={year}>{year}</option>
+                          ))}
+                        </select>
                       </div>
                     </div>
                   )}
