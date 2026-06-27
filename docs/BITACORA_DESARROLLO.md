@@ -1,5 +1,36 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-06-27] Reemplazo de Filtro por Fecha de Carga por Filtro por Año en Nómina de Personal
+
+### Resumen de Cambios
+- **Reemplazo del Filtro de Fecha de Carga por Selector de Año**: Se eliminó el filtro `<input type="date">` que obligaba a buscar por una fecha exacta de carga (día, mes y año) en la tabla de la Nómina de Personal. Se reemplazó por un menú desplegable `<select>` que permite filtrar dinámicamente por año.
+- **Cálculo Dinámico de Años**: Se implementó una rutina en React para extraer los años únicos de carga (`fecha_carga` en formato `YYYY-MM-DD`) a partir de la lista de empleados actual (`personalList`), poblando de forma automática el dropdown con los años con registros disponibles, más la opción "Todos los años".
+- **Limpieza de Filtro de Año**: Se actualizó el botón de limpiar filtros para restablecer el estado del año seleccionado (`filterAnio`).
+
+### Decisiones Clave
+- **Filtro Dinámico vs Estático**: Utilizar los años presentes en los registros existentes del cliente para poblar el dropdown previene opciones vacías y se adapta de forma orgánica a medida que se cargan nuevos períodos, garantizando una interfaz libre de configuraciones manuales.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/nomina/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción completa y exitosa (`cmd /c npm run build`).
+- Envío y sincronización exitosa de los cambios a la rama principal (`git push`).
+
+### Riesgos Detectados / Remanentes
+- Ninguno. La funcionalidad mantiene la compatibilidad con el esquema de base de datos existente y mejora la experiencia de usuario.
+
+### Próximo Paso Recomendado
+- Realizar pruebas del selector de años en producción con datos reales cargados.
+
+---
+
 ## [2026-06-27] Corrección de Detalle de Accidentes, Robustez del Contador de Días de Baja y Estandarización Global de Pictogramas de Documentos
 
 ### Resumen de Cambios
