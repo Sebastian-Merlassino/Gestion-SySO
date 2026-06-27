@@ -94,11 +94,34 @@ const GRAVEDAD_GUIA = [
 // PdfUploadZone removed in favor of reusable DocumentUploadZone component
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
+function parseDateISOorDMY(dateStr) {
+  if (!dateStr) return null;
+  if (dateStr.includes('/')) {
+    const parts = dateStr.split('/');
+    if (parts.length !== 3) return null;
+    const day = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const year = parseInt(parts[2], 10);
+    if (isNaN(day) || isNaN(month) || isNaN(year)) return null;
+    if (parts[2].length !== 4) return null;
+    return new Date(year, month, day);
+  } else if (dateStr.includes('-')) {
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return null;
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+    if (isNaN(day) || isNaN(month) || isNaN(year)) return null;
+    if (parts[0].length !== 4) return null;
+    return new Date(year, month, day);
+  }
+  return null;
+}
+
 function calcDiasBaja(fechaSiniestro, fechaAlta) {
-  if (!fechaSiniestro || !fechaAlta) return null;
-  const d1 = new Date(convertToDbDate(fechaSiniestro) + 'T00:00:00');
-  const d2 = new Date(convertToDbDate(fechaAlta) + 'T00:00:00');
-  if (isNaN(d1) || isNaN(d2)) return null;
+  const d1 = parseDateISOorDMY(fechaSiniestro);
+  const d2 = parseDateISOorDMY(fechaAlta);
+  if (!d1 || !d2) return null;
   const diff = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
   return diff >= 0 ? diff : null;
 }
@@ -586,13 +609,9 @@ export default function AccidentesPage({ params }) {
     setDenunciaUrl(acc.denuncia_accidente_url || '');
     setDenunciaFile(null);
     setDenunciaFileName(acc.denuncia_accidente_url ? 'Archivo existente' : '');
-    setDenunciaUploadType('local');
-    setDenunciaDriveLink('');
     setInformeUrl(acc.informe_investigacion_url || '');
     setInformeFile(null);
     setInformeFileName(acc.informe_investigacion_url ? 'Archivo existente' : '');
-    setInformeUploadType('local');
-    setInformeDriveLink('');
     setIsFormOpen(true);
   };
 
@@ -1503,11 +1522,16 @@ export default function AccidentesPage({ params }) {
                                   ) : '—'}
                                 </td>
                                 <td className="px-6 py-4 text-center font-bold">
-                                  {acc.dias_baja !== null && acc.dias_baja !== undefined ? (
-                                    <span className="text-xs font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full">
-                                      {acc.dias_baja}d
-                                    </span>
-                                  ) : '—'}
+                                  {(() => {
+                                    const computedDias = (acc.dias_baja !== null && acc.dias_baja !== undefined)
+                                      ? acc.dias_baja
+                                      : calcDiasBaja(acc.fecha_siniestro, acc.fecha_alta_rechazo);
+                                    return computedDias !== null && computedDias !== undefined ? (
+                                      <span className="text-xs font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full">
+                                        {computedDias}d
+                                      </span>
+                                    ) : '—';
+                                  })()}
                                 </td>
                                 <td className="px-6 py-4 text-center" onClick={e => e.stopPropagation()}>
                                   <div className="flex items-center justify-center gap-1">
@@ -1515,18 +1539,18 @@ export default function AccidentesPage({ params }) {
                                       <button
                                         onClick={e => { e.stopPropagation(); handleViewPdf(acc.denuncia_signed_url); }}
                                         title="Ver denuncia de accidente"
-                                        className="p-1 rounded-lg hover:bg-blue-50 text-[#468DFF] transition-colors"
+                                        className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-colors inline-flex items-center justify-center shadow-sm"
                                       >
-                                        <FileText className="h-4 w-4" />
+                                        <FileText className="h-4.5 w-4.5" />
                                       </button>
                                     )}
                                     {acc.informe_signed_url && (
                                       <button
                                         onClick={e => { e.stopPropagation(); handleViewPdf(acc.informe_signed_url); }}
                                         title="Ver informe de investigación"
-                                        className="p-1 rounded-lg hover:bg-blue-50 text-[#468DFF] transition-colors"
+                                        className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-colors inline-flex items-center justify-center shadow-sm"
                                       >
-                                        <Building className="h-4 w-4 text-slate-400" />
+                                        <FileText className="h-4.5 w-4.5" />
                                       </button>
                                     )}
                                     {!acc.denuncia_signed_url && !acc.informe_signed_url && (

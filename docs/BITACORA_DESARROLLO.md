@@ -1,5 +1,43 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-06-27] Corrección de Detalle de Accidentes, Robustez del Contador de Días de Baja y Estandarización Global de Pictogramas de Documentos
+
+### Resumen de Cambios
+- **Corrección de Apertura de Detalle en Accidentes**: Se eliminaron las llamadas obsoletas a `setDenunciaUploadType`, `setDenunciaDriveLink`, `setInformeUploadType` y `setInformeDriveLink` en `handleEditClick` en `accidentes/page.js`. Esto soluciona de raíz el error `ReferenceError` que interrumpía la ejecución del flujo y bloqueaba la apertura de la vista de datos al hacer clic en las filas de la tabla.
+- **Robustez del Contador de Días de Baja**: Se implementó una función helper robusta `parseDateISOorDMY` para manejar formatos de fecha híbridos (`DD/MM/YYYY` e `YYYY-MM-DD`) de forma segura, independiente del motor de zona horaria o locales del navegador. Se agregó una validación para exigir 4 dígitos de año completos antes de calcular, eliminando los conteos erráticos o negativos temporales. Adicionalmente, se configuró un cálculo dinámico en tiempo real en las celdas del listado (tabla) con fallback a dicho helper, permitiendo visualizar los días de baja de forma automática e inmediata para los registros históricos sin requerir que el usuario ingrese a editarlos y guardarlos manualmente uno por uno.
+- **Estandarización de Pictograma de Documentos**: Se unificaron los pictogramas en las tablas de todas las secciones para visualizar PDFs o documentos adjuntos:
+  - En **Accidentes**, se reemplazó el icono `Building` erróneo en el informe por el pictograma de documento `FileText`.
+  - En **Programa Anual** y **Legajo Técnico**, se reemplazaron los iconos `Eye` de previsualización por el pictograma `FileText`.
+  - Todos los botones de visualización y descarga en las columnas de documentos se actualizaron con el tamaño unificado `h-4.5 w-4.5` para los iconos y el estilo de botón consistente con fondo suave azul (`p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-colors`).
+- **Actualización de Normativas**: Se documentó este estándar de diseño en la skill de marca (`.agents/skills/gestion-syso-brand-guidelines/SKILL.md`), las directrices visuales (`docs/brand/BRAND_GUIDELINES.md`), las reglas globales (`docs/RULES_WORKSPACE.md`) y el manual del agente (`.agents/agents.md`).
+
+### Decisiones Clave
+- **Helper de Parseo Dedicado vs Date String Parsers**: Evitar `new Date(ISOString)` y el uso de `T00:00:00` reduce a cero las inconsistencias de hidratación de zona horaria en motores JS y evita resultados `Invalid Date` de Safari y Firefox.
+- **Pictograma de Documento Unificado (`FileText`)**: La consistencia cromática y formal de las acciones en las tablas (Editar = Amber, Eliminar = Red, Documento = Blue) optimiza la escaneabilidad visual para profesionales de Higiene y Seguridad Laboral.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] .agents/skills/gestion-syso-brand-guidelines/SKILL.md`
+- `[MODIFY] docs/brand/BRAND_GUIDELINES.md`
+- `[MODIFY] docs/RULES_WORKSPACE.md`
+- `[MODIFY] .agents/agents.md`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción exitosa mediante `cmd /c npm run build`.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. Las interfaces y lógicas modificadas respetan estrictamente la retrocompatibilidad y no afectan los datos en Supabase.
+
+---
+
 ## [2026-06-26] Mitigación de Advertencias en Perfil, Pantalla de Login y Diagnóstico de Errores de Consola
 
 ### Resumen de Cambios

@@ -1672,15 +1672,15 @@ export default function LegajoPage({ params }) {
                                       <div className="flex items-center justify-end gap-2">
                                         <button
                                           onClick={() => handleViewPdf(doc.documento_url)}
-                                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                          className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                                           title="Visualizar PDF"
                                         >
-                                          <Eye className="h-4.5 w-4.5" />
+                                          <FileText className="h-4.5 w-4.5" />
                                         </button>
                                         {!doc.documento_url.startsWith('http') && (
                                           <button
                                             onClick={() => handleDownloadPdf(doc.documento_url, `${doc.documento_nombre}.pdf`)}
-                                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                            className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                                             title="Descargar PDF"
                                           >
                                             <Download className="h-4.5 w-4.5" />

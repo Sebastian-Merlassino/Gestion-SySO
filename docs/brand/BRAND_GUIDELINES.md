@@ -97,3 +97,11 @@ Para mantener la coherencia y profesionalismo en la interfaz, todos los botones 
   - **Estado Pasivo**: Fondo `#FEE2E2` (Red-50), texto `#DC2626` (`text-red-600`).
   - **Estado Hover**: Fondo `#FCA5A5` (Red-200), texto `#B91C1C` (`text-red-800`).
 
+### 5. Pictograma de Documento en Tabla (Visualización / Acceso a PDF)
+- **Tabla (Icono de Acción)**:
+  - **Estado Pasivo**: Fondo `#EFF6FF` (Blue-50), texto e icono `#468DFF` (Azul corporativo).
+  - **Estado Hover**: Fondo `#DBEAFE` (Blue-100), texto e icono `#0511F2` (Azul de resaltado).
+  - **Icono**: `FileText` (Lucide React) de tamaño `h-4.5 w-4.5`.
+  - **Clases recomendadas**: `p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-colors inline-flex items-center justify-center shadow-sm`
+
+
