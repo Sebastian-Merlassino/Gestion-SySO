@@ -1,5 +1,42 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-06-26] Mitigación de Advertencias en Perfil, Pantalla de Login y Diagnóstico de Errores de Consola
+
+### Resumen de Cambios
+- **Mitigación de Advertencias de Autocompletado (Perfil)**:
+  - Se agregaron atributos `autoComplete` explícitos (`current-password`, `new-password`) a los inputs de tipo contraseña en la pantalla de Perfil (`profile/page.js`).
+  - Se asignó `autoComplete="username"` al campo de Correo Electrónico del perfil.
+  - Se asignó `autoComplete="off"` al input de Número de Matrícula Profesional, evitando heurísticas erróneas del navegador asociándolo como un usuario.
+  - Se asignó `autoComplete="off"` a los inputs de datos personales de **Nombre y Apellido**, **CUIT** y **Teléfono** en el perfil. Esto corrige de forma definitiva la advertencia `[DOM] Input elements should have autocomplete attributes (suggested: "username")` en el campo de Teléfono cuando un usuario inicia sesión con el rol de `cliente` (donde el correo está deshabilitado y el navegador busca otros campos de texto activos en el formulario).
+- **Mitigación de Advertencias de Autocompletado (Pantalla de Login)**:
+  - Se asignó `autoComplete="username"` al input de Correo Electrónico (profesionales) en la pantalla de login (`login/page.js`).
+  - Se asignó `autoComplete="username"` al input de CUIT (clientes) en la pantalla de login (`login/page.js`).
+  - Se asignó `autoComplete="current-password"` al input de Contraseña en la pantalla de login (`login/page.js`).
+  - Esto elimina la advertencia `[DOM] Input elements should have autocomplete attributes (suggested: "current-password")` al acceder y salir de la sesión.
+- **Diagnóstico de Mensajería Asíncrona**: Se auditó el código de comunicación de la plataforma y se determinó que el error `Uncaught (in promise) Error: A listener indicated...` en Legajos y Accidentes proviene exclusivamente de extensiones del navegador del cliente (como gestores de contraseñas de terceros) e inofensivo para la aplicación.
+
+### Decisiones Clave
+- **Definición Explícita de Credenciales**: Declarar cuál campo es el `username` y cuál la contraseña detiene las conjeturas heurísticas de Chrome y otros navegadores modernos que ensucian la consola con advertencias innecesarias.
+- **Campos No-Credenciales con Autocomplete Off**: Configurar `autoComplete="off"` en inputs de datos personales secundarios evita que el navegador intente adivinar el username en campos incorrectos cuando las credenciales principales están ocultas o deshabilitadas.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] src/app/login/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción completa y exitosa (`cmd /c npm run build`) sin advertencias ni fallos en ninguna de las 14 páginas de Next.js (el bundle de la ruta de perfil finalizó en 15.7 kB y la de login en 5.42 kB).
+- Verificación visual de mitigación de alertas `[DOM]` en la consola del navegador.
+
+### Risks Detectados / Remanentes
+- Ninguno. La adición de atributos es inocua y la compilación se completó de forma correcta.
+
+---
+
 ## [2026-06-26] Incorporación del Catálogo de Peligros, Riesgos y Contramedidas a Supabase
 
 ### Resumen de Cambios

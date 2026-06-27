@@ -356,6 +356,7 @@ export default function LoginPage() {
                     placeholder="nombre@empresa.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="username"
                     className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-slate-800 placeholder-slate-400 focus:outline-none transition-all"
                   />
                 </div>
@@ -375,6 +376,7 @@ export default function LoginPage() {
                     placeholder="CUIT sin puntos ni guiones (ej. 30712345678)"
                     value={cuit}
                     onChange={(e) => handleCuitChange(e, setCuit)}
+                    autoComplete="username"
                     className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-slate-800 placeholder-slate-400 focus:outline-none transition-all"
                   />
                 </div>
@@ -410,6 +412,7 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
                   className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-12 text-slate-800 placeholder-slate-400 focus:outline-none transition-all"
                 />
                 <button

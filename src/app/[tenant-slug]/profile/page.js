@@ -1134,6 +1134,7 @@ const [partidosList, setPartidosList] = useState([]);
                   placeholder="Juan Pérez"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
+                  autoComplete="off"
                   className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                 />
               </div>
@@ -1150,6 +1151,7 @@ const [partidosList, setPartidosList] = useState([]);
                     type="email"
                     required
                     value={email}
+                    autoComplete="username"
                     className="w-full border border-slate-150 rounded-xl pl-10 pr-4 py-2 text-sm bg-slate-100 text-slate-500 outline-none cursor-not-allowed focus:outline-none"
                     disabled
                   />
@@ -1168,6 +1170,7 @@ const [partidosList, setPartidosList] = useState([]);
                   placeholder="20443332225"
                   value={cuit}
                   onChange={handleCuitChange}
+                  autoComplete="off"
                   className={`w-full border ${cuitError ? 'border-red-400 focus:border-red-500' : 'border-slate-200 focus:border-[#468DFF]'} rounded-xl px-3.5 py-2 text-sm focus:outline-none bg-slate-50/50 transition-all text-slate-700`}
                 />
                 {cuitError && (
@@ -1185,6 +1188,7 @@ const [partidosList, setPartidosList] = useState([]);
                   placeholder="1165432109"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
+                  autoComplete="off"
                   className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                 />
               </div>
@@ -1319,6 +1323,7 @@ const [partidosList, setPartidosList] = useState([]);
                           placeholder="L000000"
                           value={m.numero}
                           onChange={(e) => handleMatriculaChange(index, 'numero', e.target.value)}
+                          autoComplete="off"
                           className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                         />
                       </div>
@@ -1427,6 +1432,7 @@ const [partidosList, setPartidosList] = useState([]);
                     placeholder="Contraseña actual"
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
+                    autoComplete="current-password"
                     className="w-full border border-slate-200 rounded-xl py-2 pl-3.5 pr-12 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                   />
                   <button
@@ -1448,6 +1454,7 @@ const [partidosList, setPartidosList] = useState([]);
                     placeholder="Mínimo 8 caracteres, 1 mayúscula y 1 número"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
+                    autoComplete="new-password"
                     className="w-full border border-slate-200 rounded-xl py-2 pl-3.5 pr-12 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                   />
                   <button
@@ -1472,6 +1479,7 @@ const [partidosList, setPartidosList] = useState([]);
                     placeholder="Repetir contraseña"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
+                    autoComplete="new-password"
                     className="w-full border border-slate-200 rounded-xl py-2 pl-3.5 pr-12 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                   />
                   <button
@@ -1793,6 +1801,7 @@ const [partidosList, setPartidosList] = useState([]);
                         placeholder="Contraseña actual"
                         value={deletePassword}
                         onChange={(e) => setDeletePassword(e.target.value)}
+                        autoComplete="current-password"
                         className="w-full border border-slate-200 rounded-xl py-2 pl-3.5 pr-12 text-sm focus:outline-none focus:border-red-500 bg-slate-50/50 transition-all text-slate-700"
                       />
                       <button
