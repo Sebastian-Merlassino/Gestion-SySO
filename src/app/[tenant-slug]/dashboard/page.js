@@ -778,7 +778,7 @@ export default function TenantDashboard({ params }) {
                     setAccidentFilterEmpresa(e.target.value);
                     setAccidentFilterEstablecimiento(''); // reset establecimiento al cambiar de empresa
                   }}
-                  className="border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50/50 focus:outline-none focus:border-[#468DFF] transition-colors cursor-pointer w-full sm:min-w-[140px]"
+                  className="border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50/50 focus:outline-none focus:border-[#468DFF] transition-colors cursor-pointer w-full sm:w-[240px]"
                 >
                   <option value="">Selecciona una empresa</option>
                   {empresas.map(emp => (
@@ -795,7 +795,7 @@ export default function TenantDashboard({ params }) {
                 value={accidentFilterEstablecimiento}
                 onChange={e => setAccidentFilterEstablecimiento(e.target.value)}
                 disabled={profile && profile.role !== 'cliente' && !accidentFilterEmpresa}
-                className="border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50/50 focus:outline-none focus:border-[#468DFF] transition-colors cursor-pointer w-full sm:min-w-[140px] disabled:bg-slate-100 disabled:text-slate-450 disabled:cursor-not-allowed"
+                className="border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50/50 focus:outline-none focus:border-[#468DFF] transition-colors cursor-pointer w-full sm:w-[240px] disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
               >
                 <option value="">
                   {profile && profile.role !== 'cliente' && !accidentFilterEmpresa 
@@ -816,7 +816,7 @@ export default function TenantDashboard({ params }) {
               <select
                 value={accidentFilterAnio}
                 onChange={e => setAccidentFilterAnio(e.target.value)}
-                className="border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50/50 focus:outline-none focus:border-[#468DFF] transition-colors cursor-pointer w-full sm:w-auto"
+                className="border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50/50 focus:outline-none focus:border-[#468DFF] transition-colors cursor-pointer w-full sm:w-[100px]"
               >
                 {getAccidentYears().map(year => (
                   <option key={year} value={String(year)}>{year}</option>

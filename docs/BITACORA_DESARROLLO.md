@@ -5,6 +5,7 @@
 ### Resumen de Cambios
 - **Apilado de Filtros de Siniestralidad (Dashboard)**: Se modificaron los filtros selectores del gráfico comparativo de accidentes. Se reemplazó el contenedor por una grilla responsiva (`grid-cols-1 sm:flex`) y se dispuso que la etiqueta quede arriba del dropdown (`flex flex-col`) con un ancho del 100% en pantallas de celular, evitando que se desborden de los márgenes de la tarjeta.
 - **Lista de Establecimientos Dependiente (Dashboard)**: Se restringió el dropdown de establecimientos para que esté deshabilitado si no se ha seleccionado ninguna Razón Social (para administradores y miembros), mostrando la leyenda reactiva *"Seleccione una empresa primero..."* para mantener la coherencia y evitar datos huérfanos.
+- **Prevención de Desplazamientos en Filtros (Dashboard)**: Se definieron anchos fijos responsivos en desktop (`sm:w-[240px]` y `sm:w-[100px]`) para los selectores de los filtros del dashboard. Esto previene que cambien de tamaño de forma dinámica al alternar entre estados (por ejemplo, al cambiar de "Seleccione una empresa primero..." a "Todos los establecimientos"), eliminando saltos de cuadrícula y manteniendo los labels y alineaciones perfectamente estables.
 - **Orden Alfabético de Clientes (Dashboard)**: Se modificó la carga de empresas en `fetchDashboardData` para ordenar los registros alfabéticamente por Razón Social (`.order('razon_social', { ascending: true })`).
 - **Paddings de Visitas de Obra**: Se cambió el padding fijo `p-6` a responsivo `p-3 sm:p-6` en el cuerpo del listado y a `p-4 sm:p-6` en el formulario, liberando espacio útil horizontal en celulares.
 - **Truncado de Título Adaptativo**: El título del formulario ahora se reduce y trunca en pantallas de móvil (`text-xs sm:text-sm truncate max-w-[55vw]`), impidiendo que se superponga con los botones de cierre.
@@ -14,6 +15,7 @@
 ### Decisiones Clave
 - **Apilar sobre Alinear Horizontalmente**: En pantallas de menos de 400px de ancho, cualquier alineación horizontal de etiquetas y selectores / botones extensos resulta en desbordamiento. Apilarlos verticalmente y darles el 100% del ancho del contenedor en móvil es el patrón de diseño responsivo más estable y consistente.
 - **Orden de Presentación de Catálogos**: Cargar catálogos ordenados alfabéticamente desde el motor de base de datos (`order` en PostgreSQL) es más eficiente en rendimiento que ordenar los arrays en el cliente y garantiza una UX predictiva.
+- **Ancho Fijo en Elementos de Control**: Fijar los anchos de los menús desplegables (`select`) evita que la interfaz cambie de tamaño según el texto seleccionado, lo que elimina el efecto visual de "tembleque" o saltos de layout cuando se actualizan filtros.
 
 ### Skills Utilizadas
 - `gestion-syso-bitacora`
