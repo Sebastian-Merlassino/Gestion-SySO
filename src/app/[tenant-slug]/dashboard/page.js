@@ -947,6 +947,27 @@ export default function TenantDashboard({ params }) {
               
               {/* Barra Año Anterior */}
               <div className="flex-1 flex flex-col justify-end items-center h-full group relative">
+                {/* Tooltip personalizado */}
+                <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col items-center z-30 pointer-events-none animate-fade-in">
+                  <div className="bg-slate-900/95 text-white text-[10px] py-1.5 px-2.5 rounded-lg shadow-xl font-sans whitespace-nowrap text-center flex flex-col gap-0.5 border border-slate-700/50">
+                    <span className="font-extrabold text-slate-300 uppercase tracking-wider text-[8px]">{chartData.prevYear.label}</span>
+                    <span className="font-outfit text-xs font-black text-[#468DFF]">{chartData.prevYear.value}</span>
+                    {activeChartIndex === 'incidencia' && (
+                      <span className="text-[8px] text-slate-400 font-semibold italic">Casos por cada 1.000 trab.</span>
+                    )}
+                    {activeChartIndex === 'mortalidad' && (
+                      <span className="text-[8px] text-slate-400 font-semibold italic">Casos por cada 1.000.000 trab.</span>
+                    )}
+                    {activeChartIndex === 'perdida' && (
+                      <span className="text-[8px] text-slate-400 font-semibold italic">Jornadas perdidas por millón hs</span>
+                    )}
+                    {activeChartIndex === 'dmb' && (
+                      <span className="text-[8px] text-slate-400 font-semibold italic">Días promedio de baja</span>
+                    )}
+                  </div>
+                  <div className="w-2 h-2 bg-slate-900 rotate-45 -mt-1 border-r border-b border-slate-700/50" />
+                </div>
+
                 <span className="text-[9px] font-bold text-slate-500 mb-1 select-none">
                   {chartData.prevYear.value}
                 </span>
@@ -955,7 +976,6 @@ export default function TenantDashboard({ params }) {
                   style={{
                     height: `${Math.max(4, Math.min(100, (chartData.prevYear.value / (Math.max(1, ...chartData.months.map(m => m.value), chartData.ytd.value, chartData.prevYear.value)) * 100)))}%`
                   }}
-                  title={`${chartData.prevYear.label}: ${chartData.prevYear.value}`}
                 />
                 <span className="text-[9px] font-bold text-slate-400 mt-2 truncate w-full text-center">
                   {chartData.prevYear.label}
@@ -967,6 +987,27 @@ export default function TenantDashboard({ params }) {
 
               {/* Barra YTD */}
               <div className="flex-1 flex flex-col justify-end items-center h-full group relative">
+                {/* Tooltip personalizado */}
+                <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col items-center z-30 pointer-events-none animate-fade-in">
+                  <div className="bg-slate-900/95 text-white text-[10px] py-1.5 px-2.5 rounded-lg shadow-xl font-sans whitespace-nowrap text-center flex flex-col gap-0.5 border border-slate-700/50">
+                    <span className="font-extrabold text-slate-300 uppercase tracking-wider text-[8px]">{chartData.ytd.label}</span>
+                    <span className="font-outfit text-xs font-black text-[#468DFF]">{chartData.ytd.value}</span>
+                    {activeChartIndex === 'incidencia' && (
+                      <span className="text-[8px] text-slate-400 font-semibold italic">Casos por cada 1.000 trab.</span>
+                    )}
+                    {activeChartIndex === 'mortalidad' && (
+                      <span className="text-[8px] text-slate-400 font-semibold italic">Casos por cada 1.000.000 trab.</span>
+                    )}
+                    {activeChartIndex === 'perdida' && (
+                      <span className="text-[8px] text-slate-400 font-semibold italic">Jornadas perdidas por millón hs</span>
+                    )}
+                    {activeChartIndex === 'dmb' && (
+                      <span className="text-[8px] text-slate-400 font-semibold italic">Días promedio de baja</span>
+                    )}
+                  </div>
+                  <div className="w-2 h-2 bg-slate-900 rotate-45 -mt-1 border-r border-b border-slate-700/50" />
+                </div>
+
                 <span className="text-[9px] font-extrabold text-[#0511F2] mb-1 select-none">
                   {chartData.ytd.value}
                 </span>
@@ -975,7 +1016,6 @@ export default function TenantDashboard({ params }) {
                   style={{
                     height: `${Math.max(4, Math.min(100, (chartData.ytd.value / (Math.max(1, ...chartData.months.map(m => m.value), chartData.ytd.value, chartData.prevYear.value)) * 100)))}%`
                   }}
-                  title={`${chartData.ytd.label}: ${chartData.ytd.value}`}
                 />
                 <span className="text-[9px] font-extrabold text-[#0511F2] mt-2 truncate w-full text-center">
                   {chartData.ytd.label}
@@ -988,6 +1028,27 @@ export default function TenantDashboard({ params }) {
               {/* Barras de los 12 Meses */}
               {chartData.months.map((mVal, idx) => (
                 <div key={idx} className="flex-1 flex flex-col justify-end items-center h-full group relative">
+                  {/* Tooltip personalizado */}
+                  <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col items-center z-30 pointer-events-none animate-fade-in">
+                    <div className="bg-slate-900/95 text-white text-[10px] py-1.5 px-2.5 rounded-lg shadow-xl font-sans whitespace-nowrap text-center flex flex-col gap-0.5 border border-slate-700/50">
+                      <span className="font-extrabold text-slate-300 uppercase tracking-wider text-[8px]">{mVal.label}</span>
+                      <span className="font-outfit text-xs font-black text-[#468DFF]">{mVal.value}</span>
+                      {activeChartIndex === 'incidencia' && (
+                        <span className="text-[8px] text-slate-400 font-semibold italic">Casos por cada 1.000 trab.</span>
+                      )}
+                      {activeChartIndex === 'mortalidad' && (
+                        <span className="text-[8px] text-slate-400 font-semibold italic">Casos por cada 1.000.000 trab.</span>
+                      )}
+                      {activeChartIndex === 'perdida' && (
+                        <span className="text-[8px] text-slate-400 font-semibold italic">Jornadas perdidas por millón hs</span>
+                      )}
+                      {activeChartIndex === 'dmb' && (
+                        <span className="text-[8px] text-slate-400 font-semibold italic">Días promedio de baja</span>
+                      )}
+                    </div>
+                    <div className="w-2 h-2 bg-slate-900 rotate-45 -mt-1 border-r border-b border-slate-700/50" />
+                  </div>
+
                   <span className="text-[9px] font-bold text-[#468DFF] mb-1 select-none group-hover:opacity-100 transition-opacity">
                     {mVal.value}
                   </span>
@@ -996,7 +1057,6 @@ export default function TenantDashboard({ params }) {
                     style={{
                       height: `${Math.max(4, Math.min(100, (mVal.value / (Math.max(1, ...chartData.months.map(m => m.value), chartData.ytd.value, chartData.prevYear.value)) * 100)))}%`
                     }}
-                    title={`${mVal.label}: ${mVal.value}`}
                   />
                   <span className="text-[9px] font-bold text-slate-400 mt-2 truncate w-full text-center">
                     {mVal.label}
