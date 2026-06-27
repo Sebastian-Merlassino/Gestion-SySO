@@ -1,5 +1,34 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-06-27] Incorporación de Sectores, Puestos de Trabajo y Observaciones en Establecimientos
+
+### Resumen de Cambios
+- **Matriz de Sectores y Puestos de Trabajo**: Se añadió una subsección interactiva y colapsable en cada establecimiento (ubicada entre "Riesgos del Decreto 351/79" y "Máquinas Fijas") para definir múltiples sectores (denominación y descripción) y, dentro de cada uno, múltiples puestos de trabajo asociados (denominación y descripción).
+- **Control Táctil e Interactivo en Lectura (Mobile First)**: Para permitir expandir y contraer la información de sectores y puestos en la vista de solo lectura (clientes), los botones de alternancia se implementaron como elementos `span` con `role="button"`. Esto evita que la directiva `<fieldset disabled>` inhabilite la interacción de colapsado/expandido en el portal de clientes.
+- **Reposicionamiento de Horas-Profesional**: Se ubicó el contenedor de "Horas-Profesional Mensuales" directamente debajo de "Riesgos de la actividad según Decreto Nº 351/79" para unificar la visualización de los riesgos y su correspondiente cálculo del decreto.
+- **Cuadro de Observaciones del Establecimiento**: Se incorporó un campo de texto multilínea (textarea) exclusivo para observaciones de cada establecimiento, posicionado justo debajo del componente "Equipos de Izaje de Cargas".
+- **Soporte de Base de Datos (Supabase)**: Se creó una nueva migración SQL para añadir la columna `sectores` (JSONB) y `observaciones` (TEXT) en la tabla `establecimientos`, manteniendo la compatibilidad con el resto de la plataforma y asegurando consistencia transaccional.
+
+### Decisiones Clave
+- **JSONB para Estructura Jerárquica**: Almacenar sectores y puestos en un único campo JSONB en la tabla `establecimientos` simplifica la lógica y evita uniones complejas en base de datos.
+- **Interactividad en Fieldsets Deshabilitados**: El uso de elementos alternativos con `role="button"` garantiza que las acciones estructurales de la interfaz de lectura (como colapsar o expandir bloques) permanezcan accesibles.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `supabase`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260715000000_add_sectores_and_observaciones_to_establecimientos.sql`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+
+### Validaciones Ejecutadas
+- Ejecución completa y exitosa de la migración en el pooler de base de datos Postgres de Supabase.
+- Compilación de producción con optimización y empaquetado de Next.js (`npm run build`) exitosa.
+
+---
+
 ## [2026-06-27] Corrección de Responsividad, Lógica de Establecimientos y Orden Alfabético en el Dashboard (Mobile First Android/iOS)
 
 ### Resumen de Cambios

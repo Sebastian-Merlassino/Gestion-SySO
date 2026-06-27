@@ -585,7 +585,29 @@ export default function EmpresasClientes({ params }) {
           equipos_elevacion: ['Montacargas'],
           equipos_izaje: ['Autoelevadores'],
           partidosList: ['PILAR', 'TIGRE'],
-          localidadesList: ['PILAR', 'DEL VISO']
+          localidadesList: ['PILAR', 'DEL VISO'],
+          sectores: [
+            {
+              id: 'sec-1',
+              denominacion: 'Producción',
+              descripcion: 'Área principal de fabricación y ensamble de piezas.',
+              isCollapsed: true,
+              puestos: [
+                { id: 'pst-1', denominacion: 'Operario de Torno', descripcion: 'Mecanizado de piezas según plano.', isCollapsed: true },
+                { id: 'pst-2', denominacion: 'Supervisor de Turno', descripcion: 'Control de calidad y flujo de producción.', isCollapsed: true }
+              ]
+            },
+            {
+              id: 'sec-2',
+              denominacion: 'Mantenimiento',
+              descripcion: 'Taller de reparación mecánica y eléctrica.',
+              isCollapsed: true,
+              puestos: [
+                { id: 'pst-3', denominacion: 'Soldador', descripcion: 'Soldadura de estructuras y reparaciones.', isCollapsed: true }
+              ]
+            }
+          ],
+          observaciones: 'El establecimiento requiere inspección semestral de los sistemas de izaje.'
         }
       ]);
       setArtWeb('https://art.example.com');
@@ -697,6 +719,8 @@ export default function EmpresasClientes({ params }) {
           equipos_termicos: est.equipos_termicos || [],
           equipos_elevacion: est.equipos_elevacion || [],
           equipos_izaje: est.equipos_izaje || [],
+          sectores: est.sectores || [],
+          observaciones: est.observaciones || '',
           partidosList,
           localidadesList,
           isCollapsed: true
@@ -932,6 +956,69 @@ export default function EmpresasClientes({ params }) {
     setEstablecimientos(updated);
   };
 
+  const handleAddSector = (estIndex) => {
+    const updated = [...establecimientos];
+    const sectores = [...(updated[estIndex].sectores || [])];
+    sectores.push({
+      id: 'sec-' + Date.now() + Math.random().toString(36).substr(2, 5),
+      denominacion: '',
+      descripcion: '',
+      isCollapsed: false,
+      puestos: []
+    });
+    updated[estIndex].sectores = sectores;
+    setEstablecimientos(updated);
+  };
+
+  const handleUpdateSector = (estIndex, secIndex, field, value) => {
+    const updated = [...establecimientos];
+    const sectores = [...(updated[estIndex].sectores || [])];
+    sectores[secIndex] = { ...sectores[secIndex], [field]: value };
+    updated[estIndex].sectores = sectores;
+    setEstablecimientos(updated);
+  };
+
+  const handleRemoveSector = (estIndex, secIndex) => {
+    const updated = [...establecimientos];
+    const sectores = (updated[estIndex].sectores || []).filter((_, i) => i !== secIndex);
+    updated[estIndex].sectores = sectores;
+    setEstablecimientos(updated);
+  };
+
+  const handleAddPuesto = (estIndex, secIndex) => {
+    const updated = [...establecimientos];
+    const sectores = [...(updated[estIndex].sectores || [])];
+    const puestos = [...(sectores[secIndex].puestos || [])];
+    puestos.push({
+      id: 'pst-' + Date.now() + Math.random().toString(36).substr(2, 5),
+      denominacion: '',
+      descripcion: '',
+      isCollapsed: false
+    });
+    sectores[secIndex] = { ...sectores[secIndex], puestos };
+    updated[estIndex].sectores = sectores;
+    setEstablecimientos(updated);
+  };
+
+  const handleUpdatePuesto = (estIndex, secIndex, pstIndex, field, value) => {
+    const updated = [...establecimientos];
+    const sectores = [...(updated[estIndex].sectores || [])];
+    const puestos = [...(sectores[secIndex].puestos || [])];
+    puestos[pstIndex] = { ...puestos[pstIndex], [field]: value };
+    sectores[secIndex] = { ...sectores[secIndex], puestos };
+    updated[estIndex].sectores = sectores;
+    setEstablecimientos(updated);
+  };
+
+  const handleRemovePuesto = (estIndex, secIndex, pstIndex) => {
+    const updated = [...establecimientos];
+    const sectores = [...(updated[estIndex].sectores || [])];
+    const puestos = (sectores[secIndex].puestos || []).filter((_, i) => i !== pstIndex);
+    sectores[secIndex] = { ...sectores[secIndex], puestos };
+    updated[estIndex].sectores = sectores;
+    setEstablecimientos(updated);
+  };
+
   // Determinación de categoría y horas del decreto 351/79
   const calculateHoursAndCategory = (equiv, chapters) => {
     const hasCatC = chapters.cap_8 || chapters.cap_9 || chapters.cap_10;
@@ -1099,6 +1186,8 @@ export default function EmpresasClientes({ params }) {
       equipos_termicos: [],
       equipos_elevacion: [],
       equipos_izaje: [],
+      sectores: [],
+      observaciones: '',
       partidosList: [],
       localidadesList: [],
       customFijas: '',
@@ -1303,6 +1392,8 @@ export default function EmpresasClientes({ params }) {
             equipos_termicos: est.equipos_termicos,
             equipos_elevacion: est.equipos_elevacion,
             equipos_izaje: est.equipos_izaje,
+            sectores: est.sectores || [],
+            observaciones: (est.observaciones || '').trim() || null,
             updated_at: new Date().toISOString()
           };
           if (est.id) {
@@ -2307,6 +2398,219 @@ export default function EmpresasClientes({ params }) {
                               </div>
                             </div>
 
+                            {/* SECTORES Y PUESTOS DE TRABAJO */}
+                            <div className="space-y-4 pt-4 border-t border-slate-100">
+                              <div className="flex justify-between items-center">
+                                <div className="space-y-1">
+                                  <span className="text-xs font-bold text-slate-800 block">Sectores y Puestos de Trabajo</span>
+                                  <span className="text-[10px] text-slate-500 block">
+                                    Define los sectores del establecimiento y los puestos de trabajo asociados a cada uno.
+                                  </span>
+                                </div>
+                                {canEdit && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleAddSector(idx)}
+                                    className="py-1.5 px-3 rounded-xl border border-[#468DFF]/40 hover:bg-[#468DFF] hover:text-white text-center text-[#468DFF] font-bold text-[10px] transition-all flex items-center gap-1 cursor-pointer bg-white hover:border-[#468DFF] active:scale-[0.98] shadow-sm"
+                                  >
+                                    <Plus className="h-3 w-3" /> Agregar Sector
+                                  </button>
+                                )}
+                              </div>
+
+                              {(est.sectores || []).length === 0 ? (
+                                <div className="text-center py-4 px-3 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                                  <span className="text-[10px] text-slate-400 font-medium">No se han definido sectores para este establecimiento.</span>
+                                </div>
+                              ) : (
+                                <div className="space-y-3">
+                                  {(est.sectores || []).map((sec, secIdx) => (
+                                    <div key={sec.id || secIdx} className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm hover:border-slate-300/80 transition-all">
+                                      {/* Cabecera del Sector */}
+                                      <div className="bg-slate-50/70 px-4 py-2.5 flex justify-between items-center border-b border-slate-150">
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-[10px] font-bold text-slate-700 uppercase bg-slate-200/80 px-2 py-0.5 rounded-lg border border-slate-300/40">
+                                            Sector #{secIdx + 1}
+                                          </span>
+                                          {sec.denominacion && (
+                                            <span className="text-xs font-bold text-slate-800 max-w-[200px] truncate">
+                                              - {sec.denominacion}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                          <span
+                                            role="button"
+                                            onClick={() => {
+                                              const copy = [...establecimientos];
+                                              copy[idx].sectores[secIdx].isCollapsed = !copy[idx].sectores[secIdx].isCollapsed;
+                                              setEstablecimientos(copy);
+                                            }}
+                                            className="text-[9px] text-slate-600 hover:text-slate-800 bg-white hover:bg-slate-100 font-bold px-2 py-0.5 rounded-md border border-slate-200 transition-all cursor-pointer flex items-center gap-0.5 shadow-sm"
+                                            title={sec.isCollapsed ? "Expandir sector" : "Contraer sector"}
+                                          >
+                                            {sec.isCollapsed ? (
+                                              <>
+                                                <ChevronDown className="h-2.5 w-2.5" />
+                                                Ver más
+                                              </>
+                                            ) : (
+                                              <>
+                                                <ChevronUp className="h-2.5 w-2.5" />
+                                                Ver menos
+                                              </>
+                                            )}
+                                          </span>
+                                          {canEdit && (
+                                            <button
+                                              type="button"
+                                              onClick={() => handleRemoveSector(idx, secIdx)}
+                                              className="text-[9px] text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 font-bold px-2 py-0.5 rounded-md border border-red-200 transition-all cursor-pointer flex items-center gap-0.5 shadow-sm"
+                                            >
+                                              <Trash2 className="h-2.5 w-2.5" /> Quitar
+                                            </button>
+                                          )}
+                                        </div>
+                                      </div>
+
+                                      {/* Cuerpo del Sector */}
+                                      {!sec.isCollapsed && (
+                                        <div className="p-4 space-y-4 bg-white">
+                                          <div className="grid md:grid-cols-2 gap-3">
+                                            <div className="space-y-1">
+                                              <label className="text-[10px] font-bold text-slate-600 block">Denominación del Sector</label>
+                                              <input
+                                                type="text"
+                                                placeholder="Ej: Mecanizado, Depósito, Administración"
+                                                value={sec.denominacion || ''}
+                                                onChange={(e) => handleUpdateSector(idx, secIdx, 'denominacion', e.target.value)}
+                                                className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/30 transition-all text-slate-700"
+                                              />
+                                            </div>
+                                            <div className="space-y-1">
+                                              <label className="text-[10px] font-bold text-slate-600 block">Descripción / Detalles</label>
+                                              <input
+                                                type="text"
+                                                placeholder="Ej: Maquinaria pesada, almacenamiento temporario, etc."
+                                                value={sec.descripcion || ''}
+                                                onChange={(e) => handleUpdateSector(idx, secIdx, 'descripcion', e.target.value)}
+                                                className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/30 transition-all text-slate-700"
+                                              />
+                                            </div>
+                                          </div>
+
+                                          {/* PUESTOS DE TRABAJO */}
+                                          <div className="pt-3 border-t border-slate-100 space-y-3">
+                                            <div className="flex justify-between items-center">
+                                              <span className="text-[10px] font-bold text-slate-700 flex items-center gap-1">
+                                                <Briefcase className="h-3 w-3 text-[#468DFF]" /> Puestos de Trabajo
+                                              </span>
+                                              {canEdit && (
+                                                <button
+                                                  type="button"
+                                                  onClick={() => handleAddPuesto(idx, secIdx)}
+                                                  className="text-[9px] text-[#468DFF] hover:text-[#0511F2] font-bold flex items-center gap-0.5"
+                                                >
+                                                  <Plus className="h-2.5 w-2.5" /> Agregar Puesto
+                                                </button>
+                                              )}
+                                            </div>
+
+                                            {(sec.puestos || []).length === 0 ? (
+                                              <div className="text-center py-2 px-3 border border-dashed border-slate-150 rounded-xl bg-slate-50/30">
+                                                <span className="text-[9px] text-slate-400 font-medium">No se han agregado puestos a este sector.</span>
+                                              </div>
+                                            ) : (
+                                              <div className="space-y-2">
+                                                {(sec.puestos || []).map((pst, pstIdx) => (
+                                                  <div key={pst.id || pstIdx} className="border border-slate-150 rounded-xl overflow-hidden bg-slate-50/10">
+                                                    {/* Cabecera del Puesto */}
+                                                    <div className="bg-slate-100/50 px-3 py-1.5 flex justify-between items-center border-b border-slate-150/60">
+                                                      <div className="flex items-center gap-1.5">
+                                                        <span className="text-[9px] font-bold text-slate-600 bg-slate-200/50 px-1.5 py-0.5 rounded border border-slate-350/20">
+                                                          Puesto #{pstIdx + 1}
+                                                        </span>
+                                                        {pst.denominacion && (
+                                                          <span className="text-[11px] font-semibold text-slate-700 truncate max-w-[150px]">
+                                                            - {pst.denominacion}
+                                                          </span>
+                                                        )}
+                                                      </div>
+                                                      <div className="flex items-center gap-1.5">
+                                                        <span
+                                                          role="button"
+                                                          onClick={() => {
+                                                            const copy = [...establecimientos];
+                                                            copy[idx].sectores[secIdx].puestos[pstIdx].isCollapsed = !copy[idx].sectores[secIdx].puestos[pstIdx].isCollapsed;
+                                                            setEstablecimientos(copy);
+                                                          }}
+                                                          className="text-[8px] text-slate-600 hover:text-slate-800 bg-white hover:bg-slate-50 font-bold px-1.5 py-0.5 rounded border border-slate-200 transition-all cursor-pointer flex items-center gap-0.5 shadow-sm"
+                                                          title={pst.isCollapsed ? "Expandir puesto" : "Contraer puesto"}
+                                                        >
+                                                          {pst.isCollapsed ? (
+                                                            <>
+                                                              <ChevronDown className="h-2 w-2" />
+                                                              Ver más
+                                                            </>
+                                                          ) : (
+                                                            <>
+                                                              <ChevronUp className="h-2 w-2" />
+                                                              Ver menos
+                                                            </>
+                                                          )}
+                                                        </span>
+                                                        {canEdit && (
+                                                          <button
+                                                            type="button"
+                                                            onClick={() => handleRemovePuesto(idx, secIdx, pstIdx)}
+                                                            className="text-[8px] text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 font-bold px-1.5 py-0.5 rounded border border-red-200 transition-all cursor-pointer flex items-center gap-0.5 shadow-sm"
+                                                          >
+                                                            <Trash2 className="h-2 w-2" /> Quitar
+                                                          </button>
+                                                        )}
+                                                      </div>
+                                                    </div>
+
+                                                    {/* Cuerpo del Puesto */}
+                                                    {!pst.isCollapsed && (
+                                                      <div className="p-3 grid md:grid-cols-2 gap-2 bg-white">
+                                                        <div className="space-y-1">
+                                                          <label className="text-[9px] font-bold text-slate-500 block">Denominación del Puesto</label>
+                                                          <input
+                                                            type="text"
+                                                            placeholder="Ej: Operario de Prensa, Administrativo"
+                                                            value={pst.denominacion || ''}
+                                                            onChange={(e) => handleUpdatePuesto(idx, secIdx, pstIdx, 'denominacion', e.target.value)}
+                                                            className="w-full border border-slate-200 rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/20 transition-all text-slate-700"
+                                                          />
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                          <label className="text-[9px] font-bold text-slate-500 block">Descripción de Tareas</label>
+                                                          <input
+                                                            type="text"
+                                                            placeholder="Ej: Carga y descarga de piezas, control manual..."
+                                                            value={pst.descripcion || ''}
+                                                            onChange={(e) => handleUpdatePuesto(idx, secIdx, pstIdx, 'descripcion', e.target.value)}
+                                                            className="w-full border border-slate-200 rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/20 transition-all text-slate-700"
+                                                          />
+                                                        </div>
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+
+
                             {/* MÁQUINAS, EQUIPOS Y HERRAMIENTAS */}
                             <div className="space-y-4 pt-4 border-t border-slate-100">
                               <h5 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Máquinas, Equipos y Herramientas</h5>
@@ -2381,6 +2685,22 @@ export default function EmpresasClientes({ params }) {
                                   </div>
                                 </div>
                               ))}
+                            </div>
+
+                            {/* Observaciones específicas del establecimiento */}
+                            <div className="space-y-2 pt-4 border-t border-slate-100">
+                              <label className="text-xs font-bold text-slate-600 block">Observaciones del Establecimiento</label>
+                              <textarea
+                                rows="3"
+                                placeholder="Escribe observaciones específicas sobre este establecimiento (ej. detalles de acceso, horarios especiales, particularidades de riesgos, etc.)"
+                                value={est.observaciones || ''}
+                                onChange={(e) => {
+                                  const copy = [...establecimientos];
+                                  copy[idx].observaciones = e.target.value;
+                                  setEstablecimientos(copy);
+                                }}
+                                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 resize-y"
+                              />
                             </div>
 
                             </>
