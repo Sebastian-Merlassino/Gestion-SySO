@@ -1,5 +1,47 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-06-27] Estabilización de Dimensiones de Filtros y Tablas (Evitar Layout Shift) en las 10 Secciones Principales
+
+### Resumen de Cambios
+- **Estabilización de Cabeceras de Filtros**: Se aplicó una altura fija mínima (`min-h-[28px]`) a la fila flex que aloja el botón de alternancia "Filtros de Búsqueda" y el botón de "Limpiar filtros" en todas las vistas con listados. Esto previene el salto vertical del resto de la cuadrícula cuando el botón de limpiar filtros aparece o desaparece de manera dinámica.
+- **Fijación de Altura de Contenedor de Listados**: Se reemplazó el estilo de altura dinámica `maxHeight` por un `height` fijo responsivo (`height: calc(100vh - 240px)` o `height: calc(100vh - 310px)` / `calc(100vh - 360px)` dependiendo de la sección) y se envolvió el bloque del listado completo con la clase `flex flex-col`.
+- **Integración de Estado Vacío en la Tarjeta de Listado**: Se reestructuró la lógica de renderizado condicional de modo que tanto la tabla como el contenedor de estado vacío ("No hay registros...") compartan la misma tarjeta contenedora de altura fija. El estado vacío ahora utiliza `flex-grow` y `h-full` para centrar verticalmente su contenido dentro del recuadro establecido. Esto erradica por completo el colapso visual de las tarjetas blancas cuando la lista tiene cero o pocos elementos, brindando una experiencia de escritorio premium e invariante.
+- **Secciones Modificadas**: Se propagó esta mejora de forma integral a las 10 secciones principales del sistema: *Nómina de Personal, Accidentes, Acciones Correctivas, Capacitación, Programa Anual de Gestión, Empresas/Clientes, Visitas de Obra, Extintores, Equipo de Trabajo y Avisos de Riesgo*.
+
+### Decisiones Clave
+- **Encapsulado de Estados en Tarjeta Fija**: Mantener la tarjeta contenedora principal como un elemento estructural persistente en lugar de condicionar su renderizado completo asegura que la UI no se deforme ni redimensione abruptamente al aplicar filtros o al realizar búsquedas vacías.
+- **Uso de flex-grow para el Scroll Interno**: Al fijar la altura en el contenedor padre, se delega el scroll exclusivamente al contenedor de la tabla (`overflow-auto flex-grow`), previniendo desbordamientos y manteniendo el encabezado de la tabla y de la página siempre en su posición correcta.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/nomina/page.js`
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción completa y exitosa (`cmd /c npm run build`).
+- Envío y sincronización exitosa de los cambios a la rama principal (`git push`).
+
+### Riesgos Detectados / Remanentes
+- Ninguno. Se utilizaron las mismas métricas de altura que ya estaban validadas en el proyecto, sustituyendo solo la propiedad de comportamiento variable.
+
+### Próximo Paso Recomendado
+- Continuar con el testeo de usuario en cada módulo en el entorno de despliegue.
+
+---
+
 ## [2026-06-27] Reemplazo de Filtro por Fecha de Carga por Filtro por Año en Nómina de Personal
 
 ### Resumen de Cambios
