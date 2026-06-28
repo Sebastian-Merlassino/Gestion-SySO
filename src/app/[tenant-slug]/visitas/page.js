@@ -9,6 +9,7 @@ import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import { 
   PlusCircle, 
+  AlertCircle,
   Search, 
   Building, 
   Users, 
@@ -2333,38 +2334,38 @@ export default function VisitasPage({ params }) {
 
                 {/* Tabla de Resultados */}
                 <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
-                  <div className="overflow-auto flex-grow">
-                    <table className="w-full text-left border-collapse min-w-[850px]">
-                      <thead>
-                        <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('cliente')}>Cliente</th>
-                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('establecimiento')}>Establecimiento</th>
-                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('fecha')}>Fecha</th>
-                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('profesional_nombre')}>Profesional</th>
-                          <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Responsable Presente</th>
-                          <th className="px-6 py-4 text-right sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Acciones</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 text-sm">
-                        {sortedVisitas.length === 0 ? (
-                          <tr>
-                            <td colSpan="6" className="text-center py-20 text-slate-400 font-bold bg-slate-50/10">
-                              <ClipboardCheck className="h-10 w-10 mx-auto mb-2 text-slate-350 shrink-0" />
-                              <p className="font-outfit text-sm text-slate-700">No hay constancias de visita registradas</p>
-                              <p className="text-[11px] text-slate-400 font-normal mt-1">Registra una nueva constancia de visita para comenzar.</p>
-                              {canCargar && (
-                                <button
-                                  type="button"
-                                  onClick={handleAddNew}
-                                  className="mt-3 text-xs text-[#468DFF] hover:underline font-bold block mx-auto"
-                                >
-                                  + Registrar la primera
-                                </button>
-                              )}
-                            </td>
+                  {sortedVisitas.length === 0 ? (
+                    <div className="flex-grow flex flex-col items-center justify-center p-8 text-center gap-3 h-full">
+                      <AlertCircle className="h-10 w-10 text-slate-300" />
+                      <div className="space-y-1">
+                        <p className="text-sm font-bold text-slate-800">No hay constancias de visita registradas</p>
+                        <p className="text-xs text-slate-400">Registra una nueva constancia de visita para comenzar.</p>
+                      </div>
+                      {canCargar && (
+                        <button
+                          onClick={handleAddNew}
+                          className="px-4 py-2 mt-2 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0"
+                        >
+                          <PlusCircle className="h-3.5 w-3.5" />
+                          Registrar constancia
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="overflow-auto flex-grow">
+                      <table className="w-full text-left border-collapse min-w-[850px]">
+                        <thead>
+                          <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('cliente')}>Cliente</th>
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('establecimiento')}>Establecimiento</th>
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('fecha')}>Fecha</th>
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('profesional_nombre')}>Profesional</th>
+                            <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Responsable Presente</th>
+                            <th className="px-6 py-4 text-right sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Acciones</th>
                           </tr>
-                        ) : (
-                          sortedVisitas.map((v) => {
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-sm">
+                          {sortedVisitas.map((v) => {
                             const emp = empresas.find(e => e.id === v.empresa_id);
                             const est = allEstablecimientos.find(e => e.id === v.establecimiento_id);
                             return (
@@ -2431,11 +2432,11 @@ export default function VisitasPage({ params }) {
                                 </td>
                               </tr>
                             );
-                          })
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
               </>
             )}

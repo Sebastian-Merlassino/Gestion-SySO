@@ -1,5 +1,61 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-06-27] Rediseño e Incorporación de la Sección de Matriz de Identificación de Peligros y Valoración de Riesgos (BS 8800)
+
+### Resumen de Cambios
+- **Estructura y Base de Datos (Supabase)**: Creación de la migración SQL (`20260716000000_create_matriz_riesgos.sql`) para la tabla `public.matriz_riesgos` con relaciones de clave foránea a empresas, establecimientos y tenants, incorporando la columna `consecuencia TEXT` para documentar consecuencias asociadas a los peligros. Habilitación de RLS y definición de políticas de aislamiento y permisos.
+- **Conectividad Robusta a Base de Datos**: Eliminación del fallback automático y silencioso de Supabase a modo mock cuando ocurren fallos de conexión u RLS. Ahora, si el usuario tiene sesión activa, los errores de consulta de base de datos se notifican directamente en pantalla mediante toasts de error para facilitar la depuración, limitando el modo mock únicamente a accesos de desarrollo local sin sesión iniciada.
+- **Barra de Navegación Lateral (Sidebar)**: Integración del menú interactivo `"Matriz de riesgos"` con icono unificado `ClipboardList` en `src/components/Sidebar.js`.
+- **Estructura UI Rediseñada (Filtros y Listado)**:
+  - Dividido el contenido en dos tarjetas independientes (Card superior para buscador y filtros colapsables; Card inferior de altura responsiva `h-[calc(100vh-280px)]` para la tabla).
+  - **Estado Vacío Personalizado**: Cuando no existen registros, se despliega el mensaje `"No hay evaluaciones de riesgo registradas"`, la indicación `"Registra una nueva matriz de riesgo para comenzar."` y el botón de acción rápida `+ Registrar matriz` para abrir directamente la carga por lotes.
+  - **Estandarización del Empty Table State**: Se definió formalmente en `.agents/skills/gestion-syso-brand-guidelines/SKILL.md` la estructura estándar para listados y tablas sin datos: contenedor centrado, icono `AlertCircle` en `#D9D9D9` / `slate-300`, títulos en negrita de alta jerarquía y botón principal de marca `#468DFF` con sombra (`shadow-md shadow-[#468DFF]/10`) de acción directa para registros iniciales.
+  - **Propagación del Estándar en la Aplicación**: Se eliminaron los viejos estados vacíos incrustados en celdas (`tr`/`td`) y se aplicó el nuevo contenedor centrado en:
+    - **Avisos de Riesgo** (`src/app/[tenant-slug]/avisos/page.js`)
+    - **Acciones Correctivas** (`src/app/[tenant-slug]/correctivas/page.js`)
+    - **Accidentes** (`src/app/[tenant-slug]/accidentes/page.js`)
+    - **Constancia de Visitas** (`src/app/[tenant-slug]/visitas/page.js`)
+- **Formulario de Carga y Edición Estándar**:
+  - **Inputs Manuales Integrados en Dropdown (Sin Checkboxes)**: Eliminación de checkboxes exteriores para alternar carga manual. Ahora, los selectores de Sector de Trabajo, Puesto de Trabajo, Peligro, Riesgo y Responsable incluyen una opción integrada `+ Ingresar manualmente...` dentro de la misma lista desplegable. Al seleccionarse, se oculta el dropdown y se muestra un campo de texto con un link de cancelación/retorno a la lista.
+  - **Resolución de Pérdida de Enfoque**: Corrección del bug que impedía ingresar texto en el campo manual del Sector de Trabajo en modo lote. Se agruparon las actualizaciones de estado en un único objeto (`updates`) en `handleUpdateBulkSector` y `handleUpdateBulkPuesto` para evitar colisiones y re-renderizados conflictivos.
+  - **Títulos y Secciones Simplificadas**: Se acortaron los encabezados en el formulario de carga según lineamientos: "Cargar Nueva Matriz de Riesgos" (sin la palabra Masiva), "1. Ubicación", "Sectores y Puestos de Trabajo" y "Observaciones" (en lugar de Observaciones Generales).
+  - **Botón Confirmar del Modal de Alerta**: Corrección de la clase CSS de color del botón de confirmación en modales (`bg-red-650` -> `bg-red-600`), asegurando que sea visible sin necesidad de pasar el cursor por encima (hover).
+  - **Auto-población del Catálogo**: Lógica reactiva al catálogo de peligros que autocompleta la Consecuencia y las tres Medidas de Control (Administrativas, Ingeniería y EPP's) como texto editable al seleccionar un Peligro y Riesgo del dropdown.
+  - **Selectores de Fecha Estándar**: Implementación de inputs de texto con máscara `DD/MM/YYYY` y picker de calendario nativo superpuesto para los campos de Fecha Planificada y Fecha Realización en ambos modos (masivo e individual).
+  - **Observaciones**: Caja de texto extendida colocada al final de toda la grilla del formulario.
+  - **Botonera e Interfaces Unificadas**: Alineación de los botones de formulario sobre divisor de borde blanco inferior ("Salir" a la izquierda, "Eliminar" y "Guardar" a la derecha). Alerta de salida con confirmación estandarizada ante cambios no guardados.
+
+### Decisiones Clave
+- **Dropdowns con Opción Manual Incorporada**: Integrar la entrada manual dentro de la propia lista del dropdown mantiene el formulario limpio de controles repetitivos y checkboxes redundantes, agilizando el flujo cognitivo del usuario.
+- **Transparencia en Errores de Base de Datos**: Evitar el fallback silencioso a simulación previene que errores silenciosos de migración o permisos en producción pasen desapercibidos.
+- **Auto-relleno Editable**: Habilitar que las contramedidas sugeridas del catálogo se puedan reescribir reduce drásticamente el tiempo de carga del profesional y previene duplicación de registros sin limitar la personalización.
+- **Estabilización de Layout**: Separar los filtros en una tarjeta independiente de altura controlada previene Layout Shifts al alternar filtros de búsqueda de forma horizontal o vertical.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `gestion-syso-multitenant-security`
+- `next-best-practices`
+- `supabase`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260716000000_create_matriz_riesgos.sql`
+- `[MODIFY] src/components/Sidebar.js`
+- `[NEW] src/app/[tenant-slug]/matriz-riesgos/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js (`cmd /c npm run build`) exitosa y libre de errores. La nueva ruta `/[tenant-slug]/matriz-riesgos` finalizó en **17.5 kB** de código estático optimizado.
+- Ejecución completa del script de migraciones local (`node scripts/run-migrations.js`) que aplicó con éxito la migración `20260716000000_create_matriz_riesgos.sql` en la base de datos Supabase, resolviendo el error del Schema Cache de PostgREST y notificando la recarga del esquema.
+
+### Riesgos Detectados / Remanentes
+- Ninguno.
+
+### Próximo Paso Recomendado
+- Verificar los flujos de carga masiva de riesgos en establecimientos utilizando el frontend.
+
+---
+
 ## [2026-06-27] Corrección de Contraste en Nómina de Personal, Habilitación de Evidencias a Clientes y Cambio a Pictograma de Imagen
 
 ### Resumen de Cambios

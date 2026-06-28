@@ -9,6 +9,7 @@ import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import { 
   PlusCircle, 
+  AlertCircle,
   Search, 
   Building, 
   Users, 
@@ -1538,74 +1539,74 @@ export default function AccionesCorrectivasPage({ params }) {
 
                 {/* Listado / Tabla */}
                 <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
-                  <div className="overflow-auto flex-grow">
-                    <table className="w-full text-left border-collapse min-w-[850px]">
-                      <thead>
-                        <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('cliente')}>
-                            <div className="flex items-center gap-1">
-                              Cliente / Establecimiento
-                              {sortField === 'cliente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
-                            </div>
-                          </th>
-                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('fuente')}>
-                            <div className="flex items-center gap-1">
-                              Fuente / Fecha
-                              {sortField === 'fuente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
-                            </div>
-                          </th>
-                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('hallazgo')}>
-                            <div className="flex items-center gap-1">
-                              Hallazgo / Tipo
-                              {sortField === 'hallazgo' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
-                            </div>
-                          </th>
-                          <th className="px-6 py-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('nivel_riesgo')}>
-                            <div className="flex items-center justify-center gap-1">
-                              Nivel Riesgo
-                              {sortField === 'nivel_riesgo' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
-                            </div>
-                          </th>
-                          <th className="px-6 py-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('estado')}>
-                            <div className="flex items-center justify-center gap-1">
-                              Estado
-                              {sortField === 'estado' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
-                            </div>
-                          </th>
-                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('responsable')}>
-                            <div className="flex items-center gap-1">
-                              Responsable
-                              {sortField === 'responsable' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
-                            </div>
-                          </th>
-                           {(canEditar || canEliminar || profile?.role === 'cliente') && <th className="px-6 py-4 text-right sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Acciones</th>}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 text-xs font-normal text-slate-700">
-                        {sortedAcciones.length === 0 ? (
-                          <tr>
-                            <td colSpan={(canEditar || canEliminar || profile?.role === 'cliente') ? 7 : 6} className="text-center py-20 text-slate-400 font-bold bg-slate-50/10">
-                              <AlertTriangle className="h-10 w-10 mx-auto mb-2 text-slate-350 shrink-0" />
-                              <p className="font-outfit text-sm text-slate-700">No hay acciones correctivas registradas</p>
-                              <p className="text-[11px] text-slate-400 font-normal mt-1">Registra una nueva acción correctiva para comenzar.</p>
-                              {canCargar && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setIsReadOnlyView(false);
-                                    setEditingId(null);
-                                    handleCloseForm();
-                                    setTimeout(() => setIsFormOpen(true), 0);
-                                  }}
-                                  className="mt-3 text-xs text-[#468DFF] hover:underline font-bold block mx-auto"
-                                >
-                                  + Registrar la primera
-                                </button>
-                              )}
-                            </td>
+                  {sortedAcciones.length === 0 ? (
+                    <div className="flex-grow flex flex-col items-center justify-center p-8 text-center gap-3 h-full">
+                      <AlertCircle className="h-10 w-10 text-slate-300" />
+                      <div className="space-y-1">
+                        <p className="text-sm font-bold text-slate-800">No hay acciones correctivas registradas</p>
+                        <p className="text-xs text-slate-400">Registra una nueva acción correctiva para comenzar.</p>
+                      </div>
+                      {canCargar && (
+                        <button
+                          onClick={() => {
+                            setIsReadOnlyView(false);
+                            setEditingId(null);
+                            handleCloseForm();
+                            setTimeout(() => setIsFormOpen(true), 0);
+                          }}
+                          className="px-4 py-2 mt-2 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0"
+                        >
+                          <PlusCircle className="h-3.5 w-3.5" />
+                          Registrar acción
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="overflow-auto flex-grow">
+                      <table className="w-full text-left border-collapse min-w-[850px]">
+                        <thead>
+                          <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('cliente')}>
+                              <div className="flex items-center gap-1">
+                                Cliente / Establecimiento
+                                {sortField === 'cliente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              </div>
+                            </th>
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('fuente')}>
+                              <div className="flex items-center gap-1">
+                                Fuente / Fecha
+                                {sortField === 'fuente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              </div>
+                            </th>
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('hallazgo')}>
+                              <div className="flex items-center gap-1">
+                                Hallazgo / Tipo
+                                {sortField === 'hallazgo' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              </div>
+                            </th>
+                            <th className="px-6 py-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('nivel_riesgo')}>
+                              <div className="flex items-center justify-center gap-1">
+                                Nivel Riesgo
+                                {sortField === 'nivel_riesgo' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              </div>
+                            </th>
+                            <th className="px-6 py-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('estado')}>
+                              <div className="flex items-center justify-center gap-1">
+                                Estado
+                                {sortField === 'estado' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              </div>
+                            </th>
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('responsable')}>
+                              <div className="flex items-center gap-1">
+                                Responsable
+                                {sortField === 'responsable' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              </div>
+                            </th>
+                             {(canEditar || canEliminar || profile?.role === 'cliente') && <th className="px-6 py-4 text-right sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Acciones</th>}
                           </tr>
-                        ) : (
-                          sortedAcciones.map((acc) => {
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-xs font-normal text-slate-700">
+                          {sortedAcciones.map((acc) => {
                             const emp = empresas.find(e => e.id === acc.empresa_id);
                             const est = allEstablecimientos.find(t => t.id === acc.establecimiento_id);
                             const status = getCalculatedStatus(acc.fecha_planificada, acc.fecha_implementacion);
@@ -1701,11 +1702,12 @@ export default function AccionesCorrectivasPage({ params }) {
                               </tr>
                             );
                           })
-                        )}
+                        }
                       </tbody>
                     </table>
                   </div>
-                </div>
+                )}
+              </div>
 
               </div>
             )}

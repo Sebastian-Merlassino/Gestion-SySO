@@ -11,6 +11,7 @@ import {
   ShieldAlert,
   HelpCircle,
   AlertTriangle,
+  AlertCircle,
   Upload,
   X,
   Loader2,
@@ -1417,80 +1418,81 @@ export default function AccidentesPage({ params }) {
 
                 {/* Listado / Tabla */}
                 <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
-                  <div className="overflow-auto font-sans flex-grow h-full">
-                    <table className="w-full text-left border-collapse min-w-[850px]">
-                      <thead>
-                        <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider select-none">
-                          <th
-                            className="px-6 py-4 cursor-pointer hover:text-slate-700 transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150 whitespace-nowrap"
-                            onClick={() => handleSort('empresa_id')}
-                          >
-                            <div className="flex items-center gap-1">
-                              Empresa / Establecimiento <SortIcon field="empresa_id" />
-                            </div>
-                          </th>
-                          <th
-                            className="px-6 py-4 cursor-pointer hover:text-slate-700 transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150 whitespace-nowrap"
-                            onClick={() => handleSort('nombre_apellido')}
-                          >
-                            <div className="flex items-center gap-1">
-                              Accidentado <SortIcon field="nombre_apellido" />
-                            </div>
-                          </th>
-                          <th
-                            className="px-6 py-4 cursor-pointer hover:text-slate-700 transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150 whitespace-nowrap"
-                            onClick={() => handleSort('fecha_siniestro')}
-                          >
-                            <div className="flex items-center gap-1">
-                              Fecha siniestro <SortIcon field="fecha_siniestro" />
-                            </div>
-                          </th>
-                          <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-150 whitespace-nowrap">
-                            Tipo
-                          </th>
-                          <th
-                            className="px-6 py-4 cursor-pointer hover:text-slate-700 transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150 whitespace-nowrap"
-                            onClick={() => handleSort('gravedad')}
-                          >
-                            <div className="flex items-center gap-1">
-                              Gravedad <SortIcon field="gravedad" />
-                            </div>
-                          </th>
-                          <th className="px-6 py-4 text-center sticky top-0 z-10 bg-slate-50 border-b border-slate-150 whitespace-nowrap">
-                            Días de baja
-                          </th>
-                          <th className="px-6 py-4 text-center sticky top-0 z-10 bg-slate-50 border-b border-slate-150 whitespace-nowrap">
-                            Docs.
-                          </th>
-                          <th className="px-6 py-4 text-center sticky top-0 z-10 bg-slate-50 border-b border-slate-150 whitespace-nowrap">
-                            Acciones
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 text-xs font-normal text-slate-700">
-                        {filteredAccidentes.length === 0 ? (
-                          <tr>
-                            <td colSpan={8} className="text-center py-20 text-slate-400 font-bold bg-slate-50/10">
-                              <ShieldAlert className="h-10 w-10 mx-auto mb-2 text-slate-350 shrink-0" />
-                              <p className="font-outfit text-sm text-slate-700">No hay accidentes registrados</p>
-                              <p className="text-[11px] text-slate-400 font-normal mt-1">Registra un nuevo accidente para comenzar.</p>
-                              {canCargar && (
-                                <button
-                                  onClick={() => {
-                                    setIsReadOnlyView(false);
-                                    setEditingId(null);
-                                    handleCloseForm();
-                                    setTimeout(() => setIsFormOpen(true), 0);
-                                  }}
-                                  className="mt-3 text-xs text-[#468DFF] hover:underline font-bold"
-                                >
-                                  + Registrar el primero
-                                </button>
-                              )}
-                            </td>
+                  {filteredAccidentes.length === 0 ? (
+                    <div className="flex-grow flex flex-col items-center justify-center p-8 text-center gap-3 h-full">
+                      <AlertCircle className="h-10 w-10 text-slate-300" />
+                      <div className="space-y-1">
+                        <p className="text-sm font-bold text-slate-800">No hay accidentes registrados</p>
+                        <p className="text-xs text-slate-400">Registra un nuevo accidente para comenzar.</p>
+                      </div>
+                      {canCargar && (
+                        <button
+                          onClick={() => {
+                            setIsReadOnlyView(false);
+                            setEditingId(null);
+                            handleCloseForm();
+                            setTimeout(() => setIsFormOpen(true), 0);
+                          }}
+                          className="px-4 py-2 mt-2 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0"
+                        >
+                          <PlusCircle className="h-3.5 w-3.5" />
+                          Registrar accidente
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="overflow-auto font-sans flex-grow h-full">
+                      <table className="w-full text-left border-collapse min-w-[850px]">
+                        <thead>
+                          <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider select-none">
+                            <th
+                              className="px-6 py-4 cursor-pointer hover:text-slate-700 transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150 whitespace-nowrap"
+                              onClick={() => handleSort('empresa_id')}
+                            >
+                              <div className="flex items-center gap-1">
+                                Empresa / Establecimiento <SortIcon field="empresa_id" />
+                              </div>
+                            </th>
+                            <th
+                              className="px-6 py-4 cursor-pointer hover:text-slate-700 transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150 whitespace-nowrap"
+                              onClick={() => handleSort('nombre_apellido')}
+                            >
+                              <div className="flex items-center gap-1">
+                                Accidentado <SortIcon field="nombre_apellido" />
+                              </div>
+                            </th>
+                            <th
+                              className="px-6 py-4 cursor-pointer hover:text-slate-700 transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150 whitespace-nowrap"
+                              onClick={() => handleSort('fecha_siniestro')}
+                            >
+                              <div className="flex items-center gap-1">
+                                Fecha siniestro <SortIcon field="fecha_siniestro" />
+                              </div>
+                            </th>
+                            <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-150 whitespace-nowrap">
+                              Tipo
+                            </th>
+                            <th
+                              className="px-6 py-4 cursor-pointer hover:text-slate-700 transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150 whitespace-nowrap"
+                              onClick={() => handleSort('gravedad')}
+                            >
+                              <div className="flex items-center gap-1">
+                                Gravedad <SortIcon field="gravedad" />
+                              </div>
+                            </th>
+                            <th className="px-6 py-4 text-center sticky top-0 z-10 bg-slate-50 border-b border-slate-150 whitespace-nowrap">
+                              Días de baja
+                            </th>
+                            <th className="px-6 py-4 text-center sticky top-0 z-10 bg-slate-50 border-b border-slate-150 whitespace-nowrap">
+                              Docs.
+                            </th>
+                            <th className="px-6 py-4 text-center sticky top-0 z-10 bg-slate-50 border-b border-slate-150 whitespace-nowrap">
+                              Acciones
+                            </th>
                           </tr>
-                        ) : (
-                          filteredAccidentes.map(acc => {
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-xs font-normal text-slate-700">
+                          {filteredAccidentes.map(acc => {
                             const grav = GRAVEDAD_CONFIG[acc.gravedad] || {};
                             return (
                               <tr
@@ -1589,13 +1591,13 @@ export default function AccidentesPage({ params }) {
                                 </td>
                               </tr>
                             );
-                          })
-                        )}
+                          })}
                       </tbody>
                     </table>
                   </div>
-                </div>
+                )}
               </div>
+            </div>
             )}
           </div>
         )}

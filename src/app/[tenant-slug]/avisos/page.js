@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import { 
   PlusCircle, 
+  AlertCircle,
   Search, 
   Building, 
   Users, 
@@ -2355,38 +2356,38 @@ export default function AvisosRiesgoPage({ params }) {
 
                 {/* Tabla de Avisos */}
                 <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden flex flex-col" style={{ height: showFilters ? 'calc(100vh - 360px)' : 'calc(100vh - 290px)' }}>
-                  <div className="overflow-auto flex-grow">
-                    <table className="w-full text-left border-collapse min-w-[850px]">
-                      <thead>
-                        <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('aviso_numero')}>N° Aviso</th>
-                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('cliente')}>Cliente / Razón Social</th>
-                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('establecimiento')}>Establecimiento</th>
-                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('fecha')}>Fecha</th>
-                          <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Profesional</th>
-                          <th className="px-6 py-4 text-right sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Acciones</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 text-sm">
-                        {sortedAvisos.length === 0 ? (
-                          <tr>
-                            <td colSpan="6" className="text-center py-20 text-slate-400 font-bold bg-slate-50/10">
-                              <AlertTriangle className="h-10 w-10 mx-auto mb-2 text-slate-350 shrink-0" />
-                              <p className="font-outfit text-sm text-slate-700">No hay avisos de riesgo registrados</p>
-                              <p className="text-[11px] text-slate-400 font-normal mt-1">Registra un nuevo aviso de riesgo para comenzar.</p>
-                              {canCargar && (
-                                <button
-                                  type="button"
-                                  onClick={handleAddNew}
-                                  className="mt-3 text-xs text-[#468DFF] hover:underline font-bold block mx-auto"
-                                >
-                                  + Registrar el primero
-                                </button>
-                              )}
-                            </td>
+                  {sortedAvisos.length === 0 ? (
+                    <div className="flex-grow flex flex-col items-center justify-center p-8 text-center gap-3 h-full">
+                      <AlertCircle className="h-10 w-10 text-slate-300" />
+                      <div className="space-y-1">
+                        <p className="text-sm font-bold text-slate-800">No hay avisos de riesgo registrados</p>
+                        <p className="text-xs text-slate-400">Registra un nuevo aviso de riesgo para comenzar.</p>
+                      </div>
+                      {canCargar && (
+                        <button
+                          onClick={handleAddNew}
+                          className="px-4 py-2 mt-2 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0"
+                        >
+                          <PlusCircle className="h-3.5 w-3.5" />
+                          Registrar aviso
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="overflow-auto flex-grow">
+                      <table className="w-full text-left border-collapse min-w-[850px]">
+                        <thead>
+                          <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('aviso_numero')}>N° Aviso</th>
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('cliente')}>Cliente / Razón Social</th>
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('establecimiento')}>Establecimiento</th>
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('fecha')}>Fecha</th>
+                            <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Profesional</th>
+                            <th className="px-6 py-4 text-right sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Acciones</th>
                           </tr>
-                        ) : (
-                          sortedAvisos.map(av => {
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-sm">
+                          {sortedAvisos.map(av => {
                             const emp = empresas.find(e => e.id === av.empresa_id);
                             const est = allEstablecimientos.find(e => e.id === av.establecimiento_id);
                             return (
@@ -2453,11 +2454,11 @@ export default function AvisosRiesgoPage({ params }) {
                                 </td>
                               </tr>
                             );
-                          })
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
               </>
             )}
