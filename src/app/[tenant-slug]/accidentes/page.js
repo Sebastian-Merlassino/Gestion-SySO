@@ -1559,13 +1559,21 @@ export default function AccidentesPage({ params }) {
                                 </td>
                                 <td className="px-6 py-4 text-center" onClick={e => e.stopPropagation()}>
                                   <div className="flex items-center justify-center gap-1.5">
-                                    {canEditar && (
+                                    {canEditar ? (
                                       <button
                                         onClick={e => { e.stopPropagation(); handleEditClick(acc, false); }}
                                         title="Editar accidente"
                                         className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 hover:text-amber-700 transition-colors bg-amber-50"
                                       >
                                         <Edit className="h-4.5 w-4.5" />
+                                      </button>
+                                    ) : (
+                                      <button
+                                        onClick={e => { e.stopPropagation(); handleEditClick(acc, true); }}
+                                        title="Ver Detalle"
+                                        className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer inline-flex items-center"
+                                      >
+                                        <Eye className="h-4.5 w-4.5" />
                                       </button>
                                     )}
                                     {canEliminar && (

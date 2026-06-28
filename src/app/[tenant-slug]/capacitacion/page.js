@@ -1815,13 +1815,13 @@ export default function CapacitacionPage({ params }) {
                               {sortField === 'progreso' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                             </div>
                           </th>
-                          {(canEditar || canEliminar) && <th className="px-6 py-4 text-right w-[5%] sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Acciones</th>}
+                          {(canEditar || canEliminar || profile?.role === 'cliente') && <th className="px-6 py-4 text-right w-[5%] sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Acciones</th>}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-xs font-normal text-slate-700">
                         {sortedCapacitaciones.length === 0 ? (
                           <tr>
-                            <td colSpan={(canEditar || canEliminar) ? 7 : 6} className="text-center py-20 text-slate-400 font-bold bg-slate-50/10">
+                            <td colSpan={(canEditar || canEliminar || profile?.role === 'cliente') ? 7 : 6} className="text-center py-20 text-slate-400 font-bold bg-slate-50/10">
                               <GraduationCap className="h-10 w-10 mx-auto mb-2 text-slate-350 shrink-0" />
                               <p className="font-outfit text-sm text-slate-700">No hay capacitaciones registradas</p>
                               <p className="text-[11px] text-slate-400 font-normal mt-1">Registra una nueva capacitación para comenzar.</p>
@@ -1896,14 +1896,14 @@ export default function CapacitacionPage({ params }) {
                                     </div>
                                   </div>
                                 </td>
-                                {(canEditar || canEliminar) && (
+                                {(canEditar || canEliminar || profile?.role === 'cliente') && (
                                   <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                                     <div className="flex items-center justify-end gap-2">
                                       {cap.fotos_urls && cap.fotos_urls.length > 0 && (
                                         <button
                                           onClick={() => handleViewFotosClick(cap)}
                                           title="Ver Registros de Capacitación (Fotos)"
-                                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer inline-flex items-center"
+                                          className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-colors inline-flex items-center justify-center shadow-sm"
                                         >
                                           <ImageIcon className="h-4.5 w-4.5" />
                                         </button>

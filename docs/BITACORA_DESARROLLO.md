@@ -1,5 +1,36 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-06-27] Corrección de Contraste en Nómina de Personal, Habilitación de Evidencias a Clientes y Cambio a Pictograma de Imagen
+
+### Resumen de Cambios
+- **Alto Contraste en Nómina Deshabilitada (Mobile / Desktop)**: Se corrigió la legibilidad en la vista de solo lectura/clientes de la sección de **Nómina de Personal**. Se agregaron clases explícitas de alto contraste (`disabled:text-slate-800 disabled:bg-slate-50 disabled:opacity-100`) a los selectores de la cabecera (Razón Social, Establecimiento, Fecha de Carga) y a los inputs del listado de empleados, permitiendo que la información sea legible independientemente del estado del formulario.
+- **Acceso a Evidencias para Clientes**: Se habilitó la columna de Acciones en las tablas de **Acciones Correctivas**, **Control de Extintores** y **Capacitación** para los usuarios con rol `cliente`. Esto les permite ver y descargar/visualizar las fotos o imágenes de evidencia cargadas, manteniendo inhabilitadas las funciones de edición y eliminación.
+- **Pictograma de Imagen Unificado en Tablas**: En las tablas de **Acciones Correctivas** y **Control de Extintores**, se reemplazó el icono de visualización de imágenes (`<Eye />`) por el de imagen (`<ImageIcon />`), aplicando los estilos y colores unificados de Higiene y Seguridad Laboral (`bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-colors`).
+- **Botón de Visualización de Detalle (Ojo) para Clientes**: En las tablas de **Nómina de Personal** y **Accidentes**, se agregó un botón con el pictograma del ojo (`<Eye />`) en la columna de Acciones para los usuarios clientes. Esto les permite abrir la vista de detalle/ficha del empleado o accidente en modo de solo lectura.
+- **Ajuste de colSpan en Vacio**: Se ajustó el atributo `colSpan` para el estado vacío ("No hay registros...") en las tablas de **Control de Extintores** y **Acciones Correctivas** para reflejar la presencia condicional de la columna de Acciones.
+
+### Decisiones Clave
+- **Filtros e Interactividad de Visualización de Solo Lectura**: Permitir que los clientes accedan a evidencias e imágenes sin comprometer la seguridad e integridad de la base de datos (las mutaciones de inserción, actualización y borrado siguen estrictamente validadas server-side y por permisos de frontend).
+- **Estándar de Botones y Contraste**: El uso de `disabled:text-slate-800` en campos bloqueados de formularios garantiza el cumplimiento de las pautas de accesibilidad Web (WCAG) sin necesidad de reescribir inputs como etiquetas de texto simple.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/nomina/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con optimización y empaquetado de Next.js (`npm run build`) exitosa.
+
+---
+
 ## [2026-06-27] Incorporación de Sectores, Puestos de Trabajo y Observaciones en Establecimientos
 
 ### Resumen de Cambios

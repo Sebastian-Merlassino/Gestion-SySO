@@ -30,7 +30,8 @@ import {
   Layers,
   HelpCircle,
   Menu,
-  MapPin
+  MapPin,
+  Eye
 } from 'lucide-react';
 
 export default function NominaPage({ params }) {
@@ -993,7 +994,7 @@ export default function NominaPage({ params }) {
                           setEstablecimientoId('');
                         }}
                         disabled={profile?.role === 'cliente' || editingId !== null}
-                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white text-slate-700 transition-all cursor-pointer font-semibold disabled:opacity-80 disabled:text-slate-400"
+                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white text-slate-700 transition-all cursor-pointer font-semibold disabled:text-slate-800 disabled:bg-slate-50 disabled:opacity-100"
                       >
                         <option value="">Selecciona un cliente</option>
                         {empresas.map(e => (
@@ -1012,7 +1013,7 @@ export default function NominaPage({ params }) {
                         value={establecimientoId}
                         onChange={(e) => setEstablecimientoId(e.target.value)}
                         disabled={!empresaId || editingId !== null}
-                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white text-slate-700 transition-all cursor-pointer font-semibold disabled:opacity-50 disabled:text-slate-400"
+                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white text-slate-700 transition-all cursor-pointer font-semibold disabled:text-slate-800 disabled:bg-slate-50 disabled:opacity-100"
                       >
                         <option value="">Selecciona un establecimiento</option>
                         {allEstablecimientos.filter(est => est.empresa_id === empresaId).map(e => (
@@ -1035,7 +1036,7 @@ export default function NominaPage({ params }) {
                           value={fechaCarga}
                           onChange={(e) => setFechaCarga(formatAsDateInput(e.target.value))}
                           disabled={editingId !== null}
-                          className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white text-slate-700 transition-all font-mono disabled:opacity-80 disabled:text-slate-400"
+                          className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white text-slate-700 transition-all font-mono disabled:text-slate-800 disabled:bg-slate-50 disabled:opacity-100"
                         />
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
                           <Calendar className="h-4 w-4" />
@@ -1117,7 +1118,7 @@ export default function NominaPage({ params }) {
                               placeholder="Ej: Carlos Gómez"
                               value={row.nombre_apellido}
                               onChange={(e) => handleUpdateManualRow(row.id, 'nombre_apellido', e.target.value)}
-                              className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#468DFF] bg-white transition-all"
+                              className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#468DFF] bg-white transition-all disabled:text-slate-800 disabled:bg-slate-50 disabled:opacity-100"
                             />
                           </div>
                           <div className="md:col-span-2">
@@ -1129,7 +1130,7 @@ export default function NominaPage({ params }) {
                               placeholder="11 dígitos sin guiones"
                               value={row.cuil}
                               onChange={(e) => handleUpdateManualRow(row.id, 'cuil', e.target.value.replace(/[^0-9]/g, ''))}
-                              className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-mono tracking-wider focus:outline-none focus:border-[#468DFF] bg-white transition-all"
+                              className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-mono tracking-wider focus:outline-none focus:border-[#468DFF] bg-white transition-all disabled:text-slate-800 disabled:bg-slate-50 disabled:opacity-100"
                             />
                           </div>
                           <div className="md:col-span-2">
@@ -1140,7 +1141,7 @@ export default function NominaPage({ params }) {
                               placeholder="DD/MM/YYYY"
                               value={row.fecha_alta}
                               onChange={(e) => handleUpdateManualRow(row.id, 'fecha_alta', formatAsDateInput(e.target.value))}
-                              className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#468DFF] bg-white transition-all"
+                              className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#468DFF] bg-white transition-all disabled:text-slate-800 disabled:bg-slate-50 disabled:opacity-100"
                             />
                           </div>
                           <div className="md:col-span-2">
@@ -1150,7 +1151,7 @@ export default function NominaPage({ params }) {
                               placeholder="Ej: Producción"
                               value={row.area_sector}
                               onChange={(e) => handleUpdateManualRow(row.id, 'area_sector', e.target.value)}
-                              className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#468DFF] bg-white transition-all"
+                              className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#468DFF] bg-white transition-all disabled:text-slate-800 disabled:bg-slate-50 disabled:opacity-100"
                             />
                           </div>
                           <div className="md:col-span-2">
@@ -1160,7 +1161,7 @@ export default function NominaPage({ params }) {
                               placeholder="Ej: Supervisor"
                               value={row.puesto}
                               onChange={(e) => handleUpdateManualRow(row.id, 'puesto', e.target.value)}
-                              className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#468DFF] bg-white transition-all"
+                              className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#468DFF] bg-white transition-all disabled:text-slate-800 disabled:bg-slate-50 disabled:opacity-100"
                             />
                           </div>
                           <div className="md:col-span-1 text-right">
@@ -1567,13 +1568,21 @@ export default function NominaPage({ params }) {
                             </td>
                             <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                               <div className="flex items-center justify-end gap-1.5">
-                                {canEditar && (
+                                {canEditar ? (
                                   <button
                                     onClick={() => { setIsReadOnlyView(false); handleOpenEditForm(item); }}
                                     className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 hover:text-amber-700 transition-colors cursor-pointer bg-amber-50"
                                     title="Editar empleado"
                                   >
                                     <Edit className="h-4.5 w-4.5" />
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => { setIsReadOnlyView(true); handleOpenEditForm(item); }}
+                                    className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer inline-flex items-center"
+                                    title="Ver Detalle"
+                                  >
+                                    <Eye className="h-4.5 w-4.5" />
                                   </button>
                                 )}
                                 {canDelete && (

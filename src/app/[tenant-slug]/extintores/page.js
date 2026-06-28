@@ -1484,13 +1484,13 @@ export default function ExtintoresPage({ params }) {
                             Estado
                             {sortField === 'estado' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                           </th>
-                          {(canEditar || canEliminar) && <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 py-4 px-6 text-right">Acciones</th>}
+                          {(canEditar || canEliminar || profile?.role === 'cliente') && <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 py-4 px-6 text-right">Acciones</th>}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-sm">
                         {sortedExtintores.length === 0 ? (
                           <tr>
-                            <td colSpan={(canEditar || canEliminar) ? 7 : 6} className="text-center py-20 text-slate-400 font-bold bg-slate-50/10">
+                            <td colSpan={(canEditar || canEliminar || profile?.role === 'cliente') ? 7 : 6} className="text-center py-20 text-slate-400 font-bold bg-slate-50/10">
                               <Flame className="h-10 w-10 mx-auto mb-2 text-slate-350 shrink-0" />
                               <p className="font-outfit text-sm text-slate-700">No hay extintores registrados</p>
                               <p className="text-[11px] text-slate-400 font-normal mt-1">Registra un nuevo extintor para comenzar.</p>
@@ -1556,7 +1556,7 @@ export default function ExtintoresPage({ params }) {
                                     <span className="text-slate-400 italic text-[10px]">S/Fechas</span>
                                   )}
                                 </td>
-                                  {(canEditar || canEliminar) && (
+                                  {(canEditar || canEliminar || profile?.role === 'cliente') && (
                                     <td className="py-4 px-6 text-right" onClick={(e) => e.stopPropagation()}>
                                       <div className="flex items-center justify-end gap-2">
                                         {ext.imagen_preview_url && (
@@ -1565,10 +1565,10 @@ export default function ExtintoresPage({ params }) {
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             title="Ver Foto"
-                                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer inline-flex items-center"
+                                            className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-colors inline-flex items-center justify-center shadow-sm"
                                             onClick={(e) => e.stopPropagation()}
                                           >
-                                            <Eye className="h-4.5 w-4.5" />
+                                            <ImageIcon className="h-4.5 w-4.5" />
                                           </a>
                                         )}
                                         {canEditar ? (
