@@ -665,7 +665,7 @@ export default function AccionesCorrectivasPage({ params }) {
       const headersRow = ['Fecha'];
       if (showEmpresaCol) headersRow.push('Cliente');
       if (showEstablecimientoCol) headersRow.push('Establecimiento');
-      headersRow.push('Fuente', 'Sector', 'Descripción del Hallazgo', 'Nivel Riesgo', 'Responsable', 'Plazo', 'Estado', 'F. Imp.', 'Evidencia');
+      headersRow.push('Fuente', 'Sector', 'Descripción del Hallazgo', 'Nivel Riesgo', 'Responsable', 'Fecha Planificada', 'Fecha de Realización / Implementación', 'Estado', 'Evidencia');
       const headers = [headersRow];
       
       const body = sortedAcciones.map(acc => {
@@ -683,8 +683,8 @@ export default function AccionesCorrectivasPage({ params }) {
           acc.nivel_riesgo || 'N/A',
           acc.responsable || 'N/A',
           formatDate(acc.fecha_planificada) || 'N/A',
-          status.text || 'N/A',
           formatDate(acc.fecha_implementacion) || 'N/A',
+          status.text || 'N/A',
           ''
         );
         return rowData;
@@ -723,9 +723,9 @@ export default function AccionesCorrectivasPage({ params }) {
       colStyles[colIdx++] = { cellWidth: mainWidth }; // Descripción del Hallazgo
       colStyles[colIdx++] = { cellWidth: 45 };        // Nivel Riesgo
       colStyles[colIdx++] = { cellWidth: 80 };        // Responsable
-      colStyles[colIdx++] = { cellWidth: 50 };        // Plazo
+      colStyles[colIdx++] = { cellWidth: 50 };        // Fecha Planificada
+      colStyles[colIdx++] = { cellWidth: 50 };        // Fecha de Realización / Implementación
       colStyles[colIdx++] = { cellWidth: 50 };        // Estado
-      colStyles[colIdx++] = { cellWidth: 50 };        // F. Imp.
       colStyles[colIdx++] = { cellWidth: 45 };        // Evidencia
 
       autoTable(doc, {
@@ -1907,16 +1907,28 @@ export default function AccionesCorrectivasPage({ params }) {
                                 {sortField === 'nivel_riesgo' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                               </div>
                             </th>
-                            <th className="px-6 py-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('estado')}>
-                              <div className="flex items-center justify-center gap-1">
-                                Estado
-                                {sortField === 'estado' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
-                              </div>
-                            </th>
                             <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('responsable')}>
                               <div className="flex items-center gap-1">
                                 Responsable
                                 {sortField === 'responsable' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              </div>
+                            </th>
+                            <th className="px-6 py-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('fecha_planificada')}>
+                              <div className="flex items-center justify-center gap-1">
+                                Fecha Planificada
+                                {sortField === 'fecha_planificada' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              </div>
+                            </th>
+                            <th className="px-6 py-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('fecha_implementacion')}>
+                              <div className="flex items-center justify-center gap-1">
+                                Fecha de Realización / Implementación
+                                {sortField === 'fecha_implementacion' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              </div>
+                            </th>
+                            <th className="px-6 py-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('estado')}>
+                              <div className="flex items-center justify-center gap-1">
+                                Estado
+                                {sortField === 'estado' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                               </div>
                             </th>
                              {(canEditar || canEliminar || profile?.role === 'cliente') && <th className="px-6 py-4 text-right sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Acciones</th>}
@@ -1964,13 +1976,19 @@ export default function AccionesCorrectivasPage({ params }) {
                                     {acc.nivel_riesgo}
                                   </span>
                                 </td>
+                                <td className="px-6 py-4 font-semibold text-slate-900">
+                                  {acc.responsable || 'No asignado'}
+                                </td>
+                                <td className="px-6 py-4 text-center font-medium text-slate-600 font-mono">
+                                  {formatDate(acc.fecha_planificada) || '-'}
+                                </td>
+                                <td className="px-6 py-4 text-center font-medium text-slate-600 font-mono">
+                                  {formatDate(acc.fecha_implementacion) || '-'}
+                                </td>
                                 <td className="px-6 py-4 text-center">
                                   <span className={`px-2.5 py-0.5 rounded-full border text-[10px] font-bold inline-block ${status.color}`}>
                                     {status.text}
                                   </span>
-                                </td>
-                                <td className="px-6 py-4 font-semibold text-slate-900">
-                                  {acc.responsable || 'No asignado'}
                                 </td>
                                   {(canEditar || canEliminar || profile?.role === 'cliente') && (
                                     <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
