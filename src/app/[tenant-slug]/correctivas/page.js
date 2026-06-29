@@ -692,44 +692,41 @@ export default function AccionesCorrectivasPage({ params }) {
 
       const colStyles = {};
       let colIdx = 0;
+      const fixedTotal = 500;
+      let extraColsWidth = 0;
+      let empWidth = 0;
+      let estWidth = 0;
+      
       if (showEmpresaCol && showEstablecimientoCol) {
-        colStyles[colIdx++] = { cellWidth: 50 }; // Fecha
-        colStyles[colIdx++] = { cellWidth: 75 }; // Cliente
-        colStyles[colIdx++] = { cellWidth: 75 }; // Establecimiento
-        colStyles[colIdx++] = { cellWidth: 65 }; // Fuente
-        colStyles[colIdx++] = { cellWidth: 65 }; // Sector
-        colStyles[colIdx++] = { cellWidth: 152 }; // Hallazgo
-        colStyles[colIdx++] = { cellWidth: 50 }; // Nivel
-        colStyles[colIdx++] = { cellWidth: 80 }; // Responsable
-        colStyles[colIdx++] = { cellWidth: 50 }; // Plazo
-        colStyles[colIdx++] = { cellWidth: 50 }; // Estado
-        colStyles[colIdx++] = { cellWidth: 50 }; // F. Imp
-        colStyles[colIdx++] = { cellWidth: 50 }; // Evidencia
-      } else if (!showEmpresaCol && !showEstablecimientoCol) {
-        colStyles[colIdx++] = { cellWidth: 60 }; // Fecha
-        colStyles[colIdx++] = { cellWidth: 90 }; // Fuente
-        colStyles[colIdx++] = { cellWidth: 90 }; // Sector
-        colStyles[colIdx++] = { cellWidth: 232 }; // Hallazgo
-        colStyles[colIdx++] = { cellWidth: 50 }; // Nivel
-        colStyles[colIdx++] = { cellWidth: 90 }; // Responsable
-        colStyles[colIdx++] = { cellWidth: 50 }; // Plazo
-        colStyles[colIdx++] = { cellWidth: 50 }; // Estado
-        colStyles[colIdx++] = { cellWidth: 50 }; // F. Imp
-        colStyles[colIdx++] = { cellWidth: 50 }; // Evidencia
-      } else {
-        // Solo una columna oculta (sea empresa o establecimiento)
-        colStyles[colIdx++] = { cellWidth: 50 }; // Fecha
-        colStyles[colIdx++] = { cellWidth: 75 }; // Cliente o Establecimiento visible
-        colStyles[colIdx++] = { cellWidth: 80 }; // Fuente
-        colStyles[colIdx++] = { cellWidth: 80 }; // Sector
-        colStyles[colIdx++] = { cellWidth: 192 }; // Hallazgo
-        colStyles[colIdx++] = { cellWidth: 50 }; // Nivel
-        colStyles[colIdx++] = { cellWidth: 85 }; // Responsable
-        colStyles[colIdx++] = { cellWidth: 50 }; // Plazo
-        colStyles[colIdx++] = { cellWidth: 50 }; // Estado
-        colStyles[colIdx++] = { cellWidth: 50 }; // F. Imp
-        colStyles[colIdx++] = { cellWidth: 50 }; // Evidencia
+        empWidth = 75;
+        estWidth = 75;
+        extraColsWidth = 150;
+      } else if (showEmpresaCol) {
+        empWidth = 100;
+        extraColsWidth = 100;
+      } else if (showEstablecimientoCol) {
+        estWidth = 100;
+        extraColsWidth = 100;
       }
+      
+      const mainWidth = 761.89 - fixedTotal - extraColsWidth;
+
+      colStyles[colIdx++] = { cellWidth: 50 }; // Fecha
+      if (showEmpresaCol) {
+        colStyles[colIdx++] = { cellWidth: empWidth };
+      }
+      if (showEstablecimientoCol) {
+        colStyles[colIdx++] = { cellWidth: estWidth };
+      }
+      colStyles[colIdx++] = { cellWidth: 65 };        // Fuente
+      colStyles[colIdx++] = { cellWidth: 65 };        // Sector
+      colStyles[colIdx++] = { cellWidth: mainWidth }; // Descripción del Hallazgo
+      colStyles[colIdx++] = { cellWidth: 45 };        // Nivel Riesgo
+      colStyles[colIdx++] = { cellWidth: 80 };        // Responsable
+      colStyles[colIdx++] = { cellWidth: 50 };        // Plazo
+      colStyles[colIdx++] = { cellWidth: 50 };        // Estado
+      colStyles[colIdx++] = { cellWidth: 50 };        // F. Imp.
+      colStyles[colIdx++] = { cellWidth: 45 };        // Evidencia
 
       autoTable(doc, {
         head: headers,

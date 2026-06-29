@@ -613,19 +613,38 @@ export default function ProgramaGestion({ params }) {
 
       const colStyles = {};
       let colIdx = 0;
+      const fixedTotal = 460;
+      let extraColsWidth = 0;
+      let empWidth = 0;
+      let estWidth = 0;
+      
+      if (showEmpresaCol && showEstablecimientoCol) {
+        empWidth = 90;
+        estWidth = 90;
+        extraColsWidth = 180;
+      } else if (showEmpresaCol) {
+        empWidth = 120;
+        extraColsWidth = 120;
+      } else if (showEstablecimientoCol) {
+        estWidth = 120;
+        extraColsWidth = 120;
+      }
+      
+      const mainWidth = 761.89 - fixedTotal - extraColsWidth;
+
       if (showEmpresaCol) {
-        colStyles[colIdx++] = { cellWidth: 90 };
+        colStyles[colIdx++] = { cellWidth: empWidth };
       }
       if (showEstablecimientoCol) {
-        colStyles[colIdx++] = { cellWidth: 90 };
+        colStyles[colIdx++] = { cellWidth: estWidth };
       }
-      colStyles[colIdx++] = { cellWidth: 160 }; // Actividad
-      colStyles[colIdx++] = { cellWidth: 110 }; // Marco Legal
-      colStyles[colIdx++] = { cellWidth: 80 };  // Responsable
-      colStyles[colIdx++] = { cellWidth: 55 };  // F. Planif
-      colStyles[colIdx++] = { cellWidth: 55 };  // F. Realiz
-      colStyles[colIdx++] = { cellWidth: 55 };  // Estado
-      colStyles[colIdx++] = { cellWidth: 45 };  // Progreso
+      colStyles[colIdx++] = { cellWidth: mainWidth }; // Actividad / Descripción
+      colStyles[colIdx++] = { cellWidth: 120 };       // Marco Legal
+      colStyles[colIdx++] = { cellWidth: 95 };        // Responsable
+      colStyles[colIdx++] = { cellWidth: 65 };        // F. Planif
+      colStyles[colIdx++] = { cellWidth: 65 };        // F. Realiz
+      colStyles[colIdx++] = { cellWidth: 65 };        // Estado
+      colStyles[colIdx++] = { cellWidth: 50 };        // Progreso
 
       autoTable(doc, {
         head: headers,

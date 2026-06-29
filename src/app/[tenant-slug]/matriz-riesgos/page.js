@@ -702,17 +702,36 @@ export default function MatrizRiesgosPage({ params }) {
 
       const colStyles = {};
       let colIdx = 0;
+      const fixedTotal = 480;
+      let extraColsWidth = 0;
+      let empWidth = 0;
+      let estWidth = 0;
+      
+      if (showEmpresaCol && showEstablecimientoCol) {
+        empWidth = 80;
+        estWidth = 80;
+        extraColsWidth = 160;
+      } else if (showEmpresaCol) {
+        empWidth = 110;
+        extraColsWidth = 110;
+      } else if (showEstablecimientoCol) {
+        estWidth = 110;
+        extraColsWidth = 110;
+      }
+      
+      const mainWidth = 761.89 - fixedTotal - extraColsWidth;
+
       if (showEmpresaCol) {
-        colStyles[colIdx++] = { cellWidth: 80 };
+        colStyles[colIdx++] = { cellWidth: empWidth };
       }
       if (showEstablecimientoCol) {
-        colStyles[colIdx++] = { cellWidth: 80 };
+        colStyles[colIdx++] = { cellWidth: estWidth };
       }
-      colStyles[colIdx++] = { cellWidth: 90 };  // Sector / Puesto
-      colStyles[colIdx++] = { cellWidth: 160 }; // Peligro
-      colStyles[colIdx++] = { cellWidth: 100 }; // Prob / Grav / Nivel
-      colStyles[colIdx++] = { cellWidth: 130 }; // Medidas Existentes
-      colStyles[colIdx++] = { cellWidth: 120 }; // Medidas Recom.
+      colStyles[colIdx++] = { cellWidth: 100 };       // Sector / Puesto
+      colStyles[colIdx++] = { cellWidth: mainWidth }; // Peligro / Riesgo / Consecuencias
+      colStyles[colIdx++] = { cellWidth: 110 };       // Prob. / Grav. / Nivel
+      colStyles[colIdx++] = { cellWidth: 140 };       // Medidas Existentes
+      colStyles[colIdx++] = { cellWidth: 130 };       // Medidas Recom.
 
       autoTable(doc, {
         head: headers,

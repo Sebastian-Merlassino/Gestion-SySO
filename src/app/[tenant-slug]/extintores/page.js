@@ -622,20 +622,39 @@ export default function ExtintoresPage({ params }) {
 
       const colStyles = {};
       let colIdx = 0;
-      colStyles[colIdx++] = { cellWidth: 70 }; // Puesto / Ext
+      const fixedTotal = 495;
+      let extraColsWidth = 0;
+      let empWidth = 0;
+      let estWidth = 0;
+      
+      if (showEmpresaCol && showEstablecimientoCol) {
+        empWidth = 80;
+        estWidth = 80;
+        extraColsWidth = 160;
+      } else if (showEmpresaCol) {
+        empWidth = 110;
+        extraColsWidth = 110;
+      } else if (showEstablecimientoCol) {
+        estWidth = 110;
+        extraColsWidth = 110;
+      }
+      
+      const mainWidth = 761.89 - fixedTotal - extraColsWidth;
+
+      colStyles[colIdx++] = { cellWidth: 85 };        // Puesto / N° Ext
       if (showEmpresaCol) {
-        colStyles[colIdx++] = { cellWidth: 85 };
+        colStyles[colIdx++] = { cellWidth: empWidth };
       }
       if (showEstablecimientoCol) {
-        colStyles[colIdx++] = { cellWidth: 85 };
+        colStyles[colIdx++] = { cellWidth: estWidth };
       }
-      colStyles[colIdx++] = { cellWidth: 100 }; // Sector
-      colStyles[colIdx++] = { cellWidth: 100 }; // Tipo/Capacidad
-      colStyles[colIdx++] = { cellWidth: 55 };  // Recarga
-      colStyles[colIdx++] = { cellWidth: 55 };  // PH
-      colStyles[colIdx++] = { cellWidth: 45 };  // Presión
-      colStyles[colIdx++] = { cellWidth: 55 };  // Estado
-      colStyles[colIdx++] = { cellWidth: 50 };  // Evidencia
+      colStyles[colIdx++] = { cellWidth: mainWidth }; // Sector / Referencia
+      colStyles[colIdx++] = { cellWidth: 110 };       // Tipo / Capacidad
+      colStyles[colIdx++] = { cellWidth: 65 };        // Recarga
+      colStyles[colIdx++] = { cellWidth: 65 };        // PH
+      colStyles[colIdx++] = { cellWidth: 55 };        // Presión
+      colStyles[colIdx++] = { cellWidth: 65 };        // Estado
+      colStyles[colIdx++] = { cellWidth: 50 };        // Evidencia
 
       autoTable(doc, {
         head: headers,

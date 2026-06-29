@@ -602,19 +602,38 @@ export default function CapacitacionPage({ params }) {
 
       const colStyles = {};
       let colIdx = 0;
+      const fixedTotal = 440;
+      let extraColsWidth = 0;
+      let empWidth = 0;
+      let estWidth = 0;
+      
+      if (showEmpresaCol && showEstablecimientoCol) {
+        empWidth = 90;
+        estWidth = 90;
+        extraColsWidth = 180;
+      } else if (showEmpresaCol) {
+        empWidth = 120;
+        extraColsWidth = 120;
+      } else if (showEstablecimientoCol) {
+        estWidth = 120;
+        extraColsWidth = 120;
+      }
+      
+      const mainWidth = 761.89 - fixedTotal - extraColsWidth;
+
       if (showEmpresaCol) {
-        colStyles[colIdx++] = { cellWidth: 95 };
+        colStyles[colIdx++] = { cellWidth: empWidth };
       }
       if (showEstablecimientoCol) {
-        colStyles[colIdx++] = { cellWidth: 95 };
+        colStyles[colIdx++] = { cellWidth: estWidth };
       }
-      colStyles[colIdx++] = { cellWidth: 80 };  // Puesto
-      colStyles[colIdx++] = { cellWidth: 160 }; // Tema
-      colStyles[colIdx++] = { cellWidth: 90 };  // Capacitador
-      colStyles[colIdx++] = { cellWidth: 60 };  // Inicio Planif
-      colStyles[colIdx++] = { cellWidth: 60 };  // Fin Planif
-      colStyles[colIdx++] = { cellWidth: 55 };  // Estado
-      colStyles[colIdx++] = { cellWidth: 45 };  // Progreso
+      colStyles[colIdx++] = { cellWidth: 100 };       // Puesto
+      colStyles[colIdx++] = { cellWidth: mainWidth }; // Tema de Capacitación
+      colStyles[colIdx++] = { cellWidth: 95 };        // Capacitador
+      colStyles[colIdx++] = { cellWidth: 65 };        // Inicio Planif
+      colStyles[colIdx++] = { cellWidth: 65 };        // Fin Planif
+      colStyles[colIdx++] = { cellWidth: 65 };        // Estado
+      colStyles[colIdx++] = { cellWidth: 50 };        // Progreso
 
       autoTable(doc, {
         head: headers,
