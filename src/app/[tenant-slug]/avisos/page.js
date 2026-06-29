@@ -1273,7 +1273,9 @@ export default function AvisosRiesgoPage({ params }) {
         doc.setFontSize(9.75);
         doc.setTextColor(0, 0, 0);
         const companyName = tenant?.name || 'Gestión SySO';
-        const footerText = `${companyName} - Tel: ${adminContact.phone} - Email: ${adminContact.email}`;
+        const phoneVal = profile?.role === 'miembro' ? (profile?.phone || '') : adminContact.phone;
+        const emailVal = profile?.role === 'miembro' ? (profile?.email || '') : adminContact.email;
+        const footerText = `${companyName} - Tel: ${phoneVal} - Email: ${emailVal}`;
         doc.text(footerText, 297.5, 812.23, { align: 'center' });
 
         // Footer Page Number (right-aligned at x=567.11)

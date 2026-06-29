@@ -1445,7 +1445,9 @@ export default function VisitasPage({ params }) {
         doc.setTextColor(0, 0, 0);
         
         const companyName = tenant?.name || "Gestión SySO";
-        const footerText = `${companyName} - Tel: ${adminContact.phone} - Email: ${adminContact.email}`;
+        const phoneVal = profile?.role === 'miembro' ? (profile?.phone || '') : adminContact.phone;
+        const emailVal = profile?.role === 'miembro' ? (profile?.email || '') : adminContact.email;
+        const footerText = `${companyName} - Tel: ${phoneVal} - Email: ${emailVal}`;
         const totalFooterWidth = doc.getTextWidth(footerText);
         const footerX = (595.28 - totalFooterWidth) / 2;
         

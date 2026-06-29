@@ -770,7 +770,9 @@ export default function TenantDashboard({ params }) {
         d.setFontSize(8);
         d.setTextColor(100, 100, 100);
         const tenantName = tenant?.name || 'Gestión SySO';
-        d.text(`${tenantName} - Tel: ${adminContact.phone} - Email: ${adminContact.email}`, 420.94, 560, { align: 'center' });
+        const phoneVal = profile?.role === 'miembro' ? (profile?.phone || '') : adminContact.phone;
+        const emailVal = profile?.role === 'miembro' ? (profile?.email || '') : adminContact.email;
+        d.text(`${tenantName} - Tel: ${phoneVal} - Email: ${emailVal}`, 420.94, 560, { align: 'center' });
 
         // Número de página
         d.text(`Página ${pageNum} de 4`, 791, 560, { align: 'right' });
