@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import {
   Calendar,
   List,
@@ -451,9 +451,14 @@ export default function ProgramaGestion({ params }) {
   };
 
   const getBase64ImageFromUrl = async (imageUrl) => {
+    if (!imageUrl) return '';
     try {
       const res = await fetch(imageUrl);
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const blob = await res.blob();
+      if (!blob.type.startsWith('image/')) {
+        throw new Error(`Invalid content type: ${blob.type}`);
+      }
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.addEventListener('load', () => resolve(reader.result), false);
@@ -468,6 +473,10 @@ export default function ProgramaGestion({ params }) {
 
   const resizeImage = (base64Str, maxWidth = 400, maxHeight = 400) => {
     return new Promise((resolve) => {
+      if (!base64Str || !base64Str.startsWith('data:image/')) {
+        resolve('');
+        return;
+      }
       const img = new Image();
       img.src = base64Str;
       img.onload = () => {
@@ -526,7 +535,7 @@ export default function ProgramaGestion({ params }) {
       }
 
       const drawHeader = (d) => {
-        if (logoBase64) {
+        if (logoBase64 && logoBase64.startsWith('data:image/')) {
           try {
             d.addImage(logoBase64, 'PNG', 40, 15, 100, 50);
           } catch (e) {
@@ -562,7 +571,7 @@ export default function ProgramaGestion({ params }) {
         ];
       });
 
-      doc.autoTable({
+      autoTable(doc, {
         head: headers,
         body: body,
         startY: 90,
@@ -1766,7 +1775,7 @@ export default function ProgramaGestion({ params }) {
                           title="Descargar listado en formato PDF"
                         >
                           <FileText className="h-4 w-4" />
-                          PDF
+                          Descargar PDF
                         </button>
                         <button
                           type="button"
