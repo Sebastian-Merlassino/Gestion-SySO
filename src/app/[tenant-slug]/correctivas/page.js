@@ -662,10 +662,27 @@ export default function AccionesCorrectivasPage({ params }) {
         d.line(40, 70, 801, 70);
       };
 
-      const headersRow = ['Fecha'];
-      if (showEmpresaCol) headersRow.push('Cliente');
+      const headersRow = [];
+      if (showEmpresaCol) headersRow.push('Razón Social');
       if (showEstablecimientoCol) headersRow.push('Establecimiento');
-      headersRow.push('Fuente', 'Sector', 'Descripción del Hallazgo', 'Nivel Riesgo', 'Responsable', 'Fecha Planificada', 'Fecha de Realización / Implementación', 'Estado', 'Evidencia');
+      headersRow.push(
+        'Fuente',
+        'Fecha',
+        'Área / Sector',
+        'Puesto / Operación',
+        'Tipo de hallazgo',
+        'Descripción del hallazgo',
+        'Nivel de riesgo',
+        'Recomendación',
+        'Acción Preventiva',
+        'Causa Raiz',
+        'Acción Correctiva',
+        'Responsable',
+        'Fecha planificada',
+        'Fecha de implementación / cierre',
+        'Estado',
+        'imagen'
+      );
       const headers = [headersRow];
       
       const body = sortedAcciones.map(acc => {
@@ -673,14 +690,21 @@ export default function AccionesCorrectivasPage({ params }) {
         const est = allEstablecimientos.find(e => e.id === acc.establecimiento_id);
         const status = getCalculatedStatus(acc.fecha_planificada, acc.fecha_implementacion);
         
-        const rowData = [formatDate(acc.fecha) || 'N/A'];
+        const rowData = [];
         if (showEmpresaCol) rowData.push(emp ? emp.razon_social : 'N/A');
         if (showEstablecimientoCol) rowData.push(est ? est.denominacion : 'N/A');
         rowData.push(
           acc.fuente || 'N/A',
+          formatDate(acc.fecha) || 'N/A',
           acc.area_sector || 'N/A',
+          acc.puesto_operacion || 'N/A',
+          acc.tipo_hallazgo || 'N/A',
           acc.descripcion_hallazgo || 'N/A',
           acc.nivel_riesgo || 'N/A',
+          acc.recomendacion || 'N/A',
+          acc.accion_preventiva || 'N/A',
+          acc.causa_raiz || 'N/A',
+          acc.accion_correctiva || 'N/A',
           acc.responsable || 'N/A',
           formatDate(acc.fecha_planificada) || 'N/A',
           formatDate(acc.fecha_implementacion) || 'N/A',
@@ -690,19 +714,26 @@ export default function AccionesCorrectivasPage({ params }) {
         return rowData;
       });
 
-      const columnsDef = [{ key: 'fecha', ratio: 0.75 }];
-      if (showEmpresaCol) columnsDef.push({ key: 'cliente', ratio: 1.1 });
-      if (showEstablecimientoCol) columnsDef.push({ key: 'establecimiento', ratio: 1.1 });
+      const columnsDef = [];
+      if (showEmpresaCol) columnsDef.push({ key: 'cliente', ratio: 1.0 });
+      if (showEstablecimientoCol) columnsDef.push({ key: 'establecimiento', ratio: 1.0 });
       columnsDef.push(
-        { key: 'fuente', ratio: 0.95 },
-        { key: 'sector', ratio: 0.95 },
-        { key: 'descripcion', ratio: 2.2 },
-        { key: 'nivel_riesgo', ratio: 0.75 },
-        { key: 'responsable', ratio: 1.1 },
-        { key: 'fecha_planificada', ratio: 0.8 },
-        { key: 'fecha_implementacion', ratio: 0.8 },
-        { key: 'estado', ratio: 0.8 },
-        { key: 'evidencia', ratio: 0.7 }
+        { key: 'fuente', ratio: 0.9 },
+        { key: 'fecha', ratio: 0.7 },
+        { key: 'area_sector', ratio: 0.9 },
+        { key: 'puesto_operacion', ratio: 0.9 },
+        { key: 'tipo_hallazgo', ratio: 0.9 },
+        { key: 'descripcion', ratio: 1.6 },
+        { key: 'nivel_riesgo', ratio: 0.85 },
+        { key: 'recomendacion', ratio: 1.3 },
+        { key: 'accion_preventiva', ratio: 1.3 },
+        { key: 'causa_raiz', ratio: 1.2 },
+        { key: 'accion_correctiva', ratio: 1.3 },
+        { key: 'responsable', ratio: 0.9 },
+        { key: 'fecha_planificada', ratio: 0.75 },
+        { key: 'fecha_implementacion', ratio: 0.75 },
+        { key: 'estado', ratio: 0.75 },
+        { key: 'evidencia', ratio: 0.75 }
       );
 
       const totalRatio = columnsDef.reduce((acc, col) => acc + col.ratio, 0);
@@ -718,8 +749,8 @@ export default function AccionesCorrectivasPage({ params }) {
         margin: { top: 90, bottom: 65, left: 40, right: 40 },
         theme: 'striped',
         rowPageBreak: 'avoid',
-        headStyles: { fillColor: [68, 114, 196], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
-        bodyStyles: { fontSize: 7, textColor: [50, 50, 50], minCellHeight: 35 },
+        headStyles: { fillColor: [68, 114, 196], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 5.5 },
+        bodyStyles: { fontSize: 5, textColor: [50, 50, 50], minCellHeight: 25 },
         columnStyles: colStyles,
         didDrawPage: function(data) {
           drawHeader(doc);
