@@ -8,12 +8,15 @@ import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
 import { 
   PlusCircle, 
   Search, 
   Building, 
   Users, 
   AlertTriangle, 
+  Printer, 
   X, 
   Check, 
   Loader2, 
@@ -56,6 +59,7 @@ export default function CapacitacionPage({ params }) {
     return null;
   });
   const [tenant, setTenant] = useState(null);
+  const [adminContact, setAdminContact] = useState({ email: 'info@gestionsyso.com', phone: '1159969956 / 1132296691' });
   const [empresas, setEmpresas] = useState([]);
   const [allEstablecimientos, setAllEstablecimientos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -272,6 +276,22 @@ export default function CapacitacionPage({ params }) {
 
       setTenant(ten);
 
+      // Cargar Perfil del Administrador del Tenant
+      const { data: adminProf } = await supabase
+        .from('profiles')
+        .select('email, phone')
+        .eq('tenant_id', ten.id)
+        .eq('role', 'admin')
+        .limit(1)
+        .maybeSingle();
+
+      if (adminProf) {
+        setAdminContact({
+          email: adminProf.email || 'info@gestionsyso.com',
+          phone: adminProf.phone || '1159969956 / 1132296691'
+        });
+      }
+
       // 3. Clientes
       let empresasQuery = supabase
         .from('empresas')
@@ -425,6 +445,170 @@ export default function CapacitacionPage({ params }) {
       }
     ]);
     setLoading(false);
+  };
+
+  const getBase64ImageFromUrl = async (imageUrl) => {
+    try {
+      const res = await fetch(imageUrl);
+      const blob = await res.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.addEventListener('load', () => resolve(reader.result), false);
+        reader.addEventListener('error', () => reject(new Error('FileReader error')), false);
+        reader.readAsDataURL(blob);
+      });
+    } catch (e) {
+      console.error('Error fetching image to base64:', e);
+      return '';
+    }
+  };
+
+  const resizeImage = (base64Str, maxWidth = 400, maxHeight = 400) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = base64Str;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = () => {
+        resolve(base64Str);
+      };
+    });
+  };
+
+  const handleExportPdfReport = async (shouldPrint = false) => {
+    try {
+      const doc = new jsPDF({
+        orientation: 'landscape',
+        unit: 'pt',
+        format: 'a4',
+        compress: true
+      });
+
+      let logoBase64 = '';
+      try {
+        if (tenant && tenant.logo_1_url) {
+          logoBase64 = await getBase64ImageFromUrl(tenant.logo_1_url);
+        }
+      } catch (e) {
+        console.error('Error loading logo:', e);
+      }
+      if (!logoBase64) {
+        try {
+          logoBase64 = await getBase64ImageFromUrl('/brand/logo-primary.png');
+        } catch (e) {
+          console.error('Error loading default logo:', e);
+        }
+      }
+      if (logoBase64) {
+        logoBase64 = await resizeImage(logoBase64, 200, 200);
+      }
+
+      const drawHeader = (d) => {
+        if (logoBase64) {
+          try {
+            d.addImage(logoBase64, 'PNG', 40, 15, 100, 50);
+          } catch (e) {
+            console.error('Error drawing logo:', e);
+          }
+        }
+        d.setFont('helvetica', 'bold');
+        d.setFontSize(14);
+        d.setTextColor(13, 13, 13);
+        d.text('Programa Anual de Capacitación', 801, 35, { align: 'right' });
+
+        d.setDrawColor(217, 217, 217);
+        d.setLineWidth(1);
+        d.line(40, 70, 801, 70);
+      };
+
+      const headers = [['Cliente', 'Establecimiento', 'Puesto', 'Tema de Capacitación', 'Capacitador', 'Inicio Planif.', 'Fin Planif.', 'Estado', 'Progreso']];
+      
+      const body = sortedCapacitaciones.map(cap => {
+        const emp = empresas.find(e => e.id === cap.empresa_id);
+        const est = allEstablecimientos.find(e => e.id === cap.establecimiento_id);
+        const status = getProgressStatus(cap.progreso);
+        return [
+          emp ? emp.razon_social : 'N/A',
+          est ? est.denominacion : 'N/A',
+          cap.puesto || 'N/A',
+          cap.tema || 'N/A',
+          cap.capacitador || 'N/A',
+          formatDate(cap.fecha_inicio_planificada) || 'N/A',
+          formatDate(cap.fecha_fin_planificada) || 'N/A',
+          status.text,
+          `${cap.progreso || 0}%`
+        ];
+      });
+
+      doc.autoTable({
+        head: headers,
+        body: body,
+        startY: 90,
+        margin: { left: 40, right: 40 },
+        theme: 'striped',
+        headStyles: { fillColor: [68, 114, 196], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
+        bodyStyles: { fontSize: 7, textColor: [50, 50, 50] },
+        columnStyles: {
+          0: { cellWidth: 95 },
+          1: { cellWidth: 95 },
+          2: { cellWidth: 80 },
+          3: { cellWidth: 160 },
+          4: { cellWidth: 90 },
+          5: { cellWidth: 60 },
+          6: { cellWidth: 60 },
+          7: { cellWidth: 55 },
+          8: { cellWidth: 45 }
+        },
+        didDrawPage: function(data) {
+          drawHeader(doc);
+          
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
+          doc.setTextColor(100, 100, 100);
+          
+          doc.setDrawColor(217, 217, 217);
+          doc.setLineWidth(1);
+          doc.line(40, 545, 801, 545);
+          
+          const companyName = tenant?.name || 'Gestión SySO';
+          const phoneVal = profile?.role === 'miembro' ? (profile?.phone || '') : adminContact.phone;
+          const emailVal = profile?.role === 'miembro' ? (profile?.email || '') : adminContact.email;
+          const footerText = `${companyName} - Tel: ${phoneVal} - Email: ${emailVal}`;
+          doc.text(footerText, 420.94, 560, { align: 'center' });
+          
+          doc.text(`Página ${data.pageNumber}`, 801, 560, { align: 'right' });
+        }
+      });
+
+      if (shouldPrint) {
+        doc.autoPrint();
+        const blobUrl = doc.output('bloburl');
+        window.open(blobUrl, '_blank');
+      } else {
+        doc.save(`Programa_Capacitaciones_${new Date().getFullYear()}.pdf`);
+      }
+    } catch (e) {
+      console.error('Error generating PDF:', e);
+    }
   };
 
   const handleLogout = async () => {
@@ -1672,6 +1856,27 @@ export default function CapacitacionPage({ params }) {
                           onChange={(e) => setFilterText(e.target.value)}
                           className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400"
                         />
+                      </div>
+
+                      <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleExportPdfReport(false)}
+                          className="py-1.5 px-3 rounded-xl border border-[#468DFF] text-xs font-bold bg-white text-[#468DFF] hover:bg-[#468DFF] hover:text-white transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+                          title="Descargar listado en formato PDF"
+                        >
+                          <FileText className="h-4 w-4" />
+                          PDF
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleExportPdfReport(true)}
+                          className="py-1.5 px-3 rounded-xl border border-[#468DFF] text-xs font-bold bg-white text-[#468DFF] hover:bg-[#468DFF] hover:text-white transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+                          title="Imprimir listado completo"
+                        >
+                          <Printer className="h-4 w-4" />
+                          Imprimir
+                        </button>
                       </div>
                       
                       {canCargar && (
