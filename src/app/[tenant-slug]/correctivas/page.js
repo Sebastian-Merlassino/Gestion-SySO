@@ -616,7 +616,7 @@ export default function AccionesCorrectivasPage({ params }) {
       }
       const filterString = filterParts.join(' | ');
 
-      const showEmpresaCol = !filterEmpresa;
+      const showEmpresaCol = profile?.role !== 'cliente' && !filterEmpresa;
       const showEstablecimientoCol = !filterEstablecimiento;
 
       const imageMap = {};
