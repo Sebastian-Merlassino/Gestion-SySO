@@ -1,5 +1,25 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-06-29] Ajustes de Tabla PDF, Filtros Dinámicos en Encabezado y Ocultación de Columnas Filtradas
+
+### Resumen de Cambios
+- **Alineación y Posicionamiento de Tablas**: Se modificaron las llamadas a `autoTable` en las 5 secciones (`programa`, `capacitacion`, `correctivas`, `matriz-riesgos`, `extintores`) ajustando los márgenes de página a `margin: { top: 90, bottom: 65, left: 40, right: 40 }`. Esto garantiza que la tabla de datos quede siempre contenida en el espacio central, evitando cualquier superposición con la línea del encabezado (Y=70) o la del pie de página (Y=545) en documentos de múltiples páginas.
+- **Visualización de Filtros en Encabezado**: Se incorporó un subtítulo descriptivo en el encabezado del PDF que refleja los filtros actualmente seleccionados en la pantalla (ej. "Cliente: Ams Inversiones S.A. | Establecimiento: Córdoba 2045 | Estado: Pendiente"), alineado a la derecha en la coordenada Y=55.
+- **Ocultación Dinámica de Columnas Filtradas**: Se modificó la generación del listado de columnas para que si hay un filtro de Razón Social o Establecimiento activo en la aplicación, dichas columnas se omitan de la tabla impresa para evitar duplicidad de datos y maximizar el espacio de las demás celdas.
+- **Ancho de Columnas y Evidencias Dinámicas**: Se re-diseñaron los anchos de columnas (`columnStyles`) para que se definan de forma reactiva y secuencial según las columnas realmente visibles. Además, se adaptaron las rutinas de inserción de imágenes fotográficas (en correctivas y extintores) para calcular el índice dinámico del campo de "Evidencia" en tiempo de ejecución.
+- **Resolución de Error de Compilación**: Se corrigió un error de sintaxis (llave de cierre omitida en `resizeImage`) en la sección de `matriz-riesgos/page.js` que impedía realizar el build de producción.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `next-best-practices`
+
+### Archivos Modificados
+- `src/app/[tenant-slug]/programa/page.js`
+- `src/app/[tenant-slug]/capacitacion/page.js`
+- `src/app/[tenant-slug]/correctivas/page.js`
+- `src/app/[tenant-slug]/matriz-riesgos/page.js`
+- `src/app/[tenant-slug]/extintores/page.js`
+
 ## [2026-06-29] Reorganización del Dashboard e Integración del Módulo de Tareas Pendientes
 
 ### Resumen de Cambios
