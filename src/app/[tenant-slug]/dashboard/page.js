@@ -95,6 +95,7 @@ export default function TenantDashboard({ params }) {
   const [accidentFilterAnio, setAccidentFilterAnio] = useState(String(new Date().getFullYear()));
   const [activeChartIndex, setActiveChartIndex] = useState('incidencia');
   const [showIndicesGuide, setShowIndicesGuide] = useState(false);
+  const [adminContact, setAdminContact] = useState({ email: 'info@gestionsyso.com', phone: '1159969956 / 1132296691' });
 
   // Estadísticas ficticias/reales
   const [stats, setStats] = useState({
@@ -184,6 +185,22 @@ export default function TenantDashboard({ params }) {
         }
 
         setTenant(ten);
+
+        // Cargar Perfil del Administrador del Tenant
+        const { data: adminProf } = await supabase
+          .from('profiles')
+          .select('email, phone')
+          .eq('tenant_id', ten.id)
+          .eq('role', 'admin')
+          .limit(1)
+          .maybeSingle();
+
+        if (adminProf) {
+          setAdminContact({
+            email: adminProf.email || 'info@gestionsyso.com',
+            phone: adminProf.phone || '1159969956 / 1132296691'
+          });
+        }
 
         // Cargar Empresas del Tenant
         let empresasQuery = supabase
@@ -753,9 +770,7 @@ export default function TenantDashboard({ params }) {
         d.setFontSize(8);
         d.setTextColor(100, 100, 100);
         const tenantName = tenant?.name || 'Gestión SySO';
-        const contactVal = profile?.phone || '1159969956 / 1132296691';
-        const emailVal = profile?.email || 'info@gestionsyso.com';
-        d.text(`${tenantName} - Tel: ${contactVal} - Email: ${emailVal}`, 420.94, 560, { align: 'center' });
+        d.text(`${tenantName} - Tel: ${adminContact.phone} - Email: ${adminContact.email}`, 420.94, 560, { align: 'center' });
 
         // Número de página
         d.text(`Página ${pageNum} de 4`, 791, 560, { align: 'right' });

@@ -157,6 +157,7 @@ export default function AvisosRiesgoPage({ params }) {
   const [observaciones, setObservaciones] = useState('');
   const [loadedFindings, setLoadedFindings] = useState([]);
   const [isLoadingFindings, setIsLoadingFindings] = useState(false);
+  const [adminContact, setAdminContact] = useState({ email: 'info@gestionsyso.com', phone: '1159969956 / 1132296691' });
 
   // Firma a mano (Canvas)
   const canvasRef = useRef(null);
@@ -323,6 +324,22 @@ export default function AvisosRiesgoPage({ params }) {
         return;
       }
       setTenant(ten);
+
+      // Cargar Perfil del Administrador del Tenant
+      const { data: adminProf } = await supabase
+        .from('profiles')
+        .select('email, phone')
+        .eq('tenant_id', ten.id)
+        .eq('role', 'admin')
+        .limit(1)
+        .maybeSingle();
+
+      if (adminProf) {
+        setAdminContact({
+          email: adminProf.email || 'info@gestionsyso.com',
+          phone: adminProf.phone || '1159969956 / 1132296691'
+        });
+      }
 
       // Cargar Empresas Clientes
       let empresasQuery = supabase
@@ -1255,8 +1272,9 @@ export default function AvisosRiesgoPage({ params }) {
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(9.75);
         doc.setTextColor(0, 0, 0);
-        const footerTitle = tenant?.name || 'Gestión SySO';
-        doc.text(footerTitle, 297.5, 812.23, { align: 'center' });
+        const companyName = tenant?.name || 'Gestión SySO';
+        const footerText = `${companyName} - Tel: ${adminContact.phone} - Email: ${adminContact.email}`;
+        doc.text(footerText, 297.5, 812.23, { align: 'center' });
 
         // Footer Page Number (right-aligned at x=567.11)
         doc.text(`Pág. ${pageNum}`, 567.11, 812.23, { align: 'right' });

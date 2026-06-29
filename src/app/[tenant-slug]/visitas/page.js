@@ -149,6 +149,7 @@ export default function VisitasPage({ params }) {
   const [visitas, setVisitas] = useState([]);
   const [miembrosList, setMiembrosList] = useState([]);
   const [temasList, setTemasList] = useState([]);
+  const [adminContact, setAdminContact] = useState({ email: 'info@gestionsyso.com', phone: '1159969956 / 1132296691' });
 
   // Estados del CRUD / Vista Formulario
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -570,6 +571,22 @@ export default function VisitasPage({ params }) {
       }
 
       setTenant(ten);
+
+      // Cargar Perfil del Administrador del Tenant
+      const { data: adminProf } = await supabase
+        .from('profiles')
+        .select('email, phone')
+        .eq('tenant_id', ten.id)
+        .eq('role', 'admin')
+        .limit(1)
+        .maybeSingle();
+
+      if (adminProf) {
+        setAdminContact({
+          email: adminProf.email || 'info@gestionsyso.com',
+          phone: adminProf.phone || '1159969956 / 1132296691'
+        });
+      }
 
       // Empresas
       let empresasQuery = supabase
@@ -1428,22 +1445,11 @@ export default function VisitasPage({ params }) {
         doc.setTextColor(0, 0, 0);
         
         const companyName = tenant?.name || "Gestión SySO";
-        const prefix = companyName;
-        const phoneVal = profile?.phone || "1159969956 / 1132296691";
-        const emailVal = profile?.email || "info@gestionsyso.com";
-        const restText = ` - Tel.: ${phoneVal} - Email: ${emailVal}`;
-        
-        doc.setFont('helvetica', 'bold');
-        const prefixWidth = doc.getTextWidth(prefix);
-        doc.setFont('helvetica', 'normal');
-        const restWidth = doc.getTextWidth(restText);
-        const totalFooterWidth = prefixWidth + restWidth;
+        const footerText = `${companyName} - Tel: ${adminContact.phone} - Email: ${adminContact.email}`;
+        const totalFooterWidth = doc.getTextWidth(footerText);
         const footerX = (595.28 - totalFooterWidth) / 2;
         
-        doc.setFont('helvetica', 'bold');
-        doc.text(prefix, footerX, 751);
-        doc.setFont('helvetica', 'normal');
-        doc.text(restText, footerX + prefixWidth, 751);
+        doc.text(footerText, footerX, 751);
         
         // Footer: Número de página
         doc.setFont('helvetica', 'normal');
