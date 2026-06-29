@@ -1,5 +1,40 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-06-29] Reorganización del Dashboard e Integración del Módulo de Tareas Pendientes
+
+### Resumen de Cambios
+- **Redistribución de Grilla del Dashboard**: Ubicación en cuadrícula 2x2 de las métricas principales (Clientes y Acciones Correctivas en la fila 1; % Cumplimiento y Pendientes en la fila 2), liberando el espacio lateral derecho para el gestor de tareas.
+- **Acciones Correctivas Cerradas**: Incorporación del porcentaje de avance de las acciones correctivas cerradas (`fecha_implementacion` con valor) dentro de la tarjeta de "Acciones Correctivas".
+- **Resaltado y Color del Indicador de Cierre**: Se aumentó a `text-xs` y se le asignó el color verde corporativo (`text-emerald-500 font-extrabold ml-1`) al texto del porcentaje cerrado en el contador de Acciones Correctivas para mejorar su visibilidad y legibilidad.
+- **Reubicación de Siniestralidad**: Se reubicó el contenedor de estadísticas e índices de siniestralidad de accidentes al final de la página del dashboard (debajo de las métricas y de las tareas pendientes).
+- **Gestor de Tareas Pendientes**: Creación del contenedor de control de tareas estilo Google Tasks con creación rápida, asignación de fecha, cliente/establecimiento asociado y control de completado interactivo.
+- **Base de Datos (Supabase)**: Migración SQL (`20260717000000_create_tareas_pendientes.sql`) para crear la tabla `public.tareas_pendientes` habilitando RLS con aislamiento multi-tenant y restricciones de rol.
+- **Sincronización en el Calendario**: Modificación de las rutinas de celda diaria y "Tareas del día" del dashboard para fusionar y evaluar la realización de las actividades del `programa_anual` y las tareas locales de `tareas_pendientes`.
+- **Exportación e Impresión de Reporte PDF**: Implementación de botones "Descargar PDF" e "Imprimir" en el panel de siniestralidad. Ambos generan un reporte horizontal (A4 apaisado, de 4 páginas) utilizando `jsPDF`. Si se selecciona imprimir, se utiliza la función `doc.autoPrint()` para inyectar scripts de impresión automáticos en el PDF, abriendo el reporte en una pestaña intermedia para gatillar el modal de impresión nativo del navegador inmediatamente. Dibuja los 4 gráficos de índices mediante primitivas vectoriales (con colores de marca alineados visualmente con la cuadrícula de datos) y adjunta tablas tabulares completas e información del tenant y contacto en el encabezado y pie de página.
+- **Habilitación para Clientes**: Se habilitó el panel de estadísticas e índices de siniestralidad de accidentes en la vista del dashboard de los clientes, ocultando el filtro de Razón Social (para que solo vean sus propios datos) y pre-habilitando la exportación/impresión.
+
+### Decisiones Clave
+- **Coordenadas de Grilla Explícitas**: Para evitar saltos y mantener el tamaño original de las tarjetas métricas sin colisiones visuales en resoluciones responsivas, se definieron posiciones de inicio de fila y columna (`col-start`/`row-start`) en Tailwind.
+- **RLS y Aislamiento por Rol**: Las políticas SQL aseguran que los clientes finales solo tengan permisos de consulta restrictivos sobre las tareas de su empresa asignada, mientras que el control CRUD completo de tareas se reserva para profesionales (admin/miembro).
+- **Alineación Visual en PDF**: Se estructuraron los anchos de columnas de la tabla de datos y las posiciones X de las barras del gráfico de manera coincidente para dar una apariencia integrada y limpia.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `supabase`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260717000000_create_tareas_pendientes.sql`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Ejecución de la migración local con PostgREST schema reload exitosa.
+- Compilación de producción con Next.js exitosa (`cmd /c npm run build`) sin errores, generando el bundle final de dashboard optimizado de 14.8 kB.
+
+---
+
 ## [2026-06-27] Rediseño e Incorporación de la Sección de Matriz de Identificación de Peligros y Valoración de Riesgos (BS 8800)
 
 ### Resumen de Cambios

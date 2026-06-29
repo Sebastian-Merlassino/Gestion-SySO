@@ -33,9 +33,12 @@ import {
   ClipboardCheck,
   AlertTriangle,
   Folder,
-  Activity
+  Activity,
+  Trash2,
+  Printer
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { jsPDF } from 'jspdf';
 
 export default function TenantDashboard({ params }) {
   const tenantSlug = params['tenant-slug'];
@@ -78,6 +81,13 @@ export default function TenantDashboard({ params }) {
   const [accionesCorrectivas, setAccionesCorrectivas] = useState([]);
   const [accidentes, setAccidentes] = useState([]);
   const [nomina, setNomina] = useState([]);
+  
+  // Tareas Pendientes
+  const [tareas, setTareas] = useState([]);
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newTaskFecha, setNewTaskFecha] = useState('');
+  const [newTaskEmpresaId, setNewTaskEmpresaId] = useState('');
+  const [newTaskEstablecimientoId, setNewTaskEstablecimientoId] = useState('');
 
   // Estados de filtros para accidentes en el portal de clientes / admin
   const [accidentFilterEmpresa, setAccidentFilterEmpresa] = useState('');
@@ -228,6 +238,22 @@ export default function TenantDashboard({ params }) {
         const realCorrectivasCount = !cErr && correctivasData ? correctivasData.length : 0;
         setAccionesCorrectivas(correctivasData || []);
 
+        const closedCorrectivas = (correctivasData || []).filter(a => !!a.fecha_implementacion).length;
+        const correctivasClosedPercentage = realCorrectivasCount > 0
+          ? Math.round((closedCorrectivas / realCorrectivasCount) * 100)
+          : 0;
+
+        // Cargar Tareas Pendientes
+        let tareasQuery = supabase
+          .from('tareas_pendientes')
+          .select('*')
+          .eq('tenant_id', ten.id)
+          .order('created_at', { ascending: true });
+        const { data: tData, error: tareasErr } = await tareasQuery;
+        if (!tareasErr) {
+          setTareas(tData || []);
+        }
+
         // Cargar Accidentes del Tenant/Empresa
         let accidentesQuery = supabase
           .from('accidentes')
@@ -269,6 +295,7 @@ export default function TenantDashboard({ params }) {
         setStats({
           clientsCount: clientCountReal,
           inspectionsCount: realCorrectivasCount,
+          inspectionsClosedPercentage: correctivasClosedPercentage,
           complianceRate: complianceRateReal,
           pendingVisits: pendingCount
         });
@@ -287,9 +314,30 @@ export default function TenantDashboard({ params }) {
       setStats({
         clientsCount: 2,
         inspectionsCount: 12,
+        inspectionsClosedPercentage: 50,
         complianceRate: 92,
         pendingVisits: 2
       });
+
+      const mockTareas = [
+        {
+          id: 'mock-task-1',
+          titulo: 'Revisar matafuegos pasillo principal',
+          fecha: new Date().toISOString().split('T')[0],
+          realizada: false,
+          empresa_id: 'mock-emp-1',
+          establecimiento_id: 'mock-est-1'
+        },
+        {
+          id: 'mock-task-2',
+          titulo: 'Entregar planillas de capacitación firmadas',
+          fecha: new Date(new Date().setDate(new Date().getDate() + 2)).toISOString().split('T')[0],
+          realizada: true,
+          empresa_id: 'mock-emp-1',
+          establecimiento_id: 'mock-est-1'
+        }
+      ];
+      setTareas(mockTareas);
 
       const mockCorrectivas = [
         {
@@ -435,6 +483,566 @@ export default function TenantDashboard({ params }) {
       fetchDashboardData();
     }
   }, []);
+
+  const handleAddTask = async (e) => {
+    e.preventDefault();
+    if (!newTaskTitle.trim()) return;
+
+    const newTaskObj = {
+      tenant_id: tenant?.id,
+      titulo: newTaskTitle.trim(),
+      fecha: newTaskFecha || null,
+      empresa_id: newTaskEmpresaId || null,
+      establecimiento_id: newTaskEstablecimientoId || null,
+      realizada: false
+    };
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (supabaseUrl && !supabaseUrl.includes('placeholder')) {
+      try {
+        const { data, error } = await supabase
+          .from('tareas_pendientes')
+          .insert([newTaskObj])
+          .select()
+          .single();
+
+        if (!error && data) {
+          setTareas([...tareas, data]);
+          setNewTaskTitle('');
+          setNewTaskFecha('');
+          setNewTaskEmpresaId('');
+          setNewTaskEstablecimientoId('');
+        } else {
+          console.error('Error al insertar tarea:', error);
+        }
+      } catch (err) {
+        console.error('Excepción al insertar tarea:', err);
+      }
+    } else {
+      // Modo Mock
+      const mockCreated = {
+        ...newTaskObj,
+        id: 'mock-task-' + Date.now()
+      };
+      setTareas([...tareas, mockCreated]);
+      setNewTaskTitle('');
+      setNewTaskFecha('');
+      setNewTaskEmpresaId('');
+      setNewTaskEstablecimientoId('');
+    }
+  };
+
+  const handleToggleTask = async (taskId, currentRealizada) => {
+    const updatedRealizada = !currentRealizada;
+    
+    // Actualización optimista
+    setTareas(prev => prev.map(t => t.id === taskId ? { ...t, realizada: updatedRealizada } : t));
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (supabaseUrl && !supabaseUrl.includes('placeholder') && !taskId.startsWith('mock-')) {
+      try {
+        const { error } = await supabase
+          .from('tareas_pendientes')
+          .update({ realizada: updatedRealizada })
+          .eq('id', taskId);
+
+        if (error) {
+          console.error('Error al actualizar tarea:', error);
+          // Revertir
+          setTareas(prev => prev.map(t => t.id === taskId ? { ...t, realizada: currentRealizada } : t));
+        }
+      } catch (err) {
+        console.error('Excepción al actualizar tarea:', err);
+        setTareas(prev => prev.map(t => t.id === taskId ? { ...t, realizada: currentRealizada } : t));
+      }
+    }
+  };
+
+  const handleDeleteTask = async (taskId) => {
+    const previousTareas = [...tareas];
+    setTareas(prev => prev.filter(t => t.id !== taskId));
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (supabaseUrl && !supabaseUrl.includes('placeholder') && !taskId.startsWith('mock-')) {
+      try {
+        const { error } = await supabase
+          .from('tareas_pendientes')
+          .delete()
+          .eq('id', taskId);
+
+        if (error) {
+          console.error('Error al eliminar tarea:', error);
+          setTareas(previousTareas);
+        }
+      } catch (err) {
+        console.error('Excepción al eliminar tarea:', err);
+        setTareas(previousTareas);
+      }
+    }
+  };
+
+  // Helper para convertir imagen URL a base64
+  const getBase64ImageFromUrl = async (imageUrl) => {
+    try {
+      const res = await fetch(imageUrl);
+      const blob = await res.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.addEventListener("load", () => {
+          resolve(reader.result);
+        }, false);
+        reader.addEventListener("error", () => {
+          reject(new Error("Error reading image"));
+        }, false);
+        reader.readAsDataURL(blob);
+      });
+    } catch (e) {
+      console.error('Error fetching image for base64:', e);
+      return '';
+    }
+  };
+
+  // Helper para redimensionar y comprimir una imagen en base64
+  const resizeImage = (base64Str, maxWidth = 300, maxHeight = 300) => {
+    return new Promise((resolve) => {
+      if (!base64Str) {
+        resolve('');
+        return;
+      }
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = base64Str;
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        const isPng = base64Str.startsWith('data:image/png') || base64Str.includes('signature');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        if (isPng) {
+          resolve(canvas.toDataURL('image/png'));
+        } else {
+          resolve(canvas.toDataURL('image/jpeg', 0.85));
+        }
+      };
+      img.onerror = () => {
+        resolve(base64Str);
+      };
+    });
+  };
+
+  const getChartDataForIndex = (indexType) => {
+    const Y = parseInt(accidentFilterAnio, 10) || new Date().getFullYear();
+
+    // 1. Año Anterior
+    const prevYearStr = String(Y - 1);
+    const prevPeople = getPersonasCubiertas(prevYearStr, accidentFilterEmpresa, accidentFilterEstablecimiento);
+    const prevStartDate = new Date(Y - 1, 0, 1);
+    const prevEndDate = new Date(Y - 1, 11, 31, 23, 59, 59);
+    const prevAccs = getAccidentesFiltrados(prevStartDate, prevEndDate, accidentFilterEmpresa, accidentFilterEstablecimiento);
+    const prevValue = calculateIndexValue(indexType, prevAccs, prevPeople);
+
+    // 2. YTD
+    const currentPeople = getPersonasCubiertas(String(Y), accidentFilterEmpresa, accidentFilterEstablecimiento);
+    const ytdStartDate = new Date(Y, 0, 1);
+    const ytdEndDate = new Date(Y, 11, 31, 23, 59, 59);
+    const ytdAccs = getAccidentesFiltrados(ytdStartDate, ytdEndDate, accidentFilterEmpresa, accidentFilterEstablecimiento);
+    const ytdValue = calculateIndexValue(indexType, ytdAccs, currentPeople);
+
+    // 3. Meses
+    const monthData = [];
+    const MONTH_NAMES_SHORT = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+    for (let m = 0; m < 12; m++) {
+      const monthStartDate = new Date(Y, m, 1);
+      const monthEndDate = new Date(Y, m + 1, 0, 23, 59, 59);
+      const monthAccs = getAccidentesFiltrados(monthStartDate, monthEndDate, accidentFilterEmpresa, accidentFilterEstablecimiento);
+      const monthValue = calculateIndexValue(indexType, monthAccs, currentPeople);
+      monthData.push({
+        label: MONTH_NAMES_SHORT[m],
+        ...monthValue
+      });
+    }
+
+    return {
+      prevYear: {
+        label: `Año ${Y - 1}`,
+        ...prevValue
+      },
+      ytd: {
+        label: `YTD ${Y}`,
+        ...ytdValue
+      },
+      months: monthData
+    };
+  };
+
+  const handleDownloadPdfReport = async (shouldPrint = false) => {
+    try {
+      const emp = empresas.find(e => e.id === accidentFilterEmpresa);
+      const est = establecimientos.find(e => e.id === accidentFilterEstablecimiento);
+      
+      const empName = emp ? emp.razon_social : 'Todos los clientes';
+      const estName = est ? est.denominacion : 'Todos los establecimientos';
+      const selectedYear = accidentFilterAnio || String(new Date().getFullYear());
+
+      // Inicializar jsPDF en A4 Landscape
+      const doc = new jsPDF({
+        orientation: 'landscape',
+        unit: 'pt',
+        format: 'a4',
+        compress: true
+      });
+
+      // Cargar Logo
+      let logoBase64 = '';
+      try {
+        if (tenant && tenant.logo_1_url) {
+          logoBase64 = await getBase64ImageFromUrl(tenant.logo_1_url);
+        }
+      } catch (e) {
+        console.error('No se pudo cargar el logo del tenant para PDF:', e);
+      }
+      if (!logoBase64) {
+        try {
+          logoBase64 = await getBase64ImageFromUrl('/brand/logo-primary.png');
+        } catch (e) {
+          console.error('No se pudo cargar el logo por defecto para PDF:', e);
+        }
+      }
+      if (logoBase64) {
+        logoBase64 = await resizeImage(logoBase64, 200, 200);
+      }
+
+      const drawHeaderAndFooter = (d, pageNum, logo) => {
+        // Logo
+        if (logo) {
+          try {
+            d.addImage(logo, 'PNG', 50, 15, 100, 50);
+          } catch (e) {
+            console.error('Error dibujando logo:', e);
+          }
+        }
+
+        // Título del reporte
+        d.setFont('helvetica', 'bold');
+        d.setFontSize(13);
+        d.setTextColor(13, 13, 13);
+        d.text('Reporte de Siniestralidad e Índices de Accidentes', 791, 35, { align: 'right' });
+
+        // Línea divisora cabecera
+        d.setDrawColor(217, 217, 217);
+        d.setLineWidth(1);
+        d.line(50, 70, 791, 70);
+
+        // Línea divisora pie
+        d.line(50, 545, 791, 545);
+
+        // Pie de página
+        d.setFont('helvetica', 'normal');
+        d.setFontSize(8);
+        d.setTextColor(100, 100, 100);
+        const tenantName = tenant?.name || 'Gestión SySO';
+        const contactVal = profile?.phone || '1159969956 / 1132296691';
+        const emailVal = profile?.email || 'info@gestionsyso.com';
+        d.text(`${tenantName} - Tel: ${contactVal} - Email: ${emailVal}`, 420.94, 560, { align: 'center' });
+
+        // Número de página
+        d.text(`Página ${pageNum} de 4`, 791, 560, { align: 'right' });
+      };
+
+      const drawFilterDetails = (d, eName, esName, yr) => {
+        d.setFont('helvetica', 'bold');
+        d.setFontSize(9);
+        d.setTextColor(60, 120, 216);
+        let text = `Empresa / Razón Social: ${eName}`;
+        if (esName && esName !== 'Todos los establecimientos') {
+          text += `  |  Establecimiento: ${esName}`;
+        }
+        text += `  |  Período Anual: ${yr}`;
+        d.text(text, 50, 85);
+      };
+
+      const drawVectorChart = (d, sY, chartData, chartTitle, unitLabel) => {
+        d.setFont('helvetica', 'bold');
+        d.setFontSize(11);
+        d.setTextColor(13, 13, 13);
+        d.text(chartTitle, 50, sY);
+
+        const chartX = 167;
+        const chartWidth = 624;
+        const chartHeight = 140;
+        const baselineY = sY + chartHeight + 25;
+
+        // Eje X
+        d.setDrawColor(180, 180, 180);
+        d.setLineWidth(1);
+        d.line(chartX, baselineY, 791, baselineY);
+
+        // Eje Y
+        d.line(chartX, sY + 15, chartX, baselineY);
+
+        // Unidad
+        d.setFont('helvetica', 'italic');
+        d.setFontSize(7);
+        d.setTextColor(120, 120, 120);
+        d.text(`Unidad: ${unitLabel}`, chartX, sY + 10);
+
+        const allValues = [chartData.prevYear.value, chartData.ytd.value, ...chartData.months.map(m => m.value)];
+        const maxVal = Math.max(1, ...allValues);
+
+        // Líneas de cuadrícula
+        d.setLineWidth(0.5);
+        d.setDrawColor(230, 230, 230);
+        for (let i = 0; i <= 4; i++) {
+          const gridVal = (maxVal * i) / 4;
+          const gridY = baselineY - (chartHeight * i) / 4;
+          if (i > 0) {
+            d.line(chartX, gridY, 791, gridY);
+          }
+          d.setFont('helvetica', 'normal');
+          d.setFontSize(7);
+          d.setTextColor(120, 120, 120);
+          d.text(gridVal.toFixed(1), chartX - 5, gridY + 2, { align: 'right' });
+        }
+
+        const bars = [
+          { label: chartData.prevYear.label, value: chartData.prevYear.value, color: [200, 200, 200], x: 191, width: 28 },
+          { label: chartData.ytd.label, value: chartData.ytd.value, color: [5, 17, 242], x: 239, width: 28 }
+        ];
+
+        chartData.months.forEach((m, idx) => {
+          bars.push({
+            label: m.label,
+            value: m.value,
+            color: [70, 141, 255],
+            x: 285 + idx * 44,
+            width: 26
+          });
+        });
+
+        // Dibujar barras
+        bars.forEach(bar => {
+          const barHeight = (bar.value / maxVal) * chartHeight;
+          const topY = baselineY - barHeight;
+
+          d.setFillColor(bar.color[0], bar.color[1], bar.color[2]);
+          d.rect(bar.x - bar.width / 2, topY, bar.width, Math.max(1, barHeight), 'F');
+
+          d.setFont('helvetica', 'bold');
+          d.setFontSize(7);
+          d.setTextColor(50, 50, 50);
+          d.text(bar.value.toString(), bar.x, topY - 4, { align: 'center' });
+
+          d.setFont('helvetica', 'normal');
+          d.setFontSize(7.5);
+          d.setTextColor(80, 80, 80);
+          d.text(bar.label, bar.x, baselineY + 12, { align: 'center' });
+        });
+
+        // Separadores
+        d.setDrawColor(200, 200, 200);
+        d.setLineWidth(1);
+        d.line(215, sY + 15, 215, baselineY);
+        d.line(263, sY + 15, 263, baselineY);
+      };
+
+      const drawDataTable = (d, sY, chartData, indexType) => {
+        const colWidths = [117, 48, 48, ...Array(12).fill(44)];
+        const rowHeight = 20;
+        const xStart = 50;
+
+        let rowTitles = [];
+        if (indexType === 'incidencia') {
+          rowTitles = [
+            'Casos AT y EP (Numerador)',
+            'Personal Cubierto (Denominador)',
+            'Valor del Índice'
+          ];
+        } else if (indexType === 'mortalidad') {
+          rowTitles = [
+            'Casos Mortales (Numerador)',
+            'Personal Cubierto (Denominador)',
+            'Valor del Índice'
+          ];
+        } else if (indexType === 'perdida') {
+          rowTitles = [
+            'Días de Baja (Numerador)',
+            'Personal Cubierto (Denominador)',
+            'Valor del Índice'
+          ];
+        } else if (indexType === 'dmb') {
+          rowTitles = [
+            'Días de Baja (Numerador)',
+            'Casos con Baja (Denominador)',
+            'Valor del Índice'
+          ];
+        }
+
+        const rowsCount = rowTitles.length + 1;
+
+        d.setFillColor(60, 120, 216);
+        d.rect(xStart, sY, 741, rowHeight, 'F');
+
+        d.setDrawColor(217, 217, 217);
+        d.setLineWidth(1);
+        for (let r = 0; r <= rowsCount; r++) {
+          d.line(xStart, sY + r * rowHeight, xStart + 741, sY + r * rowHeight);
+        }
+
+        let currentX = xStart;
+        colWidths.forEach(w => {
+          d.line(currentX, sY, currentX, sY + rowsCount * rowHeight);
+          currentX += w;
+        });
+        d.line(xStart + 741, sY, xStart + 741, sY + rowsCount * rowHeight);
+
+        d.setFont('helvetica', 'bold');
+        d.setFontSize(8);
+        d.setTextColor(255, 255, 255);
+        
+        currentX = xStart;
+        d.text('Concepto / Período', currentX + 6, sY + 13);
+        currentX += colWidths[0];
+        
+        d.text(chartData.prevYear.label, currentX + colWidths[1] / 2, sY + 13, { align: 'center' });
+        currentX += colWidths[1];
+
+        d.text(chartData.ytd.label, currentX + colWidths[2] / 2, sY + 13, { align: 'center' });
+        currentX += colWidths[2];
+
+        chartData.months.forEach((m, idx) => {
+          d.text(m.label, currentX + colWidths[3 + idx] / 2, sY + 13, { align: 'center' });
+          currentX += colWidths[3 + idx];
+        });
+
+        d.setTextColor(13, 13, 13);
+
+        let numVal = [];
+        if (indexType === 'incidencia') {
+          numVal = [chartData.prevYear.casosCount, chartData.ytd.casosCount, ...chartData.months.map(m => m.casosCount)];
+        } else if (indexType === 'mortalidad') {
+          numVal = [chartData.prevYear.mortalesCount, chartData.ytd.mortalesCount, ...chartData.months.map(m => m.mortalesCount)];
+        } else if (indexType === 'perdida') {
+          numVal = [chartData.prevYear.totalDiasBaja, chartData.ytd.totalDiasBaja, ...chartData.months.map(m => m.totalDiasBaja)];
+        } else if (indexType === 'dmb') {
+          numVal = [chartData.prevYear.totalDiasBaja, chartData.ytd.totalDiasBaja, ...chartData.months.map(m => m.totalDiasBaja)];
+        }
+
+        let denVal = [];
+        if (indexType === 'incidencia' || indexType === 'mortalidad' || indexType === 'perdida') {
+          denVal = [chartData.prevYear.personasCubiertas, chartData.ytd.personasCubiertas, ...chartData.months.map(m => m.personasCubiertas)];
+        } else if (indexType === 'dmb') {
+          denVal = [chartData.prevYear.casosConBaja, chartData.ytd.casosConBaja, ...chartData.months.map(m => m.casosConBaja)];
+        }
+
+        const indexVal = [chartData.prevYear.value, chartData.ytd.value, ...chartData.months.map(m => m.value)];
+
+        // Fila 1
+        d.setFont('helvetica', 'normal');
+        d.text(rowTitles[0], xStart + 6, sY + rowHeight + 13);
+        currentX = xStart + colWidths[0];
+        numVal.forEach((v, idx) => {
+          const w = colWidths[1 + idx];
+          d.text(v.toString(), currentX + w / 2, sY + rowHeight + 13, { align: 'center' });
+          currentX += w;
+        });
+
+        // Fila 2
+        d.text(rowTitles[1], xStart + 6, sY + rowHeight * 2 + 13);
+        currentX = xStart + colWidths[0];
+        denVal.forEach((v, idx) => {
+          const w = colWidths[1 + idx];
+          d.text(v.toString(), currentX + w / 2, sY + rowHeight * 2 + 13, { align: 'center' });
+          currentX += w;
+        });
+
+        // Fila 3
+        d.setFont('helvetica', 'bold');
+        d.text(rowTitles[2], xStart + 6, sY + rowHeight * 3 + 13);
+        currentX = xStart + colWidths[0];
+        indexVal.forEach((v, idx) => {
+          const w = colWidths[1 + idx];
+          d.text(v.toString(), currentX + w / 2, sY + rowHeight * 3 + 13, { align: 'center' });
+          currentX += w;
+        });
+      };
+
+      const indices = [
+        {
+          key: 'incidencia',
+          title: 'ÍNDICE DE INCIDENCIA DE ACCIDENTES DE TRABAJO Y ENFERMEDADES PROFESIONALES',
+          formula: 'Fórmula: (Casos de Accidentes de Trabajo + Casos de Enfermedades Profesionales) / Personal Cubierto * 1.000',
+          chartTitle: 'Evolución Mensual del Índice de Incidencia (AT y EP)',
+          unit: 'casos por cada 1.000 personas'
+        },
+        {
+          key: 'mortalidad',
+          title: 'ÍNDICE DE INCIDENCIA DE CASOS MORTALES',
+          formula: 'Fórmula: Casos Mortales de Trabajo y Enfermedad Profesional / Personal Cubierto * 1.000.000',
+          chartTitle: 'Evolución Mensual del Índice de Incidencia de Casos Mortales',
+          unit: 'muertes por cada 1.000.000 de personas'
+        },
+        {
+          key: 'perdida',
+          title: 'ÍNDICE DE JORNADAS PERDIDAS (PÉRDIDA)',
+          formula: 'Fórmula: Total de Días de Baja por Accidente y Enfermedad / Personal Cubierto * 1.000',
+          chartTitle: 'Evolución Mensual del Índice de Pérdida (Jornadas Perdidas)',
+          unit: 'días perdidos por cada 1.000 personas'
+        },
+        {
+          key: 'dmb',
+          title: 'DURACIÓN MEDIA DE LAS BAJAS (DMB)',
+          formula: 'Fórmula: Total de Días de Baja por Accidente y Enfermedad / Casos con Baja',
+          chartTitle: 'Evolución Mensual de la Duración Media de las Bajas',
+          unit: 'días de baja promedio por caso'
+        }
+      ];
+
+      indices.forEach((ind, idx) => {
+        if (idx > 0) {
+          doc.addPage();
+        }
+        drawHeaderAndFooter(doc, idx + 1, logoBase64);
+        drawFilterDetails(doc, empName, estName, selectedYear);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10.5);
+        doc.setTextColor(13, 13, 13);
+        doc.text(`${idx + 1}. ${ind.title}`, 50, 110);
+
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(8.5);
+        doc.setTextColor(100, 100, 100);
+        doc.text(ind.formula, 50, 125);
+
+        const data = getChartDataForIndex(ind.key);
+        drawVectorChart(doc, 145, data, ind.chartTitle, ind.unit);
+        drawDataTable(doc, 360, data, ind.key);
+      });
+
+      if (shouldPrint) {
+        doc.autoPrint();
+        const blobUrl = doc.output('bloburl');
+        window.open(blobUrl, '_blank');
+      } else {
+        const formattedEmpName = empName.replace(/\s+/g, '_');
+        doc.save(`Reporte_Siniestralidad_${formattedEmpName}_${selectedYear}.pdf`);
+      }
+    } catch (e) {
+      console.error('Error al generar reporte PDF:', e);
+    }
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -754,19 +1362,41 @@ export default function TenantDashboard({ params }) {
       <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-6">
         {/* Cabecera del contenedor con el título y modal clickeable de ayuda */}
         <div className="flex flex-col gap-4 border-b border-slate-150 pb-4">
-          <div className="flex items-center gap-2">
-            <Activity className="h-5 w-5 text-[#468DFF]" />
-            <h3 className="font-outfit text-base font-extrabold text-slate-900 flex items-center gap-1.5">
-              Estadísticas e Índices de Siniestralidad
-              <span
-                role="button"
-                onClick={() => setShowIndicesGuide(true)}
-                className="text-slate-400 hover:text-[#468DFF] transition-colors cursor-pointer inline-flex items-center"
-                title="Ver guía de cálculo de índices"
+          <div className="flex items-center justify-between gap-4 w-full">
+            <div className="flex items-center gap-2">
+              <Activity className="h-5 w-5 text-[#468DFF]" />
+              <h3 className="font-outfit text-base font-extrabold text-slate-900 flex items-center gap-1.5">
+                Estadísticas e Índices de Siniestralidad
+                <span
+                  role="button"
+                  onClick={() => setShowIndicesGuide(true)}
+                  className="text-slate-400 hover:text-[#468DFF] transition-colors cursor-pointer inline-flex items-center"
+                  title="Ver guía de cálculo de índices"
+                >
+                  <HelpCircle className="h-4 w-4" />
+                </span>
+              </h3>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => handleDownloadPdfReport(false)}
+                disabled={profile && profile.role !== 'cliente' && !accidentFilterEmpresa}
+                className="py-1.5 px-3 rounded-xl border border-[#468DFF] text-xs font-bold bg-white text-[#468DFF] hover:bg-[#468DFF] hover:text-white transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Descargar reporte completo en formato PDF"
               >
-                <HelpCircle className="h-4 w-4" />
-              </span>
-            </h3>
+                <FileText className="h-4 w-4" />
+                Descargar PDF
+              </button>
+              <button
+                onClick={() => handleDownloadPdfReport(true)}
+                disabled={profile && profile.role !== 'cliente' && !accidentFilterEmpresa}
+                className="py-1.5 px-3 rounded-xl border border-[#468DFF] text-xs font-bold bg-white text-[#468DFF] hover:bg-[#468DFF] hover:text-white transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Imprimir reporte completo"
+              >
+                <Printer className="h-4 w-4" />
+                Imprimir
+              </button>
+            </div>
           </div>
 
           {/* Contenedor de Filtros (Establecimiento y Año, y opcional Razón Social para Admin/Miembro) */}
@@ -1310,16 +1940,20 @@ export default function TenantDashboard({ params }) {
 
                           const isSelected = d.dateStr === selectedDateStr;
                           const dayActs = actividades.filter(a => a.fecha_planificada === d.dateStr);
-                          const hasActs = dayActs.length > 0;
+                          const dayTareas = tareas.filter(t => t.fecha === d.dateStr);
+                          const hasActs = dayActs.length > 0 || dayTareas.length > 0;
 
                           let dotColor = '';
                           if (hasActs) {
-                            const allDone = dayActs.every(a => a.fecha_realizacion);
-                            const anyOverdue = dayActs.some(a => {
-                              if (a.fecha_realizacion) return false;
-                              const todayStr = new Date().toISOString().split('T')[0];
-                              return todayStr > a.fecha_planificada;
-                            });
+                            const allActsDone = dayActs.every(a => !!a.fecha_realizacion);
+                            const allTareasDone = dayTareas.every(t => t.realizada);
+                            const allDone = allActsDone && allTareasDone;
+
+                            const todayStr = new Date().toISOString().split('T')[0];
+                            const anyActOverdue = dayActs.some(a => !a.fecha_realizacion && todayStr > a.fecha_planificada);
+                            const anyTareaOverdue = dayTareas.some(t => !t.realizada && todayStr > t.fecha);
+                            const anyOverdue = anyActOverdue || anyTareaOverdue;
+
                             dotColor = allDone ? 'bg-[#00b050]' : (anyOverdue ? 'bg-red-500' : 'bg-amber-500');
                           }
 
@@ -1346,40 +1980,64 @@ export default function TenantDashboard({ params }) {
                         Tareas del día ({selectedDateStr}):
                       </span>
                       <div className="space-y-2 max-h-[120px] overflow-y-auto pr-1">
-                        {actividades.filter(a => a.fecha_planificada === selectedDateStr).length === 0 ? (
-                          <p className="text-[11px] text-slate-400 italic">No hay actividades para este día.</p>
+                        {actividades.filter(a => a.fecha_planificada === selectedDateStr).length === 0 &&
+                         tareas.filter(t => t.fecha === selectedDateStr).length === 0 ? (
+                          <p className="text-[11px] text-slate-400 italic">No hay actividades ni tareas para este día.</p>
                         ) : (
-                          actividades.filter(a => a.fecha_planificada === selectedDateStr).map(act => {
-                            const emp = empresas.find(e => e.id === act.empresa_id);
-                            const done = !!act.fecha_realizacion;
-                            return (
-                              <div key={act.id} className="p-2 rounded-lg bg-slate-50 border border-slate-100 flex items-start justify-between gap-2 text-[11px]">
-                                <div className="min-w-0 flex-1">
-                                  <span className="font-bold text-slate-800 block truncate" title={act.descripcion}>{act.descripcion}</span>
-                                  <span className="text-[9px] text-slate-400 block truncate">{emp?.razon_social || 'Cliente'}</span>
+                          <>
+                            {/* Actividades */}
+                            {actividades.filter(a => a.fecha_planificada === selectedDateStr).map(act => {
+                              const emp = empresas.find(e => e.id === act.empresa_id);
+                              const done = !!act.fecha_realizacion;
+                              return (
+                                <div key={act.id} className="p-2 rounded-lg bg-slate-50 border border-slate-100 flex items-start justify-between gap-2 text-[11px]">
+                                  <div className="min-w-0 flex-1">
+                                    <span className="font-bold text-slate-800 block truncate" title={act.descripcion}>{act.descripcion}</span>
+                                    <span className="text-[9px] text-slate-400 block truncate">{emp?.razon_social || 'Cliente'}</span>
+                                  </div>
+                                  <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold text-white shrink-0 ${done ? 'bg-[#00b050]' : 'bg-amber-500'}`}>
+                                    {done ? 'Hecho' : 'Pendiente'}
+                                  </span>
                                 </div>
-                                <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold text-white shrink-0 ${done ? 'bg-[#00b050]' : 'bg-amber-500'}`}>
-                                  {done ? 'Hecho' : 'Pendiente'}
-                                </span>
-                              </div>
-                            );
-                          })
+                              );
+                            })}
+                            {/* Tareas */}
+                            {tareas.filter(t => t.fecha === selectedDateStr).map(task => {
+                              const emp = empresas.find(e => e.id === task.empresa_id);
+                              const est = establecimientos.find(e => e.id === task.establecimiento_id);
+                              return (
+                                <div key={task.id} className="p-2 rounded-lg bg-blue-50/30 border border-[#468DFF]/15 flex items-start justify-between gap-2 text-[11px]">
+                                  <div className="min-w-0 flex-1">
+                                    <span className={`font-bold text-slate-800 block truncate ${task.realizada ? 'line-through text-slate-400 font-normal' : ''}`} title={task.titulo}>
+                                      {task.titulo}
+                                    </span>
+                                    {(emp || est) && (
+                                      <span className="text-[9px] text-slate-400 block truncate">
+                                        {emp?.razon_social || ''} {est ? `• ${est.denominacion}` : ''}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold text-white shrink-0 ${task.realizada ? 'bg-[#00b050]' : 'bg-amber-500'}`}>
+                                    {task.realizada ? 'Realizada' : 'Pendiente'}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </>
                         )}
                       </div>
                     </div>
                   </div>
                 </div>
-
-                {/* Estadísticas de Siniestralidad para Admin/Miembro (debajo de ambos) */}
-                {renderSiniestralidadPanel()}
               </div>
             )}
 
-            {/* Cards de Métricas */}
+            {/* Cards de Métricas y Tareas Pendientes */}
             {profile && profile.role !== 'cliente' && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
 
-                <div className="bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
+                {/* 1. Clientes (col 1, row 1) */}
+                <div className="md:col-start-1 md:row-start-1 bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
                   <div className="text-slate-400 group-hover:text-[#468DFF] transition-colors mb-3">
                     <Users className="h-6 w-6" />
                   </div>
@@ -1390,16 +2048,20 @@ export default function TenantDashboard({ params }) {
                   </span>
                 </div>
 
-                <div className="bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
+                {/* 2. Acciones Correctivas (col 2, row 1) */}
+                <div className="md:col-start-2 md:row-start-1 bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
                   <div className="text-slate-400 group-hover:text-[#468DFF] transition-colors mb-3">
                     <ClipboardList className="h-6 w-6" />
                   </div>
                   <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-bold">Acciones Correctivas</span>
                   <span className="font-outfit text-3xl font-extrabold text-slate-900 block mt-1">{stats.inspectionsCount}</span>
-                  <span className="text-[10px] text-slate-400 block mt-2">Hallazgos registrados</span>
+                  <span className="text-[10px] text-slate-400 block mt-2">
+                    Hallazgos registrados • <span className="text-emerald-500 font-extrabold text-xs ml-1">{stats.inspectionsClosedPercentage}% cerradas</span>
+                  </span>
                 </div>
 
-                <div className="bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
+                {/* 3. % Cumplimiento (col 1, row 2) */}
+                <div className="md:col-start-1 md:row-start-2 bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
                   <div className="text-slate-400 group-hover:text-emerald-500 transition-colors mb-3">
                     <ShieldCheck className="h-6 w-6" />
                   </div>
@@ -1408,7 +2070,8 @@ export default function TenantDashboard({ params }) {
                   <span className="text-[10px] text-slate-400 block mt-2">Nivel de cumplimiento global</span>
                 </div>
 
-                <div className="bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
+                {/* 4. Pendientes (col 2, row 2) */}
+                <div className="md:col-start-2 md:row-start-2 bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
                   <div className="text-slate-400 group-hover:text-amber-500 transition-colors mb-3">
                     <Calendar className="h-6 w-6" />
                   </div>
@@ -1417,8 +2080,125 @@ export default function TenantDashboard({ params }) {
                   <span className="text-[10px] text-slate-400 block mt-2">Visitas de control agendadas</span>
                 </div>
 
+                {/* 5. Tareas Pendientes (col 3-4, row 1-2 span) */}
+                <div className="col-span-2 md:col-start-3 md:col-span-2 md:row-start-1 md:row-span-2 bg-white border border-slate-150 rounded-2xl p-5 shadow-sm flex flex-col justify-between min-h-[360px]">
+                  <div className="flex flex-col flex-1 min-h-0">
+                    <div className="flex items-center gap-2 border-b border-slate-150 pb-2 mb-3">
+                      <ClipboardCheck className="h-5 w-5 text-[#468DFF]" />
+                      <h3 className="font-outfit text-sm font-extrabold text-slate-900">Tareas Pendientes</h3>
+                    </div>
+
+                    {/* Task checklist (Google Tasks style) */}
+                    <div className="flex-1 overflow-y-auto pr-1 space-y-2.5 max-h-[170px] min-h-[120px]">
+                      {tareas.length === 0 ? (
+                        <p className="text-xs text-slate-400 italic text-center py-4">No tienes tareas pendientes.</p>
+                      ) : (
+                        tareas.map(t => {
+                          const emp = empresas.find(e => e.id === t.empresa_id);
+                          const est = establecimientos.find(e => e.id === t.establecimiento_id);
+                          return (
+                            <div key={t.id} className="flex items-start justify-between gap-2 p-2 rounded-xl bg-slate-50 border border-slate-100 hover:border-[#468DFF]/20 transition-all text-xs">
+                              <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                                <input
+                                  type="checkbox"
+                                  checked={t.realizada}
+                                  onChange={() => handleToggleTask(t.id, t.realizada)}
+                                  className="mt-0.5 rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF] h-4 w-4 cursor-pointer"
+                                />
+                                <div className="min-w-0 flex-1">
+                                  <span className={`font-semibold text-slate-700 block break-words ${t.realizada ? 'line-through text-slate-400 font-normal' : ''}`}>
+                                    {t.titulo}
+                                  </span>
+                                  <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5 text-[10px] text-slate-400 font-medium">
+                                    {t.fecha && (
+                                      <span className="bg-slate-200/50 px-1 py-0.2 rounded font-mono">
+                                        {formatDate(t.fecha)}
+                                      </span>
+                                    )}
+                                    {emp && (
+                                      <span className="truncate max-w-[120px]" title={emp.razon_social}>
+                                        {emp.razon_social} {est ? `• ${est.denominacion}` : ''}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => handleDeleteTask(t.id)}
+                                className="p-1 rounded text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors shrink-0 cursor-pointer"
+                                title="Eliminar tarea"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Inline creation form */}
+                  <form onSubmit={handleAddTask} className="border-t border-slate-150 pt-3 mt-3 flex flex-col gap-2 shrink-0">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Nueva tarea..."
+                        value={newTaskTitle}
+                        onChange={e => setNewTaskTitle(e.target.value)}
+                        className="flex-1 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 font-semibold"
+                      />
+                      <input
+                        type="date"
+                        value={newTaskFecha}
+                        onChange={e => setNewTaskFecha(e.target.value)}
+                        className="border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 font-mono font-bold cursor-pointer"
+                        title="Asignar fecha"
+                      />
+                    </div>
+
+                    <div className="flex gap-2">
+                      <select
+                        value={newTaskEmpresaId}
+                        onChange={e => {
+                          setNewTaskEmpresaId(e.target.value);
+                          setNewTaskEstablecimientoId('');
+                        }}
+                        className="flex-1 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-600 bg-slate-50/50 focus:outline-none focus:border-[#468DFF] cursor-pointer"
+                      >
+                        <option value="">Razón Social (opcional)</option>
+                        {empresas.map(emp => (
+                          <option key={emp.id} value={emp.id}>{emp.razon_social}</option>
+                        ))}
+                      </select>
+
+                      <select
+                        value={newTaskEstablecimientoId}
+                        onChange={e => setNewTaskEstablecimientoId(e.target.value)}
+                        disabled={!newTaskEmpresaId}
+                        className="flex-1 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-600 bg-slate-50/50 focus:outline-none focus:border-[#468DFF] cursor-pointer disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+                      >
+                        <option value="">Establecimiento (opcional)</option>
+                        {establecimientos.filter(est => est.empresa_id === newTaskEmpresaId).map(est => (
+                          <option key={est.id} value={est.id}>{est.denominacion}</option>
+                        ))}
+                      </select>
+
+                      <button
+                        type="submit"
+                        disabled={!newTaskTitle.trim()}
+                        className="px-4 py-1.5 bg-[#468DFF] hover:bg-[#0511F2] disabled:bg-slate-200 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] shrink-0 cursor-pointer disabled:cursor-not-allowed"
+                      >
+                        Agregar
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
               </div>
             )}
+
+            {/* Estadísticas de Siniestralidad (debajo de contadores y tareas pendientes) */}
+            {profile && renderSiniestralidadPanel()}
 
             {/* Secciones de Trabajo y Acciones Rápidas */}
             {profile && profile.role === 'cliente' ? (
