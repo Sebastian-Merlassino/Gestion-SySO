@@ -1,5 +1,31 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-06-29] Rediseño y Consistencia del Layout de Matrículas Profesionales
+
+### Resumen de Cambios
+- **Rediseño del Formulario de Matrículas**: Reorganización del grid de campos opcionales de matrículas profesionales en los formularios de onboarding (`onboarding/page.js`), perfil de usuario (`profile/page.js`) y edición de integrantes de equipo (`equipo/page.js`).
+- **Distribución en 3 Filas**:
+  - **Fila 1**: El campo de Colegio / Consejo o Institución Emisora se ubica en su propia fila independiente a ancho completo.
+  - **Fila 2**: Los campos de Número de Matrícula y Fecha de Vencimiento se ubican lado a lado en la misma fila (`grid-cols-1 md:grid-cols-2`).
+  - **Fila 3**: Las imágenes cargadas de la matrícula (Frente y Dorso) se ubican al final, distribuidas en la misma fila en paralelo.
+- **Remoción de Icono en Botón Guardar**: Se eliminó el tilde/icono de verificación (`CheckCircle`) del botón "Guardar" en el onboarding (`onboarding/page.js`) para lograr un diseño simple e impecable que solo muestre texto.
+- **Simplificación de Etiquetas CUIT**: Se removieron las descripciones `(11 números enteros)` y `(11 números)` de la etiqueta del campo CUIT en el onboarding (`onboarding/page.js`) y en el formulario de integrantes (`equipo/page.js`) para una interfaz de usuario más limpia.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados
+- [onboarding/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/onboarding/page.js)
+- [profile/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/profile/page.js)
+- [equipo/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/equipo/page.js)
+
+### Validaciones Ejecutadas
+- Compilación de producción (`cmd /c npm run build`) exitosa y libre de errores.
+
+---
+
 ## [2026-06-29] Mitigación de Advertencias de Autocompletado (Autocomplete) en Formularios de Registro, Restablecimiento y Empresas
 
 ### Resumen de Cambios

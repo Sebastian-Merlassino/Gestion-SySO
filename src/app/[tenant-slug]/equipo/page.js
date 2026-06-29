@@ -1445,7 +1445,7 @@ export default function EquipoPage({ params }) {
                   <div className="grid md:grid-cols-3 gap-6">
                     <div>
                       <label className="text-xs font-bold text-slate-600 block mb-1">
-                        CUIT (11 números) <span className="text-[#468DFF]">*</span>
+                        CUIT <span className="text-[#468DFF]">*</span>
                       </label>
                       <input
                         type="text"
@@ -1783,20 +1783,20 @@ export default function EquipoPage({ params }) {
                           )}
                         </div>
 
-                        <div className="grid md:grid-cols-3 gap-6">
-                          <div>
-                            <label className="text-xs font-bold text-slate-600 block mb-1">
-                              Colegio / Consejo Emisor
-                            </label>
-                            <input
-                              type="text"
-                              placeholder="COPIME, CPSH, etc."
-                              value={mat.institucion}
-                              onChange={(e) => handleMatriculaChange(idx, 'institucion', e.target.value)}
-                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
-                            />
-                          </div>
+                        <div>
+                          <label className="text-xs font-bold text-slate-600 block mb-1">
+                            Colegio / Consejo Emisor
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="COPIME, CPSH, etc."
+                            value={mat.institucion}
+                            onChange={(e) => handleMatriculaChange(idx, 'institucion', e.target.value)}
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
+                          />
+                        </div>
 
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <div>
                             <label className="text-xs font-bold text-slate-600 block mb-1">
                               Número de Matrícula

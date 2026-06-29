@@ -955,7 +955,7 @@ export default function OnboardingPage() {
             <div className="grid md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                  CUIT (11 números enteros) <span className="text-[#468DFF]">*</span>
+                  CUIT <span className="text-[#468DFF]">*</span>
                 </label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
@@ -1115,20 +1115,20 @@ export default function OnboardingPage() {
                       )}
                     </div>
 
-                    <div className="grid md:grid-cols-3 gap-6">
-                      <div className="md:col-span-2">
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                          Colegio o Institución Emisora
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="Ej: COPIME, CIPBA, Colegio de Ingenieros"
-                          value={mat.institucion}
-                          onChange={(e) => handleMatriculaChange(idx, 'institucion', e.target.value)}
-                          className="w-full bg-white border border-slate-300 focus:border-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none"
-                        />
-                      </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                        Colegio o Institución Emisora
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ej: COPIME, CIPBA, Colegio de Ingenieros"
+                        value={mat.institucion}
+                        onChange={(e) => handleMatriculaChange(idx, 'institucion', e.target.value)}
+                        className="w-full bg-white border border-slate-300 focus:border-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none"
+                      />
+                    </div>
 
+                    <div className="grid md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                           Número de Matrícula
@@ -1141,9 +1141,7 @@ export default function OnboardingPage() {
                           className="w-full bg-white border border-slate-300 focus:border-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none"
                         />
                       </div>
-                    </div>
 
-                    <div className="grid md:grid-cols-3 gap-6">
                       <div>
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                           Fecha de Vencimiento
@@ -1160,7 +1158,9 @@ export default function OnboardingPage() {
                           />
                         </div>
                       </div>
+                    </div>
 
+                    <div className="grid md:grid-cols-2 gap-6">
                       <div className="flex flex-col justify-center">
                         <div className="max-w-[280px] w-full mx-auto">
                           <ImageUploadZone
@@ -1427,7 +1427,6 @@ export default function OnboardingPage() {
               ) : (
                 <>
                   Guardar
-                  <CheckCircle className="h-4 w-4 text-blue-100" />
                 </>
               )}
             </button>

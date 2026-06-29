@@ -1299,45 +1299,43 @@ const [partidosList, setPartidosList] = useState([]);
                     </button>
                   )}
                   
-                  <div className="grid md:grid-cols-3 gap-6">
-                    <div className="md:col-span-2">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      Colegio o Institución Emisora
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="COPIME, CPSH..."
+                      value={m.institucion}
+                      onChange={(e) => handleMatriculaChange(index, 'institucion', e.target.value)}
+                      className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                        Colegio o Institución Emisora
+                        Número
                       </label>
                       <input
                         type="text"
-                        placeholder="COPIME, CPSH..."
-                        value={m.institucion}
-                        onChange={(e) => handleMatriculaChange(index, 'institucion', e.target.value)}
+                        placeholder="L000000"
+                        value={m.numero}
+                        onChange={(e) => handleMatriculaChange(index, 'numero', e.target.value)}
+                        autoComplete="off"
                         className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                       />
                     </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                          Número
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="L000000"
-                          value={m.numero}
-                          onChange={(e) => handleMatriculaChange(index, 'numero', e.target.value)}
-                          autoComplete="off"
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                          Vencimiento
-                        </label>
-                        <input
-                          type="date"
-                          value={m.vencimiento}
-                          onChange={(e) => handleMatriculaChange(index, 'vencimiento', e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
-                        />
-                      </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                        Vencimiento
+                      </label>
+                      <input
+                        type="date"
+                        value={m.vencimiento}
+                        onChange={(e) => handleMatriculaChange(index, 'vencimiento', e.target.value)}
+                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
+                      />
                     </div>
                   </div>
 
