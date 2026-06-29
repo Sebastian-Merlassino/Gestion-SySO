@@ -185,6 +185,13 @@ export default function CapacitacionPage({ params }) {
     checkEnvAndLoad();
   }, []);
 
+  // Auto-filtrar por cliente si la sesión iniciada es de rol 'cliente'
+  useEffect(() => {
+    if (profile && profile.role === 'cliente' && profile.empresa_id) {
+      setFilterEmpresa(profile.empresa_id);
+    }
+  }, [profile]);
+
   const triggerToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
     setTimeout(() => {
@@ -1971,22 +1978,24 @@ export default function CapacitacionPage({ params }) {
                     {showFilters && (
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pt-1 animate-fade-in">
                         {/* Selector Cliente */}
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Cliente</label>
-                          <select
-                            value={filterEmpresa}
-                            onChange={(e) => {
-                              setFilterEmpresa(e.target.value);
-                              setFilterEstablecimiento('');
-                            }}
-                            className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs cursor-pointer w-full"
-                          >
-                            <option value="">Todos los clientes</option>
-                            {empresas.map((emp) => (
-                              <option key={emp.id} value={emp.id}>{emp.razon_social}</option>
-                            ))}
-                          </select>
-                        </div>
+                        {profile?.role !== 'cliente' && (
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Cliente</label>
+                            <select
+                              value={filterEmpresa}
+                              onChange={(e) => {
+                                setFilterEmpresa(e.target.value);
+                                setFilterEstablecimiento('');
+                              }}
+                              className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs cursor-pointer w-full"
+                            >
+                              <option value="">Todos los clientes</option>
+                              {empresas.map((emp) => (
+                                <option key={emp.id} value={emp.id}>{emp.razon_social}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
 
                         {/* Selector Establecimiento */}
                         <div className="space-y-1">

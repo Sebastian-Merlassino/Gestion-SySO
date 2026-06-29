@@ -116,6 +116,13 @@ export default function NominaPage({ params }) {
     }
   }, [tenantSlug]);
 
+  // Auto-filtrar por cliente si la sesión iniciada es de rol 'cliente'
+  useEffect(() => {
+    if (profile && profile.role === 'cliente' && profile.empresa_id) {
+      setFilterEmpresa(profile.empresa_id);
+    }
+  }, [profile]);
+
   const loadInitialData = async () => {
     try {
       setLoading(true);
@@ -1445,22 +1452,24 @@ export default function NominaPage({ params }) {
 
                   {showFilters && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-1 animate-fade-in">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Cliente</label>
-                        <select
-                          value={filterEmpresa}
-                          onChange={(e) => {
-                            setFilterEmpresa(e.target.value);
-                            setFilterEstablecimiento('');
-                          }}
-                          className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer"
-                        >
-                          <option value="">Todos los clientes</option>
-                          {empresas.map(e => (
-                            <option key={e.id} value={e.id}>{e.razon_social}</option>
-                          ))}
-                        </select>
-                      </div>
+                       {profile?.role !== 'cliente' && (
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Cliente</label>
+                          <select
+                            value={filterEmpresa}
+                            onChange={(e) => {
+                              setFilterEmpresa(e.target.value);
+                              setFilterEstablecimiento('');
+                            }}
+                            className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer"
+                          >
+                            <option value="">Todos los clientes</option>
+                            {empresas.map(e => (
+                              <option key={e.id} value={e.id}>{e.razon_social}</option>
+                            ))}
+                          </select>
+                        </div>
+                       )}
 
                       <div className="space-y-1">
                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Establecimiento</label>
