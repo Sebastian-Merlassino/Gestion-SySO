@@ -580,7 +580,7 @@ export default function ExtintoresPage({ params }) {
         d.setFont('helvetica', 'bold');
         d.setFontSize(14);
         d.setTextColor(13, 13, 13);
-        d.text('Inventario y Control de Extintores', 801, 35, { align: 'right' });
+        d.text('Seguimiento y control de extintores', 801, 35, { align: 'right' });
 
         if (filterString) {
           d.setFont('helvetica', 'normal');
