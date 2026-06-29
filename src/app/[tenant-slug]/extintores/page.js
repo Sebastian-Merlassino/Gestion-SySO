@@ -594,10 +594,10 @@ export default function ExtintoresPage({ params }) {
         d.line(40, 70, 801, 70);
       };
 
-      const headersRow = ['Puesto / N° Ext.'];
-      if (showEmpresaCol) headersRow.push('Cliente');
+      const headersRow = [];
+      if (showEmpresaCol) headersRow.push('Razón Social');
       if (showEstablecimientoCol) headersRow.push('Establecimiento');
-      headersRow.push('Sector / Referencia', 'Tipo / Capacidad', 'Venc. Recarga', 'Venc. PH', 'Presión', 'Estado', 'Evidencia');
+      headersRow.push('Área / Sector', 'Puesto / Operación / Referencia', 'N° de puesto / N° de extintor', 'Tipo / Capacidad [Kg] / [l]', 'Venc. de recarga', 'Venc. de PH', 'Estado', 'Evidencia');
       const headers = [headersRow];
       
       const body = sortedExtintores.map(ext => {
@@ -605,15 +605,16 @@ export default function ExtintoresPage({ params }) {
         const est = allEstablecimientos.find(e => e.id === ext.establecimiento_id);
         const status = getCalculatedEstado(ext.venc_recarga, ext.venc_ph);
         
-        const rowData = [`Puesto: ${ext.n_puesto || 'N/A'}\nExt: ${ext.n_extintor || 'N/A'}`];
+        const rowData = [];
         if (showEmpresaCol) rowData.push(emp ? emp.razon_social : 'N/A');
         if (showEstablecimientoCol) rowData.push(est ? est.denominacion : 'N/A');
         rowData.push(
-          `Sector: ${ext.area_sector || 'N/A'}\nRef: ${ext.puesto_operacion_ref || 'N/A'}`,
+          ext.area_sector || 'N/A',
+          ext.puesto_operacion_ref || 'N/A',
+          `Puesto: ${ext.n_puesto || 'N/A'}\nExt: ${ext.n_extintor || 'N/A'}`,
           `${ext.tipo || 'N/A'}\nCapacidad: ${ext.capacidad ? `${ext.capacidad} Kg` : 'N/A'}`,
           formatDate(ext.venc_recarga) || 'N/A',
           formatDate(ext.venc_ph) || 'N/A',
-          ext.presion || 'N/A',
           status.text || 'N/A',
           ''
         );
@@ -622,15 +623,15 @@ export default function ExtintoresPage({ params }) {
 
       const colStyles = {};
       let colIdx = 0;
-      const fixedTotal = 495;
+      const fixedTotal = 510;
       let extraColsWidth = 0;
       let empWidth = 0;
       let estWidth = 0;
       
       if (showEmpresaCol && showEstablecimientoCol) {
-        empWidth = 80;
-        estWidth = 80;
-        extraColsWidth = 160;
+        empWidth = 75;
+        estWidth = 75;
+        extraColsWidth = 150;
       } else if (showEmpresaCol) {
         empWidth = 110;
         extraColsWidth = 110;
@@ -641,20 +642,20 @@ export default function ExtintoresPage({ params }) {
       
       const mainWidth = 761.89 - fixedTotal - extraColsWidth;
 
-      colStyles[colIdx++] = { cellWidth: 85 };        // Puesto / N° Ext
       if (showEmpresaCol) {
         colStyles[colIdx++] = { cellWidth: empWidth };
       }
       if (showEstablecimientoCol) {
         colStyles[colIdx++] = { cellWidth: estWidth };
       }
-      colStyles[colIdx++] = { cellWidth: mainWidth }; // Sector / Referencia
-      colStyles[colIdx++] = { cellWidth: 110 };       // Tipo / Capacidad
-      colStyles[colIdx++] = { cellWidth: 65 };        // Recarga
-      colStyles[colIdx++] = { cellWidth: 65 };        // PH
-      colStyles[colIdx++] = { cellWidth: 55 };        // Presión
-      colStyles[colIdx++] = { cellWidth: 65 };        // Estado
-      colStyles[colIdx++] = { cellWidth: 50 };        // Evidencia
+      colStyles[colIdx++] = { cellWidth: mainWidth }; // Área / Sector
+      colStyles[colIdx++] = { cellWidth: 100 };       // Puesto / Operación / Referencia
+      colStyles[colIdx++] = { cellWidth: 85 };        // N° de puesto / N° de extintor
+      colStyles[colIdx++] = { cellWidth: 100 };       // Tipo / Capacidad
+      colStyles[colIdx++] = { cellWidth: 60 };        // Venc. de recarga
+      colStyles[colIdx++] = { cellWidth: 60 };        // Venc. de PH
+      colStyles[colIdx++] = { cellWidth: 60 };        // Estado
+      colStyles[colIdx++] = { cellWidth: 45 };        // Evidencia
 
       autoTable(doc, {
         head: headers,
@@ -1771,9 +1772,13 @@ export default function ExtintoresPage({ params }) {
                             Cliente / Establecimiento
                             {sortField === 'cliente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                           </th>
-                          <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 py-4 px-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('n_extintor')}>
-                            N° Ext / Puesto / Sector
-                            {sortField === 'n_extintor' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                          <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 py-4 px-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('area_sector')}>
+                            Sector
+                            {sortField === 'area_sector' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                          </th>
+                          <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 py-4 px-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('n_puesto')}>
+                            Puesto / N° de extintor
+                            {sortField === 'n_puesto' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                           </th>
                           <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 py-4 px-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('tipo')}>
                             Tipo / Capacidad
@@ -1797,7 +1802,7 @@ export default function ExtintoresPage({ params }) {
                       <tbody className="divide-y divide-slate-100 text-sm">
                         {sortedExtintores.length === 0 ? (
                           <tr>
-                            <td colSpan={(canEditar || canEliminar || profile?.role === 'cliente') ? 7 : 6} className="text-center py-20 text-slate-400 font-bold bg-slate-50/10">
+                            <td colSpan={(canEditar || canEliminar || profile?.role === 'cliente') ? 8 : 7} className="text-center py-20 text-slate-400 font-bold bg-slate-50/10">
                               <Flame className="h-10 w-10 mx-auto mb-2 text-slate-350 shrink-0" />
                               <p className="font-outfit text-sm text-slate-700">No hay extintores registrados</p>
                               <p className="text-[11px] text-slate-400 font-normal mt-1">Registra un nuevo extintor para comenzar.</p>
@@ -1840,9 +1845,11 @@ export default function ExtintoresPage({ params }) {
                                   </span>
                                 </td>
                                 <td className="py-4 px-4">
-                                  <span className="font-semibold text-slate-900 block">N° {ext.n_extintor || 'S/N'}</span>
-                                  <span className="text-[10px] text-slate-500 font-medium block">Puesto: {ext.n_puesto || 'S/D'}</span>
-                                  <span className="text-[10px] text-slate-400 block truncate max-w-[150px] font-medium">{ext.area_sector || 'S/D'}</span>
+                                  <span className="font-semibold text-slate-800 block truncate max-w-[150px]">{ext.area_sector || 'S/D'}</span>
+                                </td>
+                                <td className="py-4 px-4">
+                                  <span className="font-medium text-slate-700 block">Puesto: {ext.n_puesto || 'S/D'}</span>
+                                  <span className="text-[10px] text-slate-400 block font-mono">N° {ext.n_extintor || 'S/N'}</span>
                                 </td>
                                 <td className="py-4 px-4">
                                   <span className="font-medium text-slate-600 block max-w-[150px] truncate" title={ext.tipo}>{ext.tipo || 'S/D'}</span>
