@@ -44,7 +44,8 @@ import {
   ChevronDown,
   ChevronUp,
   Folder,
-  HelpCircle
+  HelpCircle,
+  FileText
 } from 'lucide-react';
 
 const FUENTE_OPTIONS = [

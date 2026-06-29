@@ -34,7 +34,8 @@ import {
   FileSpreadsheet,
   AlertCircle,
   Sliders,
-  Printer
+  Printer,
+  FileText
 } from 'lucide-react';
 
 const FRECUENCIAS = [

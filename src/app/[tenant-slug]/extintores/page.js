@@ -41,7 +41,8 @@ import {
   Flame,
   ClipboardCheck,
   Folder,
-  Printer
+  Printer,
+  FileText
 } from 'lucide-react';
 
 const TIPO_EXTINTORES = [
