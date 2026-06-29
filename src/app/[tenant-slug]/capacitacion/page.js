@@ -600,40 +600,24 @@ export default function CapacitacionPage({ params }) {
         return rowData;
       });
 
-      const colStyles = {};
-      let colIdx = 0;
-      const fixedTotal = 440;
-      let extraColsWidth = 0;
-      let empWidth = 0;
-      let estWidth = 0;
-      
-      if (showEmpresaCol && showEstablecimientoCol) {
-        empWidth = 90;
-        estWidth = 90;
-        extraColsWidth = 180;
-      } else if (showEmpresaCol) {
-        empWidth = 120;
-        extraColsWidth = 120;
-      } else if (showEstablecimientoCol) {
-        estWidth = 120;
-        extraColsWidth = 120;
-      }
-      
-      const mainWidth = 761.89 - fixedTotal - extraColsWidth;
+      const columnsDef = [];
+      if (showEmpresaCol) columnsDef.push({ key: 'cliente', ratio: 1.25 });
+      if (showEstablecimientoCol) columnsDef.push({ key: 'establecimiento', ratio: 1.25 });
+      columnsDef.push(
+        { key: 'puesto', ratio: 1.25 },
+        { key: 'tema', ratio: 2.2 },
+        { key: 'capacitador', ratio: 1.25 },
+        { key: 'fecha_inicio', ratio: 0.85 },
+        { key: 'fecha_fin', ratio: 0.85 },
+        { key: 'estado', ratio: 0.85 },
+        { key: 'progreso', ratio: 0.7 }
+      );
 
-      if (showEmpresaCol) {
-        colStyles[colIdx++] = { cellWidth: empWidth };
-      }
-      if (showEstablecimientoCol) {
-        colStyles[colIdx++] = { cellWidth: estWidth };
-      }
-      colStyles[colIdx++] = { cellWidth: 100 };       // Puesto
-      colStyles[colIdx++] = { cellWidth: mainWidth }; // Tema de Capacitación
-      colStyles[colIdx++] = { cellWidth: 95 };        // Capacitador
-      colStyles[colIdx++] = { cellWidth: 65 };        // Inicio Planif
-      colStyles[colIdx++] = { cellWidth: 65 };        // Fin Planif
-      colStyles[colIdx++] = { cellWidth: 65 };        // Estado
-      colStyles[colIdx++] = { cellWidth: 50 };        // Progreso
+      const totalRatio = columnsDef.reduce((acc, col) => acc + col.ratio, 0);
+      const colStyles = {};
+      columnsDef.forEach((col, idx) => {
+        colStyles[idx] = { cellWidth: (col.ratio / totalRatio) * 761.89 };
+      });
 
       autoTable(doc, {
         head: headers,

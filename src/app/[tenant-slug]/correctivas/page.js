@@ -690,43 +690,26 @@ export default function AccionesCorrectivasPage({ params }) {
         return rowData;
       });
 
-      const colStyles = {};
-      let colIdx = 0;
-      const fixedTotal = 500;
-      let extraColsWidth = 0;
-      let empWidth = 0;
-      let estWidth = 0;
-      
-      if (showEmpresaCol && showEstablecimientoCol) {
-        empWidth = 75;
-        estWidth = 75;
-        extraColsWidth = 150;
-      } else if (showEmpresaCol) {
-        empWidth = 100;
-        extraColsWidth = 100;
-      } else if (showEstablecimientoCol) {
-        estWidth = 100;
-        extraColsWidth = 100;
-      }
-      
-      const mainWidth = 761.89 - fixedTotal - extraColsWidth;
+      const columnsDef = [{ key: 'fecha', ratio: 0.75 }];
+      if (showEmpresaCol) columnsDef.push({ key: 'cliente', ratio: 1.1 });
+      if (showEstablecimientoCol) columnsDef.push({ key: 'establecimiento', ratio: 1.1 });
+      columnsDef.push(
+        { key: 'fuente', ratio: 0.95 },
+        { key: 'sector', ratio: 0.95 },
+        { key: 'descripcion', ratio: 2.2 },
+        { key: 'nivel_riesgo', ratio: 0.75 },
+        { key: 'responsable', ratio: 1.1 },
+        { key: 'fecha_planificada', ratio: 0.8 },
+        { key: 'fecha_implementacion', ratio: 0.8 },
+        { key: 'estado', ratio: 0.8 },
+        { key: 'evidencia', ratio: 0.7 }
+      );
 
-      colStyles[colIdx++] = { cellWidth: 50 }; // Fecha
-      if (showEmpresaCol) {
-        colStyles[colIdx++] = { cellWidth: empWidth };
-      }
-      if (showEstablecimientoCol) {
-        colStyles[colIdx++] = { cellWidth: estWidth };
-      }
-      colStyles[colIdx++] = { cellWidth: 65 };        // Fuente
-      colStyles[colIdx++] = { cellWidth: 65 };        // Sector
-      colStyles[colIdx++] = { cellWidth: mainWidth }; // Descripción del Hallazgo
-      colStyles[colIdx++] = { cellWidth: 45 };        // Nivel Riesgo
-      colStyles[colIdx++] = { cellWidth: 80 };        // Responsable
-      colStyles[colIdx++] = { cellWidth: 50 };        // Fecha Planificada
-      colStyles[colIdx++] = { cellWidth: 50 };        // Fecha de Realización / Implementación
-      colStyles[colIdx++] = { cellWidth: 50 };        // Estado
-      colStyles[colIdx++] = { cellWidth: 45 };        // Evidencia
+      const totalRatio = columnsDef.reduce((acc, col) => acc + col.ratio, 0);
+      const colStyles = {};
+      columnsDef.forEach((col, idx) => {
+        colStyles[idx] = { cellWidth: (col.ratio / totalRatio) * 761.89 };
+      });
 
       autoTable(doc, {
         head: headers,

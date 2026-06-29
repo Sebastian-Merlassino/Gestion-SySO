@@ -700,38 +700,22 @@ export default function MatrizRiesgosPage({ params }) {
         return rowData;
       });
 
-      const colStyles = {};
-      let colIdx = 0;
-      const fixedTotal = 480;
-      let extraColsWidth = 0;
-      let empWidth = 0;
-      let estWidth = 0;
-      
-      if (showEmpresaCol && showEstablecimientoCol) {
-        empWidth = 80;
-        estWidth = 80;
-        extraColsWidth = 160;
-      } else if (showEmpresaCol) {
-        empWidth = 110;
-        extraColsWidth = 110;
-      } else if (showEstablecimientoCol) {
-        estWidth = 110;
-        extraColsWidth = 110;
-      }
-      
-      const mainWidth = 761.89 - fixedTotal - extraColsWidth;
+      const columnsDef = [];
+      if (showEmpresaCol) columnsDef.push({ key: 'cliente', ratio: 1.15 });
+      if (showEstablecimientoCol) columnsDef.push({ key: 'establecimiento', ratio: 1.15 });
+      columnsDef.push(
+        { key: 'sector_puesto', ratio: 1.45 },
+        { key: 'peligro_riesgo', ratio: 2.2 },
+        { key: 'prob_grav_nivel', ratio: 1.45 },
+        { key: 'medidas_existentes', ratio: 1.8 },
+        { key: 'medidas_recom', ratio: 1.6 }
+      );
 
-      if (showEmpresaCol) {
-        colStyles[colIdx++] = { cellWidth: empWidth };
-      }
-      if (showEstablecimientoCol) {
-        colStyles[colIdx++] = { cellWidth: estWidth };
-      }
-      colStyles[colIdx++] = { cellWidth: 100 };       // Sector / Puesto
-      colStyles[colIdx++] = { cellWidth: mainWidth }; // Peligro / Riesgo / Consecuencias
-      colStyles[colIdx++] = { cellWidth: 110 };       // Prob. / Grav. / Nivel
-      colStyles[colIdx++] = { cellWidth: 140 };       // Medidas Existentes
-      colStyles[colIdx++] = { cellWidth: 130 };       // Medidas Recom.
+      const totalRatio = columnsDef.reduce((acc, col) => acc + col.ratio, 0);
+      const colStyles = {};
+      columnsDef.forEach((col, idx) => {
+        colStyles[idx] = { cellWidth: (col.ratio / totalRatio) * 761.89 };
+      });
 
       autoTable(doc, {
         head: headers,

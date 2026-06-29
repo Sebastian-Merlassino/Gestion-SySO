@@ -621,41 +621,25 @@ export default function ExtintoresPage({ params }) {
         return rowData;
       });
 
-      const colStyles = {};
-      let colIdx = 0;
-      const fixedTotal = 510;
-      let extraColsWidth = 0;
-      let empWidth = 0;
-      let estWidth = 0;
-      
-      if (showEmpresaCol && showEstablecimientoCol) {
-        empWidth = 75;
-        estWidth = 75;
-        extraColsWidth = 150;
-      } else if (showEmpresaCol) {
-        empWidth = 110;
-        extraColsWidth = 110;
-      } else if (showEstablecimientoCol) {
-        estWidth = 110;
-        extraColsWidth = 110;
-      }
-      
-      const mainWidth = 761.89 - fixedTotal - extraColsWidth;
+      const columnsDef = [];
+      if (showEmpresaCol) columnsDef.push({ key: 'cliente', ratio: 1.15 });
+      if (showEstablecimientoCol) columnsDef.push({ key: 'establecimiento', ratio: 1.15 });
+      columnsDef.push(
+        { key: 'area_sector', ratio: 1.4 },
+        { key: 'puesto_operacion_ref', ratio: 1.4 },
+        { key: 'puesto_extintor', ratio: 1.2 },
+        { key: 'tipo_capacidad', ratio: 1.4 },
+        { key: 'venc_recarga', ratio: 0.9 },
+        { key: 'venc_ph', ratio: 0.9 },
+        { key: 'estado', ratio: 0.9 },
+        { key: 'evidencia', ratio: 0.7 }
+      );
 
-      if (showEmpresaCol) {
-        colStyles[colIdx++] = { cellWidth: empWidth };
-      }
-      if (showEstablecimientoCol) {
-        colStyles[colIdx++] = { cellWidth: estWidth };
-      }
-      colStyles[colIdx++] = { cellWidth: mainWidth }; // Área / Sector
-      colStyles[colIdx++] = { cellWidth: 100 };       // Puesto / Operación / Referencia
-      colStyles[colIdx++] = { cellWidth: 85 };        // N° de puesto / N° de extintor
-      colStyles[colIdx++] = { cellWidth: 100 };       // Tipo / Capacidad
-      colStyles[colIdx++] = { cellWidth: 60 };        // Venc. de recarga
-      colStyles[colIdx++] = { cellWidth: 60 };        // Venc. de PH
-      colStyles[colIdx++] = { cellWidth: 60 };        // Estado
-      colStyles[colIdx++] = { cellWidth: 45 };        // Evidencia
+      const totalRatio = columnsDef.reduce((acc, col) => acc + col.ratio, 0);
+      const colStyles = {};
+      columnsDef.forEach((col, idx) => {
+        colStyles[idx] = { cellWidth: (col.ratio / totalRatio) * 761.89 };
+      });
 
       autoTable(doc, {
         head: headers,

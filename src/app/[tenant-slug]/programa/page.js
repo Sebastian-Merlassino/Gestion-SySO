@@ -611,40 +611,24 @@ export default function ProgramaGestion({ params }) {
         return rowData;
       });
 
-      const colStyles = {};
-      let colIdx = 0;
-      const fixedTotal = 460;
-      let extraColsWidth = 0;
-      let empWidth = 0;
-      let estWidth = 0;
-      
-      if (showEmpresaCol && showEstablecimientoCol) {
-        empWidth = 90;
-        estWidth = 90;
-        extraColsWidth = 180;
-      } else if (showEmpresaCol) {
-        empWidth = 120;
-        extraColsWidth = 120;
-      } else if (showEstablecimientoCol) {
-        estWidth = 120;
-        extraColsWidth = 120;
-      }
-      
-      const mainWidth = 761.89 - fixedTotal - extraColsWidth;
+      const columnsDef = [];
+      if (showEmpresaCol) columnsDef.push({ key: 'cliente', ratio: 1.25 });
+      if (showEstablecimientoCol) columnsDef.push({ key: 'establecimiento', ratio: 1.25 });
+      columnsDef.push(
+        { key: 'actividad', ratio: 2.2 },
+        { key: 'marco_legal', ratio: 1.5 },
+        { key: 'responsable', ratio: 1.25 },
+        { key: 'fecha_planif', ratio: 0.85 },
+        { key: 'fecha_realiz', ratio: 0.85 },
+        { key: 'estado', ratio: 0.85 },
+        { key: 'progreso', ratio: 0.7 }
+      );
 
-      if (showEmpresaCol) {
-        colStyles[colIdx++] = { cellWidth: empWidth };
-      }
-      if (showEstablecimientoCol) {
-        colStyles[colIdx++] = { cellWidth: estWidth };
-      }
-      colStyles[colIdx++] = { cellWidth: mainWidth }; // Actividad / Descripción
-      colStyles[colIdx++] = { cellWidth: 120 };       // Marco Legal
-      colStyles[colIdx++] = { cellWidth: 95 };        // Responsable
-      colStyles[colIdx++] = { cellWidth: 65 };        // F. Planif
-      colStyles[colIdx++] = { cellWidth: 65 };        // F. Realiz
-      colStyles[colIdx++] = { cellWidth: 65 };        // Estado
-      colStyles[colIdx++] = { cellWidth: 50 };        // Progreso
+      const totalRatio = columnsDef.reduce((acc, col) => acc + col.ratio, 0);
+      const colStyles = {};
+      columnsDef.forEach((col, idx) => {
+        colStyles[idx] = { cellWidth: (col.ratio / totalRatio) * 761.89 };
+      });
 
       autoTable(doc, {
         head: headers,
