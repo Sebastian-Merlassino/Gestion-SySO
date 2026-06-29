@@ -597,6 +597,27 @@ export default function AccionesCorrectivasPage({ params }) {
         logoBase64 = await resizeImage(logoBase64, 200, 200);
       }
 
+      // Construir indicador de filtros activos
+      const filterParts = [];
+      if (filterEmpresa) {
+        const emp = empresas.find(e => e.id === filterEmpresa);
+        if (emp) filterParts.push(`Cliente: ${emp.razon_social}`);
+      }
+      if (filterEstablecimiento) {
+        const est = allEstablecimientos.find(e => e.id === filterEstablecimiento);
+        if (est) filterParts.push(`Establecimiento: ${est.denominacion}`);
+      }
+      if (filterRiesgo) {
+        filterParts.push(`Riesgo: ${filterRiesgo}`);
+      }
+      if (filterEstado) {
+        filterParts.push(`Estado: ${filterEstado}`);
+      }
+      const filterString = filterParts.join(' | ');
+
+      const showEmpresaCol = !filterEmpresa;
+      const showEstablecimientoCol = !filterEstablecimiento;
+
       const imageMap = {};
       const loadImagesPromise = Promise.all(
         sortedAcciones
@@ -628,51 +649,69 @@ export default function AccionesCorrectivasPage({ params }) {
         d.setTextColor(13, 13, 13);
         d.text('Seguimiento de Acciones Correctivas', 801, 35, { align: 'right' });
 
+        if (filterString) {
+          d.setFont('helvetica', 'normal');
+          d.setFontSize(8);
+          d.setTextColor(100, 100, 100);
+          d.text(filterString, 801, 55, { align: 'right' });
+        }
+
         d.setDrawColor(217, 217, 217);
         d.setLineWidth(1);
         d.line(40, 70, 801, 70);
       };
 
-      const headers = [['Fecha', 'Cliente', 'Establecimiento', 'Fuente / Sector', 'Descripción del Hallazgo', 'Nivel Riesgo', 'Responsable / Plazo', 'Estado / F. Imp.', 'Evidencia']];
+      const headersRow = ['Fecha'];
+      if (showEmpresaCol) headersRow.push('Cliente');
+      if (showEstablecimientoCol) headersRow.push('Establecimiento');
+      headersRow.push('Fuente / Sector', 'Descripción del Hallazgo', 'Nivel Riesgo', 'Responsable / Plazo', 'Estado / F. Imp.', 'Evidencia');
+      const headers = [headersRow];
       
       const body = sortedAcciones.map(acc => {
         const emp = empresas.find(e => e.id === acc.empresa_id);
         const est = allEstablecimientos.find(e => e.id === acc.establecimiento_id);
         const status = getCalculatedStatus(acc.fecha_planificada, acc.fecha_implementacion);
         
-        return [
-          formatDate(acc.fecha) || 'N/A',
-          emp ? emp.razon_social : 'N/A',
-          est ? est.denominacion : 'N/A',
+        const rowData = [formatDate(acc.fecha) || 'N/A'];
+        if (showEmpresaCol) rowData.push(emp ? emp.razon_social : 'N/A');
+        if (showEstablecimientoCol) rowData.push(est ? est.denominacion : 'N/A');
+        rowData.push(
           `${acc.fuente || 'N/A'}${acc.area_sector ? ` - Sector: ${acc.area_sector}` : ''}`,
           acc.descripcion_hallazgo || 'N/A',
           acc.nivel_riesgo || 'N/A',
           `${acc.responsable || 'N/A'}${acc.fecha_planificada ? `\nPlazo: ${formatDate(acc.fecha_planificada)}` : ''}`,
           `${status.text}${acc.fecha_implementacion ? `\nCierre: ${formatDate(acc.fecha_implementacion)}` : ''}`,
           ''
-        ];
+        );
+        return rowData;
       });
+
+      const colStyles = {};
+      let colIdx = 0;
+      colStyles[colIdx++] = { cellWidth: 50 }; // Fecha
+      if (showEmpresaCol) {
+        colStyles[colIdx++] = { cellWidth: 80 };
+      }
+      if (showEstablecimientoCol) {
+        colStyles[colIdx++] = { cellWidth: 80 };
+      }
+      colStyles[colIdx++] = { cellWidth: 100 }; // Fuente
+      colStyles[colIdx++] = { cellWidth: 160 }; // Hallazgo
+      colStyles[colIdx++] = { cellWidth: 60 };  // Nivel
+      colStyles[colIdx++] = { cellWidth: 85 };  // Responsable
+      colStyles[colIdx++] = { cellWidth: 70 };  // Estado
+      colStyles[colIdx++] = { cellWidth: 50 };  // Evidencia
 
       autoTable(doc, {
         head: headers,
         body: body,
         startY: 90,
-        margin: { left: 40, right: 40 },
+        margin: { top: 90, bottom: 65, left: 40, right: 40 },
         theme: 'striped',
         rowPageBreak: 'avoid',
         headStyles: { fillColor: [68, 114, 196], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
         bodyStyles: { fontSize: 7, textColor: [50, 50, 50], minCellHeight: 35 },
-        columnStyles: {
-          0: { cellWidth: 50 },
-          1: { cellWidth: 80 },
-          2: { cellWidth: 80 },
-          3: { cellWidth: 100 },
-          4: { cellWidth: 160 },
-          5: { cellWidth: 60 },
-          6: { cellWidth: 85 },
-          7: { cellWidth: 70 },
-          8: { cellWidth: 50 }
-        },
+        columnStyles: colStyles,
         didDrawPage: function(data) {
           drawHeader(doc);
           
@@ -693,7 +732,7 @@ export default function AccionesCorrectivasPage({ params }) {
           doc.text(`Página ${data.pageNumber}`, 801, 560, { align: 'right' });
         },
         didDrawCell: function(data) {
-          if (data.column.index === 8 && data.cell.section === 'body') {
+          if (data.column.index === headersRow.length - 1 && data.cell.section === 'body') {
             const acc = sortedAcciones[data.row.index];
             const imgBase64 = imageMap[acc.id];
             if (imgBase64) {

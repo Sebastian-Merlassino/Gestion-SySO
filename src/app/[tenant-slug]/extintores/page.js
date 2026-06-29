@@ -535,6 +535,21 @@ export default function ExtintoresPage({ params }) {
         logoBase64 = await resizeImage(logoBase64, 200, 200);
       }
 
+      // Construir indicador de filtros activos
+      const filterParts = [];
+      if (filterEmpresa) {
+        const emp = empresas.find(e => e.id === filterEmpresa);
+        if (emp) filterParts.push(`Cliente: ${emp.razon_social}`);
+      }
+      if (filterEstablecimiento) {
+        const est = allEstablecimientos.find(e => e.id === filterEstablecimiento);
+        if (est) filterParts.push(`Establecimiento: ${est.denominacion}`);
+      }
+      const filterString = filterParts.join(' | ');
+
+      const showEmpresaCol = !filterEmpresa;
+      const showEstablecimientoCol = !filterEstablecimiento;
+
       const imageMap = {};
       const loadImagesPromise = Promise.all(
         sortedExtintores
@@ -566,22 +581,33 @@ export default function ExtintoresPage({ params }) {
         d.setTextColor(13, 13, 13);
         d.text('Inventario y Control de Extintores', 801, 35, { align: 'right' });
 
+        if (filterString) {
+          d.setFont('helvetica', 'normal');
+          d.setFontSize(8);
+          d.setTextColor(100, 100, 100);
+          d.text(filterString, 801, 55, { align: 'right' });
+        }
+
         d.setDrawColor(217, 217, 217);
         d.setLineWidth(1);
         d.line(40, 70, 801, 70);
       };
 
-      const headers = [['Puesto / N° Ext.', 'Cliente', 'Establecimiento', 'Sector / Referencia', 'Tipo / Capacidad', 'Venc. Recarga', 'Venc. PH', 'Presión', 'Estado', 'Evidencia']];
+      const headersRow = ['Puesto / N° Ext.'];
+      if (showEmpresaCol) headersRow.push('Cliente');
+      if (showEstablecimientoCol) headersRow.push('Establecimiento');
+      headersRow.push('Sector / Referencia', 'Tipo / Capacidad', 'Venc. Recarga', 'Venc. PH', 'Presión', 'Estado', 'Evidencia');
+      const headers = [headersRow];
       
       const body = sortedExtintores.map(ext => {
         const emp = empresas.find(e => e.id === ext.empresa_id);
         const est = allEstablecimientos.find(e => e.id === ext.establecimiento_id);
         const status = getCalculatedEstado(ext.venc_recarga, ext.venc_ph);
         
-        return [
-          `Puesto: ${ext.n_puesto || 'N/A'}\nExt: ${ext.n_extintor || 'N/A'}`,
-          emp ? emp.razon_social : 'N/A',
-          est ? est.denominacion : 'N/A',
+        const rowData = [`Puesto: ${ext.n_puesto || 'N/A'}\nExt: ${ext.n_extintor || 'N/A'}`];
+        if (showEmpresaCol) rowData.push(emp ? emp.razon_social : 'N/A');
+        if (showEstablecimientoCol) rowData.push(est ? est.denominacion : 'N/A');
+        rowData.push(
           `Sector: ${ext.area_sector || 'N/A'}\nRef: ${ext.puesto_operacion_ref || 'N/A'}`,
           `${ext.tipo || 'N/A'}\nCapacidad: ${ext.capacidad ? `${ext.capacidad} Kg` : 'N/A'}`,
           formatDate(ext.venc_recarga) || 'N/A',
@@ -589,30 +615,37 @@ export default function ExtintoresPage({ params }) {
           ext.presion || 'N/A',
           status.text || 'N/A',
           ''
-        ];
+        );
+        return rowData;
       });
+
+      const colStyles = {};
+      let colIdx = 0;
+      colStyles[colIdx++] = { cellWidth: 70 }; // Puesto / Ext
+      if (showEmpresaCol) {
+        colStyles[colIdx++] = { cellWidth: 85 };
+      }
+      if (showEstablecimientoCol) {
+        colStyles[colIdx++] = { cellWidth: 85 };
+      }
+      colStyles[colIdx++] = { cellWidth: 100 }; // Sector
+      colStyles[colIdx++] = { cellWidth: 100 }; // Tipo/Capacidad
+      colStyles[colIdx++] = { cellWidth: 55 };  // Recarga
+      colStyles[colIdx++] = { cellWidth: 55 };  // PH
+      colStyles[colIdx++] = { cellWidth: 45 };  // Presión
+      colStyles[colIdx++] = { cellWidth: 55 };  // Estado
+      colStyles[colIdx++] = { cellWidth: 50 };  // Evidencia
 
       autoTable(doc, {
         head: headers,
         body: body,
         startY: 90,
-        margin: { left: 40, right: 40 },
+        margin: { top: 90, bottom: 65, left: 40, right: 40 },
         theme: 'striped',
         rowPageBreak: 'avoid',
         headStyles: { fillColor: [68, 114, 196], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
         bodyStyles: { fontSize: 7, textColor: [50, 50, 50], minCellHeight: 35 },
-        columnStyles: {
-          0: { cellWidth: 70 },
-          1: { cellWidth: 85 },
-          2: { cellWidth: 85 },
-          3: { cellWidth: 100 },
-          4: { cellWidth: 100 },
-          5: { cellWidth: 55 },
-          6: { cellWidth: 55 },
-          7: { cellWidth: 45 },
-          8: { cellWidth: 55 },
-          9: { cellWidth: 50 }
-        },
+        columnStyles: colStyles,
         didDrawPage: function(data) {
           drawHeader(doc);
           
@@ -633,7 +666,7 @@ export default function ExtintoresPage({ params }) {
           doc.text(`Página ${data.pageNumber}`, 801, 560, { align: 'right' });
         },
         didDrawCell: function(data) {
-          if (data.column.index === 9 && data.cell.section === 'body') {
+          if (data.column.index === headersRow.length - 1 && data.cell.section === 'body') {
             const ext = sortedExtintores[data.row.index];
             const imgBase64 = imageMap[ext.id];
             if (imgBase64) {

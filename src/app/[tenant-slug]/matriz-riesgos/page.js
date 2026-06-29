@@ -633,6 +633,24 @@ export default function MatrizRiesgosPage({ params }) {
         logoBase64 = await resizeImage(logoBase64, 200, 200);
       }
 
+      // Construir indicador de filtros activos
+      const filterParts = [];
+      if (filterEmpresa) {
+        const emp = empresas.find(e => e.id === filterEmpresa);
+        if (emp) filterParts.push(`Cliente: ${emp.razon_social}`);
+      }
+      if (filterEstablecimiento) {
+        const est = allEstablecimientos.find(e => e.id === filterEstablecimiento);
+        if (est) filterParts.push(`Establecimiento: ${est.denominacion}`);
+      }
+      if (filterNivelRiesgo) {
+        filterParts.push(`Nivel Riesgo: ${filterNivelRiesgo}`);
+      }
+      const filterString = filterParts.join(' | ');
+
+      const showEmpresaCol = !filterEmpresa;
+      const showEstablecimientoCol = !filterEstablecimiento;
+
       const drawHeader = (d) => {
         if (logoBase64 && logoBase64.startsWith('data:image/')) {
           try {
@@ -646,45 +664,64 @@ export default function MatrizRiesgosPage({ params }) {
         d.setTextColor(13, 13, 13);
         d.text('Matriz de Identificación de Peligros y Valoración de Riesgos', 801, 35, { align: 'right' });
 
+        if (filterString) {
+          d.setFont('helvetica', 'normal');
+          d.setFontSize(8);
+          d.setTextColor(100, 100, 100);
+          d.text(filterString, 801, 55, { align: 'right' });
+        }
+
         d.setDrawColor(217, 217, 217);
         d.setLineWidth(1);
         d.line(40, 70, 801, 70);
       };
 
-      const headers = [['Cliente', 'Establecimiento', 'Sector / Puesto', 'Peligro / Riesgo / Consecuencias', 'Prob. / Grav. / Nivel', 'Medidas de Control Existentes', 'Medidas Control Recom.']];
+      const headersRow = [];
+      if (showEmpresaCol) headersRow.push('Cliente');
+      if (showEstablecimientoCol) headersRow.push('Establecimiento');
+      headersRow.push('Sector / Puesto', 'Peligro / Riesgo / Consecuencias', 'Prob. / Grav. / Nivel', 'Medidas de Control Existentes', 'Medidas Control Recom.');
+      const headers = [headersRow];
       
       const body = sortedMatriz.map(row => {
         const emp = empresas.find(e => e.id === row.empresa_id);
         const est = allEstablecimientos.find(e => e.id === row.establecimiento_id);
         
-        return [
-          emp ? emp.razon_social : 'N/A',
-          est ? est.denominacion : 'N/A',
+        const rowData = [];
+        if (showEmpresaCol) rowData.push(emp ? emp.razon_social : 'N/A');
+        if (showEstablecimientoCol) rowData.push(est ? est.denominacion : 'N/A');
+        rowData.push(
           `Sector: ${row.sector || 'N/A'}\nPuesto: ${row.puesto || 'N/A'}`,
           `Peligro: ${row.peligro || 'N/A'}\nRiesgo: ${row.riesgo || 'N/A'}\nConsecuencias: ${row.consecuencia || 'N/A'}`,
           `Ini: P=${row.probabilidad}, G=${row.gravedad} -> ${row.nivel_riesgo}\nRes: P=${row.post_probabilidad || '-'}, G=${row.post_gravedad || '-'} -> ${row.post_nivel_riesgo || '-'}`,
           `Ingeniería: ${row.medidas_control_ing || 'N/A'}\nAdm: ${row.medidas_control_adm || 'N/A'}\nEPPs: ${row.medidas_control_epp || 'N/A'}`,
           `${row.medidas_control_recomendadas || 'N/A'}${row.responsable ? `\nResp: ${row.responsable}` : ''}${row.fecha_planificada ? `\nPlazo: ${formatDate(row.fecha_planificada)}` : ''}`
-        ];
+        );
+        return rowData;
       });
+
+      const colStyles = {};
+      let colIdx = 0;
+      if (showEmpresaCol) {
+        colStyles[colIdx++] = { cellWidth: 80 };
+      }
+      if (showEstablecimientoCol) {
+        colStyles[colIdx++] = { cellWidth: 80 };
+      }
+      colStyles[colIdx++] = { cellWidth: 90 };  // Sector / Puesto
+      colStyles[colIdx++] = { cellWidth: 160 }; // Peligro
+      colStyles[colIdx++] = { cellWidth: 100 }; // Prob / Grav / Nivel
+      colStyles[colIdx++] = { cellWidth: 130 }; // Medidas Existentes
+      colStyles[colIdx++] = { cellWidth: 120 }; // Medidas Recom.
 
       autoTable(doc, {
         head: headers,
         body: body,
         startY: 90,
-        margin: { left: 40, right: 40 },
+        margin: { top: 90, bottom: 65, left: 40, right: 40 },
         theme: 'grid',
         headStyles: { fillColor: [68, 114, 196], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
         bodyStyles: { fontSize: 7, textColor: [50, 50, 50] },
-        columnStyles: {
-          0: { cellWidth: 80 },
-          1: { cellWidth: 80 },
-          2: { cellWidth: 90 },
-          3: { cellWidth: 160 },
-          4: { cellWidth: 100 },
-          5: { cellWidth: 130 },
-          6: { cellWidth: 120 }
-        },
+        columnStyles: colStyles,
         didDrawPage: function(data) {
           drawHeader(doc);
           
