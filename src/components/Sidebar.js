@@ -51,7 +51,7 @@ export default function Sidebar({
     { id: 'capacitacion', label: 'Prog. Capacitación Anual', path: `/${tenantSlug}/capacitacion`, icon: GraduationCap },
     { id: 'correctivas', label: 'Acciones Correctivas', path: `/${tenantSlug}/correctivas`, icon: ClipboardList },
     { id: 'accidentes', label: 'Accidentes', path: `/${tenantSlug}/accidentes`, icon: ShieldAlert },
-    { id: 'matriz-riesgos', label: 'Matriz de riesgos', path: `/${tenantSlug}/matriz-riesgos`, icon: ClipboardList },
+    { id: 'matriz-riesgos', label: 'Matriz de riesgos', path: `/${tenantSlug}/matriz-riesgos`, icon: AlertTriangle },
     { id: 'extintores', label: 'Extintores', path: `/${tenantSlug}/extintores`, icon: Flame },
     { id: 'visitas', label: 'Constancia de Visita', path: `/${tenantSlug}/visitas`, icon: ClipboardCheck },
     { id: 'avisos', label: 'Aviso de Riesgo', path: `/${tenantSlug}/avisos`, icon: AlertTriangle },

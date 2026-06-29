@@ -1,5 +1,22 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-06-29] Actualización de Icono para Matriz de Riesgos en Barra Lateral
+
+### Resumen de Cambios
+- **Modificación de Icono en Sidebar**: Se cambió el icono de la sección de **Matriz de riesgos** en la barra lateral (`src/components/Sidebar.js`) de `ClipboardList` a `AlertTriangle`. Esto alinea el pictograma de la sección con la indicación visual de atención o advertencia de riesgos requerida.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados
+- [src/components/Sidebar.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/components/Sidebar.js)
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js exitosa (`cmd /c npm run build`) libre de errores y advertencias.
+
+---
+
 ## [2026-06-29] Rediseño y Consistencia del Layout de Matrículas Profesionales
 
 ### Resumen de Cambios
