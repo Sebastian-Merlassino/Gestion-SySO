@@ -1,5 +1,27 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-06-29] Mitigación de Advertencias de Autocompletado (Autocomplete) en Formularios de Registro, Restablecimiento y Empresas
+
+### Resumen de Cambios
+- **Registro de Usuario**: Se agregaron los atributos `autoComplete` correspondientes (`name` para nombre, `email` para correo electrónico, y `new-password` para los campos de contraseña y confirmación de contraseña) en la vista de `register/page.js`.
+- **Restablecimiento de Contraseña**: Se añadieron atributos `autoComplete="new-password"` a los inputs de tipo password en `reset-password/page.js` para cumplir con las heurísticas del navegador.
+- **Habilitación de Portal de Cliente**: Se integraron los atributos `autoComplete="username"` (en el correo del cliente) y `autoComplete="new-password"` (en la contraseña inicial) en la sección de habilitación de portal de clientes en `empresas/page.js` para evitar advertencias de autocompletado en el DOM.
+
+### Skills Utilizadas
+- `next-best-practices`
+- `gestion-syso-brand-guidelines`
+- `gestion-syso-bitacora`
+
+### Archivos Modificados
+- [register/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/register/page.js)
+- [reset-password/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/reset-password/page.js)
+- [empresas/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/empresas/page.js)
+
+### Validaciones Ejecutadas
+- Compilación de producción exitosa (`cmd /c npm run build`) libre de advertencias y errores.
+
+---
+
 ## [2026-06-29] Ajustes de Tabla PDF, Filtros Dinámicos en Encabezado y Ocultación de Columnas Filtradas
 
 ### Resumen de Cambios

@@ -2995,6 +2995,7 @@ export default function EmpresasClientes({ params }) {
                                     value={clientEmail}
                                     onChange={(e) => setClientEmail(e.target.value)}
                                     placeholder="correo@cliente.com"
+                                    autoComplete="username"
                                     className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                                   />
                                 </div>
@@ -3007,6 +3008,7 @@ export default function EmpresasClientes({ params }) {
                                   value={clientPassword}
                                   onChange={(e) => setClientPassword(e.target.value)}
                                   placeholder="Dejar vacío para usar el CUIT como clave"
+                                  autoComplete="new-password"
                                   className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                                 />
                               </div>
