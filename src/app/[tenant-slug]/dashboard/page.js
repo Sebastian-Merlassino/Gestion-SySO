@@ -741,6 +741,10 @@ export default function TenantDashboard({ params }) {
         logoBase64 = await resizeImage(logoBase64, 200, 200);
       }
 
+      const filterString = `Empresa / Razón Social: ${empName}${
+        estName && estName !== 'Todos los establecimientos' ? `  |  Establecimiento: ${estName}` : ''
+      }  |  Período Anual: ${selectedYear}`;
+
       const drawHeaderAndFooter = (d, pageNum, logo) => {
         // Logo
         if (logo) {
@@ -756,6 +760,12 @@ export default function TenantDashboard({ params }) {
         d.setFontSize(13);
         d.setTextColor(13, 13, 13);
         d.text('Reporte de Siniestralidad e Índices de Accidentes', 791, 35, { align: 'right' });
+
+        // Detalles del filtro
+        d.setFont('helvetica', 'normal');
+        d.setFontSize(8);
+        d.setTextColor(100, 100, 100);
+        d.text(filterString, 791, 55, { align: 'right' });
 
         // Línea divisora cabecera
         d.setDrawColor(217, 217, 217);
@@ -779,15 +789,7 @@ export default function TenantDashboard({ params }) {
       };
 
       const drawFilterDetails = (d, eName, esName, yr) => {
-        d.setFont('helvetica', 'bold');
-        d.setFontSize(9);
-        d.setTextColor(60, 120, 216);
-        let text = `Empresa / Razón Social: ${eName}`;
-        if (esName && esName !== 'Todos los establecimientos') {
-          text += `  |  Establecimiento: ${esName}`;
-        }
-        text += `  |  Período Anual: ${yr}`;
-        d.text(text, 50, 85);
+        // No-op to avoid double printing filter details on body
       };
 
       const drawVectorChart = (d, sY, chartData, chartTitle, unitLabel) => {
