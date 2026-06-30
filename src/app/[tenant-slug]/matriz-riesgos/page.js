@@ -1419,7 +1419,7 @@ export default function MatrizRiesgosPage({ params }) {
             </div>
           </div>
         ) : (
-          <div className="p-6 md:p-8 space-y-6 max-w-[95%] mx-auto w-full">
+          <div className="max-w-[95%] mx-auto w-full py-8 px-4 md:px-0 flex-1 flex flex-col min-h-0">
             
             {isFormOpen ? (
               // FORMULARIO DE ALTA O EDICIÓN INLINE
@@ -2743,22 +2743,24 @@ export default function MatrizRiesgosPage({ params }) {
               </div>
             ) : (
               // VISTA DE LISTADO PRINCIPAL (CONTENEDORES SEPARADOS DE FILTRO Y TABLA)
-              <div className="space-y-6">
+              <div className="space-y-6 flex-1 flex flex-col min-h-0">
                 
                 {/* Contenedor 1: Panel de Filtros y Búsqueda */}
-                <div className="bg-white rounded-2xl border border-slate-150 p-3 shadow-sm space-y-3 shrink-0">
+                <div className="bg-white border border-slate-150 rounded-2xl p-4 shadow-sm space-y-4 shrink-0">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                     <div className="hidden md:block flex-1"></div>
 
                     <div className="flex flex-col md:flex-row md:items-center gap-3 w-full md:w-auto">
                       <div className="relative w-full md:w-72">
-                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 pointer-events-none" />
+                        <span className="absolute left-3.5 top-3 h-4.5 w-4.5 text-slate-400 pointer-events-none">
+                          <Search className="h-4.5 w-4.5" />
+                        </span>
                         <input
                           type="text"
                           placeholder="Buscar por sector, puesto, peligro, riesgo..."
                           value={filterText}
                           onChange={(e) => setFilterText(e.target.value)}
-                          className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400"
+                          className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400"
                         />
                       </div>
 
@@ -2766,7 +2768,7 @@ export default function MatrizRiesgosPage({ params }) {
                         <button
                           type="button"
                           onClick={() => handleExportPdfReport(false)}
-                          className="py-1.5 px-3 rounded-xl border border-[#468DFF] text-xs font-bold bg-white text-[#468DFF] hover:bg-[#468DFF] hover:text-white transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+                          className="py-2 px-4 rounded-xl border border-[#468DFF] text-sm font-bold bg-white text-[#468DFF] hover:bg-[#468DFF] hover:text-white transition-all flex items-center gap-2 cursor-pointer shrink-0"
                           title="Descargar listado en formato PDF"
                         >
                           <FileText className="h-4 w-4" />
@@ -2775,7 +2777,7 @@ export default function MatrizRiesgosPage({ params }) {
                         <button
                           type="button"
                           onClick={() => handleExportPdfReport(true)}
-                          className="py-1.5 px-3 rounded-xl border border-[#468DFF] text-xs font-bold bg-white text-[#468DFF] hover:bg-[#468DFF] hover:text-white transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+                          className="py-2 px-4 rounded-xl border border-[#468DFF] text-sm font-bold bg-white text-[#468DFF] hover:bg-[#468DFF] hover:text-white transition-all flex items-center gap-2 cursor-pointer shrink-0"
                           title="Imprimir listado completo"
                         >
                           <Printer className="h-4 w-4" />
@@ -2786,9 +2788,9 @@ export default function MatrizRiesgosPage({ params }) {
                       {canCargar && (
                         <button
                           onClick={() => { setIsBulkMode(true); setIsReadOnlyView(false); setIsFormOpen(true); }}
-                          className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0 w-full md:w-auto"
+                          className="px-4 py-2 bg-[#468DFF] text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0 w-full md:w-auto"
                         >
-                          <PlusCircle className="h-3.5 w-3.5" />
+                          <PlusCircle className="h-4.5 w-4.5" />
                           Nueva Matriz de Riesgos
                         </button>
                       )}
@@ -2828,7 +2830,7 @@ export default function MatrizRiesgosPage({ params }) {
                           <div className="space-y-1">
                             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Cliente</label>
                             <select
-                              value={filterEmpresa}
+                               value={filterEmpresa}
                               onChange={(e) => {
                                 setFilterEmpresa(e.target.value);
                                 setFilterEstablecimiento('');
@@ -2879,7 +2881,7 @@ export default function MatrizRiesgosPage({ params }) {
                 </div>
 
                 {/* Contenedor 2: Tabla del Listado */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[calc(100vh-280px)] min-h-[400px]">
+                <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden flex flex-col transition-all duration-300 ease-in-out" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
                   {sortedMatriz.length === 0 ? (
                     <div className="flex-grow flex flex-col items-center justify-center p-8 text-center gap-3 h-full">
                       <AlertCircle className="h-10 w-10 text-slate-300" />
@@ -2900,21 +2902,54 @@ export default function MatrizRiesgosPage({ params }) {
                   ) : (
                     <div className="overflow-auto flex-grow">
                       <table className="w-full text-left text-xs border-collapse min-w-[1200px]">
-                        <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider sticky top-0 border-b border-slate-200 z-10">
+                        <thead className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider sticky top-0 z-10">
                           <tr>
-                            <th className="px-6 py-4 text-center w-28">Acciones</th>
-                            <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('cliente')}>Cliente</th>
-                            <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('establecimiento')}>Establecimiento</th>
-                            <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('sector')}>Sector</th>
-                            <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('puesto')}>Puesto / Operación</th>
-                            <th className="px-6 py-4">Peligro</th>
-                            <th className="px-6 py-4">Riesgo</th>
-                            <th className="px-6 py-4 text-center">Riesgo Inicial</th>
-                            <th className="px-6 py-4 text-center">Riesgo Residual</th>
-                            <th className="px-6 py-4">Responsable</th>
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[18%]" onClick={() => handleSort('cliente')}>
+                              <div className="flex items-center gap-1">
+                                Cliente / Establecimiento
+                                {sortField === 'cliente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              </div>
+                            </th>
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[18%]" onClick={() => handleSort('sector')}>
+                              <div className="flex items-center gap-1">
+                                Área / Sector / Puesto / Operación
+                                {sortField === 'sector' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              </div>
+                            </th>
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[20%]" onClick={() => handleSort('tareas')}>
+                              <div className="flex items-center gap-1">
+                                Tareas
+                                {sortField === 'tareas' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              </div>
+                            </th>
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[10%]" onClick={() => handleSort('peligro')}>
+                              <div className="flex items-center gap-1">
+                                Peligro
+                                {sortField === 'peligro' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              </div>
+                            </th>
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[18%]" onClick={() => handleSort('riesgo')}>
+                              <div className="flex items-center gap-1">
+                                Riesgo
+                                {sortField === 'riesgo' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              </div>
+                            </th>
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[8%] text-center" onClick={() => handleSort('nivel_riesgo')}>
+                              <div className="flex items-center justify-center gap-1">
+                                Riesgo Inicial
+                                {sortField === 'nivel_riesgo' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              </div>
+                            </th>
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[8%] text-center" onClick={() => handleSort('post_nivel_riesgo')}>
+                              <div className="flex items-center justify-center gap-1">
+                                Riesgo Residual
+                                {sortField === 'post_nivel_riesgo' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              </div>
+                            </th>
+                            <th className="px-6 py-4 text-center w-[5%]">Acciones</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-150">
+                        <tbody className="divide-y divide-slate-100 text-xs font-normal text-slate-700">
                           {sortedMatriz.map((row) => {
                             const emp = empresas.find(e => e.id === row.empresa_id);
                             const est = allEstablecimientos.find(e => e.id === row.establecimiento_id);
@@ -2925,14 +2960,73 @@ export default function MatrizRiesgosPage({ params }) {
                               : null;
 
                             return (
-                              <tr key={row.id} className="hover:bg-slate-50/50 transition-colors">
-                                <td className="px-6 py-3 text-center">
+                              <tr 
+                                key={row.id} 
+                                onClick={() => { setIsReadOnlyView(true); handleEditClick(row); }}
+                                className="hover:bg-slate-50/50 cursor-pointer transition-colors"
+                              >
+                                {/* 1. Cliente / Establecimiento */}
+                                <td className="px-6 py-4">
+                                  <span className="font-semibold text-slate-900 block">{emp?.razon_social || 'Desconocido'}</span>
+                                  <span className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5 font-normal">
+                                    <Building className="h-3 w-3 shrink-0" />
+                                    {est?.denominacion || 'General / Todos'}
+                                  </span>
+                                </td>
+
+                                {/* 2. Área / Sector / Puesto / Operación */}
+                                <td className="px-6 py-4">
+                                  <span className="text-slate-900 font-semibold block">{row.sector || 'N/A'}</span>
+                                  <span className="text-[10px] text-slate-500 font-medium block mt-0.5">{row.puesto || 'N/A'}</span>
+                                </td>
+
+                                {/* 3. Tareas */}
+                                <td className="px-6 py-4 text-slate-600 font-normal">
+                                  <span className="block truncate max-w-[200px]" title={row.tareas}>
+                                    {row.tareas || 'N/A'}
+                                  </span>
+                                </td>
+
+                                {/* 4. Peligro */}
+                                <td className="px-6 py-4 text-slate-600 font-normal">
+                                  <span className="block truncate max-w-[120px]" title={row.peligro}>
+                                    {row.peligro || 'N/A'}
+                                  </span>
+                                </td>
+
+                                {/* 5. Riesgo */}
+                                <td className="px-6 py-4 text-slate-600 font-normal">
+                                  <span className="block truncate max-w-[200px]" title={row.riesgo}>
+                                    {row.riesgo || 'N/A'}
+                                  </span>
+                                </td>
+
+                                {/* 6. Riesgo Inicial */}
+                                <td className="px-6 py-4 text-center">
+                                  <span className={`inline-flex items-center justify-center text-center leading-[1.15] px-2.5 py-1 rounded-full text-[10px] font-bold border ${initialRisk?.bgClass}`}>
+                                    {row.nivel_riesgo}
+                                  </span>
+                                </td>
+
+                                {/* 7. Riesgo Residual */}
+                                <td className="px-6 py-4 text-center">
+                                  {residualRisk ? (
+                                    <span className={`inline-flex items-center justify-center text-center leading-[1.15] px-2.5 py-1 rounded-full text-[10px] font-bold border ${residualRisk?.bgClass}`}>
+                                      {row.post_nivel_riesgo}
+                                    </span>
+                                  ) : (
+                                    <span className="text-slate-400 italic text-[11px]">-</span>
+                                  )}
+                                </td>
+
+                                {/* 8. Acciones */}
+                                <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
                                   <div className="flex items-center justify-center gap-1.5">
                                     {isReadOnlyView ? (
                                       <button
                                         type="button"
                                         onClick={() => { handleEditClick(row); }}
-                                        className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-all cursor-pointer"
+                                        className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center"
                                         title="Ver detalles"
                                       >
                                         <Eye className="h-4.5 w-4.5" />
@@ -2941,47 +3035,26 @@ export default function MatrizRiesgosPage({ params }) {
                                       <>
                                         <button
                                           type="button"
-                                          onClick={() => handleEditClick(row)}
-                                          className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-colors cursor-pointer"
+                                          onClick={() => { setIsReadOnlyView(false); handleEditClick(row); }}
+                                          className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-colors cursor-pointer inline-flex items-center"
                                           title="Editar evaluación"
                                         >
-                                          <Edit className="h-4 w-4" />
+                                          <Edit className="h-4.5 w-4.5" />
                                         </button>
                                         {canEliminar && (
                                           <button
                                             type="button"
                                             onClick={() => handleDeleteClick(row.id)}
-                                            className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-colors cursor-pointer"
+                                            className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-colors cursor-pointer inline-flex items-center"
                                             title="Eliminar registro"
                                           >
-                                            <Trash2 className="h-4 w-4" />
+                                            <Trash2 className="h-4.5 w-4.5" />
                                           </button>
                                         )}
                                       </>
                                     )}
                                   </div>
                                 </td>
-                                <td className="px-6 py-3 font-semibold text-slate-800">{emp?.razon_social || 'Desconocido'}</td>
-                                <td className="px-6 py-3 text-slate-600">{est?.denominacion || 'Desconocido'}</td>
-                                <td className="px-6 py-3 text-slate-600 font-semibold">{row.sector}</td>
-                                <td className="px-6 py-3 text-slate-600 font-medium">{row.puesto}</td>
-                                <td className="px-6 py-3 text-slate-600">{row.peligro}</td>
-                                <td className="px-6 py-3 text-slate-600">{row.riesgo}</td>
-                                <td className="px-6 py-3 text-center">
-                                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${initialRisk?.bgClass}`}>
-                                    {row.nivel_riesgo}
-                                  </span>
-                                </td>
-                                <td className="px-6 py-3 text-center">
-                                  {residualRisk ? (
-                                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${residualRisk?.bgClass}`}>
-                                      {row.post_nivel_riesgo}
-                                    </span>
-                                  ) : (
-                                    <span className="text-slate-400 italic text-[11px]">-</span>
-                                  )}
-                                </td>
-                                <td className="px-6 py-3 text-slate-600 font-medium">{row.responsable || 'No asignado'}</td>
                               </tr>
                             );
                           })}

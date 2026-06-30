@@ -1254,11 +1254,11 @@ export default function AccionesCorrectivasPage({ params }) {
             </div>
           </div>
         ) : (
-          <div className="p-6 md:p-8 space-y-6 max-w-[95%] mx-auto w-full">
+          <div className="max-w-[95%] mx-auto w-full py-8 px-4 md:px-0 flex-1 flex flex-col min-h-0">
             
             {/* VISTA FORMULARIO O TABLA */}
             {isFormOpen ? (
-              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden animate-fade-in">
+              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
                 <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-150 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
                     <button 
@@ -1277,7 +1277,7 @@ export default function AccionesCorrectivasPage({ params }) {
                   </button>
                 </div>
 
-                <form onSubmit={handleSaveHallazgo} className="p-6 space-y-6">
+                <form onSubmit={handleSaveHallazgo} className="p-6 space-y-6 overflow-y-auto flex-1 scrollbar-thin">
                   <fieldset disabled={!canEdit} className="space-y-6">
                   
                   {/* Seccion 1: Identificación y Ubicación */}
@@ -1391,10 +1391,22 @@ export default function AccionesCorrectivasPage({ params }) {
                       </div>
 
                       <div className="space-y-1">
-                        <div className="flex items-center gap-1.5 mb-1">
+                        <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                           <label className="text-xs font-bold text-slate-600">
                             Nivel de Riesgo <span className="text-[#468DFF]">*</span>
                           </label>
+                          {nivelRiesgo && nivelRiesgo !== 'N/A' && (
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              nivelRiesgo === 'Riesgo trivial' ? 'bg-[#00B050] text-white' :
+                              nivelRiesgo === 'Riesgo tolerable' ? 'bg-[#00FF00] text-slate-900' :
+                              nivelRiesgo === 'Riesgo moderado' ? 'bg-[#FFFF00] text-slate-900' :
+                              nivelRiesgo === 'Riesgo sustancial' ? 'bg-[#FF9900] text-white' :
+                              nivelRiesgo === 'Riesgo intolerable' ? 'bg-[#FF0000] text-white' :
+                              'bg-slate-100 text-slate-700'
+                            }`}>
+                              {nivelRiesgo}
+                            </span>
+                          )}
                           <button
                             type="button"
                             onClick={() => setShowRiskMatrix(true)}
@@ -1408,10 +1420,17 @@ export default function AccionesCorrectivasPage({ params }) {
                           required
                           value={nivelRiesgo}
                           onChange={(e) => setNivelRiesgo(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
+                          className={`w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] transition-all cursor-pointer font-bold ${
+                            nivelRiesgo === 'Riesgo trivial' ? 'bg-[#00B050] text-white' :
+                            nivelRiesgo === 'Riesgo tolerable' ? 'bg-[#00FF00] text-slate-900' :
+                            nivelRiesgo === 'Riesgo moderado' ? 'bg-[#FFFF00] text-slate-900' :
+                            nivelRiesgo === 'Riesgo sustancial' ? 'bg-[#FF9900] text-white' :
+                            nivelRiesgo === 'Riesgo intolerable' ? 'bg-[#FF0000] text-white' :
+                            'bg-slate-50/50 text-slate-900'
+                          }`}
                         >
                           {NIVEL_RIESGO_OPTIONS.map((opt) => (
-                            <option key={opt} value={opt}>{opt}</option>
+                            <option key={opt} value={opt} className="bg-white text-slate-900 font-normal">{opt}</option>
                           ))}
                         </select>
                       </div>
@@ -1485,9 +1504,21 @@ export default function AccionesCorrectivasPage({ params }) {
                           placeholder="Describe detalladamente lo observado..."
                           value={descripcionHallazgo}
                           onChange={(e) => setDescripcionHallazgo(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all resize-none"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all resize-y scrollbar-thin"
                         />
                       </div>
+                    </div>
+
+                    {/* Recomendaciones / sugerencias */}
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-600 block mb-1">Recomendaciones / sugerencias</label>
+                      <textarea
+                        rows="2"
+                        placeholder="Recomendaciones o sugerencias..."
+                        value={recomendacion}
+                        onChange={(e) => setRecomendacion(e.target.value)}
+                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all resize-y scrollbar-thin"
+                      />
                     </div>
 
                     {/* Imagen de Respaldo */}
@@ -1522,52 +1553,40 @@ export default function AccionesCorrectivasPage({ params }) {
                       Acciones, Plazos y Responsabilidades
                     </span>
                     
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-600 block mb-1">Causa Raíz (Análisis)</label>
-                        <input
-                          type="text"
-                          placeholder="¿Por qué ocurrió?"
-                          value={causaRaiz}
-                          onChange={(e) => setCausaRaiz(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-600 block mb-1">Recomendación Técnica</label>
-                        <input
-                          type="text"
-                          placeholder="Medida preventiva recomendada..."
-                          value={recomendacion}
-                          onChange={(e) => setRecomendacion(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
-                        />
-                      </div>
+                    {/* Acción Preventiva (Una sola fila) */}
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-600 block mb-1">Acción Preventiva</label>
+                      <textarea
+                        rows="2"
+                        placeholder="Se aplica antes de que ocurra el evento no deseado"
+                        value={accionPreventiva}
+                        onChange={(e) => setAccionPreventiva(e.target.value)}
+                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all resize-y scrollbar-thin"
+                      />
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-600 block mb-1">Acción Preventiva Definida</label>
-                        <input
-                          type="text"
-                          placeholder="Acción a largo plazo..."
-                          value={accionPreventiva}
-                          onChange={(e) => setAccionPreventiva(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
-                        />
-                      </div>
+                    {/* Causa Raíz (Una sola fila) */}
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-600 block mb-1">Causa Raíz</label>
+                      <textarea
+                        rows="2"
+                        placeholder="es la causa que, si se elimina o controla, evita la repetición del evento"
+                        value={causaRaiz}
+                        onChange={(e) => setCausaRaiz(e.target.value)}
+                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all resize-y scrollbar-thin"
+                      />
+                    </div>
 
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-600 block mb-1">Acción Correctiva Inmediata</label>
-                        <input
-                          type="text"
-                          placeholder="Acción correctora directa..."
-                          value={accionCorrectiva}
-                          onChange={(e) => setAccionCorrectiva(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
-                        />
-                      </div>
+                    {/* Acción Correctiva (Una sola fila) */}
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-600 block mb-1">Acción Correctiva</label>
+                      <textarea
+                        rows="2"
+                        placeholder="Acción tomada para eliminar la causa raíz."
+                        value={accionCorrectiva}
+                        onChange={(e) => setAccionCorrectiva(e.target.value)}
+                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all resize-y scrollbar-thin"
+                      />
                     </div>
 
                     <div className="grid md:grid-cols-3 gap-4">
@@ -1653,7 +1672,7 @@ export default function AccionesCorrectivasPage({ params }) {
                         placeholder="Comentarios adicionales..."
                         value={observaciones}
                         onChange={(e) => setObservaciones(e.target.value)}
-                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all resize-none"
+                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all resize-y scrollbar-thin"
                       />
                     </div>
                   </div>
@@ -1715,10 +1734,10 @@ export default function AccionesCorrectivasPage({ params }) {
               </div>
             ) : (
               // TABLA DE HALLAZGOS Y FILTROS
-              <div className="space-y-6">
+              <div className="space-y-6 flex-1 flex flex-col min-h-0">
                 
                 {/* Panel de Filtros y Búsqueda */}
-                <div className="bg-white rounded-2xl border border-slate-150 p-3 shadow-sm space-y-3 shrink-0">
+                <div className="bg-white border border-slate-150 rounded-2xl p-4 shadow-sm space-y-4 shrink-0">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                     {/* Espaciador para empujar el buscador y botón a la derecha en desktop */}
                     <div className="hidden md:block flex-1"></div>
@@ -1726,15 +1745,15 @@ export default function AccionesCorrectivasPage({ params }) {
                     {/* Buscador y Botón agrupados */}
                     <div className="flex flex-col md:flex-row md:items-center gap-3 w-full md:w-auto">
                       <div className="relative w-full md:w-72">
-                        <span className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 pointer-events-none">
-                          <Search className="h-3.5 w-3.5" />
+                        <span className="absolute left-3.5 top-3 h-4.5 w-4.5 text-slate-400 pointer-events-none">
+                          <Search className="h-4.5 w-4.5" />
                         </span>
                         <input
                           type="text"
                           placeholder="Buscar por descripción, área, puesto, responsable..."
                           value={filterText}
                           onChange={(e) => setFilterText(e.target.value)}
-                          className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400"
+                          className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400"
                         />
                       </div>
 
@@ -1742,7 +1761,7 @@ export default function AccionesCorrectivasPage({ params }) {
                         <button
                           type="button"
                           onClick={() => handleExportPdfReport(false)}
-                          className="py-1.5 px-3 rounded-xl border border-[#468DFF] text-xs font-bold bg-white text-[#468DFF] hover:bg-[#468DFF] hover:text-white transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+                          className="py-2 px-4 rounded-xl border border-[#468DFF] text-sm font-bold bg-white text-[#468DFF] hover:bg-[#468DFF] hover:text-white transition-all flex items-center gap-2 cursor-pointer shrink-0"
                           title="Descargar listado en formato PDF"
                         >
                           <FileText className="h-4 w-4" />
@@ -1751,7 +1770,7 @@ export default function AccionesCorrectivasPage({ params }) {
                         <button
                           type="button"
                           onClick={() => handleExportPdfReport(true)}
-                          className="py-1.5 px-3 rounded-xl border border-[#468DFF] text-xs font-bold bg-white text-[#468DFF] hover:bg-[#468DFF] hover:text-white transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+                          className="py-2 px-4 rounded-xl border border-[#468DFF] text-sm font-bold bg-white text-[#468DFF] hover:bg-[#468DFF] hover:text-white transition-all flex items-center gap-2 cursor-pointer shrink-0"
                           title="Imprimir listado completo"
                         >
                           <Printer className="h-4 w-4" />
@@ -1762,9 +1781,9 @@ export default function AccionesCorrectivasPage({ params }) {
                       {canCargar && (
                         <button
                           onClick={() => { setIsReadOnlyView(false); setIsFormOpen(true); }}
-                          className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0 w-full md:w-auto"
+                          className="px-4 py-2 bg-[#468DFF] text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0 w-full md:w-auto"
                         >
-                          <PlusCircle className="h-3.5 w-3.5" />
+                          <PlusCircle className="h-4.5 w-4.5" />
                           Incorporar Nuevo Hallazgo
                         </button>
                       )}
@@ -1848,11 +1867,18 @@ export default function AccionesCorrectivasPage({ params }) {
                           <select
                             value={filterRiesgo}
                             onChange={(e) => setFilterRiesgo(e.target.value)}
-                            className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer"
+                            className={`border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer font-bold transition-all ${
+                              filterRiesgo === 'Riesgo trivial' ? 'bg-[#00B050] text-white' :
+                              filterRiesgo === 'Riesgo tolerable' ? 'bg-[#00FF00] text-slate-900' :
+                              filterRiesgo === 'Riesgo moderado' ? 'bg-[#FFFF00] text-slate-900' :
+                              filterRiesgo === 'Riesgo sustancial' ? 'bg-[#FF9900] text-white' :
+                              filterRiesgo === 'Riesgo intolerable' ? 'bg-[#FF0000] text-white' :
+                              'bg-white text-slate-600'
+                            }`}
                           >
-                            <option value="">Todos los riesgos</option>
+                            <option value="" className="bg-white text-slate-900 font-normal">Todos los riesgos</option>
                             {NIVEL_RIESGO_OPTIONS.map((opt) => (
-                              <option key={opt} value={opt}>{opt}</option>
+                              <option key={opt} value={opt} className="bg-white text-slate-900 font-normal">{opt}</option>
                             ))}
                           </select>
                         </div>
@@ -1965,11 +1991,11 @@ export default function AccionesCorrectivasPage({ params }) {
                             
                             // Color del nivel de riesgo
                             let riskBadge = 'bg-slate-100 text-slate-700 border-slate-200';
-                            if (acc.nivel_riesgo === 'Riesgo trivial') riskBadge = 'bg-[#0b8043]/10 text-[#0b8043] border-[#0b8043]/20';
-                            else if (acc.nivel_riesgo === 'Riesgo tolerable') riskBadge = 'bg-[#00b050]/10 text-[#00b050] border-[#00b050]/20';
-                            else if (acc.nivel_riesgo === 'Riesgo moderado') riskBadge = 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20';
-                            else if (acc.nivel_riesgo === 'Riesgo sustancial') riskBadge = 'bg-orange-500/10 text-orange-700 border-orange-500/20';
-                            else if (acc.nivel_riesgo === 'Riesgo intolerable') riskBadge = 'bg-red-500/10 text-red-600 border-red-500/20';
+                            if (acc.nivel_riesgo === 'Riesgo trivial') riskBadge = 'bg-[#00B050] text-white border-[#00B050]';
+                            else if (acc.nivel_riesgo === 'Riesgo tolerable') riskBadge = 'bg-[#00FF00] text-slate-900 border-[#00FF00]';
+                            else if (acc.nivel_riesgo === 'Riesgo moderado') riskBadge = 'bg-[#FFFF00] text-slate-900 border-[#FFFF00]';
+                            else if (acc.nivel_riesgo === 'Riesgo sustancial') riskBadge = 'bg-[#FF9900] text-white border-[#FF9900]';
+                            else if (acc.nivel_riesgo === 'Riesgo intolerable') riskBadge = 'bg-[#FF0000] text-white border-[#FF0000]';
 
                             return (
                               <tr 
@@ -2113,9 +2139,9 @@ export default function AccionesCorrectivasPage({ params }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
           <div className="bg-white rounded-2xl border border-slate-150 shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-scale-up">
             {/* Cabecera */}
-            <div className="px-6 py-4 bg-slate-50 border-b border-slate-150 flex items-center justify-between">
+            <div className="px-6 py-4 bg-slate-50 border-b border-slate-150 flex items-center justify-between shrink-0">
               <h3 className="font-outfit text-base font-bold text-slate-900">
-                Nivel de Riesgo - Método BS 8800
+                Nivel de Riesgo y Acciones <span className="font-normal text-slate-500 text-sm">(Método BS 8800)</span>
               </h3>
               <button
                 type="button"
@@ -2127,16 +2153,43 @@ export default function AccionesCorrectivasPage({ params }) {
             </div>
             
             {/* Cuerpo */}
-            <div className="p-6 overflow-y-auto flex items-center justify-center bg-slate-50/50">
-              <img
-                src="/assets/nivel-riesgo-bs-8800.png"
-                alt="Método BS 8800"
-                className="max-w-full max-h-[60vh] object-contain rounded-lg border border-slate-200 shadow-sm"
-              />
+            <div className="p-6 overflow-y-auto space-y-6 scrollbar-thin">
+              <div className="overflow-x-auto rounded-xl border border-slate-200">
+                <table className="w-full text-xs text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200">
+                      <th className="p-3 font-bold text-slate-800 border-r border-slate-200">Nivel de Riesgo</th>
+                      <th className="p-3 font-bold text-slate-800">Acción y cronograma</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-slate-150">
+                      <td className="p-3 font-bold text-white bg-[#00B050] border-r border-slate-200 text-center whitespace-nowrap">Riesgo trivial</td>
+                      <td className="p-3 text-slate-600 bg-white">No se requiere ninguna acción y no es necesario guardar registros documentados.</td>
+                    </tr>
+                    <tr className="border-b border-slate-150">
+                      <td className="p-3 font-bold text-slate-900 bg-[#00FF00] border-r border-slate-200 text-center whitespace-nowrap">Riesgo tolerable</td>
+                      <td className="p-3 text-slate-600 bg-white">No hacen falta controles adicionales. Puede prestarse mayor consideración a una mejor costo/beneficio, o mejora que no imponga una carga de costos adicionales. Se requiere monitoreo para asegurar que se mantengan los controles.</td>
+                    </tr>
+                    <tr className="border-b border-slate-150">
+                      <td className="p-3 font-bold text-slate-900 bg-[#FFFF00] border-r border-slate-200 text-center whitespace-nowrap">Riesgo moderado</td>
+                      <td className="p-3 text-slate-600 bg-white">Deben tomarse los recaudos para reducir el riesgo, pero los costos de prevención deben medirse y restringirse cuidadosamente. Deben implementarse medidas de reducción de riesgo dentro de un lapso definido. Cuando el riesgo moderado está asociado con consecuencias de daño extremo, pueden resultar necesarias ulteriores evaluaciones para establecer con más precisión la probabilidad de daño como base para determinar la necesidad de tomar mejores medidas de control.</td>
+                    </tr>
+                    <tr className="border-b border-slate-150">
+                      <td className="p-3 font-bold text-white bg-[#FF9900] border-r border-slate-200 text-center whitespace-nowrap">Riesgo sustancial</td>
+                      <td className="p-3 text-slate-600 bg-white">No debe comenzar el trabajo hasta que se haya reducido el riesgo. Puede ser necesario asignar recursos considerables para reducir el riesgo. Cuando éste involucra trabajo en proceso, debe tomarse acción urgente.</td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 font-bold text-white bg-[#FF0000] border-r border-slate-200 text-center whitespace-nowrap">Riesgo intolerable</td>
+                      <td className="p-3 text-slate-600 bg-white">No debe comenzar ni continuar el trabajo hasta que se haya reducido el riesgo. Si no es posible reducir el riesgo, el trabajo tiene que permanecer prohibido.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
             
             {/* Pie de página */}
-            <div className="px-6 py-3 bg-slate-50 border-t border-slate-150 flex justify-end">
+            <div className="px-6 py-3 bg-slate-50 border-t border-slate-150 flex justify-end shrink-0">
               <button
                 type="button"
                 onClick={() => setShowRiskMatrix(false)}

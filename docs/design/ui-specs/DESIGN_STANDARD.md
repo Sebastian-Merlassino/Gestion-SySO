@@ -148,3 +148,64 @@ El formulario reemplaza la vista de listado y se despliega con una animación su
   - Clase: `flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer`
 - **Botón Cancelar / Volver (Neutro)**:
   - Clase: `flex-1 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer`
+
+---
+
+## 7. Sección Programa de Capacitación (Especificaciones Detalladas)
+
+Para la sección de **Programa de Capacitación Anual** (`/capacitacion`), se establece un diseño estructurado y de alto contraste que asegura un control impecable del espacio de pantalla y consistencia visual:
+
+### 7.1 Contenedor Superior (Buscador y Acciones)
+El panel superior está unificado en una tarjeta única y colapsable que agrupa la búsqueda global, exportación y altas. Debe respetar las siguientes clases e interacciones:
+- **Estructura y Bordes**: Tarjeta con clase `bg-white border border-slate-150 rounded-2xl p-4 shadow-sm space-y-4 shrink-0`.
+- **Buscador (Input de Texto)**:
+  - Clase: `w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400`
+  - Icono `Search`: Lucide React posicionado a la izquierda con `absolute left-3.5 top-3 h-4.5 w-4.5 text-slate-400 pointer-events-none`.
+- **Botones de Descarga e Impresión (Estilo Secundario)**:
+  - Clase: `py-2 px-4 rounded-xl border border-[#468DFF] text-sm font-bold bg-white text-[#468DFF] hover:bg-[#468DFF] hover:text-white transition-all flex items-center gap-2 cursor-pointer shrink-0`
+- **Botón Registrar Capacitación (Estilo Primario)**:
+  - Clase: `px-4 py-2 bg-[#468DFF] text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0 w-full md:w-auto`
+- **Selects de Filtrado (Desplegables)**:
+  - Clase: `border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs cursor-pointer w-full disabled:opacity-50 disabled:bg-slate-50 disabled:text-slate-400`
+- **Botón Limpiar Filtros**:
+  - Clase: `px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[10px] font-semibold cursor-pointer transition-all border border-slate-200`
+
+### 7.2 Tabla de Contenidos (Listado de Datos)
+La tabla de visualización debe ocupar una porción de pantalla fija y predecible, evitando desplazamientos de la página mediante una altura de tarjeta controlada por el estado de los filtros:
+- **Estructura y Dimensiones**:
+  - Altura con filtros visibles: `height: calc(100vh - 310px)`
+  - Altura con filtros colapsados: `height: calc(100vh - 240px)`
+  - Clase contenedora: `bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden flex flex-col`
+  - Contenedor interno del scroll: `overflow-auto flex-grow`
+  - Clase de tabla: `w-full text-left border-collapse min-w-[850px]`
+- **Encabezados de Columna (`<thead>`)**:
+  - Clase de fila: `bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider`
+  - Celdas (`<th>`): `px-6 py-4`
+  - Distribución de Anchos (Respecto al 100% de la grilla):
+    - Cliente / Establecimiento: `w-[20%]`
+    - Puesto: `w-[15%]`
+    - Tema de Capacitación: `w-[25%]`
+    - Capacitador: `w-[15%]`
+    - Fechas Programadas: `w-[12%]`
+    - Progreso / Estado: `w-[8%]`
+    - Acciones: `w-[5%]`
+- **Celdas de Cuerpo (`<tbody>`)**:
+  - Fila interactiva: `hover:bg-slate-50/50 cursor-pointer` con `divide-y divide-slate-100`
+  - Paddings y fuentes generales: `px-6 py-4 text-xs font-normal text-slate-700`
+  - Textos principales (Cliente, Tema): `font-semibold text-slate-900`
+  - Sub-etiquetas secundarias (Establecimiento, Contenido): `text-[10px] text-slate-400 block mt-0.5 font-normal`
+  - Fechas: `text-slate-500 font-mono text-[10px]`
+- **Badges de Estado de Progreso**:
+  - Planificado (0%): `bg-slate-100 text-slate-700 border-slate-200 border rounded-full px-2 py-0.5 text-[10px] font-bold`
+  - En curso (> 0%): `bg-blue-500/10 text-[#468DFF] border-blue-500/20 border rounded-full px-2 py-0.5 text-[10px] font-bold`
+  - Completado (100%): `bg-[#00b050]/10 text-[#00b050] border-[#00b050]/20 border rounded-full px-2 py-0.5 text-[10px] font-bold`
+- **Barra de Progreso Miniatura**:
+  - Clase contenedor: `w-16 h-1.5 bg-slate-100 border border-slate-150 rounded-full overflow-hidden`
+  - Clase barra activa: `bg-[#468DFF] h-full`
+- **Botonera de Acciones (Columna final)**:
+  - Clase del contenedor: `flex items-center justify-end gap-2`
+  - Botón Ver Fotos: `p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-colors inline-flex items-center justify-center shadow-sm` (Icono: `ImageIcon` `h-4.5 w-4.5`).
+  - Botón Editar: `p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-colors inline-flex items-center justify-center` (Icono: `Edit` `h-4.5 w-4.5`).
+  - Botón Eliminar: `p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-colors inline-flex items-center justify-center` (Icono: `Trash2` `h-4.5 w-4.5`).
+  - Botón Ver Detalle (Solo lectura para Clientes): `p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors inline-flex items-center justify-center` (Icono: `Eye` `h-4.5 w-4.5`).
+

@@ -1,5 +1,218 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-06-29] Ajustes en Formulario de Acciones Correctivas y Modal de Aclaración
+
+### Resumen de Cambios
+- **Textareas Expandibles**: Se convirtieron los campos de entrada de texto manual (Descripción, Recomendaciones/Sugerencias, Acción Preventiva, Causa Raíz, Acción Correctiva y Observaciones Generales) de `input` a `textarea` configurados con las clases `resize-y scrollbar-thin` para permitir expandirlos desde la esquina inferior derecha.
+- **Reordenamiento y Nuevas Etiquetas**:
+  - Se movió "Recomendaciones / sugerencias" (antes "Recomendación Técnica") arriba del componente de carga de imágenes en la Sección 2.
+  - Se colocó "Acción Preventiva" (antes "Acción Preventiva Definida") en una fila completa, con el placeholder `"Se aplica antes de que ocurra el evento no deseado"`.
+  - Se colocó "Causa Raíz" (antes "Causa Raíz (Análisis)") en una fila completa, con el placeholder `"es la causa que, si se elimina o controla, evita la repetición del evento"`.
+  - Se colocó "Acción Correctiva" (antes "Acción Correctiva Inmediata") en una fila completa, con el placeholder `"Acción tomada para eliminar la causa raíz."`.
+- **Modal Informativo de Nivel de Riesgo**: Se actualizó el modal emergente de "Nivel de Riesgo" en `src/app/[tenant-slug]/correctivas/page.js` para añadir "(Método BS 8800)" a su título (sin negrita) y se eliminó la sección de imagen de la matriz BS 8800 en la parte inferior, dejando únicamente la tabla explicativa a color. Se removió la negrita (`font-semibold`) de la descripción de acción de "Riesgo intolerable" para unificar el estilo visual de la tabla y usar colores de fondo idénticos a la matriz BS 8800.
+- **Colores Sólidos BS 8800**:
+  - Se añadió un badge dinámico al lado de la etiqueta del formulario `"Nivel de Riesgo"`.
+  - Se estilizó dinámicamente el selector `<select>` del formulario y el de los filtros con los mismos colores sólidos e identificadores del método BS 8800 según la selección activa.
+  - Se modificaron las clases de color de la columna `"Nivel de Riesgo"` de la grilla de listado para usar fondos sólidos e idénticos a los definidos en el modal explicativo.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados
+- [page.js (Acciones Correctivas)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/correctivas/page.js)
+
+---
+
+## [2026-06-29] Habilitación de Scroll en Formularios de Acciones Correctivas y Accidentes
+
+### Resumen de Cambios
+- **Límite de Altura de Contenedor de Formulario**: Se configuró la clase `max-h-[85vh]` y `flex flex-col` en las tarjetas contenedoras de los formularios de `src/app/[tenant-slug]/correctivas/page.js` y `src/app/[tenant-slug]/accidentes/page.js` cuando `isFormOpen` es verdadero.
+- **Desplazamiento Vertical**: Se aplicó la clase `overflow-y-auto flex-1 scrollbar-thin` en los tags `<form>` correspondientes para hacer scrollable el contenido y prevenir que los formularios extensos se corten en pantallas pequeñas y viewports limitados por flex.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados
+- [page.js (Acciones Correctivas)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/correctivas/page.js)
+- [page.js (Accidentes)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/accidentes/page.js)
+
+---
+
+## [2026-06-29] Estandarización de Contenedores en Accidentes
+
+### Resumen de Cambios
+- **Alineación de Contenedor Padre**: Se actualizó el contenedor padre de la vista en `src/app/[tenant-slug]/accidentes/page.js` (línea 751) para usar la clase flex y padding unificada de capacitación: `max-w-[95%] mx-auto w-full py-8 px-4 md:px-0 flex-1 flex flex-col min-h-0`.
+- **Estructura del Listado**: Se cambió el contenedor de listado principal a flex (`space-y-6 flex-1 flex flex-col min-h-0`) para conservar la distancia estándar (24px) entre filtros y tabla.
+- **Contenedores de Filtros y Tabla**: Se incrementó el padding del panel de filtros a `p-4 space-y-4` y se aplicó la altura dinámica de la tabla a `calc(100vh - 310px)` (filtros abiertos) y `calc(100vh - 240px)` (filtros colapsados).
+- **Inputs, Botones e Iconos**: Se incrementaron los tamaños de padding y fuente del buscador y botón "Nuevo Accidente", unificándolos en tamaño `py-2` y `text-sm font-bold`.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados
+- [page.js (Accidentes)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/accidentes/page.js)
+
+---
+
+## [2026-06-29] Estandarización de Contenedores en Seguimiento de Acciones Correctivas
+
+### Resumen de Cambios
+- **Alineación de Contenedor Padre**: Se actualizó el contenedor padre de la vista en `src/app/[tenant-slug]/correctivas/page.js` (línea 1257) para usar la clase flex y padding unificada de capacitación: `max-w-[95%] mx-auto w-full py-8 px-4 md:px-0 flex-1 flex flex-col min-h-0`.
+- **Estructura del Listado**: Se cambió el contenedor de listado principal a flex (`space-y-6 flex-1 flex flex-col min-h-0`) para conservar la distancia estándar (24px) entre filtros y tabla.
+- **Contenedores de Filtros y Tabla**: Se incrementó el padding del panel de filtros a `p-4 space-y-4` y se aplicó la altura dinámica de la tabla a `calc(100vh - 310px)` (filtros abiertos) y `calc(100vh - 240px)` (filtros colapsados).
+- **Inputs, Botones e Iconos**: Se incrementaron los tamaños de padding y fuente del buscador, botones de exportación PDF/Impresión y botón "Incorporar Nuevo Hallazgo", unificándolos en tamaño `py-2` y `text-sm font-bold`.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados
+- [page.js (Acciones Correctivas)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/correctivas/page.js)
+
+---
+
+## [2026-06-29] Estandarización de Contenedores en Programa de Gestión Anual
+
+### Resumen de Cambios
+- **Reintegración del Selector en Panel de Filtros**: Se reinsertó el selector de vistas ("Programa anual" / "Calendario") en la fila superior dentro de la tarjeta de filtros, aplicando la alineación flex de doble extremo (`justify-between`) para empujar buscador/botones a la derecha y alinear el selector a la izquierda.
+- **Restauración del Espaciado Estándar**: Se agruparon la tarjeta de filtros y la tabla/calendario dentro de un contenedor flexible secundario `<div className="space-y-6 flex-1 flex flex-col min-h-0">`. Esto garantiza que la separación entre ambos bloques sea de `space-y-6` (24px), cumpliendo rigurosamente el estándar visual de la plataforma.
+- **Alturas y Dimensiones**: Se configuraron las alturas de las tarjetas de Tabla y Calendario a `style={{ height: showFilters ? 'calc(100vh - 360px)' : 'calc(100vh - 290px)' }}` para ajustarse al viewport sin desbordar.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados
+- [page.js (Programa de Gestión Anual)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/programa/page.js)
+
+---
+
+## [2026-06-29] Estandarización de Contenedores y Alturas en Control de Extintores
+
+### Resumen de Cambios
+- **Alineación de Contenedor Padre**: Se actualizó el contenedor padre de la vista en `src/app/[tenant-slug]/extintores/page.js` (línea 1153) para usar la clase flex y padding unificada de capacitación: `max-w-[95%] mx-auto w-full py-8 px-4 md:px-0 flex-1 flex flex-col min-h-0`.
+- **Contenedores de Filtros y Tabla**: Se cambió el contenedor de listado principal a flex, se incrementó el padding del panel de filtros a `p-4 space-y-4` y se aplicó la altura dinámica de la tabla a `calc(100vh - 310px)` (filtros abiertos) y `calc(100vh - 240px)` (filtros colapsados), junto con la animación de contracción suave `transition-all duration-300 ease-in-out`.
+- **Inputs, Botones e Iconos**: Se incrementaron los tamaños del buscador, botones de exportación y botón "Incorporar Nuevo Extintor" para que coincidan visualmente con Capacitación.
+- **Badges de Estado**: Se modificó el badge de estado de extintor para usar la clase unificada `inline-flex items-center justify-center text-center leading-[1.15]`.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados
+- [page.js (Control de Extintores)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/extintores/page.js)
+
+---
+
+## [2026-06-29] Corrección del Contenedor Padre de Matriz de Riesgos
+
+### Resumen de Cambios
+- **Alineación de Contenedor Padre y Flujo Flex**: Se reemplazó la clase estática de padding `p-6 md:p-8 space-y-6 max-w-[95%] mx-auto w-full` por la clase unificada de Capacitación `max-w-[95%] mx-auto w-full py-8 px-4 md:px-0 flex-1 flex flex-col min-h-0` en `src/app/[tenant-slug]/matriz-riesgos/page.js`. Esto habilita la correcta propagación del flujo flexible (flex height), garantizando que las proporciones, ancho y alto de la tabla y los filtros coincidan exactamente en ambas vistas.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados
+- [page.js (Matriz de Riesgos)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/matriz-riesgos/page.js)
+
+---
+
+## [2026-06-29] Sincronización de Contenedores y Altura Dinámica de Matriz de Riesgos con Capacitación
+
+### Resumen de Cambios
+- **Alineación de Tamaños y Contenedores**: Se modificaron el panel de filtros y la tabla en `src/app/[tenant-slug]/matriz-riesgos/page.js` para replicar con exactitud los espaciados, paddings y alturas de la sección de Capacitación.
+- **Sincronización de Altura y Contracción**: Se actualizó la altura dinámica de la tabla a `calc(100vh - 310px)` (filtros abiertos) y `calc(100vh - 240px)` (filtros colapsados) junto con la clase `transition-all duration-300 ease-in-out` para replicar el mismo movimiento suave de contracción.
+- **Consistencia en Inputs y Botones**: Se incrementaron los tamaños de padding y fuentes en el buscador, botones de exportación y botón "Nueva Matriz de Riesgos" para que coincidan visualmente al 100% con los estándares de la sección de Capacitación.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados
+- [page.js (Matriz de Riesgos)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/matriz-riesgos/page.js)
+
+---
+
+## [2026-06-29] Corrección de Badges de Nivel de Riesgo en Matriz de Riesgos
+
+### Resumen de Cambios
+- **Corrección Estética en Badges de Doble Renglón**: Se modificaron las etiquetas de valoración de riesgo inicial y residual en `src/app/[tenant-slug]/matriz-riesgos/page.js` para usar la clase `inline-flex items-center justify-center text-center leading-[1.15]`. Esto previene que se fragmenten o corten los bordes y el fondo redondeado cuando el texto descriptivo se divide en dos renglones (ej. "Riesgo intolerable").
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados
+- [page.js (Matriz de Riesgos)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/matriz-riesgos/page.js)
+
+---
+
+## [2026-06-29] Reorganización de Columnas y Flechas de Ordenamiento en Matriz de Riesgos
+
+### Resumen de Cambios
+- **Reordenamiento y Fusión de Columnas**: Se reestructuró la tabla de contenidos en `src/app/[tenant-slug]/matriz-riesgos/page.js` para ordenar los campos de la siguiente manera:
+  1. Cliente / Establecimiento (combinados en una sola columna con icono).
+  2. Área / Sector / Puesto / Operación (combinados en una sola columna).
+  3. Tareas.
+  4. Peligro.
+  5. Riesgo.
+  6. Riesgo Inicial.
+  7. Riesgo Residual.
+  8. Acciones (desplazada al final).
+- **Indicadores de Ordenamiento (Flechas)**: Se incorporaron triángulos visuales indicadores de ordenamiento (`▲` / `▼`) en todos los encabezados de columna interactivos que reaccionan dinámicamente según la columna y el sentido activo de ordenación.
+- **Acciones y Pictogramas**: Se ajustó el tamaño de los iconos `Edit` y `Trash2` en los botones de acción rápida para usar exactamente `h-4.5 w-4.5`, respetando la consistencia del manual de marca.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados
+- [page.js (Matriz de Riesgos)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/matriz-riesgos/page.js)
+
+---
+
+## [2026-06-29] Estandarización de Tabla de Contenidos en Matriz de Riesgos
+
+### Resumen de Cambios
+- **Rediseño Estético de la Tabla**: Se modificó la tabla de contenidos en `src/app/[tenant-slug]/matriz-riesgos/page.js` para alinearla con el estándar visual (`DESIGN_STANDARD.md`).
+- **Control de Altura de Pantalla y Filtros Reactivos**: Se implementó una altura de tarjeta reactiva que cambia según el estado del panel de filtros de búsqueda (`style={{ height: showFilters ? 'calc(100vh - 360px)' : 'calc(100vh - 280px)' }}`), evitando desplazamientos no deseados y Layout Shifts.
+- **Acceso Directo y Navegación**: Se habilitó la interactividad de la fila (`tr`) haciendo clic sobre ella para abrir la previsualización del registro en modo lectura (`setIsReadOnlyView(true); handleEditClick(row)`), y se detuvo la propagación del evento (`onClick={(e) => e.stopPropagation()}`) en la celda de Acciones para evitar colisiones.
+- **Bordes y Encabezados Suaves**: Se cambió la clase de borde de la tarjeta a `border-slate-150`, la clase del divisor de filas a `divide-slate-100`, el padding de celdas a `py-4`, y los hover del header a un cambio sutil de color de texto (`hover:text-slate-700 select-none`).
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados
+- [page.js (Matriz de Riesgos)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/matriz-riesgos/page.js)
+
+---
+
+## [2026-06-29] Estandarización de Filtros y Listado del Programa de Capacitación Anual
+
+### Resumen de Cambios
+- **Definición de Estándar UX/UI**: Se agregó la sección `7` en `docs/design/ui-specs/DESIGN_STANDARD.md` detallando las clases, dimensiones, botones y estructura visual del contenedor superior de filtros y de la tabla de contenidos para el Programa de Capacitación.
+- **Actualización de Skills**: Se documentaron estas mismas directrices técnicas dentro de la skill de la marca (`.agents/skills/gestion-syso-brand-guidelines/SKILL.md`) para guiar futuros desarrollos en la sección.
+- **Refactorización de Interfaz de Usuario**:
+  - Se modificaron los paddings y espacios verticales del panel superior en `src/app/[tenant-slug]/capacitacion/page.js` de `p-3 space-y-3` a `p-4 space-y-4` para coincidir con la cuadrícula de diseño.
+  - Se aumentó la escala del input del buscador principal a `py-2 text-sm` con el icono `Search` de tamaño `h-4.5 w-4.5` y posicionado a `left-3.5 top-3`.
+  - Se alinearon los botones de exportación ("Descargar PDF" e "Imprimir") y el botón primario ("Registrar Capacitación") al tamaño estándar `py-2 text-sm` y se le dotó al botón primario de una sombra de marca (`shadow-lg shadow-[#468DFF]/10`).
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados
+- [DESIGN_STANDARD.md](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/docs/design/ui-specs/DESIGN_STANDARD.md)
+- [SKILL.md](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/.agents/skills/gestion-syso-brand-guidelines/SKILL.md)
+- [page.js (Capacitación)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/capacitacion/page.js)
+
+---
+
 ## [2026-06-29] Actualización de Icono para Matriz de Riesgos en Barra Lateral
 
 ### Resumen de Cambios

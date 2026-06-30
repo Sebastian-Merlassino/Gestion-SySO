@@ -1366,7 +1366,7 @@ export default function ProgramaGestion({ params }) {
             </div>
           </div>
         ) : (
-          <div className="p-6 md:p-8 space-y-6 max-w-[95%] mx-auto w-full">
+          <div className="max-w-[95%] mx-auto w-full py-8 px-4 md:px-0 flex-1 flex flex-col min-h-0">
             {showForm ? (
               // FORMULARIO DE ALTA Y EDICIÓN INLINE
               <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
@@ -1783,15 +1783,13 @@ export default function ProgramaGestion({ params }) {
                 </form>
               </div>
             ) : (
-              <>
-                {/* Toolbar y Filtros Unificados */}
-                <div className="bg-white rounded-2xl border border-slate-150 p-4 shadow-sm space-y-4">
-
-                  {/* Fila Superior: Controles de Vista, Buscador y Botón Nuevo */}
-                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-
+              <div className="space-y-6 flex-1 flex flex-col min-h-0">
+                {/* Panel de Filtros y Búsqueda */}
+                <div className="bg-white border border-slate-150 rounded-2xl p-4 shadow-sm space-y-4 shrink-0">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    
                     {/* Selector de Vista */}
-                    <div className="flex items-center gap-2 rounded-xl bg-slate-100 p-1 border border-slate-200/80 self-start">
+                    <div className="flex items-center gap-2 rounded-xl bg-slate-100 p-1 border border-slate-200/80 self-start shrink-0">
                       <button
                         onClick={() => setView('list')}
                         className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${view === 'list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
@@ -1808,18 +1806,18 @@ export default function ProgramaGestion({ params }) {
                       </button>
                     </div>
 
-                    {/* Buscador y Nueva Actividad */}
+                    {/* Buscador y Botón agrupados */}
                     <div className="flex flex-col md:flex-row md:items-center gap-3 w-full md:w-auto">
                       <div className="relative w-full md:w-72">
-                        <span className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 pointer-events-none">
-                          <Search className="h-3.5 w-3.5" />
+                        <span className="absolute left-3.5 top-3 h-4.5 w-4.5 text-slate-400 pointer-events-none">
+                          <Search className="h-4.5 w-4.5" />
                         </span>
                         <input
                           type="text"
                           placeholder="Buscar actividad, cliente, obs..."
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
-                          className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400"
+                          className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400"
                         />
                       </div>
 
@@ -1827,7 +1825,7 @@ export default function ProgramaGestion({ params }) {
                         <button
                           type="button"
                           onClick={() => handleExportPdfReport(false)}
-                          className="py-1.5 px-3 rounded-xl border border-[#468DFF] text-xs font-bold bg-white text-[#468DFF] hover:bg-[#468DFF] hover:text-white transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+                          className="py-2 px-4 rounded-xl border border-[#468DFF] text-sm font-bold bg-white text-[#468DFF] hover:bg-[#468DFF] hover:text-white transition-all flex items-center gap-2 cursor-pointer shrink-0"
                           title="Descargar listado en formato PDF"
                         >
                           <FileText className="h-4 w-4" />
@@ -1836,7 +1834,7 @@ export default function ProgramaGestion({ params }) {
                         <button
                           type="button"
                           onClick={() => handleExportPdfReport(true)}
-                          className="py-1.5 px-3 rounded-xl border border-[#468DFF] text-xs font-bold bg-white text-[#468DFF] hover:bg-[#468DFF] hover:text-white transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+                          className="py-2 px-4 rounded-xl border border-[#468DFF] text-sm font-bold bg-white text-[#468DFF] hover:bg-[#468DFF] hover:text-white transition-all flex items-center gap-2 cursor-pointer shrink-0"
                           title="Imprimir listado completo"
                         >
                           <Printer className="h-4 w-4" />
@@ -1847,9 +1845,9 @@ export default function ProgramaGestion({ params }) {
                       {canCargar && (
                         <button
                           onClick={() => handleAddNew()}
-                          className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0 w-full md:w-auto"
+                          className="px-4 py-2 bg-[#468DFF] text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0 w-full md:w-auto"
                         >
-                          <PlusCircle className="h-3.5 w-3.5" />
+                          <PlusCircle className="h-4.5 w-4.5" />
                           Nueva Actividad
                         </button>
                       )}
@@ -1979,7 +1977,7 @@ export default function ProgramaGestion({ params }) {
 
                 {/* VISTA CALENDARIO */}
                 {view === 'calendar' && (
-                  <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4 overflow-auto flex flex-col" style={{ height: showFilters ? 'calc(100vh - 360px)' : 'calc(100vh - 290px)' }}>
+                  <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4 overflow-auto flex flex-col" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
 
                     {/* Cabecera del Mes del Calendario */}
                     <div className="flex items-center justify-between pb-3 border-b border-slate-200">
@@ -2090,7 +2088,7 @@ export default function ProgramaGestion({ params }) {
 
                 {/* VISTA DE TABLA / LISTADO */}
                 {view === 'list' && (
-                  <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden flex flex-col" style={{ height: showFilters ? 'calc(100vh - 360px)' : 'calc(100vh - 290px)' }}>
+                  <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden flex flex-col" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
                     <div className="overflow-auto flex-grow">
                       <table className="w-full border-collapse text-left min-w-[850px]">
                         <thead className="sticky top-0 z-10 bg-slate-50">
@@ -2300,7 +2298,7 @@ export default function ProgramaGestion({ params }) {
                     </div>
                   </div>
                 )}
-              </>
+              </div>
             )}
           </div>
         )}
