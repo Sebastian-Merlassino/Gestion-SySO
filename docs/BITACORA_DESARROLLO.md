@@ -1,5 +1,114 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-06-30] Estandarización de Layout Compacto en Nómina, Avisos y Constancias de Visita
+
+### Resumen de Cambios
+- **Alineación de Contenedor Padre**: Se actualizaron los contenedores padre en las vistas de Nómina del Personal (`src/app/[tenant-slug]/nomina/page.js`), Avisos de Riesgo (`src/app/[tenant-slug]/avisos/page.js`) y Constancias de Visita (`src/app/[tenant-slug]/visitas/page.js`) para usar la clase unificada del estándar: `max-w-[95%] mx-auto w-full py-8 px-4 md:px-0 flex-1 flex flex-col min-h-0`.
+- **Estructura de Listado y Flex Vertical**: Se reemplazaron los contenedores fragmento `<>` por un contenedor flex secundario `<div className="space-y-6 flex-1 flex flex-col min-h-0">` alrededor de la tarjeta de filtros y la tabla en las tres páginas, asegurando que se conserve la distancia vertical estándar (24px) y las alturas dinámicas del listado se comporten adecuadamente.
+- **Remoción de Scrollbars Duplicadas en Visitas**: Se modificó la etiqueta `<main>` en `visitas/page.js` para usar `min-w-0 overflow-y-auto` y se removió la envoltura intermedia `{/* Content Body */}` con `overflow-y-auto`, centralizando el scroll general y evitando doble scroll vertical en móviles y escritorios.
+- **Corrección de Scroll de Formularios Inline**: Al unificar la navegación en el contenedor padre, se aplicaron las clases de scroll local (`overflow-y-auto flex-1 scrollbar-thin`) y límites de altura (`max-h-[85vh] flex flex-col`) en las tarjetas de carga de Constancia de Visita (`src/app/[tenant-slug]/visitas/page.js`), Nómina del Personal (`src/app/[tenant-slug]/nomina/page.js`) y Control de Extintores (`src/app/[tenant-slug]/extintores/page.js`), devolviendo la scrollbar vertical interna correspondiente a estas secciones de carga larga.
+- **Corrección en Limpieza de Firmas de Visitas**: Se solucionó un bug en la función `handleClearCanvas` en `visitas/page.js` que impedía limpiar y re-firmar el canvas del Responsable o del Profesional de Higiene y Seguridad cuando se editaba una constancia de visita existente. Se reordenó la ejecución de la función para limpiar las URLs guardadas e invalidar el estado de firma antes del chequeo de referencia del canvas (`canvasRef.current`), permitiendo desmontar la imagen renderizada y desplegar el canvas de dibujo correctamente.
+- **Rediseño Estético en Sección de Firmas de Visita**: Se renombró la Sección 6 a '6. Firmas de la Constancia', removiendo la mención técnica al canvas. Se ubicó el selector de origen de firma del profesional ('Firma de Perfil' y 'Firmar a mano') directamente en la columna 2 del profesional, por encima de su respectivo cuadro de firma. Para lograr que los cuadros de firma del Responsable y del Profesional comiencen a la misma altura horizontal, se añadió un espaciador invisible (`h-[51px]`) en la columna 1 por debajo del label. Se rediseñó el selector con el formato de pestañas unificadas del componente de legajo y se adaptó la caja de firma de perfil a una relación de aspecto `aspect-[2/1]`.
+- **Transición de Tabla y Sombra de Botones**: Se añadió la clase de transición `transition-all duration-300 ease-in-out` en el contenedor de tabla de las tres páginas para suavizar la contracción/expansión al colapsar filtros. Se estandarizó la sombra del botón de acción principal de las tres páginas a `shadow-lg shadow-[#468DFF]/10`.
+
+### Decisiones Clave
+- **Unificación de Altura e Integración Flex**: El uso del contenedor padre unificado permite que las alturas dinámicas calculadas mediante `style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}` para las tablas se fijen perfectamente a la pantalla del viewport, eliminando el scrollbar exterior de la página y mejorando la consistencia UX/UI de la plataforma.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados
+- [page.js (Nómina del Personal)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/nomina/page.js)
+- [page.js (Avisos de Riesgo)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/avisos/page.js)
+- [page.js (Constancias de Visita)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/visitas/page.js)
+- [page.js (Control de Extintores)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/extintores/page.js)
+
+### Validaciones Ejecutadas
+- Compilación de producción exitosa mediante `next build` localmente, garantizando que los cambios de layout flex no introducen regresiones de renderizado o errores de JSX.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. La modularización del layout respeta los roles, permisos y adaptaciones responsivas preexistentes de cada una de las páginas.
+
+### Próximo Paso Recomendado
+- Seguir auditando las pantallas secundarias (como Legajo Técnico) para verificar si quedan páginas operativas pendientes de estandarización al estándar SySO Compact Layout.
+
+## [2026-06-30] Rediseño de Panel de Filtros y Botones en Programa de Gestión Anual
+
+### Resumen de Cambios
+- **Reducción de Padding e Interlineado**: Se modificó el contenedor superior en la sección de Programa de Gestión Anual (`src/app/[tenant-slug]/programa/page.js`) para usar `p-3 shadow-sm space-y-3` en lugar de `p-4 shadow-sm space-y-4`, compactando el área vertical general.
+- **Botones y Inputs Compactos**:
+  - Se redujo el padding de los botones de selección de vista ("Programa anual" y "Calendario") a `px-3 py-1.5` y su contenedor a `p-0.5 gap-1`.
+  - Se achicó el buscador de texto (`w-64`, `pl-9 pr-3.5 py-1.5 text-xs`) y su icono (`h-4 w-4`).
+  - Se compactaron los botones de descarga de PDF e Imprimir (`py-1.5 px-3 text-xs gap-1.5`) y sus iconos (`h-3.5 w-3.5`).
+- **Reposicionamiento de Botón +Nueva Actividad**: Se removió de la fila superior y se ubicó en la fila inferior al lado de "Filtros de Búsqueda" utilizando un diseño alineado a los extremos (`justify-between`), reduciendo también su padding y tamaño de texto (`px-3 py-1.5 text-xs gap-1.5`).
+- **Estandarización del Layout Compacto**: Se actualizó el documento general de especificaciones visuales `docs/design/ui-specs/DESIGN_STANDARD.md` y las instrucciones de la skill `.agents/skills/gestion-syso-brand-guidelines/SKILL.md` para establecer este diseño como el estándar oficial del sistema, denominado **"Layout Compacto de Tabla y Filtros de SySO"** (o **"SySO Compact Layout"**).
+- **Colapso Responsivo de Botones de Exportar (Móvil)**: Se incorporó un botón de flecha al lado de la barra de búsqueda que se visualiza de forma exclusiva en dispositivos móviles (`md:hidden`). Al hacer click, expande o colapsa de manera vertical los botones de descarga de PDF e impresión (`showExportMobile` de React), reduciendo drásticamente la altura de pantalla utilizada en teléfonos.
+- **Implementación del Estándar en Programa de Capacitación**: Se migró el panel de filtros y la barra superior en `src/app/[tenant-slug]/capacitacion/page.js` al **SySO Compact Layout**, reduciendo paddings, moviendo el botón "+ Registrar Capacitación" a la derecha de la fila inferior de filtros e integrando la funcionalidad colapsable de exportación en móviles.
+- **Estandarización del Resto de las Secciones Operativas**: Se migraron las 8 páginas principales del sistema (Acciones Correctivas, Accidentes, Matriz de Riesgos, Control de Extintores, Constancia de Visita, Aviso de Riesgo, Nómina del Personal y Legajo Técnico) al estándar **SySO Compact Layout**, compactando sus dimensiones, reorganizando el botón de alta en la fila inferior y añadiendo el toggle de exportación móvil en las vistas aplicables.
+
+### Decisiones Clave
+- **Mejora de UX y Consistencia**: Mantener controles que no bloqueen visualmente el contenido del listado/tabla y colocar la acción principal de creación en una ubicación contextual e integrada con la fila de filtros.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados
+- [page.js (Programa de Gestión Anual)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/programa/page.js)
+- [page.js (Capacitación)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/capacitacion/page.js)
+- [page.js (Acciones Correctivas)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/correctivas/page.js)
+- [page.js (Accidentes)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/accidentes/page.js)
+- [page.js (Matriz de Riesgos)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/matriz-riesgos/page.js)
+- [page.js (Control de Extintores)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/extintores/page.js)
+- [page.js (Constancia de Visita)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/visitas/page.js)
+- [page.js (Aviso de Riesgo)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/avisos/page.js)
+- [page.js (Nómina del Personal)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/nomina/page.js)
+- [page.js (Legajo Técnico)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/legajo/page.js)
+- [DESIGN_STANDARD.md](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/docs/design/ui-specs/DESIGN_STANDARD.md)
+- [SKILL.md (Brand Guidelines)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/.agents/skills/gestion-syso-brand-guidelines/SKILL.md)
+
+### Validaciones Ejecutadas
+- Compilación y build exitoso del proyecto utilizando `npm run build` localmente para garantizar la integridad sintáctica de la interfaz de usuario.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. El comportamiento responsivo fue resguardado utilizando clases condicionales flex-direction en dispositivos móviles.
+
+### Próximo Paso Recomendado
+- Validar con el cliente que el tamaño compacto de los botones y el posicionamiento del botón "+ Nueva Actividad" cumplan con sus expectativas estéticas y de uso ágil.
+
+---
+
+## [2026-06-30] Corrección de Scroll en Extintores y Canvas de Firmas en Visitas
+
+### Resumen de Cambios
+- **Desbloqueo de Scroll en Control de Extintores**: Se acondicionaron las clases del layout contenedor de la vista en `src/app/[tenant-slug]/extintores/page.js` para remover las propiedades restrictivas `flex-1 flex flex-col min-h-0` cuando el formulario de creación/edición está abierto (`isFormOpen === true`). Esto permite al contenedor de la tarjeta expandirse verticalmente hacia abajo según el contenido y delega el scroll vertical al contenedor general de la vista (`main` con `overflow-y-auto`), arreglando el scroll en computadoras y móviles.
+- **Implementación de Callback Refs para Canvas de Firmas**: En `src/app/[tenant-slug]/visitas/page.js`, se reestructuró la lógica de dibujo de firmas para utilizar callback refs de React en lugar de un `useEffect` con referencias estáticas que dependía únicamente de `isFormOpen`. Al pasar la inicialización de listeners a callbacks asociadas directamente al ciclo de montaje de los nodos en el DOM, se resuelven las firmas inertes en dispositivos móviles (cuando se cambia de firma de perfil a dibujo a mano) y al editar constancias existentes (cuando se hace click en "Limpiar Firma" y se monta el canvas correspondiente).
+
+### Decisiones Clave
+- **Uso de Callback Refs**: Se adoptó la técnica de Callback Refs para vincular eventos a elementos del DOM que se renderizan condicionalmente (como los `<canvas>` de firmas), evitando la falta de sincronización que se producía al usar `useRef` con efectos asíncronos y arrays de dependencias rígidos.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `vercel-react-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+
+### Validaciones Ejecutadas
+- Compilación y build exitoso del proyecto utilizando `next build` localmente sin advertencias ni errores.
+
+### Riesgos Detectados / Remanentes
+- Ninguno detectado. La interactividad de los canvas se limpiará automáticamente al desmontarse los componentes.
+
+### Próximo Paso Recomendado
+- Validar visualmente el comportamiento de dibujo en tabletas y móviles reales de distintas marcas para confirmar la fluidez de la experiencia.
+
+---
+
 ## [2026-06-29] Ajustes en Formulario de Acciones Correctivas y Modal de Aclaración
 
 ### Resumen de Cambios

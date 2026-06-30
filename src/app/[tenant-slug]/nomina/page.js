@@ -81,6 +81,7 @@ export default function NominaPage({ params }) {
   const [filterEstablecimiento, setFilterEstablecimiento] = useState('');
   const [filterAnio, setFilterAnio] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [showExportMobile, setShowExportMobile] = useState(false);
 
   // Sorting
   const [sortField, setSortField] = useState('nombre_apellido');
@@ -946,12 +947,12 @@ export default function NominaPage({ params }) {
             <span className="text-xs font-bold text-slate-400">Cargando personal...</span>
           </div>
         ) : (
-          <div className="p-6 md:p-8 space-y-6 max-w-[95%] mx-auto w-full">
+          <div className="max-w-[95%] mx-auto w-full py-8 px-4 md:px-0 flex-1 flex flex-col min-h-0">
             
             {isFormOpen ? (
               
               /* REDESIGNED INLINE FORM VIEW */
-              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col animate-fade-in">
+              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
                 
                 {/* Form Header */}
                 <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-150 flex items-center justify-between shrink-0">
@@ -977,7 +978,7 @@ export default function NominaPage({ params }) {
               </div>
 
               {/* Form Fields */}
-              <form onSubmit={handleSaveForm} className="p-6 space-y-6">
+              <form onSubmit={handleSaveForm} className="p-6 space-y-6 overflow-y-auto flex-1 scrollbar-thin">
                 <fieldset disabled={isReadOnlyView || !canEdit} className="space-y-6">
                 
                 {/* Cabecera de Lote */}
@@ -1392,60 +1393,61 @@ export default function NominaPage({ params }) {
           ) : (
             
             /* MAIN LIST VIEW */
-            <>
+            <div className="space-y-6 flex-1 flex flex-col min-h-0">
               {/* Panel de Filtros y Búsqueda */}
               <div className="bg-white rounded-2xl border border-slate-150 p-3 shadow-sm space-y-3 shrink-0">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
                   <div className="hidden md:block flex-1"></div>
 
-                  <div className="flex flex-col md:flex-row md:items-center gap-3 w-full md:w-auto">
-                    <div className="relative w-full md:w-72">
-                      <span className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 pointer-events-none">
-                        <Search className="h-3.5 w-3.5" />
-                      </span>
+                  {/* Buscador */}
+                  <div className="flex flex-col md:flex-row md:items-center gap-2 w-full md:w-auto">
+                    <div className="relative w-full md:w-64">
+                      <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 pointer-events-none" />
                       <input
                         type="text"
                         placeholder="Buscar por nombre, CUIL, puesto..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400 font-semibold"
+                        className="w-full pl-9 pr-3.5 py-1.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400"
                       />
                     </div>
-                    
-                    {canCreate && (
-                      <button
-                        onClick={handleOpenCreateForm}
-                        className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0 w-full md:w-auto"
-                      >
-                        <PlusCircle className="h-3.5 w-3.5" />
-                        Cargar Personal
-                      </button>
-                    )}
                   </div>
                 </div>
 
                 {/* Selectores de Filtrado */}
-                <div className="pt-2 border-t border-slate-100 space-y-2">
+                <div className="pt-1.5 border-t border-slate-100 space-y-2">
                   <div className="flex items-center justify-between min-h-[28px]">
-                    <button
-                      type="button"
-                      onClick={() => setShowFilters(!showFilters)}
-                      className="font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px] hover:text-slate-600 transition-colors cursor-pointer"
-                    >
-                      <Sliders className="h-3 w-3" />
-                      Filtros de Búsqueda
-                      {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                    </button>
-                    {(filterEmpresa || filterEstablecimiento || filterAnio) && (
+                    <div className="flex items-center gap-2">
                       <button
-                        onClick={() => {
-                          setFilterEmpresa('');
-                          setFilterEstablecimiento('');
-                          setFilterAnio('');
-                        }}
-                        className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[10px] font-semibold cursor-pointer transition-all border border-slate-200"
+                        type="button"
+                        onClick={() => setShowFilters(!showFilters)}
+                        className="font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px] hover:text-slate-600 transition-colors cursor-pointer"
                       >
-                        Limpiar filtros
+                        <Sliders className="h-3 w-3" />
+                        Filtros de Búsqueda
+                        {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                      </button>
+                      {(filterEmpresa || filterEstablecimiento || filterAnio) && (
+                        <button
+                          onClick={() => {
+                            setFilterEmpresa('');
+                            setFilterEstablecimiento('');
+                            setFilterAnio('');
+                          }}
+                          className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[10px] font-semibold cursor-pointer transition-all border border-slate-200"
+                        >
+                          Limpiar filtros
+                        </button>
+                      )}
+                    </div>
+
+                    {canCreate && (
+                      <button
+                        onClick={handleOpenCreateForm}
+                        className="px-3 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0"
+                      >
+                        <PlusCircle className="h-3.5 w-3.5" />
+                        Cargar Personal
                       </button>
                     )}
                   </div>
@@ -1507,7 +1509,7 @@ export default function NominaPage({ params }) {
               </div>
 
               {/* Listado / Tabla */}
-              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
+              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col transition-all duration-300 ease-in-out" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
                 {filteredPersonal.length === 0 ? (
                   <div className="flex-grow flex flex-col items-center justify-center text-center px-4 bg-slate-50/10 h-full">
                     <Users className="h-10 w-10 text-slate-350 mb-2 shrink-0" />
@@ -1612,7 +1614,7 @@ export default function NominaPage({ params }) {
                   </div>
                 )}
               </div>
-            </>
+            </div>
           )}
 
           </div>

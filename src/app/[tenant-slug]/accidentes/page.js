@@ -202,6 +202,7 @@ export default function AccidentesPage({ params }) {
   const [filterTipo, setFilterTipo] = useState('');
   const [filterGravedad, setFilterGravedad] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [showExportMobile, setShowExportMobile] = useState(false);
 
   // ── Ordenamiento ──────────────────────────────────────────────────────────
   const [sortField, setSortField] = useState('fecha_siniestro');
@@ -1271,26 +1272,57 @@ export default function AccidentesPage({ params }) {
               <div className="space-y-6 flex-1 flex flex-col min-h-0">
 
                 {/* Panel de Filtros y Búsqueda */}
-                <div className="bg-white border border-slate-150 rounded-2xl p-4 shadow-sm space-y-4 shrink-0">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                    {/* Espaciador para empujar el buscador y botón a la derecha en desktop */}
+                <div className="bg-white border border-slate-150 rounded-2xl p-3 shadow-sm space-y-3 shrink-0">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
+                    {/* Espaciador para empujar el buscador a la derecha en desktop */}
                     <div className="hidden md:block flex-1"></div>
 
-                    {/* Buscador y Botón agrupados */}
-                    <div className="flex flex-col md:flex-row md:items-center gap-3 w-full md:w-auto">
-                      <div className="relative w-full md:w-72">
-                        <span className="absolute left-3.5 top-3 h-4.5 w-4.5 text-slate-400 pointer-events-none">
-                          <Search className="h-4.5 w-4.5" />
+                    {/* Buscador */}
+                    <div className="flex flex-col md:flex-row md:items-center gap-2 w-full md:w-auto">
+                      <div className="relative w-full md:w-64">
+                        <span className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 pointer-events-none">
+                          <Search className="h-4 w-4" />
                         </span>
                         <input
                           type="text"
                           placeholder="Buscar por accidentado, N° siniestro, diagnóstico..."
                           value={filterText}
                           onChange={(e) => setFilterText(e.target.value)}
-                          className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400 font-semibold"
+                          className="w-full pl-9 pr-3.5 py-1.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400 font-semibold"
                         />
                       </div>
-                      
+                    </div>
+                  </div>
+
+                  {/* Selectores de Filtrado */}
+                  <div className="pt-1.5 border-t border-slate-100 space-y-2">
+                    <div className="flex items-center justify-between min-h-[28px]">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowFilters(!showFilters)}
+                          className="font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px] hover:text-slate-600 transition-colors cursor-pointer"
+                        >
+                          <Sliders className="h-3 w-3" />
+                          Filtros de Búsqueda
+                          {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                        </button>
+                        {(filterEmpresa || filterEstablecimiento || filterFecha || filterTipo || filterGravedad) && (
+                          <button
+                            onClick={() => {
+                              setFilterEmpresa('');
+                              setFilterEstablecimiento('');
+                              setFilterFecha('');
+                              setFilterTipo('');
+                              setFilterGravedad('');
+                            }}
+                            className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[10px] font-semibold cursor-pointer transition-all border border-slate-200"
+                          >
+                            Limpiar filtros
+                          </button>
+                        )}
+                      </div>
+
                       {canCargar && (
                         <button
                           onClick={() => {
@@ -1299,39 +1331,10 @@ export default function AccidentesPage({ params }) {
                             handleCloseForm();
                             setTimeout(() => setIsFormOpen(true), 0);
                           }}
-                          className="px-4 py-2 bg-[#468DFF] text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0 w-full md:w-auto font-sans"
+                          className="px-3 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0 font-sans"
                         >
-                          <PlusCircle className="h-4.5 w-4.5" />
+                          <PlusCircle className="h-3.5 w-3.5" />
                           Nuevo Accidente
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Selectores de Filtrado */}
-                  <div className="pt-2 border-t border-slate-100 space-y-2">
-                    <div className="flex items-center justify-between min-h-[28px]">
-                      <button
-                        type="button"
-                        onClick={() => setShowFilters(!showFilters)}
-                        className="font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px] hover:text-slate-600 transition-colors cursor-pointer"
-                      >
-                        <Sliders className="h-3 w-3" />
-                        Filtros de Búsqueda
-                        {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                      </button>
-                      {(filterEmpresa || filterEstablecimiento || filterFecha || filterTipo || filterGravedad) && (
-                        <button
-                          onClick={() => {
-                            setFilterEmpresa('');
-                            setFilterEstablecimiento('');
-                            setFilterFecha('');
-                            setFilterTipo('');
-                            setFilterGravedad('');
-                          }}
-                          className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[10px] font-semibold cursor-pointer transition-all border border-slate-200"
-                        >
-                          Limpiar filtros
                         </button>
                       )}
                     </div>

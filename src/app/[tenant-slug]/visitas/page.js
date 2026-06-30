@@ -1,7 +1,7 @@
 // src/app/[tenant-slug]/visitas/page.js
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
@@ -229,6 +229,7 @@ export default function VisitasPage({ params }) {
   const [filterAnio, setFilterAnio] = useState('');
   const [filterMes, setFilterMes] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [showExportMobile, setShowExportMobile] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
@@ -358,81 +359,96 @@ export default function VisitasPage({ params }) {
     resolveProfileSignaturePreview();
   }, [signaturePath, firmaTipo, isDevMode]);
 
-  // Setup de Canvas de dibujo para firmas
-  useEffect(() => {
-    if (!isFormOpen || !canEdit) return;
+  // Helper de dibujo del Canvas enlazado con useCallback
+  const setupCanvas = useCallback((canvas, setHasSigned) => {
+    if (!canvas || !canEdit) return;
+    const ctx = canvas.getContext('2d');
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
 
-    const setupCanvas = (canvas, setHasSigned) => {
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      ctx.strokeStyle = '#000000';
-      ctx.lineWidth = 2.5;
-      ctx.lineCap = 'round';
+    let drawing = false;
 
-      let drawing = false;
-
-      // Obtener coordenadas de mouse/touch relativas al canvas
-      const getPos = (e) => {
-        const rect = canvas.getBoundingClientRect();
-        // Soporte touch
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        
-        // Calcular en base al tamaño real interno del canvas para evitar desfases de escalado CSS
-        const x = ((clientX - rect.left) / rect.width) * canvas.width;
-        const y = ((clientY - rect.top) / rect.height) * canvas.height;
-        return { x, y };
-      };
-
-      const startDrawing = (e) => {
-        drawing = true;
-        const pos = getPos(e);
-        ctx.beginPath();
-        ctx.moveTo(pos.x, pos.y);
-        e.preventDefault();
-      };
-
-      const draw = (e) => {
-        if (!drawing) return;
-        const pos = getPos(e);
-        ctx.lineTo(pos.x, pos.y);
-        ctx.stroke();
-        setHasSigned(true);
-        e.preventDefault();
-      };
-
-      const stopDrawing = () => {
-        drawing = false;
-      };
-
-      canvas.addEventListener('mousedown', startDrawing);
-      canvas.addEventListener('mousemove', draw);
-      canvas.addEventListener('mouseup', stopDrawing);
-      canvas.addEventListener('mouseleave', stopDrawing);
-
-      canvas.addEventListener('touchstart', startDrawing, { passive: false });
-      canvas.addEventListener('touchmove', draw, { passive: false });
-      canvas.addEventListener('touchend', stopDrawing);
-
-      return () => {
-        canvas.removeEventListener('mousedown', startDrawing);
-        canvas.removeEventListener('mousemove', draw);
-        canvas.removeEventListener('mouseup', stopDrawing);
-        canvas.removeEventListener('mouseleave', stopDrawing);
-        canvas.removeEventListener('touchstart', startDrawing);
-        canvas.removeEventListener('touchmove', draw);
-        canvas.removeEventListener('touchend', stopDrawing);
-      };
+    // Obtener coordenadas de mouse/touch relativas al canvas
+    const getPos = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      // Soporte touch
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      
+      // Calcular en base al tamaño real interno del canvas para evitar desfases de escalado CSS
+      const x = ((clientX - rect.left) / rect.width) * canvas.width;
+      const y = ((clientY - rect.top) / rect.height) * canvas.height;
+      return { x, y };
     };
 
-    const cleanupResp = setupCanvas(firmaRespCanvasRef.current, setHasSignedResp);
-    const cleanupProf = setupCanvas(firmaProfCanvasRef.current, setHasSignedProf);
-
-    return () => {
-      if (cleanupResp) cleanupResp();
-      if (cleanupProf) cleanupProf();
+    const startDrawing = (e) => {
+      drawing = true;
+      const pos = getPos(e);
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+      e.preventDefault();
     };
-  }, [isFormOpen]);
+
+    const draw = (e) => {
+      if (!drawing) return;
+      const pos = getPos(e);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+      setHasSigned(true);
+      e.preventDefault();
+    };
+
+    const stopDrawing = () => {
+      drawing = false;
+    };
+
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseleave', stopDrawing);
+
+    canvas.addEventListener('touchstart', startDrawing, { passive: false });
+    canvas.addEventListener('touchmove', draw, { passive: false });
+    canvas.addEventListener('touchend', stopDrawing);
+
+    // Adjuntar la función de limpieza al propio objeto del nodo canvas para llamarla al desmontar
+    canvas._cleanup = () => {
+      canvas.removeEventListener('mousedown', startDrawing);
+      canvas.removeEventListener('mousemove', draw);
+      canvas.removeEventListener('mouseup', stopDrawing);
+      canvas.removeEventListener('mouseleave', stopDrawing);
+      canvas.removeEventListener('touchstart', startDrawing);
+      canvas.removeEventListener('touchmove', draw);
+      canvas.removeEventListener('touchend', stopDrawing);
+    };
+  }, [canEdit]);
+
+  // Callback ref para el Canvas del Responsable de la Empresa
+  const firmaRespRefCallback = useCallback((node) => {
+    if (node) {
+      setupCanvas(node, setHasSignedResp);
+      firmaRespCanvasRef.current = node;
+    } else {
+      if (firmaRespCanvasRef.current && firmaRespCanvasRef.current._cleanup) {
+        firmaRespCanvasRef.current._cleanup();
+      }
+      firmaRespCanvasRef.current = null;
+    }
+  }, [setupCanvas]);
+
+  // Callback ref para el Canvas del Profesional de SySO
+  const firmaProfRefCallback = useCallback((node) => {
+    if (node) {
+      setupCanvas(node, setHasSignedProf);
+      firmaProfCanvasRef.current = node;
+    } else {
+      if (firmaProfCanvasRef.current && firmaProfCanvasRef.current._cleanup) {
+        firmaProfCanvasRef.current._cleanup();
+      }
+      firmaProfCanvasRef.current = null;
+    }
+  }, [setupCanvas]);
 
   const triggerToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
@@ -841,12 +857,12 @@ export default function VisitasPage({ params }) {
 
   // Limpiar canvas
   const handleClearCanvas = (canvasRef, setHasSigned, savedUrlSetter) => {
+    if (savedUrlSetter) savedUrlSetter('');
+    setHasSigned(false);
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    setHasSigned(false);
-    if (savedUrlSetter) savedUrlSetter('');
   };
 
   // Manejo de fotos de registros
@@ -2168,7 +2184,7 @@ export default function VisitasPage({ params }) {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col h-full bg-[#FFFFFF] overflow-hidden">
+      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         
         {/* Navbar / Top Bar */}
         <header className="h-16 border-b border-slate-200 flex items-center justify-between px-4 md:px-6 bg-white shrink-0 sticky top-0 z-20">
@@ -2196,69 +2212,70 @@ export default function VisitasPage({ params }) {
         </header>
 
         {/* Content Body */}
-        <div className="flex-1 overflow-y-auto p-3 sm:p-6 bg-syso-bg">
-          <div className="max-w-[95%] mx-auto space-y-6">
+        <div className="max-w-[95%] mx-auto w-full py-8 px-4 md:px-0 flex-1 flex flex-col min-h-0">
 
             {/* LISTADO DE VISITAS */}
             {!isFormOpen && (
-              <>
+              <div className="space-y-6 flex-1 flex flex-col min-h-0">
                 {/* Herramientas, Búsqueda y Filtros */}
                 <div className="bg-white rounded-2xl border border-slate-150 p-3 shadow-sm space-y-3 shrink-0">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                    {/* Espaciador para empujar el buscador y botón a la derecha en desktop */}
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
+                    {/* Espaciador para empujar el buscador a la derecha en desktop */}
                     <div className="hidden md:block flex-1"></div>
 
-                    {/* Buscador y Botón agrupados */}
-                    <div className="flex flex-col md:flex-row md:items-center gap-3 w-full md:w-auto">
-                      <div className="relative w-full md:w-72">
+                    {/* Buscador */}
+                    <div className="flex flex-col md:flex-row md:items-center gap-2 w-full md:w-auto">
+                      <div className="relative w-full md:w-64">
                         <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 pointer-events-none" />
                         <input 
                           type="text" 
                           placeholder="Buscar por profesional, responsable, observaciones..."
                           value={filterText}
                           onChange={(e) => setFilterText(e.target.value)}
-                          className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400"
+                          className="w-full pl-9 pr-3.5 py-1.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400"
                         />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Filtros avanzados colapsables */}
+                  <div className="pt-1.5 border-t border-slate-100 space-y-2">
+                    <div className="flex items-center justify-between min-h-[28px]">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowFilters(!showFilters)}
+                          className="font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px] hover:text-slate-600 transition-colors cursor-pointer"
+                        >
+                          <Sliders className="h-3 w-3" />
+                          Filtros de Búsqueda
+                          {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                        </button>
+
+                        {(filterText || filterEmpresa || filterEstablecimiento || filterFecha || filterAnio || filterMes) && (
+                          <button 
+                            onClick={() => {
+                              setFilterText('');
+                              setFilterEmpresa('');
+                              setFilterEstablecimiento('');
+                              setFilterFecha('');
+                              setFilterAnio('');
+                              setFilterMes('');
+                            }}
+                            className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[10px] font-semibold cursor-pointer transition-all border border-slate-200"
+                          >
+                            Limpiar filtros
+                          </button>
+                        )}
                       </div>
 
                       {canCargar && (
                         <button 
                           onClick={handleAddNew}
-                          className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0 w-full md:w-auto"
+                          className="px-3 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0"
                         >
                           <PlusCircle className="h-3.5 w-3.5" />
                           Nueva Constancia
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Filtros avanzados colapsables */}
-                  <div className="pt-2 border-t border-slate-100 space-y-2">
-                    <div className="flex items-center justify-between min-h-[28px]">
-                      <button
-                        type="button"
-                        onClick={() => setShowFilters(!showFilters)}
-                        className="font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px] hover:text-slate-600 transition-colors cursor-pointer"
-                      >
-                        <Sliders className="h-3 w-3" />
-                        Filtros de Búsqueda
-                        {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                      </button>
-
-                      {(filterText || filterEmpresa || filterEstablecimiento || filterFecha || filterAnio || filterMes) && (
-                        <button 
-                          onClick={() => {
-                            setFilterText('');
-                            setFilterEmpresa('');
-                            setFilterEstablecimiento('');
-                            setFilterFecha('');
-                            setFilterAnio('');
-                            setFilterMes('');
-                          }}
-                          className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[10px] font-semibold cursor-pointer transition-all border border-slate-200"
-                        >
-                          Limpiar Filtros
                         </button>
                       )}
                     </div>
@@ -2350,7 +2367,7 @@ export default function VisitasPage({ params }) {
                 </div>
 
                 {/* Tabla de Resultados */}
-                <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
+                <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col transition-all duration-300 ease-in-out" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
                   {sortedVisitas.length === 0 ? (
                     <div className="flex-grow flex flex-col items-center justify-center p-8 text-center gap-3 h-full">
                       <AlertCircle className="h-10 w-10 text-slate-300" />
@@ -2381,7 +2398,7 @@ export default function VisitasPage({ params }) {
                             <th className="px-6 py-4 text-right sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Acciones</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 text-sm">
+                        <tbody className="divide-y divide-slate-100 text-xs font-normal text-slate-700">
                           {sortedVisitas.map((v) => {
                             const emp = empresas.find(e => e.id === v.empresa_id);
                             const est = allEstablecimientos.find(e => e.id === v.establecimiento_id);
@@ -2455,12 +2472,12 @@ export default function VisitasPage({ params }) {
                     </div>
                   )}
                 </div>
-              </>
+              </div>
             )}
 
             {/* FORMULARIO INLINE */}
             {isFormOpen && (
-              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden animate-fade-in">
+              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
                 
                 {/* Cabecera del formulario */}
                 <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-150 flex items-center justify-between shrink-0">
@@ -2482,7 +2499,7 @@ export default function VisitasPage({ params }) {
                 </div>
 
                 {/* Formulario */}
-                <form onSubmit={handleSaveVisita} className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+                <form onSubmit={handleSaveVisita} className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto flex-1 scrollbar-thin">
                   <fieldset disabled={!canEdit} className="space-y-6">
                   
                   {/* SECCIÓN 1: DATOS GENERALES */}
@@ -3211,14 +3228,14 @@ export default function VisitasPage({ params }) {
                   <div className="space-y-4 pt-4">
                     <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
                       <Check className="h-4.5 w-4.5 text-[#00b050]" />
-                      6. Firmas de la Constancia (Canvas de Dibujo)
+                      6. Firmas de la Constancia
                     </h3>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       
                       {/* Firma 1: Responsable Empresa */}
                       <div className="space-y-2 flex flex-col">
-                        <div className="flex flex-row justify-between items-end gap-2">
+                        <div className="flex flex-row justify-between items-end gap-2 min-h-[18px]">
                           <label className="text-xs font-bold text-slate-600 pr-2">Firma del Responsable de la Empresa</label>
                           {canEdit && (hasSignedResp || firmaRespSavedUrl) && (
                             <button
@@ -3231,13 +3248,16 @@ export default function VisitasPage({ params }) {
                           )}
                         </div>
 
+                        {/* Espaciador para compensar el selector de la firma del profesional y mantener alineados los cuadros */}
+                        <div className="hidden md:block h-[51px] shrink-0" />
+
                         {/* Cuadro de Firma (Canvas o Visualización de guardada) */}
                         <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl aspect-[2/1] relative overflow-hidden flex items-center justify-center">
                           {firmaRespSavedUrl && !hasSignedResp ? (
                             <img src={firmaRespSavedUrl} alt="Firma Responsable" className="w-full h-full object-contain p-2" />
                           ) : (
                             <canvas
-                              ref={firmaRespCanvasRef}
+                              ref={firmaRespRefCallback}
                               width={400}
                               height={200}
                               className={`w-full h-full bg-white block ${canEdit ? 'cursor-crosshair' : 'cursor-default'}`}
@@ -3251,7 +3271,7 @@ export default function VisitasPage({ params }) {
 
                       {/* Firma 2: Profesional Higiene y Seguridad */}
                       <div className="space-y-2 flex flex-col">
-                        <div className="flex flex-row justify-between items-end gap-2">
+                        <div className="flex flex-row justify-between items-end gap-2 min-h-[18px]">
                           <label className="text-xs font-bold text-slate-600 pr-2">Firma del Profesional de Higiene y Seguridad</label>
                           {firmaTipo === 'mano' && canEdit && (hasSignedProf || firmaProfSavedUrl) && (
                             <button
@@ -3264,63 +3284,73 @@ export default function VisitasPage({ params }) {
                           )}
                         </div>
 
-                        <div className="space-y-3">
-                          <div className="flex gap-2">
+                        {/* Selector de Tipo de Firma del Profesional */}
+                        <div className="space-y-1.5 h-[51px] flex flex-col justify-end">
+                          <label className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Origen de Firma del Profesional</label>
+                          <div className="flex border border-slate-200 bg-white text-[11px] font-semibold shrink-0 rounded-lg overflow-hidden border">
                             <button
                               type="button"
                               onClick={() => setFirmaTipo('perfil')}
-                              className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all border ${firmaTipo === 'perfil' ? 'bg-[#468DFF]/10 text-[#468DFF] border-[#468DFF]/30' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}`}
+                              className={`flex-1 py-1 transition-colors cursor-pointer ${
+                                firmaTipo === 'perfil'
+                                  ? 'bg-[#468DFF] text-white'
+                                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                              }`}
                             >
                               Firma de Perfil
                             </button>
                             <button
                               type="button"
                               onClick={() => setFirmaTipo('mano')}
-                              className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all border ${firmaTipo === 'mano' ? 'bg-[#468DFF]/10 text-[#468DFF] border-[#468DFF]/30' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}`}
+                              className={`flex-1 py-1 transition-colors cursor-pointer ${
+                                firmaTipo === 'mano'
+                                  ? 'bg-[#468DFF] text-white'
+                                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                              }`}
                             >
                               Firmar a mano
                             </button>
                           </div>
-
-                          {firmaTipo === 'perfil' ? (
-                            <div className="border border-slate-200 bg-slate-50/30 rounded-xl p-3 text-center space-y-2 flex flex-col items-center justify-center min-h-[100px]">
-                              {signaturePath ? (
-                                <>
-                                  {firmaPerfilPreviewUrl ? (
-                                    <div className="bg-white border border-slate-200 rounded-lg p-2 max-w-[200px] h-[80px] flex items-center justify-center overflow-hidden">
-                                      <img 
-                                        src={firmaPerfilPreviewUrl} 
-                                        alt="Vista previa de firma de perfil" 
-                                        className="max-w-full max-h-full object-contain"
-                                      />
-                                    </div>
-                                  ) : (
-                                    <Loader2 className="h-5 w-5 animate-spin text-[#468DFF]" />
-                                  )}
-                                  <p className="text-[10px] text-green-600 font-bold">✓ Firma del perfil cargada correctamente.</p>
-                                </>
-                              ) : (
-                                <p className="text-[10px] text-amber-600 font-bold">⚠ El profesional seleccionado no tiene una firma digital configurada.</p>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl aspect-[2/1] relative overflow-hidden flex items-center justify-center">
-                              {firmaProfSavedUrl && !hasSignedProf ? (
-                                <img src={firmaProfSavedUrl} alt="Firma Profesional" className="w-full h-full object-contain p-2" />
-                              ) : (
-                                <canvas
-                                  ref={firmaProfCanvasRef}
-                                  width={400}
-                                  height={200}
-                                  className={`w-full h-full bg-white block ${canEdit ? 'cursor-crosshair' : 'cursor-default'}`}
-                                />
-                              )}
-                              {!hasSignedProf && !firmaProfSavedUrl && (
-                                <span className="absolute pointer-events-none text-[10px] text-slate-400 font-bold uppercase tracking-wider">Dibuje la firma aquí</span>
-                              )}
-                            </div>
-                          )}
                         </div>
+
+                        {firmaTipo === 'perfil' ? (
+                          <div className="border-2 border-dashed border-slate-200 bg-slate-50 rounded-xl aspect-[2/1] relative overflow-hidden flex items-center justify-center p-3 text-center">
+                            {signaturePath && signaturePath !== 'N/A' ? (
+                              <div className="flex flex-col items-center justify-center h-full w-full">
+                                {firmaPerfilPreviewUrl ? (
+                                  <div className="bg-white border border-slate-200 rounded-lg p-2 max-w-[200px] h-[80px] flex items-center justify-center overflow-hidden shadow-sm">
+                                    <img 
+                                      src={firmaPerfilPreviewUrl} 
+                                      alt="Vista previa de firma de perfil" 
+                                      className="max-w-full max-h-full object-contain"
+                                    />
+                                  </div>
+                                ) : (
+                                  <Loader2 className="h-5 w-5 animate-spin text-[#468DFF]" />
+                                )}
+                                <p className="text-[10px] text-green-600 font-bold mt-2">✓ Firma del perfil cargada correctamente.</p>
+                              </div>
+                            ) : (
+                              <p className="text-[10px] text-amber-600 font-bold p-4">⚠ El profesional seleccionado no tiene una firma digital configurada.</p>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl aspect-[2/1] relative overflow-hidden flex items-center justify-center">
+                            {firmaProfSavedUrl && !hasSignedProf ? (
+                              <img src={firmaProfSavedUrl} alt="Firma Profesional" className="w-full h-full object-contain p-2" />
+                            ) : (
+                              <canvas
+                                ref={firmaProfRefCallback}
+                                width={400}
+                                height={200}
+                                className={`w-full h-full bg-white block ${canEdit ? 'cursor-crosshair' : 'cursor-default'}`}
+                              />
+                            )}
+                            {!hasSignedProf && !firmaProfSavedUrl && (
+                              <span className="absolute pointer-events-none text-[10px] text-slate-400 font-bold uppercase tracking-wider">Dibuje la firma aquí</span>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                     </div>
@@ -3379,7 +3409,6 @@ export default function VisitasPage({ params }) {
             )}
 
           </div>
-        </div>
       </main>
 
       {/* MODAL DE CORREO ELECTRÓNICO */}

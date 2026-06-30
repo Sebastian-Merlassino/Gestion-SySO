@@ -162,6 +162,7 @@ export default function ExtintoresPage({ params }) {
   const [filterEstado, setFilterEstado] = useState('');
   const [filterTipo, setFilterTipo] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [showExportMobile, setShowExportMobile] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
@@ -1154,7 +1155,7 @@ export default function ExtintoresPage({ params }) {
             
             {isFormOpen ? (
               // FORMULARIO DE ALTA Y EDICIÓN INLINE
-              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden animate-fade-in">
+              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
                 <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-150 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
                     <button 
@@ -1172,7 +1173,7 @@ export default function ExtintoresPage({ params }) {
                   </button>
                 </div>
 
-                <form onSubmit={handleSaveExtintor} className="p-6 space-y-6">
+                <form onSubmit={handleSaveExtintor} className="p-6 space-y-6 overflow-y-auto flex-1 scrollbar-thin">
                   <fieldset disabled={!canEdit} className="space-y-6">
                   
                   {/* Seccion 1: Identificación y Ubicación */}
@@ -1599,84 +1600,97 @@ export default function ExtintoresPage({ params }) {
               <div className="space-y-6 flex-1 flex flex-col min-h-0">
                 
                 {/* Panel de Filtros y Búsqueda */}
-                <div className="bg-white border border-slate-150 rounded-2xl p-4 shadow-sm space-y-4 shrink-0">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div className="bg-white border border-slate-150 rounded-2xl p-3 shadow-sm space-y-3 shrink-0">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
                     {/* Espaciador para empujar el buscador y botón a la derecha en desktop */}
                     <div className="hidden md:block flex-1"></div>
 
-                    {/* Buscador y Botón agrupados */}
-                    <div className="flex flex-col md:flex-row md:items-center gap-3 w-full md:w-auto">
-                      <div className="relative w-full md:w-72">
-                        <span className="absolute left-3.5 top-3 h-4.5 w-4.5 text-slate-400 pointer-events-none">
-                          <Search className="h-4.5 w-4.5" />
-                        </span>
-                        <input
-                          type="text"
-                          placeholder="Buscar por N° de Extintor, N° de puesto, sector, referencia..."
-                          value={filterText}
-                          onChange={(e) => setFilterText(e.target.value)}
-                          className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400"
-                        />
+                    {/* Buscador, exportaciones y flecha agrupados */}
+                    <div className="flex flex-col md:flex-row md:items-center gap-2 w-full md:w-auto">
+                      <div className="flex items-center gap-2 w-full md:w-64">
+                        <div className="relative flex-1">
+                          <span className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 pointer-events-none">
+                            <Search className="h-4 w-4" />
+                          </span>
+                          <input
+                            type="text"
+                            placeholder="Buscar por N° de Extintor, N° de puesto, sector, referencia..."
+                            value={filterText}
+                            onChange={(e) => setFilterText(e.target.value)}
+                            className="w-full pl-9 pr-3.5 py-1.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400"
+                          />
+                        </div>
+                        {/* Botón de flecha para colapsar/expandir exportaciones en móvil */}
+                        <button
+                          type="button"
+                          onClick={() => setShowExportMobile(!showExportMobile)}
+                          className="p-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-all cursor-pointer flex items-center justify-center shrink-0 h-[29px] w-[29px] md:hidden"
+                          title={showExportMobile ? "Ocultar botones de exportación" : "Mostrar botones de exportación"}
+                        >
+                          {showExportMobile ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        </button>
                       </div>
 
-                      <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
+                      <div className={`items-center gap-1.5 w-full md:w-auto shrink-0 justify-end ${showExportMobile ? 'flex' : 'hidden md:flex'}`}>
                         <button
                           type="button"
                           onClick={() => handleExportPdfReport(false)}
-                          className="py-2 px-4 rounded-xl border border-[#468DFF] text-sm font-bold bg-white text-[#468DFF] hover:bg-[#468DFF] hover:text-white transition-all flex items-center gap-2 cursor-pointer shrink-0"
+                          className="py-1.5 px-3 rounded-xl border border-[#468DFF] text-xs font-bold bg-white text-[#468DFF] hover:bg-[#468DFF] hover:text-white transition-all flex items-center gap-1.5 cursor-pointer shrink-0 flex-1 md:flex-initial justify-center"
                           title="Descargar listado en formato PDF"
                         >
-                          <FileText className="h-4 w-4" />
+                          <FileText className="h-3.5 w-3.5" />
                           Descargar PDF
                         </button>
                         <button
                           type="button"
                           onClick={() => handleExportPdfReport(true)}
-                          className="py-2 px-4 rounded-xl border border-[#468DFF] text-sm font-bold bg-white text-[#468DFF] hover:bg-[#468DFF] hover:text-white transition-all flex items-center gap-2 cursor-pointer shrink-0"
+                          className="py-1.5 px-3 rounded-xl border border-[#468DFF] text-xs font-bold bg-white text-[#468DFF] hover:bg-[#468DFF] hover:text-white transition-all flex items-center gap-1.5 cursor-pointer shrink-0 flex-1 md:flex-initial justify-center"
                           title="Imprimir listado completo"
                         >
-                          <Printer className="h-4 w-4" />
+                          <Printer className="h-3.5 w-3.5" />
                           Imprimir
                         </button>
                       </div>
-                      
-                      {canCargar && (
-                        <button
-                          onClick={() => { setIsReadOnlyView(false); setIsFormOpen(true); }}
-                          className="px-4 py-2 bg-[#468DFF] text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0 w-full md:w-auto"
-                        >
-                          <PlusCircle className="h-4.5 w-4.5" />
-                          Incorporar Nuevo Extintor
-                        </button>
-                      )}
                     </div>
                   </div>
 
                   {/* Selectores de Filtrado */}
-                  <div className="pt-2 border-t border-slate-100 space-y-2">
+                  <div className="pt-1.5 border-t border-slate-100 space-y-2">
                     <div className="flex items-center justify-between min-h-[28px]">
-                      <button
-                        type="button"
-                        onClick={() => setShowFilters(!showFilters)}
-                        className="font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px] hover:text-slate-600 transition-colors cursor-pointer"
-                      >
-                        <Sliders className="h-3 w-3" />
-                        Filtros de Búsqueda
-                        {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                      </button>
-
-                      {(filterEmpresa || filterEstablecimiento || filterEstado || filterTipo || filterText) && (
-                        <button 
-                          onClick={() => {
-                            setFilterEmpresa('');
-                            setFilterEstablecimiento('');
-                            setFilterEstado('');
-                            setFilterTipo('');
-                            setFilterText('');
-                          }}
-                          className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[10px] font-semibold cursor-pointer transition-all border border-slate-200"
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowFilters(!showFilters)}
+                          className="font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px] hover:text-slate-600 transition-colors cursor-pointer"
                         >
-                          Limpiar Filtros
+                          <Sliders className="h-3 w-3" />
+                          Filtros de Búsqueda
+                          {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                        </button>
+
+                        {(filterEmpresa || filterEstablecimiento || filterEstado || filterTipo || filterText) && (
+                          <button 
+                            onClick={() => {
+                              setFilterEmpresa('');
+                              setFilterEstablecimiento('');
+                              setFilterEstado('');
+                              setFilterTipo('');
+                              setFilterText('');
+                            }}
+                            className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[10px] font-semibold cursor-pointer transition-all border border-slate-200"
+                          >
+                            Limpiar Filtros
+                          </button>
+                        )}
+                      </div>
+
+                      {canCargar && (
+                        <button
+                          onClick={() => { setIsReadOnlyView(false); setIsFormOpen(true); }}
+                          className="px-3 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0"
+                        >
+                          <PlusCircle className="h-3.5 w-3.5" />
+                          Incorporar Nuevo Extintor
                         </button>
                       )}
                     </div>
