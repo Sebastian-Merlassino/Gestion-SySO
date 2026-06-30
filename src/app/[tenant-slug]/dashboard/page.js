@@ -1839,7 +1839,7 @@ export default function TenantDashboard({ params }) {
             </div>
           </div>
         ) : (
-          <div className="p-6 md:p-8 space-y-8 max-w-[95%] mx-auto w-full">
+          <div className="max-w-[95%] mx-auto w-full py-8 px-4 md:px-0 flex-1 flex flex-col min-h-0 space-y-8">
             {/* Fila del Programa de Gestión o Siniestralidad */}
             {profile && profile.role === 'cliente' ? (
               renderSiniestralidadPanel()
@@ -2053,10 +2053,10 @@ export default function TenantDashboard({ params }) {
 
             {/* Cards de Métricas y Tareas Pendientes */}
             {profile && profile.role !== 'cliente' && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
 
                 {/* 1. Clientes (col 1, row 1) */}
-                <div className="md:col-start-1 md:row-start-1 bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
+                <div className="sm:col-start-1 sm:row-start-1 md:col-start-1 md:row-start-1 bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
                   <div className="text-slate-400 group-hover:text-[#468DFF] transition-colors mb-3">
                     <Users className="h-6 w-6" />
                   </div>
@@ -2068,7 +2068,7 @@ export default function TenantDashboard({ params }) {
                 </div>
 
                 {/* 2. Acciones Correctivas (col 2, row 1) */}
-                <div className="md:col-start-2 md:row-start-1 bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
+                <div className="sm:col-start-2 sm:row-start-1 md:col-start-2 md:row-start-1 bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
                   <div className="text-slate-400 group-hover:text-[#468DFF] transition-colors mb-3">
                     <ClipboardList className="h-6 w-6" />
                   </div>
@@ -2080,7 +2080,7 @@ export default function TenantDashboard({ params }) {
                 </div>
 
                 {/* 3. % Cumplimiento (col 1, row 2) */}
-                <div className="md:col-start-1 md:row-start-2 bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
+                <div className="sm:col-start-1 sm:row-start-2 md:col-start-1 md:row-start-2 bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
                   <div className="text-slate-400 group-hover:text-emerald-500 transition-colors mb-3">
                     <ShieldCheck className="h-6 w-6" />
                   </div>
@@ -2090,7 +2090,7 @@ export default function TenantDashboard({ params }) {
                 </div>
 
                 {/* 4. Pendientes (col 2, row 2) */}
-                <div className="md:col-start-2 md:row-start-2 bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
+                <div className="sm:col-start-2 sm:row-start-2 md:col-start-2 md:row-start-2 bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
                   <div className="text-slate-400 group-hover:text-amber-500 transition-colors mb-3">
                     <Calendar className="h-6 w-6" />
                   </div>
@@ -2100,7 +2100,7 @@ export default function TenantDashboard({ params }) {
                 </div>
 
                 {/* 5. Tareas Pendientes (col 3-4, row 1-2 span) */}
-                <div className="col-span-2 md:col-start-3 md:col-span-2 md:row-start-1 md:row-span-2 bg-white border border-slate-150 rounded-2xl p-5 shadow-sm flex flex-col justify-between min-h-[360px]">
+                <div className="col-span-1 sm:col-span-2 sm:col-start-1 md:col-start-3 md:col-span-2 md:row-start-1 md:row-span-2 bg-white border border-slate-150 rounded-2xl p-5 shadow-sm flex flex-col justify-between min-h-[360px]">
                   <div className="flex flex-col flex-1 min-h-0">
                     <div className="flex items-center gap-2 border-b border-slate-150 pb-2 mb-3">
                       <ClipboardCheck className="h-5 w-5 text-[#468DFF]" />
@@ -2158,31 +2158,31 @@ export default function TenantDashboard({ params }) {
 
                   {/* Inline creation form */}
                   <form onSubmit={handleAddTask} className="border-t border-slate-150 pt-3 mt-3 flex flex-col gap-2 shrink-0">
-                    <div className="flex gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <input
                         type="text"
                         placeholder="Nueva tarea..."
                         value={newTaskTitle}
                         onChange={e => setNewTaskTitle(e.target.value)}
-                        className="flex-1 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 font-semibold"
+                        className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 font-semibold"
                       />
                       <input
                         type="date"
                         value={newTaskFecha}
                         onChange={e => setNewTaskFecha(e.target.value)}
-                        className="border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 font-mono font-bold cursor-pointer"
+                        className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 font-mono font-bold cursor-pointer"
                         title="Asignar fecha"
                       />
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <select
                         value={newTaskEmpresaId}
                         onChange={e => {
                           setNewTaskEmpresaId(e.target.value);
                           setNewTaskEstablecimientoId('');
                         }}
-                        className="flex-1 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-600 bg-slate-50/50 focus:outline-none focus:border-[#468DFF] cursor-pointer"
+                        className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-600 bg-slate-50/50 focus:outline-none focus:border-[#468DFF] cursor-pointer"
                       >
                         <option value="">Razón Social (opcional)</option>
                         {empresas.map(emp => (
@@ -2194,7 +2194,7 @@ export default function TenantDashboard({ params }) {
                         value={newTaskEstablecimientoId}
                         onChange={e => setNewTaskEstablecimientoId(e.target.value)}
                         disabled={!newTaskEmpresaId}
-                        className="flex-1 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-600 bg-slate-50/50 focus:outline-none focus:border-[#468DFF] cursor-pointer disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+                        className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-600 bg-slate-50/50 focus:outline-none focus:border-[#468DFF] cursor-pointer disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
                       >
                         <option value="">Establecimiento (opcional)</option>
                         {establecimientos.filter(est => est.empresa_id === newTaskEmpresaId).map(est => (
@@ -2205,7 +2205,7 @@ export default function TenantDashboard({ params }) {
                       <button
                         type="submit"
                         disabled={!newTaskTitle.trim()}
-                        className="px-4 py-1.5 bg-[#468DFF] hover:bg-[#0511F2] disabled:bg-slate-200 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] shrink-0 cursor-pointer disabled:cursor-not-allowed"
+                        className="w-full py-1.5 bg-[#468DFF] hover:bg-[#0511F2] disabled:bg-slate-200 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] shrink-0 cursor-pointer disabled:cursor-not-allowed text-center"
                       >
                         Agregar
                       </button>
