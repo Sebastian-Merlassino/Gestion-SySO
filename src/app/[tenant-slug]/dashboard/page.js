@@ -95,6 +95,7 @@ export default function TenantDashboard({ params }) {
   const [accidentFilterAnio, setAccidentFilterAnio] = useState(String(new Date().getFullYear()));
   const [activeChartIndex, setActiveChartIndex] = useState('incidencia');
   const [showIndicesGuide, setShowIndicesGuide] = useState(false);
+  const [activeTab, setActiveTab] = useState('vencimientos'); // 'vencimientos' o 'calendario'
   const [adminContact, setAdminContact] = useState({ email: 'info@gestionsyso.com', phone: '1159969956 / 1132296691' });
 
   // Estadísticas ficticias/reales
@@ -1381,7 +1382,7 @@ export default function TenantDashboard({ params }) {
       <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-6">
         {/* Cabecera del contenedor con el título y modal clickeable de ayuda */}
         <div className="flex flex-col gap-4 border-b border-slate-150 pb-4">
-          <div className="flex items-center justify-between gap-4 w-full">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
             <div className="flex items-center gap-2">
               <Activity className="h-5 w-5 text-[#468DFF]" />
               <h3 className="font-outfit text-base font-extrabold text-slate-900 flex items-center gap-1.5">
@@ -1396,11 +1397,11 @@ export default function TenantDashboard({ params }) {
                 </span>
               </h3>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               <button
                 onClick={() => handleDownloadPdfReport(false)}
                 disabled={profile && profile.role !== 'cliente' && !accidentFilterEmpresa}
-                className="py-1.5 px-3 rounded-xl border border-[#468DFF] text-xs font-bold bg-white text-[#468DFF] hover:bg-[#468DFF] hover:text-white transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="py-1.5 px-3 rounded-xl border border-[#468DFF] text-xs font-bold bg-white text-[#468DFF] hover:bg-[#468DFF] hover:text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-initial"
                 title="Descargar reporte completo en formato PDF"
               >
                 <FileText className="h-4 w-4" />
@@ -1409,7 +1410,7 @@ export default function TenantDashboard({ params }) {
               <button
                 onClick={() => handleDownloadPdfReport(true)}
                 disabled={profile && profile.role !== 'cliente' && !accidentFilterEmpresa}
-                className="py-1.5 px-3 rounded-xl border border-[#468DFF] text-xs font-bold bg-white text-[#468DFF] hover:bg-[#468DFF] hover:text-white transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="py-1.5 px-3 rounded-xl border border-[#468DFF] text-xs font-bold bg-white text-[#468DFF] hover:bg-[#468DFF] hover:text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-initial"
                 title="Imprimir reporte completo"
               >
                 <Printer className="h-4 w-4" />
@@ -1482,34 +1483,34 @@ export default function TenantDashboard({ params }) {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-8 gap-4">
 
           {/* Columna Izquierda: Tipos de Siniestro (5 columnas de ancho) */}
-          <div className="xl:col-span-5 grid grid-cols-2 sm:grid-cols-5 gap-3 border-r border-slate-100 pr-0 xl:pr-4">
+          <div className="xl:col-span-5 grid grid-cols-2 sm:grid-cols-5 gap-3 border-b xl:border-b-0 xl:border-r border-slate-100 pb-4 xl:pb-0 pr-0 xl:pr-4">
 
             {/* AT */}
-            <div className="p-4 rounded-xl border border-slate-150 bg-slate-50/30 hover:border-[#468DFF]/20 transition-all flex flex-col justify-between shadow-sm">
+            <div className="p-3 sm:p-4 rounded-xl border border-slate-150 bg-slate-50/30 hover:border-[#468DFF]/20 transition-all flex flex-col justify-between shadow-sm">
               <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider leading-none">Acc. Trabajo</span>
               <span className="font-outfit text-2xl font-extrabold text-slate-800 mt-2">{countTrabajo}</span>
             </div>
 
             {/* In itinere */}
-            <div className="p-4 rounded-xl border border-slate-150 bg-slate-50/30 hover:border-[#468DFF]/20 transition-all flex flex-col justify-between shadow-sm">
+            <div className="p-3 sm:p-4 rounded-xl border border-slate-150 bg-slate-50/30 hover:border-[#468DFF]/20 transition-all flex flex-col justify-between shadow-sm">
               <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider leading-none">In Itinere</span>
               <span className="font-outfit text-2xl font-extrabold text-slate-800 mt-2">{countItinere}</span>
             </div>
 
             {/* Enfermedad Profesional */}
-            <div className="p-4 rounded-xl border border-slate-150 bg-slate-50/30 hover:border-[#468DFF]/20 transition-all flex flex-col justify-between shadow-sm">
+            <div className="p-3 sm:p-4 rounded-xl border border-slate-150 bg-slate-50/30 hover:border-[#468DFF]/20 transition-all flex flex-col justify-between shadow-sm">
               <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider leading-none">Enf. Profesional</span>
               <span className="font-outfit text-2xl font-extrabold text-slate-800 mt-2">{countEnfermedad}</span>
             </div>
 
             {/* Reingreso */}
-            <div className="p-4 rounded-xl border border-slate-150 bg-slate-50/30 hover:border-[#468DFF]/20 transition-all flex flex-col justify-between shadow-sm">
+            <div className="p-3 sm:p-4 rounded-xl border border-slate-150 bg-slate-50/30 hover:border-[#468DFF]/20 transition-all flex flex-col justify-between shadow-sm">
               <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider leading-none">Reingreso</span>
               <span className="font-outfit text-2xl font-extrabold text-slate-800 mt-2">{countReingreso}</span>
             </div>
 
             {/* TOTAL */}
-            <div className="p-4 rounded-xl border border-[#468DFF]/20 bg-blue-50/20 hover:border-[#468DFF]/40 transition-all flex flex-col justify-between shadow-sm col-span-2 sm:col-span-1">
+            <div className="p-3 sm:p-4 rounded-xl border border-[#468DFF]/20 bg-blue-50/20 hover:border-[#468DFF]/40 transition-all flex flex-col justify-between shadow-sm col-span-2 sm:col-span-1">
               <span className="text-[9px] text-[#468DFF] uppercase font-bold tracking-wider leading-none">Total Siniestros</span>
               <span className="font-outfit text-2xl font-extrabold text-[#468DFF] mt-2">{totalAccidents}</span>
             </div>
@@ -1518,7 +1519,7 @@ export default function TenantDashboard({ params }) {
           {/* Columna Derecha: Gravedad (3 columnas de ancho) */}
           <div className="xl:col-span-3 grid grid-cols-3 gap-3">
             {/* Leve */}
-            <div className="p-4 rounded-xl border border-green-400 bg-green-100 flex flex-col justify-between shadow-sm">
+            <div className="p-3 sm:p-4 rounded-xl border border-green-400 bg-green-100 flex flex-col justify-between shadow-sm">
               <div className="flex items-center justify-between">
                 <span className="text-[9px] text-green-800 font-extrabold uppercase tracking-wider leading-none">Leve</span>
                 <span className="h-2 w-2 rounded-full bg-green-600 shrink-0"></span>
@@ -1527,7 +1528,7 @@ export default function TenantDashboard({ params }) {
             </div>
 
             {/* Grave */}
-            <div className="p-4 rounded-xl border border-yellow-400 bg-yellow-100 flex flex-col justify-between shadow-sm">
+            <div className="p-3 sm:p-4 rounded-xl border border-yellow-400 bg-yellow-100 flex flex-col justify-between shadow-sm">
               <div className="flex items-center justify-between">
                 <span className="text-[9px] text-yellow-800 font-extrabold uppercase tracking-wider leading-none">Grave</span>
                 <span className="h-2 w-2 rounded-full bg-yellow-600 shrink-0"></span>
@@ -1536,7 +1537,7 @@ export default function TenantDashboard({ params }) {
             </div>
 
             {/* Mortal */}
-            <div className="p-4 rounded-xl border border-red-400 bg-red-100 flex flex-col justify-between shadow-sm">
+            <div className="p-3 sm:p-4 rounded-xl border border-red-400 bg-red-100 flex flex-col justify-between shadow-sm">
               <div className="flex items-center justify-between">
                 <span className="text-[9px] text-red-800 font-extrabold uppercase tracking-wider leading-none">Mortal</span>
                 <span className="h-2 w-2 rounded-full bg-red-600 shrink-0"></span>
@@ -1550,10 +1551,10 @@ export default function TenantDashboard({ params }) {
         <div className="border-t border-slate-150 pt-6 space-y-4">
 
           {/* Selector de Índices (4 Botones) */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
             <button
               onClick={() => setActiveChartIndex('incidencia')}
-              className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${activeChartIndex === 'incidencia'
+              className={`py-1.5 px-2.5 rounded-xl border text-xs font-bold transition-all whitespace-normal break-words flex items-center justify-center text-center min-h-[38px] ${activeChartIndex === 'incidencia'
                   ? 'bg-[#468DFF] text-white border-[#468DFF]'
                   : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                 }`}
@@ -1562,7 +1563,7 @@ export default function TenantDashboard({ params }) {
             </button>
             <button
               onClick={() => setActiveChartIndex('mortalidad')}
-              className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${activeChartIndex === 'mortalidad'
+              className={`py-1.5 px-2.5 rounded-xl border text-xs font-bold transition-all whitespace-normal break-words flex items-center justify-center text-center min-h-[38px] ${activeChartIndex === 'mortalidad'
                   ? 'bg-[#468DFF] text-white border-[#468DFF]'
                   : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                 }`}
@@ -1571,7 +1572,7 @@ export default function TenantDashboard({ params }) {
             </button>
             <button
               onClick={() => setActiveChartIndex('perdida')}
-              className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${activeChartIndex === 'perdida'
+              className={`py-1.5 px-2.5 rounded-xl border text-xs font-bold transition-all whitespace-normal break-words flex items-center justify-center text-center min-h-[38px] ${activeChartIndex === 'perdida'
                   ? 'bg-[#468DFF] text-white border-[#468DFF]'
                   : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                 }`}
@@ -1580,7 +1581,7 @@ export default function TenantDashboard({ params }) {
             </button>
             <button
               onClick={() => setActiveChartIndex('dmb')}
-              className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${activeChartIndex === 'dmb'
+              className={`py-1.5 px-2.5 rounded-xl border text-xs font-bold transition-all whitespace-normal break-words flex items-center justify-center text-center min-h-[38px] ${activeChartIndex === 'dmb'
                   ? 'bg-[#468DFF] text-white border-[#468DFF]'
                   : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                 }`}
@@ -1845,218 +1846,368 @@ export default function TenantDashboard({ params }) {
               renderSiniestralidadPanel()
             ) : (
               <div className="space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-                  {/* Próximos Vencimientos */}
-                  <div className="lg:col-span-2 bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center justify-between border-b border-slate-150 pb-3 mb-4">
-                        <h3 className="font-outfit text-base font-extrabold text-slate-900 flex items-center gap-2">
-                          <Calendar className="h-5 w-5 text-[#468DFF]" />
-                          Próximos vencimientos
-                        </h3>
-                        <span className="px-2.5 py-0.5 rounded-full bg-blue-500/10 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider">
-                          Programa de Gestión
-                        </span>
+                  {/* Contenedor Unificado: Vencimientos o Calendario */}
+                  <div className="bg-white border border-slate-150 rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col justify-between h-[460px] overflow-hidden">
+                    <div className="flex flex-col flex-1 min-h-0">
+                      {/* Pestañas de Selección con estilo segmentado similar a DocumentUploadZone */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-150 pb-3 mb-4 shrink-0">
+                        <div className="flex items-center gap-2.5">
+                          <Calendar className="h-5 w-5 text-[#468DFF] shrink-0" />
+                          <div className="flex border border-slate-200 rounded-xl overflow-hidden text-[11px] font-bold bg-slate-50 shrink-0 min-w-[250px]">
+                            <button
+                              type="button"
+                              onClick={() => setActiveTab('vencimientos')}
+                              className={`flex-1 py-1.5 transition-colors cursor-pointer text-center ${
+                                activeTab === 'vencimientos'
+                                  ? 'bg-[#468DFF] text-white font-extrabold'
+                                  : 'text-slate-500 hover:text-slate-700 bg-white font-semibold'
+                              }`}
+                            >
+                              Vencimientos
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setActiveTab('calendario')}
+                              className={`flex-1 py-1.5 transition-colors cursor-pointer text-center border-l border-slate-200 ${
+                                activeTab === 'calendario'
+                                  ? 'bg-[#468DFF] text-white font-extrabold'
+                                  : 'text-slate-500 hover:text-slate-700 bg-white font-semibold'
+                              }`}
+                            >
+                              Calendario
+                            </button>
+                          </div>
+                        </div>
+
+                        {activeTab === 'vencimientos' ? (
+                          <span className="px-2.5 py-0.5 rounded-full bg-blue-500/10 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider hidden sm:inline-block">
+                            Programa de Gestión
+                          </span>
+                        ) : (
+                          <div className="flex items-center gap-1 justify-end sm:justify-start">
+                            <button onClick={handlePrevMonth} className="p-1 rounded hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer">
+                              <ChevronLeft className="h-4 w-4" />
+                            </button>
+                            <span className="text-[10px] font-bold text-slate-800 min-w-[70px] text-center font-mono">
+                              {MONTHS_SPANISH[calendarMonth.getMonth()].substring(0, 3)} {calendarMonth.getFullYear()}
+                            </span>
+                            <button onClick={handleNextMonth} className="p-1 rounded hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer">
+                              <ChevronRight className="h-4 w-4" />
+                            </button>
+                          </div>
+                        )}
                       </div>
 
-                      <div className="overflow-x-auto">
-                        <table className="w-full border-collapse text-left text-xs min-w-[800px]">
-                          <thead>
-                            <tr className="bg-slate-50 border-b border-slate-150 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                              <th className="px-4 py-3">Cliente / Razón Social</th>
-                              <th className="px-4 py-3">Establecimiento</th>
-                              <th className="px-4 py-3">Actividad</th>
-                              <th className="px-4 py-3">F. Planificada</th>
-                              <th className="px-4 py-3">Estado</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100">
-                            {filteredVencimientos.length === 0 ? (
-                              <tr>
-                                <td colSpan="5" className="px-4 py-6 text-center text-slate-400 font-semibold italic">
-                                  No hay vencimientos programados para este mes ni el próximo.
-                                </td>
+                      {/* Cuerpo de la pestaña activa */}
+                      {activeTab === 'vencimientos' ? (
+                        <div className="overflow-auto flex-1 scrollbar-thin">
+                          <table className="w-full border-collapse text-left text-xs min-w-[500px]">
+                            <thead>
+                              <tr className="bg-slate-50 border-b border-slate-150 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                <th className="px-4 py-3">Cliente / Razón Social</th>
+                                <th className="px-4 py-3">Establecimiento</th>
+                                <th className="px-4 py-3">Actividad</th>
+                                <th className="px-4 py-3">F. Planificada</th>
+                                <th className="px-4 py-3">Estado</th>
                               </tr>
-                            ) : (
-                              filteredVencimientos.slice(0, 5).map(act => {
-                                const emp = empresas.find(e => e.id === act.empresa_id);
-                                const est = establecimientos.find(e => e.id === act.establecimiento_id);
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                              {filteredVencimientos.length === 0 ? (
+                                <tr>
+                                  <td colSpan="5" className="px-4 py-6 text-center text-slate-400 font-semibold italic">
+                                    No hay vencimientos programados para este mes ni el próximo.
+                                  </td>
+                                </tr>
+                              ) : (
+                                filteredVencimientos.map(act => {
+                                  const emp = empresas.find(e => e.id === act.empresa_id);
+                                  const est = establecimientos.find(e => e.id === act.establecimiento_id);
+                                  const statusInfo = getItemStatusAndColor(act);
+                                  return (
+                                    <tr key={act.id} className="hover:bg-slate-50/50 transition-colors">
+                                      <td className="px-4 py-3 font-extrabold text-slate-800 truncate max-w-[120px]" title={emp?.razon_social}>
+                                        {emp?.razon_social || 'Cliente desconocido'}
+                                      </td>
+                                      <td className="px-4 py-3 text-slate-600 font-medium truncate max-w-[120px]" title={est?.denominacion}>
+                                        {est?.denominacion || 'Sin establecimiento'}
+                                      </td>
+                                      <td className="px-4 py-3 font-semibold text-slate-700 truncate max-w-[120px]" title={act.descripcion}>
+                                        {act.descripcion}
+                                      </td>
+                                      <td className="px-4 py-3 font-mono font-bold whitespace-nowrap">
+                                        <span className={statusInfo.dateAlertColor === 'red' ? 'text-[#fa050b] bg-red-500/10 px-1.5 py-0.5 rounded' : statusInfo.dateAlertColor === 'yellow' ? 'text-amber-600 bg-amber-500/10 px-1.5 py-0.5 rounded' : 'text-slate-700'}>
+                                          {formatDate(act.fecha_planificada)}
+                                        </span>
+                                      </td>
+                                      <td className="px-4 py-3">
+                                        <span
+                                          className="px-2 py-0.5 rounded-full text-[9px] font-bold text-white uppercase tracking-wider inline-block text-center"
+                                          style={{ backgroundColor: statusInfo.estadoColor }}
+                                        >
+                                          {statusInfo.estadoText}
+                                        </span>
+                                      </td>
+                                    </tr>
+                                  );
+                                })
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <div className="flex-1 flex flex-col justify-between min-h-0">
+                          <div>
+                            <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-400 mb-2">
+                              {DAYS_OF_WEEK.map(d => <div key={d}>{d}</div>)}
+                            </div>
 
-                                const statusInfo = getItemStatusAndColor(act);
+                            <div className="grid grid-cols-7 gap-1">
+                              {getDaysInMonth(calendarMonth).map((d, index) => {
+                                if (!d) return <div key={`empty-${index}`} className="h-8 w-full" />;
+
+                                const isSelected = d.dateStr === selectedDateStr;
+                                const dayActs = actividades.filter(a => a.fecha_planificada === d.dateStr);
+                                const dayTareas = tareas.filter(t => t.fecha === d.dateStr);
+                                const hasActs = dayActs.length > 0 || dayTareas.length > 0;
+
+                                let dotColor = '';
+                                if (hasActs) {
+                                  const allActsDone = dayActs.every(a => !!a.fecha_realizacion);
+                                  const allTareasDone = dayTareas.every(t => t.realizada);
+                                  const allDone = allActsDone && allTareasDone;
+
+                                  const todayStr = new Date().toISOString().split('T')[0];
+                                  const anyActOverdue = dayActs.some(a => !a.fecha_realizacion && todayStr > a.fecha_planificada);
+                                  const anyTareaOverdue = dayTareas.some(t => !t.realizada && todayStr > t.fecha);
+                                  const anyOverdue = anyActOverdue || anyTareaOverdue;
+
+                                  dotColor = allDone ? 'bg-[#00b050]' : (anyOverdue ? 'bg-red-500' : 'bg-amber-500');
+                                }
+
+                                const canCargar = profile && profile.role !== 'cliente';
 
                                 return (
-                                  <tr key={act.id} className="hover:bg-slate-50/50 transition-colors">
-                                    <td className="px-4 py-3 font-extrabold text-slate-800">
-                                      {emp?.razon_social || 'Cliente desconocido'}
-                                    </td>
-                                    <td className="px-4 py-3 text-slate-600 font-medium">
-                                      {est?.denominacion || 'Sin establecimiento'}
-                                    </td>
-                                    <td className="px-4 py-3 font-semibold text-slate-700 truncate max-w-[150px]" title={act.descripcion}>
-                                      {act.descripcion}
-                                    </td>
-                                    <td className="px-4 py-3 font-mono font-bold">
-                                      <span className={statusInfo.dateAlertColor === 'red' ? 'text-[#fa050b] bg-red-500/10 px-1.5 py-0.5 rounded' : statusInfo.dateAlertColor === 'yellow' ? 'text-amber-600 bg-amber-500/10 px-1.5 py-0.5 rounded' : 'text-slate-700'}>
-                                        {formatDate(act.fecha_planificada)}
-                                      </span>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                      <span
-                                        className="px-2 py-0.5 rounded-full text-[9px] font-bold text-white uppercase tracking-wider inline-block text-center"
-                                        style={{ backgroundColor: statusInfo.estadoColor }}
-                                      >
-                                        {statusInfo.estadoText}
-                                      </span>
-                                    </td>
-                                  </tr>
+                                  <button
+                                    key={d.dateStr}
+                                    onClick={() => setSelectedDateStr(d.dateStr)}
+                                    className={`h-8 w-full rounded-lg flex flex-col items-center justify-center text-xs font-semibold relative transition-all cursor-pointer
+                                      ${isSelected ? 'bg-[#468DFF] text-white font-bold' : 'hover:bg-slate-50 text-slate-700'}
+                                    `}
+                                  >
+                                    <span>{d.day}</span>
+                                    {hasActs && (
+                                      <span className={`absolute bottom-1 h-1.5 w-1.5 rounded-full ${dotColor}`} />
+                                    )}
+                                  </button>
                                 );
-                              })
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
+                              })}
+                            </div>
+                          </div>
+
+                          <div className="border-t border-slate-150 pt-2 flex flex-col gap-2 mt-2.5 shrink-0">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                                Tareas del día ({selectedDateStr}):
+                              </span>
+                              {profile && profile.role !== 'cliente' && (
+                                <Link
+                                  href={`/${tenantSlug}/programa?add-date=${selectedDateStr}`}
+                                  className="bg-[#468DFF] hover:bg-[#0511F2] text-white border border-[#468DFF] hover:border-[#0511F2] px-2.5 py-1 rounded-xl text-[10px] font-extrabold shadow-sm shadow-[#468DFF]/10 transition-all cursor-pointer inline-flex items-center gap-1"
+                                  title={`Registrar actividad para el ${formatDate(selectedDateStr)}`}
+                                >
+                                  + Añadir Actividad
+                                </Link>
+                              )}
+                            </div>
+                            <div className="space-y-2 max-h-[100px] overflow-y-auto pr-1">
+                              {actividades.filter(a => a.fecha_planificada === selectedDateStr).length === 0 &&
+                               tareas.filter(t => t.fecha === selectedDateStr).length === 0 ? (
+                                <p className="text-[11px] text-slate-400 italic">No hay actividades ni tareas para este día.</p>
+                              ) : (
+                                <>
+                                  {/* Actividades */}
+                                  {actividades.filter(a => a.fecha_planificada === selectedDateStr).map(act => {
+                                    const emp = empresas.find(e => e.id === act.empresa_id);
+                                    const done = !!act.fecha_realizacion;
+                                    return (
+                                      <div key={act.id} className="p-2 rounded-lg bg-slate-50 border border-slate-100 flex items-start justify-between gap-2 text-[11px]">
+                                        <div className="min-w-0 flex-1">
+                                          <span className="font-bold text-slate-800 block truncate" title={act.descripcion}>{act.descripcion}</span>
+                                          <span className="text-[9px] text-slate-400 block truncate">{emp?.razon_social || 'Cliente'}</span>
+                                        </div>
+                                        <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold text-white shrink-0 ${done ? 'bg-[#00b050]' : 'bg-amber-500'}`}>
+                                          {done ? 'Hecho' : 'Pendiente'}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                  {/* Tareas */}
+                                  {tareas.filter(t => t.fecha === selectedDateStr).map(task => {
+                                    const emp = empresas.find(e => e.id === task.empresa_id);
+                                    const est = establecimientos.find(e => e.id === task.establecimiento_id);
+                                    return (
+                                      <div key={task.id} className="p-2 rounded-lg bg-blue-50/30 border border-[#468DFF]/15 flex items-start justify-between gap-2 text-[11px]">
+                                        <div className="min-w-0 flex-1">
+                                          <span className={`font-bold text-slate-800 block truncate ${task.realizada ? 'line-through text-slate-400 font-normal' : ''}`} title={task.titulo}>
+                                            {task.titulo}
+                                          </span>
+                                          {(emp || est) && (
+                                            <span className="text-[9px] text-slate-400 block truncate">
+                                              {emp?.razon_social || ''} {est ? `• ${est.denominacion}` : ''}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold text-white shrink-0 ${task.realizada ? 'bg-[#00b050]' : 'bg-amber-500'}`}>
+                                          {task.realizada ? 'Realizada' : 'Pendiente'}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                    {filteredVencimientos.length > 5 && (
-                      <div className="text-right pt-2">
-                        <a href={`/${tenantSlug}/programa`} className="text-xs font-bold text-[#468DFF] hover:text-[#0511F2] transition-colors inline-flex items-center gap-1">
+                    {/* Pie del Contenedor (para Vencimientos) */}
+                    {activeTab === 'vencimientos' && filteredVencimientos.length > 5 && (
+                      <div className="text-right pt-2 border-t border-slate-50 mt-4 shrink-0">
+                        <Link href={`/${tenantSlug}/programa`} className="text-xs font-bold text-[#468DFF] hover:text-[#0511F2] transition-colors inline-flex items-center gap-1">
                           Ver todos los vencimientos ({filteredVencimientos.length})
                           <ArrowRight className="h-3.5 w-3.5" />
-                        </a>
+                        </Link>
                       </div>
                     )}
                   </div>
 
-                  {/* Calendario Compacto Vinculado */}
-                  <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm flex flex-col justify-between space-y-4">
-                    <div>
-                      <div className="flex items-center justify-between border-b border-slate-150 pb-3 mb-4">
-                        <h3 className="font-outfit text-base font-extrabold text-slate-900 flex items-center gap-2">
-                          <Calendar className="h-5 w-5 text-[#468DFF]" />
-                          Calendario Mensual
-                        </h3>
-                        <div className="flex items-center gap-1">
-                          <button onClick={handlePrevMonth} className="p-1 rounded hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer">
-                            <ChevronLeft className="h-4 w-4" />
-                          </button>
-                          <span className="text-[10px] font-bold text-slate-800 min-w-[70px] text-center">
-                            {MONTHS_SPANISH[calendarMonth.getMonth()]} {calendarMonth.getFullYear()}
-                          </span>
-                          <button onClick={handleNextMonth} className="p-1 rounded hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer">
-                            <ChevronRight className="h-4 w-4" />
-                          </button>
-                        </div>
+                  {/* Contenedor B: Tareas Pendientes */}
+                  <div className="bg-white border border-slate-150 rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col justify-between h-[460px] overflow-hidden">
+                    <div className="flex flex-col flex-1 min-h-0">
+                      <div className="flex items-center gap-2 border-b border-slate-150 pb-3 mb-4">
+                        <ClipboardCheck className="h-5 w-5 text-[#468DFF]" />
+                        <h3 className="font-outfit text-base font-extrabold text-slate-900">Tareas Pendientes</h3>
                       </div>
 
-                      <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-400 mb-2">
-                        {DAYS_OF_WEEK.map(d => <div key={d}>{d}</div>)}
-                      </div>
-
-                      <div className="grid grid-cols-7 gap-1">
-                        {getDaysInMonth(calendarMonth).map((d, index) => {
-                          if (!d) return <div key={`empty-${index}`} className="aspect-square" />;
-
-                          const isSelected = d.dateStr === selectedDateStr;
-                          const dayActs = actividades.filter(a => a.fecha_planificada === d.dateStr);
-                          const dayTareas = tareas.filter(t => t.fecha === d.dateStr);
-                          const hasActs = dayActs.length > 0 || dayTareas.length > 0;
-
-                          let dotColor = '';
-                          if (hasActs) {
-                            const allActsDone = dayActs.every(a => !!a.fecha_realizacion);
-                            const allTareasDone = dayTareas.every(t => t.realizada);
-                            const allDone = allActsDone && allTareasDone;
-
-                            const todayStr = new Date().toISOString().split('T')[0];
-                            const anyActOverdue = dayActs.some(a => !a.fecha_realizacion && todayStr > a.fecha_planificada);
-                            const anyTareaOverdue = dayTareas.some(t => !t.realizada && todayStr > t.fecha);
-                            const anyOverdue = anyActOverdue || anyTareaOverdue;
-
-                            dotColor = allDone ? 'bg-[#00b050]' : (anyOverdue ? 'bg-red-500' : 'bg-amber-500');
-                          }
-
-                          return (
-                            <button
-                              key={d.dateStr}
-                              onClick={() => setSelectedDateStr(d.dateStr)}
-                              className={`aspect-square rounded-lg flex flex-col items-center justify-center text-xs font-semibold relative transition-all cursor-pointer
-                              ${isSelected ? 'bg-[#468DFF] text-white' : 'hover:bg-slate-50 text-slate-700'}
-                            `}
-                            >
-                              <span>{d.day}</span>
-                              {hasActs && (
-                                <span className={`absolute bottom-1.5 h-1.5 w-1.5 rounded-full ${dotColor}`} />
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="border-t border-slate-150 pt-3 flex flex-col gap-2">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                        Tareas del día ({selectedDateStr}):
-                      </span>
-                      <div className="space-y-2 max-h-[120px] overflow-y-auto pr-1">
-                        {actividades.filter(a => a.fecha_planificada === selectedDateStr).length === 0 &&
-                         tareas.filter(t => t.fecha === selectedDateStr).length === 0 ? (
-                          <p className="text-[11px] text-slate-400 italic">No hay actividades ni tareas para este día.</p>
+                      {/* Task checklist (Google Tasks style) */}
+                      <div className="flex-grow overflow-y-auto pr-1 space-y-2.5 max-h-[220px] min-h-[150px]">
+                        {tareas.length === 0 ? (
+                          <p className="text-xs text-slate-400 italic text-center py-4">No tienes tareas pendientes.</p>
                         ) : (
-                          <>
-                            {/* Actividades */}
-                            {actividades.filter(a => a.fecha_planificada === selectedDateStr).map(act => {
-                              const emp = empresas.find(e => e.id === act.empresa_id);
-                              const done = !!act.fecha_realizacion;
-                              return (
-                                <div key={act.id} className="p-2 rounded-lg bg-slate-50 border border-slate-100 flex items-start justify-between gap-2 text-[11px]">
+                          tareas.map(t => {
+                            const emp = empresas.find(e => e.id === t.empresa_id);
+                            const est = establecimientos.find(e => e.id === t.establecimiento_id);
+                            return (
+                              <div key={t.id} className="flex items-start justify-between gap-2 p-2 rounded-xl bg-slate-50 border border-slate-100 hover:border-[#468DFF]/20 transition-all text-xs">
+                                <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                                  <input
+                                    type="checkbox"
+                                    checked={t.realizada}
+                                    onChange={() => handleToggleTask(t.id, t.realizada)}
+                                    className="mt-0.5 rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF] h-4 w-4 cursor-pointer"
+                                  />
                                   <div className="min-w-0 flex-1">
-                                    <span className="font-bold text-slate-800 block truncate" title={act.descripcion}>{act.descripcion}</span>
-                                    <span className="text-[9px] text-slate-400 block truncate">{emp?.razon_social || 'Cliente'}</span>
-                                  </div>
-                                  <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold text-white shrink-0 ${done ? 'bg-[#00b050]' : 'bg-amber-500'}`}>
-                                    {done ? 'Hecho' : 'Pendiente'}
-                                  </span>
-                                </div>
-                              );
-                            })}
-                            {/* Tareas */}
-                            {tareas.filter(t => t.fecha === selectedDateStr).map(task => {
-                              const emp = empresas.find(e => e.id === task.empresa_id);
-                              const est = establecimientos.find(e => e.id === task.establecimiento_id);
-                              return (
-                                <div key={task.id} className="p-2 rounded-lg bg-blue-50/30 border border-[#468DFF]/15 flex items-start justify-between gap-2 text-[11px]">
-                                  <div className="min-w-0 flex-1">
-                                    <span className={`font-bold text-slate-800 block truncate ${task.realizada ? 'line-through text-slate-400 font-normal' : ''}`} title={task.titulo}>
-                                      {task.titulo}
+                                    <span className={`font-semibold text-slate-700 block break-words ${t.realizada ? 'line-through text-slate-400 font-normal' : ''}`}>
+                                      {t.titulo}
                                     </span>
-                                    {(emp || est) && (
-                                      <span className="text-[9px] text-slate-400 block truncate">
-                                        {emp?.razon_social || ''} {est ? `• ${est.denominacion}` : ''}
-                                      </span>
-                                    )}
+                                    <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5 text-[10px] text-slate-400 font-medium">
+                                      {t.fecha && (
+                                        <span className="bg-slate-200/50 px-1 py-0.2 rounded font-mono">
+                                          {formatDate(t.fecha)}
+                                        </span>
+                                      )}
+                                      {emp && (
+                                        <span className="truncate max-w-[120px]" title={emp.razon_social}>
+                                          {emp.razon_social} {est ? `• ${est.denominacion}` : ''}
+                                        </span>
+                                      )}
+                                    </div>
                                   </div>
-                                  <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold text-white shrink-0 ${task.realizada ? 'bg-[#00b050]' : 'bg-amber-500'}`}>
-                                    {task.realizada ? 'Realizada' : 'Pendiente'}
-                                  </span>
                                 </div>
-                              );
-                            })}
-                          </>
+                                <button
+                                  onClick={() => handleDeleteTask(t.id)}
+                                  className="p-1 rounded text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors shrink-0 cursor-pointer"
+                                  title="Eliminar tarea"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                            );
+                          })
                         )}
                       </div>
                     </div>
+
+                    {/* Inline creation form */}
+                    <form onSubmit={handleAddTask} className="border-t border-slate-150 pt-3 mt-3 flex flex-col gap-2 shrink-0">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <input
+                          type="text"
+                          placeholder="Nueva tarea..."
+                          value={newTaskTitle}
+                          onChange={e => setNewTaskTitle(e.target.value)}
+                          className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 font-semibold"
+                        />
+                        <input
+                          type="date"
+                          value={newTaskFecha}
+                          onChange={e => setNewTaskFecha(e.target.value)}
+                          className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 font-mono font-bold cursor-pointer"
+                          title="Asignar fecha"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <select
+                          value={newTaskEmpresaId}
+                          onChange={e => {
+                            setNewTaskEmpresaId(e.target.value);
+                            setNewTaskEstablecimientoId('');
+                          }}
+                          className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-600 bg-slate-50/50 focus:outline-none focus:border-[#468DFF] cursor-pointer"
+                        >
+                          <option value="">Razón Social (opcional)</option>
+                          {empresas.map(emp => (
+                            <option key={emp.id} value={emp.id}>{emp.razon_social}</option>
+                          ))}
+                        </select>
+
+                        <select
+                          value={newTaskEstablecimientoId}
+                          onChange={e => setNewTaskEstablecimientoId(e.target.value)}
+                          disabled={!newTaskEmpresaId}
+                          className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-600 bg-slate-50/50 focus:outline-none focus:border-[#468DFF] cursor-pointer disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+                        >
+                          <option value="">Establecimiento (opcional)</option>
+                          {establecimientos.filter(est => est.empresa_id === newTaskEmpresaId).map(est => (
+                            <option key={est.id} value={est.id}>{est.denominacion}</option>
+                          ))}
+                        </select>
+
+                        <button
+                          type="submit"
+                          disabled={!newTaskTitle.trim()}
+                          className="w-full py-1.5 bg-[#468DFF] hover:bg-[#0511F2] disabled:bg-slate-200 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] shrink-0 cursor-pointer disabled:cursor-not-allowed text-center"
+                        >
+                          Agregar
+                        </button>
+                      </div>
+                    </form>
                   </div>
+
                 </div>
               </div>
             )}
 
-            {/* Cards de Métricas y Tareas Pendientes */}
+            {/* Cards de Métricas */}
             {profile && profile.role !== 'cliente' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
-                {/* 1. Clientes (col 1, row 1) */}
-                <div className="sm:col-start-1 sm:row-start-1 md:col-start-1 md:row-start-1 bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
+                {/* 1. Clientes */}
+                <div className="bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
                   <div className="text-slate-400 group-hover:text-[#468DFF] transition-colors mb-3">
                     <Users className="h-6 w-6" />
                   </div>
@@ -2067,8 +2218,8 @@ export default function TenantDashboard({ params }) {
                   </span>
                 </div>
 
-                {/* 2. Acciones Correctivas (col 2, row 1) */}
-                <div className="sm:col-start-2 sm:row-start-1 md:col-start-2 md:row-start-1 bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
+                {/* 2. Acciones Correctivas */}
+                <div className="bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
                   <div className="text-slate-400 group-hover:text-[#468DFF] transition-colors mb-3">
                     <ClipboardList className="h-6 w-6" />
                   </div>
@@ -2079,8 +2230,8 @@ export default function TenantDashboard({ params }) {
                   </span>
                 </div>
 
-                {/* 3. % Cumplimiento (col 1, row 2) */}
-                <div className="sm:col-start-1 sm:row-start-2 md:col-start-1 md:row-start-2 bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
+                {/* 3. % Cumplimiento */}
+                <div className="bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
                   <div className="text-slate-400 group-hover:text-emerald-500 transition-colors mb-3">
                     <ShieldCheck className="h-6 w-6" />
                   </div>
@@ -2089,128 +2240,14 @@ export default function TenantDashboard({ params }) {
                   <span className="text-[10px] text-slate-400 block mt-2">Nivel de cumplimiento global</span>
                 </div>
 
-                {/* 4. Pendientes (col 2, row 2) */}
-                <div className="sm:col-start-2 sm:row-start-2 md:col-start-2 md:row-start-2 bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
+                {/* 4. Pendientes */}
+                <div className="bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
                   <div className="text-slate-400 group-hover:text-amber-500 transition-colors mb-3">
                     <Calendar className="h-6 w-6" />
                   </div>
                   <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-bold">Pendientes</span>
                   <span className="font-outfit text-3xl font-extrabold text-slate-900 block mt-1">{stats.pendingVisits}</span>
                   <span className="text-[10px] text-slate-400 block mt-2">Visitas de control agendadas</span>
-                </div>
-
-                {/* 5. Tareas Pendientes (col 3-4, row 1-2 span) */}
-                <div className="col-span-1 sm:col-span-2 sm:col-start-1 md:col-start-3 md:col-span-2 md:row-start-1 md:row-span-2 bg-white border border-slate-150 rounded-2xl p-5 shadow-sm flex flex-col justify-between min-h-[360px]">
-                  <div className="flex flex-col flex-1 min-h-0">
-                    <div className="flex items-center gap-2 border-b border-slate-150 pb-2 mb-3">
-                      <ClipboardCheck className="h-5 w-5 text-[#468DFF]" />
-                      <h3 className="font-outfit text-sm font-extrabold text-slate-900">Tareas Pendientes</h3>
-                    </div>
-
-                    {/* Task checklist (Google Tasks style) */}
-                    <div className="flex-1 overflow-y-auto pr-1 space-y-2.5 max-h-[170px] min-h-[120px]">
-                      {tareas.length === 0 ? (
-                        <p className="text-xs text-slate-400 italic text-center py-4">No tienes tareas pendientes.</p>
-                      ) : (
-                        tareas.map(t => {
-                          const emp = empresas.find(e => e.id === t.empresa_id);
-                          const est = establecimientos.find(e => e.id === t.establecimiento_id);
-                          return (
-                            <div key={t.id} className="flex items-start justify-between gap-2 p-2 rounded-xl bg-slate-50 border border-slate-100 hover:border-[#468DFF]/20 transition-all text-xs">
-                              <div className="flex items-start gap-2.5 min-w-0 flex-1">
-                                <input
-                                  type="checkbox"
-                                  checked={t.realizada}
-                                  onChange={() => handleToggleTask(t.id, t.realizada)}
-                                  className="mt-0.5 rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF] h-4 w-4 cursor-pointer"
-                                />
-                                <div className="min-w-0 flex-1">
-                                  <span className={`font-semibold text-slate-700 block break-words ${t.realizada ? 'line-through text-slate-400 font-normal' : ''}`}>
-                                    {t.titulo}
-                                  </span>
-                                  <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5 text-[10px] text-slate-400 font-medium">
-                                    {t.fecha && (
-                                      <span className="bg-slate-200/50 px-1 py-0.2 rounded font-mono">
-                                        {formatDate(t.fecha)}
-                                      </span>
-                                    )}
-                                    {emp && (
-                                      <span className="truncate max-w-[120px]" title={emp.razon_social}>
-                                        {emp.razon_social} {est ? `• ${est.denominacion}` : ''}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                              <button
-                                onClick={() => handleDeleteTask(t.id)}
-                                className="p-1 rounded text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors shrink-0 cursor-pointer"
-                                title="Eliminar tarea"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Inline creation form */}
-                  <form onSubmit={handleAddTask} className="border-t border-slate-150 pt-3 mt-3 flex flex-col gap-2 shrink-0">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <input
-                        type="text"
-                        placeholder="Nueva tarea..."
-                        value={newTaskTitle}
-                        onChange={e => setNewTaskTitle(e.target.value)}
-                        className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 font-semibold"
-                      />
-                      <input
-                        type="date"
-                        value={newTaskFecha}
-                        onChange={e => setNewTaskFecha(e.target.value)}
-                        className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 font-mono font-bold cursor-pointer"
-                        title="Asignar fecha"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                      <select
-                        value={newTaskEmpresaId}
-                        onChange={e => {
-                          setNewTaskEmpresaId(e.target.value);
-                          setNewTaskEstablecimientoId('');
-                        }}
-                        className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-600 bg-slate-50/50 focus:outline-none focus:border-[#468DFF] cursor-pointer"
-                      >
-                        <option value="">Razón Social (opcional)</option>
-                        {empresas.map(emp => (
-                          <option key={emp.id} value={emp.id}>{emp.razon_social}</option>
-                        ))}
-                      </select>
-
-                      <select
-                        value={newTaskEstablecimientoId}
-                        onChange={e => setNewTaskEstablecimientoId(e.target.value)}
-                        disabled={!newTaskEmpresaId}
-                        className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-600 bg-slate-50/50 focus:outline-none focus:border-[#468DFF] cursor-pointer disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
-                      >
-                        <option value="">Establecimiento (opcional)</option>
-                        {establecimientos.filter(est => est.empresa_id === newTaskEmpresaId).map(est => (
-                          <option key={est.id} value={est.id}>{est.denominacion}</option>
-                        ))}
-                      </select>
-
-                      <button
-                        type="submit"
-                        disabled={!newTaskTitle.trim()}
-                        className="w-full py-1.5 bg-[#468DFF] hover:bg-[#0511F2] disabled:bg-slate-200 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] shrink-0 cursor-pointer disabled:cursor-not-allowed text-center"
-                      >
-                        Agregar
-                      </button>
-                    </div>
-                  </form>
                 </div>
 
               </div>
@@ -2446,7 +2483,7 @@ export default function TenantDashboard({ params }) {
                 <p className="text-slate-500 text-[11px] font-medium leading-normal">
                   Se computa como la cantidad de accidentes de trabajo o enfermedades profesionales (AT y EP) con al menos un día de baja laboral o secuela incapacitante sin días de baja laboral cada mil personas trabajadoras cubiertas. El índice se calcula para el período de un año (por razón social o establecimiento).
                 </p>
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-150 font-mono text-[10px] text-slate-800 font-bold text-center">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-150 font-mono text-[10px] text-slate-800 font-bold text-left sm:text-center overflow-x-auto whitespace-nowrap scrollbar-thin">
                   Índice de Incidencia = (Casos AT y EP con baja o secuela / Personas cubiertas) x 1.000
                 </div>
               </div>
@@ -2460,7 +2497,7 @@ export default function TenantDashboard({ params }) {
                 <p className="text-slate-500 text-[11px] font-medium leading-normal">
                   Se calcula como la cantidad de casos mortales por accidentes de trabajo o enfermedades profesionales, cada millón de personas cubiertas. El índice se calcula para el período de un año (por razón social o establecimiento).
                 </p>
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-150 font-mono text-[10px] text-slate-800 font-bold text-center">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-150 font-mono text-[10px] text-slate-800 font-bold text-left sm:text-center overflow-x-auto whitespace-nowrap scrollbar-thin">
                   Índice de Mortalidad = (Casos mortales de AT y EP / Personas cubiertas) x 1.000.000
                 </div>
               </div>
@@ -2474,7 +2511,7 @@ export default function TenantDashboard({ params }) {
                 <p className="text-slate-500 text-[11px] font-medium leading-normal">
                   El índice de pérdida refleja la cantidad de jornadas no trabajadas en el año debido a siniestros, por cada mil personas cubiertas.
                 </p>
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-150 font-mono text-[10px] text-slate-800 font-bold text-center">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-150 font-mono text-[10px] text-slate-800 font-bold text-left sm:text-center overflow-x-auto whitespace-nowrap scrollbar-thin">
                   Índice de Pérdida (IP) = (Jornadas no trabajadas / Personas cubiertas) x 1.000
                 </div>
               </div>
@@ -2488,7 +2525,7 @@ export default function TenantDashboard({ params }) {
                 <p className="text-slate-500 text-[11px] font-medium leading-normal">
                   La duración media de las bajas indica el promedio de jornadas no trabajadas por cada persona damnificada, incluyendo solamente aquellas con baja laboral.
                 </p>
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-150 font-mono text-[10px] text-slate-800 font-bold text-center">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-150 font-mono text-[10px] text-slate-800 font-bold text-left sm:text-center overflow-x-auto whitespace-nowrap scrollbar-thin">
                   Duración Media (DMB) = Jornadas no trabajadas / Casos con días de baja laboral
                 </div>
               </div>

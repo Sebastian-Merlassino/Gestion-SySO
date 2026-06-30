@@ -1,5 +1,45 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-06-30] Unificación de Vencimientos y Calendario, y Reubicación de Tareas Pendientes en el Dashboard
+
+### Resumen de Cambios
+- **Contenedor Unificado de Vencimientos y Calendario**: Se creó un contenedor único en `src/app/[tenant-slug]/dashboard/page.js` que contiene las secciones de **Próximos Vencimientos** y **Calendario Mensual**, integrando pestañas interactivas (Tabs) en la cabecera para alternar dinámicamente entre ambas vistas, reduciendo el espacio general ocupado y optimizando la interfaz en pantallas medianas y móviles.
+- **Reubicación Simétrica de Tareas Pendientes**: Se trasladó el gestor de Tareas Pendientes (checklist con creación rápida inline) de la fila inferior a la fila superior al lado del contenedor unificado. Se configuraron ambos contenedores con un grid de dos columnas de igual tamaño (`grid-cols-1 lg:grid-cols-2`) y la misma altura (`min-h-[460px] flex flex-col justify-between`), logrando una simetría visual impecable.
+- **Grilla de Métricas Simplificada**: Al liberar las Tareas Pendientes del bloque inferior, se redistribuyeron las 4 tarjetas de métricas (Clientes, Acciones Correctivas, % Cumplimiento, Visitas Pendientes) en una sola fila homogénea de 4 columnas (`grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4`) libre de clases de posicionamiento complejas en grid.
+- **Función de Añadir en el Calendario**: Se agregó la funcionalidad para registrar actividades de gestión directamente desde el calendario del Dashboard mediante el link `+ Añadir Actividad` en el visor de tareas del día seleccionado, el cual redirige al usuario a la página de Programa de Gestión (`/[tenant-slug]/programa?add-date=YYYY-MM-DD`).
+- **Corrección de Selección en Celdas de Calendario**: Se removió el link flotante absoluto (`+ Añadir`) de hover que cubría las celdas de día en el calendario compacto. Esto corrige el bug que impedía hacer clic normal para seleccionar el día y ver sus tareas correspondientes abajo, garantizando una UX limpia y libre de interferencias táctiles.
+- **Visualización Completa y Scroll en Vencimientos**: Se eliminó la restricción de `.slice(0, 5)` que limitaba el listado de Próximos Vencimientos. Se configuró el contenedor de la tabla con `overflow-auto flex-1 scrollbar-thin` para habilitar el desplazamiento vertical y permitir el recorrido completo de todos los vencimientos planificados, preservando la simetría del bloque superior.
+- **Captura Automática en el Programa Anual**: Se incorporó un `useEffect` en `src/app/[tenant-slug]/programa/page.js` dependiente de la carga de datos (`loading === false`) que detecta el parámetro de consulta `add-date`. Al estar presente, gatilla automáticamente la apertura del formulario de creación (`handleAddNew(addDate)`) con la fecha pre-rellenada, limpiando el parámetro de la URL usando `window.history.replaceState` para evitar re-aperturas accidentales al refrescar la página.
+
+### Decisiones Clave
+- **Redirección con queryParams para Formularios Complejos**: En lugar de duplicar los formularios y lógica de bases de datos del programa de gestión en el dashboard, la redirección limpia con el parámetro de fecha pre-seleccionada permite reutilizar la interfaz preexistente del programa, logrando una UX integrada.
+- **Simetría Flex**: El uso de alturas de min-h consistentes y layouts flex coordinados en las dos columnas superiores asegura que la UI se mantenga simétrica en resoluciones de laptops y monitores anchos.
+
+### Archivos Modificados
+- [page.js (Dashboard)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/dashboard/page.js)
+- [page.js (Programa)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/programa/page.js)
+- [BITACORA_DESARROLLO.md](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/docs/BITACORA_DESARROLLO.md)
+
+---
+
+## [2026-06-30] Optimización Responsiva en Contenedor de Accidentabilidad del Dashboard
+
+### Resumen de Cambios
+- **Apilamiento y Ajuste en Cabecera**: Se re-estructuró el contenedor de cabecera del panel de siniestralidad (`renderSiniestralidadPanel` en `src/app/[tenant-slug]/dashboard/page.js`) para usar `flex flex-col sm:flex-row` en lugar de `flex items-center justify-between`, evitando colisiones y desbordes del título y los botones de exportación ("Descargar PDF" e "Imprimir") en pantallas móviles. Asimismo, se les asignó a los botones las clases `w-full sm:w-auto flex-1 sm:flex-initial justify-center` para expandirse ordenadamente a media fila cada uno en smartphones.
+- **División Horizontal en Dispositivos Móviles**: Se modificó la línea divisoria vertical que separa los tipos de siniestro de la gravedad, reemplazando `border-r border-slate-100` por `border-b xl:border-b-0 xl:border-r border-slate-100 pb-4 xl:pb-0`, logrando una línea divisoria horizontal adecuada para el flujo vertical apilado en dispositivos móviles.
+- **Padding Responsivo en Tarjetas**: Se disminuyó el padding interno de las tarjetas de métricas en teléfonos pequeños, reemplazando `p-4` por `p-3 sm:p-4` para maximizar el área de visualización del texto.
+- **Selector de Índices Adaptable**: Se modificó la disposición del selector de gráficos de índices a `grid-cols-1 sm:grid-cols-2 md:grid-cols-4` para apilarse en una única columna en pantallas angostas. Se agregaron las propiedades `whitespace-normal break-words flex items-center justify-center text-center min-h-[38px] py-1.5 px-2.5` a los botones selectores para permitir saltos de línea elegantes y evitar desbordes.
+- **Scroll en Fórmulas del Modal de Ayuda**: Se integró `overflow-x-auto whitespace-nowrap scrollbar-thin` en los cuadros de fórmulas matemáticas de la guía de índices para evitar que ensanchen o desborden el cuerpo del modal en pantallas móviles, garantizando desplazamiento lateral táctil suave.
+
+### Decisiones Clave
+- **Control del Desborde en Flex/Grid**: El uso de `flex-col` para la cabecera e interrupción de renglones (`whitespace-normal`) en los botones del selector elimina los desbordes causados por la rigidez de texto largo en celdas pequeñas de visualización de móviles.
+
+### Archivos Modificados
+- [page.js (Dashboard)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/dashboard/page.js)
+- [BITACORA_DESARROLLO.md](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/docs/BITACORA_DESARROLLO.md)
+
+---
+
 ## [2026-06-30] Estandarización de Layout Compacto en Nómina, Avisos y Constancias de Visita
 
 ### Resumen de Cambios

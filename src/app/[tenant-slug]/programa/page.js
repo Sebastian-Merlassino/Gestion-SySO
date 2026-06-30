@@ -189,6 +189,19 @@ export default function ProgramaGestion({ params }) {
     }
   }, [profile]);
 
+  // Chequear parámetro de URL para agregar actividad desde el calendario del dashboard
+  useEffect(() => {
+    if (!loading) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const addDate = urlParams.get('add-date');
+      if (addDate) {
+        handleAddNew(addDate);
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+      }
+    }
+  }, [loading]);
+
 
   // Modales y Toasts
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
