@@ -1187,7 +1187,7 @@ export default function EquipoPage({ params }) {
           </div>
         </header>
 
-        <div className="p-6 md:p-8 space-y-8 max-w-[95%] mx-auto w-full">
+        <div className="max-w-[95%] mx-auto w-full py-8 px-4 md:px-0 flex-1 flex flex-col min-h-0">
           
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 space-y-4">
@@ -1199,7 +1199,7 @@ export default function EquipoPage({ params }) {
             // ==========================================
             // VIEW: MEMBERS LIST (TABLE)
             // ==========================================
-            <div className="space-y-6">
+            <div className="space-y-6 flex-1 flex flex-col min-h-0">
               
               {/* Panel de Filtros y Búsqueda */}
               <div className="bg-white rounded-2xl border border-slate-150 p-3 shadow-sm">
@@ -1233,7 +1233,7 @@ export default function EquipoPage({ params }) {
                     {canCargar && (
                       <button
                         onClick={handleAddNew}
-                        className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0 w-full md:w-auto"
+                        className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0 w-full md:w-auto"
                       >
                         <PlusCircle className="h-3.5 w-3.5" />
                         Agregar Integrante
@@ -1244,7 +1244,7 @@ export default function EquipoPage({ params }) {
               </div>
 
               {/* Members Grid/List */}
-              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col" style={{ height: 'calc(100vh - 240px)' }}>
+              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex-1 flex flex-col min-h-0 transition-all duration-300 ease-in-out">
                 {miembros.length === 0 ? (
                   <div className="flex-grow flex flex-col items-center justify-center p-20 text-center bg-slate-50/10 h-full">
                     <Briefcase className="h-10 w-10 text-slate-350 mx-auto mb-2 shrink-0" />

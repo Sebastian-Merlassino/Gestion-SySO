@@ -959,7 +959,7 @@ export default function EmpresasClientes({ params }) {
   const handleAddSector = (estIndex) => {
     const updated = [...establecimientos];
     const sectores = [...(updated[estIndex].sectores || [])];
-    sectores.push({
+    sectores.unshift({
       id: 'sec-' + Date.now() + Math.random().toString(36).substr(2, 5),
       denominacion: '',
       descripcion: '',
@@ -989,7 +989,7 @@ export default function EmpresasClientes({ params }) {
     const updated = [...establecimientos];
     const sectores = [...(updated[estIndex].sectores || [])];
     const puestos = [...(sectores[secIndex].puestos || [])];
-    puestos.push({
+    puestos.unshift({
       id: 'pst-' + Date.now() + Math.random().toString(36).substr(2, 5),
       denominacion: '',
       descripcion: '',
@@ -1475,7 +1475,7 @@ export default function EmpresasClientes({ params }) {
           </div>
         </header>
 
-        <div className="p-6 md:p-8 space-y-8 max-w-[95%] mx-auto w-full">
+        <div className="max-w-[95%] mx-auto w-full py-8 px-4 md:px-0 flex-1 flex flex-col min-h-0">
           
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 space-y-4">
@@ -1487,7 +1487,7 @@ export default function EmpresasClientes({ params }) {
             // ==========================================
             // VISTA: LISTADO DE EMPRESAS (TABLA)
             // ==========================================
-            <div className="space-y-6">
+            <div className="space-y-6 flex-1 flex flex-col min-h-0">
               
               {empresas.length === 0 ? (
                 <div className="bg-white rounded-2xl border border-slate-150 p-20 text-center shadow-sm bg-slate-50/10">
@@ -1510,7 +1510,7 @@ export default function EmpresasClientes({ params }) {
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                       {/* Espaciador para empujar el buscador y botón a la derecha en desktop */}
                       <div className="hidden md:block flex-1"></div>
-
+ 
                       {/* Buscador y Botón agrupados */}
                       <div className="flex flex-col md:flex-row md:items-center gap-3 w-full md:w-auto">
                         <div className="relative w-full md:w-72">
@@ -1525,12 +1525,12 @@ export default function EmpresasClientes({ params }) {
                             className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400"
                           />
                         </div>
-
+ 
                         {/* Botón de Agregar */}
                         {canCargar && (
                           <button
                             onClick={handleAddNew}
-                            className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0 w-full md:w-auto"
+                            className="px-3.5 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0 w-full md:w-auto"
                           >
                             <PlusCircle className="h-3.5 w-3.5" />
                             Agregar nueva empresa
@@ -1538,7 +1538,7 @@ export default function EmpresasClientes({ params }) {
                         )}
                       </div>
                     </div>
-
+ 
                     {/* Filtros rápidos */}
                     <div className="border-t border-slate-100 pt-2 space-y-2">
                       <div className="flex items-center justify-between min-h-[28px]">
@@ -1563,7 +1563,7 @@ export default function EmpresasClientes({ params }) {
                           </button>
                         )}
                       </div>
-
+ 
                       {showFilters && (
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-1 animate-fade-in">
                           <div className="space-y-1">
@@ -1583,9 +1583,9 @@ export default function EmpresasClientes({ params }) {
                       )}
                     </div>
                   </div>
-
+ 
                   {/* Tabla */}
-                  <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden flex flex-col" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
+                  <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden flex-1 flex flex-col min-h-0 transition-all duration-300 ease-in-out">
                     <div className="overflow-auto flex-grow">
                       <table className="w-full text-left border-collapse min-w-[850px]">
                         <thead>
@@ -2104,8 +2104,8 @@ export default function EmpresasClientes({ params }) {
                                 Establecimiento #{idx + 1}
                               </span>
                               <div className="flex items-center gap-2">
-                                <button
-                                  type="button"
+                                <span
+                                  role="button"
                                   onClick={() => {
                                     const copy = [...establecimientos];
                                     copy[idx].isCollapsed = !copy[idx].isCollapsed;
@@ -2125,7 +2125,7 @@ export default function EmpresasClientes({ params }) {
                                       Contraer
                                     </>
                                   )}
-                                </button>
+                                </span>
                                 <button
                                   type="button"
                                   onClick={() => handleRemoveEstablecimiento(idx)}

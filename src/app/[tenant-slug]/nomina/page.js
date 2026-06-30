@@ -385,8 +385,8 @@ export default function NominaPage({ params }) {
   const handleAddManualRow = () => {
     const newId = 'temp-' + Date.now();
     setManualRows(prev => [
-      ...prev,
-      { id: newId, nombre_apellido: '', cuil: '', fecha_alta: '', area_sector: '', puesto: '' }
+      { id: newId, nombre_apellido: '', cuil: '', fecha_alta: '', area_sector: '', puesto: '' },
+      ...prev
     ]);
   };
 
@@ -1126,7 +1126,7 @@ export default function NominaPage({ params }) {
                               placeholder="Ej: Carlos Gómez"
                               value={row.nombre_apellido}
                               onChange={(e) => handleUpdateManualRow(row.id, 'nombre_apellido', e.target.value)}
-                              className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#468DFF] bg-white transition-all disabled:text-slate-800 disabled:bg-slate-50 disabled:opacity-100"
+                              className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-700 focus:outline-none focus:border-[#468DFF] bg-white transition-all disabled:text-slate-800 disabled:bg-slate-50 disabled:opacity-100"
                             />
                           </div>
                           <div className="md:col-span-2">
@@ -1138,19 +1138,38 @@ export default function NominaPage({ params }) {
                               placeholder="11 dígitos sin guiones"
                               value={row.cuil}
                               onChange={(e) => handleUpdateManualRow(row.id, 'cuil', e.target.value.replace(/[^0-9]/g, ''))}
-                              className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-mono tracking-wider focus:outline-none focus:border-[#468DFF] bg-white transition-all disabled:text-slate-800 disabled:bg-slate-50 disabled:opacity-100"
+                              className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-mono tracking-wider text-slate-700 focus:outline-none focus:border-[#468DFF] bg-white transition-all disabled:text-slate-800 disabled:bg-slate-50 disabled:opacity-100"
                             />
                           </div>
                           <div className="md:col-span-2">
                             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Fecha de alta *</label>
-                            <input
-                              type="text"
-                              required
-                              placeholder="DD/MM/YYYY"
-                              value={row.fecha_alta}
-                              onChange={(e) => handleUpdateManualRow(row.id, 'fecha_alta', formatAsDateInput(e.target.value))}
-                              className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#468DFF] bg-white transition-all disabled:text-slate-800 disabled:bg-slate-50 disabled:opacity-100"
-                            />
+                            <div className="relative">
+                              <input
+                                type="text"
+                                required
+                                placeholder="DD/MM/YYYY"
+                                maxLength={10}
+                                value={row.fecha_alta}
+                                onChange={(e) => handleUpdateManualRow(row.id, 'fecha_alta', formatAsDateInput(e.target.value))}
+                                className="w-full border border-slate-200 rounded-lg pl-3 pr-8 py-1.5 text-xs font-semibold text-slate-700 focus:outline-none focus:border-[#468DFF] bg-white transition-all disabled:text-slate-800 disabled:bg-slate-50 disabled:opacity-100"
+                              />
+                              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
+                                <Calendar className="h-3.5 w-3.5" />
+                                <input
+                                  type="date"
+                                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val) {
+                                      const parts = val.split('-');
+                                      if (parts.length === 3) {
+                                        handleUpdateManualRow(row.id, 'fecha_alta', `${parts[2]}/${parts[1]}/${parts[0]}`);
+                                      }
+                                    }
+                                  }}
+                                />
+                              </div>
+                            </div>
                           </div>
                           <div className="md:col-span-2">
                             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Área / Sector</label>
@@ -1159,7 +1178,7 @@ export default function NominaPage({ params }) {
                               placeholder="Ej: Producción"
                               value={row.area_sector}
                               onChange={(e) => handleUpdateManualRow(row.id, 'area_sector', e.target.value)}
-                              className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#468DFF] bg-white transition-all disabled:text-slate-800 disabled:bg-slate-50 disabled:opacity-100"
+                              className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-700 focus:outline-none focus:border-[#468DFF] bg-white transition-all disabled:text-slate-800 disabled:bg-slate-50 disabled:opacity-100"
                             />
                           </div>
                           <div className="md:col-span-2">
@@ -1169,7 +1188,7 @@ export default function NominaPage({ params }) {
                               placeholder="Ej: Supervisor"
                               value={row.puesto}
                               onChange={(e) => handleUpdateManualRow(row.id, 'puesto', e.target.value)}
-                              className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#468DFF] bg-white transition-all disabled:text-slate-800 disabled:bg-slate-50 disabled:opacity-100"
+                              className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-700 focus:outline-none focus:border-[#468DFF] bg-white transition-all disabled:text-slate-800 disabled:bg-slate-50 disabled:opacity-100"
                             />
                           </div>
                           <div className="md:col-span-1 text-right">

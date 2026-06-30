@@ -798,9 +798,10 @@ export default function MatrizRiesgosPage({ params }) {
       id: 'bulk-sec-' + Date.now() + Math.random().toString(36).substr(2, 5),
       sector: '',
       isManual: false,
+      isCollapsed: false,
       puestos: []
     };
-    setBulkSectores([...bulkSectores, newSec]);
+    setBulkSectores([newSec, ...bulkSectores]);
   };
 
   const handleRemoveBulkSector = (secId) => {
@@ -815,6 +816,7 @@ export default function MatrizRiesgosPage({ params }) {
           id: 'bulk-pst-' + Date.now() + Math.random().toString(36).substr(2, 5),
           puesto: '',
           isManual: false,
+          isCollapsed: false,
           tareas: '',
           frecuencia: '',
           situacion: 'Normal',
@@ -840,7 +842,7 @@ export default function MatrizRiesgosPage({ params }) {
         };
         return {
           ...sec,
-          puestos: [...sec.puestos, newPst]
+          puestos: [newPst, ...sec.puestos]
         };
       }
       return sec;
@@ -870,7 +872,8 @@ export default function MatrizRiesgosPage({ params }) {
     setBulkSectores(prev => prev.map(sec => {
       if (sec.id === secId) {
         const next = { ...sec, ...updates };
-        if ('sector' in updates) {
+        // Limpiamos los puestos de trabajo sólo si seleccionamos un sector predefinido diferente (no manual)
+        if ('sector' in updates && !next.isManual && updates.sector !== sec.sector) {
           next.puestos = sec.puestos.map(p => ({
             ...p,
             puesto: '',
@@ -1424,7 +1427,7 @@ export default function MatrizRiesgosPage({ params }) {
             
             {isFormOpen ? (
               // FORMULARIO DE ALTA O EDICIÓN INLINE
-              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden animate-fade-in">
+              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
                 <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-150 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
                     <button 
@@ -1443,7 +1446,7 @@ export default function MatrizRiesgosPage({ params }) {
                   </button>
                 </div>
 
-                <form onSubmit={handleSaveMatriz} className="p-6 space-y-6">
+                <form onSubmit={handleSaveMatriz} className="p-6 space-y-6 overflow-y-auto flex-1 scrollbar-thin">
                   <fieldset disabled={!canEdit} className="space-y-6">
 
                     {/* Sección 1: Cliente y Establecimiento */}
@@ -1516,7 +1519,7 @@ export default function MatrizRiesgosPage({ params }) {
 
                         {!establecimientoId && (
                           <div className="p-4 border border-dashed border-slate-250 bg-slate-50 rounded-xl text-center">
-                            <span className="text-xs text-slate-400 font-semibold">Seleccione un Establecimiento para comenzar a estructurar la matriz.</span>
+                            <span className="text-xs text-slate-400 font-semibold">Seleccione un Cliente / Razón Social y Establecimiento, para comenzar a estructurar la matriz.</span>
                           </div>
                         )}
 
@@ -1529,570 +1532,663 @@ export default function MatrizRiesgosPage({ params }) {
 
                         {bulkSectores.map((sec, secIdx) => (
                           <div key={sec.id} className="border border-slate-200 rounded-xl bg-slate-50/40 p-4 space-y-4">
-                            <div className="flex items-center justify-between gap-4">
-                              <div className="flex-grow flex flex-col gap-1">
-                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Sector de Trabajo #{secIdx + 1}</label>
-                                {sec.isManual ? (
-                                  <div className="space-y-1">
-                                    <input
-                                      type="text"
-                                      required
-                                      placeholder="Ingresar sector a mano..."
-                                      value={sec.sector}
-                                      onChange={(e) => handleUpdateBulkSector(sec.id, 'sector', e.target.value)}
-                                      className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs bg-white focus:outline-none"
-                                    />
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        handleUpdateBulkSector(sec.id, { isManual: false, sector: '' });
-                                      }}
-                                      className="text-[10px] text-[#468DFF] hover:underline block"
-                                    >
-                                      Seleccionar de la lista predefinida
-                                    </button>
-                                  </div>
-                                ) : (
-                                  <select
-                                    required
-                                    value={sec.sector}
-                                    onChange={(e) => {
-                                      if (e.target.value === 'MANUAL') {
-                                        handleUpdateBulkSector(sec.id, { isManual: true, sector: '' });
-                                      } else {
-                                        handleUpdateBulkSector(sec.id, 'sector', e.target.value);
-                                      }
-                                    }}
-                                    className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs bg-white focus:outline-none cursor-pointer"
-                                  >
-                                    <option value="">Selecciona sector...</option>
-                                    {currentEstSectores.map(s => (
-                                      <option key={s.id} value={s.denominacion}>{s.denominacion}</option>
-                                    ))}
-                                    <option value="MANUAL">+ Ingresar manualmente...</option>
-                                  </select>
+                            {/* Cabecera del Sector */}
+                            <div className="flex justify-between items-center border-b border-slate-200/80 pb-2.5">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold text-slate-700 bg-slate-200/80 px-2 py-0.5 rounded-lg border border-slate-300/40 uppercase">
+                                  Sector #{secIdx + 1}
+                                </span>
+                                {sec.sector && (
+                                  <span className="text-xs font-bold text-slate-800 max-w-[200px] truncate">
+                                    - {sec.sector}
+                                  </span>
                                 )}
                               </div>
-                              <div className="flex items-center gap-2 mt-5">
-                                <button
-                                  type="button"
-                                  onClick={() => handleAddBulkPuesto(sec.id)}
-                                  disabled={!sec.sector}
-                                  className="px-2.5 py-1.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-lg text-xs font-bold transition-all disabled:opacity-50 flex items-center gap-1"
+                              <div className="flex items-center gap-2">
+                                <span
+                                  role="button"
+                                  onClick={() => {
+                                    const updated = bulkSectores.map(s => {
+                                      if (s.id === sec.id) {
+                                        return { ...s, isCollapsed: !s.isCollapsed };
+                                      }
+                                      return s;
+                                    });
+                                    setBulkSectores(updated);
+                                  }}
+                                  className="text-[9px] text-slate-600 hover:text-slate-800 bg-white hover:bg-slate-100 font-bold px-2 py-0.5 rounded-md border border-slate-200 transition-all cursor-pointer flex items-center gap-0.5 shadow-sm"
+                                  title={sec.isCollapsed ? "Expandir sector" : "Contraer sector"}
                                 >
-                                  <PlusCircle className="h-3 w-3" />
-                                  Puesto
-                                </button>
+                                  {sec.isCollapsed ? (
+                                    <>
+                                      <ChevronDown className="h-2.5 w-2.5" />
+                                      Ver más
+                                    </>
+                                  ) : (
+                                    <>
+                                      <ChevronUp className="h-2.5 w-2.5" />
+                                      Ver menos
+                                    </>
+                                  )}
+                                </span>
                                 <button
                                   type="button"
                                   onClick={() => handleRemoveBulkSector(sec.id)}
-                                  className="p-1.5 text-red-500 hover:bg-red-55 rounded-lg transition-colors border border-red-200"
+                                  className="p-1 text-red-500 hover:bg-red-55 rounded transition-colors border border-red-200 flex items-center justify-center cursor-pointer"
                                   title="Eliminar Sector"
                                 >
-                                  <Trash2 className="h-4 w-4" />
+                                  <Trash2 className="h-3.5 w-3.5" />
                                 </button>
                               </div>
                             </div>
 
-                            {/* Puestos de Trabajo */}
-                            <div className="pl-4 border-l-2 border-slate-200 space-y-4">
-                              {sec.puestos.length === 0 && (
-                                <span className="text-[10px] text-slate-400 font-semibold block py-1">No hay puestos agregados en este sector. Haga clic en "+ Puesto".</span>
-                              )}
-                              
-                              {sec.puestos.map((pst, pstIdx) => {
-                                const sectorEstObj = currentEstSectores.find(s => s.denominacion === sec.sector);
-                                const predefPuestos = sectorEstObj?.puestos || [];
-
-                                return (
-                                  <div key={pst.id} className="border border-slate-150 rounded-xl bg-white p-4 space-y-4">
-                                    <div className="flex items-center justify-between gap-4 pb-2 border-b border-slate-100">
-                                      <div className="flex-1 grid md:grid-cols-2 gap-4">
-                                        <div className="flex flex-grow flex-col gap-1">
-                                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Puesto / Operación *</label>
-                                          {pst.isManual ? (
-                                            <div className="space-y-1">
-                                              <input
-                                                type="text"
-                                                required
-                                                placeholder="Ingresar puesto a mano..."
-                                                value={pst.puesto}
-                                                onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'puesto', e.target.value)}
-                                                className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs bg-white focus:outline-none"
-                                              />
-                                              <button
-                                                type="button"
-                                                onClick={() => {
-                                                  handleUpdateBulkPuesto(sec.id, pst.id, { isManual: false, puesto: '' });
-                                                }}
-                                                className="text-[9px] text-[#468DFF] hover:underline block"
-                                              >
-                                                Seleccionar de la lista predefinida
-                                              </button>
-                                            </div>
-                                          ) : (
-                                            <select
-                                              required
-                                              value={pst.puesto}
-                                              onChange={(e) => {
-                                                if (e.target.value === 'MANUAL') {
-                                                  handleUpdateBulkPuesto(sec.id, pst.id, { isManual: true, puesto: '' });
-                                                } else {
-                                                  handleUpdateBulkPuesto(sec.id, pst.id, 'puesto', e.target.value);
-                                                }
-                                              }}
-                                              className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs bg-white focus:outline-none cursor-pointer"
-                                            >
-                                              <option value="">Selecciona puesto...</option>
-                                              {predefPuestos.map(p => (
-                                                <option key={p.id} value={p.denominacion}>{p.denominacion}</option>
-                                              ))}
-                                              <option value="MANUAL">+ Ingresar manualmente...</option>
-                                            </select>
-                                          )}
-                                        </div>
-
-                                        <div className="flex flex-col gap-1">
-                                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tareas Ejecutadas *</label>
-                                          <input
-                                            type="text"
-                                            required
-                                            placeholder="Descripción de las tareas..."
-                                            value={pst.tareas}
-                                            onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'tareas', e.target.value)}
-                                            className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none"
-                                          />
-                                        </div>
-                                      </div>
-
-                                      <button
-                                        type="button"
-                                        onClick={() => handleRemoveBulkPuesto(sec.id, pst.id)}
-                                        className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-red-200 mt-4"
+                            {/* Contenido del Sector */}
+                            {!sec.isCollapsed && (
+                              <div className="space-y-4">
+                                <div className="flex justify-between items-center gap-4 bg-white/60 p-3 rounded-xl border border-slate-100">
+                                  <div className="flex-grow flex flex-col gap-1">
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Seleccionar Área / Sector *</label>
+                                    <div className="space-y-2">
+                                      <select
+                                        required
+                                        value={sec.isManual ? 'MANUAL' : sec.sector}
+                                        onChange={(e) => {
+                                          if (e.target.value === 'MANUAL') {
+                                            handleUpdateBulkSector(sec.id, { isManual: true, sector: '' });
+                                          } else {
+                                            handleUpdateBulkSector(sec.id, { isManual: false, sector: e.target.value });
+                                          }
+                                        }}
+                                        className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs bg-white focus:outline-none cursor-pointer font-medium"
                                       >
-                                        <Trash2 className="h-3.5 w-3.5" />
-                                      </button>
-                                    </div>
+                                        <option value="">Selecciona sector...</option>
+                                        {currentEstSectores.map(s => (
+                                          <option key={s.id} value={s.denominacion}>{s.denominacion}</option>
+                                        ))}
+                                        <option value="MANUAL">Otro (especificar...)</option>
+                                      </select>
 
-                                    {/* Campos de Análisis */}
-                                    <div className="grid md:grid-cols-4 gap-4">
-                                      <div className="flex flex-col gap-1">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                                          Frecuencia *
-                                          <button type="button" onClick={() => setHelpModal({ show: true, type: 'frecuencia' })} className="text-slate-400 hover:text-[#468DFF]"><HelpCircle className="h-3 w-3" /></button>
-                                        </label>
-                                        <select
-                                          required
-                                          value={pst.frecuencia}
-                                          onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'frecuencia', e.target.value)}
-                                          className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs bg-white focus:outline-none cursor-pointer"
-                                        >
-                                          <option value="">Selecciona...</option>
-                                          {FRECUENCIAS.map(f => (
-                                            <option key={f.value} value={f.value}>{f.value}</option>
-                                          ))}
-                                        </select>
-                                      </div>
-
-                                      <div className="flex flex-col gap-1">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Situación *</label>
-                                        <select
-                                          required
-                                          value={pst.situacion}
-                                          onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'situacion', e.target.value)}
-                                          className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs bg-white focus:outline-none cursor-pointer"
-                                        >
-                                          {SITUACIONES.map(s => (
-                                            <option key={s} value={s}>{s}</option>
-                                          ))}
-                                        </select>
-                                      </div>
-
-                                      <div className="flex flex-col gap-1">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Peligro *</label>
-                                        {pst.peligroIsManual ? (
-                                          <div className="space-y-1">
-                                            <input
-                                              type="text"
-                                              required
-                                              placeholder="Peligro a mano..."
-                                              value={pst.peligro}
-                                              onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'peligro', e.target.value)}
-                                              className="w-full border border-slate-200 rounded-xl px-2.5 py-1 text-xs"
-                                            />
-                                            <button
-                                              type="button"
-                                              onClick={() => {
-                                                handleUpdateBulkPuesto(sec.id, pst.id, { peligroIsManual: false, peligro: '' });
-                                              }}
-                                              className="text-[9px] text-[#468DFF] hover:underline block"
-                                            >
-                                              Seleccionar del catálogo
-                                            </button>
-                                          </div>
-                                        ) : (
-                                          <select
-                                            required
-                                            value={pst.peligro}
-                                            onChange={(e) => {
-                                              if (e.target.value === 'MANUAL') {
-                                                handleUpdateBulkPuesto(sec.id, pst.id, { peligroIsManual: true, peligro: '' });
-                                              } else {
-                                                handleUpdateBulkPuesto(sec.id, pst.id, 'peligro', e.target.value);
-                                              }
-                                            }}
-                                            className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs bg-white focus:outline-none cursor-pointer"
-                                          >
-                                            <option value="">Selecciona...</option>
-                                            {uniquePeligros.map(p => (
-                                              <option key={p} value={p}>{p}</option>
-                                            ))}
-                                            <option value="MANUAL">+ Ingresar manualmente...</option>
-                                          </select>
-                                        )}
-                                      </div>
-
-                                      <div className="flex flex-col gap-1">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Riesgo *</label>
-                                        {pst.riesgoIsManual ? (
-                                          <div className="space-y-1">
-                                            <input
-                                              type="text"
-                                              required
-                                              placeholder="Riesgo a mano..."
-                                              value={pst.riesgo}
-                                              onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'riesgo', e.target.value)}
-                                              className="w-full border border-slate-200 rounded-xl px-2.5 py-1 text-xs"
-                                            />
-                                            <button
-                                              type="button"
-                                              onClick={() => {
-                                                handleUpdateBulkPuesto(sec.id, pst.id, { riesgoIsManual: false, riesgo: '' });
-                                              }}
-                                              className="text-[9px] text-[#468DFF] hover:underline block"
-                                            >
-                                              Seleccionar del catálogo
-                                            </button>
-                                          </div>
-                                        ) : (
-                                          <select
-                                            required
-                                            disabled={!pst.peligro || pst.peligroIsManual}
-                                            value={pst.riesgo}
-                                            onChange={(e) => {
-                                              if (e.target.value === 'MANUAL') {
-                                                handleUpdateBulkPuesto(sec.id, pst.id, { riesgoIsManual: true, riesgo: '' });
-                                              } else {
-                                                handleUpdateBulkPuesto(sec.id, pst.id, 'riesgo', e.target.value);
-                                              }
-                                            }}
-                                            className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs bg-white focus:outline-none cursor-pointer disabled:bg-slate-100 disabled:text-slate-400"
-                                          >
-                                            <option value="">{!pst.peligro ? 'Peligro primero' : 'Selecciona...'}</option>
-                                            {getRiesgosForPeligro(pst.peligro).map(r => (
-                                              <option key={r} value={r}>{r}</option>
-                                            ))}
-                                            <option value="MANUAL">+ Ingresar manualmente...</option>
-                                          </select>
-                                        )}
-                                      </div>
-                                    </div>
-
-                                    {/* Consecuencias y Tipo Peligro */}
-                                    <div className="grid md:grid-cols-2 gap-4">
-                                      <div className="flex flex-col gap-1">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Consecuencia *</label>
-                                        <textarea
-                                          required
-                                          rows={2}
-                                          placeholder="Consecuencias del riesgo (autocompletado o manual)..."
-                                          value={pst.consecuencia}
-                                          onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'consecuencia', e.target.value)}
-                                          className="w-full border border-slate-200 rounded-xl px-2.5 py-1 text-xs focus:outline-none"
-                                        />
-                                      </div>
-                                      <div className="flex flex-col gap-1">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tipo Peligro (Autocompletado)</label>
-                                        <input
-                                          type="text"
-                                          readOnly
-                                          value={pst.tipo_peligro}
-                                          placeholder="Tipo de Peligro"
-                                          className="w-full border border-slate-200 rounded-xl px-2.5 py-2 text-xs bg-slate-100 text-slate-500 font-semibold"
-                                        />
-                                      </div>
-                                    </div>
-
-                                    {/* Evaluación Inicial de Riesgo */}
-                                    <div className="grid md:grid-cols-3 gap-4 bg-slate-50/50 p-3 rounded-xl border border-slate-100">
-                                      <div className="flex flex-col gap-1">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                                          Probabilidad Inicial *
-                                          <button type="button" onClick={() => setHelpModal({ show: true, type: 'probabilidad' })} className="text-slate-400 hover:text-[#468DFF]"><HelpCircle className="h-3 w-3" /></button>
-                                        </label>
-                                        <select
-                                          required
-                                          value={pst.probabilidad}
-                                          onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'probabilidad', e.target.value)}
-                                          className="w-full border border-slate-200 rounded-xl px-2.5 py-1 text-xs bg-white focus:outline-none cursor-pointer"
-                                        >
-                                          <option value="">Selecciona...</option>
-                                          {NIVELES_PROBABILIDAD.map(p => (
-                                            <option key={p} value={p}>{p}</option>
-                                          ))}
-                                        </select>
-                                      </div>
-
-                                      <div className="flex flex-col gap-1">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                                          Gravedad Inicial *
-                                          <button type="button" onClick={() => setHelpModal({ show: true, type: 'gravedad' })} className="text-slate-400 hover:text-[#468DFF]"><HelpCircle className="h-3 w-3" /></button>
-                                        </label>
-                                        <select
-                                          required
-                                          value={pst.gravedad}
-                                          onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'gravedad', e.target.value)}
-                                          className="w-full border border-slate-200 rounded-xl px-2.5 py-1 text-xs bg-white focus:outline-none cursor-pointer"
-                                        >
-                                          <option value="">Selecciona...</option>
-                                          {NIVELES_GRAVEDAD.map(g => (
-                                            <option key={g} value={g}>{g}</option>
-                                          ))}
-                                        </select>
-                                      </div>
-
-                                      <div className="flex flex-col justify-end pb-1">
-                                        <span className="text-[10px] text-slate-400 font-bold block mb-1">Nivel de Riesgo Inicial</span>
-                                        {pst.probabilidad && pst.gravedad ? (
-                                          (() => {
-                                            const r = getRiskLevel(pst.probabilidad, pst.gravedad);
-                                            return (
-                                              <span className={`px-3 py-1.5 rounded-lg text-xs text-center border font-bold ${r?.bgClass}`}>
-                                                {r?.text}
-                                              </span>
-                                            );
-                                          })()
-                                        ) : (
-                                          <span className="text-xs text-slate-400 italic py-1">Incompleto</span>
-                                        )}
-                                      </div>
-                                    </div>
-
-                                    {/* Medidas de Control Existentes */}
-                                    <div className="space-y-3">
-                                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block border-b pb-0.5 border-slate-100">Medidas de Control Existentes</span>
-                                      <div className="grid md:grid-cols-3 gap-4">
+                                      {sec.isManual && (
                                         <div className="flex flex-col gap-1">
-                                          <label className="text-[10px] font-semibold text-slate-600">Administrativas</label>
-                                          <textarea
-                                            rows={2}
-                                            placeholder="Editar o ingresar medidas administrativas..."
-                                            value={pst.medidas_control_adm}
-                                            onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'medidas_control_adm', e.target.value)}
-                                            className="w-full border border-slate-200 rounded-xl px-2.5 py-1 text-xs focus:outline-none"
-                                          />
-                                        </div>
-                                        <div className="flex flex-col gap-1">
-                                          <label className="text-[10px] font-semibold text-slate-600">De Ingeniería</label>
-                                          <textarea
-                                            rows={2}
-                                            placeholder="Editar o ingresar medidas de ingeniería..."
-                                            value={pst.medidas_control_ing}
-                                            onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'medidas_control_ing', e.target.value)}
-                                            className="w-full border border-slate-200 rounded-xl px-2.5 py-1 text-xs focus:outline-none"
-                                          />
-                                        </div>
-                                        <div className="flex flex-col gap-1">
-                                          <label className="text-[10px] font-semibold text-slate-600">EPP's</label>
-                                          <textarea
-                                            rows={2}
-                                            placeholder="Editar o ingresar equipo de protección..."
-                                            value={pst.medidas_control_epp}
-                                            onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'medidas_control_epp', e.target.value)}
-                                            className="w-full border border-slate-200 rounded-xl px-2.5 py-1 text-xs focus:outline-none"
-                                          />
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    {/* Medidas Recomendadas y Responsable */}
-                                    <div className="grid md:grid-cols-2 gap-4">
-                                      <div className="flex flex-col gap-1">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Medidas de Control Recomendadas</label>
-                                        <textarea
-                                          rows={2}
-                                          placeholder="Acciones de mejora planificadas..."
-                                          value={pst.medidas_control_recomendadas}
-                                          onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'medidas_control_recomendadas', e.target.value)}
-                                          className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:outline-none"
-                                        />
-                                      </div>
-
-                                      <div className="flex flex-col gap-1">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Responsable</label>
-                                        {pst.responsableIsManual ? (
-                                          <div className="space-y-1">
-                                            <input
-                                              type="text"
-                                              placeholder="Nombre del responsable..."
-                                              value={pst.responsable}
-                                              onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'responsable', e.target.value)}
-                                              className="w-full border border-slate-200 rounded-xl px-2 py-1 text-xs focus:outline-none"
-                                            />
-                                            <button
-                                              type="button"
-                                              onClick={() => {
-                                                handleUpdateBulkPuesto(sec.id, pst.id, { responsableIsManual: false, responsable: '' });
-                                              }}
-                                              className="text-[9px] text-[#468DFF] hover:underline block"
-                                            >
-                                              Seleccionar miembro del equipo
-                                            </button>
-                                          </div>
-                                        ) : (
-                                          <select
-                                            value={pst.responsable}
-                                            onChange={(e) => {
-                                              if (e.target.value === 'MANUAL') {
-                                                handleUpdateBulkPuesto(sec.id, pst.id, { responsableIsManual: true, responsable: '' });
-                                              } else {
-                                                handleUpdateBulkPuesto(sec.id, pst.id, 'responsable', e.target.value);
-                                              }
-                                            }}
-                                            className="w-full border border-slate-200 rounded-xl px-2 py-1.5 text-xs bg-white focus:outline-none cursor-pointer"
-                                          >
-                                            <option value="">Selecciona...</option>
-                                            {miembrosList.map(m => (
-                                              <option key={m.id} value={m.full_name}>{m.full_name}</option>
-                                            ))}
-                                            <option value="MANUAL">+ Ingresar manualmente...</option>
-                                          </select>
-                                        )}
-                                      </div>
-                                    </div>
-
-                                    {/* Fechas con Selector Estándar y Evaluación Residual */}
-                                    <div className="grid md:grid-cols-4 gap-4 pt-2 border-t border-slate-100">
-                                      <div className="flex flex-col gap-1">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Fecha Planificada</label>
-                                        <div className="relative">
+                                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Especifique el Sector *</label>
                                           <input
                                             type="text"
-                                            placeholder="DD/MM/YYYY"
-                                            maxLength={10}
-                                            value={pst.fecha_planificada}
-                                            onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'fecha_planificada', formatAsDateInput(e.target.value))}
-                                            className="w-full border border-slate-200 rounded-xl pl-2.5 pr-8 py-1 text-xs focus:outline-none font-mono"
+                                            required
+                                            placeholder="Ingresar sector a mano..."
+                                            value={sec.sector}
+                                            onChange={(e) => handleUpdateBulkSector(sec.id, 'sector', e.target.value)}
+                                            className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs bg-white focus:outline-none"
                                           />
-                                          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
-                                            <Calendar className="h-3.5 w-3.5" />
-                                            <input
-                                              type="date"
-                                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                                              onChange={(e) => {
-                                                const val = e.target.value;
-                                                if (val) {
-                                                  const parts = val.split('-');
-                                                  if (parts.length === 3) {
-                                                    handleUpdateBulkPuesto(sec.id, pst.id, 'fecha_planificada', `${parts[2]}/${parts[1]}/${parts[0]}`);
-                                                  }
-                                                }
-                                              }}
-                                            />
-                                          </div>
                                         </div>
-                                      </div>
-
-                                      <div className="flex flex-col gap-1">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Fecha Realización</label>
-                                        <div className="relative">
-                                          <input
-                                            type="text"
-                                            placeholder="DD/MM/YYYY"
-                                            maxLength={10}
-                                            value={pst.fecha_realizacion}
-                                            onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'fecha_realizacion', formatAsDateInput(e.target.value))}
-                                            className="w-full border border-slate-200 rounded-xl pl-2.5 pr-8 py-1 text-xs focus:outline-none font-mono"
-                                          />
-                                          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
-                                            <Calendar className="h-3.5 w-3.5" />
-                                            <input
-                                              type="date"
-                                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                                              onChange={(e) => {
-                                                const val = e.target.value;
-                                                if (val) {
-                                                  const parts = val.split('-');
-                                                  if (parts.length === 3) {
-                                                    handleUpdateBulkPuesto(sec.id, pst.id, 'fecha_realizacion', `${parts[2]}/${parts[1]}/${parts[0]}`);
-                                                  }
-                                                }
-                                              }}
-                                            />
-                                          </div>
-                                        </div>
-                                      </div>
-
-                                      <div className="flex flex-col gap-1 bg-[#468DFF]/5 p-2 rounded-xl border border-[#468DFF]/15">
-                                        <label className="text-[9px] font-bold text-[#468DFF] uppercase tracking-wider">Probabilidad Residual</label>
-                                        <select
-                                          value={pst.post_probabilidad}
-                                          onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'post_probabilidad', e.target.value)}
-                                          className="w-full border border-slate-200 rounded-xl px-1 py-0.5 text-xs bg-white focus:outline-none cursor-pointer"
-                                        >
-                                          <option value="">Selecciona...</option>
-                                          {NIVELES_PROBABILIDAD.map(p => (
-                                            <option key={p} value={p}>{p}</option>
-                                          ))}
-                                        </select>
-                                      </div>
-
-                                      <div className="flex flex-col gap-1 bg-[#468DFF]/5 p-2 rounded-xl border border-[#468DFF]/15">
-                                        <label className="text-[9px] font-bold text-[#468DFF] uppercase tracking-wider">Gravedad Residual</label>
-                                        <select
-                                          value={pst.post_gravedad}
-                                          onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'post_gravedad', e.target.value)}
-                                          className="w-full border border-slate-200 rounded-xl px-1 py-0.5 text-xs bg-white focus:outline-none cursor-pointer"
-                                        >
-                                          <option value="">Selecciona...</option>
-                                          {NIVELES_GRAVEDAD.map(g => (
-                                            <option key={g} value={g}>{g}</option>
-                                          ))}
-                                        </select>
-                                      </div>
+                                      )}
                                     </div>
-
-                                    {/* Nivel de Riesgo Residual Resultante */}
-                                    {pst.post_probabilidad && pst.post_gravedad && (
-                                      <div className="flex items-center justify-end gap-2 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Riesgo Residual Resultante:</span>
-                                        {(() => {
-                                          const r = getRiskLevel(pst.post_probabilidad, pst.post_gravedad);
-                                          return (
-                                            <span className={`px-3 py-1 rounded-lg text-xs font-bold border ${r?.bgClass}`}>
-                                              {r?.text}
-                                            </span>
-                                          );
-                                        })()}
-                                      </div>
-                                    )}
-
-                                    {/* Observaciones (Bulk) */}
-                                    <div className="flex flex-col gap-1">
-                                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Observaciones del Puesto</label>
-                                      <textarea
-                                        rows={2}
-                                        placeholder="Detalles u observaciones de este puesto..."
-                                        value={pst.observaciones}
-                                        onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'observaciones', e.target.value)}
-                                        className="w-full border border-slate-200 rounded-xl px-2.5 py-1 text-xs focus:outline-none"
-                                      />
-                                    </div>
-
                                   </div>
-                                );
-                              })}
-                            </div>
+
+                                  <div className="flex items-center gap-2 mt-5">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleAddBulkPuesto(sec.id)}
+                                      disabled={!sec.sector}
+                                      className="px-2.5 py-1.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-lg text-xs font-bold transition-all disabled:opacity-50 flex items-center gap-1 cursor-pointer"
+                                    >
+                                      <PlusCircle className="h-3 w-3" />
+                                      Puesto
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* Puestos de Trabajo */}
+                                <div className="pl-4 border-l-2 border-slate-200 space-y-4">
+                                  {sec.puestos.length === 0 && (
+                                    <span className="text-[10px] text-slate-400 font-semibold block py-1">No hay puestos agregados en este sector. Haga clic en "+ Puesto".</span>
+                                  )}
+                                  
+                                  {sec.puestos.map((pst, pstIdx) => {
+                                    const sectorEstObj = currentEstSectores.find(s => s.denominacion === sec.sector);
+                                    const predefPuestos = sectorEstObj?.puestos || [];
+
+                                    return (
+                                      <div key={pst.id} className="border border-slate-150 rounded-xl bg-white p-4 space-y-4">
+                                        {/* Cabecera del Puesto */}
+                                        <div className="flex items-center justify-between gap-4 pb-2 border-b border-slate-100">
+                                          <div className="flex items-center gap-2">
+                                            <span className="text-[10px] font-bold text-slate-700 bg-slate-200/80 px-2 py-0.5 rounded-lg border border-slate-300/40 uppercase">
+                                              Puesto #{pstIdx + 1}
+                                            </span>
+                                            {pst.puesto && (
+                                              <span className="text-xs font-bold text-slate-800 max-w-[200px] truncate">
+                                                - {pst.puesto}
+                                              </span>
+                                            )}
+                                          </div>
+                                          <div className="flex items-center gap-2">
+                                            <span
+                                              role="button"
+                                              onClick={() => {
+                                                const updated = bulkSectores.map(s => {
+                                                  if (s.id === sec.id) {
+                                                    return {
+                                                      ...s,
+                                                      puestos: s.puestos.map(p => {
+                                                        if (p.id === pst.id) {
+                                                          return { ...p, isCollapsed: !p.isCollapsed };
+                                                        }
+                                                        return p;
+                                                      })
+                                                    };
+                                                  }
+                                                  return s;
+                                                });
+                                                setBulkSectores(updated);
+                                              }}
+                                              className="text-[9px] text-slate-600 hover:text-slate-800 bg-white hover:bg-slate-100 font-bold px-2 py-0.5 rounded-md border border-slate-200 transition-all cursor-pointer flex items-center gap-0.5 shadow-sm"
+                                              title={pst.isCollapsed ? "Expandir puesto" : "Contraer puesto"}
+                                            >
+                                              {pst.isCollapsed ? (
+                                                <>
+                                                  <ChevronDown className="h-2.5 w-2.5" />
+                                                  Ver más
+                                                </>
+                                              ) : (
+                                                <>
+                                                  <ChevronUp className="h-2.5 w-2.5" />
+                                                  Ver menos
+                                                </>
+                                              )}
+                                            </span>
+                                            <button
+                                              type="button"
+                                              onClick={() => handleRemoveBulkPuesto(sec.id, pst.id)}
+                                              className="text-[9px] text-red-500 hover:text-red-700 bg-red-55 hover:bg-red-100 font-bold px-2 py-0.5 rounded-md border border-red-200 transition-all cursor-pointer flex items-center gap-0.5 shadow-sm"
+                                            >
+                                              <Trash2 className="h-2.5 w-2.5" /> Quitar
+                                            </button>
+                                          </div>
+                                        </div>
+
+                                        {/* Contenido del Puesto */}
+                                        {!pst.isCollapsed && (
+                                          <div className="space-y-4">
+                                            <div className="grid md:grid-cols-2 gap-4">
+                                              <div className="flex flex-col gap-1">
+                                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Puesto / Operación *</label>
+                                                <div className="space-y-2">
+                                                  <select
+                                                    required
+                                                    value={pst.isManual ? 'MANUAL' : pst.puesto}
+                                                    onChange={(e) => {
+                                                      if (e.target.value === 'MANUAL') {
+                                                        handleUpdateBulkPuesto(sec.id, pst.id, { isManual: true, puesto: '' });
+                                                      } else {
+                                                        handleUpdateBulkPuesto(sec.id, pst.id, { isManual: false, puesto: e.target.value });
+                                                      }
+                                                    }}
+                                                    className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs bg-white focus:outline-none cursor-pointer font-medium"
+                                                  >
+                                                    <option value="">Selecciona puesto...</option>
+                                                    {predefPuestos.map(p => (
+                                                      <option key={p.id} value={p.denominacion}>{p.denominacion}</option>
+                                                    ))}
+                                                    <option value="MANUAL">Otro (especificar...)</option>
+                                                  </select>
+
+                                                  {pst.isManual && (
+                                                    <div className="flex flex-col gap-1">
+                                                      <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Especifique el Puesto *</label>
+                                                      <input
+                                                        type="text"
+                                                        required
+                                                        placeholder="Ingresar puesto a mano..."
+                                                        value={pst.puesto}
+                                                        onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'puesto', e.target.value)}
+                                                        className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs bg-white focus:outline-none"
+                                                      />
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              </div>
+
+                                              <div className="flex flex-col gap-1">
+                                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tareas Ejecutadas *</label>
+                                                <input
+                                                  type="text"
+                                                  required
+                                                  placeholder="Descripción de las tareas..."
+                                                  value={pst.tareas}
+                                                  onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'tareas', e.target.value)}
+                                                  className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none"
+                                                />
+                                              </div>
+                                            </div>
+
+                                            {/* Campos de Análisis */}
+                                            <div className="grid md:grid-cols-4 gap-4">
+                                              <div className="flex flex-col gap-1">
+                                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                                                  Frecuencia *
+                                                  <button type="button" onClick={() => setHelpModal({ show: true, type: 'frecuencia' })} className="text-slate-400 hover:text-[#468DFF]"><HelpCircle className="h-3 w-3" /></button>
+                                                </label>
+                                                <select
+                                                  required
+                                                  value={pst.frecuencia}
+                                                  onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'frecuencia', e.target.value)}
+                                                  className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs bg-white focus:outline-none cursor-pointer"
+                                                >
+                                                  <option value="">Selecciona...</option>
+                                                  {FRECUENCIAS.map(f => (
+                                                    <option key={f.value} value={f.value}>{f.value}</option>
+                                                  ))}
+                                                </select>
+                                              </div>
+
+                                              <div className="flex flex-col gap-1">
+                                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Situación *</label>
+                                                <select
+                                                  required
+                                                  value={pst.situacion}
+                                                  onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'situacion', e.target.value)}
+                                                  className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs bg-white focus:outline-none cursor-pointer"
+                                                >
+                                                  {SITUACIONES.map(s => (
+                                                    <option key={s} value={s}>{s}</option>
+                                                  ))}
+                                                </select>
+                                              </div>
+
+                                              <div className="flex flex-col gap-1">
+                                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Peligro *</label>
+                                                {pst.peligroIsManual ? (
+                                                  <div className="space-y-1">
+                                                    <input
+                                                      type="text"
+                                                      required
+                                                      placeholder="Peligro a mano..."
+                                                      value={pst.peligro}
+                                                      onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'peligro', e.target.value)}
+                                                      className="w-full border border-slate-200 rounded-xl px-2.5 py-1 text-xs"
+                                                    />
+                                                    <button
+                                                      type="button"
+                                                      onClick={() => {
+                                                        handleUpdateBulkPuesto(sec.id, pst.id, { peligroIsManual: false, peligro: '' });
+                                                      }}
+                                                      className="text-[9px] text-[#468DFF] hover:underline block"
+                                                    >
+                                                      Seleccionar del catálogo
+                                                    </button>
+                                                  </div>
+                                                ) : (
+                                                  <select
+                                                    required
+                                                    value={pst.peligro}
+                                                    onChange={(e) => {
+                                                      if (e.target.value === 'MANUAL') {
+                                                        handleUpdateBulkPuesto(sec.id, pst.id, { peligroIsManual: true, peligro: '' });
+                                                      } else {
+                                                        handleUpdateBulkPuesto(sec.id, pst.id, 'peligro', e.target.value);
+                                                      }
+                                                    }}
+                                                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs bg-white focus:outline-none cursor-pointer"
+                                                  >
+                                                    <option value="">Selecciona...</option>
+                                                    {uniquePeligros.map(p => (
+                                                      <option key={p} value={p}>{p}</option>
+                                                    ))}
+                                                    <option value="MANUAL">+ Ingresar manualmente...</option>
+                                                  </select>
+                                                )}
+                                              </div>
+
+                                              <div className="flex flex-col gap-1">
+                                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Riesgo *</label>
+                                                {pst.riesgoIsManual ? (
+                                                  <div className="space-y-1">
+                                                    <input
+                                                      type="text"
+                                                      required
+                                                      placeholder="Riesgo a mano..."
+                                                      value={pst.riesgo}
+                                                      onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'riesgo', e.target.value)}
+                                                      className="w-full border border-slate-200 rounded-xl px-2.5 py-1 text-xs"
+                                                    />
+                                                    <button
+                                                      type="button"
+                                                      onClick={() => {
+                                                        handleUpdateBulkPuesto(sec.id, pst.id, { riesgoIsManual: false, riesgo: '' });
+                                                      }}
+                                                      className="text-[9px] text-[#468DFF] hover:underline block"
+                                                    >
+                                                      Seleccionar del catálogo
+                                                    </button>
+                                                  </div>
+                                                ) : (
+                                                  <select
+                                                    required
+                                                    disabled={!pst.peligro || pst.peligroIsManual}
+                                                    value={pst.riesgo}
+                                                    onChange={(e) => {
+                                                      if (e.target.value === 'MANUAL') {
+                                                        handleUpdateBulkPuesto(sec.id, pst.id, { riesgoIsManual: true, riesgo: '' });
+                                                      } else {
+                                                        handleUpdateBulkPuesto(sec.id, pst.id, 'riesgo', e.target.value);
+                                                      }
+                                                    }}
+                                                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs bg-white focus:outline-none cursor-pointer disabled:bg-slate-100 disabled:text-slate-400"
+                                                  >
+                                                    <option value="">{!pst.peligro ? 'Peligro primero' : 'Selecciona...'}</option>
+                                                    {getRiesgosForPeligro(pst.peligro).map(r => (
+                                                      <option key={r} value={r}>{r}</option>
+                                                    ))}
+                                                    <option value="MANUAL">+ Ingresar manualmente...</option>
+                                                  </select>
+                                                )}
+                                              </div>
+                                            </div>
+
+                                            {/* Consecuencias y Tipo Peligro */}
+                                            <div className="grid md:grid-cols-2 gap-4">
+                                              <div className="flex flex-col gap-1">
+                                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Consecuencia *</label>
+                                                <textarea
+                                                  required
+                                                  rows={2}
+                                                  placeholder="Consecuencias del riesgo (autocompletado o manual)..."
+                                                  value={pst.consecuencia}
+                                                  onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'consecuencia', e.target.value)}
+                                                  className="w-full border border-slate-200 rounded-xl px-2.5 py-1 text-xs focus:outline-none"
+                                                />
+                                              </div>
+                                              <div className="flex flex-col gap-1">
+                                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tipo Peligro (Autocompletado)</label>
+                                                <input
+                                                  type="text"
+                                                  readOnly
+                                                  value={pst.tipo_peligro}
+                                                  placeholder="Tipo de Peligro"
+                                                  className="w-full border border-slate-200 rounded-xl px-2.5 py-2 text-xs bg-slate-100 text-slate-500 font-semibold"
+                                                />
+                                              </div>
+                                            </div>
+
+                                            {/* Evaluación Inicial de Riesgo */}
+                                            <div className="grid md:grid-cols-3 gap-4 bg-slate-50/50 p-3 rounded-xl border border-slate-100">
+                                              <div className="flex flex-col gap-1">
+                                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                                                  Probabilidad Inicial *
+                                                  <button type="button" onClick={() => setHelpModal({ show: true, type: 'probabilidad' })} className="text-slate-400 hover:text-[#468DFF]"><HelpCircle className="h-3 w-3" /></button>
+                                                </label>
+                                                <select
+                                                  required
+                                                  value={pst.probabilidad}
+                                                  onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'probabilidad', e.target.value)}
+                                                  className="w-full border border-slate-200 rounded-xl px-2.5 py-1 text-xs bg-white focus:outline-none cursor-pointer"
+                                                >
+                                                  <option value="">Selecciona...</option>
+                                                  {NIVELES_PROBABILIDAD.map(p => (
+                                                    <option key={p} value={p}>{p}</option>
+                                                  ))}
+                                                </select>
+                                              </div>
+
+                                              <div className="flex flex-col gap-1">
+                                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                                                  Gravedad Inicial *
+                                                  <button type="button" onClick={() => setHelpModal({ show: true, type: 'gravedad' })} className="text-slate-400 hover:text-[#468DFF]"><HelpCircle className="h-3 w-3" /></button>
+                                                </label>
+                                                <select
+                                                  required
+                                                  value={pst.gravedad}
+                                                  onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'gravedad', e.target.value)}
+                                                  className="w-full border border-slate-200 rounded-xl px-2.5 py-1 text-xs bg-white focus:outline-none cursor-pointer"
+                                                >
+                                                  <option value="">Selecciona...</option>
+                                                  {NIVELES_GRAVEDAD.map(g => (
+                                                    <option key={g} value={g}>{g}</option>
+                                                  ))}
+                                                </select>
+                                              </div>
+
+                                              <div className="flex flex-col justify-end pb-1">
+                                                <div className="flex items-center gap-1 mb-1">
+                                                  <span className="text-[10px] text-slate-400 font-bold block">Nivel de Riesgo Inicial</span>
+                                                  <button type="button" onClick={() => setHelpModal({ show: true, type: 'nivelRiesgo' })} className="text-slate-400 hover:text-[#468DFF] cursor-pointer focus:outline-none"><HelpCircle className="h-3 w-3" /></button>
+                                                </div>
+                                                {pst.probabilidad && pst.gravedad ? (
+                                                  (() => {
+                                                    const r = getRiskLevel(pst.probabilidad, pst.gravedad);
+                                                    return (
+                                                      <span className={`px-3 py-1.5 rounded-lg text-xs text-center border font-bold ${r?.bgClass}`}>
+                                                        {r?.text}
+                                                      </span>
+                                                    );
+                                                  })()
+                                                ) : (
+                                                  <span className="text-xs text-slate-400 italic py-1">Incompleto</span>
+                                                )}
+                                              </div>
+                                            </div>
+
+                                            {/* Medidas de Control Existentes */}
+                                            <div className="space-y-3">
+                                              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block border-b pb-0.5 border-slate-100">Medidas de Control Existentes</span>
+                                              <div className="grid md:grid-cols-3 gap-4">
+                                                <div className="flex flex-col gap-1">
+                                                  <label className="text-[10px] font-semibold text-slate-600">Administrativas</label>
+                                                  <textarea
+                                                    rows={2}
+                                                    placeholder="Editar o ingresar medidas administrativas..."
+                                                    value={pst.medidas_control_adm}
+                                                    onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'medidas_control_adm', e.target.value)}
+                                                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1 text-xs focus:outline-none"
+                                                  />
+                                                </div>
+                                                <div className="flex flex-col gap-1">
+                                                  <label className="text-[10px] font-semibold text-slate-600">De Ingeniería</label>
+                                                  <textarea
+                                                    rows={2}
+                                                    placeholder="Editar o ingresar medidas de ingeniería..."
+                                                    value={pst.medidas_control_ing}
+                                                    onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'medidas_control_ing', e.target.value)}
+                                                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1 text-xs focus:outline-none"
+                                                  />
+                                                </div>
+                                                <div className="flex flex-col gap-1">
+                                                  <label className="text-[10px] font-semibold text-slate-600">EPP's</label>
+                                                  <textarea
+                                                    rows={2}
+                                                    placeholder="Editar o ingresar equipo de protección..."
+                                                    value={pst.medidas_control_epp}
+                                                    onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'medidas_control_epp', e.target.value)}
+                                                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1 text-xs focus:outline-none"
+                                                  />
+                                                </div>
+                                              </div>
+                                            </div>
+
+                                            {/* Medidas Recomendadas y Responsable */}
+                                            <div className="grid md:grid-cols-2 gap-4">
+                                              <div className="flex flex-col gap-1">
+                                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Medidas de Control Recomendadas</label>
+                                                <textarea
+                                                  rows={2}
+                                                  placeholder="Acciones de mejora planificadas..."
+                                                  value={pst.medidas_control_recomendadas}
+                                                  onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'medidas_control_recomendadas', e.target.value)}
+                                                  className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:outline-none"
+                                                />
+                                              </div>
+
+                                              <div className="flex flex-col gap-1">
+                                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Responsable</label>
+                                                {pst.responsableIsManual ? (
+                                                  <div className="space-y-1">
+                                                    <input
+                                                      type="text"
+                                                      placeholder="Nombre del responsable..."
+                                                      value={pst.responsable}
+                                                      onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'responsable', e.target.value)}
+                                                      className="w-full border border-slate-200 rounded-xl px-2 py-1 text-xs focus:outline-none"
+                                                    />
+                                                    <button
+                                                      type="button"
+                                                      onClick={() => {
+                                                        handleUpdateBulkPuesto(sec.id, pst.id, { responsableIsManual: false, responsable: '' });
+                                                      }}
+                                                      className="text-[9px] text-[#468DFF] hover:underline block"
+                                                    >
+                                                      Seleccionar miembro del equipo
+                                                    </button>
+                                                  </div>
+                                                ) : (
+                                                  <select
+                                                    value={pst.responsable}
+                                                    onChange={(e) => {
+                                                      if (e.target.value === 'MANUAL') {
+                                                        handleUpdateBulkPuesto(sec.id, pst.id, { responsableIsManual: true, responsable: '' });
+                                                      } else {
+                                                        handleUpdateBulkPuesto(sec.id, pst.id, 'responsable', e.target.value);
+                                                      }
+                                                    }}
+                                                    className="w-full border border-slate-200 rounded-xl px-2 py-1.5 text-xs bg-white focus:outline-none cursor-pointer"
+                                                  >
+                                                    <option value="">Selecciona...</option>
+                                                    {miembrosList.map(m => (
+                                                      <option key={m.id} value={m.full_name}>{m.full_name}</option>
+                                                    ))}
+                                                    <option value="MANUAL">+ Ingresar manualmente...</option>
+                                                  </select>
+                                                )}
+                                              </div>
+                                            </div>
+
+                                            {/* Fechas con Selector Estándar y Evaluación Residual */}
+                                            <div className="grid md:grid-cols-4 gap-4 pt-2 border-t border-slate-100">
+                                              <div className="flex flex-col gap-1">
+                                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Fecha Planificada</label>
+                                                <div className="relative">
+                                                  <input
+                                                    type="text"
+                                                    placeholder="DD/MM/YYYY"
+                                                    maxLength={10}
+                                                    value={pst.fecha_planificada}
+                                                    onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'fecha_planificada', formatAsDateInput(e.target.value))}
+                                                    className="w-full border border-slate-200 rounded-xl pl-2.5 pr-8 py-1 text-xs focus:outline-none font-mono"
+                                                  />
+                                                  <div className="absolute right-2.5 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center font-sans">
+                                                    <Calendar className="h-3.5 w-3.5" />
+                                                    <input
+                                                      type="date"
+                                                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                                      onChange={(e) => {
+                                                        const val = e.target.value;
+                                                        if (val) {
+                                                          const parts = val.split('-');
+                                                          if (parts.length === 3) {
+                                                            handleUpdateBulkPuesto(sec.id, pst.id, 'fecha_planificada', `${parts[2]}/${parts[1]}/${parts[0]}`);
+                                                          }
+                                                        }
+                                                      }}
+                                                    />
+                                                  </div>
+                                                </div>
+                                              </div>
+
+                                              <div className="flex flex-col gap-1">
+                                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Fecha Realización</label>
+                                                <div className="relative">
+                                                  <input
+                                                    type="text"
+                                                    placeholder="DD/MM/YYYY"
+                                                    maxLength={10}
+                                                    value={pst.fecha_realizacion}
+                                                    onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'fecha_realizacion', formatAsDateInput(e.target.value))}
+                                                    className="w-full border border-slate-200 rounded-xl pl-2.5 pr-8 py-1 text-xs focus:outline-none font-mono"
+                                                  />
+                                                  <div className="absolute right-2.5 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center font-sans">
+                                                    <Calendar className="h-3.5 w-3.5" />
+                                                    <input
+                                                      type="date"
+                                                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                                      onChange={(e) => {
+                                                        const val = e.target.value;
+                                                        if (val) {
+                                                          const parts = val.split('-');
+                                                          if (parts.length === 3) {
+                                                            handleUpdateBulkPuesto(sec.id, pst.id, 'fecha_realizacion', `${parts[2]}/${parts[1]}/${parts[0]}`);
+                                                          }
+                                                        }
+                                                      }}
+                                                    />
+                                                  </div>
+                                                </div>
+                                              </div>
+
+                                              <div className="flex flex-col gap-1 bg-[#468DFF]/5 p-2 rounded-xl border border-[#468DFF]/15">
+                                                <label className="text-[9px] font-bold text-[#468DFF] uppercase tracking-wider">Probabilidad Residual</label>
+                                                <select
+                                                  value={pst.post_probabilidad}
+                                                  onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'post_probabilidad', e.target.value)}
+                                                  className="w-full border border-slate-200 rounded-xl px-1 py-0.5 text-xs bg-white focus:outline-none cursor-pointer"
+                                                >
+                                                  <option value="">Selecciona...</option>
+                                                  {NIVELES_PROBABILIDAD.map(p => (
+                                                    <option key={p} value={p}>{p}</option>
+                                                  ))}
+                                                </select>
+                                              </div>
+
+                                              <div className="flex flex-col gap-1 bg-[#468DFF]/5 p-2 rounded-xl border border-[#468DFF]/15">
+                                                <label className="text-[9px] font-bold text-[#468DFF] uppercase tracking-wider">Gravedad Residual</label>
+                                                <select
+                                                  value={pst.post_gravedad}
+                                                  onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'post_gravedad', e.target.value)}
+                                                  className="w-full border border-slate-200 rounded-xl px-1 py-0.5 text-xs bg-white focus:outline-none cursor-pointer"
+                                                >
+                                                  <option value="">Selecciona...</option>
+                                                  {NIVELES_GRAVEDAD.map(g => (
+                                                    <option key={g} value={g}>{g}</option>
+                                                  ))}
+                                                </select>
+                                              </div>
+                                            </div>
+
+                                            {/* Nivel de Riesgo Residual Resultante */}
+                                            {pst.post_probabilidad && pst.post_gravedad && (
+                                              <div className="flex items-center justify-end gap-2 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                                                <div className="flex items-center gap-1">
+                                                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Riesgo Residual Resultante:</span>
+                                                  <button type="button" onClick={() => setHelpModal({ show: true, type: 'nivelRiesgo' })} className="text-slate-400 hover:text-[#468DFF] cursor-pointer focus:outline-none"><HelpCircle className="h-3 w-3" /></button>
+                                                </div>
+                                                {(() => {
+                                                  const r = getRiskLevel(pst.post_probabilidad, pst.post_gravedad);
+                                                  return (
+                                                    <span className={`px-3 py-1 rounded-lg text-xs font-bold border ${r?.bgClass}`}>
+                                                      {r?.text}
+                                                    </span>
+                                                  );
+                                                })()}
+                                              </div>
+                                            )}
+
+                                            {/* Observaciones (Bulk) */}
+                                            <div className="flex flex-col gap-1">
+                                              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Observaciones del Puesto</label>
+                                              <textarea
+                                                rows={2}
+                                                placeholder="Detalles u observaciones de este puesto..."
+                                                value={pst.observaciones}
+                                                onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'observaciones', e.target.value)}
+                                                className="w-full border border-slate-200 rounded-xl px-2.5 py-1 text-xs focus:outline-none"
+                                              />
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -2110,99 +2206,86 @@ export default function MatrizRiesgosPage({ params }) {
                           <div className="grid md:grid-cols-2 gap-4">
                             <div className="flex flex-col gap-1.5">
                               <label className="text-xs font-bold text-slate-600">Área / Sector de Trabajo *</label>
-                              {singleSectorIsManual ? (
-                                <div className="space-y-1">
-                                  <input
-                                    type="text"
-                                    required
-                                    placeholder="Ingresar sector..."
-                                    value={singleSector}
-                                    onChange={(e) => setSingleSector(e.target.value)}
-                                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50"
-                                  />
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setSingleSectorIsManual(false);
-                                      setSingleSector('');
-                                      setSinglePuesto('');
-                                    }}
-                                    className="text-xs text-[#468DFF] hover:underline block"
-                                  >
-                                    Seleccionar de la lista predefinida
-                                  </button>
-                                </div>
-                              ) : (
+                              <div className="space-y-2">
                                 <select
                                   required
                                   disabled={!establecimientoId}
-                                  value={singleSector}
+                                  value={singleSectorIsManual ? 'MANUAL' : singleSector}
                                   onChange={(e) => {
                                     if (e.target.value === 'MANUAL') {
                                       setSingleSectorIsManual(true);
                                       setSingleSector('');
                                       setSinglePuesto('');
                                     } else {
+                                      setSingleSectorIsManual(false);
                                       setSingleSector(e.target.value);
                                       setSinglePuesto('');
                                     }
                                   }}
-                                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] cursor-pointer bg-slate-50/50 disabled:bg-slate-100 disabled:text-slate-400"
+                                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] cursor-pointer bg-slate-50/50 disabled:bg-slate-100 disabled:text-slate-400 font-medium"
                                 >
                                   <option value="">{!establecimientoId ? 'Seleccione establecimiento primero' : 'Selecciona sector'}</option>
                                   {currentEstSectores.map(s => (
                                     <option key={s.id} value={s.denominacion}>{s.denominacion}</option>
                                   ))}
-                                  <option value="MANUAL">+ Ingresar manualmente...</option>
+                                  <option value="MANUAL">Otro (especificar...)</option>
                                 </select>
-                              )}
+
+                                {singleSectorIsManual && (
+                                  <div className="flex flex-col gap-1">
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Especifique el Sector *</label>
+                                    <input
+                                      type="text"
+                                      required
+                                      placeholder="Ingresar sector..."
+                                      value={singleSector}
+                                      onChange={(e) => setSingleSector(e.target.value)}
+                                      className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50"
+                                    />
+                                  </div>
+                                )}
+                              </div>
                             </div>
 
                             <div className="flex flex-col gap-1.5">
                               <label className="text-xs font-bold text-slate-600">Puesto de Trabajo / Operación *</label>
-                              {singlePuestoIsManual ? (
-                                <div className="space-y-1">
-                                  <input
-                                    type="text"
-                                    required
-                                    placeholder="Ingresar puesto..."
-                                    value={singlePuesto}
-                                    onChange={(e) => setSinglePuesto(e.target.value)}
-                                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50"
-                                  />
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setSinglePuestoIsManual(false);
-                                      setSinglePuesto('');
-                                    }}
-                                    className="text-xs text-[#468DFF] hover:underline block"
-                                  >
-                                    Seleccionar de la lista predefinida
-                                  </button>
-                                </div>
-                              ) : (
+                              <div className="space-y-2">
                                 <select
                                   required
-                                  disabled={!singleSector || singleSectorIsManual}
-                                  value={singlePuesto}
+                                  disabled={!singleSector}
+                                  value={singlePuestoIsManual ? 'MANUAL' : singlePuesto}
                                   onChange={(e) => {
                                     if (e.target.value === 'MANUAL') {
                                       setSinglePuestoIsManual(true);
                                       setSinglePuesto('');
                                     } else {
+                                      setSinglePuestoIsManual(false);
                                       setSinglePuesto(e.target.value);
                                     }
                                   }}
-                                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] cursor-pointer bg-slate-50/50 disabled:bg-slate-100 disabled:text-slate-400"
+                                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] cursor-pointer bg-slate-50/50 disabled:bg-slate-100 disabled:text-slate-400 font-medium"
                                 >
                                   <option value="">{!singleSector ? 'Seleccione sector primero' : 'Selecciona puesto'}</option>
-                                  {(currentEstSectores.find(s => s.denominacion === singleSector)?.puestos || []).map(p => (
+                                  {(!singleSectorIsManual && (currentEstSectores.find(s => s.denominacion === singleSector)?.puestos || [])).map(p => (
                                     <option key={p.id} value={p.denominacion}>{p.denominacion}</option>
                                   ))}
-                                  <option value="MANUAL">+ Ingresar manualmente...</option>
+                                  <option value="MANUAL">Otro (especificar...)</option>
                                 </select>
-                              )}
+
+                                {singlePuestoIsManual && (
+                                  <div className="flex flex-col gap-1">
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Especifique el Puesto *</label>
+                                    <input
+                                      type="text"
+                                      required
+                                      placeholder="Ingresar puesto..."
+                                      value={singlePuesto}
+                                      onChange={(e) => setSinglePuesto(e.target.value)}
+                                      className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50"
+                                    />
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
 
@@ -2437,7 +2520,10 @@ export default function MatrizRiesgosPage({ params }) {
                             </div>
 
                             <div className="flex flex-col justify-end">
-                              <label className="text-xs font-bold text-slate-600 mb-1">Nivel de Riesgo Inicial</label>
+                              <div className="flex items-center gap-1.5 mb-1">
+                                <label className="text-xs font-bold text-slate-600">Nivel de Riesgo Inicial</label>
+                                <button type="button" onClick={() => setHelpModal({ show: true, type: 'nivelRiesgo' })} className="text-slate-400 hover:text-[#468DFF] cursor-pointer focus:outline-none"><HelpCircle className="h-3.5 w-3.5" /></button>
+                              </div>
                               {singleProbabilidad && singleGravedad ? (
                                 (() => {
                                   const r = getRiskLevel(singleProbabilidad, singleGravedad);
@@ -2659,7 +2745,10 @@ export default function MatrizRiesgosPage({ params }) {
 
                           {singlePostProbabilidad && singlePostGravedad && (
                             <div className="flex items-center justify-end gap-3 bg-slate-50 p-4 rounded-xl border border-slate-150">
-                              <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Nivel de Riesgo Residual:</span>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Nivel de Riesgo Residual:</span>
+                                <button type="button" onClick={() => setHelpModal({ show: true, type: 'nivelRiesgo' })} className="text-slate-400 hover:text-[#468DFF] cursor-pointer focus:outline-none"><HelpCircle className="h-3.5 w-3.5" /></button>
+                              </div>
                               {(() => {
                                 const r = getRiskLevel(singlePostProbabilidad, singlePostGravedad);
                                 return (
@@ -3220,6 +3309,50 @@ export default function MatrizRiesgosPage({ params }) {
                       </ul>
                     </div>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {helpModal.type === 'nivelRiesgo' && (
+              <div className="space-y-4 text-slate-700">
+                <h3 className="font-outfit text-base font-bold text-slate-950 flex items-center gap-2 border-b pb-2">
+                  <HelpCircle className="h-5 w-5 text-[#468DFF]" />
+                  Nivel de Riesgo y Acciones <span className="font-normal text-slate-500 text-sm">(Método BS 8800)</span>
+                </h3>
+                <p className="text-xs leading-relaxed">
+                  Basado en la combinación de la probabilidad y la gravedad del daño, determina las acciones requeridas y su cronograma:
+                </p>
+                <div className="overflow-x-auto rounded-xl border border-slate-200">
+                  <table className="w-full text-xs text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200">
+                        <th className="p-3 font-bold text-slate-800 border-r border-slate-200">Nivel de Riesgo</th>
+                        <th className="p-3 font-bold text-slate-800">Acción y cronograma</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="border-b border-slate-150">
+                        <td className="p-3 font-bold text-white bg-[#00B050] border-r border-slate-200 text-center whitespace-nowrap">Riesgo trivial</td>
+                        <td className="p-3 text-slate-600 bg-white">No se requiere ninguna acción y no es necesario guardar registros documentados.</td>
+                      </tr>
+                      <tr className="border-b border-slate-150">
+                        <td className="p-3 font-bold text-slate-900 bg-[#00FF00] border-r border-slate-200 text-center whitespace-nowrap">Riesgo tolerable</td>
+                        <td className="p-3 text-slate-600 bg-white">No hacen falta controles adicionales. Puede prestarse mayor consideración a una mejor costo/beneficio, o mejora que no imponga una carga de costos adicionales. Se requiere monitoreo para asegurar que se mantengan los controles.</td>
+                      </tr>
+                      <tr className="border-b border-slate-150">
+                        <td className="p-3 font-bold text-slate-900 bg-[#FFFF00] border-r border-slate-200 text-center whitespace-nowrap">Riesgo moderado</td>
+                        <td className="p-3 text-slate-600 bg-white">Deben tomarse los recaudos para reducir el riesgo, pero los costos de prevención deben medirse y restringirse cuidadosamente. Deben implementarse medidas de reducción de riesgo dentro de un lapso definido. Cuando el riesgo moderado está asociado con consecuencias de daño extremo, pueden resultar necesarias ulteriores evaluaciones para establecer con más precisión la probabilidad de daño como base para determinar la necesidad de tomar mejores medidas de control.</td>
+                      </tr>
+                      <tr className="border-b border-slate-150">
+                        <td className="p-3 font-bold text-white bg-[#FF9900] border-r border-slate-200 text-center whitespace-nowrap">Riesgo sustancial</td>
+                        <td className="p-3 text-slate-600 bg-white">No debe comenzar el trabajo hasta que se haya reducido el riesgo. Puede ser necesario asignar recursos considerables para reducir el riesgo. Cuando éste involucra trabajo en proceso, debe tomarse acción urgente.</td>
+                      </tr>
+                      <tr>
+                        <td className="p-3 font-bold text-white bg-[#FF0000] border-r border-slate-200 text-center whitespace-nowrap">Riesgo intolerable</td>
+                        <td className="p-3 text-slate-600 bg-white">No debe comenzar ni continuar el trabajo hasta que se haya reducido el riesgo. Si no es posible reducir el riesgo, el trabajo tiene que permanecer prohibido.</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
             )}
