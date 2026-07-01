@@ -2655,18 +2655,20 @@ export default function VisitasPage({ params }) {
                       2. Siniestralidad e Incidentes Laborales
                     </h3>
 
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       {/* Ocurrencia de incidentes */}
-                      <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold text-slate-600">¿Ocurrieron incidentes o accidentes laborales desde la última visita? *</label>
-                        <div className="flex items-center gap-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-150 bg-white">
+                        <div className="flex gap-2 items-start">
+                          <label className="text-xs font-bold text-slate-700 leading-normal">¿Ocurrieron incidentes o accidentes laborales desde la última visita? *</label>
+                        </div>
+                        <div className="flex items-center gap-1.5 w-full sm:w-48 shrink-0">
                           <button
                             type="button"
                             onClick={() => setOcurrieronIncidentes(true)}
-                            className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all cursor-pointer ${
+                            className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                               ocurrieronIncidentes
-                                ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-md shadow-[#468DFF]/10'
-                                : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
+                                ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-sm shadow-[#468DFF]/10'
+                                : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                             }`}
                           >
                             Sí
@@ -2679,10 +2681,10 @@ export default function VisitasPage({ params }) {
                               setCausaRaiz('');
                               setAccionCorrectiva('');
                             }}
-                            className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all cursor-pointer ${
+                            className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                               !ocurrieronIncidentes
-                                ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-md shadow-[#468DFF]/10'
-                                : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
+                                ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-sm shadow-[#468DFF]/10'
+                                : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                             }`}
                           >
                             No
@@ -2692,21 +2694,23 @@ export default function VisitasPage({ params }) {
 
                       {/* Campos dinámicos condicionales a Sí */}
                       {ocurrieronIncidentes && (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50/50 p-4 border border-slate-150 rounded-2xl animate-fade-in">
+                        <div className="bg-slate-50/50 p-4 border border-slate-150 rounded-2xl space-y-3 animate-fade-in">
                           
                           {/* Análisis de causa */}
-                          <div className="flex flex-col gap-1.5">
-                            <label className="text-xs font-bold text-slate-600">¿Se realizó el análisis correspondiente (causa raíz, correctivas)? *</label>
-                            <div className="flex items-center gap-2">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-150 bg-white">
+                            <div className="flex gap-2 items-start">
+                              <label className="text-xs font-bold text-slate-700 leading-normal">¿Se realizó el análisis correspondiente (causa raíz, correctivas)? *</label>
+                            </div>
+                            <div className="flex items-center gap-1.5 w-full sm:w-48 shrink-0">
                               {['Sí', 'No', 'N/A'].map(opt => (
                                 <button
                                   key={opt}
                                   type="button"
                                   onClick={() => setAnalisisCorrespondiente(opt)}
-                                  className={`flex-1 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                                  className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                                     analisisCorrespondiente === opt
-                                      ? 'bg-[#468DFF] text-white border-[#468DFF]'
-                                      : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+                                      ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-sm shadow-[#468DFF]/10'
+                                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                                   }`}
                                 >
                                   {opt}
@@ -2715,30 +2719,32 @@ export default function VisitasPage({ params }) {
                             </div>
                           </div>
 
-                          {/* Causa raíz */}
-                          <div className="flex flex-col gap-1.5">
-                            <label className="text-xs font-bold text-slate-600">¿Cuál fue la causa raíz? *</label>
-                            <input
-                              type="text"
-                              placeholder="Causa raíz identificada"
-                              value={causaRaiz}
-                              onChange={(e) => setCausaRaiz(e.target.value)}
-                              required={ocurrieronIncidentes}
-                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white"
-                            />
-                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Causa raíz */}
+                            <div className="flex flex-col gap-2 p-3 rounded-xl border border-slate-150 bg-white">
+                              <label className="text-xs font-bold text-slate-700">¿Cuál fue la causa raíz? *</label>
+                              <input
+                                type="text"
+                                placeholder="Causa raíz identificada"
+                                value={causaRaiz}
+                                onChange={(e) => setCausaRaiz(e.target.value)}
+                                required={ocurrieronIncidentes}
+                                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50"
+                              />
+                            </div>
 
-                          {/* Acción correctiva */}
-                          <div className="flex flex-col gap-1.5">
-                            <label className="text-xs font-bold text-slate-600">¿Qué acción correctiva se planificó / realizó? *</label>
-                            <input
-                              type="text"
-                              placeholder="Acción correctiva"
-                              value={accionCorrectiva}
-                              onChange={(e) => setAccionCorrectiva(e.target.value)}
-                              required={ocurrieronIncidentes}
-                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white"
-                            />
+                            {/* Acción correctiva */}
+                            <div className="flex flex-col gap-2 p-3 rounded-xl border border-slate-150 bg-white">
+                              <label className="text-xs font-bold text-slate-700">¿Qué acción correctiva se planificó / realizó? *</label>
+                              <input
+                                type="text"
+                                placeholder="Acción correctiva"
+                                value={accionCorrectiva}
+                                onChange={(e) => setAccionCorrectiva(e.target.value)}
+                                required={ocurrieronIncidentes}
+                                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50"
+                              />
+                            </div>
                           </div>
 
                         </div>
@@ -2753,97 +2759,48 @@ export default function VisitasPage({ params }) {
                       3. Relevamientos y Evaluaciones Técnicas
                     </h3>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      
-                      {/* Relevamiento condiciones de Higiene y Seguridad */}
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600">Relevamiento Higiene y Seguridad *</label>
-                        <div className="flex items-center gap-1.5">
-                          {['Sí', 'No', 'N/A'].map(opt => (
-                            <button
-                              key={opt}
-                              type="button"
-                              onClick={() => setRelevamientoHigieneSeguridad(opt)}
-                              className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-all cursor-pointer ${
-                                relevamientoHigieneSeguridad === opt
-                                  ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-sm'
-                                  : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                              }`}
-                            >
-                              {opt}
-                            </button>
-                          ))}
+                    <div className="space-y-3">
+                      {[
+                        { label: 'Relevamiento Higiene y Seguridad *', value: relevamientoHigieneSeguridad, setter: setRelevamientoHigieneSeguridad, options: ['Sí', 'No', 'N/A'] },
+                        { label: 'Relevamiento Actos Inseguros *', value: relevamientoPracticasSeguras, setter: setRelevamientoPracticasSeguras, options: ['Sí', 'No', 'N/A'] },
+                        { label: 'Relevamiento Uso de EPP *', value: relevamientoEpp, setter: setRelevamientoEpp, options: ['Sí', 'No', 'N/A'] },
+                        {
+                          label: '¿Realizaron Mediciones? *',
+                          value: realizaronMediciones,
+                          setter: (val) => {
+                            setRealizaronMediciones(val);
+                            if (val !== 'Sí') {
+                              setSelectedMediciones([]);
+                            }
+                          },
+                          options: ['Sí', 'No', 'N/A']
+                        }
+                      ].map((item, idx) => (
+                        <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-150 bg-white">
+                          <div className="flex gap-2 items-start">
+                            <span className="text-xs font-bold text-slate-700 leading-normal">{item.label}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 w-full sm:w-48 shrink-0">
+                            {item.options.map(opt => {
+                              const isSelected = item.value === opt;
+                              return (
+                                <button
+                                  key={opt}
+                                  type="button"
+                                  onClick={() => item.setter(opt)}
+                                  className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                                    isSelected
+                                      ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-sm'
+                                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                                  }`}
+                                >
+                                  {opt}
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
-
-                      {/* Relevamiento prácticas de trabajo seguro */}
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600">Relevamiento Actos Inseguros *</label>
-                        <div className="flex items-center gap-1.5">
-                          {['Sí', 'No', 'N/A'].map(opt => (
-                            <button
-                              key={opt}
-                              type="button"
-                              onClick={() => setRelevamientoPracticasSeguras(opt)}
-                              className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-all cursor-pointer ${
-                                relevamientoPracticasSeguras === opt
-                                  ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-sm'
-                                  : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                              }`}
-                            >
-                              {opt}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Relevamiento uso adecuado de EPP */}
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600">Relevamiento Uso de EPP *</label>
-                        <div className="flex items-center gap-1.5">
-                          {['Sí', 'No', 'N/A'].map(opt => (
-                            <button
-                              key={opt}
-                              type="button"
-                              onClick={() => setRelevamientoEpp(opt)}
-                              className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-all cursor-pointer ${
-                                relevamientoEpp === opt
-                                  ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-sm'
-                                  : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                              }`}
-                            >
-                              {opt}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* ¿Se realizaron mediciones o evaluaciones técnicas? */}
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600">¿Realizaron Mediciones? *</label>
-                        <div className="flex items-center gap-1.5">
-                          {['Sí', 'No', 'N/A'].map(opt => (
-                            <button
-                              key={opt}
-                              type="button"
-                              onClick={() => {
-                                setRealizaronMediciones(opt);
-                                if (opt !== 'Sí') {
-                                  setSelectedMediciones([]);
-                                }
-                              }}
-                              className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-all cursor-pointer ${
-                                realizaronMediciones === opt
-                                  ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-sm'
-                                  : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                              }`}
-                            >
-                              {opt}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
+                      ))}
                     </div>
 
                     {/* Mediciones condicionales a Sí */}
@@ -2899,18 +2856,19 @@ export default function VisitasPage({ params }) {
                       4. Capacitaciones, Simulacros y Legajo Técnico
                     </h3>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      
-                      {/* ¿Se verificó implementación de correctivas? */}
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600">¿Verificó correctivas previas? *</label>
-                        <div className="flex items-center gap-1.5">
+                    <div className="space-y-3">
+                      {/* ¿Verificó correctivas previas? */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-150 bg-white">
+                        <div className="flex gap-2 items-start">
+                          <label className="text-xs font-bold text-slate-700 leading-normal">¿Verificó correctivas previas? *</label>
+                        </div>
+                        <div className="flex items-center gap-1.5 w-full sm:w-48 shrink-0">
                           {['Sí', 'No', 'N/A'].map(opt => (
                             <button
                               key={opt}
                               type="button"
                               onClick={() => setVerificoAccionesCorrectivas(opt)}
-                              className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-all cursor-pointer ${
+                              className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                                 verificoAccionesCorrectivas === opt
                                   ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-sm'
                                   : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
@@ -2923,13 +2881,15 @@ export default function VisitasPage({ params }) {
                       </div>
 
                       {/* ¿Se dictaron capacitaciones? */}
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600">¿Se dictaron capacitaciones? *</label>
-                        <div className="flex items-center gap-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-150 bg-white">
+                        <div className="flex gap-2 items-start">
+                          <label className="text-xs font-bold text-slate-700 leading-normal">¿Se dictaron capacitaciones? *</label>
+                        </div>
+                        <div className="flex items-center gap-1.5 w-full sm:w-48 shrink-0">
                           <button
                             type="button"
                             onClick={() => setDictaronCapacitaciones(true)}
-                            className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-all cursor-pointer ${
+                            className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                               dictaronCapacitaciones
                                 ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-sm'
                                 : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
@@ -2943,7 +2903,7 @@ export default function VisitasPage({ params }) {
                               setDictaronCapacitaciones(false);
                               setSelectedTemas([]);
                             }}
-                            className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-all cursor-pointer ${
+                            className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                               !dictaronCapacitaciones
                                 ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-sm'
                                 : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
@@ -2955,13 +2915,15 @@ export default function VisitasPage({ params }) {
                       </div>
 
                       {/* ¿Se realizaron simulacros? */}
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600">¿Se realizaron simulacros? *</label>
-                        <div className="flex items-center gap-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-150 bg-white">
+                        <div className="flex gap-2 items-start">
+                          <label className="text-xs font-bold text-slate-700 leading-normal">¿Se realizaron simulacros? *</label>
+                        </div>
+                        <div className="flex items-center gap-1.5 w-full sm:w-48 shrink-0">
                           <button
                             type="button"
                             onClick={() => setRealizaronSimulacros(true)}
-                            className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-all cursor-pointer ${
+                            className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                               realizaronSimulacros
                                 ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-sm'
                                 : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
@@ -2975,7 +2937,7 @@ export default function VisitasPage({ params }) {
                               setRealizaronSimulacros(false);
                               setSelectedSimulacros([]);
                             }}
-                            className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-all cursor-pointer ${
+                            className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                               !realizaronSimulacros
                                 ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-sm'
                                 : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
@@ -2985,7 +2947,6 @@ export default function VisitasPage({ params }) {
                           </button>
                         </div>
                       </div>
-
                     </div>
 
                     {/* Especificar temas capacitados (condicional) */}
@@ -3099,34 +3060,36 @@ export default function VisitasPage({ params }) {
                       </div>
                     )}
 
-                    {/* ¿Se emite aviso de riesgo? */}
-                    <div className="flex flex-col gap-2 pt-2">
-                      <label className="text-xs font-bold text-slate-600">¿Se emite aviso de riesgo por condiciones inseguras / actos inseguros? *</label>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setEmiteAvisoRiesgo(true)}
-                          className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all cursor-pointer ${
-                            emiteAvisoRiesgo
-                              ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-sm'
-                              : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                          }`}
-                        >
-                          Sí
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setEmiteAvisoRiesgo(false)}
-                          className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all cursor-pointer ${
-                            !emiteAvisoRiesgo
-                              ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-sm'
-                              : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                          }`}
-                        >
-                          No
-                        </button>
+                      {/* ¿Se emite aviso de riesgo? */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-150 bg-white">
+                        <div className="flex gap-2 items-start">
+                          <label className="text-xs font-bold text-slate-700 leading-normal">¿Se emite aviso de riesgo por condiciones inseguras / actos inseguros? *</label>
+                        </div>
+                        <div className="flex items-center gap-1.5 w-full sm:w-48 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setEmiteAvisoRiesgo(true)}
+                            className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                              emiteAvisoRiesgo
+                                ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-sm'
+                                : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                            }`}
+                          >
+                            Sí
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEmiteAvisoRiesgo(false)}
+                            className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                              !emiteAvisoRiesgo
+                                ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-sm'
+                                : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                            }`}
+                          >
+                            No
+                          </button>
+                        </div>
                       </div>
-                    </div>
 
                     {/* Documentación incorporada al Legajo */}
                     <div className="bg-slate-50/50 p-4 border border-slate-150 rounded-2xl space-y-3">
