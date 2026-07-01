@@ -75,7 +75,7 @@ const PROVINCIAS_ARGENTINAS = [
 ];
 
 const normalizePermisos = (perms) => {
-  const sections = ['empresas', 'equipo', 'programa', 'capacitacion', 'correctivas', 'extintores', 'control_electrico', 'visitas', 'avisos', 'legajo', 'nomina'];
+  const sections = ['empresas', 'equipo', 'programa', 'capacitacion', 'correctivas', 'extintores', 'control_electrico', 'visitas', 'avisos', 'legajo', 'nomina', 'checklist_personalizados'];
   const normalized = {};
   sections.forEach(sec => {
     const val = perms?.[sec];
@@ -189,7 +189,9 @@ export default function EquipoPage({ params }) {
     control_electrico: { cargar: true, editar: true, eliminar: true },
     visitas: { cargar: true, editar: true, eliminar: true },
     avisos: { cargar: true, editar: true, eliminar: true },
-    legajo: { cargar: true, editar: true, eliminar: true }
+    legajo: { cargar: true, editar: true, eliminar: true },
+    nomina: { cargar: true, editar: true, eliminar: true },
+    checklist_personalizados: { cargar: true, editar: true, eliminar: true }
   });
 
   // Matrículas
@@ -618,7 +620,8 @@ export default function EquipoPage({ params }) {
       visitas: { cargar: true, editar: true, eliminar: true },
       avisos: { cargar: true, editar: true, eliminar: true },
       legajo: { cargar: true, editar: true, eliminar: true },
-      nomina: { cargar: true, editar: true, eliminar: true }
+      nomina: { cargar: true, editar: true, eliminar: true },
+      checklist_personalizados: { cargar: true, editar: true, eliminar: true }
     });
     setMatriculas([
       {
@@ -656,7 +659,8 @@ export default function EquipoPage({ params }) {
         visitas: { cargar: true, editar: true, eliminar: true },
         avisos: { cargar: true, editar: true, eliminar: true },
         legajo: { cargar: true, editar: true, eliminar: true },
-        nomina: { cargar: true, editar: true, eliminar: true }
+        nomina: { cargar: true, editar: true, eliminar: true },
+        checklist_personalizados: { cargar: true, editar: true, eliminar: true }
       },
       matriculas: [{ institucion: '', numero: '', vencimiento: '', fotoFrentePreview: '', fotoDorsoPreview: '', fotoFrentePath: '', fotoDorsoPath: '' }]
     });
@@ -1672,7 +1676,8 @@ export default function EquipoPage({ params }) {
                             visitas: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
                             avisos: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
                             legajo: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
-                            nomina: { cargar: targetVal, editar: targetVal, eliminar: targetVal }
+                            nomina: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
+                            checklist_personalizados: { cargar: targetVal, editar: targetVal, eliminar: targetVal }
                           });
                         }}
                         className="text-[10px] font-bold text-[#468DFF] hover:underline cursor-pointer bg-transparent border-none outline-none"
@@ -1698,6 +1703,7 @@ export default function EquipoPage({ params }) {
                         { key: 'correctivas', name: 'Acciones Correctivas' },
                         { key: 'extintores', name: 'Control de Extintores' },
                         { key: 'control_electrico', name: 'Control Eléctrico' },
+                        { key: 'checklist_personalizados', name: 'Checklist Personalizados' },
                         { key: 'visitas', name: 'Constancias de Visita' },
                         { key: 'avisos', name: 'Avisos de Riesgo' },
                         { key: 'legajo', name: 'Legajo Técnico' },

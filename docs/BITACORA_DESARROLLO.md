@@ -1,5 +1,79 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-01] Creación del Módulo de Checklist Personalizados (Dos Niveles)
+
+### Resumen de Cambios
+- **Base de Datos y Multi-tenancy**: Se creó la migración SQL `supabase/migrations/20260723000000_create_checklist_personalizados.sql` con las tablas `checklist_templates` (plantillas de nivel 1) y `checklist_inspecciones` (ejecuciones de nivel 2), aplicando políticas RLS automáticas de aislamiento por `tenant_id` y control por permisos.
+- **Navegación e Integración de Permisos**:
+  - Se modificó `src/components/Sidebar.js` para registrar "Checklist Personalizados" con el icono de verificación `ClipboardCheck` bajo "Control Eléctrico".
+  - Se modificó `src/app/[tenant-slug]/equipo/page.js` para integrar el nuevo módulo en los permisos de equipo.
+- **API de Correo**: Se actualizó `src/app/api/send-email/route.js` para admitir el tipo de documento `checklist_personalizado`, parametrizando el asunto, nombre de archivo y cuerpo en base a la plantilla correspondiente.
+- **Página de Carga e Interfaz**: Se creó la vista `src/app/[tenant-slug]/checklist-personalizados/page.js` adoptando la especificación **SySO Compact Layout**:
+  - Interfaz multitestaña para listar e interactuar con inspecciones y plantillas.
+  - Diseñador visual de plantillas (creador dinámico de ítems, tipos de respuesta, y bloques adicionales).
+  - Formulario de ejecución de checklist (autocompleta metadatos de clientes/establecimientos, carga de imágenes y firmas).
+  - Generación de reportes PDF A4 con jsPDF y jspdf-autotable, e integración del envío por correo.
+- **Depuración de Errores y Ajustes de Consola**:
+  - Se corrigió la consulta de Supabase a `miembros_equipo` reemplazando `firma_url` por la columna real `signature_url`.
+  - Se eliminó el warning del selector de fecha (`yyyy-MM-dd`) implementando el input de tipo texto con la superposición transparente de calendario estándar.
+  - Se mitigaron errores 404 de firmas no encontradas mediante un resolvedor seguro de firmas.
+  - Se aplicaron los estilos de marca, márgenes y pictogramas del SySO Compact Layout al listado, cuadro de filtros y botones de acción.
+
+### Decisiones Clave
+- **Estructura Multitestaña**: Agrupar plantillas y ejecuciones en una misma vista optimiza la experiencia del usuario y reduce el tiempo de desarrollo de flujos interconectados.
+- **Almacenamiento Dinámico JSONB**: El uso de JSONB en `config_campos` y `items` permite soportar cualquier diseño de checklist personalizado sin alterar la estructura de la base de datos PostgreSQL.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `gestion-syso-multitenant-security`
+- `next-best-practices`
+- `supabase`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260723000000_create_checklist_personalizados.sql`
+- `[MODIFY] src/components/Sidebar.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/api/send-email/route.js`
+- `[NEW] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js (`npm run build`) exitosa.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. Se heredaron patrones de diseño y validación robustos ya probados en otros módulos.
+
+### Próximo Paso Recomendado
+- Realizar pruebas exhaustivas en el entorno remoto (staging/producción) del flujo de carga de firmas y subida de imágenes para validar el funcionamiento de los buckets en Supabase.
+
+## [2026-07-01] Reordenamiento de la Barra Lateral (Sidebar)
+
+### Resumen de Cambios
+- Se modificó el orden del menú lateral en `src/components/Sidebar.js`.
+- Se reubicaron los accesos a **Constancia de Visita** (`visitas`) y **Aviso de Riesgo** (`avisos`) para que queden listados inmediatamente debajo de **Matriz de riesgos** (`matriz-riesgos`).
+- Se mantuvo el resto de las secciones intactas respetando los accesos del perfil administrador/profesional.
+
+### Decisiones Clave
+- **Consistencia de navegación**: El cambio agrupa las secciones de control, verificación y análisis de campo (Matriz de riesgos, Constancia de Visita, Aviso de Riesgo) en una estructura más lógica y consecutiva.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/components/Sidebar.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js (`npm run build`) exitosa.
+
+### Riesgos Detectados / Remanentes
+- Ninguno.
+
+### Próximo Paso Recomendado
+- Validar visualmente la barra lateral en desarrollo local para confirmar que el nuevo orden de los iconos sea cómodo y cumpla plenamente las expectativas de uso.
+
 ## [2026-07-01] Homologación de Alertas de PDF y Saneamiento de Guardado UUID en Control Eléctrico (Fase 6 y 7)
 
 ### Resumen de Cambios
