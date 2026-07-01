@@ -1,5 +1,62 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-01] Ajustes y Correcciones en Control Eléctrico (Fase 2)
+
+### Resumen de Cambios
+- **Visuales y UI**:
+  - Se eliminó el label redundante `Observaciones Generales o Diagnóstico Final` en la Sección 3 (Observaciones).
+  - Se colorearon los botones activos del checklist con tonos de marca específicos: Ok (Verde `#00b050`), No Ok (Rojo `bg-red-500`) y N.A. (Gris `bg-slate-500`).
+  - Se rediseñó el modal dialog de `modalAlert` para que adopte el formato premium estándar (con el icono animado `AlertTriangle` y botones paralelos equilibrados).
+- **Firmas y Perfil**:
+  - Se corrigió el storage bucket en `getSignedProfileSig` para buscar firmas digitales en `signatures` (en lugar de `documents`), solucionando el fallo en la carga de la firma del perfil del profesional interviniente.
+  - Se reestructuró la Sección 5 (firmas) a un layout responsivo de dos columnas (`grid grid-cols-1 md:grid-cols-2 gap-6`) idéntico al de *Avisos de Riesgo*, reubicando allí la selección del profesional técnico interviniente y la configuración de firmas.
+  - Se integró un procesador de URLs robusto en `resolveProfileSignaturePreview` idéntico al de `avisos/page.js` que extrae dinámicamente el path relativo de las firmas públicas guardadas en la base de datos de miembros, solucionando el problema de visualización de firmas de perfil con imágenes rotas.
+- **Datos y Base de Datos**:
+  - Se corrigió la consulta de `empresas` (`empresasQuery`) en la carga de datos de Supabase para traer la columna `cuit`. Esto resuelve el problema por el cual el campo de lectura automática del C.U.I.T. no se cargaba y permanecía vacío. También se añadieron valores `cuit` en la base de datos simulada en DevMode.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con `npm run build` completada con éxito.
+
+## [2026-07-01] Refactorización de Planilla de Control Eléctrico, Firmas y Fotos
+
+### Resumen de Cambios
+- **Base de Datos**: Se creó la migración SQL `supabase/migrations/20260721000000_add_photos_to_control_electrico.sql` para añadir soporte a registros fotográficos con la columna `adjuntar_registros_urls` (tipo `TEXT[] DEFAULT '{}'::TEXT[]`).
+- **Diseño del Formulario (UI)**:
+  - Se homogeneizaron los títulos de las secciones con el estilo unificado (`font-outfit uppercase tracking-wider font-bold text-slate-800 border-b border-slate-100 pb-1.5 flex items-center gap-2`).
+  - Se eliminó el formato de tabla/grilla de los 15 ítems a verificar. Se listaron de forma vertical y se implementó un conjunto de botones separados (Ok, No Ok, N.A.) con el estilo de *Visitas*, que se iluminan al seleccionarse.
+  - Se eliminaron las observaciones individuales por ítem en el formulario, consolidándolas en una única caja de texto ampliable de **Observaciones / Recomendaciones** al pie de las preguntas.
+  - Se integró el componente de carga de múltiples fotos `ImageUploadZone` y se asoció al estado local `fotosFiles` con subida asíncrona a Supabase Storage (`documents`) e inicialización con firma de URLs.
+  - Se simplificó la sección de firmas eliminando la firma del responsable de empresa. Ahora el formulario cuenta únicamente con la firma del Profesional Interviniente (que actúa como el **Responsable de Higiene y Seguridad**), alineada al centro del panel de firmas.
+- **Normalización de Botonera y Confirmación**:
+  - Se alineó el footer del formulario con la botonera de tres botones estándar (Salir, Editar, Guardar, Eliminar) del sistema.
+  - Se implementó la alerta estándar modal `Salir sin guardar` en el formulario ante cambios no guardados.
+- **Exportación en PDF**:
+  - Se modificó la tabla del PDF para mostrar 3 columnas (`N°`, `Ítem a Verificar` y `Estado`) eliminando la columna de observaciones de ítem.
+  - Se adaptó la firma única centrada del Profesional Interviniente bajo el rótulo de **Responsable de Higiene y Seguridad**.
+  - Se implementó la generación dinámica del **Anexo Fotográfico** al final del PDF para incluir las fotos adjuntas descargadas de forma segura desde Supabase Storage.
+
+### Decisiones Clave
+- **Firma Única**: Simplifica el flujo de trabajo en campo del profesional, quitando la necesidad de solicitar la firma inmediata del responsable de empresa en este control en particular.
+- **Layout de Preguntas y Botones**: Remueve la rigidez del formato tabla en dispositivos móviles y centraliza las recomendaciones en una sola zona.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+- `supabase`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260721000000_add_photos_to_control_electrico.sql`
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción Next.js (`npm run build`) exitosa y sin errores de sintaxis.
+
 ## [2026-06-30] Creación del Módulo de Control Visual de Instalaciones Eléctricas
 
 ### Resumen de Cambios

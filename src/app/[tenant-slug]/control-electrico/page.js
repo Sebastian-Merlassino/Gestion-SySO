@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import { 
   PlusCircle, 
   Search, 
@@ -37,7 +38,8 @@ import {
   Award,
   Sliders,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Image as ImageIcon
 } from 'lucide-react';
 
 const INITIAL_ITEMS = [
@@ -118,6 +120,7 @@ export default function ControlElectricoPage({ params }) {
 
   // Datos principales de controles eléctricos
   const [controles, setControles] = useState([]);
+  const [fotosFiles, setFotosFiles] = useState([]);
 
   // Estados del CRUD / Vista Formulario
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -193,34 +196,57 @@ export default function ControlElectricoPage({ params }) {
 
   // Sincronizar firma del profesional interviniente al cambiar de profesional o tipo
   useEffect(() => {
-    if (isFormOpen && signaturePath && profesionalTipo === 'miembro' && firmaTipo === 'perfil') {
-      const getSignedProfileSig = async () => {
-        if (isDevMode) {
-          setFirmaPerfilPreviewUrl('/brand/logo-primary.png');
-          return;
-        }
+    const resolveProfileSignaturePreview = async () => {
+      if (!signaturePath || firmaTipo !== 'perfil' || !isFormOpen) {
+        setFirmaPerfilPreviewUrl('');
+        return;
+      }
+
+      if (signaturePath.startsWith('data:')) {
+        setFirmaPerfilPreviewUrl(signaturePath);
+      } else if (isDevMode || signaturePath.startsWith('mock')) {
+        setFirmaPerfilPreviewUrl('/brand/logo-primary.png');
+      } else {
         try {
-          if (signaturePath.startsWith('http://') || signaturePath.startsWith('https://')) {
-            setFirmaPerfilPreviewUrl(signaturePath);
+          let relativePath = signaturePath;
+          let isExternal = false;
+          
+          if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
+            try {
+              const urlObj = new URL(relativePath);
+              const pathParts = urlObj.pathname.split('/');
+              const bucketIndex = pathParts.findIndex(part => part === 'signatures' || part === 'documents');
+              if (bucketIndex !== -1 && bucketIndex < pathParts.length - 1) {
+                relativePath = pathParts.slice(bucketIndex + 1).join('/');
+              } else {
+                isExternal = true;
+              }
+            } catch (urlErr) {
+              console.error('Error parseando URL de firma de perfil:', urlErr);
+              isExternal = true;
+            }
+          }
+
+          if (isExternal) {
+            setFirmaPerfilPreviewUrl(relativePath);
           } else {
-            const { data, error } = await supabase.storage
-              .from('documents')
-              .createSignedUrl(signaturePath, 3600);
-            if (!error && data) {
-              setFirmaPerfilPreviewUrl(data.signedUrl);
+            const { data: sData, error: sErr } = await supabase.storage
+              .from('signatures')
+              .createSignedUrl(relativePath, 3600);
+            if (!sErr && sData?.signedUrl) {
+              setFirmaPerfilPreviewUrl(sData.signedUrl);
             } else {
               setFirmaPerfilPreviewUrl('/brand/logo-primary.png');
             }
           }
         } catch (e) {
-          console.error(e);
+          console.error('Error cargando previsualización de firma de perfil:', e);
           setFirmaPerfilPreviewUrl('/brand/logo-primary.png');
         }
-      };
-      getSignedProfileSig();
-    } else {
-      setFirmaPerfilPreviewUrl('');
-    }
+      }
+    };
+
+    resolveProfileSignaturePreview();
   }, [isFormOpen, signaturePath, profesionalTipo, firmaTipo, isDevMode]);
 
   const triggerToast = (message, type = 'success') => {
@@ -333,7 +359,7 @@ export default function ControlElectricoPage({ params }) {
       // Clientes
       let empresasQuery = supabase
         .from('empresas')
-        .select('id, razon_social')
+        .select('id, razon_social, cuit')
         .eq('tenant_id', ten.id);
       if (prof.role === 'cliente') {
         empresasQuery = empresasQuery.eq('id', prof.empresa_id);
@@ -388,8 +414,8 @@ export default function ControlElectricoPage({ params }) {
     setProfile({ full_name: 'Profesional de SySO (Mock)', role: 'admin' });
     setTenant({ id: 'mock-tenant', name: 'Consultora de Prueba', plan_id: 'free' });
     setEmpresas([
-      { id: 'mock-empresa-1', razon_social: 'Ams Inversiones S.A.' },
-      { id: 'mock-empresa-2', razon_social: 'Argento Via Publica' }
+      { id: 'mock-empresa-1', razon_social: 'Ams Inversiones S.A.', cuit: '30-12345678-9' },
+      { id: 'mock-empresa-2', razon_social: 'Argento Via Publica', cuit: '30-98765432-1' }
     ]);
     setAllEstablecimientos([
       { id: 'mock-est-1', empresa_id: 'mock-empresa-1', denominacion: 'Callao 727', direccion: 'Av. Callao 727, CABA' },
@@ -591,6 +617,13 @@ export default function ControlElectricoPage({ params }) {
     setSignaturePath('');
     setHasSignedResp(false);
     setHasSignedProf(false);
+    // Revocar preview blobs
+    fotosFiles.forEach(foto => {
+      if (foto.preview && foto.preview.startsWith('blob:')) {
+        URL.revokeObjectURL(foto.preview);
+      }
+    });
+    setFotosFiles([]);
   };
 
   const handleAddNew = () => {
@@ -606,6 +639,7 @@ export default function ControlElectricoPage({ params }) {
     setFirmaProfSavedUrl('');
     setHasSignedResp(false);
     setHasSignedProf(false);
+    setFotosFiles([]);
 
     const currentMember = miembrosList.find(m => m.profile_id === profile?.id);
     if (currentMember) {
@@ -722,12 +756,7 @@ export default function ControlElectricoPage({ params }) {
       const tempId = editingId || crypto.randomUUID();
 
       // Subir firmas si hay dibujos nuevos
-      let finalFirmaResp = firmaRespSavedUrl;
       let finalFirmaProf = '';
-
-      if (hasSignedResp && firmaRespCanvasRef.current) {
-        finalFirmaResp = await uploadCanvasToStorage(firmaRespCanvasRef.current, 'firma_resp');
-      }
 
       if (firmaTipo === 'perfil') {
         finalFirmaProf = signaturePath;
@@ -754,28 +783,41 @@ export default function ControlElectricoPage({ params }) {
         return;
       }
 
+      // Subir fotos
+      const finalFotosUrls = [];
+      for (let i = 0; i < fotosFiles.length; i++) {
+        const foto = fotosFiles[i];
+        if (foto.file) {
+          const uploadedPath = await uploadFileToStorage(foto.file, 'control_electrico_registro', i);
+          finalFotosUrls.push(uploadedPath);
+        } else if (foto.path) {
+          finalFotosUrls.push(foto.path);
+        }
+      }
+
       const payload = {
         id: tempId,
         tenant_id: tenant.id,
         empresa_id: empresaId,
         establecimiento_id: establecimientoId,
         fecha: convertToDbDate(fecha) || null,
-        items: formItems,
-        responsable_aclaracion: responsableAclaracion.trim() || null,
+        items: formItems.map(it => ({ id: it.id, text: it.text, estado: it.estado, observaciones: '' })),
+        responsable_aclaracion: null,
         profesional_tipo: profesionalTipo,
         profesional_nombre: finalProfNombre,
         profesional_id: profesionalTipo === 'miembro' ? profesionalId : null,
         firma_tipo: firmaTipo,
-        firma_responsable: finalFirmaResp,
+        firma_responsable: null,
         firma_profesional: finalFirmaProf,
         observaciones: observaciones.trim() || null,
+        adjuntar_registros_urls: finalFotosUrls,
         updated_at: new Date().toISOString()
       };
 
       if (isDevMode) {
         const mockCe = {
           ...payload,
-          firma_resp_preview_url: finalFirmaResp.startsWith('mock') ? '/brand/logo-primary.png' : finalFirmaResp,
+          fotos_preview_urls: fotosFiles.map(f => f.preview),
           firma_prof_preview_url: finalFirmaProf.startsWith('mock') ? '/brand/logo-primary.png' : finalFirmaProf
         };
 
@@ -842,12 +884,20 @@ export default function ControlElectricoPage({ params }) {
 
     setFirmaRespSavedUrl('');
     setFirmaProfSavedUrl('');
+    setFotosFiles([]);
     setHasSignedResp(false);
     setHasSignedProf(false);
 
     if (isDevMode) {
       setFirmaRespSavedUrl(c.firma_responsable ? '/brand/logo-primary.png' : '');
       setFirmaProfSavedUrl((c.firma_tipo || 'perfil') === 'mano' && c.firma_profesional ? '/brand/logo-primary.png' : '');
+      if (c.adjuntar_registros_urls && c.adjuntar_registros_urls.length > 0) {
+        setFotosFiles(c.adjuntar_registros_urls.map(p => ({
+          file: null,
+          preview: '/brand/logo-primary.png',
+          path: p
+        })));
+      }
     } else {
       const pathsToSign = [];
       if (c.firma_responsable && c.firma_responsable !== 'N/A' && !c.firma_responsable.startsWith('http')) {
@@ -855,6 +905,15 @@ export default function ControlElectricoPage({ params }) {
       }
       if ((c.firma_tipo || 'perfil') === 'mano' && c.firma_profesional && c.firma_profesional !== 'N/A' && !c.firma_profesional.startsWith('http')) {
         pathsToSign.push(c.firma_profesional);
+      }
+      if (c.adjuntar_registros_urls && c.adjuntar_registros_urls.length > 0) {
+        c.adjuntar_registros_urls.forEach(p => {
+          if (p && p !== 'N/A' && p !== '') {
+            if (!p.startsWith('http://') && !p.startsWith('https://')) {
+              pathsToSign.push(p);
+            }
+          }
+        });
       }
 
       const loadSignatures = async () => {
@@ -881,6 +940,23 @@ export default function ControlElectricoPage({ params }) {
         }
         if ((c.firma_tipo || 'perfil') === 'mano' && c.firma_profesional) {
           setFirmaProfSavedUrl(c.firma_profesional.startsWith('http') ? c.firma_profesional : (signedUrlsMap[c.firma_profesional] || ''));
+        }
+        if (c.adjuntar_registros_urls && c.adjuntar_registros_urls.length > 0) {
+          const validUrls = c.adjuntar_registros_urls.filter(p => p && p !== 'N/A' && p !== '');
+          const loadedFotos = validUrls.map(path => {
+            let preview = '/brand/logo-primary.png';
+            if (path.startsWith('http://') || path.startsWith('https://')) {
+              preview = path;
+            } else {
+              preview = signedUrlsMap[path] || '/brand/logo-primary.png';
+            }
+            return {
+              file: null,
+              preview,
+              path
+            };
+          });
+          setFotosFiles(loadedFotos);
         }
       };
       loadSignatures();
@@ -997,17 +1073,7 @@ export default function ControlElectricoPage({ params }) {
       const est = allEstablecimientos.find(e => e.id === c.establecimiento_id);
 
       // Cargar firmas
-      let fRespBase64 = '';
       let fProfBase64 = '';
-
-      if (c.firma_responsable) {
-        let fRespUrl = c.firma_responsable;
-        if (!isDevMode && !c.firma_responsable.startsWith('http')) {
-          const { data } = await supabase.storage.from('documents').createSignedUrl(c.firma_responsable, 360);
-          if (data) fRespUrl = data.signedUrl;
-        }
-        fRespBase64 = await getBase64ImageFromUrl(fRespUrl || '/brand/logo-primary.png');
-      }
 
       if (c.firma_profesional) {
         let fProfUrl = c.firma_profesional;
@@ -1018,8 +1084,31 @@ export default function ControlElectricoPage({ params }) {
         fProfBase64 = await getBase64ImageFromUrl(fProfUrl || '/brand/logo-primary.png');
       }
 
-      if (fRespBase64) fRespBase64 = await resizeImageForPdf(fRespBase64, 150, 75);
       if (fProfBase64) fProfBase64 = await resizeImageForPdf(fProfBase64, 150, 75);
+
+      // Cargar fotos adjuntas para el anexo
+      const fotosBase64 = [];
+      if (c.adjuntar_registros_urls && c.adjuntar_registros_urls.length > 0) {
+        for (let i = 0; i < c.adjuntar_registros_urls.length; i++) {
+          const path = c.adjuntar_registros_urls[i];
+          if (path && path !== 'N/A' && path !== '') {
+            try {
+              let signedUrl = path;
+              if (!isDevMode && !path.startsWith('http')) {
+                const { data } = await supabase.storage.from('documents').createSignedUrl(path, 360);
+                if (data) signedUrl = data.signedUrl;
+              }
+              const b64 = await getBase64ImageFromUrl(signedUrl || '/brand/logo-primary.png');
+              if (b64) {
+                const resized = await resizeImageForPdf(b64, 450, 450);
+                fotosBase64.push(resized);
+              }
+            } catch (err) {
+              console.error('Error cargando foto para PDF:', err);
+            }
+          }
+        }
+      }
 
       // Logo del Tenant
       let logoBase64 = '';
@@ -1088,12 +1177,11 @@ export default function ControlElectricoPage({ params }) {
       doc.text(c.profesional_nombre || 'N/A', 105, 145);
 
       // Tabla de ítems checked
-      const headers = [['N°', 'Ítem a Verificar', 'Estado', 'Observaciones / Recomendaciones']];
+      const headers = [['N°', 'Ítem a Verificar', 'Estado']];
       const body = (c.items || INITIAL_ITEMS).map(it => [
         it.id.toString(),
         it.text,
-        it.estado || 'N/A',
-        it.observaciones || ''
+        it.estado || 'N/A'
       ]);
 
       autoTable(doc, {
@@ -1106,10 +1194,9 @@ export default function ControlElectricoPage({ params }) {
         headStyles: { fillColor: [70, 141, 255], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
         bodyStyles: { fontSize: 7.5, textColor: [50, 50, 50], minCellHeight: 18 },
         columnStyles: {
-          0: { cellWidth: 20 },
-          1: { cellWidth: 250 },
-          2: { cellWidth: 55, fontStyle: 'bold' },
-          3: { cellWidth: 190 }
+          0: { cellWidth: 35 },
+          1: { cellWidth: 400 },
+          2: { cellWidth: 80, fontStyle: 'bold', halign: 'center' }
         },
         didDrawPage: function(data) {
           if (data.pageNumber > 1) {
@@ -1121,7 +1208,6 @@ export default function ControlElectricoPage({ params }) {
       // Añadir observaciones finales y firmas en la última página
       let finalY = doc.previousAutoTable.finalY + 15;
       
-      // Comprobar si hay espacio suficiente para observaciones y firmas en la página actual
       const pageHeight = doc.internal.pageSize.getHeight();
       if (finalY + 150 > pageHeight) {
         doc.addPage();
@@ -1154,40 +1240,69 @@ export default function ControlElectricoPage({ params }) {
       doc.line(40, finalY, 555, finalY);
 
       const sigY = finalY + 15;
-      
-      // Firma Responsable
-      if (fRespBase64 && fRespBase64.startsWith('data:image/')) {
+
+      // Firma Profesional Única Centrada
+      if (fProfBase64 && fProfBase64.startsWith('data:image/')) {
         try {
-          doc.addImage(fRespBase64, 'PNG', 80, sigY, 120, 60);
+          doc.addImage(fProfBase64, 'PNG', 237.64, sigY, 120, 60);
         } catch (e) {
           console.error(e);
         }
       }
       doc.setDrawColor(180, 180, 180);
-      doc.line(50, sigY + 65, 230, sigY + 65);
+      doc.line(207.64, sigY + 65, 387.64, sigY + 65);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8);
+      doc.setFontSize(8.5);
       doc.setTextColor(13, 13, 13);
-      doc.text('Firma del Responsable', 140, sigY + 77, { align: 'center' });
+      doc.text('Firma del Profesional de SySO', 297.64, sigY + 77, { align: 'center' });
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(100, 100, 100);
-      doc.text(`Aclaración: ${c.responsable_aclaracion || 'N/A'}`, 140, sigY + 87, { align: 'center' });
+      doc.text(c.profesional_nombre || 'N/A', 297.64, sigY + 87, { align: 'center' });
+      doc.text('Responsable de Higiene y Seguridad', 297.64, sigY + 97, { align: 'center' });
 
-      // Firma Profesional
-      if (fProfBase64 && fProfBase64.startsWith('data:image/')) {
-        try {
-          doc.addImage(fProfBase64, 'PNG', 360, sigY, 120, 60);
-        } catch (e) {
-          console.error(e);
+      // Anexo fotográfico si existen fotos adjuntas
+      if (fotosBase64.length > 0) {
+        doc.addPage();
+        drawHeader(doc);
+        
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(13, 13, 13);
+        doc.text('ANEXO FOTOGRÁFICO', 40, 95);
+
+        let curPhotoY = 115;
+        for (let i = 0; i < fotosBase64.length; i++) {
+          if (curPhotoY + 240 > pageHeight - 60) {
+            doc.addPage();
+            drawHeader(doc);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(11);
+            doc.setTextColor(13, 13, 13);
+            doc.text('ANEXO FOTOGRÁFICO (Continuación)', 40, 95);
+            curPhotoY = 115;
+          }
+
+          const fotoB64 = fotosBase64[i];
+          if (fotoB64 && fotoB64.startsWith('data:image/')) {
+            try {
+              doc.setDrawColor(220, 220, 220);
+              doc.setLineWidth(1);
+              doc.rect(137.5, curPhotoY, 320, 210);
+
+              doc.addImage(fotoB64, 'PNG', 140, curPhotoY + 2, 316, 206);
+              
+              doc.setFont('helvetica', 'normal');
+              doc.setFontSize(8);
+              doc.setTextColor(120, 120, 120);
+              doc.text(`Registro Fotográfico N° ${i + 1}`, 297.5, curPhotoY + 225, { align: 'center' });
+
+              curPhotoY += 250;
+            } catch (e) {
+              console.error('Error al agregar foto al PDF:', e);
+            }
+          }
         }
       }
-      doc.line(330, sigY + 65, 510, sigY + 65);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(13, 13, 13);
-      doc.text('Firma del Profesional de SySO', 420, sigY + 77, { align: 'center' });
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(100, 100, 100);
-      doc.text(c.profesional_nombre || 'N/A', 420, sigY + 87, { align: 'center' });
 
       // Pie de página general
       const pagesCount = doc.internal.getNumberOfPages();
@@ -1324,27 +1439,26 @@ export default function ControlElectricoPage({ params }) {
             
             {/* SI FORMULARIO ESTÁ ABIERTO */}
             {isFormOpen ? (
-              <div className="bg-white border border-slate-150 rounded-2xl shadow-sm flex-1 flex flex-col min-h-0 overflow-hidden max-h-[85vh] animate-scaleUp">
+              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
                 
                 {/* Cabecera del formulario */}
-                <div className="px-5 py-4 border-b border-slate-150 bg-slate-50/50 flex items-center justify-between shrink-0">
-                  <div className="flex items-center gap-2">
+                <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-150 flex items-center justify-between shrink-0">
+                  <div className="flex items-center gap-3">
                     <button 
                       type="button" 
                       onClick={handleExitForm}
-                      className="p-1 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition-all cursor-pointer"
-                      title="Volver"
+                      className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 cursor-pointer"
                     >
-                      <ArrowLeft className="h-4.5 w-4.5" />
+                      <ArrowLeft className="h-5 w-5" />
                     </button>
-                    <h2 className="text-sm font-bold text-slate-800 font-outfit uppercase tracking-wider">
-                      {isReadOnlyView ? 'Visualización de Planilla' : editingId ? 'Editar Control Eléctrico' : 'Registrar Nuevo Control Eléctrico'}
-                    </h2>
+                    <span className="font-outfit text-xs sm:text-sm md:text-base font-bold text-slate-900 truncate max-w-[55vw] sm:max-w-none">
+                      {isReadOnlyView ? 'Detalle / Visualización de Control Eléctrico' : editingId ? 'Detalle / Editar Control Eléctrico' : 'Registrar Nuevo Control Eléctrico'}
+                    </span>
                   </div>
                   <button 
                     type="button" 
                     onClick={handleExitForm}
-                    className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-all cursor-pointer"
+                    className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200 cursor-pointer"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -1458,316 +1572,293 @@ export default function ControlElectricoPage({ params }) {
                         </div>
                       </div>
 
-                      {/* Profesional Interviniente */}
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600">Profesional Interviniente *</label>
-                        <select
-                          value={profesionalId || (profesionalTipo === 'manual' ? '__custom__' : '')}
-                          onChange={(e) => handleProfesionalChange(e.target.value)}
-                          required
-                          disabled={isFormDisabled || (profile && profile.role === 'cliente')}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 cursor-pointer disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
-                        >
-                          <option value="">Seleccionar Profesional...</option>
-                          {miembrosList.map(m => (
-                            <option key={m.id} value={m.id}>{m.full_name}</option>
-                          ))}
-                          <option value="__custom__">Otro (cargar manualmente)...</option>
-                        </select>
-
-                        {profesionalTipo === 'manual' && (
-                          <input
-                            type="text"
-                            placeholder="Nombre y Apellido del Profesional"
-                            value={profesionalNombre}
-                            onChange={(e) => setProfesionalNombre(e.target.value)}
-                            required
-                            disabled={isFormDisabled}
-                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white mt-2 transition-all disabled:bg-slate-100 disabled:text-slate-400"
-                          />
-                        )}
-                      </div>
-
                     </div>
                   </div>
 
                   {/* SECCIÓN 2: PLANILLA DE VERIFICACIÓN */}
                   <div className="space-y-4">
-                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-1.5 flex items-center gap-1.5">
+                    <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
                       <Zap className="h-4 w-4 text-[#468DFF]" />
                       2. Ítems a Verificar (Grilla de Control)
                     </h3>
                     
-                    <div className="border border-slate-150 rounded-xl overflow-hidden shadow-sm">
-                      <div className="overflow-x-auto">
-                        <table className="w-full border-collapse text-left text-xs min-w-[700px]">
-                          <thead>
-                            <tr className="bg-slate-50 border-b border-slate-150 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                              <th className="px-4 py-3 w-12 text-center">N°</th>
-                              <th className="px-4 py-3 w-[350px]">Ítem a Verificar</th>
-                              <th className="px-4 py-3 w-44 text-center">Estado (Ok / No Ok / N.A.)</th>
-                              <th className="px-4 py-3">Observaciones / Recomendaciones</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100 bg-white">
-                            {formItems.map((item) => (
-                              <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
-                                <td className="px-4 py-3 text-center font-bold text-slate-400">{item.id}</td>
-                                <td className="px-4 py-3 font-semibold text-slate-700 break-words leading-normal">{item.text}</td>
-                                <td className="px-4 py-3">
-                                  <div className="flex border border-slate-200 rounded-xl overflow-hidden text-[10px] font-bold bg-slate-50 shrink-0 select-none">
-                                    <button
-                                      type="button"
-                                      onClick={() => handleItemEstadoChange(item.id, 'Ok')}
-                                      disabled={isFormDisabled}
-                                      className={`px-2.5 py-1.5 transition-colors cursor-pointer text-center flex-1 ${
-                                        item.estado === 'Ok'
-                                          ? 'bg-[#00b050] text-white font-extrabold shadow-sm'
-                                          : 'text-slate-500 hover:text-slate-700 bg-white font-semibold'
-                                      }`}
-                                    >
-                                      Ok
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleItemEstadoChange(item.id, 'No Ok')}
-                                      disabled={isFormDisabled}
-                                      className={`px-2.5 py-1.5 transition-colors cursor-pointer text-center flex-1 border-l border-slate-200 ${
-                                        item.estado === 'No Ok'
-                                          ? 'bg-red-500 text-white font-extrabold shadow-sm'
-                                          : 'text-slate-500 hover:text-slate-700 bg-white font-semibold'
-                                      }`}
-                                    >
-                                      No Ok
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleItemEstadoChange(item.id, 'No aplica')}
-                                      disabled={isFormDisabled}
-                                      className={`px-2.5 py-1.5 transition-colors cursor-pointer text-center flex-1 border-l border-slate-200 ${
-                                        item.estado === 'No aplica'
-                                          ? 'bg-slate-500 text-white font-extrabold shadow-sm'
-                                          : 'text-slate-500 hover:text-slate-700 bg-white font-semibold'
-                                      }`}
-                                    >
-                                      N.A.
-                                    </button>
-                                  </div>
-                                </td>
-                                <td className="px-4 py-2">
-                                  <input
-                                    type="text"
-                                    value={item.observaciones || ''}
-                                    onChange={(e) => handleItemObsChange(item.id, e.target.value)}
-                                    placeholder="Ingrese recomendaciones o detalles si corresponde..."
-                                    disabled={isFormDisabled}
-                                    className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 bg-white focus:outline-none focus:border-[#468DFF] disabled:bg-slate-100 disabled:cursor-not-allowed font-medium"
-                                  />
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
+                    <div className="space-y-3.5">
+                      {formItems.map((item) => (
+                        <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-150 bg-white">
+                          <div className="flex gap-2 items-start">
+                            <span className="font-mono text-xs font-bold text-slate-400 mt-0.5">{item.id}.</span>
+                            <span className="text-xs font-bold text-slate-700 leading-normal">{item.text}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 w-full sm:w-48 shrink-0">
+                            {['Ok', 'No Ok', 'N.A.'].map(opt => {
+                              const dbValue = opt === 'N.A.' ? 'No aplica' : opt;
+                              const isSelected = item.estado === dbValue;
+                              return (
+                                <button
+                                  key={opt}
+                                  type="button"
+                                  onClick={() => handleItemEstadoChange(item.id, dbValue)}
+                                  disabled={isFormDisabled}
+                                  className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                                    isSelected
+                                      ? opt === 'Ok'
+                                        ? 'bg-[#00b050] text-white border-[#00b050] shadow-sm'
+                                        : opt === 'No Ok'
+                                          ? 'bg-red-500 text-white border-red-500 shadow-sm'
+                                          : 'bg-slate-500 text-white border-slate-500 shadow-sm'
+                                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-50'
+                                  }`}
+                                >
+                                  {opt}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
 
-                  {/* SECCIÓN 3: DETALLES Y OBSERVACIONES FINALES */}
+                  {/* SECCIÓN 3: OBSERVACIONES / RECOMENDACIONES */}
                   <div className="space-y-4">
-                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-1.5 flex items-center gap-1.5">
+                    <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
                       <ClipboardList className="h-4 w-4 text-[#468DFF]" />
-                      3. Observaciones Generales
+                      3. Observaciones / Recomendaciones
                     </h3>
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-600">Observaciones Generales o Diagnóstico Final</label>
-                      <textarea
-                        value={observaciones}
-                        onChange={(e) => setObservaciones(e.target.value)}
-                        placeholder="Escriba comentarios o notas generales adicionales sobre el control..."
+                    <textarea
+                      value={observaciones}
+                      onChange={(e) => setObservaciones(e.target.value)}
+                      placeholder="Escriba comentarios o notas generales adicionales sobre el control..."
+                      disabled={isFormDisabled}
+                      rows={3}
+                      className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF] resize-y scrollbar-thin disabled:bg-slate-100 disabled:cursor-not-allowed"
+                    />
+                  </div>
+
+                  {/* SECCIÓN 4: REGISTROS FOTOGRÁFICOS */}
+                  <div className="space-y-4">
+                    <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
+                      <ImageIcon className="h-4.5 w-4.5 text-[#468DFF]" />
+                      4. Registros Fotográficos
+                    </h3>
+                    <div className="flex flex-col gap-2">
+                      <ImageUploadZone
+                        label="Adjuntar registros fotográficos (Tableros, cableado, protecciones, etc.)"
+                        multiple={true}
+                        images={fotosFiles}
+                        onAddPhotos={(validFiles) => {
+                          const newPhotos = validFiles.map(file => ({
+                            file,
+                            preview: URL.createObjectURL(file),
+                            path: ''
+                          }));
+                          setFotosFiles(prev => [...prev, ...newPhotos]);
+                        }}
+                        onRemovePhoto={(index) => {
+                          setFotosFiles(prev => {
+                            const target = prev[index];
+                            if (target && target.preview && target.preview.startsWith('blob:')) {
+                              URL.revokeObjectURL(target.preview);
+                            }
+                            return prev.filter((_, idx) => idx !== index);
+                          });
+                        }}
                         disabled={isFormDisabled}
-                        rows={3}
-                        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF] resize-y scrollbar-thin disabled:bg-slate-100 disabled:cursor-not-allowed"
+                        maxSizeMB={5}
+                        onToast={triggerToast}
                       />
                     </div>
                   </div>
 
-                  {/* SECCIÓN 4: FIRMAS */}
+                  {/* SECCIÓN 5: FIRMA DEL CONTROL */}
                   <div className="space-y-4">
-                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-1.5 flex items-center gap-1.5">
+                    <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
                       <Check className="h-4 w-4 text-[#468DFF]" />
-                      4. Firmas del Control
+                      5. Firma del Control
                     </h3>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <span className="font-outfit text-xs font-extrabold text-slate-800 block uppercase tracking-wider">
+                          Profesional Técnico Interviniente
+                        </span>
+                        
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-xs font-bold text-slate-600">Selección de Profesional *</label>
+                          <select
+                            value={profesionalId || (profesionalTipo === 'manual' ? '__custom__' : '')}
+                            onChange={(e) => handleProfesionalChange(e.target.value)}
+                            required
+                            disabled={isFormDisabled || (profile && profile.role === 'cliente')}
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 cursor-pointer disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+                          >
+                            <option value="">Seleccionar Profesional...</option>
+                            {miembrosList.map(m => (
+                              <option key={m.id} value={m.id}>{m.full_name}</option>
+                            ))}
+                            <option value="__custom__">Otro (cargar manualmente)...</option>
+                          </select>
 
-                      {/* Columna Izquierda: Firma Responsable */}
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between pb-1">
-                          <label className="text-xs font-bold text-slate-600 pr-2">Firma del Responsable de la Empresa</label>
-                          {!isReadOnlyView && firmaRespSavedUrl && (
+                          {profesionalTipo === 'manual' && (
+                            <input
+                              type="text"
+                              placeholder="Nombre y Apellido del Profesional"
+                              value={profesionalNombre}
+                              onChange={(e) => setProfesionalNombre(e.target.value)}
+                              required
+                              disabled={isFormDisabled}
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white mt-2 transition-all disabled:bg-slate-100 disabled:text-slate-400"
+                            />
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Configuración de Firma */}
+                      <div className="space-y-2 flex flex-col">
+                        <div className="flex flex-row justify-between items-end gap-2 min-h-[18px]">
+                          <label className="text-xs font-bold text-slate-600 pr-2">Firma del Profesional de Higiene y Seguridad</label>
+                          {firmaTipo === 'mano' && !isFormDisabled && (hasSignedProf || firmaProfSavedUrl) && (
                             <button
                               type="button"
-                              onClick={() => handleClearCanvas(firmaRespCanvasRef, setHasSignedResp, setFirmaRespSavedUrl)}
-                              className="text-[10px] font-bold text-red-500 hover:underline cursor-pointer border-none bg-transparent"
+                              onClick={() => handleClearCanvas(firmaProfCanvasRef, setHasSignedProf, setFirmaProfSavedUrl)}
+                              className="text-[10px] font-bold text-red-500 hover:text-red-700 cursor-pointer shrink-0 border-none bg-transparent"
                             >
                               Limpiar Firma
                             </button>
                           )}
                         </div>
-                        
-                        <div className="border border-slate-250 rounded-xl bg-slate-50 overflow-hidden flex flex-col">
-                          {firmaRespSavedUrl ? (
-                            <div className="aspect-[2/1] bg-white flex items-center justify-center p-3">
-                              <img src={firmaRespSavedUrl} alt="Firma Responsable" className="max-h-full max-w-full object-contain" />
-                            </div>
-                          ) : (
-                            <div className="relative aspect-[2/1] bg-white">
-                              {isReadOnlyView && (
-                                <div className="absolute inset-0 bg-slate-50/70 flex items-center justify-center text-xs text-slate-400 italic font-semibold">
-                                  Sin firma registrada
-                                </div>
-                              )}
-                              <canvas
-                                ref={firmaRespRefCallback}
-                                width={400}
-                                height={200}
-                                className="w-full h-full block cursor-crosshair"
-                              />
-                            </div>
-                          )}
-                          <div className="bg-slate-50 border-t border-slate-200 px-3.5 py-2.5 flex items-center gap-2">
-                            <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider shrink-0 mt-0.5">Aclaración:</span>
-                            <input
-                              type="text"
-                              value={responsableAclaracion}
-                              onChange={(e) => setResponsableAclaracion(e.target.value)}
-                              placeholder="Nombre impreso del firmante..."
-                              disabled={isFormDisabled}
-                              className="flex-1 bg-transparent border-none p-0 text-xs text-slate-800 font-bold focus:outline-none focus:ring-0 placeholder:text-slate-400 placeholder:font-normal"
-                            />
+
+                        {/* Selector de Tipo de Firma del Profesional */}
+                        <div className="space-y-1.5 h-[51px] flex flex-col justify-end">
+                          <label className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Origen de Firma del Profesional</label>
+                          <div className="flex border border-slate-200 bg-white text-[11px] font-semibold shrink-0 rounded-lg overflow-hidden border">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFirmaTipo('perfil');
+                                setFirmaProfSavedUrl('');
+                                setHasSignedProf(false);
+                              }}
+                              className={`flex-1 py-1 transition-colors cursor-pointer ${
+                                firmaTipo === 'perfil'
+                                  ? 'bg-[#468DFF] text-white'
+                                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                              }`}
+                            >
+                              Firma de Perfil
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFirmaTipo('mano');
+                                setFirmaProfSavedUrl('');
+                                setHasSignedProf(false);
+                              }}
+                              className={`flex-1 py-1 transition-colors cursor-pointer ${
+                                firmaTipo === 'mano'
+                                  ? 'bg-[#468DFF] text-white'
+                                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                              }`}
+                            >
+                              Firmar a mano
+                            </button>
                           </div>
                         </div>
+
+                        {firmaTipo === 'perfil' ? (
+                          <div className="border-2 border-dashed border-slate-200 bg-slate-50 rounded-xl aspect-[2/1] relative overflow-hidden flex items-center justify-center p-3 text-center">
+                            {signaturePath ? (
+                              <div className="flex flex-col items-center justify-center h-full w-full">
+                                {firmaPerfilPreviewUrl ? (
+                                  <div className="bg-white border border-slate-200 rounded-lg p-2 max-w-[200px] h-[80px] flex items-center justify-center overflow-hidden shadow-sm">
+                                    <img 
+                                      src={firmaPerfilPreviewUrl} 
+                                      alt="Vista previa de firma de perfil" 
+                                      className="max-w-full max-h-full object-contain"
+                                    />
+                                  </div>
+                                ) : (
+                                  <Loader2 className="h-5 w-5 animate-spin text-[#468DFF]" />
+                                )}
+                                <p className="text-[10px] text-green-600 font-bold mt-2">✓ Firma del perfil cargada correctamente.</p>
+                              </div>
+                            ) : (
+                              <p className="text-[10px] text-amber-600 font-bold p-4">⚠ El profesional seleccionado no tiene una firma digital configurada.</p>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl aspect-[2/1] relative overflow-hidden flex items-center justify-center">
+                            {firmaProfSavedUrl && !hasSignedProf ? (
+                              <img src={firmaProfSavedUrl} alt="Firma Profesional" className="w-full h-full object-contain p-2" />
+                            ) : (
+                              <canvas
+                                ref={firmaProfRefCallback}
+                                width={400}
+                                height={200}
+                                className={`w-full h-full bg-white block ${!isFormDisabled ? 'cursor-crosshair' : 'cursor-default'}`}
+                              />
+                            )}
+                            {!hasSignedProf && !firmaProfSavedUrl && (
+                              <span className="absolute pointer-events-none text-[10px] text-slate-400 font-bold uppercase tracking-wider">Dibuje la firma aquí</span>
+                            )}
+                          </div>
+                        )}
                       </div>
-
-                      {/* Columna Derecha: Firma Profesional */}
-                      <div className="space-y-3">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1">
-                          <label className="text-xs font-bold text-slate-600">Firma del Profesional de Higiene y Seguridad</label>
-                          {!isReadOnlyView && (
-                            <div className="flex border border-slate-200 rounded-xl overflow-hidden text-[10px] font-bold bg-slate-100 shrink-0">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setFirmaTipo('perfil');
-                                  setFirmaProfSavedUrl('');
-                                  setHasSignedProf(false);
-                                }}
-                                className={`px-2.5 py-1.5 transition-all cursor-pointer ${
-                                  firmaTipo === 'perfil'
-                                    ? 'bg-[#468DFF] text-white font-extrabold'
-                                    : 'text-slate-500 hover:text-slate-700 bg-white font-semibold'
-                                }`}
-                              >
-                                Firma de Perfil
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setFirmaTipo('mano');
-                                  setFirmaProfSavedUrl('');
-                                  setHasSignedProf(false);
-                                }}
-                                className={`px-2.5 py-1.5 transition-all cursor-pointer border-l border-slate-200 ${
-                                  firmaTipo === 'mano'
-                                    ? 'bg-[#468DFF] text-white font-extrabold'
-                                    : 'text-slate-500 hover:text-slate-700 bg-white font-semibold'
-                                }`}
-                              >
-                                Firmar a mano
-                              </button>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="border border-slate-250 rounded-xl bg-slate-50 overflow-hidden flex flex-col">
-                          
-                          {firmaTipo === 'perfil' ? (
-                            <div className="aspect-[2/1] bg-white flex flex-col items-center justify-center p-3 gap-2">
-                              {firmaPerfilPreviewUrl ? (
-                                <img src={firmaPerfilPreviewUrl} alt="Firma de Perfil" className="max-h-[85%] max-w-full object-contain" />
-                              ) : (
-                                <span className="text-[10px] text-slate-400 font-semibold italic">El profesional seleccionado no posee firma de perfil</span>
-                              )}
-                            </div>
-                          ) : (
-                            /* Firma a mano */
-                            <>
-                              {firmaProfSavedUrl ? (
-                                <div className="aspect-[2/1] bg-white flex items-center justify-center p-3 relative">
-                                  <img src={firmaProfSavedUrl} alt="Firma Profesional" className="max-h-full max-w-full object-contain" />
-                                  {!isReadOnlyView && (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleClearCanvas(firmaProfCanvasRef, setHasSignedProf, setFirmaProfSavedUrl)}
-                                      className="absolute top-2 right-2 text-[10px] font-bold text-red-500 hover:underline bg-white/80 px-2 py-0.5 rounded shadow-sm cursor-pointer"
-                                    >
-                                      Re-firmar
-                                    </button>
-                                  )}
-                                </div>
-                              ) : (
-                                <div className="relative aspect-[2/1] bg-white">
-                                  {isReadOnlyView && (
-                                    <div className="absolute inset-0 bg-slate-50/70 flex items-center justify-center text-xs text-slate-400 italic font-semibold">
-                                      Sin firma registrada
-                                    </div>
-                                  )}
-                                  <canvas
-                                    ref={firmaProfRefCallback}
-                                    width={400}
-                                    height={200}
-                                    className="w-full h-full block cursor-crosshair"
-                                  />
-                                  {!isReadOnlyView && hasSignedProf && (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleClearCanvas(firmaProfCanvasRef, setHasSignedProf, setFirmaProfSavedUrl)}
-                                      className="absolute top-2 right-2 text-[10px] font-bold text-red-500 hover:underline bg-white/80 px-2 py-0.5 rounded shadow-sm cursor-pointer"
-                                    >
-                                      Limpiar
-                                    </button>
-                                  )}
-                                </div>
-                              )}
-                            </>
-                          )}
-
-                        </div>
-                      </div>
-
                     </div>
                   </div>
 
-                  {/* SECCIÓN DE BOTONES DE ACCIÓN */}
-                  {!isReadOnlyView && (
-                    <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-150">
-                      <button
-                        type="button"
-                        onClick={handleCloseForm}
-                        className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-all cursor-pointer"
-                      >
-                        Cancelar
-                      </button>
-                      <button
-                        type="submit"
-                        disabled={saveLoading}
-                        className="px-5 py-2 bg-[#468DFF] hover:bg-[#0511F2] disabled:bg-slate-200 text-white border border-[#468DFF] hover:border-[#0511F2] rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:cursor-not-allowed shadow-md shadow-[#468DFF]/10"
-                      >
-                        {saveLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                        {editingId ? 'Guardar Cambios' : 'Registrar Control'}
-                      </button>
+                  {/* Footer de Acciones del Formulario */}
+                  <div className="flex justify-between items-center pt-6 border-t border-slate-100 shrink-0">
+                    <button
+                      type="button"
+                      onClick={handleExitForm}
+                      className="px-5 py-2.5 bg-[#FFFFFF] text-[#468DFF] border border-[#468DFF] rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-[#FFFFFF] hover:border-[#FFFFFF] transition-all active:scale-[0.98] cursor-pointer"
+                    >
+                      Salir
+                    </button>
+                    
+                    <div className="flex items-center gap-3">
+                      {isReadOnlyView ? (
+                        canEditar && (
+                          <button
+                            type="button"
+                            onClick={() => setIsReadOnlyView(false)}
+                            className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-bold transition-all cursor-pointer shadow-lg shadow-amber-500/10"
+                          >
+                            Editar
+                          </button>
+                        )
+                      ) : (
+                        <>
+                          {editingId && canEliminar && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteClick(editingId)}
+                              className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all cursor-pointer shadow-lg shadow-red-600/10"
+                            >
+                              Eliminar
+                            </button>
+                          )}
+                          {!isFormDisabled && (
+                            <button
+                              type="submit"
+                              disabled={saveLoading}
+                              className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
+                            >
+                              {saveLoading ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                  Guardando...
+                                </>
+                              ) : (
+                                'Guardar'
+                              )}
+                            </button>
+                          )}
+                        </>
+                      )}
                     </div>
-                  )}
+                  </div>
 
                 </form>
               </div>
@@ -2066,23 +2157,32 @@ export default function ControlElectricoPage({ params }) {
 
       {/* MODAL DIALOG PREGUNTA/ALERTA */}
       {modalAlert.show && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-150 rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4 animate-scaleUp">
-            <h3 className="font-outfit text-base font-extrabold text-slate-900">{modalAlert.title}</h3>
-            <p className="text-xs text-slate-500 leading-relaxed">{modalAlert.message}</p>
-            <div className="flex items-center justify-end gap-2.5 pt-2">
+        <div className="fixed inset-0 z-55 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
+            <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500 animate-pulse">
+              <AlertTriangle className="h-6 w-6" />
+            </div>
+            <div className="space-y-1">
+              <h4 className="font-outfit text-base font-extrabold text-slate-800">{modalAlert.title}</h4>
+              <p className="text-xs text-slate-500 leading-relaxed">{modalAlert.message}</p>
+            </div>
+            <div className="flex gap-2">
               <button
+                type="button"
                 onClick={closeAlert}
-                className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100 transition-all cursor-pointer"
+                className="flex-1 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all cursor-pointer"
               >
                 Cancelar
               </button>
-              <button
-                onClick={modalAlert.onConfirm}
-                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
-              >
-                {modalAlert.confirmText}
-              </button>
+              {modalAlert.onConfirm && (
+                <button
+                  type="button"
+                  onClick={modalAlert.onConfirm}
+                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
+                >
+                  {modalAlert.confirmText || 'Confirmar'}
+                </button>
+              )}
             </div>
           </div>
         </div>
