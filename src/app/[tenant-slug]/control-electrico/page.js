@@ -39,7 +39,10 @@ import {
   Sliders,
   ChevronUp,
   ChevronDown,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Send,
+  Download,
+  Mail
 } from 'lucide-react';
 
 const INITIAL_ITEMS = [
@@ -172,6 +175,13 @@ export default function ControlElectricoPage({ params }) {
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
   const [saveLoading, setSaveLoading] = useState(false);
+
+  // Estados de Envío por Correo (Fase 3)
+  const [isMailModalOpen, setIsMailModalOpen] = useState(false);
+  const [mailTargetControl, setMailTargetControl] = useState(null);
+  const [availableEmails, setAvailableEmails] = useState([]);
+  const [manualEmail, setManualEmail] = useState('');
+  const [mailLoading, setMailLoading] = useState(false);
 
   // Cargar datos
   useEffect(() => {
@@ -1058,7 +1068,7 @@ export default function ControlElectricoPage({ params }) {
     });
   };
 
-  const handleExportPdfReport = async (c, shouldPrint = false) => {
+  const handleExportPdfReport = async (c, shouldPrint = false, shouldDownload = true) => {
     try {
       triggerToast('Generando reporte PDF...', 'info');
 
@@ -1327,12 +1337,122 @@ export default function ControlElectricoPage({ params }) {
         doc.autoPrint();
         const blobUrl = doc.output('bloburl');
         window.open(blobUrl, '_blank');
-      } else {
+      } else if (shouldDownload) {
         doc.save(`Control_Electrico_${emp?.razon_social.replace(/\s+/g, '_') || ''}_${c.fecha}.pdf`);
+      } else {
+        return doc;
       }
     } catch (e) {
       console.error('Error al generar PDF:', e);
       triggerToast('Error al exportar reporte PDF.', 'error');
+    }
+  };
+
+  const handleOpenPdf = async (c) => {
+    const doc = await handleExportPdfReport(c, false, false);
+    if (doc) {
+      const blob = doc.output('blob');
+      const blobUrl = URL.createObjectURL(blob);
+      window.open(blobUrl, '_blank');
+    }
+  };
+
+  const handleOpenEmailModal = (c) => {
+    setMailTargetControl(c);
+    const emp = empresas.find(e => e.id === c.empresa_id);
+    if (emp && emp.contactos_correos && emp.contactos_correos.length > 0) {
+      const formatted = emp.contactos_correos.map((cont, i) => ({
+        valor: cont.valor,
+        descripcion: `${cont.nombre || 'Contacto'} - ${cont.cargo || 'General'} (${cont.valor})`,
+        checked: i === 0
+      }));
+      setAvailableEmails(formatted);
+    } else {
+      setAvailableEmails([]);
+    }
+    setManualEmail('');
+    setIsMailModalOpen(true);
+  };
+
+  const handleSendEmail = async (e) => {
+    if (e) e.preventDefault();
+    if (!mailTargetControl) return;
+
+    const checkedEmails = availableEmails.filter(em => em.checked).map(em => em.valor);
+    const manualList = manualEmail.split(',').map(em => em.trim()).filter(Boolean);
+    const recipients = [...checkedEmails, ...manualList];
+
+    if (recipients.length === 0) {
+      triggerToast('Debe ingresar o seleccionar al menos un correo de destino.', 'error');
+      return;
+    }
+
+    setMailLoading(true);
+    try {
+      const doc = await handleExportPdfReport(mailTargetControl, false, false);
+      if (!doc) throw new Error('No se pudo generar el PDF del control eléctrico.');
+
+      const pdfBlob = doc.output('blob');
+      
+      const fileId = crypto.randomUUID();
+      const filePath = `${profile?.id || 'anonymous'}/control_electrico_${mailTargetControl.id}_${fileId}.pdf`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, pdfBlob, {
+          contentType: 'application/pdf',
+          upsert: true
+        });
+
+      if (uploadError) {
+        throw new Error(`Error al subir el adjunto a Storage: ${uploadError.message}`);
+      }
+
+      const emp = empresas.find(emp => emp.id === mailTargetControl.empresa_id);
+      const est = allEstablecimientos.find(est => est.id === mailTargetControl.establecimiento_id);
+
+      let tenantLogoBase64 = '';
+      if (tenant && tenant.logo_1_url) {
+        try {
+          tenantLogoBase64 = await getBase64ImageFromUrl(tenant.logo_1_url);
+          if (tenantLogoBase64) {
+            tenantLogoBase64 = await resizeImageForPdf(tenantLogoBase64, 400, 200);
+          }
+        } catch (logoErr) {
+          console.warn('No se pudo cargar el logo para el email:', logoErr);
+        }
+      }
+
+      const payload = {
+        emails: recipients,
+        filePath,
+        companyName: emp ? emp.razon_social : 'N/A',
+        establishmentName: est ? est.denominacion : 'N/A',
+        date: formatDate(mailTargetControl.fecha),
+        inspectorName: mailTargetControl.profesional_nombre,
+        tenantLogoBase64: tenantLogoBase64 || null,
+        tenantName: tenant?.name || 'Gestión SySO',
+        documentType: 'control_electrico'
+      };
+
+      const res = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const resData = await res.json();
+      if (!res.ok || resData.error) {
+        throw new Error(resData.error || 'Error del servidor al enviar correo.');
+      }
+
+      triggerToast('Correo enviado exitosamente.');
+      setIsMailModalOpen(false);
+    } catch (err) {
+      console.error('Error al enviar correo:', err);
+      triggerToast(err.message || 'Error al intentar enviar el correo.', 'error');
+    } finally {
+      setMailLoading(false);
     }
   };
 
@@ -2005,7 +2125,7 @@ export default function ControlElectricoPage({ params }) {
                             <th className="px-6 py-4">Profesional Interviniente</th>
                             <th className="px-6 py-4">Aclaración Responsable</th>
                             <th className="px-6 py-4 text-center">Resultado</th>
-                            <th className="px-6 py-4 text-center w-28">Acciones</th>
+                            <th className="px-6 py-4 text-right w-36">Acciones</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -2054,9 +2174,9 @@ export default function ControlElectricoPage({ params }) {
                                     setIsReadOnlyView(true);
                                     handleEditClick(c);
                                   }} 
-                                  className="px-6 py-4 text-slate-600 font-medium"
+                                  className="px-6 py-4 text-slate-600 font-semibold"
                                 >
-                                  {c.profesional_nombre}
+                                  {c.profesional_nombre || 'N/A'}
                                 </td>
                                 <td 
                                   onClick={() => {
@@ -2087,43 +2207,63 @@ export default function ControlElectricoPage({ params }) {
                                     )}
                                   </div>
                                 </td>
-                                <td className="px-6 py-4">
-                                  <div className="flex items-center justify-center gap-1.5">
+                                <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                                  <div className="flex items-center justify-end gap-2">
                                     <button
-                                      onClick={() => handleExportPdfReport(c, false)}
-                                      className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-colors"
-                                      title="Exportar PDF"
+                                      onClick={() => handleOpenPdf(c)}
+                                      title="Visualizar PDF"
+                                      className="p-1.5 rounded-lg bg-[#EFF6FF] hover:bg-[#DBEAFE] text-[#468DFF] hover:text-[#0511F2] transition-all cursor-pointer"
                                     >
-                                      <FileText className="h-4 w-4" />
+                                      <FileText className="h-4.5 w-4.5" />
                                     </button>
                                     <button
-                                      onClick={() => handleExportPdfReport(c, true)}
-                                      className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-colors"
-                                      title="Imprimir"
+                                      onClick={() => handleExportPdfReport(c, false, true)}
+                                      title="Descargar PDF"
+                                      className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer"
                                     >
-                                      <Printer className="h-4 w-4" />
+                                      <Download className="h-4.5 w-4.5" />
                                     </button>
-                                    
-                                    {canEditar && (
+                                    {profile && profile.role !== 'cliente' && (
                                       <button
-                                        onClick={() => {
-                                          setIsReadOnlyView(false);
-                                          handleEditClick(c);
-                                        }}
-                                        className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-colors"
-                                        title="Editar"
+                                        onClick={() => handleOpenEmailModal(c)}
+                                        title="Enviar por Correo"
+                                        className="p-1.5 rounded-lg bg-blue-50 hover:bg-[#468DFF]/25 text-[#468DFF] transition-all cursor-pointer"
                                       >
-                                        <Edit className="h-4 w-4" />
+                                        <Mail className="h-4.5 w-4.5" />
                                       </button>
                                     )}
-
-                                    {canEliminar && (
+                                    {profile && profile.role !== 'cliente' && (
+                                      canEditar ? (
+                                        <button
+                                          onClick={() => {
+                                            setIsReadOnlyView(false);
+                                            handleEditClick(c);
+                                          }}
+                                          className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer"
+                                          title="Editar"
+                                        >
+                                          <Edit className="h-4.5 w-4.5" />
+                                        </button>
+                                      ) : (
+                                        <button
+                                          onClick={() => {
+                                            setIsReadOnlyView(true);
+                                            handleEditClick(c);
+                                          }}
+                                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer"
+                                          title="Ver Detalle"
+                                        >
+                                          <Eye className="h-4.5 w-4.5" />
+                                        </button>
+                                      )
+                                    )}
+                                    {profile && profile.role !== 'cliente' && canEliminar && (
                                       <button
                                         onClick={() => handleDeleteClick(c.id)}
-                                        className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-colors"
+                                        className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer"
                                         title="Eliminar"
                                       >
-                                        <Trash2 className="h-4 w-4" />
+                                        <Trash2 className="h-4.5 w-4.5" />
                                       </button>
                                     )}
                                   </div>
@@ -2144,6 +2284,94 @@ export default function ControlElectricoPage({ params }) {
         )}
 
       </main>
+
+      {/* Modal de Envío de Email */}
+      {isMailModalOpen && mailTargetControl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div onClick={() => setIsMailModalOpen(false)} className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="bg-white rounded-2xl border border-slate-150 p-6 max-w-md w-full z-10 shadow-2xl relative space-y-4 animate-fade-in">
+            
+            <div className="flex justify-between items-center">
+              <h4 className="font-outfit text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                <Mail className="h-4.5 w-4.5 text-[#468DFF]" />
+                Enviar Control Eléctrico por Correo
+              </h4>
+              <button onClick={() => setIsMailModalOpen(false)} className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 cursor-pointer">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-500 font-medium">
+              Seleccione los contactos registrados de la empresa o ingrese correos electrónicos manualmente (separados por comas) para enviar el reporte de control eléctrico en PDF.
+            </p>
+
+            <div className="space-y-3">
+              
+              {/* Contactos de la empresa */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-600 block">Correos de la Empresa:</label>
+                {availableEmails.length === 0 ? (
+                  <p className="text-xs text-slate-400 italic font-semibold">No hay contactos registrados para esta empresa.</p>
+                ) : (
+                  <div className="bg-slate-50 p-3 border border-slate-200 rounded-xl max-h-36 overflow-y-auto space-y-1.5">
+                    {availableEmails.map((e, idx) => (
+                      <label key={idx} className="flex items-center gap-2.5 text-xs font-semibold text-slate-700 cursor-pointer hover:bg-slate-100/50 py-1 rounded">
+                        <input
+                          type="checkbox"
+                          checked={e.checked}
+                          onChange={() => {
+                            setAvailableEmails(prev => prev.map((item, i) => i === idx ? { ...item, checked: !item.checked } : item));
+                          }}
+                          className="accent-[#468DFF] h-4 w-4"
+                        />
+                        {e.descripcion}
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Ingreso manual */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-600">Correos Manuales:</label>
+                <textarea
+                  rows="2"
+                  placeholder="ejemplo1@correo.com, ejemplo2@correo.com..."
+                  value={manualEmail}
+                  onChange={(e) => setManualEmail(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50"
+                />
+              </div>
+
+            </div>
+
+            {/* Acciones */}
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsMailModalOpen(false)}
+                className="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-100 cursor-pointer transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={mailLoading}
+                onClick={handleSendEmail}
+                className="px-4 py-2 bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold rounded-lg cursor-pointer transition-all flex items-center gap-1.5 shadow-md shadow-[#468DFF]/10 disabled:bg-slate-400"
+              >
+                {mailLoading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Send className="h-3.5 w-3.5" />
+                )}
+                Enviar Correo
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
       {/* TOAST FEEDBACK */}
       {toast.show && (

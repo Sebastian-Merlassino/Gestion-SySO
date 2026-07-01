@@ -1,5 +1,27 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-01] Acciones de Tabla y Envío de Correo en Control Eléctrico (Fase 3)
+
+### Resumen de Cambios
+- **Tabla de Registros y Acciones**:
+  - Se unificó la cabecera de "Acciones" de la tabla a alineación derecha (`text-right w-36`).
+  - Se reemplazaron las acciones por los pictogramas premium estándar del sistema:
+    - **Visualizar PDF**: Icono `FileText` en color azul (`bg-[#EFF6FF] text-[#468DFF]`). Abre el reporte generado en una nueva pestaña del navegador.
+    - **Descargar PDF**: Icono `Download` en color gris (`bg-slate-100 text-slate-600`).
+    - **Enviar por Correo**: Icono `Mail` en color azul/celeste (`bg-blue-50 text-[#468DFF]`). Reservado para perfiles administradores y profesionales de equipo.
+    - **Editar / Ver Detalle / Eliminar**: Estilos y envolturas estandarizados con colores ámbar, gris y rojo.
+- **Envío por Correo y PDF**:
+  - Se implementó el modal emergente animado `isMailModalOpen` para seleccionar contactos de la empresa de forma segmentada o ingresar direcciones manualmente.
+  - Se modificó `handleExportPdfReport` para retornar el documento jsPDF en lugar de descargarlo de forma directa si `shouldDownload` es falso.
+  - Se implementaron las funciones `handleOpenEmailModal` y `handleSendEmail` para subir el PDF generado asíncronamente a Supabase Storage y despachar el correo a la API del servidor `/api/send-email`.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con `npm run build` completada con éxito.
+
 ## [2026-07-01] Ajustes y Correcciones en Control Eléctrico (Fase 2)
 
 ### Resumen de Cambios
