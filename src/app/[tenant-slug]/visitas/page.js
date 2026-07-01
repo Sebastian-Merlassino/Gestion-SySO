@@ -200,6 +200,7 @@ export default function VisitasPage({ params }) {
   const [selectedTemas, setSelectedTemas] = useState([]);
   const [isTemasDropdownOpen, setIsTemasDropdownOpen] = useState(false);
   const [searchTopicTerm, setSearchTopicTerm] = useState('');
+  const [temaCustomText, setTemaCustomText] = useState('');
 
   const [realizaronSimulacros, setRealizaronSimulacros] = useState(false);
 
@@ -752,6 +753,7 @@ export default function VisitasPage({ params }) {
     setSelectedTemas([]);
     setIsTemasDropdownOpen(false);
     setSearchTopicTerm('');
+    setTemaCustomText('');
     setRealizaronSimulacros(false);
     setSelectedSimulacros([]);
     setSimulacroCustomText('');
@@ -788,6 +790,7 @@ export default function VisitasPage({ params }) {
     setSelectedTemas([]);
     setIsTemasDropdownOpen(false);
     setSearchTopicTerm('');
+    setTemaCustomText('');
     setRealizaronSimulacros(false);
     setSelectedSimulacros([]);
     setSimulacroCustomText('');
@@ -1326,6 +1329,15 @@ export default function VisitasPage({ params }) {
     setSelectedTemas(prev =>
       prev.includes(tName) ? prev.filter(x => x !== tName) : [...prev, tName]
     );
+  };
+
+  const handleAddCustomTema = () => {
+    if (!temaCustomText.trim()) return;
+    const txt = temaCustomText.trim();
+    if (!selectedTemas.includes(txt)) {
+      setSelectedTemas(prev => [...prev, txt]);
+    }
+    setTemaCustomText('');
   };
 
   // Helper para convertir imagen URL a base64
@@ -2809,7 +2821,7 @@ export default function VisitasPage({ params }) {
                         <label className="text-xs font-bold text-slate-600 block">Mediciones de contaminantes físicos/químicos o evaluaciones técnicas:</label>
                         
                         <div className="flex flex-wrap gap-2">
-                          {MEDICIONES_OPTS.map(m => {
+                          {Array.from(new Set([...MEDICIONES_OPTS, ...selectedMediciones])).map(m => {
                             const isSel = selectedMediciones.includes(m);
                             return (
                               <button
@@ -2980,19 +2992,22 @@ export default function VisitasPage({ params }) {
                                   className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs outline-none focus:border-[#468DFF]"
                                 />
                                 <div className="divide-y divide-slate-100 max-h-40 overflow-y-auto">
-                                  {temasList
-                                    .filter(t => t.tema.toLowerCase().includes(searchTopicTerm.toLowerCase()))
-                                    .map(t => {
-                                      const isChecked = selectedTemas.includes(t.tema);
+                                  {Array.from(new Set([
+                                    ...temasList.map(t => t.tema),
+                                    ...selectedTemas
+                                  ]))
+                                    .filter(tName => tName.toLowerCase().includes(searchTopicTerm.toLowerCase()))
+                                    .map((tName, idx) => {
+                                      const isChecked = selectedTemas.includes(tName);
                                       return (
-                                        <label key={t.id} className="flex items-center gap-2 py-1.5 text-xs font-semibold hover:bg-slate-50 cursor-pointer px-1">
+                                        <label key={idx} className="flex items-center gap-2 py-1.5 text-xs font-semibold hover:bg-slate-50 cursor-pointer px-1">
                                           <input
                                             type="checkbox"
                                             checked={isChecked}
-                                            onChange={() => handleToggleTemaCapacitacion(t.tema)}
+                                            onChange={() => handleToggleTemaCapacitacion(tName)}
                                             className="accent-[#468DFF]"
                                           />
-                                          {t.tema}
+                                          {tName}
                                         </label>
                                       );
                                     })
@@ -3012,6 +3027,24 @@ export default function VisitasPage({ params }) {
                             </span>
                           ))}
                         </div>
+
+                        {/* Agregar tema manual */}
+                        <div className="flex gap-2 max-w-md pt-2">
+                          <input
+                            type="text"
+                            placeholder="Agregar otro tema..."
+                            value={temaCustomText}
+                            onChange={(e) => setTemaCustomText(e.target.value)}
+                            className="flex-1 px-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-[#468DFF] bg-white"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleAddCustomTema}
+                            className="px-3 py-1.5 bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold rounded-lg cursor-pointer"
+                          >
+                            Agregar
+                          </button>
+                        </div>
                       </div>
                     )}
 
@@ -3021,7 +3054,7 @@ export default function VisitasPage({ params }) {
                         <label className="text-xs font-bold text-slate-600 block">Especificar tipo de simulacro:</label>
                         
                         <div className="flex flex-wrap gap-2">
-                          {SIMULACROS_OPTS.map(s => {
+                          {Array.from(new Set([...SIMULACROS_OPTS, ...selectedSimulacros])).map(s => {
                             const isSel = selectedSimulacros.includes(s);
                             return (
                               <button
@@ -3096,7 +3129,7 @@ export default function VisitasPage({ params }) {
                       <label className="text-xs font-bold text-slate-600 block">Documentación incorporada al Legajo de SySO:</label>
                       
                       <div className="flex flex-wrap gap-2">
-                        {DOCUMENTACION_OPTS.map(d => {
+                        {Array.from(new Set([...DOCUMENTACION_OPTS, ...selectedDocumentacion])).map(d => {
                           const isSel = selectedDocumentacion.includes(d);
                           return (
                             <button
