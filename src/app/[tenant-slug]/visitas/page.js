@@ -1408,6 +1408,7 @@ export default function VisitasPage({ params }) {
   // Generar PDF
   const handleGeneratePdf = async (v, shouldDownload = true) => {
     try {
+      triggerToast('Generando reporte PDF...', 'info');
       // 1. Obtener nombres de empresa y establecimiento
       const emp = empresas.find(e => e.id === v.empresa_id);
       const est = allEstablecimientos.find(e => e.id === v.establecimiento_id);
@@ -1995,7 +1996,7 @@ export default function VisitasPage({ params }) {
       }
     } catch (e) {
       console.error('Error al generar PDF:', e);
-      triggerToast('Error al estructurar el PDF de la constancia.', 'error');
+      triggerToast('Error al generar el reporte PDF.', 'error');
       return null;
     }
   };
@@ -2003,14 +2004,15 @@ export default function VisitasPage({ params }) {
   // Previsualizar PDF en nueva pestaña sin descargar
   const handlePreviewPdf = async (v) => {
     try {
-      triggerToast('Generando vista previa del PDF...');
+      triggerToast('Generando reporte PDF...', 'info');
       const blobUrl = await handleGeneratePdf(v, 'bloburl');
       if (blobUrl) {
         window.open(blobUrl, '_blank');
+        triggerToast('Vista previa abierta.');
       }
     } catch (e) {
       console.error('Error al abrir la vista previa:', e);
-      triggerToast('Error al abrir la vista previa.', 'error');
+      triggerToast('Error al generar el reporte PDF.', 'error');
     }
   };
 

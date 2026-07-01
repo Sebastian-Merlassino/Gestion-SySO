@@ -363,6 +363,7 @@ Respetar siempre:
 - Todo formulario debe contemplar accesibilidad y validación visible.
 - Toda pantalla debe ser usable desde escritorio, tablet y móvil.
 - Antes de cambiar UI, revisá bitácora y documentación de marca.
+- Toda generación o descarga de reporte PDF en cualquier sección (Visitas, Avisos de Riesgo, Control Eléctrico, etc.) debe usar la alerta informativa estándar "Generando reporte PDF..." de tipo info.
 
 ## Archivos y carpetas objetivo
 

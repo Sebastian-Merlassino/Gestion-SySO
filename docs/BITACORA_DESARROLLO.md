@@ -1,5 +1,30 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-01] Homologación de Alertas de PDF y Saneamiento de Guardado UUID en Control Eléctrico (Fase 6 y 7)
+
+### Resumen de Cambios
+- **Unificación Global de Alertas (Toasts) para PDF**:
+  - Se estableció el toast informativo `"Generando reporte PDF..."` de tipo `info` como estándar al iniciar la generación de PDF (visualización o descarga) en los 3 módulos críticos de la plataforma: **Visitas de Higiene y Seguridad**, **Avisos de Riesgo** y **Control Visual de Instalaciones Eléctricas**.
+  - Al completarse con éxito, se despachan los toasts unificados: `"PDF descargado exitosamente."` para la acción de descarga, y `"Vista previa abierta."` para la acción de ver en pestaña nueva.
+  - Al fallar, se despacha en todos los casos el toast de error unificado: `"Error al generar el reporte PDF."` de tipo `error`.
+- **Alineaciones y Escalas del PDF de Control Eléctrico**:
+  - **Alineación del Logo**: Se redefinió la coordenada X de dibujo del logo a exactamente `36 pt`, de modo que quede perfectamente alineado al borde izquierdo de la tabla y del cuerpo del reporte.
+  - **Firma del Profesional**: Se redefinió el tamaño máximo de la firma digital a `240 x 120 pt` (idéntico al de Constancias de Visita y Avisos de Riesgo), añadiendo un acotamiento inteligente al ancho físico de la línea punteada (`194.25 pt`) para que no deforme ni tape otros bloques.
+  - **Footer de la Consultora**: Se removió el símbolo de marca registrada `®` del footer de la página, imprimiendo únicamente la consultora de la sesión (`companyName`) tal como la cargó el usuario administrador en su perfil.
+- **Saneamiento en el Guardado y Edición**:
+  - Se solucionó el crash de guardado provocado por un error de sintaxis de tipo UUID en PostgreSQL (`invalid input syntax for type uuid: ""`). Si el campo `profesional_id` se envía como un string vacío `""` (por ejemplo, cuando es un inspector manual externo), se saneó a `null` de forma segura en `handleSave`, permitiendo guardar y editar registros sin interrupciones.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] .agents/skills/gestion-syso-brand-guidelines/SKILL.md`
+- `[MODIFY] .agents/AGENTS.md`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de Next.js en entorno local (`npm run build`) exitosa.
+
 ## [2026-07-01] Acciones de Tabla, Envío de Correo y Reporte PDF A4 en Control Eléctrico (Fase 3)
 
 ### Resumen de Cambios

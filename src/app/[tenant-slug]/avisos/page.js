@@ -1022,6 +1022,7 @@ export default function AvisosRiesgoPage({ params }) {
   // ----------------------------------------------------
   const generateAvisoPdf = async (av, shouldDownload = true) => {
     try {
+      triggerToast('Generando reporte PDF...', 'info');
       const emp = empresas.find(e => e.id === av.empresa_id);
       const est = allEstablecimientos.find(e => e.id === av.establecimiento_id);
       const empName = emp ? emp.razon_social : 'N/A';
@@ -1669,6 +1670,7 @@ export default function AvisosRiesgoPage({ params }) {
 
       if (shouldDownload) {
         doc.save(`Aviso_Riesgo_${av.aviso_numero || 'N_A'}.pdf`);
+        triggerToast('PDF descargado exitosamente.');
       } else {
         return doc;
       }
@@ -1679,11 +1681,17 @@ export default function AvisosRiesgoPage({ params }) {
   };
 
   const handleOpenPdf = async (av) => {
-    const doc = await generateAvisoPdf(av, false);
-    if (doc) {
-      const blob = doc.output('blob');
-      const blobUrl = URL.createObjectURL(blob);
-      window.open(blobUrl, '_blank');
+    try {
+      const doc = await generateAvisoPdf(av, false);
+      if (doc) {
+        const blob = doc.output('blob');
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, '_blank');
+        triggerToast('Vista previa abierta.');
+      }
+    } catch (e) {
+      console.error('Error al abrir la vista previa:', e);
+      triggerToast('Error al generar el reporte PDF.', 'error');
     }
   };
 

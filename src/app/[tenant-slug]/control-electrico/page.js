@@ -822,7 +822,7 @@ export default function ControlElectricoPage({ params }) {
         responsable_aclaracion: null,
         profesional_tipo: profesionalTipo,
         profesional_nombre: finalProfNombre,
-        profesional_id: profesionalTipo === 'miembro' ? profesionalId : null,
+        profesional_id: (profesionalTipo === 'miembro' && profesionalId && profesionalId !== '') ? profesionalId : null,
         firma_tipo: firmaTipo,
         firma_responsable: null,
         firma_profesional: finalFirmaProf,
@@ -1535,23 +1535,31 @@ export default function ControlElectricoPage({ params }) {
         doc.autoPrint();
         const blobUrl = doc.output('bloburl');
         window.open(blobUrl, '_blank');
+        triggerToast('Vista previa abierta.');
       } else if (shouldDownload) {
         doc.save(`Control_Electrico_${emp?.razon_social.replace(/\s+/g, '_') || ''}_${c.fecha}.pdf`);
+        triggerToast('PDF descargado exitosamente.');
       } else {
         return doc;
       }
     } catch (e) {
       console.error('Error al generar PDF:', e);
-      triggerToast('Error al exportar reporte PDF.', 'error');
+      triggerToast('Error al generar el reporte PDF.', 'error');
     }
   };
 
   const handleOpenPdf = async (c) => {
-    const doc = await handleExportPdfReport(c, false, false);
-    if (doc) {
-      const blob = doc.output('blob');
-      const blobUrl = URL.createObjectURL(blob);
-      window.open(blobUrl, '_blank');
+    try {
+      const doc = await handleExportPdfReport(c, false, false);
+      if (doc) {
+        const blob = doc.output('blob');
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, '_blank');
+        triggerToast('Vista previa abierta.');
+      }
+    } catch (e) {
+      console.error('Error al abrir la vista previa:', e);
+      triggerToast('Error al generar el reporte PDF.', 'error');
     }
   };
 
