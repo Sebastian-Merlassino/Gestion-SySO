@@ -1141,7 +1141,7 @@ export default function ControlElectricoPage({ params }) {
           console.error('Error al resolver firma del profesional para PDF:', errSig);
         }
       }
-      if (fProfBase64) fProfBase64 = await resizeImageForPdf(fProfBase64, 150, 90);
+      if (fProfBase64) fProfBase64 = await resizeImageForPdf(fProfBase64, 250, 150);
 
       // 2. Cargar fotos del anexo
       const fotosBase64 = [];
@@ -1167,7 +1167,23 @@ export default function ControlElectricoPage({ params }) {
         }
       }
 
-      // 3. Logo del Tenant (sin deformación)
+      // Obtener nombre de la consultora de la sesión o de la base de datos
+      let tenantName = tenant?.name;
+      if (!tenantName && !isDevMode) {
+        try {
+          const { data: tenData } = await supabase
+            .from('tenants')
+            .select('name')
+            .eq('id', c.tenant_id)
+            .single();
+          if (tenData) tenantName = tenData.name;
+        } catch (errTen) {
+          console.warn('Error cargando tenant desde BD para reporte PDF:', errTen);
+        }
+      }
+      const companyName = tenantName || 'Gestión SySO';
+
+      // 3. Logo del Tenant (sin deformación y tamaño óptimo)
       let logoBase64 = '';
       try {
         if (tenant && tenant.logo_1_url) {
@@ -1186,14 +1202,11 @@ export default function ControlElectricoPage({ params }) {
         try {
           const dims = await getImgDimensions(logoBase64);
           const ratio = dims.width / dims.height;
-          const maxW = 127.5;
-          const maxH = 49.5;
-          if (ratio > maxW / maxH) {
-            logoWidth = maxW;
-            logoHeight = maxW / ratio;
-          } else {
-            logoHeight = maxH;
-            logoWidth = maxH * ratio;
+          logoWidth = 127.5;
+          logoHeight = 127.5 / ratio;
+          if (logoHeight > 55) {
+            logoHeight = 55;
+            logoWidth = 55 * ratio;
           }
         } catch (e) {
           console.error('Error calculando proporciones de logo:', e);
@@ -1380,10 +1393,20 @@ export default function ControlElectricoPage({ params }) {
       // Firma real del profesional
       if (fProfBase64 && fProfBase64.startsWith('data:image/')) {
         try {
-          // Centrar firma horizontalmente sobre el tramo 34.5 a 228.75 (ancho 194.25)
-          const sigW = 120;
-          const sigH = 65;
-          const sigX = 34.5 + (194.25 - sigW) / 2;
+          const sigDims = await getImgDimensions(fProfBase64);
+          const sigRatio = sigDims.width / sigDims.height;
+          const maxSigW = 194.25;
+          const maxSigH = 100;
+          let sigW = maxSigW;
+          let sigH = maxSigH;
+          if (sigRatio > maxSigW / maxSigH) {
+            sigW = maxSigW;
+            sigH = maxSigW / sigRatio;
+          } else {
+            sigH = maxSigH;
+            sigW = maxSigH * sigRatio;
+          }
+          const sigX = 34.5 + (maxSigW - sigW) / 2;
           const sigY = 652 - sigH - 5;
           doc.addImage(fProfBase64, 'PNG', sigX, sigY, sigW, sigH);
         } catch (e) {
@@ -1461,7 +1484,6 @@ export default function ControlElectricoPage({ params }) {
         d.setFontSize(8);
         d.setTextColor(0, 0, 0);
         
-        const companyName = tenant?.name || 'Gestión SySO';
         const phoneVal = profile?.role === 'miembro' ? (profile?.phone || '') : adminContact.phone;
         const emailVal = profile?.role === 'miembro' ? (profile?.email || '') : adminContact.email;
         
