@@ -1068,6 +1068,19 @@ export default function ControlElectricoPage({ params }) {
     });
   };
 
+  const getImgDimensions = (base64Str) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = base64Str;
+      img.onload = () => {
+        resolve({ width: img.width, height: img.height });
+      };
+      img.onerror = () => {
+        resolve({ width: 127.5, height: 49.5 });
+      };
+    });
+  };
+
   const handleExportPdfReport = async (c, shouldPrint = false, shouldDownload = true) => {
     try {
       triggerToast('Generando reporte PDF...', 'info');
@@ -1086,12 +1099,47 @@ export default function ControlElectricoPage({ params }) {
       // 1. Cargar firma del profesional
       let fProfBase64 = '';
       if (c.firma_profesional) {
-        let fProfUrl = c.firma_profesional;
-        if (!isDevMode && !c.firma_profesional.startsWith('http')) {
-          const { data } = await supabase.storage.from('documents').createSignedUrl(c.firma_profesional, 360);
-          if (data) fProfUrl = data.signedUrl;
+        try {
+          if (c.firma_profesional.startsWith('data:')) {
+            fProfBase64 = c.firma_profesional;
+          } else if (isDevMode || c.firma_profesional.startsWith('mock')) {
+            fProfBase64 = await getBase64ImageFromUrl('/brand/logo-primary.png');
+          } else {
+            // Extraer path relativo si es una URL de Supabase Storage (pública o privada)
+            let relativePath = c.firma_profesional;
+            let isExternal = false;
+            
+            if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
+              try {
+                const urlObj = new URL(relativePath);
+                const pathParts = urlObj.pathname.split('/');
+                const bucketIndex = pathParts.findIndex(part => part === 'signatures' || part === 'documents');
+                if (bucketIndex !== -1 && bucketIndex < pathParts.length - 1) {
+                  relativePath = pathParts.slice(bucketIndex + 1).join('/');
+                } else {
+                  isExternal = true;
+                }
+              } catch (urlErr) {
+                console.error('Error parseando URL de firma:', urlErr);
+                isExternal = true;
+              }
+            }
+
+            if (isExternal) {
+              fProfBase64 = await getBase64ImageFromUrl(c.firma_profesional);
+            } else {
+              const bucketName = c.firma_tipo === 'perfil' ? 'signatures' : 'documents';
+              const { data: sData, error: sErr } = await supabase.storage
+                .from(bucketName)
+                .createSignedUrl(relativePath, 3600);
+              if (!sErr && sData?.signedUrl) {
+                fProfBase64 = await getBase64ImageFromUrl(sData.signedUrl);
+              }
+            }
+          }
+        } catch (errSig) {
+          console.error('Error al resolver firma del profesional para PDF:', errSig);
         }
-        fProfBase64 = await getBase64ImageFromUrl(fProfUrl || '/brand/logo-primary.png');
       }
       if (fProfBase64) fProfBase64 = await resizeImageForPdf(fProfBase64, 150, 90);
 
@@ -1119,7 +1167,7 @@ export default function ControlElectricoPage({ params }) {
         }
       }
 
-      // 3. Logo del Tenant
+      // 3. Logo del Tenant (sin deformación)
       let logoBase64 = '';
       try {
         if (tenant && tenant.logo_1_url) {
@@ -1131,14 +1179,31 @@ export default function ControlElectricoPage({ params }) {
       if (!logoBase64) {
         logoBase64 = await getBase64ImageFromUrl('/brand/logo-primary.png');
       }
+
+      let logoWidth = 127.5;
+      let logoHeight = 49.5;
       if (logoBase64) {
-        logoBase64 = await resizeImageForPdf(logoBase64, 127.5, 49.5);
+        try {
+          const dims = await getImgDimensions(logoBase64);
+          const ratio = dims.width / dims.height;
+          const maxW = 127.5;
+          const maxH = 49.5;
+          if (ratio > maxW / maxH) {
+            logoWidth = maxW;
+            logoHeight = maxW / ratio;
+          } else {
+            logoHeight = maxH;
+            logoWidth = maxH * ratio;
+          }
+        } catch (e) {
+          console.error('Error calculando proporciones de logo:', e);
+        }
       }
 
       const drawHeaderLogo = (d) => {
         if (logoBase64) {
           try {
-            d.addImage(logoBase64, 'PNG', 37.5, 15.65, 127.5, 49.5);
+            d.addImage(logoBase64, 'PNG', 37.5 + (127.5 - logoWidth)/2, 15.65 + (49.5 - logoHeight)/2, logoWidth, logoHeight);
           } catch (err) {
             console.error('Error dibujando logo:', err);
           }
@@ -1188,10 +1253,21 @@ export default function ControlElectricoPage({ params }) {
       // Fila 2 - Dirección & Fecha
       doc.setFont('helvetica', 'bold');
       doc.text('Dirección:', 41.25, 138);
+      
       doc.setFont('helvetica', 'normal');
-      doc.text(est?.direccion || 'N/A', 103, 138);
+      const dirVal = est?.direccion || 'N/A';
+      const dirLines = doc.splitTextToSize(dirVal, 290);
+      if (dirLines.length > 1) {
+        doc.setFontSize(10);
+        doc.text(dirLines[0], 103, 134);
+        doc.text(dirLines[1], 103, 142);
+      } else {
+        doc.setFontSize(12);
+        doc.text(dirLines[0], 103, 138);
+      }
 
       doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
       doc.text('Fecha:', 402.75, 138);
       doc.setFont('helvetica', 'normal');
       doc.text(formatDate(c.fecha), 444, 138);
