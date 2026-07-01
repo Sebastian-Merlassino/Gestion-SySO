@@ -1,5 +1,136 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-06-30] Creación del Módulo de Control Visual de Instalaciones Eléctricas
+
+### Resumen de Cambios
+- **Base de Datos y Seguridad**: Se creó la migración `supabase/migrations/20260720000000_create_control_electrico.sql` para definir la tabla `public.control_electrico` con almacenamiento JSONB para el checklist de 15 ítems y políticas RLS para garantizar el aislamiento multi-tenant y los permisos de usuario (`cargar`, `editar` y `eliminar`). Se ejecutó con éxito contra Supabase.
+- **Navegación e Integración de Permisos**:
+  - Se modificó `src/components/Sidebar.js` para registrar la sección "Control Eléctrico" con la ruta `/[tenant-slug]/control-electrico` y el icono `Zap` de `lucide-react` entre "Extintores" y "Constancia de Visita".
+  - Se modificó `src/app/[tenant-slug]/equipo/page.js` para integrar de forma nativa la sección en la tabla de asignación de permisos de equipo.
+- **Página de Carga e Interfaz**: Se creó la vista `src/app/[tenant-slug]/control-electrico/page.js` adoptando la especificación **SySO Compact Layout**:
+  - Panel de filtros superior y tabla compacta con ordenamiento por cliente, establecimiento y fecha.
+  - Formulario de carga con límites de altura (`max-h-[85vh]`) y scrollbar interna.
+  - Tabla interactiva con los 15 ítems requeridos con selectores segmentados (Ok, No Ok, N.A.) y campo de texto para observaciones específicas.
+  - Panel de firmas digitales del profesional (perfil o mano) y firma del responsable (mano + aclaración) utilizando callback refs estables en canvas.
+  - Generación de reportes PDF dinámicos mediante `jsPDF` incluyendo los estados, observaciones y firmas al pie.
+- **Corrección de ReferenceError en Cierre de Sesión**: Se definió la función `handleLogout` en la página de control eléctrico, la cual estaba declarada en la llamada al componente `Sidebar` pero faltaba su definición interna en el controlador del cliente, previniendo fallos en tiempo de ejecución al interactuar con el menú de navegación lateral.
+- **Homologación de Estética y Filtros (SySO Compact Layout)**: Se corrigió la estructura del panel de filtros del módulo de control eléctrico, recolocando el buscador principal a la derecha, agrupando los selectores de Cliente y Establecimiento de forma colapsable bajo el panel grid de "Filtros de Búsqueda" con animación, y reposicionando el botón "+ Nuevo Control" en la esquina inferior derecha. Asimismo, se quitó el color de fondo `bg-[#F8FAFC]` y se agregó `overflow-y-auto` en la etiqueta `<main>` para que herede correctamente `bg-syso-bg` del layout general.
+- **Homologación del Formulario de Carga (Datos Generales)**: Se reestructuró la sección de cabecera del formulario de carga del control eléctrico en una grilla de 4 columnas idéntica a la del módulo de visitas, incluyendo la sección '1. Información del Establecimiento y Fecha', campos de autocompletado en tiempo real (C.U.I.T. y Dirección), selector de fecha (entrada de texto formateada y calendario emergente interactivo), y la reubicación del selector del Profesional Interviniente en esta misma sección, eliminando su selector duplicado de la firma al pie.
+
+### Decisiones Clave
+- **Almacenamiento Checklist en JSONB**: Evita la dispersión del esquema tabular en 30 columnas y flexibiliza cambios futuros en los 15 ítems de control de instalaciones eléctricas.
+- **RLS y Aislamiento por Cliente**: Los usuarios con rol `cliente` quedan limitados server-side a visualizar exclusivamente los registros donde `empresa_id = public.get_current_user_empresa_id()`, previniendo IDOR.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `gestion-syso-multitenant-security`
+- `next-best-practices`
+- `supabase`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260720000000_create_control_electrico.sql`
+- `[NEW] docs/adr/ADR-0005-modulo-control-electrico.md`
+- `[MODIFY] src/components/Sidebar.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[NEW] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción Next.js (`npm run build`) completada con éxito.
+- Aplicación de migración SQL PostgreSQL realizada en el backend de Supabase.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. La funcionalidad de control eléctrico hereda los mismos patrones validados del módulo de visitas de Higiene y Seguridad.
+
+### Próximo Paso Recomendado
+- Realizar pruebas integrales de firma manual utilizando dispositivos móviles y tabletas en el entorno de desarrollo y pruebas.
+
+## [2026-06-30] Filtrado de Tareas del Dashboard, Ajuste de Spacing y Homologación de Firmas en Avisos de Riesgo
+
+### Resumen de Cambios
+- **Creador de Tareas en Base de Datos**: Se creó la migración SQL `supabase/migrations/20260719000000_add_created_by_to_tareas_pendientes.sql` para añadir la columna `created_by` a la tabla `tareas_pendientes` (referenciando a `public.profiles(id)` con valor por defecto de `auth.uid()`). La migración se aplicó exitosamente en el entorno remoto de Supabase.
+- **Políticas RLS robustas**: Se ajustaron las políticas RLS (`SELECT`, `INSERT`, `UPDATE`, `DELETE`) de `tareas_pendientes` para validar que `created_by = auth.uid()` o sea nulo (para preservar acceso a tareas históricas sin creador asignado).
+- **Filtrado Server-Side en Dashboard**: Se actualizó la carga de tareas pendientes en el Dashboard para limitar los resultados por base de datos únicamente a los registros donde `created_by` coincida con el ID del usuario logueado o sea NULL.
+- **Asignación Explícita del Creador**: Se modificó `handleAddTask` para asignar de forma explícita la propiedad `created_by: currentUser?.id` al crear nuevas tareas desde el Dashboard.
+- **Ajuste de Spacing Estándar en Dashboard**: Se quitó el padding inferior `pb-8` del contenedor principal `<main>` y se añadió un espaciador de bloque de alto fijo `<div className="h-8 shrink-0 w-full block" />` al final del contenedor interno del Dashboard (que conserva su max-width del 95% y alineación mx-auto). Esto asegura que cuando hay scroll, el navegador respete de forma perfecta la separación de **32px** (32px de alto del espaciador) tanto a lo ancho como a lo alto, impidiendo que los widgets de accesos rápidos y plan toquen el borde inferior de la ventana.
+- **Homologación de Firmas en Avisos de Riesgo**: Se reformateó el bloque de firmas en `src/app/[tenant-slug]/avisos/page.js` para integrarlo completamente al estándar estético del módulo de visitas:
+  - Título y etiquetas estandarizadas: "Firma del Profesional de Higiene y Seguridad" y "Origen de Firma del Profesional".
+  - Selector de origen con formato segmentado tabulado de estilo premium.
+  - Relación de aspecto `aspect-[2/1]` configurada para la caja de canvas manual y la visualización de la firma digital de perfil.
+  - Reposicionamiento del botón de limpieza de firma alineado a la derecha en la cabecera del bloque.
+
+### Decisiones Clave
+- **Aislamiento Multi-Tenant y Seguridad**: Al restringir las tareas pendientes a nivel RLS se evita la fuga de información (IDOR) y se garantiza que cada inspector u operador vea únicamente sus propias tareas.
+- **Soporte de Compatibilidad Histórica**: Permitir `created_by IS NULL` en el filtro y políticas de RLS evita la pérdida o invisibilidad de tareas que fueron creadas previo a la incorporación de la columna de autor.
+- **Espaciador de Bloque No Colapsable**: El uso de un div vacío con clase `block h-8` y ancho completo al final del flujo del flexbox soluciona de forma definitiva el colapso del padding inferior en contenedores scrollable bajo motores Blink y Gecko, asegurando la consistencia del 95% de ancho en toda la página.
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260719000000_add_created_by_to_tareas_pendientes.sql`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+- `[MODIFY] scripts/run-single-migration.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción (`npm run build`) exitosa y sin errores de tipado o linting.
+
+### Próximo Paso Recomendado
+- Seguir auditando la interacción táctil en firmas digitales desde teléfonos móviles y tablets.
+
+## [2026-06-30] Eliminación de Vista de Calendario y Consolidación de Tabla en Programa Anual
+
+### Resumen de Cambios
+- **Remoción del Componente de Calendario**: Se eliminó del componente `ProgramaGestion` la visualización alternativa de calendario. Se removieron sus estados, constantes de nombres de meses y días, y sus funciones de generación y transición mensual de días.
+- **Eliminación del Selector de Vista**: Se quitó la botonera que alternaba entre "Programa anual" y "Calendario".
+- **Estandarización del Layout de Filtros**: Se insertó un espaciador flexible `<div className="hidden md:block flex-1"></div>` que empuja el buscador y los botones de exportación a la derecha en pantallas grandes, coincidiendo exactamente con la visualización del estándar compacto de Capacitación.
+- **Renderizado Incondicional**: Se re-estructuró el JSX para renderizar la tabla del programa de gestión anual de forma directa e incondicional.
+
+### Decisiones Clave
+- **Simplificación y Enfoque de Interfaz**: Se unificó el Programa de Gestión Anual para mostrar exclusivamente la tabla compacta estándar, lo cual mejora la velocidad de carga, evita la duplicación de código y simplifica el flujo de navegación de la página.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados
+- [page.js (Programa)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/programa/page.js)
+- [BITACORA_DESARROLLO.md](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/docs/BITACORA_DESARROLLO.md)
+
+### Validaciones Ejecutadas
+- Compilación de producción (`next build`) exitosa y sin advertencias, confirmando que la eliminación de variables no afecta a otros módulos.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. La funcionalidad de pre-completar fecha desde el Dashboard (`?add-date=YYYY-MM-DD`) sigue operativa abriendo el formulario de alta directamente.
+
+### Próximo Paso Recomendado
+- Seguir validando en producción que la UX sea óptima tras la remoción del selector.
+
+## [2026-06-30] Corrección de Casting JSONB en Permisos y Depuración de Políticas RLS de Visitas
+
+### Resumen de Cambios
+- **Corrección de Casting JSONB en Base de Datos**: Se redefinieron las funciones auxiliares de permisos `public.user_has_action_permission(p_section, p_action)` y `public.user_has_edit_permission(p_section)` en la base de datos de Supabase. Se modificó el operador de extracción de `->` (retorna un objeto JSONB que no puede castearse directamente a booleano en Postgres) a `->>` (extrae el valor como `text`), aplicando el casteo final a booleano `::boolean` de manera robusta. Esto soluciona de raíz el error `cannot cast jsonb object to type boolean` al procesar permisos de usuarios de tipo miembro.
+- **Depuración de Políticas RLS Huérfanas**: Se eliminaron de la tabla `visitas` las políticas obsoletas `visitas_tenant_write` y `visitas_tenant_isolation` que no habían sido dadas de baja durante las últimas refactorizaciones de permisos, y que seguían invocando a la función rota de permisos antiguos en inserciones y modificaciones de visitas.
+- **Sincronización y Git Push**: Se creó y versionó el script de migración SQL `supabase/migrations/20260718000000_fix_permisos_casting.sql` y se subieron los cambios a la rama principal en el repositorio remoto.
+
+### Decisiones Clave
+- **Extracción de Texto previa al Casting**: El uso del operador de extracción de texto de JSONB (`->>`) en Postgres es mandatorio para conversiones explícitas a tipos de datos nativos como booleano (`::boolean`), previniendo errores de casteo de objetos.
+- **Limpieza de Políticas Obsoletas en RLS**: Consolidar y borrar explícitamente políticas antiguas no contempladas en las reestructuraciones de RLS evita evaluaciones redundantes e inconsistencias de permisos en la base de datos.
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260718000000_fix_permisos_casting.sql`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Creación de un entorno RLS simulado de miembro mediante un script de validación local que ejecutó de manera exitosa la inserción de registros en la tabla `visitas` en Supabase bajo la sesión del miembro de equipo de prueba con permisos de tipo objeto. Se comprobó la correcta aserción de denegación de RLS en otras tablas.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. La base de datos y la consistencia de aislamiento multi-tenant se mantienen intactas.
+
+### Próximo Paso Recomendado
+- Monitorear el correcto funcionamiento del registro de constancias de visitas utilizando firmas del perfil por parte de los inspectores en producción.
+
 ## [2026-06-30] Unificación de Vencimientos y Calendario, y Reubicación de Tareas Pendientes en el Dashboard
 
 ### Resumen de Cambios

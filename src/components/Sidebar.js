@@ -16,7 +16,8 @@ import {
   ChevronLeft, 
   ChevronRight, 
   X,
-  ShieldAlert
+  ShieldAlert,
+  Zap
 } from 'lucide-react';
 
 let isHydratedGlobal = false;
@@ -53,6 +54,7 @@ export default function Sidebar({
     { id: 'accidentes', label: 'Accidentes', path: `/${tenantSlug}/accidentes`, icon: ShieldAlert },
     { id: 'matriz-riesgos', label: 'Matriz de riesgos', path: `/${tenantSlug}/matriz-riesgos`, icon: AlertTriangle },
     { id: 'extintores', label: 'Extintores', path: `/${tenantSlug}/extintores`, icon: Flame },
+    { id: 'control-electrico', label: 'Control Eléctrico', path: `/${tenantSlug}/control-electrico`, icon: Zap },
     { id: 'visitas', label: 'Constancia de Visita', path: `/${tenantSlug}/visitas`, icon: ClipboardCheck },
     { id: 'avisos', label: 'Aviso de Riesgo', path: `/${tenantSlug}/avisos`, icon: AlertTriangle },
     { id: 'legajo', label: 'Legajo Técnico', path: `/${tenantSlug}/legajo`, icon: Folder },

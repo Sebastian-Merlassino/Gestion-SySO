@@ -266,6 +266,7 @@ export default function TenantDashboard({ params }) {
           .from('tareas_pendientes')
           .select('*')
           .eq('tenant_id', ten.id)
+          .or(`created_by.eq.${user.id},created_by.is.null`)
           .order('created_at', { ascending: true });
         const { data: tData, error: tareasErr } = await tareasQuery;
         if (!tareasErr) {
@@ -512,7 +513,8 @@ export default function TenantDashboard({ params }) {
       fecha: newTaskFecha || null,
       empresa_id: newTaskEmpresaId || null,
       establecimiento_id: newTaskEstablecimientoId || null,
-      realizada: false
+      realizada: false,
+      created_by: currentUser?.id
     };
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -1809,7 +1811,6 @@ export default function TenantDashboard({ params }) {
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-
         <header className="h-16 border-b border-slate-200 flex items-center justify-between px-4 md:px-6 bg-white shrink-0 sticky top-0 z-20">
           <div className="flex items-center gap-2.5 min-w-0">
             <button
@@ -1840,7 +1841,7 @@ export default function TenantDashboard({ params }) {
             </div>
           </div>
         ) : (
-          <div className="max-w-[95%] mx-auto w-full py-8 px-4 md:px-0 flex-1 flex flex-col min-h-0 space-y-8">
+          <div className="max-w-[95%] mx-auto w-full pt-8 px-4 md:px-0 flex-1 flex flex-col min-h-0 space-y-6">
             {/* Fila del Programa de Gestión o Siniestralidad */}
             {profile && profile.role === 'cliente' ? (
               renderSiniestralidadPanel()
@@ -2440,6 +2441,8 @@ export default function TenantDashboard({ params }) {
 
               </div>
             )}
+            {/* Non-collapsible block spacer to guarantee standard 32px bottom spacing on scroll overflow */}
+            <div className="h-8 shrink-0 w-full block" />
           </div>
         )}
 

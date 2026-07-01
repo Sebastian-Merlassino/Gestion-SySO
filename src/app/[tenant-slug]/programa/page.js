@@ -49,18 +49,12 @@ import {
   Upload
 } from 'lucide-react';
 
-const MONTH_NAMES = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-];
 
-const WEEK_DAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
 export default function ProgramaGestion({ params }) {
   const tenantSlug = params['tenant-slug'];
 
   // Vistas y Cargas
-  const [view, setView] = useState('list'); // 'list' o 'calendar'
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isDevMode, setIsDevMode] = useState(false);
@@ -110,9 +104,6 @@ export default function ProgramaGestion({ params }) {
   const [miembros, setMiembros] = useState([]);
   const [catalogo, setCatalogo] = useState([]);
   const [actividades, setActividades] = useState([]);
-
-  // Estados del calendario
-  const [calendarDate, setCalendarDate] = useState(new Date());
 
   // Filtros
   const [filterEmpresa, setFilterEmpresa] = useState('');
@@ -1298,35 +1289,7 @@ export default function ProgramaGestion({ params }) {
   };
 
 
-  // 9. Lógica del Calendario
-  const currYear = calendarDate.getFullYear();
-  const currMonth = calendarDate.getMonth();
 
-  const handlePrevMonth = () => {
-    setCalendarDate(new Date(currYear, currMonth - 1, 1));
-  };
-
-  const handleNextMonth = () => {
-    setCalendarDate(new Date(currYear, currMonth + 1, 1));
-  };
-
-  const generateCalendarDays = () => {
-    const firstDayIndex = new Date(currYear, currMonth, 1).getDay(); // Domingo=0, Lunes=1...
-    const numDays = new Date(currYear, currMonth + 1, 0).getDate();
-
-    const days = [];
-    // Espacios en blanco
-    for (let i = 0; i < firstDayIndex; i++) {
-      days.push(null);
-    }
-    // Días reales
-    for (let d = 1; d <= numDays; d++) {
-      days.push(d);
-    }
-    return days;
-  };
-
-  const calendarDays = generateCalendarDays();
 
   // Filtrar establecimientos por empresa seleccionada en el formulario
   const filteredEstablecimientos = allEstablecimientos.filter(e => e.empresa_id === empresaId);
@@ -1802,23 +1765,8 @@ export default function ProgramaGestion({ params }) {
                 <div className="bg-white border border-slate-150 rounded-2xl p-3 shadow-sm space-y-3 shrink-0">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
                     
-                    {/* Selector de Vista */}
-                    <div className="flex items-center gap-1 rounded-xl bg-slate-100 p-0.5 border border-slate-200/80 self-start shrink-0">
-                      <button
-                        onClick={() => setView('list')}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${view === 'list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
-                      >
-                        <List className="h-4 w-4" />
-                        Programa anual
-                      </button>
-                      <button
-                        onClick={() => setView('calendar')}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${view === 'calendar' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
-                      >
-                        <CalendarDays className="h-4 w-4" />
-                        Calendario
-                      </button>
-                    </div>
+                    {/* Espaciador para empujar el buscador y botón a la derecha en desktop */}
+                    <div className="hidden md:block flex-1"></div>
 
                     {/* Buscador, exportaciones y flecha agrupados */}
                     <div className="flex flex-col md:flex-row md:items-center gap-2 w-full md:w-auto">
@@ -2001,120 +1949,6 @@ export default function ProgramaGestion({ params }) {
                     )}
                   </div>
                 </div>
-
-                {/* VISTA CALENDARIO */}
-                {view === 'calendar' && (
-                  <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4 overflow-auto flex flex-col" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
-
-                    {/* Cabecera del Mes del Calendario */}
-                    <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-                      <h3 className="font-outfit text-base font-extrabold text-slate-900 flex items-center gap-2">
-                        <Calendar className="h-5 w-5 text-[#468DFF]" />
-                        {MONTH_NAMES[currMonth]} {currYear}
-                      </h3>
-
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={handlePrevMonth}
-                          className="p-2 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 transition-colors text-slate-600 cursor-pointer"
-                        >
-                          <ChevronLeft className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => setCalendarDate(new Date())}
-                          className="px-3 py-2 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 text-xs font-bold transition-colors cursor-pointer text-slate-600"
-                        >
-                          Hoy
-                        </button>
-                        <button
-                          onClick={handleNextMonth}
-                          className="p-2 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 transition-colors text-slate-600 cursor-pointer"
-                        >
-                          <ChevronRight className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Grilla de días */}
-                    <div className="grid grid-cols-7 gap-1.5">
-
-                      {/* Cabecera días semana */}
-                      {WEEK_DAYS.map((day, idx) => (
-                        <div key={idx} className="text-center font-bold text-[10px] text-slate-400 uppercase tracking-widest py-2 bg-slate-50/50 rounded-lg">
-                          {day}
-                        </div>
-                      ))}
-
-                      {/* Celdas del calendario */}
-                      {calendarDays.map((day, idx) => {
-                        if (day === null) {
-                          return <div key={`empty-${idx}`} className="bg-slate-50/30 rounded-2xl border border-slate-100/50 min-h-[70px] md:min-h-[85px]" />;
-                        }
-
-                        const dateStr = `${currYear}-${String(currMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                        const dayActs = filteredActividades.filter(act => act.fecha_planificada === dateStr);
-                        const isToday = new Date().toISOString().split('T')[0] === dateStr;
-
-                        return (
-                          <div
-                            key={`day-${day}`}
-                            className={`bg-white rounded-2xl border p-2 flex flex-col justify-between group min-h-[70px] md:min-h-[85px] transition-all hover:shadow-md cursor-pointer ${isToday ? 'border-[#468DFF] ring-1 ring-[#468DFF]/30' : 'border-slate-150'}`}
-                            onClick={() => canCargar && handleAddNew(dateStr)}
-                          >
-                            {/* Indicador del número de día */}
-                            <div className="flex items-center justify-between mb-1.5">
-                              <span className={`text-xs font-extrabold px-1.5 py-0.5 rounded-md ${isToday ? 'bg-[#468DFF] text-white' : 'text-slate-800'}`}>
-                                {day}
-                              </span>
-
-                              {/* Botón rápido de agregar */}
-                              {canCargar && (
-                                <span className="opacity-0 group-hover:opacity-100 text-[10px] text-[#468DFF] hover:text-[#0511F2] font-bold transition-all transition-opacity">
-                                  + Añadir
-                                </span>
-                              )}
-                            </div>
-
-                            {/* Listado de actividades del día */}
-                            <div className="space-y-1.5 flex-1 overflow-y-auto max-h-[80px]" onClick={(e) => e.stopPropagation()}>
-                              {dayActs.map(act => {
-                                const statusInfo = getItemStatusAndColor(act);
-                                const emp = empresas.find(e => e.id === act.empresa_id);
-
-                                // Color del bloque según el estado
-                                let blockBgClass = 'bg-[#0b8043]/10 border-[#0b8043]/30 text-[#0b8043]'; // Vigente
-                                if (statusInfo.estadoText === 'Vencido') {
-                                  blockBgClass = 'bg-[#fa050b]/10 border-[#fa050b]/30 text-[#fa050b]'; // Vencido
-                                } else if (statusInfo.dateAlertColor === 'yellow') {
-                                  blockBgClass = 'bg-amber-500/10 border-amber-500/30 text-amber-600'; // Próximo
-                                }
-
-                                return (
-                                  <div
-                                    key={act.id}
-                                    onClick={(e) => { e.stopPropagation(); handleEdit(act); }}
-                                    className={`text-[10px] font-bold p-1 rounded-lg border truncate text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${blockBgClass}`}
-                                    title={`${emp?.razon_social || 'Cliente'}: ${act.descripcion}`}
-                                  >
-                                    <span className="block truncate font-semibold opacity-70">
-                                      {emp?.razon_social || 'Cliente'}
-                                    </span>
-                                    <span className="block truncate font-extrabold leading-tight">
-                                      {act.descripcion}
-                                    </span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* VISTA DE TABLA / LISTADO */}
-                {view === 'list' && (
                   <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden flex flex-col" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
                     <div className="overflow-auto flex-grow">
                       <table className="w-full border-collapse text-left min-w-[850px]">
@@ -2324,7 +2158,6 @@ export default function ProgramaGestion({ params }) {
                       </table>
                     </div>
                   </div>
-                )}
               </div>
             )}
           </div>

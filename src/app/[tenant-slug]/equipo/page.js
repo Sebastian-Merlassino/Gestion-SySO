@@ -75,7 +75,7 @@ const PROVINCIAS_ARGENTINAS = [
 ];
 
 const normalizePermisos = (perms) => {
-  const sections = ['empresas', 'equipo', 'programa', 'capacitacion', 'correctivas', 'extintores', 'visitas', 'avisos', 'legajo', 'nomina'];
+  const sections = ['empresas', 'equipo', 'programa', 'capacitacion', 'correctivas', 'extintores', 'control_electrico', 'visitas', 'avisos', 'legajo', 'nomina'];
   const normalized = {};
   sections.forEach(sec => {
     const val = perms?.[sec];
@@ -186,6 +186,7 @@ export default function EquipoPage({ params }) {
     capacitacion: { cargar: true, editar: true, eliminar: true },
     correctivas: { cargar: true, editar: true, eliminar: true },
     extintores: { cargar: true, editar: true, eliminar: true },
+    control_electrico: { cargar: true, editar: true, eliminar: true },
     visitas: { cargar: true, editar: true, eliminar: true },
     avisos: { cargar: true, editar: true, eliminar: true },
     legajo: { cargar: true, editar: true, eliminar: true }
@@ -613,6 +614,7 @@ export default function EquipoPage({ params }) {
       capacitacion: { cargar: true, editar: true, eliminar: true },
       correctivas: { cargar: true, editar: true, eliminar: true },
       extintores: { cargar: true, editar: true, eliminar: true },
+      control_electrico: { cargar: true, editar: true, eliminar: true },
       visitas: { cargar: true, editar: true, eliminar: true },
       avisos: { cargar: true, editar: true, eliminar: true },
       legajo: { cargar: true, editar: true, eliminar: true },
@@ -650,6 +652,7 @@ export default function EquipoPage({ params }) {
         capacitacion: { cargar: true, editar: true, eliminar: true },
         correctivas: { cargar: true, editar: true, eliminar: true },
         extintores: { cargar: true, editar: true, eliminar: true },
+        control_electrico: { cargar: true, editar: true, eliminar: true },
         visitas: { cargar: true, editar: true, eliminar: true },
         avisos: { cargar: true, editar: true, eliminar: true },
         legajo: { cargar: true, editar: true, eliminar: true },
@@ -1665,6 +1668,7 @@ export default function EquipoPage({ params }) {
                             capacitacion: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
                             correctivas: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
                             extintores: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
+                            control_electrico: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
                             visitas: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
                             avisos: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
                             legajo: { cargar: targetVal, editar: targetVal, eliminar: targetVal },
@@ -1693,6 +1697,7 @@ export default function EquipoPage({ params }) {
                         { key: 'capacitacion', name: 'Prog. de Capacitación' },
                         { key: 'correctivas', name: 'Acciones Correctivas' },
                         { key: 'extintores', name: 'Control de Extintores' },
+                        { key: 'control_electrico', name: 'Control Eléctrico' },
                         { key: 'visitas', name: 'Constancias de Visita' },
                         { key: 'avisos', name: 'Avisos de Riesgo' },
                         { key: 'legajo', name: 'Legajo Técnico' },
