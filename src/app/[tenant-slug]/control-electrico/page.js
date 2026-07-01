@@ -763,6 +763,13 @@ export default function ControlElectricoPage({ params }) {
 
     setSaveLoading(true);
     try {
+      const tenantIdValue = isDevMode ? 'mock-tenant' : (tenant?.id || profile?.tenant_id);
+      if (!tenantIdValue) {
+        triggerToast('No se detectó una sesión de organización activa.', 'error');
+        setSaveLoading(false);
+        return;
+      }
+
       const tempId = editingId || crypto.randomUUID();
 
       // Subir firmas si hay dibujos nuevos
@@ -807,7 +814,7 @@ export default function ControlElectricoPage({ params }) {
 
       const payload = {
         id: tempId,
-        tenant_id: tenant.id,
+        tenant_id: tenantIdValue,
         empresa_id: empresaId,
         establecimiento_id: establecimientoId,
         fecha: convertToDbDate(fecha) || null,
@@ -1169,12 +1176,13 @@ export default function ControlElectricoPage({ params }) {
 
       // Obtener nombre de la consultora de la sesión o de la base de datos
       let tenantName = tenant?.name;
-      if (!tenantName && !isDevMode) {
+      const activeTenantId = profile?.tenant_id || tenant?.id || c.tenant_id;
+      if (!tenantName && activeTenantId && !isDevMode) {
         try {
           const { data: tenData } = await supabase
             .from('tenants')
             .select('name')
-            .eq('id', c.tenant_id)
+            .eq('id', activeTenantId)
             .single();
           if (tenData) tenantName = tenData.name;
         } catch (errTen) {
@@ -1183,7 +1191,7 @@ export default function ControlElectricoPage({ params }) {
       }
       const companyName = tenantName || 'Gestión SySO';
 
-      // 3. Logo del Tenant (sin deformación y tamaño óptimo)
+      // 3. Logo del Tenant (sin deformación y tamaño idéntico a Visitas)
       let logoBase64 = '';
       try {
         if (tenant && tenant.logo_1_url) {
@@ -1196,17 +1204,24 @@ export default function ControlElectricoPage({ params }) {
         logoBase64 = await getBase64ImageFromUrl('/brand/logo-primary.png');
       }
 
-      let logoWidth = 127.5;
-      let logoHeight = 49.5;
+      if (logoBase64) {
+        logoBase64 = await resizeImageForPdf(logoBase64, 300, 300);
+      }
+
+      let logoWidth = 142.5;
+      let logoHeight = 55;
       if (logoBase64) {
         try {
           const dims = await getImgDimensions(logoBase64);
           const ratio = dims.width / dims.height;
-          logoWidth = 127.5;
-          logoHeight = 127.5 / ratio;
-          if (logoHeight > 55) {
-            logoHeight = 55;
-            logoWidth = 55 * ratio;
+          const maxW = 142.5;
+          const maxH = 55;
+          if (ratio > maxW / maxH) {
+            logoWidth = maxW;
+            logoHeight = maxW / ratio;
+          } else {
+            logoHeight = maxH;
+            logoWidth = maxH * ratio;
           }
         } catch (e) {
           console.error('Error calculando proporciones de logo:', e);
@@ -1216,7 +1231,7 @@ export default function ControlElectricoPage({ params }) {
       const drawHeaderLogo = (d) => {
         if (logoBase64) {
           try {
-            d.addImage(logoBase64, 'PNG', 37.5 + (127.5 - logoWidth)/2, 15.65 + (49.5 - logoHeight)/2, logoWidth, logoHeight);
+            d.addImage(logoBase64, 'PNG', 37.5 + (142.5 - logoWidth)/2, 15.65 + (55 - logoHeight)/2, logoWidth, logoHeight);
           } catch (err) {
             console.error('Error dibujando logo:', err);
           }
@@ -2549,11 +2564,29 @@ export default function ControlElectricoPage({ params }) {
 
       {/* TOAST FEEDBACK */}
       {toast.show && (
-        <div className={`fixed bottom-4 right-4 z-50 px-4.5 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 text-xs font-bold text-white transition-all animate-slideIn ${
-          toast.type === 'error' ? 'bg-red-500' : toast.type === 'info' ? 'bg-[#468DFF]' : 'bg-emerald-500'
+        <div className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 border animate-fade-in ${
+          toast.type === 'error' 
+            ? 'bg-red-50 border-red-200 text-red-800' 
+            : toast.type === 'info'
+            ? 'bg-blue-50 border-blue-200 text-blue-800'
+            : 'bg-green-50 border-green-200 text-green-800'
         }`}>
-          {toast.type === 'error' ? <AlertTriangle className="h-4.5 w-4.5" /> : <Check className="h-4.5 w-4.5" />}
-          <span>{toast.message}</span>
+          <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+            toast.type === 'error' 
+              ? 'bg-red-500 text-white' 
+              : toast.type === 'info'
+              ? 'bg-[#468DFF] text-white'
+              : 'bg-[#00b050] text-white'
+          }`}>
+            {toast.type === 'error' ? (
+              <AlertTriangle className="h-3.5 w-3.5" />
+            ) : toast.type === 'info' ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Check className="h-3.5 w-3.5" />
+            )}
+          </div>
+          <span className="text-xs font-semibold leading-none">{toast.message}</span>
         </div>
       )}
 
