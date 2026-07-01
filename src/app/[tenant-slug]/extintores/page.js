@@ -1383,85 +1383,48 @@ export default function ExtintoresPage({ params }) {
                       3. Inspección y Estado Visual
                     </h3>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600">Presión</label>
-                        <select
-                          value={presion}
-                          onChange={(e) => setPresion(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
-                        >
-                          {PRESION_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-                        </select>
-                      </div>
-
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600">Precinto</label>
-                        <select
-                          value={precinto}
-                          onChange={(e) => setPrecinto(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
-                        >
-                          {CHECK_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-                        </select>
-                      </div>
-
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600">Marbete</label>
-                        <select
-                          value={marbete}
-                          onChange={(e) => setMarbete(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
-                        >
-                          {CHECK_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-                        </select>
-                      </div>
-
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600">Partes Mecánicas</label>
-                        <select
-                          value={partesMecanicas}
-                          onChange={(e) => setPartesMecanicas(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
-                        >
-                          {CHECK_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600">Manguera / Boquilla</label>
-                        <select
-                          value={mangueraBoquilla}
-                          onChange={(e) => setMangueraBoquilla(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
-                        >
-                          {CHECK_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-                        </select>
-                      </div>
-
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600">Cilindro</label>
-                        <select
-                          value={cilindro}
-                          onChange={(e) => setCilindro(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
-                        >
-                          {CHECK_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-                        </select>
-                      </div>
-
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600">Señalización</label>
-                        <select
-                          value={senalizacion}
-                          onChange={(e) => setSenalizacion(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
-                        >
-                          {CHECK_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-                        </select>
-                      </div>
+                    <div className="space-y-3">
+                      {[
+                        { id: 1, label: 'Presión', value: presion, setter: setPresion, options: PRESION_OPTIONS },
+                        { id: 2, label: 'Precinto', value: precinto, setter: setPrecinto, options: CHECK_OPTIONS },
+                        { id: 3, label: 'Marbete', value: marbete, setter: setMarbete, options: CHECK_OPTIONS },
+                        { id: 4, label: 'Partes Mecánicas', value: partesMecanicas, setter: setPartesMecanicas, options: CHECK_OPTIONS },
+                        { id: 5, label: 'Manguera / Boquilla', value: mangueraBoquilla, setter: setMangueraBoquilla, options: CHECK_OPTIONS },
+                        { id: 6, label: 'Cilindro', value: cilindro, setter: setCilindro, options: CHECK_OPTIONS },
+                        { id: 7, label: 'Señalización', value: senalizacion, setter: setSenalizacion, options: CHECK_OPTIONS },
+                      ].map((item) => (
+                        <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-150 bg-white">
+                          <div className="flex gap-2 items-start">
+                            <span className="font-mono text-xs font-bold text-slate-400 mt-0.5">{item.id}.</span>
+                            <span className="text-xs font-bold text-slate-700 leading-normal">{item.label}</span>
+                          </div>
+                          <div className={`flex items-center gap-1.5 w-full shrink-0 ${item.options.length > 3 ? 'sm:w-80' : 'sm:w-48'}`}>
+                            {item.options.map(opt => {
+                              const isSelected = item.value === opt;
+                              return (
+                                <button
+                                  key={opt}
+                                  type="button"
+                                  onClick={() => item.setter(opt)}
+                                  disabled={!canEdit}
+                                  className={`flex-1 py-1.5 rounded-xl text-[10px] sm:text-xs font-bold border transition-all cursor-pointer truncate ${
+                                    isSelected
+                                      ? opt === 'Ok'
+                                        ? 'bg-[#00b050] text-white border-[#00b050] shadow-sm'
+                                        : (opt === 'No Ok' || opt === 'Despresurizado' || opt === 'Sobrepresurizado')
+                                          ? 'bg-red-500 text-white border-red-500 shadow-sm'
+                                          : 'bg-slate-500 text-white border-slate-500 shadow-sm'
+                                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-50'
+                                  }`}
+                                  title={opt}
+                                >
+                                  {opt}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
                     </div>
 
                     {/* Foto / Evidencia de Control */}
