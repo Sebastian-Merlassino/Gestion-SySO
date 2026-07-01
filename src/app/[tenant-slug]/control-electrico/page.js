@@ -1176,8 +1176,11 @@ export default function ControlElectricoPage({ params }) {
 
       // Obtener nombre de la consultora de la sesión o de la base de datos
       let tenantName = tenant?.name;
+      if (isDevMode && !tenantName) {
+        tenantName = 'Consultora de Prueba';
+      }
       const activeTenantId = profile?.tenant_id || tenant?.id || c.tenant_id;
-      if (!tenantName && activeTenantId && !isDevMode) {
+      if (!tenantName && activeTenantId) {
         try {
           const { data: tenData } = await supabase
             .from('tenants')
@@ -1231,7 +1234,8 @@ export default function ControlElectricoPage({ params }) {
       const drawHeaderLogo = (d) => {
         if (logoBase64) {
           try {
-            d.addImage(logoBase64, 'PNG', 37.5 + (142.5 - logoWidth)/2, 15.65 + (55 - logoHeight)/2, logoWidth, logoHeight);
+            // Alinear exactamente al borde izquierdo de la tabla (x = 36 pt)
+            d.addImage(logoBase64, 'PNG', 36, 15.65 + (55 - logoHeight)/2, logoWidth, logoHeight);
           } catch (err) {
             console.error('Error dibujando logo:', err);
           }
@@ -1410,8 +1414,8 @@ export default function ControlElectricoPage({ params }) {
         try {
           const sigDims = await getImgDimensions(fProfBase64);
           const sigRatio = sigDims.width / sigDims.height;
-          const maxSigW = 194.25;
-          const maxSigH = 100;
+          const maxSigW = 240;
+          const maxSigH = 120;
           let sigW = maxSigW;
           let sigH = maxSigH;
           if (sigRatio > maxSigW / maxSigH) {
@@ -1421,7 +1425,12 @@ export default function ControlElectricoPage({ params }) {
             sigH = maxSigH;
             sigW = maxSigH * sigRatio;
           }
-          const sigX = 34.5 + (maxSigW - sigW) / 2;
+          // Acotar el ancho al tramo de la línea física (194.25 pt) si excede
+          if (sigW > 194.25) {
+            sigW = 194.25;
+            sigH = 194.25 / sigRatio;
+          }
+          const sigX = 34.5 + (194.25 - sigW) / 2;
           const sigY = 652 - sigH - 5;
           doc.addImage(fProfBase64, 'PNG', sigX, sigY, sigW, sigH);
         } catch (e) {
@@ -1503,8 +1512,8 @@ export default function ControlElectricoPage({ params }) {
         const emailVal = profile?.role === 'miembro' ? (profile?.email || '') : adminContact.email;
         
         d.setFont('helvetica', 'bold');
-        const compW = d.getTextWidth(`${companyName} ®`);
-        d.text(`${companyName} ®`, 135.72, 798.68);
+        const compW = d.getTextWidth(companyName);
+        d.text(companyName, 135.72, 798.68);
         
         d.setFont('helvetica', 'normal');
         d.text(` - Tel.: ${phoneVal || '1159969956 / 1132296691'} - Email: ${emailVal || 'info@gestionsyso.com'}`, 135.72 + compW, 798.68);
