@@ -1,8 +1,13 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-07-01] Acciones de Tabla y Envío de Correo en Control Eléctrico (Fase 3)
+## [2026-07-01] Acciones de Tabla, Envío de Correo y Reporte PDF A4 en Control Eléctrico (Fase 3)
 
 ### Resumen de Cambios
+- **Maquetado y Diseño del PDF**:
+  - Se implementó un diseño de coordenadas absolutas A4 vertical (`596 x 842 pt`) en `handleExportPdfReport` siguiendo fielmente el blueprint especificado.
+  - **Página 1**: Logo a la izquierda (`37.5, 15.65`), barra de título azul institucional (`#3C78D8`), tabla de datos generales de doble columna (Razón social, CUIT, Dirección, Fecha) y la tabla de verificación de 15 ítems con contorno negro y celdas de resultado alineadas vertical y horizontalmente.
+  - **Página 2**: Logo superior, bloque de observaciones unificado (`observaciones_recomendaciones`) dentro de un contenedor de borde negro de `149 pt` de altura, y la firma punteada (`dotted`) del responsable de higiene y seguridad ubicada en el tercio inferior izquierdo (`34.5` a `228.75 pt`), con la firma real/digital dibujada encima.
+  - **Anexo Fotográfico**: Se repite el logo del tenant y el footer institucional en cada página adicional para los registros fotográficos adjuntos.
 - **Tabla de Registros y Acciones**:
   - Se unificó la cabecera de "Acciones" de la tabla a alineación derecha (`text-right w-36`).
   - Se reemplazaron las acciones por los pictogramas premium estándar del sistema:

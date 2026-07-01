@@ -1072,6 +1072,7 @@ export default function ControlElectricoPage({ params }) {
     try {
       triggerToast('Generando reporte PDF...', 'info');
 
+      // A4 portrait en pt es aprox 595.28 x 841.89 (redondeado a 596 x 842)
       const doc = new jsPDF({
         orientation: 'portrait',
         unit: 'pt',
@@ -1082,9 +1083,8 @@ export default function ControlElectricoPage({ params }) {
       const emp = empresas.find(e => e.id === c.empresa_id);
       const est = allEstablecimientos.find(e => e.id === c.establecimiento_id);
 
-      // Cargar firmas
+      // 1. Cargar firma del profesional
       let fProfBase64 = '';
-
       if (c.firma_profesional) {
         let fProfUrl = c.firma_profesional;
         if (!isDevMode && !c.firma_profesional.startsWith('http')) {
@@ -1093,10 +1093,9 @@ export default function ControlElectricoPage({ params }) {
         }
         fProfBase64 = await getBase64ImageFromUrl(fProfUrl || '/brand/logo-primary.png');
       }
+      if (fProfBase64) fProfBase64 = await resizeImageForPdf(fProfBase64, 150, 90);
 
-      if (fProfBase64) fProfBase64 = await resizeImageForPdf(fProfBase64, 150, 75);
-
-      // Cargar fotos adjuntas para el anexo
+      // 2. Cargar fotos del anexo
       const fotosBase64 = [];
       if (c.adjuntar_registros_urls && c.adjuntar_registros_urls.length > 0) {
         for (let i = 0; i < c.adjuntar_registros_urls.length; i++) {
@@ -1110,7 +1109,7 @@ export default function ControlElectricoPage({ params }) {
               }
               const b64 = await getBase64ImageFromUrl(signedUrl || '/brand/logo-primary.png');
               if (b64) {
-                const resized = await resizeImageForPdf(b64, 450, 450);
+                const resized = await resizeImageForPdf(b64, 400, 300);
                 fotosBase64.push(resized);
               }
             } catch (err) {
@@ -1120,7 +1119,7 @@ export default function ControlElectricoPage({ params }) {
         }
       }
 
-      // Logo del Tenant
+      // 3. Logo del Tenant
       let logoBase64 = '';
       try {
         if (tenant && tenant.logo_1_url) {
@@ -1133,206 +1132,283 @@ export default function ControlElectricoPage({ params }) {
         logoBase64 = await getBase64ImageFromUrl('/brand/logo-primary.png');
       }
       if (logoBase64) {
-        logoBase64 = await resizeImageForPdf(logoBase64, 120, 50);
+        logoBase64 = await resizeImageForPdf(logoBase64, 127.5, 49.5);
       }
 
-      // Dibujar cabecera
-      const drawHeader = (d) => {
+      const drawHeaderLogo = (d) => {
         if (logoBase64) {
-          d.addImage(logoBase64, 'PNG', 40, 20, 100, 40);
+          try {
+            d.addImage(logoBase64, 'PNG', 37.5, 15.65, 127.5, 49.5);
+          } catch (err) {
+            console.error('Error dibujando logo:', err);
+          }
         }
-        d.setFont('helvetica', 'bold');
-        d.setFontSize(13);
-        d.setTextColor(13, 13, 13);
-        d.text('Control Visual de Instalaciones Eléctricas', 555, 38, { align: 'right' });
-        
-        d.setFont('helvetica', 'normal');
-        d.setFontSize(8);
-        d.setTextColor(100, 100, 100);
-        d.text(`Fecha: ${formatDate(c.fecha)}`, 555, 52, { align: 'right' });
-
-        d.setDrawColor(217, 217, 217);
-        d.setLineWidth(1);
-        d.line(40, 70, 555, 70);
       };
 
-      drawHeader(doc);
+      // ==========================================
+      // PÁGINA 1
+      // ==========================================
+      drawHeaderLogo(doc);
 
-      // Bloque de información general
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
-      doc.setTextColor(13, 13, 13);
-      doc.text('INFORMACIÓN DE CONTROL', 40, 95);
-
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.setTextColor(80, 80, 80);
-      doc.text(`Razón Social:`, 40, 115);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(13, 13, 13);
-      doc.text(emp?.razon_social || 'N/A', 110, 115);
-
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(80, 80, 80);
-      doc.text(`Establecimiento:`, 40, 130);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(13, 13, 13);
-      doc.text(`${est?.denominacion || 'N/A'} (${est?.direccion || 'Sin dirección'})`, 120, 130);
-
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(80, 80, 80);
-      doc.text(`Profesional:`, 40, 145);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(13, 13, 13);
-      doc.text(c.profesional_nombre || 'N/A', 105, 145);
-
-      // Tabla de ítems checked
-      const headers = [['N°', 'Ítem a Verificar', 'Estado']];
-      const body = (c.items || INITIAL_ITEMS).map(it => [
-        it.id.toString(),
-        it.text,
-        it.estado || 'N/A'
-      ]);
-
-      autoTable(doc, {
-        head: headers,
-        body: body,
-        startY: 165,
-        margin: { top: 90, bottom: 120, left: 40, right: 40 },
-        theme: 'striped',
-        rowPageBreak: 'avoid',
-        headStyles: { fillColor: [70, 141, 255], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
-        bodyStyles: { fontSize: 7.5, textColor: [50, 50, 50], minCellHeight: 18 },
-        columnStyles: {
-          0: { cellWidth: 35 },
-          1: { cellWidth: 400 },
-          2: { cellWidth: 80, fontStyle: 'bold', halign: 'center' }
-        },
-        didDrawPage: function(data) {
-          if (data.pageNumber > 1) {
-            drawHeader(doc);
-          }
-        }
-      });
-
-      // Añadir observaciones finales y firmas en la última página
-      let finalY = doc.previousAutoTable.finalY + 15;
-      
-      const pageHeight = doc.internal.pageSize.getHeight();
-      if (finalY + 150 > pageHeight) {
-        doc.addPage();
-        drawHeader(doc);
-        finalY = 90;
-      }
-
-      if (c.observaciones) {
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(9);
-        doc.text('Observaciones Generales:', 40, finalY);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8.5);
-        doc.setTextColor(80, 80, 80);
-        
-        const splitObs = doc.splitTextToSize(c.observaciones, 515);
-        doc.text(splitObs, 40, finalY + 13);
-        finalY += (splitObs.length * 11) + 20;
-      }
-
-      if (finalY + 110 > pageHeight) {
-        doc.addPage();
-        drawHeader(doc);
-        finalY = 90;
-      }
-
-      // Dibujar bloque de firmas
-      doc.setDrawColor(230, 230, 230);
+      // Barra de Título
+      doc.setFillColor(60, 120, 216); // #3C78D8
+      doc.rect(36, 75.2, 522.75, 18, 'F');
+      doc.setDrawColor(0, 0, 0);
       doc.setLineWidth(1);
-      doc.line(40, finalY, 555, finalY);
+      doc.rect(36, 75.2, 522.75, 18, 'S');
 
-      const sigY = finalY + 15;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(14);
+      doc.setTextColor(255, 255, 255);
+      doc.text('Inspección Visual de Instalaciones Eléctricas', 297.37, 88.5, { align: 'center' });
 
-      // Firma Profesional Única Centrada
+      // Tabla de Datos Generales
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(1);
+      // Contorno exterior
+      doc.rect(36, 107, 523, 37, 'S');
+      // Línea horizontal media
+      doc.line(36, 125.5, 559, 125.5);
+      // Línea vertical central
+      doc.line(397.5, 107, 397.5, 144);
+
+      // Fila 1 - Razón Social & CUIT
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text('Razón social:', 41.25, 120);
+      doc.setFont('helvetica', 'normal');
+      doc.text(emp?.razon_social || 'N/A', 118, 120);
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('C.U.I.T.:', 402.75, 120);
+      doc.setFont('helvetica', 'normal');
+      doc.text(emp?.cuit || 'N/A', 452, 120);
+
+      // Fila 2 - Dirección & Fecha
+      doc.setFont('helvetica', 'bold');
+      doc.text('Dirección:', 41.25, 138);
+      doc.setFont('helvetica', 'normal');
+      doc.text(est?.direccion || 'N/A', 103, 138);
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('Fecha:', 402.75, 138);
+      doc.setFont('helvetica', 'normal');
+      doc.text(formatDate(c.fecha), 444, 138);
+
+      // Tabla de Inspección - Encabezado
+      doc.setFillColor(60, 120, 216); // #3C78D8
+      doc.rect(36, 158.3, 522.5, 26.2, 'F');
+      
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(1);
+      doc.rect(36, 158.3, 522.5, 26.2, 'S');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.setTextColor(255, 255, 255);
+      doc.text('N°', 48.5, 175.5, { align: 'center' });
+      doc.text('Ítem a Verificar', 250, 175.5, { align: 'center' });
+      
+      doc.setFontSize(10);
+      doc.text('Ok / No Ok / No aplica', 499, 174.5, { align: 'center' });
+
+      // Tabla de Inspección - Filas
+      const yLines = [
+        158.5, 184.5, 216.5, 249.5, 281.5, 313.5, 345.5, 378.5, 
+        410.5, 442.5, 474.5, 507.5, 539.5, 571.5, 603.5, 636.5, 668.5
+      ];
+
+      // Dibujar líneas horizontales
+      for (let i = 0; i < yLines.length; i++) {
+        doc.line(36, yLines[i], 558.5, yLines[i]);
+      }
+      // Dibujar líneas verticales
+      const xLines = [36.5, 60.5, 439.5, 558.5];
+      for (let i = 0; i < xLines.length; i++) {
+        doc.line(xLines[i], 158.5, xLines[i], 668.5);
+      }
+
+      // Renderizar items y respuestas
+      const itemsList = c.items || INITIAL_ITEMS;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+
+      for (let i = 0; i < 15; i++) {
+        const yStart = yLines[i + 1];
+        const yEnd = yLines[i + 2];
+        const it = itemsList[i] || { id: i + 1, text: '', estado: '' };
+
+        // Columna N°
+        doc.text((i + 1).toString(), 48.5, yStart + 20, { align: 'center' });
+
+        // Columna Ítem a Verificar (salto de línea automático si es largo)
+        const itLines = doc.splitTextToSize(it.text || '', 370);
+        if (itLines.length === 1) {
+          doc.text(itLines[0], 65.25, yStart + 20);
+        } else {
+          doc.text(itLines[0], 65.25, yStart + 14);
+          doc.text(itLines[1], 65.25, yStart + 26);
+        }
+
+        // Columna Estado
+        if (it.estado) {
+          doc.setFont('helvetica', 'bold');
+          doc.text(it.estado, 499, yStart + 20, { align: 'center' });
+          doc.setFont('helvetica', 'normal');
+        }
+      }
+
+      // ==========================================
+      // PÁGINA 2
+      // ==========================================
+      doc.addPage();
+      drawHeaderLogo(doc);
+
+      // Bloque de Observaciones
+      // Barra de Título
+      doc.setFillColor(60, 120, 216); // #3C78D8
+      doc.rect(36, 89, 523, 24.75, 'F');
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(1);
+      doc.rect(36, 89, 523, 24.75, 'S');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.setTextColor(255, 255, 255);
+      doc.text('Observaciones / Recomendaciones', 297.5, 105, { align: 'center' });
+
+      // Área de Escritura
+      doc.setFillColor(255, 255, 255);
+      doc.rect(36, 113.75, 523, 149, 'F');
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(1);
+      doc.rect(36, 113.75, 523, 149, 'S');
+
+      // Texto Observaciones
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      const obsText = c.observaciones || 'N/A.';
+      const splitObs = doc.splitTextToSize(obsText, 510);
+      let curObsY = 130;
+      for (let idx = 0; idx < splitObs.length; idx++) {
+        if (curObsY < 255) {
+          doc.text(splitObs[idx], 42, curObsY);
+          curObsY += 13.8;
+        }
+      }
+
+      // Bloque de Firma
+      // Firma real del profesional
       if (fProfBase64 && fProfBase64.startsWith('data:image/')) {
         try {
-          doc.addImage(fProfBase64, 'PNG', 237.64, sigY, 120, 60);
+          // Centrar firma horizontalmente sobre el tramo 34.5 a 228.75 (ancho 194.25)
+          const sigW = 120;
+          const sigH = 65;
+          const sigX = 34.5 + (194.25 - sigW) / 2;
+          const sigY = 652 - sigH - 5;
+          doc.addImage(fProfBase64, 'PNG', sigX, sigY, sigW, sigH);
         } catch (e) {
-          console.error(e);
+          console.error('Error insertando firma en reporte:', e);
         }
       }
-      doc.setDrawColor(180, 180, 180);
-      doc.line(207.64, sigY + 65, 387.64, sigY + 65);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8.5);
-      doc.setTextColor(13, 13, 13);
-      doc.text('Firma del Profesional de SySO', 297.64, sigY + 77, { align: 'center' });
+
+      // Línea de firma punteada
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(1);
+      doc.setLineDashPattern([2, 2], 0);
+      doc.line(34.5, 652, 228.75, 652);
+      doc.setLineDashPattern([], 0);
+
+      // Texto de Aclaración de Firma
       doc.setFont('helvetica', 'normal');
-      doc.setTextColor(100, 100, 100);
-      doc.text(c.profesional_nombre || 'N/A', 297.64, sigY + 87, { align: 'center' });
-      doc.text('Responsable de Higiene y Seguridad', 297.64, sigY + 97, { align: 'center' });
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      doc.text('Firma y aclaración del responsable', 131.62, 665, { align: 'center' });
 
-      // Anexo fotográfico si existen fotos adjuntas
+      doc.setFont('helvetica', 'bold');
+      doc.text(c.profesional_nombre || 'N/A', 131.62, 680, { align: 'center' });
+      
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.text('Responsable de Higiene y Seguridad', 131.62, 692, { align: 'center' });
+
+      // ==========================================
+      // ANEXO FOTOGRÁFICO (Páginas 3+)
+      // ==========================================
       if (fotosBase64.length > 0) {
-        doc.addPage();
-        drawHeader(doc);
-        
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(11);
-        doc.setTextColor(13, 13, 13);
-        doc.text('ANEXO FOTOGRÁFICO', 40, 95);
-
-        let curPhotoY = 115;
         for (let i = 0; i < fotosBase64.length; i++) {
-          if (curPhotoY + 240 > pageHeight - 60) {
-            doc.addPage();
-            drawHeader(doc);
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(11);
-            doc.setTextColor(13, 13, 13);
-            doc.text('ANEXO FOTOGRÁFICO (Continuación)', 40, 95);
-            curPhotoY = 115;
-          }
+          doc.addPage();
+          drawHeaderLogo(doc);
+
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(12);
+          doc.setTextColor(0, 0, 0);
+          doc.text('ANEXO FOTOGRÁFICO', 36, 85);
 
           const fotoB64 = fotosBase64[i];
           if (fotoB64 && fotoB64.startsWith('data:image/')) {
             try {
-              doc.setDrawColor(220, 220, 220);
+              // Borde de la foto
+              doc.setDrawColor(200, 200, 200);
               doc.setLineWidth(1);
-              doc.rect(137.5, curPhotoY, 320, 210);
+              doc.rect(98, 160, 400, 300);
 
-              doc.addImage(fotoB64, 'PNG', 140, curPhotoY + 2, 316, 206);
-              
+              // Render de foto
+              doc.addImage(fotoB64, 'PNG', 100, 162, 396, 296);
+
               doc.setFont('helvetica', 'normal');
-              doc.setFontSize(8);
+              doc.setFontSize(9);
               doc.setTextColor(120, 120, 120);
-              doc.text(`Registro Fotográfico N° ${i + 1}`, 297.5, curPhotoY + 225, { align: 'center' });
-
-              curPhotoY += 250;
-            } catch (e) {
-              console.error('Error al agregar foto al PDF:', e);
+              doc.text(`Registro Fotográfico N° ${i + 1}`, 297.5, 485, { align: 'center' });
+            } catch (err) {
+              console.error('Error insertando foto en anexo:', err);
             }
           }
         }
       }
 
-      // Pie de página general
-      const pagesCount = doc.internal.getNumberOfPages();
-      for (let i = 1; i <= pagesCount; i++) {
-        doc.setPage(i);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7.5);
-        doc.setTextColor(150, 150, 150);
-        
-        doc.setDrawColor(230, 230, 230);
-        doc.line(40, pageHeight - 40, 555, pageHeight - 40);
+      // ==========================================
+      // PIE DE PÁGINA GENERAL (Se aplica a todas las páginas al final)
+      // ==========================================
+      const totalPages = doc.internal.getNumberOfPages();
+      
+      const drawFooter = (d, pageNum) => {
+        // Barra azul inferior
+        d.setFillColor(60, 120, 216); // #3C78D8
+        d.rect(34.5, 780.9, 525.75, 10.5, 'F');
 
+        // Texto institucional
+        d.setFont('helvetica', 'normal');
+        d.setFontSize(8);
+        d.setTextColor(0, 0, 0);
+        
         const companyName = tenant?.name || 'Gestión SySO';
         const phoneVal = profile?.role === 'miembro' ? (profile?.phone || '') : adminContact.phone;
         const emailVal = profile?.role === 'miembro' ? (profile?.email || '') : adminContact.email;
-        const footerText = `${companyName} - Tel: ${phoneVal} - Email: ${emailVal}`;
-        doc.text(footerText, 297.5, pageHeight - 27, { align: 'center' });
-        doc.text(`Página ${i} de ${pagesCount}`, 555, pageHeight - 27, { align: 'right' });
+        
+        d.setFont('helvetica', 'bold');
+        const compW = d.getTextWidth(`${companyName} ®`);
+        d.text(`${companyName} ®`, 135.72, 798.68);
+        
+        d.setFont('helvetica', 'normal');
+        d.text(` - Tel.: ${phoneVal || '1159969956 / 1132296691'} - Email: ${emailVal || 'info@gestionsyso.com'}`, 135.72 + compW, 798.68);
+
+        // Número de página
+        d.setFont('helvetica', 'normal');
+        d.setFontSize(9);
+        d.setTextColor(128, 128, 128); // #808080
+        d.text(`Página ${pageNum} de ${totalPages}`, 552.75, 799.05, { align: 'right' });
+      };
+
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        drawFooter(doc, i);
       }
 
+      // Acciones de salida
       if (shouldPrint) {
         doc.autoPrint();
         const blobUrl = doc.output('bloburl');
