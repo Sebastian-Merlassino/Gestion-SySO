@@ -2,7 +2,6 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
@@ -20,34 +19,27 @@ import {
   Trash2, 
   Edit, 
   AlertTriangle, 
-  Briefcase, 
-  Settings, 
-  LogOut, 
-  Menu,
-  ClipboardList,
-  Calendar,
-  Eye,
+  ClipboardList, 
+  Calendar, 
+  FileText, 
+  Sliders, 
+  Send, 
+  Download, 
+  Mail, 
+  CheckSquare, 
+  Trash, 
+  ChevronUp, 
+  ChevronDown,
   ArrowLeft,
-  ChevronLeft,
-  ChevronRight,
-  Printer,
-  FileText,
-  Sliders,
-  Send,
-  Download,
-  Mail,
-  Info,
-  CheckSquare,
-  ListPlus,
-  Trash,
-  ChevronUp,
-  ChevronDown
+  Menu
 } from 'lucide-react';
 
 export default function ChecklistPersonalizadosPage({ params }) {
   const tenantSlug = params['tenant-slug'];
 
-  // Estados estructurales
+  // ==========================================
+  // ESTADOS Y REFERENCIAS
+  // ==========================================
   const [profile, setProfile] = useState(() => {
     if (typeof window !== 'undefined') {
       const cached = sessionStorage.getItem('user-profile');
@@ -56,6 +48,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
     return null;
   });
   const [tenant, setTenant] = useState(null);
+  const [adminContact, setAdminContact] = useState({ email: 'info@gestionsyso.com', phone: '1159969956 / 1132296691' });
   const [empresas, setEmpresas] = useState([]);
   const [allEstablecimientos, setAllEstablecimientos] = useState([]);
   const [miembrosList, setMiembrosList] = useState([]);
@@ -63,9 +56,82 @@ export default function ChecklistPersonalizadosPage({ params }) {
   const [isDevMode, setIsDevMode] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [activeTab, setActiveTab] = useState('inspecciones'); // 'inspecciones' o 'plantillas'
+  const [activeTab, setActiveTab] = useState('inspecciones'); // 'inspecciones' | 'plantillas'
 
-  // Permisos granulares de edición
+  // Datos principales
+  const [templates, setTemplates] = useState([]);
+  const [inspecciones, setInspecciones] = useState([]);
+
+  // Estados CRUD: Diseñador de Plantillas (Builder)
+  const [isTemplateFormOpen, setIsTemplateFormOpen] = useState(false);
+  const [editingTemplateId, setEditingTemplateId] = useState(null);
+  const [templateNombre, setTemplateNombre] = useState('');
+  const [configCampos, setConfigCampos] = useState({
+    razon_social: true,
+    establecimiento: true,
+    direccion: true,
+    cuit: true,
+    fecha: true
+  });
+  const [templateItems, setTemplateItems] = useState([]);
+  const [bloqueImagenes, setBloqueImagenes] = useState(false);
+  const [bloqueFirmas, setBloqueFirmas] = useState({
+    responsable_establecimiento: false,
+    responsable_higiene_seguridad: false
+  });
+
+  // Estados CRUD: Inspecciones (Runner)
+  const [isInspeccionFormOpen, setIsInspeccionFormOpen] = useState(false);
+  const [editingInspeccionId, setEditingInspeccionId] = useState(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState('');
+  const [inspeccionEmpresaId, setInspeccionEmpresaId] = useState('');
+  const [inspeccionEstablecimientoId, setInspeccionEstablecimientoId] = useState('');
+  const [inspeccionFecha, setInspeccionFecha] = useState('');
+  const [inspeccionRespuestas, setInspeccionRespuestas] = useState([]);
+  const [fotosFiles, setFotosFiles] = useState([]);
+  const [firmaRespSavedUrl, setFirmaRespSavedUrl] = useState('');
+  const [firmaProfSavedUrl, setFirmaProfSavedUrl] = useState('');
+  const [firmaTipo, setFirmaTipo] = useState('perfil'); // 'perfil' | 'mano'
+  const [profesionalTipo, setProfesionalTipo] = useState('miembro'); // 'miembro' | 'manual'
+  const [profesionalId, setProfesionalId] = useState('');
+  const [profesionalNombre, setProfesionalNombre] = useState('');
+  const [responsableAclaracion, setResponsableAclaracion] = useState('');
+  const [inspeccionObservaciones, setInspeccionObservaciones] = useState('');
+  const [isInspeccionReadOnly, setIsInspeccionReadOnly] = useState(false);
+
+  // Canvas para firmas manuscritas
+  const [hasSignedResp, setHasSignedResp] = useState(false);
+  const [hasSignedProf, setHasSignedProf] = useState(false);
+  const firmaRespCanvasRef = useRef(null);
+  const firmaProfCanvasRef = useRef(null);
+  const [firmaPerfilPreviewUrl, setFirmaPerfilPreviewUrl] = useState('');
+  const [signaturePath, setSignaturePath] = useState('');
+
+  // Filtros de Inspecciones
+  const [filterText, setFilterText] = useState('');
+  const [filterEmpresa, setFilterEmpresa] = useState('');
+  const [filterTemplate, setFilterTemplate] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Ordenamiento
+  const [sortField, setSortField] = useState('fecha');
+  const [sortOrder, setSortOrder] = useState('desc');
+
+  // Toasts y Modal Alert
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
+  const [saveLoading, setSaveLoading] = useState(false);
+
+  // Correo
+  const [isMailModalOpen, setIsMailModalOpen] = useState(false);
+  const [mailTargetInspeccion, setMailTargetInspeccion] = useState(null);
+  const [availableEmails, setAvailableEmails] = useState([]);
+  const [manualEmail, setManualEmail] = useState('');
+  const [mailLoading, setMailLoading] = useState(false);
+
+  // ==========================================
+  // PERMISOS DE SECCION
+  // ==========================================
   const getSectionPermissions = (userProfile, sectionName) => {
     if (!userProfile) return { cargar: true, editar: true, eliminar: true };
     if (userProfile.role === 'cliente') return { cargar: false, editar: false, eliminar: false };
@@ -86,6 +152,9 @@ export default function ChecklistPersonalizadosPage({ params }) {
   const canEliminar = sectionPerms.eliminar;
   const isReadOnlyView = profile?.role === 'cliente';
 
+  // ==========================================
+  // EFECTOS (USEEFFECT)
+  // ==========================================
   useEffect(() => {
     const collapsed = localStorage.getItem('sidebar-collapsed');
     if (collapsed === 'true') {
@@ -99,78 +168,6 @@ export default function ChecklistPersonalizadosPage({ params }) {
     localStorage.setItem('sidebar-collapsed', String(newVal));
   };
 
-  // Datos principales de checklist personalizados
-  const [templates, setTemplates] = useState([]);
-  const [inspecciones, setInspecciones] = useState([]);
-  
-  // Estados para CRUD de Plantillas (Builder)
-  const [isTemplateFormOpen, setIsTemplateFormOpen] = useState(false);
-  const [editingTemplateId, setEditingTemplateId] = useState(null);
-  const [templateNombre, setTemplateNombre] = useState('');
-  const [configCampos, setConfigCampos] = useState({
-    razon_social: true,
-    establecimiento: true,
-    direccion: true,
-    cuit: true,
-    fecha: true
-  });
-  const [templateItems, setTemplateItems] = useState([]);
-  const [bloqueImagenes, setBloqueImagenes] = useState(false);
-  const [bloqueFirmas, setBloqueFirmas] = useState({
-    responsable_establecimiento: false,
-    responsable_higiene_seguridad: false
-  });
-
-  // Estados para CRUD de Inspecciones (Runner)
-  const [isInspeccionFormOpen, setIsInspeccionFormOpen] = useState(false);
-  const [editingInspeccionId, setEditingInspeccionId] = useState(null);
-  const [selectedTemplateId, setSelectedTemplateId] = useState('');
-  const [inspeccionEmpresaId, setInspeccionEmpresaId] = useState('');
-  const [inspeccionEstablecimientoId, setInspeccionEstablecimientoId] = useState('');
-  const [inspeccionFecha, setInspeccionFecha] = useState('');
-  const [inspeccionRespuestas, setInspeccionRespuestas] = useState([]);
-  const [fotosFiles, setFotosFiles] = useState([]);
-  const [firmaRespSavedUrl, setFirmaRespSavedUrl] = useState('');
-  const [firmaProfSavedUrl, setFirmaProfSavedUrl] = useState('');
-  const [firmaTipo, setFirmaTipo] = useState('perfil'); // 'perfil' o 'mano'
-  const [profesionalTipo, setProfesionalTipo] = useState('miembro'); // 'miembro' o 'manual'
-  const [profesionalId, setProfesionalId] = useState('');
-  const [profesionalNombre, setProfesionalNombre] = useState('');
-  const [responsableAclaracion, setResponsableAclaracion] = useState('');
-  const [inspeccionObservaciones, setInspeccionObservaciones] = useState('');
-  const [isInspeccionReadOnly, setIsInspeccionReadOnly] = useState(false);
-
-  // Canvas Refs & Signature states
-  const [hasSignedResp, setHasSignedResp] = useState(false);
-  const [hasSignedProf, setHasSignedProf] = useState(false);
-  const firmaRespCanvasRef = useRef(null);
-  const firmaProfCanvasRef = useRef(null);
-  const [firmaPerfilPreviewUrl, setFirmaPerfilPreviewUrl] = useState('');
-  const [signaturePath, setSignaturePath] = useState('');
-
-  // Filtros de Inspecciones
-  const [filterText, setFilterText] = useState('');
-  const [filterEmpresa, setFilterEmpresa] = useState('');
-  const [filterTemplate, setFilterTemplate] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
-
-  // Ordenamiento
-  const [sortField, setSortField] = useState('fecha');
-  const [sortOrder, setSortOrder] = useState('desc');
-
-  // Modales y Feedback
-  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
-  const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
-  const [saveLoading, setSaveLoading] = useState(false);
-
-  // Envío por correo
-  const [isMailModalOpen, setIsMailModalOpen] = useState(false);
-  const [mailTargetInspeccion, setMailTargetInspeccion] = useState(null);
-  const [availableEmails, setAvailableEmails] = useState([]);
-  const [manualEmail, setManualEmail] = useState('');
-  const [mailLoading, setMailLoading] = useState(false);
-
-  // Carga inicial de datos
   useEffect(() => {
     const checkEnvAndLoad = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -184,14 +181,38 @@ export default function ChecklistPersonalizadosPage({ params }) {
     checkEnvAndLoad();
   }, []);
 
-  // Auto-filtrar por cliente si es rol cliente
   useEffect(() => {
     if (profile && profile.role === 'cliente' && profile.empresa_id) {
       setFilterEmpresa(profile.empresa_id);
     }
   }, [profile]);
 
-  // Auxiliar para resolver firmas y evitar 404s en modo simulación o con URLs inexistentes
+  // Sincronizar firma del perfil del profesional interviniente
+  useEffect(() => {
+    const resolveProfileSignaturePreview = async () => {
+      if (!signaturePath || firmaTipo !== 'perfil' || !isInspeccionFormOpen) {
+        setFirmaPerfilPreviewUrl('');
+        return;
+      }
+      const url = await getFirmaUrl(signaturePath, 'perfil');
+      setFirmaPerfilPreviewUrl(url);
+    };
+    resolveProfileSignaturePreview();
+  }, [isInspeccionFormOpen, signaturePath, profesionalTipo, firmaTipo, isDevMode]);
+
+  // ==========================================
+  // HELPERS Y TOASTS
+  // ==========================================
+  const triggerToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: '', type: 'success' });
+    }, 4000);
+  };
+
+  const closeAlert = () => setModalAlert({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
+
+  // Auxiliar para resolver firmas y evitar 404s
   const getFirmaUrl = async (path, type) => {
     if (!path) return '';
     if (path.startsWith('data:')) return path;
@@ -199,7 +220,6 @@ export default function ChecklistPersonalizadosPage({ params }) {
     try {
       let relativePath = path;
       let isExternal = false;
-      
       if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
         try {
           const urlObj = new URL(relativePath);
@@ -214,52 +234,24 @@ export default function ChecklistPersonalizadosPage({ params }) {
           isExternal = true;
         }
       }
-
-      if (isExternal) {
-        return relativePath;
-      }
+      if (isExternal) return relativePath;
 
       const bucketName = type === 'perfil' ? 'signatures' : 'documents';
       const { data: sData, error: sErr } = await supabase.storage
         .from(bucketName)
         .createSignedUrl(relativePath, 3600);
-      
-      if (!sErr && sData?.signedUrl) {
-        return sData.signedUrl;
-      }
+      if (!sErr && sData?.signedUrl) return sData.signedUrl;
     } catch (e) {
       console.error('Error resolviendo firma:', e);
     }
     return '/brand/logo-primary.png';
   };
 
-  // Sincronizar firma del profesional interviniente al cambiar de profesional o tipo
-  useEffect(() => {
-    const resolveProfileSignaturePreview = async () => {
-      if (!signaturePath || firmaTipo !== 'perfil' || !isInspeccionFormOpen) {
-        setFirmaPerfilPreviewUrl('');
-        return;
-      }
-      const url = await getFirmaUrl(signaturePath, 'perfil');
-      setFirmaPerfilPreviewUrl(url);
-    };
-
-    resolveProfileSignaturePreview();
-  }, [isInspeccionFormOpen, signaturePath, profesionalTipo, firmaTipo, isDevMode]);
-
-  const triggerToast = (message, type = 'success') => {
-    setToast({ show: true, message, type });
-    setTimeout(() => {
-      setToast({ show: false, message: '', type: 'success' });
-    }, 4000);
-  };
-
-  const closeAlert = () => setModalAlert({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
-
-  // Cargar mock data en modo desarrollo local
+  // ==========================================
+  // CARGA DE DATOS (MOCK / REAL)
+  // ==========================================
   const loadMockData = () => {
     setTenant({ id: 'mock-tenant-1', name: 'SySO Consultora Integral', logo_1_url: '/brand/logo-primary.png' });
-    
     const mockEmpresas = [
       { id: 'mock-empresa-1', razon_social: 'Ams Inversiones S.A.', cuit: '30123456789' },
       { id: 'mock-empresa-2', razon_social: 'Argento Via Publica', cuit: '30987654321' }
@@ -285,23 +277,13 @@ export default function ChecklistPersonalizadosPage({ params }) {
         nombre: 'Inspección General de EPP',
         config_campos: { razon_social: true, establecimiento: true, direccion: true, cuit: true, fecha: true },
         items: [
-          { id: '1', pregunta: '¿El personal posee calzado de seguridad en buen estado?', tipo_respuesta: 'botones', opciones_botones: ['Ok', 'No Ok', 'N/A'], con_otro: true },
-          { id: '2', pregunta: '¿Uso de arnés en trabajos en altura superior a 2 metros?', tipo_respuesta: 'botones', opciones_botones: ['Si', 'No', 'N/A'], con_otro: false },
-          { id: '3', pregunta: 'Observaciones sobre el uso de EPP', tipo_respuesta: 'texto' }
+          { id: '1', pregunta: '¿El personal posee calzado de seguridad en buen estado?', tipo_respuesta: 'botones', opciones_botones: ['Ok', 'No Ok', 'N/A'], con_otro: false, requerido: true },
+          { id: '2', pregunta: '¿Uso de arnés en trabajos en altura superior a 2 metros?', tipo_respuesta: 'botones', opciones_botones: ['Si', 'No', 'N/A'], con_otro: false, requerido: true },
+          { id: '3', pregunta: '¿Se verifica el uso de casco de seguridad?', tipo_respuesta: 'check list', requerido: true },
+          { id: '4', pregunta: 'Observaciones sobre el uso de EPP', tipo_respuesta: 'texto', requerido: false }
         ],
         bloque_imagenes: true,
         bloque_firmas: { responsable_establecimiento: true, responsable_higiene_seguridad: true }
-      },
-      {
-        id: 'mock-template-2',
-        nombre: 'Control de Orden y Limpieza 5S',
-        config_campos: { razon_social: true, establecimiento: true, direccion: false, cuit: false, fecha: true },
-        items: [
-          { id: '1', pregunta: '¿Pasillos y salidas de emergencia se encuentran obstruidos?', tipo_respuesta: 'botones', opciones_botones: ['Si', 'No'], con_otro: false },
-          { id: '2', pregunta: '¿Herramientas limpias y ordenadas en sus tableros?', tipo_respuesta: 'botones', opciones_botones: ['Ok', 'No Ok'], con_otro: true }
-        ],
-        bloque_imagenes: false,
-        bloque_firmas: { responsable_establecimiento: false, responsable_higiene_seguridad: true }
       }
     ];
     setTemplates(mockTemplates);
@@ -317,7 +299,8 @@ export default function ChecklistPersonalizadosPage({ params }) {
         respuestas: [
           { pregunta_id: '1', pregunta: '¿El personal posee calzado de seguridad en buen estado?', respuesta: 'Ok', detalle_otro: '' },
           { pregunta_id: '2', pregunta: '¿Uso de arnés en trabajos en altura superior a 2 metros?', respuesta: 'N/A', detalle_otro: '' },
-          { pregunta_id: '3', pregunta: 'Observaciones sobre el uso de EPP', respuesta: 'Se realiza llamado de atención a un operario por no ajustar antiparras.', detalle_otro: '' }
+          { pregunta_id: '3', pregunta: '¿Se verifica el uso de casco de seguridad?', respuesta: 'Si', detalle_otro: '' },
+          { pregunta_id: '4', pregunta: 'Observaciones sobre el uso de EPP', respuesta: 'Se realiza llamado de atención a un operario por no ajustar antiparras.', detalle_otro: '' }
         ],
         adjuntar_registros_urls: [],
         firma_responsable_establecimiento: 'mock-signature-resp',
@@ -334,7 +317,6 @@ export default function ChecklistPersonalizadosPage({ params }) {
     setLoading(false);
   };
 
-  // Cargar datos reales desde Supabase
   const loadRealData = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -343,7 +325,6 @@ export default function ChecklistPersonalizadosPage({ params }) {
         return;
       }
 
-      // Perfil
       const { data: prof, error: pErr } = await supabase
         .from('profiles')
         .select('*')
@@ -355,7 +336,6 @@ export default function ChecklistPersonalizadosPage({ params }) {
         sessionStorage.setItem('user-profile', JSON.stringify(prof));
       }
 
-      // Tenant
       const { data: ten, error: tErr } = await supabase
         .from('tenants')
         .select('*')
@@ -364,7 +344,6 @@ export default function ChecklistPersonalizadosPage({ params }) {
       if (tErr) throw tErr;
       setTenant(ten);
 
-      // Empresas / Clientes
       const { data: empData, error: empErr } = await supabase
         .from('empresas')
         .select('id, razon_social, cuit')
@@ -372,14 +351,12 @@ export default function ChecklistPersonalizadosPage({ params }) {
       if (empErr) throw empErr;
       setEmpresas(empData);
 
-      // Establecimientos
       const { data: estData, error: estErr } = await supabase
         .from('establecimientos')
         .select('id, empresa_id, denominacion, direccion');
       if (estErr) throw estErr;
       setAllEstablecimientos(estData);
 
-      // Miembros Equipo (corregido a signature_url, profile_id)
       const { data: miembData, error: miembErr } = await supabase
         .from('miembros_equipo')
         .select('id, full_name, signature_url, profile_id')
@@ -387,7 +364,6 @@ export default function ChecklistPersonalizadosPage({ params }) {
       if (miembErr) throw miembErr;
       setMiembrosList(miembData || []);
 
-      // Plantillas (Templates)
       const { data: templData, error: templErr } = await supabase
         .from('checklist_templates')
         .select('*')
@@ -395,14 +371,12 @@ export default function ChecklistPersonalizadosPage({ params }) {
       if (templErr) throw templErr;
       setTemplates(templData || []);
 
-      // Inspecciones
       const { data: inspData, error: inspErr } = await supabase
         .from('checklist_inspecciones')
         .select('*')
         .order('fecha', { ascending: false });
       if (inspErr) throw inspErr;
       setInspecciones(inspData || []);
-
     } catch (e) {
       console.error('Error cargando datos de Supabase:', e);
       triggerToast('Error al conectar con la base de datos, usando simulación.', 'error');
@@ -414,9 +388,8 @@ export default function ChecklistPersonalizadosPage({ params }) {
   };
 
   // ==========================================
-  // LOGICA CRUD - PLANTILLAS
+  // LOGICA CRUD: PLANTILLAS (BUILDER)
   // ==========================================
-
   const handleOpenNewTemplate = () => {
     setEditingTemplateId(null);
     setTemplateNombre('');
@@ -431,7 +404,10 @@ export default function ChecklistPersonalizadosPage({ params }) {
     setEditingTemplateId(tmpl.id);
     setTemplateNombre(tmpl.nombre);
     setConfigCampos(tmpl.config_campos);
-    setTemplateItems(tmpl.items);
+    setTemplateItems(tmpl.items ? tmpl.items.map(item => ({
+      ...item,
+      requerido: item.requerido !== false
+    })) : []);
     setBloqueImagenes(tmpl.bloque_imagenes);
     setBloqueFirmas(tmpl.bloque_firmas);
     setIsTemplateFormOpen(true);
@@ -443,7 +419,8 @@ export default function ChecklistPersonalizadosPage({ params }) {
       pregunta: '',
       tipo_respuesta: 'botones',
       opciones_botones: ['Ok', 'No Ok', 'N/A'],
-      con_otro: false
+      con_otro: false,
+      requerido: true
     };
     setTemplateItems([...templateItems, newItem]);
   };
@@ -456,7 +433,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
     setTemplateItems(templateItems.map(item => {
       if (item.id === id) {
         const updated = { ...item, ...fields };
-        if (fields.tipo_respuesta === 'texto') {
+        if (fields.tipo_respuesta === 'texto' || fields.tipo_respuesta === 'check list') {
           updated.opciones_botones = [];
           updated.con_otro = false;
         } else if (fields.tipo_respuesta === 'botones' && !updated.opciones_botones?.length) {
@@ -503,7 +480,11 @@ export default function ChecklistPersonalizadosPage({ params }) {
     const payload = {
       nombre: templateNombre.trim(),
       config_campos: configCampos,
-      items: templateItems,
+      items: templateItems.map(item => ({
+        ...item,
+        con_otro: false,
+        requerido: item.requerido !== false
+      })),
       bloque_imagenes: bloqueImagenes,
       bloque_firmas: bloqueFirmas,
       tenant_id: tenant?.id || 'mock-tenant-1',
@@ -584,9 +565,8 @@ export default function ChecklistPersonalizadosPage({ params }) {
   };
 
   // ==========================================
-  // LOGICA CRUD - INSPECCIONES
+  // LOGICA CRUD: INSPECCIONES (RUNNER)
   // ==========================================
-
   const handleOpenNewInspeccion = () => {
     if (templates.length === 0) {
       triggerToast('Debe crear al menos una plantilla para poder realizar inspecciones.', 'warning');
@@ -594,10 +574,10 @@ export default function ChecklistPersonalizadosPage({ params }) {
     }
     setEditingInspeccionId(null);
     setSelectedTemplateId(templates[0].id);
-    setInspeccionEmpresaId(empresas[0]?.id || '');
+    setInspeccionEmpresaId('');
     setInspeccionEstablecimientoId('');
     
-    // Inicializar fecha formateada a DD/MM/YYYY
+    // Inicializar fecha
     const today = new Date();
     const day = String(today.getDate()).padStart(2, '0');
     const month = String(today.getMonth() + 1).padStart(2, '0');
@@ -607,11 +587,20 @@ export default function ChecklistPersonalizadosPage({ params }) {
     setFotosFiles([]);
     setFirmaRespSavedUrl('');
     setFirmaProfSavedUrl('');
-    setFirmaTipo('perfil');
-    setProfesionalTipo('miembro');
-    setProfesionalId(profile?.role !== 'cliente' ? (miembrosList.find(m => m.full_name === profile?.full_name)?.id || '') : '');
-    setProfesionalNombre(profile?.role !== 'cliente' ? (profile?.full_name || '') : '');
-    setSignaturePath('');
+    const currentMember = profile ? miembrosList.find(m => m.profile_id === profile.id) : null;
+    if (currentMember) {
+      setProfesionalTipo('miembro');
+      setProfesionalId(currentMember.id);
+      setProfesionalNombre(currentMember.full_name);
+      setSignaturePath(currentMember.signature_url || '');
+      setFirmaTipo(currentMember.signature_url ? 'perfil' : 'mano');
+    } else {
+      setProfesionalTipo('miembro');
+      setProfesionalId('');
+      setProfesionalNombre(profile?.role !== 'cliente' ? (profile?.full_name || '') : '');
+      setSignaturePath('');
+      setFirmaTipo('perfil');
+    }
     setResponsableAclaracion('');
     setInspeccionObservaciones('');
     setHasSignedResp(false);
@@ -627,7 +616,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
     const initialResp = tmpl.items.map(item => ({
       pregunta_id: item.id,
       pregunta: item.pregunta,
-      respuesta: '',
+      respuesta: item.tipo_respuesta === 'check list' ? 'No' : '',
       detalle_otro: ''
     }));
     setInspeccionRespuestas(initialResp);
@@ -642,7 +631,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
   const handleUpdateInspeccionRespuesta = (preguntaId, val, detail = '') => {
     setInspeccionRespuestas(inspeccionRespuestas.map(r => {
       if (r.pregunta_id === preguntaId) {
-        return { ...r, respuesta: val, ...(detail !== undefined ? { detalle_otro: detail } : {}) };
+        return { ...r, respuesta: val, detalle_otro: detail };
       }
       return r;
     }));
@@ -653,11 +642,20 @@ export default function ChecklistPersonalizadosPage({ params }) {
     setSelectedTemplateId(insp.template_id);
     setInspeccionEmpresaId(insp.empresa_id || '');
     setInspeccionEstablecimientoId(insp.establecimiento_id || '');
-    
-    // Formatear fecha YYYY-MM-DD a DD/MM/YYYY
     setInspeccionFecha(formatDate(insp.fecha));
     
-    setInspeccionRespuestas(insp.respuestas || []);
+    const tmpl = templates.find(t => t.id === insp.template_id);
+    const mappedRespuestas = tmpl ? tmpl.items.map(item => {
+      const existing = (insp.respuestas || []).find(r => r.pregunta_id === item.id);
+      return {
+        pregunta_id: item.id,
+        pregunta: item.pregunta,
+        respuesta: existing ? existing.respuesta : (item.tipo_respuesta === 'check list' ? 'No' : ''),
+        detalle_otro: existing ? (existing.detalle_otro || '') : ''
+      };
+    }) : (insp.respuestas || []);
+    
+    setInspeccionRespuestas(mappedRespuestas);
     setFirmaRespSavedUrl(insp.firma_responsable_establecimiento || '');
     setFirmaProfSavedUrl(insp.firma_responsable_higiene_seguridad || '');
     setFirmaTipo(insp.firma_tipo || 'perfil');
@@ -670,7 +668,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
     setHasSignedResp(!!insp.firma_responsable_establecimiento);
     setHasSignedProf(!!insp.firma_responsable_higiene_seguridad);
 
-    // Cargar fotos existentes
+    // Cargar fotos
     if (insp.adjuntar_registros_urls && insp.adjuntar_registros_urls.length > 0) {
       const fList = [];
       for (const path of insp.adjuntar_registros_urls) {
@@ -683,7 +681,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
               fList.push({ name: 'Foto', preview: data.signedUrl, saved: true, path });
             }
           } catch (e) {
-            console.error('Error resolviendo signedUrl para foto:', e);
+            console.error('Error resolviendo URL para foto:', e);
           }
         }
       }
@@ -692,7 +690,6 @@ export default function ChecklistPersonalizadosPage({ params }) {
       setFotosFiles([]);
     }
 
-    // Resolver firma del perfil
     if (insp.responsable_higiene_seguridad_id) {
       const memb = miembrosList.find(m => m.id === insp.responsable_higiene_seguridad_id);
       if (memb?.signature_url) {
@@ -703,94 +700,126 @@ export default function ChecklistPersonalizadosPage({ params }) {
     setIsInspeccionFormOpen(true);
   };
 
-  // Manejar firmas en canvas
   const handleExitForm = () => {
-    setIsInspeccionFormOpen(false);
-    setIsTemplateFormOpen(false);
-  };
-
-  const handleClearCanvas = (type) => {
-    if (type === 'resp') {
-      const canvas = firmaRespCanvasRef.current;
-      if (canvas) {
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-      }
-      setHasSignedResp(false);
-      setFirmaRespSavedUrl('');
-    } else {
-      const canvas = firmaProfCanvasRef.current;
-      if (canvas) {
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-      }
-      setHasSignedProf(false);
-      setFirmaProfSavedUrl('');
+    if (isInspeccionReadOnly) {
+      setIsInspeccionFormOpen(false);
+      setIsTemplateFormOpen(false);
+      return;
     }
+    setModalAlert({
+      show: true,
+      title: 'Salir sin guardar',
+      message: '¿Estás seguro de que deseas salir? Los cambios no guardados se perderán.',
+      confirmText: 'Confirmar',
+      onConfirm: () => {
+        setIsInspeccionFormOpen(false);
+        setIsTemplateFormOpen(false);
+        closeAlert();
+      }
+    });
   };
 
-  const initCanvasDraw = (canvas, setHasSigned) => {
+  const handleClearCanvas = (canvasRef, setHasSigned, savedUrlSetter) => {
+    if (savedUrlSetter) savedUrlSetter('');
+    setHasSigned(false);
+    const canvas = canvasRef.current;
     if (!canvas) return;
-    let drawing = false;
     const ctx = canvas.getContext('2d');
-    ctx.lineWidth = 2;
-    ctx.lineCap = 'round';
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  };
+
+  const setupCanvas = useCallback((canvas, setHasSigned) => {
+    const canEdit = !isInspeccionReadOnly;
+    if (!canvas || !canEdit) return;
+    const ctx = canvas.getContext('2d');
     ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    let drawing = false;
 
     const getPos = (e) => {
       const rect = canvas.getBoundingClientRect();
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
       const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      return {
-        x: clientX - rect.left,
-        y: clientY - rect.top
-      };
+      const x = ((clientX - rect.left) / rect.width) * canvas.width;
+      const y = ((clientY - rect.top) / rect.height) * canvas.height;
+      return { x, y };
     };
 
-    const startDraw = (e) => {
-      e.preventDefault();
+    const startDrawing = (e) => {
       drawing = true;
       const pos = getPos(e);
       ctx.beginPath();
       ctx.moveTo(pos.x, pos.y);
+      e.preventDefault();
     };
 
     const draw = (e) => {
       if (!drawing) return;
-      e.preventDefault();
       const pos = getPos(e);
       ctx.lineTo(pos.x, pos.y);
       ctx.stroke();
       setHasSigned(true);
     };
 
-    const stopDraw = () => {
+    const stopDrawing = () => {
       drawing = false;
     };
 
-    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousedown', startDrawing);
     canvas.addEventListener('mousemove', draw);
-    canvas.addEventListener('mouseup', stopDraw);
-    canvas.addEventListener('mouseleave', stopDraw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseleave', stopDrawing);
+    canvas.addEventListener('touchstart', startDrawing, { passive: false });
+    canvas.addEventListener('touchmove', draw, { passive: false });
+    canvas.addEventListener('touchend', stopDrawing);
 
-    canvas.addEventListener('touchstart', startDraw);
-    canvas.addEventListener('touchmove', draw);
-    canvas.addEventListener('touchend', stopDraw);
-  };
+    canvas._cleanup = () => {
+      canvas.removeEventListener('mousedown', startDrawing);
+      canvas.removeEventListener('mousemove', draw);
+      canvas.removeEventListener('mouseup', stopDrawing);
+      canvas.removeEventListener('mouseleave', stopDrawing);
+      canvas.removeEventListener('touchstart', startDrawing);
+      canvas.removeEventListener('touchmove', draw);
+      canvas.removeEventListener('touchend', stopDrawing);
+    };
+  }, [isInspeccionReadOnly]);
 
   const refRespCallback = useCallback((node) => {
     if (node) {
+      setupCanvas(node, setHasSignedResp);
       firmaRespCanvasRef.current = node;
-      initCanvasDraw(node, setHasSignedResp);
+    } else {
+      if (firmaRespCanvasRef.current && firmaRespCanvasRef.current._cleanup) {
+        firmaRespCanvasRef.current._cleanup();
+      }
+      firmaRespCanvasRef.current = null;
     }
-  }, [isInspeccionFormOpen]);
+  }, [setupCanvas]);
 
   const refProfCallback = useCallback((node) => {
     if (node) {
+      setupCanvas(node, setHasSignedProf);
       firmaProfCanvasRef.current = node;
-      initCanvasDraw(node, setHasSignedProf);
+    } else {
+      if (firmaProfCanvasRef.current && firmaProfCanvasRef.current._cleanup) {
+        firmaProfCanvasRef.current._cleanup();
+      }
+      firmaProfCanvasRef.current = null;
     }
-  }, [isInspeccionFormOpen, firmaTipo]);
+  }, [setupCanvas]);
+
+  const handleProfesionalChange = (memberId) => {
+    setProfesionalId(memberId);
+    const m = miembrosList.find(memb => memb.id === memberId);
+    if (m) {
+      setProfesionalNombre(m.full_name);
+      setSignaturePath(m.signature_url || '');
+    } else {
+      setProfesionalNombre('');
+      setSignaturePath('');
+    }
+  };
 
   const handleSaveInspeccion = async () => {
     const tmpl = templates.find(t => t.id === selectedTemplateId);
@@ -809,15 +838,20 @@ export default function ChecklistPersonalizadosPage({ params }) {
       return;
     }
 
-    if (inspeccionRespuestas.some(r => r.respuesta === '')) {
-      triggerToast('Por favor, responda todas las preguntas antes de guardar.', 'error');
+    const missingRequired = tmpl.items.some(item => {
+      const isRequired = item.requerido !== false;
+      if (!isRequired) return false;
+      const respObj = inspeccionRespuestas.find(r => r.pregunta_id === item.id);
+      return !respObj || respObj.respuesta === '';
+    });
+    if (missingRequired) {
+      triggerToast('Por favor, responda todas las preguntas obligatorias antes de guardar.', 'error');
       return;
     }
 
     setSaveLoading(true);
 
     try {
-      // 1. Guardar firmas
       let respSigData = firmaRespSavedUrl;
       if (tmpl.bloque_firmas.responsable_establecimiento && firmaRespCanvasRef.current && hasSignedResp && !firmaRespSavedUrl.startsWith('data:image')) {
         respSigData = firmaRespCanvasRef.current.toDataURL('image/png');
@@ -832,7 +866,6 @@ export default function ChecklistPersonalizadosPage({ params }) {
         }
       }
 
-      // 2. Subir fotos
       const uploadedUrls = [];
       for (const file of fotosFiles) {
         if (file.saved) {
@@ -842,15 +875,13 @@ export default function ChecklistPersonalizadosPage({ params }) {
             uploadedUrls.push(file.preview);
           } else {
             const fileName = `inspeccion_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
-            const relativePath = `${tenantSlug}/checklist/${fileName}`;
-            
-            const resBlob = await fetch(file.preview);
-            const blobObj = await resBlob.blob();
+            const relativePath = `${profile?.id || 'anonymous'}/checklist/${fileName}`;
+            const blobObj = file.file;
+            if (!blobObj) throw new Error('Archivo de imagen no encontrado');
 
             const { error: uploadErr } = await supabase.storage
               .from('documents')
               .upload(relativePath, blobObj, { contentType: 'image/jpeg' });
-            
             if (uploadErr) throw uploadErr;
             uploadedUrls.push(relativePath);
           }
@@ -862,7 +893,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
         template_id: selectedTemplateId,
         empresa_id: tmpl.config_campos.razon_social ? inspeccionEmpresaId : null,
         establecimiento_id: tmpl.config_campos.establecimiento ? inspeccionEstablecimientoId : null,
-        fecha: tmpl.config_campos.fecha ? convertToDbDate(inspeccionFecha) : new Date().toISOString().split('T')[0],
+        fecha: (tmpl.config_campos.fecha && inspeccionFecha) ? convertToDbDate(inspeccionFecha) : new Date().toISOString().split('T')[0],
         respuestas: inspeccionRespuestas,
         adjuntar_registros_urls: uploadedUrls,
         firma_responsable_establecimiento: respSigData,
@@ -909,7 +940,6 @@ export default function ChecklistPersonalizadosPage({ params }) {
         setInspecciones(inspData || []);
         setIsInspeccionFormOpen(false);
       }
-
     } catch (e) {
       console.error(e);
       triggerToast('Error al guardar la inspección.', 'error');
@@ -946,21 +976,63 @@ export default function ChecklistPersonalizadosPage({ params }) {
     });
   };
 
-  const handleProfesionalChange = (memberId) => {
-    setProfesionalId(memberId);
-    const m = miembrosList.find(memb => memb.id === memberId);
-    if (m) {
-      setProfesionalNombre(m.full_name);
-      setSignaturePath(m.signature_url || '');
-    } else {
-      setProfesionalNombre('');
-      setSignaturePath('');
+  // ==========================================
+  // LOGICA: EXPORTACIÓN A PDF (JSPDF)
+  // ==========================================
+  const getBase64ImageFromUrl = async (url) => {
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (err) {
+      console.error('Error convirtiendo URL a Base64:', err);
+      return '';
     }
   };
 
-  // ==========================================
-  // EXPORTACION A PDF
-  // ==========================================
+  const resizeImageForPdf = (base64Str, maxW, maxH, type = 'image/png') => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = base64Str;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        if (width > maxW) {
+          height *= maxW / width;
+          width = maxW;
+        }
+        if (height > maxH) {
+          width *= maxH / height;
+          height = maxH;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (type === 'image/jpeg') {
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, width, height);
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL(type, type === 'image/jpeg' ? 0.75 : undefined));
+      };
+      img.onerror = () => resolve(base64Str);
+    });
+  };
+
+  const getImgDimensions = (base64Str) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = base64Str;
+      img.onload = () => resolve({ width: img.width, height: img.height });
+      img.onerror = () => resolve({ width: 100, height: 100 });
+    });
+  };
 
   const handleExportPdfReport = async (c, shouldPrint = false, shouldDownload = true) => {
     try {
@@ -983,14 +1055,14 @@ export default function ChecklistPersonalizadosPage({ params }) {
         const url = await getFirmaUrl(c.firma_responsable_higiene_seguridad, c.firma_tipo);
         fProfBase64 = await getBase64ImageFromUrl(url);
       }
-      if (fProfBase64) fProfBase64 = await resizeImageForPdf(fProfBase64, 240, 120);
+      if (fProfBase64) fProfBase64 = await resizeImageForPdf(fProfBase64, 800, 400);
 
       let fRespBase64 = '';
       if (tmpl.bloque_firmas.responsable_establecimiento && c.firma_responsable_establecimiento) {
         const url = await getFirmaUrl(c.firma_responsable_establecimiento, 'mano');
         fRespBase64 = await getBase64ImageFromUrl(url);
       }
-      if (fRespBase64) fRespBase64 = await resizeImageForPdf(fRespBase64, 240, 120);
+      if (fRespBase64) fRespBase64 = await resizeImageForPdf(fRespBase64, 400, 200);
 
       // Cargar logo
       let logoBase64 = '';
@@ -1037,7 +1109,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
       // --- PÁGINA 1 ---
       drawHeaderLogo(doc);
 
-      // Título
+      // Título azul
       doc.setFillColor(60, 120, 216); // #3C78D8
       doc.rect(36, 75.2, 522.75, 18, 'F');
       doc.setDrawColor(0, 0, 0);
@@ -1049,25 +1121,22 @@ export default function ChecklistPersonalizadosPage({ params }) {
       doc.setTextColor(255, 255, 255);
       doc.text((tmpl?.nombre || 'CHECKLIST').toUpperCase(), 297.37, 88, { align: 'center' });
 
-      // Tabla de Datos Generales
+      // Tabla Datos Generales
       const generalFields = [];
       if (tmpl?.config_campos?.razon_social) generalFields.push({ label: 'Razón Social', val: emp?.razon_social || 'N/A' });
       if (tmpl?.config_campos?.cuit) generalFields.push({ label: 'C.U.I.T.', val: emp?.cuit || 'N/A' });
-      if (tmpl?.config_campos?.establecimiento) generalFields.push({ label: 'Establecimiento', val: est?.denominacion || 'N/A' });
       if (tmpl?.config_campos?.direccion) generalFields.push({ label: 'Dirección', val: est?.direccion || 'N/A' });
       if (tmpl?.config_campos?.fecha) generalFields.push({ label: 'Fecha', val: formatDate(c.fecha) });
 
       if (generalFields.length > 0) {
         doc.setDrawColor(0, 0, 0);
         doc.setLineWidth(1);
-        
         let startY = 105;
         let rowH = 18;
         
         for (let i = 0; i < generalFields.length; i += 2) {
           const f1 = generalFields[i];
           const f2 = generalFields[i+1];
-
           doc.rect(36, startY, 523, rowH, 'S');
           doc.line(397.5, startY, 397.5, startY + rowH);
 
@@ -1077,20 +1146,41 @@ export default function ChecklistPersonalizadosPage({ params }) {
           doc.setTextColor(0, 0, 0);
           doc.text(`${f1.label}:`, 42, startY + 12);
           doc.setFont('helvetica', 'normal');
-          doc.text(f1.val, 130, startY + 12);
+          
+          const maxTextW1 = 260;
+          const val1Lines = doc.splitTextToSize(f1.val, maxTextW1);
+          if (val1Lines.length > 1) {
+            doc.setFontSize(8);
+            doc.text(val1Lines[0], 130, startY + 8);
+            doc.text(val1Lines[1], 130, startY + 15);
+          } else {
+            doc.setFontSize(10);
+            doc.text(f1.val, 130, startY + 12);
+          }
 
           // Col 2
           if (f2) {
             doc.setFont('helvetica', 'bold');
+            doc.setFontSize(10);
             doc.text(`${f2.label}:`, 402, startY + 12);
             doc.setFont('helvetica', 'normal');
-            doc.text(f2.val, 490, startY + 12);
+            
+            const maxTextW2 = 65;
+            const val2Lines = doc.splitTextToSize(f2.val, maxTextW2);
+            if (val2Lines.length > 1) {
+              doc.setFontSize(8);
+              doc.text(val2Lines[0], 490, startY + 8);
+              doc.text(val2Lines[1], 490, startY + 15);
+            } else {
+              doc.setFontSize(10);
+              doc.text(f2.val, 490, startY + 12);
+            }
           }
           startY += rowH;
         }
       }
 
-      // Tabla de Respuestas
+      // Tabla Respuestas
       const tableHeaders = [['N°', 'Ítem a Verificar', 'Respuesta']];
       const tableRows = c.respuestas.map((r, idx) => {
         let respText = r.respuesta;
@@ -1100,7 +1190,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
         return [idx + 1, r.pregunta, respText];
       });
 
-      let tableStartY = generalFields.length > 0 ? 110 + (Math.ceil(generalFields.length / 2) * 18) : 105;
+      let tableStartY = generalFields.length > 0 ? 105 + (Math.ceil(generalFields.length / 2) * 18) + 15 : 105;
 
       autoTable(doc, {
         startY: tableStartY,
@@ -1120,12 +1210,12 @@ export default function ChecklistPersonalizadosPage({ params }) {
           halign: 'center'
         },
         columnStyles: {
-          0: { width: 30, halign: 'center' },
-          2: { width: 140 }
+          0: { cellWidth: 30, halign: 'center' },
+          2: { cellWidth: 140 }
         }
       });
 
-      let finalY = doc.lastAutoTable.finalY + 15;
+      let finalY = doc.lastAutoTable.finalY + 25;
 
       // Observaciones
       if (c.observaciones) {
@@ -1144,7 +1234,6 @@ export default function ChecklistPersonalizadosPage({ params }) {
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(9);
         const obsLines = doc.splitTextToSize(c.observaciones, 520);
-        
         doc.rect(36, finalY, 523, Math.max(50, obsLines.length * 12 + 10));
         doc.text(obsLines, 42, finalY + 12);
         finalY += Math.max(50, obsLines.length * 12 + 10) + 20;
@@ -1152,60 +1241,82 @@ export default function ChecklistPersonalizadosPage({ params }) {
 
       // Firmas
       if (tmpl?.bloque_firmas?.responsable_establecimiento || tmpl?.bloque_firmas?.responsable_higiene_seguridad) {
-        if (finalY > 650) {
+        if (finalY > 550) {
           doc.addPage();
           drawHeaderLogo(doc);
           finalY = 85;
         }
 
-        const blockY = finalY;
+        const sigY = finalY + 120;
 
         if (tmpl?.bloque_firmas?.responsable_establecimiento) {
           doc.setLineWidth(0.5);
           doc.setDrawColor(150, 150, 150);
-          doc.line(36, blockY + 70, 260, blockY + 70);
+          doc.line(36, sigY, 260, sigY);
 
           if (fRespBase64) {
             try {
-              doc.addImage(fRespBase64, 'PNG', 70, blockY, 120, 60);
+              const dims = await getImgDimensions(fRespBase64);
+              const ratio = dims.width / dims.height;
+              const maxW = 100;
+              const maxH = 40;
+              let sWidth = maxW;
+              let sHeight = maxH;
+              if (ratio > maxW / maxH) {
+                sWidth = maxW;
+                sHeight = maxW / ratio;
+              } else {
+                sHeight = maxH;
+                sWidth = maxH * ratio;
+              }
+              doc.addImage(fRespBase64, 'PNG', 148 - sWidth/2, sigY - 5 - sHeight, sWidth, sHeight);
             } catch (err) {
               console.error(err);
             }
           }
-
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(8);
           doc.setTextColor(0, 0, 0);
-          doc.text('Firma Responsable del Establecimiento', 36, blockY + 80);
-          
+          doc.text('Firma Responsable del Establecimiento', 36, sigY + 10);
           doc.setFont('helvetica', 'normal');
-          doc.text(`Aclaración: ${c.responsable_establecimiento_aclaracion || 'N/A'}`, 36, blockY + 90);
+          doc.text(`Aclaración: ${c.responsable_establecimiento_aclaracion || 'N/A'}`, 36, sigY + 20);
         }
 
         if (tmpl?.bloque_firmas?.responsable_higiene_seguridad) {
           doc.setLineWidth(0.5);
           doc.setDrawColor(150, 150, 150);
-          doc.line(330, blockY + 70, 554, blockY + 70);
+          doc.line(330, sigY, 554, sigY);
 
           if (fProfBase64) {
             try {
-              doc.addImage(fProfBase64, 'PNG', 360, blockY, 120, 60);
+              const dims = await getImgDimensions(fProfBase64);
+              const ratio = dims.width / dims.height;
+              const maxW = 240;
+              const maxH = 120;
+              let sWidth = maxW;
+              let sHeight = maxH;
+              if (ratio > maxW / maxH) {
+                sWidth = maxW;
+                sHeight = maxW / ratio;
+              } else {
+                sHeight = maxH;
+                sWidth = maxH * ratio;
+              }
+              doc.addImage(fProfBase64, 'PNG', 442 - sWidth/2, sigY - 5 - sHeight, sWidth, sHeight);
             } catch (err) {
               console.error(err);
             }
           }
-
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(8);
           doc.setTextColor(0, 0, 0);
-          doc.text('Firma Responsable Higiene y Seguridad', 330, blockY + 80);
-          
+          doc.text('Firma Responsable Higiene y Seguridad', 330, sigY + 10);
           doc.setFont('helvetica', 'normal');
-          doc.text(`Nombre: ${c.responsable_higiene_seguridad_nombre || 'N/A'}`, 330, blockY + 90);
+          doc.text(`Nombre: ${c.responsable_higiene_seguridad_nombre || 'N/A'}`, 330, sigY + 20);
         }
       }
 
-      // Anexo Fotográfico
+      // Anexo fotográfico
       if (tmpl?.bloque_imagenes && c.adjuntar_registros_urls && c.adjuntar_registros_urls.length > 0) {
         const fotosB64 = [];
         for (const path of c.adjuntar_registros_urls) {
@@ -1217,7 +1328,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
             }
             const b64 = await getBase64ImageFromUrl(signedUrl || '/brand/logo-primary.png');
             if (b64) {
-              const resized = await resizeImageForPdf(b64, 400, 300);
+              const resized = await resizeImageForPdf(b64, 400, 300, 'image/jpeg');
               fotosB64.push(resized);
             }
           } catch (err) {
@@ -1238,57 +1349,82 @@ export default function ChecklistPersonalizadosPage({ params }) {
 
           let imgY = 110;
           for (let idx = 0; idx < fotosB64.length; idx++) {
-            if (imgY > 580) {
-              doc.addPage();
-              drawHeaderLogo(doc);
-              imgY = 85;
-            }
-
             try {
-              doc.addImage(fotosB64[idx], 'JPEG', 98, imgY, 400, 220);
-              doc.rect(98, imgY, 400, 220, 'S');
+              const dims = await getImgDimensions(fotosB64[idx]);
+              const ratio = dims.width / dims.height;
+              const maxW = 360;
+              const maxH = 245;
+              let imgW = maxW;
+              let imgH = maxW / ratio;
+              if (imgH > maxH) {
+                imgH = maxH;
+                imgW = maxH * ratio;
+              }
+              if (imgY + imgH > 750) {
+                doc.addPage();
+                drawHeaderLogo(doc);
+                imgY = 85;
+              }
+              const drawX = 297.6 - imgW / 2;
+              doc.addImage(fotosB64[idx], 'JPEG', drawX, imgY, imgW, imgH);
+              doc.setDrawColor(200, 200, 200);
+              doc.setLineWidth(0.5);
+              doc.rect(drawX, imgY, imgW, imgH, 'S');
+
+              doc.setFont('helvetica', 'bold');
+              doc.setFontSize(9);
+              doc.setTextColor(0, 0, 0);
+              doc.text(`Registro Fotográfico N° ${idx + 1}`, drawX, imgY + imgH + 15);
+              imgY += imgH + 40;
             } catch (errImg) {
               console.error(errImg);
             }
-            
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(9);
-            doc.setTextColor(0, 0, 0);
-            doc.text(`Registro Fotográfico N° ${idx + 1}`, 98, imgY + 232);
-            imgY += 255;
           }
         }
       }
 
       // Footer
       const totalPages = doc.internal.getNumberOfPages();
-      const companyConsultName = tenant?.name || 'Gestión SySO';
+      const companyName = tenant?.name || 'Gestión SySO';
       
+      const drawFooter = (d, pageNum) => {
+        d.setFillColor(60, 120, 216);
+        d.rect(34.5, 780.9, 525.75, 10.5, 'F');
+
+        d.setFont('helvetica', 'normal');
+        d.setFontSize(8);
+        d.setTextColor(0, 0, 0);
+        
+        const phoneVal = profile?.role === 'miembro' ? (profile?.phone || '') : adminContact.phone;
+        const emailVal = profile?.role === 'miembro' ? (profile?.email || '') : adminContact.email;
+        
+        d.setFont('helvetica', 'bold');
+        const compW = d.getTextWidth(companyName);
+        d.text(companyName, 135.72, 798.68);
+        
+        d.setFont('helvetica', 'normal');
+        d.text(` - Tel.: ${phoneVal} - Email: ${emailVal}`, 135.72 + compW, 798.68);
+
+        d.setFont('helvetica', 'normal');
+        d.setFontSize(9);
+        d.setTextColor(128, 128, 128);
+        d.text(`Página ${pageNum} de ${totalPages}`, 552.75, 799.05, { align: 'right' });
+      };
+
       for (let i = 1; i <= totalPages; i++) {
         doc.setPage(i);
-        doc.setDrawColor(217, 217, 217);
-        doc.setLineWidth(0.5);
-        doc.line(36, 815, 559, 815);
-
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-        doc.setTextColor(100, 100, 100);
-        doc.text(companyConsultName, 36, 825);
-        doc.text(`Página ${i} de ${totalPages}`, 559, 825, { align: 'right' });
+        drawFooter(doc, i);
       }
 
       if (shouldDownload) {
         doc.save(`Checklist_${(tmpl?.nombre || 'Personalizado').replace(/\s+/g, '_')}_${formatDate(c.fecha)}.pdf`);
         triggerToast('PDF descargado exitosamente.');
       }
-
       if (shouldPrint) {
         window.open(doc.output('bloburl'), '_blank');
         triggerToast('Vista previa abierta.');
       }
-
       return doc;
-
     } catch (e) {
       console.error(e);
       triggerToast('Error al generar el reporte PDF.', 'error');
@@ -1296,9 +1432,8 @@ export default function ChecklistPersonalizadosPage({ params }) {
   };
 
   // ==========================================
-  // LOGICA CORREO ELECTRONICO
+  // LOGICA: ENVÍO POR CORREO
   // ==========================================
-
   const handleOpenEmailModal = (insp) => {
     setMailTargetInspeccion(insp);
     setManualEmail('');
@@ -1336,7 +1471,6 @@ export default function ChecklistPersonalizadosPage({ params }) {
     } else {
       setAvailableEmails([]);
     }
-
     setIsMailModalOpen(true);
   };
 
@@ -1358,7 +1492,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
 
       const pdfBlob = docObj.output('blob');
       const filename = `inspeccion_${mailTargetInspeccion.id}.pdf`;
-      const relativePath = `${tenantSlug}/pdf_enviados/${filename}`;
+      const relativePath = `${profile?.id || 'anonymous'}/pdf_enviados/${filename}`;
 
       if (!isDevMode) {
         const { error: uploadErr } = await supabase.storage
@@ -1388,9 +1522,8 @@ export default function ChecklistPersonalizadosPage({ params }) {
       const resJson = await res.json();
       if (!res.ok) throw new Error(resJson.error || 'Error al despachar correo');
 
-      triggerToast(resJson.message || 'Correo electrónico enviado exitosamente.');
+      triggerToast('Correo enviado exitosamente.');
       setIsMailModalOpen(false);
-
     } catch (e) {
       console.error(e);
       triggerToast(e.message || 'Error al enviar por correo.', 'error');
@@ -1402,7 +1535,6 @@ export default function ChecklistPersonalizadosPage({ params }) {
   // ==========================================
   // FILTRADO Y ORDENAMIENTO
   // ==========================================
-
   const handleSort = (field) => {
     if (sortField === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -1416,8 +1548,8 @@ export default function ChecklistPersonalizadosPage({ params }) {
     const tmpl = templates.find(t => t.id === insp.template_id);
     const emp = empresas.find(e => e.id === insp.empresa_id);
     const est = allEstablecimientos.find(e => e.id === insp.establecimiento_id);
-
     const searchLower = filterText.toLowerCase();
+    
     const matchesSearch = 
       (tmpl?.nombre || '').toLowerCase().includes(searchLower) ||
       (emp?.razon_social || '').toLowerCase().includes(searchLower) ||
@@ -1426,7 +1558,6 @@ export default function ChecklistPersonalizadosPage({ params }) {
 
     const matchesEmpresa = filterEmpresa ? insp.empresa_id === filterEmpresa : true;
     const matchesTemplate = filterTemplate ? insp.template_id === filterTemplate : true;
-
     return matchesSearch && matchesEmpresa && matchesTemplate;
   });
 
@@ -1445,7 +1576,6 @@ export default function ChecklistPersonalizadosPage({ params }) {
       aVal = eA?.razon_social || '';
       bVal = eB?.razon_social || '';
     }
-
     if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
     if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
     return 0;
@@ -1454,13 +1584,11 @@ export default function ChecklistPersonalizadosPage({ params }) {
   const activeTemplate = templates.find(t => t.id === selectedTemplateId);
   const selectedEmpresaObj = empresas.find(e => e.id === inspeccionEmpresaId);
   const selectedEstablecimientoObj = allEstablecimientos.find(est => est.id === inspeccionEstablecimientoId);
-
-  const filteredEstablecimientos = allEstablecimientos.filter(
-    est => est.empresa_id === inspeccionEmpresaId
-  );
-
+  const filteredEstablecimientos = allEstablecimientos.filter(est => est.empresa_id === inspeccionEmpresaId);
   const isFormOpen = isTemplateFormOpen || isInspeccionFormOpen;
 
+  // ==========================================
+  // RENDER
   return (
     <div className="h-screen overflow-hidden bg-syso-bg text-slate-700 flex font-sans">
       <Sidebar
@@ -1476,8 +1604,8 @@ export default function ChecklistPersonalizadosPage({ params }) {
         }}
       />
 
-      <main className="flex-grow flex flex-col min-w-0 overflow-y-auto bg-syso-bg">
-        {/* HEADER */}
+      <main className="flex-grow flex flex-col min-w-0 bg-syso-bg overflow-y-auto">
+        {/* HEADER PRINCIPAL */}
         <header className="h-16 border-b border-slate-200 flex items-center justify-between px-4 md:px-6 bg-white shrink-0 sticky top-0 z-20">
           <div className="flex items-center gap-2.5 min-w-0">
             <button
@@ -1493,40 +1621,14 @@ export default function ChecklistPersonalizadosPage({ params }) {
           </div>
           <div className="flex items-center gap-3 shrink-0">
             <span className="text-xs font-semibold text-slate-500 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-150 hidden sm:inline-block">
-              {tenant?.name || 'Cargando...'}
+              {tenant?.name || 'Gestión SySO'}
+            </span>
+            <span className="px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider" suppressHydrationWarning>
+              {tenant?.plan_id ? (tenant.plan_id.toLowerCase() === 'libre' ? 'Plan Libre' : tenant.plan_id.toLowerCase().startsWith('standard') ? 'Plan Standard' : tenant.plan_id.toLowerCase().startsWith('basic') ? 'Plan Basic' : `Plan ${tenant.plan_id}`) : 'Plan Libre'}
             </span>
           </div>
         </header>
 
-        {/* TABS DE SECCION (Ocultos si el formulario está abierto para ganar espacio vertical) */}
-        {!isFormOpen && (
-          <div className="flex border-b border-slate-200 bg-white px-6 py-2 sticky top-16 z-10 shrink-0 gap-6 shadow-sm">
-            <button
-              onClick={() => setActiveTab('inspecciones')}
-              className={`pb-2 text-sm font-bold border-b-2 transition-all cursor-pointer bg-transparent border-none ${
-                activeTab === 'inspecciones'
-                  ? 'border-[#468DFF] text-[#468DFF]'
-                  : 'border-transparent text-slate-400 hover:text-slate-600'
-              }`}
-            >
-              Inspecciones Realizadas
-            </button>
-            {!isReadOnlyView && (
-              <button
-                onClick={() => setActiveTab('plantillas')}
-                className={`pb-2 text-sm font-bold border-b-2 transition-all cursor-pointer bg-transparent border-none ${
-                  activeTab === 'plantillas'
-                    ? 'border-[#468DFF] text-[#468DFF]'
-                    : 'border-transparent text-slate-400 hover:text-slate-600'
-                }`}
-              >
-                Plantillas / Configuración
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* CONTENIDO PRINCIPAL CON COMPACT LAYOUT */}
         {loading ? (
           <div className="flex-grow flex items-center justify-center p-8">
             <div className="text-center space-y-4">
@@ -1535,39 +1637,66 @@ export default function ChecklistPersonalizadosPage({ params }) {
             </div>
           </div>
         ) : (
-          <div className="max-w-[95%] mx-auto w-full py-6 px-4 md:px-0 flex-1 flex flex-col min-h-0">
+          <div className="max-w-[95%] mx-auto w-full py-8 px-4 md:px-0 flex-1 flex flex-col min-h-0">
             
-            {/* TAB 1: LISTADO DE INSPECCIONES */}
-            {activeTab === 'inspecciones' && !isFormOpen && (
-              <>
-                {/* FILTROS Y BUSQUEDA (SySO Compact Layout) */}
-                <div className="bg-white border border-slate-150 rounded-2xl p-3 shadow-sm shrink-0 flex flex-col gap-1.5 mb-4">
-                  <div className="flex flex-col md:flex-row md:items-center gap-2 w-full md:w-auto">
-                    <div className="relative w-full md:w-64">
-                      <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 pointer-events-none" />
-                      <input
-                        type="text"
-                        placeholder="Buscar por plantilla, cliente, observaciones..."
-                        value={filterText}
-                        onChange={(e) => setFilterText(e.target.value)}
-                        className="w-full pl-9 pr-3.5 py-1.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400 font-semibold"
-                      />
-                    </div>
+            {/* TABS Y FILTROS COMPACTOS (Solo si no está abierto ningún formulario) */}
+            {!isFormOpen && (
+              <div className="bg-white border border-slate-150 rounded-2xl p-3 shadow-sm shrink-0 flex flex-col gap-3 mb-4 transition-all">
+                {/* Fila superior: Tabs y Buscador */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 select-none">
+                  <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 gap-1 flex-shrink-0 items-center">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('inspecciones')}
+                      className={`px-3 py-1 text-xs font-bold rounded-md transition-all cursor-pointer border-none ${
+                        activeTab === 'inspecciones'
+                          ? 'bg-white text-[#468DFF] shadow-sm'
+                          : 'bg-transparent text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      Inspecciones Realizadas
+                    </button>
+                    {!isReadOnlyView && (
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('plantillas')}
+                        className={`px-3 py-1 text-xs font-bold rounded-md transition-all cursor-pointer border-none ${
+                          activeTab === 'plantillas'
+                            ? 'bg-white text-[#468DFF] shadow-sm'
+                            : 'bg-transparent text-slate-500 hover:text-slate-700'
+                        }`}
+                      >
+                        Plantillas / Configuración
+                      </button>
+                    )}
                   </div>
-                  
-                  <div className="pt-1.5 border-t border-slate-100 space-y-2">
-                    <div className="flex items-center justify-between min-h-[28px]">
+
+                  <div className="relative w-full sm:w-64">
+                    <Search className="absolute left-3 top-2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                    <input
+                      type="text"
+                      placeholder={activeTab === 'inspecciones' ? "Buscar por plantilla, cliente..." : "Buscar plantilla..."}
+                      value={filterText}
+                      onChange={(e) => setFilterText(e.target.value)}
+                      className="w-full pl-9 pr-3.5 py-1.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400 font-semibold"
+                    />
+                  </div>
+                </div>
+
+                {/* Fila inferior: Toggle Filtros / Botones Nuevos */}
+                <div className="pt-1.5 border-t border-slate-100 flex items-center justify-between min-h-[28px]">
+                  {activeTab === 'inspecciones' ? (
+                    <>
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
                           onClick={() => setShowFilters(!showFilters)}
-                          className="font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px] hover:text-slate-600 transition-colors cursor-pointer bg-transparent border-none"
+                          className="font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px] hover:text-slate-655 transition-colors cursor-pointer bg-transparent border-none"
                         >
                           <Sliders className="h-3 w-3" />
                           Filtros de Búsqueda
                           {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                         </button>
-
                         {(filterText || filterEmpresa || filterTemplate) && (
                           <button
                             onClick={() => {
@@ -1592,250 +1721,244 @@ export default function ChecklistPersonalizadosPage({ params }) {
                           Nueva Inspección
                         </button>
                       )}
-                    </div>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider select-none">Configuración de Fichas de Checklist</span>
+                      {canCargar && (
+                        <button
+                          type="button"
+                          onClick={handleOpenNewTemplate}
+                          className="px-3 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0 border border-[#468DFF] hover:border-[#0511F2]"
+                        >
+                          <PlusCircle className="h-3.5 w-3.5" />
+                          Nueva Plantilla
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
 
-                    {showFilters && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 pt-1 animate-scaleUp">
-                        {/* Cliente Filter */}
-                        {profile && profile.role !== 'cliente' && (
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase">Cliente / Empresa</label>
-                            <select
-                              value={filterEmpresa}
-                              onChange={(e) => setFilterEmpresa(e.target.value)}
-                              className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] font-semibold text-slate-600 bg-white focus:outline-none focus:ring-1 focus:ring-[#468DFF] cursor-pointer"
-                            >
-                              <option value="">Todos los Clientes...</option>
-                              {empresas.map(emp => (
-                                <option key={emp.id} value={emp.id}>{emp.razon_social}</option>
-                              ))}
-                            </select>
-                          </div>
-                        )}
-
-                        {/* Plantilla Filter */}
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase">Plantilla de Checklist</label>
-                          <select
-                            value={filterTemplate}
-                            onChange={(e) => setFilterTemplate(e.target.value)}
-                            className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] font-semibold text-slate-600 bg-white focus:outline-none focus:ring-1 focus:ring-[#468DFF] cursor-pointer"
-                          >
-                            <option value="">Todas las Plantillas...</option>
-                            {templates.map(tmpl => (
-                              <option key={tmpl.id} value={tmpl.id}>{tmpl.nombre}</option>
-                            ))}
-                          </select>
-                        </div>
+                {/* Filtros avanzados */}
+                {activeTab === 'inspecciones' && showFilters && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 pt-1 border-t border-slate-50 animate-scaleUp">
+                    {profile && profile.role !== 'cliente' && (
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase">Cliente / Empresa</label>
+                        <select
+                          value={filterEmpresa}
+                          onChange={(e) => setFilterEmpresa(e.target.value)}
+                          className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] font-semibold text-slate-655 bg-white focus:outline-none focus:ring-1 focus:ring-[#468DFF] cursor-pointer"
+                        >
+                          <option value="">Todos los Clientes...</option>
+                          {empresas.map(emp => (
+                            <option key={emp.id} value={emp.id}>{emp.razon_social}</option>
+                          ))}
+                        </select>
                       </div>
                     )}
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">Plantilla de Checklist</label>
+                      <select
+                        value={filterTemplate}
+                        onChange={(e) => setFilterTemplate(e.target.value)}
+                        className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] font-semibold text-slate-655 bg-white focus:outline-none focus:ring-1 focus:ring-[#468DFF] cursor-pointer"
+                      >
+                        <option value="">Todas las Plantillas...</option>
+                        {templates.map(tmpl => (
+                          <option key={tmpl.id} value={tmpl.id}>{tmpl.nombre}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
-                </div>
-
-                {/* CONTENEDOR DE TABLA (SySO Compact Layout) */}
-                <div 
-                  className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden flex flex-col flex-grow min-h-[300px] transition-all duration-300 ease-in-out"
-                  style={{ height: showFilters ? 'calc(100vh - 330px)' : 'calc(100vh - 260px)' }}
-                >
-                  {sortedInspecciones.length === 0 ? (
-                    <div className="flex-grow flex flex-col items-center justify-center p-8 text-center gap-3 h-full">
-                      <AlertTriangle className="h-10 w-10 text-slate-300" />
-                      <span className="text-sm font-bold text-slate-800">No hay inspecciones registradas</span>
-                      <span className="text-xs text-slate-400">Comienza utilizando una de tus plantillas de checklist.</span>
-                      {canCargar && (
-                        <button
-                          onClick={handleOpenNewInspeccion}
-                          className="px-4 py-2 mt-2 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0"
-                        >
-                          + Nueva Inspección
-                        </button>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="overflow-auto flex-grow scrollbar-thin">
-                      <table className="w-full text-left border-collapse min-w-[850px] text-xs">
-                        <thead>
-                          <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider select-none">
-                            <th className="px-6 py-4 cursor-pointer" onClick={() => handleSort('template')}>Plantilla</th>
-                            <th className="px-6 py-4 cursor-pointer" onClick={() => handleSort('empresa')}>Cliente</th>
-                            <th className="px-6 py-4 cursor-pointer" onClick={() => handleSort('fecha')}>Fecha</th>
-                            <th className="px-6 py-4">Responsable H&S</th>
-                            <th className="px-6 py-4 text-right w-36">Acciones</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 text-slate-700">
-                          {sortedInspecciones.map((insp) => {
-                            const tmpl = templates.find(t => t.id === insp.template_id);
-                            const emp = empresas.find(e => e.id === insp.empresa_id);
-                            return (
-                              <tr key={insp.id} className="hover:bg-slate-50/50 transition-colors cursor-pointer">
-                                <td className="px-6 py-4 font-bold text-slate-800" onClick={() => handleOpenEditInspeccion(insp, true)}>
-                                  {tmpl?.nombre || 'Plantilla Eliminada'}
-                                </td>
-                                <td className="px-6 py-4" onClick={() => handleOpenEditInspeccion(insp, true)}>
-                                  {emp?.razon_social || 'N/A'}
-                                </td>
-                                <td className="px-6 py-4" onClick={() => handleOpenEditInspeccion(insp, true)}>
-                                  {formatDate(insp.fecha)}
-                                </td>
-                                <td className="px-6 py-4" onClick={() => handleOpenEditInspeccion(insp, true)}>
-                                  {insp.responsable_higiene_seguridad_nombre || 'N/A'}
-                                </td>
-                                <td className="px-6 py-4 flex items-center justify-end gap-1.5 h-full">
-                                  {/* Visualizar PDF */}
-                                  <button
-                                    onClick={() => handleExportPdfReport(insp, true, false)}
-                                    title="Ver PDF"
-                                    className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-colors border-none cursor-pointer"
-                                  >
-                                    <FileText className="h-4.5 w-4.5" />
-                                  </button>
-                                  {/* Descargar PDF */}
-                                  <button
-                                    onClick={() => handleExportPdfReport(insp, false, true)}
-                                    title="Descargar PDF"
-                                    className="p-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors border-none cursor-pointer"
-                                  >
-                                    <Download className="h-4 w-4" />
-                                  </button>
-                                  {/* Enviar por Correo */}
-                                  {!isReadOnlyView && (
-                                    <button
-                                      onClick={() => handleOpenEmailModal(insp)}
-                                      title="Enviar por Correo"
-                                      className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-colors border-none cursor-pointer"
-                                    >
-                                      <Mail className="h-4 w-4" />
-                                    </button>
-                                  )}
-                                  {/* Editar */}
-                                  {canEditar && (
-                                    <button
-                                      onClick={() => handleOpenEditInspeccion(insp, false)}
-                                      title="Editar"
-                                      className="p-1.5 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors border-none cursor-pointer"
-                                    >
-                                      <Edit className="h-4 w-4" />
-                                    </button>
-                                  )}
-                                  {/* Eliminar */}
-                                  {canEliminar && (
-                                    <button
-                                      onClick={() => handleDeleteInspeccion(insp.id)}
-                                      title="Eliminar"
-                                      className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors border-none cursor-pointer"
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </button>
-                                  )}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              </>
+                )}
+              </div>
             )}
 
-            {/* TAB 2: LISTADO DE PLANTILLAS */}
-            {activeTab === 'plantillas' && !isFormOpen && (
-              <>
-                {/* ACCION SUPERIOR */}
-                <div className="flex justify-end shrink-0 mb-4">
-                  {canCargar && (
-                    <button
-                      onClick={handleOpenNewTemplate}
-                      className="py-1.5 px-3 bg-[#468DFF] text-white border border-[#468DFF] hover:bg-[#0511F2] hover:border-[#0511F2] rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-lg shadow-[#468DFF]/10 transition-all active:scale-[0.98]"
-                    >
-                      <PlusCircle className="h-4 w-4" />
-                      Nueva Plantilla
-                    </button>
-                  )}
-                </div>
-
-                {/* TABLA DE PLANTILLAS */}
-                <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden flex flex-col flex-grow min-h-[300px]">
-                  {templates.length === 0 ? (
-                    <div className="flex-grow flex flex-col items-center justify-center p-8 text-center gap-3 h-full">
-                      <AlertTriangle className="h-10 w-10 text-slate-300" />
-                      <span className="text-sm font-bold text-slate-800">No hay plantillas de checklist</span>
-                      <span className="text-xs text-slate-400">Diseña un nuevo checklist personalizado para que tu equipo pueda usarlo.</span>
-                      {canCargar && (
-                        <button
-                          onClick={handleOpenNewTemplate}
-                          className="px-4 py-2 mt-2 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0"
-                        >
-                          + Nueva Plantilla
-                        </button>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="overflow-auto flex-grow scrollbar-thin">
-                      <table className="w-full text-left border-collapse min-w-[700px] text-xs">
-                        <thead>
-                          <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider select-none">
-                            <th className="px-6 py-4">Nombre de Plantilla</th>
-                            <th className="px-6 py-4">Ítems</th>
-                            <th className="px-6 py-4 text-center">Firma Resp.</th>
-                            <th className="px-6 py-4 text-center">Firma H&S</th>
-                            <th className="px-6 py-4 text-right w-28">Acciones</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 text-slate-700">
-                          {templates.map((tmpl) => (
-                            <tr key={tmpl.id} className="hover:bg-slate-50/50 transition-colors cursor-pointer">
-                              <td className="px-6 py-4 font-bold text-slate-800" onClick={() => canEditar && handleOpenEditTemplate(tmpl)}>
-                                {tmpl.nombre}
+            {/* TAB 1: LISTADO DE INSPECCIONES */}
+            {activeTab === 'inspecciones' && !isFormOpen && (
+              <div 
+                className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden flex flex-col flex-grow min-h-[300px] transition-all duration-300 ease-in-out"
+                style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}
+              >
+                {sortedInspecciones.length === 0 ? (
+                  <div className="flex-grow flex flex-col items-center justify-center p-8 text-center gap-3 h-full">
+                    <AlertTriangle className="h-10 w-10 text-slate-300" />
+                    <span className="text-sm font-bold text-slate-800">No hay inspecciones registradas</span>
+                    <span className="text-xs text-slate-400">Comienza utilizando una de tus plantillas de checklist.</span>
+                    {canCargar && (
+                      <button
+                        onClick={handleOpenNewInspeccion}
+                        className="px-4 py-2 mt-2 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0"
+                      >
+                        + Nueva Inspección
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="overflow-auto flex-grow scrollbar-thin">
+                    <table className="w-full text-left border-collapse min-w-[850px] text-xs">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider select-none">
+                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('template')}>Plantilla</th>
+                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('empresa')}>Cliente</th>
+                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('fecha')}>Fecha</th>
+                          <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Responsable H&S</th>
+                          <th className="px-6 py-4 text-right w-36 sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-slate-700">
+                        {sortedInspecciones.map((insp) => {
+                          const tmpl = templates.find(t => t.id === insp.template_id);
+                          const emp = empresas.find(e => e.id === insp.empresa_id);
+                          return (
+                            <tr key={insp.id} className="hover:bg-slate-50/50 transition-colors cursor-pointer border-b border-slate-100">
+                              <td className="px-6 py-4 font-bold text-slate-800" onClick={() => handleOpenEditInspeccion(insp, true)}>
+                                {tmpl?.nombre || 'Plantilla Eliminada'}
                               </td>
-                              <td className="px-6 py-4" onClick={() => canEditar && handleOpenEditTemplate(tmpl)}>
-                                {tmpl.items?.length || 0} ítems configurados
+                              <td className="px-6 py-4" onClick={() => handleOpenEditInspeccion(insp, true)}>
+                                {emp?.razon_social || 'N/A'}
                               </td>
-                              <td className="px-6 py-4 text-center" onClick={() => canEditar && handleOpenEditTemplate(tmpl)}>
-                                {tmpl.bloque_firmas?.responsable_establecimiento ? 'Habilitado' : 'Desactivado'}
+                              <td className="px-6 py-4" onClick={() => handleOpenEditInspeccion(insp, true)}>
+                                {formatDate(insp.fecha)}
                               </td>
-                              <td className="px-6 py-4 text-center" onClick={() => canEditar && handleOpenEditTemplate(tmpl)}>
-                                {tmpl.bloque_firmas?.responsable_higiene_seguridad ? 'Habilitado' : 'Desactivado'}
+                              <td className="px-6 py-4" onClick={() => handleOpenEditInspeccion(insp, true)}>
+                                {insp.responsable_higiene_seguridad_nombre || 'N/A'}
                               </td>
                               <td className="px-6 py-4 flex items-center justify-end gap-1.5 h-full">
+                                <button
+                                  onClick={() => handleExportPdfReport(insp, true, false)}
+                                  title="Ver PDF"
+                                  className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-colors border-none cursor-pointer"
+                                >
+                                  <FileText className="h-4.5 w-4.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleExportPdfReport(insp, false, true)}
+                                  title="Descargar PDF"
+                                  className="p-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors border-none cursor-pointer"
+                                >
+                                  <Download className="h-4.5 w-4.5" />
+                                </button>
+                                {!isReadOnlyView && (
+                                  <button
+                                    onClick={() => handleOpenEmailModal(insp)}
+                                    title="Enviar por Correo"
+                                    className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-colors border-none cursor-pointer"
+                                  >
+                                    <Mail className="h-4.5 w-4.5" />
+                                  </button>
+                                )}
                                 {canEditar && (
                                   <button
-                                    onClick={() => handleOpenEditTemplate(tmpl)}
-                                    title="Editar Plantilla"
+                                    onClick={() => handleOpenEditInspeccion(insp, false)}
+                                    title="Editar"
                                     className="p-1.5 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors border-none cursor-pointer"
                                   >
-                                    <Edit className="h-4 w-4" />
+                                    <Edit className="h-4.5 w-4.5" />
                                   </button>
                                 )}
                                 {canEliminar && (
                                   <button
-                                    onClick={() => handleDeleteTemplate(tmpl.id, tmpl.nombre)}
-                                    title="Eliminar Plantilla"
+                                    onClick={() => handleDeleteInspeccion(insp.id)}
+                                    title="Eliminar"
                                     className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors border-none cursor-pointer"
                                   >
-                                    <Trash2 className="h-4 w-4" />
+                                    <Trash2 className="h-4.5 w-4.5" />
                                   </button>
                                 )}
                               </td>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              </>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB 2: LISTADO DE PLANTILLAS */}
+            {activeTab === 'plantillas' && !isFormOpen && (
+              <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden flex flex-col flex-grow min-h-[300px] transition-all">
+                {templates.length === 0 ? (
+                  <div className="flex-grow flex flex-col items-center justify-center p-8 text-center gap-3 h-full">
+                    <AlertTriangle className="h-10 w-10 text-slate-300" />
+                    <span className="text-sm font-bold text-slate-800">No hay plantillas de checklist</span>
+                    <span className="text-xs text-slate-400">Diseña un nuevo checklist personalizado para comenzar.</span>
+                    {canCargar && (
+                      <button
+                        onClick={handleOpenNewTemplate}
+                        className="px-4 py-2 mt-2 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0"
+                      >
+                        + Nueva Plantilla
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="overflow-auto flex-grow scrollbar-thin">
+                    <table className="w-full text-left border-collapse min-w-[700px] text-xs">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider select-none">
+                          <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Nombre de Plantilla</th>
+                          <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Ítems</th>
+                          <th className="px-6 py-4 text-center sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Firma Resp.</th>
+                          <th className="px-6 py-4 text-center sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Firma H&S</th>
+                          <th className="px-6 py-4 text-right w-28 sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-slate-700">
+                        {templates
+                          .filter(t => t.nombre.toLowerCase().includes(filterText.toLowerCase()))
+                          .map((tmpl) => (
+                          <tr key={tmpl.id} className="hover:bg-slate-50/50 transition-colors cursor-pointer border-b border-slate-100">
+                            <td className="px-6 py-4 font-bold text-slate-800" onClick={() => canEditar && handleOpenEditTemplate(tmpl)}>
+                              {tmpl.nombre}
+                            </td>
+                            <td className="px-6 py-4" onClick={() => canEditar && handleOpenEditTemplate(tmpl)}>
+                              {tmpl.items?.length || 0} ítems configurados
+                            </td>
+                            <td className="px-6 py-4 text-center" onClick={() => canEditar && handleOpenEditTemplate(tmpl)}>
+                              {tmpl.bloque_firmas?.responsable_establecimiento ? 'Habilitado' : 'Desactivado'}
+                            </td>
+                            <td className="px-6 py-4 text-center" onClick={() => canEditar && handleOpenEditTemplate(tmpl)}>
+                              {tmpl.bloque_firmas?.responsable_higiene_seguridad ? 'Habilitado' : 'Desactivado'}
+                            </td>
+                            <td className="px-6 py-4 flex items-center justify-end gap-1.5 h-full">
+                              {canEditar && (
+                                <button
+                                  onClick={() => handleOpenEditTemplate(tmpl)}
+                                  title="Editar Plantilla"
+                                  className="p-1.5 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors border-none cursor-pointer"
+                                >
+                                  <Edit className="h-4.5 w-4.5" />
+                                </button>
+                              )}
+                              {canEliminar && (
+                                <button
+                                  onClick={() => handleDeleteTemplate(tmpl.id, tmpl.nombre)}
+                                  title="Eliminar Plantilla"
+                                  className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors border-none cursor-pointer"
+                                >
+                                  <Trash2 className="h-4.5 w-4.5" />
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             )}
 
             {/* ==========================================
                 FORMULARIO: DISEÑADOR DE PLANTILLAS (LEVEL 1)
                 ========================================== */}
             {activeTab === 'plantillas' && isTemplateFormOpen && (
-              <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden flex flex-col flex-grow max-h-[85vh] animate-fade-in">
-                
-                {/* HEADER FORM */}
+              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
+                {/* Cabecera del formulario */}
                 <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-150 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
                     <button 
@@ -1845,44 +1968,42 @@ export default function ChecklistPersonalizadosPage({ params }) {
                     >
                       <ArrowLeft className="h-5 w-5" />
                     </button>
-                    <span className="font-outfit text-xs sm:text-sm md:text-base font-bold text-slate-900 truncate">
+                    <span className="font-outfit text-xs sm:text-sm md:text-base font-bold text-slate-900 truncate max-w-[55vw] sm:max-w-none">
                       {editingTemplateId ? 'Editar Plantilla de Checklist' : 'Nueva Plantilla de Checklist'}
                     </span>
                   </div>
                   <button
                     onClick={handleExitForm}
-                    className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-all border-none cursor-pointer"
+                    className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200 cursor-pointer border-none bg-transparent"
                   >
-                    <X className="h-4.5 w-4.5" />
+                    <X className="h-5 w-5" />
                   </button>
                 </div>
 
-                {/* BODY FORM */}
-                <form onSubmit={handleSaveTemplate} className="overflow-y-auto flex-grow scrollbar-thin p-5 sm:p-6 space-y-6">
-                  
-                  {/* Nombre de la plantilla */}
+                {/* Formulario */}
+                <form onSubmit={handleSaveTemplate} className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto flex-grow flex-1 scrollbar-thin">
+                  {/* Nombre del Checklist */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-slate-700">Nombre del Checklist <span className="text-red-500">*</span></label>
+                    <label className="text-xs font-bold text-slate-600">Nombre del Checklist <span className="text-red-500">*</span></label>
                     <input
                       type="text"
                       required
                       value={templateNombre}
                       onChange={(e) => setTemplateNombre(e.target.value)}
                       placeholder="Ej: Auditoría Diaria de EPP, Inspección 5S, etc."
-                      className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs w-full md:w-1/2 focus:outline-none focus:ring-2 focus:ring-[#468DFF] transition-all"
+                      className="w-full md:w-1/2 border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 font-semibold text-slate-700"
                     />
                   </div>
 
-                  {/* Selección de campos generales */}
-                  <div className="border-t border-slate-100 pt-4">
-                    <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">1. Datos Generales de la Ficha</h3>
-                    <p className="text-[10px] text-slate-400 mb-4">Selecciona los campos que el inspector completará antes de evaluar los ítems.</p>
-                    
+                  {/* Datos Generales */}
+                  <div className="border-t border-slate-100 pt-4 space-y-3">
+                    <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">1. Datos Generales de la Ficha</h3>
+                    <p className="text-[10px] text-slate-400">Selecciona los campos que el inspector completará antes de evaluar los ítems.</p>
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                       {Object.keys(configCampos).map((field) => (
                         <label
                           key={field}
-                          className="flex items-center gap-2 p-3 border border-slate-200 bg-slate-50/50 hover:bg-slate-50 rounded-xl text-xs font-semibold text-slate-600 cursor-pointer select-none transition-all"
+                          className="flex items-center gap-2.5 p-3 border border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-xs font-semibold text-slate-700 cursor-pointer select-none transition-all"
                         >
                           <input
                             type="checkbox"
@@ -1896,11 +2017,11 @@ export default function ChecklistPersonalizadosPage({ params }) {
                     </div>
                   </div>
 
-                  {/* Diseño de ítems a evaluar */}
-                  <div className="border-t border-slate-100 pt-4">
-                    <div className="flex items-center justify-between mb-4">
+                  {/* Puntos a Evaluar */}
+                  <div className="border-t border-slate-100 pt-4 space-y-3">
+                    <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">2. Ítems a Evaluar</h3>
+                        <h3 className="font-outfit text-sm font-bold text-slate-800 uppercase tracking-wider">2. Puntos a Evaluar</h3>
                         <p className="text-[10px] text-slate-400">Agrega las preguntas o controles a auditar en campo.</p>
                       </div>
                       <button
@@ -1927,29 +2048,43 @@ export default function ChecklistPersonalizadosPage({ params }) {
                               placeholder="Pregunta o item a auditar..."
                               value={item.pregunta}
                               onChange={(e) => handleUpdateTemplateItem(item.id, { pregunta: e.target.value })}
-                              className="px-3 py-2 border border-slate-200 rounded-xl text-xs w-full bg-white focus:outline-none focus:ring-2 focus:ring-[#468DFF] transition-all"
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#468DFF] bg-white font-semibold text-slate-700"
                             />
                           </div>
 
                           <div className="flex flex-wrap items-center gap-4 w-full md:w-auto shrink-0 select-none">
                             <div className="flex flex-col gap-1">
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Tipo Respuesta</label>
+                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider font-bold">Tipo Respuesta</label>
                               <select
                                 value={item.tipo_respuesta}
                                 onChange={(e) => handleUpdateTemplateItem(item.id, { tipo_respuesta: e.target.value })}
-                                className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#468DFF] cursor-pointer"
+                                className="border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:border-[#468DFF] bg-white cursor-pointer font-semibold text-slate-700"
                               >
                                 <option value="botones">Botones</option>
                                 <option value="texto">Caja de Texto</option>
+                                <option value="check list">check list</option>
                               </select>
+                            </div>
+
+                            <div className="flex flex-col gap-1">
+                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider font-bold">Validación</label>
+                              <label className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-650 cursor-pointer h-[34px] select-none">
+                                <input
+                                  type="checkbox"
+                                  checked={item.requerido !== false}
+                                  onChange={(e) => handleUpdateTemplateItem(item.id, { requerido: e.target.checked })}
+                                  className="h-4 w-4 rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF] cursor-pointer"
+                                />
+                                <span>Obligatorio</span>
+                              </label>
                             </div>
 
                             {item.tipo_respuesta === 'botones' && (
                               <div className="flex flex-col gap-1">
-                                <label className="text-[9px] font-bold text-slate-400 tracking-wider uppercase">Botones a mostrar</label>
+                                <label className="text-[9px] font-bold text-slate-400 tracking-wider uppercase font-bold">Botones a mostrar</label>
                                 <div className="flex items-center gap-2 p-1.5 bg-white border border-slate-200 rounded-xl">
                                   {['Ok', 'No Ok', 'N/A', 'Si', 'No'].map((opt) => (
-                                    <label key={opt} className="flex items-center gap-1 text-[11px] font-bold text-slate-600 cursor-pointer">
+                                    <label key={opt} className="flex items-center gap-1 text-[11px] font-bold text-slate-655 cursor-pointer">
                                       <input
                                         type="checkbox"
                                         checked={item.opciones_botones?.includes(opt)}
@@ -1960,21 +2095,6 @@ export default function ChecklistPersonalizadosPage({ params }) {
                                     </label>
                                   ))}
                                 </div>
-                              </div>
-                            )}
-
-                            {item.tipo_respuesta === 'botones' && (
-                              <div className="flex flex-col gap-1">
-                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Permitir Aclaración</label>
-                                <label className="flex items-center gap-1.5 py-2 px-2.5 bg-white border border-slate-200 rounded-xl text-[11px] font-bold text-slate-600 cursor-pointer">
-                                  <input
-                                    type="checkbox"
-                                    checked={item.con_otro}
-                                    onChange={(e) => handleUpdateTemplateItem(item.id, { con_otro: e.target.checked })}
-                                    className="h-3.5 w-3.5 rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF] cursor-pointer"
-                                  />
-                                  <span>Añadir "Otro (especificar...)"</span>
-                                </label>
                               </div>
                             )}
 
@@ -1997,13 +2117,11 @@ export default function ChecklistPersonalizadosPage({ params }) {
                     </div>
                   </div>
 
-                  {/* Configuración de bloques adicionales */}
-                  <div className="border-t border-slate-100 pt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    
-                    {/* Bloque Imagenes */}
+                  {/* Bloque Imagenes */}
+                  <div className="border-t border-slate-100 pt-4 space-y-4">
                     <div className="flex flex-col gap-1.5">
-                      <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">3. Adjuntos Fotográficos</h3>
-                      <label className="flex items-center gap-2.5 p-3.5 border border-slate-200 bg-slate-50/50 hover:bg-slate-50 rounded-xl text-xs font-semibold text-slate-600 cursor-pointer select-none transition-all">
+                      <h3 className="font-outfit text-sm font-bold text-slate-800 uppercase tracking-wider pb-1.5 border-b border-slate-100">3. Adjuntos Fotográficos</h3>
+                      <label className="flex items-center gap-2.5 p-3.5 border border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-xs font-semibold text-slate-700 cursor-pointer select-none transition-all">
                         <input
                           type="checkbox"
                           checked={bloqueImagenes}
@@ -2016,9 +2134,9 @@ export default function ChecklistPersonalizadosPage({ params }) {
 
                     {/* Bloque Firmas */}
                     <div className="flex flex-col gap-1.5">
-                      <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">4. Bloques de Firmas</h3>
+                      <h3 className="font-outfit text-sm font-bold text-slate-800 uppercase tracking-wider pb-1.5 border-b border-slate-100">4. Bloques de Firmas</h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <label className="flex items-center gap-2 p-3.5 border border-slate-200 bg-slate-50/50 hover:bg-slate-50 rounded-xl text-xs font-semibold text-slate-600 cursor-pointer select-none transition-all">
+                        <label className="flex items-center gap-2.5 p-3.5 border border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-xs font-semibold text-slate-700 cursor-pointer select-none transition-all">
                           <input
                             type="checkbox"
                             checked={bloqueFirmas.responsable_establecimiento}
@@ -2028,7 +2146,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
                           <span>Firma del Responsable del Establecimiento</span>
                         </label>
 
-                        <label className="flex items-center gap-2 p-3.5 border border-slate-200 bg-slate-50/50 hover:bg-slate-50 rounded-xl text-xs font-semibold text-slate-600 cursor-pointer select-none transition-all">
+                        <label className="flex items-center gap-2.5 p-3.5 border border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-xs font-semibold text-slate-700 cursor-pointer select-none transition-all">
                           <input
                             type="checkbox"
                             checked={bloqueFirmas.responsable_higiene_seguridad}
@@ -2039,28 +2157,37 @@ export default function ChecklistPersonalizadosPage({ params }) {
                         </label>
                       </div>
                     </div>
-
                   </div>
 
-                  {/* BOTONERA FOOTER FORM */}
-                  <div className="border-t border-slate-200 pt-6 flex items-center justify-end gap-3 bg-white sticky bottom-0">
+                  {/* Acciones del formulario */}
+                  <div className="flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center gap-3 pt-6 border-t border-slate-100 shrink-0">
                     <button
                       type="button"
                       onClick={handleExitForm}
-                      className="px-4 py-2.5 bg-white border border-[#468DFF] text-[#468DFF] hover:bg-[#468DFF] hover:text-white rounded-xl text-xs font-bold cursor-pointer transition-all shrink-0"
+                      className="px-5 py-2.5 bg-[#FFFFFF] text-[#468DFF] border border-[#468DFF] rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-[#FFFFFF] hover:border-[#FFFFFF] transition-all active:scale-[0.98] cursor-pointer text-center w-full sm:w-auto"
                     >
                       Salir
                     </button>
-                    <button
-                      type="submit"
-                      disabled={saveLoading}
-                      className="px-5 py-2.5 bg-[#468DFF] text-white border border-[#468DFF] hover:bg-[#0511F2] hover:border-[#0511F2] rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer shadow-lg shadow-[#468DFF]/10 transition-all shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {saveLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                      {editingTemplateId ? 'Guardar Cambios' : 'Crear Plantilla'}
-                    </button>
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                      {editingTemplateId && canEliminar && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteTemplate(editingTemplateId, templateNombre)}
+                          className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-red-600/10 text-center w-full sm:w-auto"
+                        >
+                          Eliminar
+                        </button>
+                      )}
+                      <button
+                        type="submit"
+                        disabled={saveLoading}
+                        className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50 w-full sm:w-auto border border-[#468DFF] hover:border-[#0511F2]"
+                      >
+                        {saveLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                        {editingTemplateId ? 'Guardar Cambios' : 'Registrar Plantilla'}
+                      </button>
+                    </div>
                   </div>
-
                 </form>
               </div>
             )}
@@ -2069,41 +2196,37 @@ export default function ChecklistPersonalizadosPage({ params }) {
                 FORMULARIO: EJECUCIÓN / EDICIÓN DE INSPECCIÓN (LEVEL 2)
                 ========================================== */}
             {isInspeccionFormOpen && (
-              <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden flex flex-col flex-grow max-h-[85vh] animate-fade-in">
-                
-                {/* HEADER FORM */}
+              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
+                {/* Cabecera del formulario */}
                 <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-150 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
                     <button 
-                      type="button" 
-                      onClick={handleExitForm}
+                      type="button"
+                      onClick={handleExitForm} 
                       className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 cursor-pointer"
                     >
                       <ArrowLeft className="h-5 w-5" />
                     </button>
-                    <span className="font-outfit text-xs sm:text-sm md:text-base font-bold text-slate-900 truncate">
+                    <span className="font-outfit text-xs sm:text-sm md:text-base font-bold text-slate-900 truncate max-w-[55vw] sm:max-w-none">
                       {isInspeccionReadOnly ? 'Detalle de Inspección' : editingInspeccionId ? 'Editar Inspección' : 'Cargar Nueva Inspección'}
                     </span>
                   </div>
-                  <button
-                    onClick={handleExitForm}
-                    className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-all border-none cursor-pointer"
-                  >
-                    <X className="h-4.5 w-4.5" />
+                  <button type="button" onClick={handleExitForm} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200 cursor-pointer border-none bg-transparent">
+                    <X className="h-5 w-5" />
                   </button>
                 </div>
 
-                {/* BODY FORM */}
-                <div className="overflow-y-auto flex-grow scrollbar-thin p-5 sm:p-6 space-y-6">
+                {/* Formulario */}
+                <form onSubmit={(e) => { e.preventDefault(); handleSaveInspeccion(); }} className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto flex-grow flex-1 scrollbar-thin">
                   
-                  {/* 1. Selección de plantilla (Solo en creación) */}
+                  {/* Selección de plantilla */}
                   {!editingInspeccionId && (
                     <div className="flex flex-col gap-1.5 md:w-1/2">
                       <label className="text-xs font-bold text-slate-700">Seleccionar Plantilla a utilizar</label>
                       <select
                         value={selectedTemplateId}
                         onChange={(e) => handleSelectTemplate(e.target.value)}
-                        className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs w-full focus:outline-none focus:ring-2 focus:ring-[#468DFF] cursor-pointer font-bold"
+                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 cursor-pointer font-bold text-slate-700"
                       >
                         {templates.map(t => (
                           <option key={t.id} value={t.id}>{t.nombre}</option>
@@ -2113,8 +2236,9 @@ export default function ChecklistPersonalizadosPage({ params }) {
                   )}
 
                   {activeTemplate && (
-                    <>
-                      {/* Título de la planilla actual */}
+                    <fieldset disabled={isInspeccionReadOnly} className="space-y-6 flex-grow flex-1 border-none p-0 m-0">
+                      
+                      {/* Cabecera informativa */}
                       <div className="bg-blue-50/50 p-4 border border-blue-100 rounded-2xl flex items-center gap-3">
                         <div className="p-2 bg-white rounded-xl text-[#468DFF] shadow-sm">
                           <ClipboardList className="h-6 w-6" />
@@ -2126,17 +2250,16 @@ export default function ChecklistPersonalizadosPage({ params }) {
                       </div>
 
                       {/* Sección 1: Información del Establecimiento y Fecha */}
-                      <div className="border border-slate-150 rounded-2xl p-4 space-y-4">
-                        <h4 className="font-outfit uppercase tracking-wider font-bold text-slate-800 border-b border-slate-100 pb-1.5 flex items-center gap-2 text-xs">
+                      <div className="space-y-4">
+                        <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
                           <Building className="h-4 w-4 text-[#468DFF]" />
                           1. Información del Establecimiento y Fecha
-                        </h4>
+                        </h3>
 
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                          {/* Dropdown Empresas */}
                           {activeTemplate.config_campos.razon_social && (
-                            <div className="flex flex-col gap-1">
-                              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Cliente / Razón Social <span className="text-red-500">*</span></label>
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-xs font-bold text-slate-600">Cliente / Razón Social *</label>
                               <select
                                 disabled={isInspeccionReadOnly || !!editingInspeccionId}
                                 value={inspeccionEmpresaId}
@@ -2144,7 +2267,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
                                   setInspeccionEmpresaId(e.target.value);
                                   setInspeccionEstablecimientoId('');
                                 }}
-                                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#468DFF] cursor-pointer disabled:opacity-60"
+                                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 cursor-pointer disabled:opacity-60 text-slate-700 font-semibold"
                               >
                                 <option value="">Seleccionar cliente...</option>
                                 {empresas.map(e => (
@@ -2154,15 +2277,14 @@ export default function ChecklistPersonalizadosPage({ params }) {
                             </div>
                           )}
 
-                          {/* Dropdown Establecimientos */}
                           {activeTemplate.config_campos.establecimiento && (
-                            <div className="flex flex-col gap-1">
-                              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Establecimiento <span className="text-red-500">*</span></label>
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-xs font-bold text-slate-600">Establecimiento *</label>
                               <select
                                 disabled={isInspeccionReadOnly || !inspeccionEmpresaId}
                                 value={inspeccionEstablecimientoId}
                                 onChange={(e) => setInspeccionEstablecimientoId(e.target.value)}
-                                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#468DFF] cursor-pointer disabled:opacity-60"
+                                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 cursor-pointer disabled:opacity-60 text-slate-700 font-semibold"
                               >
                                 <option value="">Seleccionar establecimiento...</option>
                                 {filteredEstablecimientos.map(est => (
@@ -2172,36 +2294,33 @@ export default function ChecklistPersonalizadosPage({ params }) {
                             </div>
                           )}
 
-                          {/* CUIT Autocompletado */}
                           {activeTemplate.config_campos.cuit && (
-                            <div className="flex flex-col gap-1">
-                              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">C.U.I.T.</label>
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-xs font-bold text-slate-500">C.U.I.T.</label>
                               <input
                                 type="text"
                                 disabled
                                 value={selectedEmpresaObj?.cuit || ''}
-                                className="px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs text-slate-500 font-semibold"
+                                className="w-full border border-slate-200 bg-slate-100 text-slate-500 rounded-xl px-3.5 py-2 text-sm font-semibold"
                               />
                             </div>
                           )}
 
-                          {/* Dirección Autocompletada */}
                           {activeTemplate.config_campos.direccion && (
-                            <div className="flex flex-col gap-1">
-                              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Dirección</label>
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-xs font-bold text-slate-500">Dirección</label>
                               <input
                                 type="text"
                                 disabled
                                 value={selectedEstablecimientoObj?.direccion || ''}
-                                className="px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs text-slate-500 font-semibold"
+                                className="w-full border border-slate-200 bg-slate-100 text-slate-500 rounded-xl px-3.5 py-2 text-sm font-semibold"
                               />
                             </div>
                           )}
 
-                          {/* Fecha de Inspección (Compact Date Picker Standard) */}
                           {activeTemplate.config_campos.fecha && (
-                            <div className="flex flex-col gap-1">
-                              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Fecha de Inspección *</label>
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-xs font-bold text-slate-600">Fecha de Inspección *</label>
                               <div className="relative">
                                 <input
                                   type="text"
@@ -2211,7 +2330,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
                                   onChange={(e) => setInspeccionFecha(formatAsDateInput(e.target.value))}
                                   required
                                   disabled={isInspeccionReadOnly}
-                                  className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 font-mono disabled:bg-slate-100 disabled:text-slate-500"
+                                  className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 font-mono disabled:bg-slate-100 disabled:text-slate-500 font-semibold"
                                 />
                                 {!isInspeccionReadOnly && (
                                   <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
@@ -2237,80 +2356,75 @@ export default function ChecklistPersonalizadosPage({ params }) {
                         </div>
                       </div>
 
-                      {/* Sección 2: Ítems a auditar */}
-                      <div className="border border-slate-150 rounded-2xl p-4 space-y-4">
-                        <h4 className="font-outfit uppercase tracking-wider font-bold text-slate-800 border-b border-slate-100 pb-1.5 flex items-center gap-2 text-xs">
-                          <CheckSquare className="h-4 w-4 text-[#468DFF]" />
+                      {/* Sección 2: Puntos de Verificación */}
+                      <div className="space-y-3">
+                        <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
+                          <CheckSquare className="h-4.5 w-4.5 text-[#468DFF]" />
                           2. Puntos de Verificación
-                        </h4>
+                        </h3>
 
-                        <div className="divide-y divide-slate-100">
+                        <div className="space-y-2">
                           {activeTemplate.items.map((item, index) => {
                             const respObj = inspeccionRespuestas.find(r => r.pregunta_id === item.id) || { respuesta: '', detalle_otro: '' };
+                            const isActive = (val) => respObj.respuesta === val;
 
                             return (
-                              <div key={item.id} className="py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 first:pt-0 last:pb-0 select-none">
-                                <div className="flex-grow min-w-0 pr-4">
-                                  <span className="text-xs font-bold text-slate-800 block">
-                                    {index + 1}. {item.pregunta}
+                              <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-150 bg-white shadow-sm transition-all duration-300 hover:bg-slate-50/10">
+                                <div className="flex gap-2 items-start">
+                                  <span className="font-mono text-xs font-bold text-slate-400 mt-0.5">{index + 1}.</span>
+                                  <span className="text-xs font-bold text-slate-700 leading-normal">
+                                    {item.pregunta}
+                                    {item.requerido !== false && <span className="text-red-500 ml-1 font-bold">*</span>}
                                   </span>
                                 </div>
 
-                                <div className="shrink-0 flex flex-wrap items-center gap-3">
-                                  {/* Renderizar Botones */}
+                                <div className="flex items-center gap-1.5 w-full sm:w-64 shrink-0 justify-end">
                                   {item.tipo_respuesta === 'botones' && (
-                                    <div className="flex items-center gap-1.5">
-                                      {(item.opciones_botones || ['Ok', 'No Ok', 'N/A']).map((opt) => {
-                                        const isActive = respObj.respuesta === opt;
-                                        
-                                        let activeColor = 'bg-[#468DFF] text-white border-[#468DFF]';
-                                        if (opt === 'Ok' || opt === 'Si') activeColor = 'bg-[#00b050] text-white border-[#00b050]';
-                                        if (opt === 'No Ok' || opt === 'No') activeColor = 'bg-red-500 text-white border-red-500';
-                                        if (opt === 'N/A') activeColor = 'bg-slate-500 text-white border-slate-500';
-
-                                        return (
-                                          <button
-                                            key={opt}
-                                            type="button"
-                                            disabled={isInspeccionReadOnly}
-                                            onClick={() => handleUpdateInspeccionRespuesta(item.id, opt, respObj.detalle_otro)}
-                                            className={`px-3 py-1.5 border text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                                              isActive
-                                                ? activeColor
-                                                : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
-                                            } disabled:opacity-50 disabled:cursor-not-allowed`}
-                                          >
-                                            {opt}
-                                          </button>
-                                        );
-                                      })}
+                                    <div className="flex items-center gap-1.5 w-full">
+                                      {(item.opciones_botones || ['Ok', 'No Ok', 'N/A']).map((opt) => (
+                                        <button
+                                          key={opt}
+                                          type="button"
+                                          disabled={isInspeccionReadOnly}
+                                          onClick={() => handleUpdateInspeccionRespuesta(item.id, opt)}
+                                          className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                                            isActive(opt)
+                                              ? opt === 'Ok' || opt === 'Si'
+                                                ? 'bg-[#00b050] text-white border-[#00b050] shadow-sm'
+                                                : opt === 'No Ok' || opt === 'No'
+                                                  ? 'bg-red-500 text-white border-red-500 shadow-sm'
+                                                  : 'bg-slate-500 text-white border-slate-500 shadow-sm'
+                                              : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-50'
+                                          }`}
+                                        >
+                                          {opt}
+                                        </button>
+                                      ))}
                                     </div>
                                   )}
 
-                                  {/* Renderizar Texto */}
                                   {item.tipo_respuesta === 'texto' && (
                                     <input
                                       type="text"
                                       placeholder="Ingrese respuesta..."
                                       disabled={isInspeccionReadOnly}
                                       value={respObj.respuesta}
-                                      onChange={(e) => handleUpdateInspeccionRespuesta(item.id, e.target.value, '')}
-                                      className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-[#468DFF] transition-all disabled:opacity-60"
+                                      onChange={(e) => handleUpdateInspeccionRespuesta(item.id, e.target.value)}
+                                      className="w-full px-3.5 py-1.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 text-slate-700 placeholder-slate-400 font-semibold disabled:opacity-60"
                                     />
                                   )}
 
-                                  {/* Opción Otro (Aclaración) */}
-                                  {item.tipo_respuesta === 'botones' && item.con_otro && (
-                                    <div className="flex items-center gap-1.5 flex-grow md:flex-initial">
+                                  {item.tipo_respuesta === 'check list' && (
+                                    <label className="flex items-center gap-2.5 cursor-pointer bg-slate-50 border border-slate-200 hover:bg-slate-100 rounded-xl px-4 py-1.5 text-xs font-bold text-slate-600 transition-all select-none">
                                       <input
-                                        type="text"
-                                        placeholder="Especificar..."
+                                        type="checkbox"
                                         disabled={isInspeccionReadOnly}
-                                        value={respObj.detalle_otro}
-                                        onChange={(e) => handleUpdateInspeccionRespuesta(item.id, respObj.respuesta, e.target.value)}
-                                        className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs w-36 md:w-48 focus:outline-none focus:ring-2 focus:ring-[#468DFF] transition-all disabled:opacity-60"
+                                        checked={respObj.respuesta === 'Si'}
+                                        onChange={(e) => handleUpdateInspeccionRespuesta(item.id, e.target.checked ? 'Si' : 'No')}
+                                        className="h-4.5 w-4.5 rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF] cursor-pointer"
                                       />
-                                    </div>
+                                      <span>Verificado</span>
+                                    </label>
                                   )}
                                 </div>
                               </div>
@@ -2319,29 +2433,29 @@ export default function ChecklistPersonalizadosPage({ params }) {
                         </div>
                       </div>
 
-                      {/* Sección 3: Observaciones Finales */}
-                      <div className="border border-slate-150 rounded-2xl p-4 space-y-3">
-                        <h4 className="font-outfit uppercase tracking-wider font-bold text-slate-800 border-b border-slate-100 pb-1.5 flex items-center gap-2 text-xs">
+                      {/* Sección 3: Observaciones */}
+                      <div className="space-y-3">
+                        <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
                           <ClipboardList className="h-4 w-4 text-[#468DFF]" />
-                          3. Observaciones Generales o Diagnóstico Final
-                        </h4>
+                          3. Observaciones
+                        </h3>
                         <textarea
                           rows={3}
                           disabled={isInspeccionReadOnly}
                           value={inspeccionObservaciones}
                           onChange={(e) => setInspeccionObservaciones(e.target.value)}
-                          placeholder="Escriba comentarios, desvíos adicionales, recomendaciones o diagnósticos finales..."
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#468DFF] transition-all disabled:opacity-60"
+                          placeholder="Escriba observaciones, comentarios o desvíos adicionales..."
+                          className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#468DFF] transition-all disabled:opacity-60 font-semibold text-slate-700"
                         />
                       </div>
 
                       {/* Sección 4: Registro Fotográfico */}
                       {activeTemplate.bloque_imagenes && (
-                        <div className="border border-slate-150 rounded-2xl p-4 space-y-3">
-                          <h4 className="font-outfit uppercase tracking-wider font-bold text-slate-800 border-b border-slate-100 pb-1.5 flex items-center gap-2 text-xs">
+                        <div className="space-y-3">
+                          <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
                             <ClipboardList className="h-4 w-4 text-[#468DFF]" />
                             4. Registro Fotográfico (Evidencias)
-                          </h4>
+                          </h3>
                           
                           <ImageUploadZone
                             label="Adjuntar registros fotográficos"
@@ -2371,84 +2485,86 @@ export default function ChecklistPersonalizadosPage({ params }) {
                         </div>
                       )}
 
-                      {/* Sección 5: Firmas Digitales */}
+                      {/* Sección 5: Firmas */}
                       {(activeTemplate.bloque_firmas.responsable_establecimiento || activeTemplate.bloque_firmas.responsable_higiene_seguridad) && (
-                        <div className="border border-slate-150 rounded-2xl p-4 space-y-4">
-                          <h4 className="font-outfit uppercase tracking-wider font-bold text-slate-800 border-b border-slate-100 pb-1.5 flex items-center gap-2 text-xs">
-                            <Users className="h-4 w-4 text-[#468DFF]" />
-                            5. Firmas y Validaciones
-                          </h4>
+                        <div className="space-y-4">
+                          <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
+                            <Users className="h-4.5 w-4.5 text-[#468DFF]" />
+                            5. Firmas
+                          </h3>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            
-                            {/* Firma Responsable Establecimiento */}
+                            {/* Responsable del Establecimiento */}
                             {activeTemplate.bloque_firmas.responsable_establecimiento && (
-                              <div className="p-4 border border-slate-200 rounded-xl bg-slate-50/50 space-y-3 flex flex-col">
-                                <div className="flex items-center justify-between">
-                                  <label className="text-xs font-bold text-slate-700">Firma del Responsable del Establecimiento</label>
-                                  {!isInspeccionReadOnly && (
+                              <div className="space-y-2 flex flex-col">
+                                <div className="flex flex-row justify-between items-end gap-2 min-h-[18px]">
+                                  <label className="text-xs font-bold text-slate-600 pr-2">Firma del Responsable del Establecimiento</label>
+                                  {!isInspeccionReadOnly && (hasSignedResp || firmaRespSavedUrl) && (
                                     <button
                                       type="button"
-                                      onClick={() => handleClearCanvas('resp')}
-                                      className="text-[10px] font-bold text-red-500 hover:underline cursor-pointer bg-transparent border-none"
+                                      onClick={() => handleClearCanvas(firmaRespCanvasRef, setHasSignedResp, setFirmaRespSavedUrl)}
+                                      className="text-[10px] font-bold text-red-500 hover:text-red-700 cursor-pointer shrink-0 border-none bg-transparent"
                                     >
-                                      Limpiar
+                                      Limpiar Firma
                                     </button>
                                   )}
                                 </div>
-
-                                <div className="relative border-2 border-dashed border-slate-200 rounded-xl bg-white aspect-[2/1] overflow-hidden flex items-center justify-center">
-                                  {firmaRespSavedUrl ? (
-                                    <img src={firmaRespSavedUrl.startsWith('mock') ? '/brand/logo-primary.png' : firmaRespSavedUrl} alt="Firma Responsable" className="h-full w-full object-contain" />
-                                  ) : isInspeccionReadOnly ? (
-                                    <span className="text-xs text-slate-400">Sin firma registrada</span>
+                                <div className="hidden md:block h-[51px] shrink-0" />
+                                <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl aspect-[2/1] relative overflow-hidden flex items-center justify-center">
+                                  {firmaRespSavedUrl && !hasSignedResp ? (
+                                    <img src={firmaRespSavedUrl.startsWith('mock') ? '/brand/logo-primary.png' : firmaRespSavedUrl} alt="Firma Responsable" className="w-full h-full object-contain p-2" />
                                   ) : (
                                     <canvas
                                       ref={refRespCallback}
                                       width={400}
                                       height={200}
-                                      className="h-full w-full cursor-crosshair touch-none"
+                                      className={`w-full h-full bg-white block ${!isInspeccionReadOnly ? 'cursor-crosshair' : 'cursor-default'}`}
                                     />
                                   )}
+                                  {!hasSignedResp && !firmaRespSavedUrl && (
+                                    <span className="absolute pointer-events-none text-[10px] text-slate-400 font-bold uppercase tracking-wider">Dibuje la firma aquí</span>
+                                  )}
                                 </div>
-
                                 <div className="flex flex-col gap-1 pt-1.5">
-                                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Aclaración / Nombre del Responsable</label>
+                                  <label className="text-xs font-bold text-slate-500">Aclaración / Nombre del Responsable</label>
                                   <input
                                     type="text"
                                     disabled={isInspeccionReadOnly}
                                     value={responsableAclaracion}
                                     onChange={(e) => setResponsableAclaracion(e.target.value)}
                                     placeholder="Nombre completo..."
-                                    className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#468DFF] transition-all disabled:opacity-60"
+                                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all disabled:opacity-60 text-slate-700 font-semibold"
                                   />
                                 </div>
                               </div>
                             )}
 
-                            {/* Firma Responsable Higiene y Seguridad */}
+                            {/* Profesional Higiene y Seguridad */}
                             {activeTemplate.bloque_firmas.responsable_higiene_seguridad && (
-                              <div className="p-4 border border-slate-200 rounded-xl bg-slate-50/50 space-y-3 flex flex-col">
-                                <div className="flex items-center justify-between">
-                                  <label className="text-xs font-bold text-slate-700">Firma del Profesional de Higiene y Seguridad</label>
-                                  {firmaTipo === 'mano' && !isInspeccionReadOnly && (
+                              <div className="space-y-2 flex flex-col">
+                                <div className="flex flex-row justify-between items-end gap-2 min-h-[18px]">
+                                  <label className="text-xs font-bold text-slate-600 pr-2">Firma del Profesional de Higiene y Seguridad</label>
+                                  {firmaTipo === 'mano' && !isInspeccionReadOnly && (hasSignedProf || firmaProfSavedUrl) && (
                                     <button
                                       type="button"
-                                      onClick={() => handleClearCanvas('prof')}
-                                      className="text-[10px] font-bold text-red-500 hover:underline cursor-pointer bg-transparent border-none"
+                                      onClick={() => handleClearCanvas(firmaProfCanvasRef, setHasSignedProf, setFirmaProfSavedUrl)}
+                                      className="text-[10px] font-bold text-red-500 hover:text-red-700 cursor-pointer shrink-0 border-none bg-transparent"
                                     >
-                                      Limpiar
+                                      Limpiar Firma
                                     </button>
                                   )}
                                 </div>
 
-                                {!isInspeccionReadOnly && profile?.role !== 'cliente' && (
-                                  <div className="grid grid-cols-2 bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[10px] font-bold text-slate-500">
+                                <div className="space-y-1.5 h-[51px] flex flex-col justify-end">
+                                  <label className="text-xs font-bold text-slate-500">Origen de Firma del Profesional</label>
+                                  <div className="flex border border-slate-200 bg-white text-[11px] font-semibold shrink-0 rounded-lg overflow-hidden">
                                     <button
                                       type="button"
                                       onClick={() => setFirmaTipo('perfil')}
-                                      className={`py-1 rounded-md transition-all cursor-pointer border-none ${
-                                        firmaTipo === 'perfil' ? 'bg-[#468DFF] text-white shadow-sm' : 'bg-transparent text-slate-500'
+                                      className={`flex-1 py-1 transition-colors cursor-pointer border-none ${
+                                        firmaTipo === 'perfil'
+                                          ? 'bg-[#468DFF] text-white'
+                                          : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
                                       }`}
                                     >
                                       Firma de Perfil
@@ -2456,46 +2572,63 @@ export default function ChecklistPersonalizadosPage({ params }) {
                                     <button
                                       type="button"
                                       onClick={() => setFirmaTipo('mano')}
-                                      className={`py-1 rounded-md transition-all cursor-pointer border-none ${
-                                        firmaTipo === 'mano' ? 'bg-[#468DFF] text-white shadow-sm' : 'bg-transparent text-slate-500'
+                                      className={`flex-1 py-1 transition-colors cursor-pointer border-none ${
+                                        firmaTipo === 'mano'
+                                          ? 'bg-[#468DFF] text-white'
+                                          : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
                                       }`}
                                     >
-                                      Dibujar a Mano
+                                      Firmar a mano
                                     </button>
+                                  </div>
+                                </div>
+
+                                {firmaTipo === 'perfil' ? (
+                                  <div className="border-2 border-dashed border-slate-200 bg-slate-50 rounded-xl aspect-[2/1] relative overflow-hidden flex items-center justify-center p-3 text-center">
+                                    {signaturePath && signaturePath !== 'N/A' ? (
+                                      <div className="flex flex-col items-center justify-center h-full w-full">
+                                        {firmaPerfilPreviewUrl ? (
+                                          <div className="bg-white border border-slate-200 rounded-lg p-2 max-w-[200px] h-[80px] flex items-center justify-center overflow-hidden shadow-sm">
+                                            <img 
+                                              src={firmaPerfilPreviewUrl} 
+                                              alt="Firma Perfil" 
+                                              className="max-w-full max-h-full object-contain"
+                                            />
+                                          </div>
+                                        ) : (
+                                          <Loader2 className="h-5 w-5 animate-spin text-[#468DFF]" />
+                                        )}
+                                        <p className="text-[10px] text-green-600 font-bold mt-2">✓ Firma del perfil cargada correctamente.</p>
+                                      </div>
+                                    ) : (
+                                      <p className="text-[10px] text-amber-600 font-bold p-4">⚠ El profesional seleccionado no tiene una firma digital configurada.</p>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl aspect-[2/1] relative overflow-hidden flex items-center justify-center">
+                                    {firmaProfSavedUrl && !hasSignedProf ? (
+                                      <img src={firmaProfSavedUrl.startsWith('mock') ? '/brand/logo-primary.png' : firmaProfSavedUrl} alt="Firma Profesional" className="w-full h-full object-contain p-2" />
+                                    ) : (
+                                      <canvas
+                                        ref={refProfCallback}
+                                        width={400}
+                                        height={200}
+                                        className={`w-full h-full bg-white block ${!isInspeccionReadOnly ? 'cursor-crosshair' : 'cursor-default'}`}
+                                      />
+                                    )}
+                                    {!hasSignedProf && !firmaProfSavedUrl && (
+                                      <span className="absolute pointer-events-none text-[10px] text-slate-400 font-bold uppercase tracking-wider">Dibuje la firma aquí</span>
+                                    )}
                                   </div>
                                 )}
 
-                                <div className="relative border-2 border-dashed border-slate-200 rounded-xl bg-white aspect-[2/1] overflow-hidden flex items-center justify-center">
-                                  {firmaTipo === 'perfil' ? (
-                                    firmaPerfilPreviewUrl ? (
-                                      <img src={firmaPerfilPreviewUrl} alt="Firma Perfil" className="h-full w-full object-contain p-2" />
-                                    ) : (
-                                      <div className="flex flex-col items-center p-4 text-center">
-                                        <Info className="h-6 w-6 text-slate-300 mb-1" />
-                                        <span className="text-[10px] text-slate-400">Seleccione un profesional para cargar su firma digital.</span>
-                                      </div>
-                                    )
-                                  ) : firmaProfSavedUrl && !hasSignedProf ? (
-                                    <img src={firmaProfSavedUrl.startsWith('mock') ? '/brand/logo-primary.png' : firmaProfSavedUrl} alt="Firma Cargada" className="h-full w-full object-contain" />
-                                  ) : isInspeccionReadOnly ? (
-                                    <span className="text-xs text-slate-400">Sin firma registrada</span>
-                                  ) : (
-                                    <canvas
-                                      ref={refProfCallback}
-                                      width={400}
-                                      height={200}
-                                      className="h-full w-full cursor-crosshair touch-none"
-                                    />
-                                  )}
-                                </div>
-
                                 <div className="flex flex-col gap-1 pt-1.5">
-                                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Profesional Interviniente</label>
+                                  <label className="text-xs font-bold text-slate-500">Profesional Interviniente</label>
                                   {!isInspeccionReadOnly && profesionalTipo === 'miembro' ? (
                                     <select
                                       value={profesionalId}
                                       onChange={(e) => handleProfesionalChange(e.target.value)}
-                                      className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#468DFF] cursor-pointer font-semibold text-slate-650"
+                                      className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 cursor-pointer font-semibold text-slate-700"
                                     >
                                       <option value="">Seleccionar profesional...</option>
                                       {miembrosList.map(m => (
@@ -2507,45 +2640,62 @@ export default function ChecklistPersonalizadosPage({ params }) {
                                       type="text"
                                       disabled
                                       value={profesionalNombre || 'N/A'}
-                                      className="px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs text-slate-500 font-semibold"
+                                      className="w-full border border-slate-200 bg-slate-100 text-slate-500 rounded-xl px-3.5 py-2 text-sm font-semibold"
                                     />
                                   )}
                                 </div>
                               </div>
                             )}
-
                           </div>
                         </div>
                       )}
-
-                    </>
+                    </fieldset>
                   )}
 
-                </div>
-
-                {/* BOTONERA FOOTER FORM */}
-                <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between bg-white shrink-0 sticky bottom-0 z-20">
-                  <button
-                    onClick={handleExitForm}
-                    className="px-4 py-2.5 bg-white border border-[#468DFF] text-[#468DFF] hover:bg-[#468DFF] hover:text-white rounded-xl text-xs font-bold cursor-pointer transition-all"
-                  >
-                    Salir
-                  </button>
-
-                  {!isInspeccionReadOnly && (
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={handleSaveInspeccion}
-                        disabled={saveLoading}
-                        className="px-5 py-2.5 bg-[#468DFF] text-white border border-[#468DFF] hover:bg-[#0511F2] hover:border-[#0511F2] rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer shadow-lg shadow-[#468DFF]/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {saveLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                        {editingInspeccionId ? 'Guardar Cambios' : 'Guardar Inspección'}
-                      </button>
+                  {/* Acciones del formulario */}
+                  <div className="flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center gap-3 pt-6 border-t border-slate-100 shrink-0">
+                    <button
+                      type="button"
+                      onClick={handleExitForm}
+                      className="px-5 py-2.5 bg-[#FFFFFF] text-[#468DFF] border border-[#468DFF] rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-[#FFFFFF] hover:border-[#FFFFFF] transition-all active:scale-[0.98] cursor-pointer text-center w-full sm:w-auto"
+                    >
+                      Salir
+                    </button>
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                      {isInspeccionReadOnly ? (
+                        canEditar && (
+                          <button
+                            type="button"
+                            onClick={() => setIsInspeccionReadOnly(false)}
+                            className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-amber-500/10 text-center w-full sm:w-auto"
+                          >
+                            Editar
+                          </button>
+                        )
+                      ) : (
+                        <>
+                          {editingInspeccionId && canEliminar && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteInspeccion(editingInspeccionId)}
+                              className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-red-600/10 text-center w-full sm:w-auto"
+                            >
+                              Eliminar
+                            </button>
+                          )}
+                          <button
+                            type="submit"
+                            disabled={saveLoading}
+                            className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50 w-full sm:w-auto border border-[#468DFF] hover:border-[#0511F2]"
+                          >
+                            {saveLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                            {editingInspeccionId ? 'Guardar Cambios' : 'Registrar Inspección'}
+                          </button>
+                        </>
+                      )}
                     </div>
-                  )}
-                </div>
-
+                  </div>
+                </form>
               </div>
             )}
           </div>
@@ -2553,13 +2703,11 @@ export default function ChecklistPersonalizadosPage({ params }) {
       </main>
 
       {/* ==========================================
-          MODAL: ENVIO POR CORREO
+          MODAL: ENVÍO POR CORREO
           ========================================== */}
       {isMailModalOpen && mailTargetInspeccion && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
           <div className="bg-white border border-slate-200 rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-scaleUp">
-            
-            {/* Header */}
             <div className="px-5 py-4 border-b border-slate-150 bg-slate-50 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Mail className="h-5 w-5 text-[#468DFF]" />
@@ -2567,15 +2715,13 @@ export default function ChecklistPersonalizadosPage({ params }) {
               </div>
               <button
                 onClick={() => setIsMailModalOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors border-none cursor-pointer"
+                className="p-1 text-slate-400 hover:text-slate-655 rounded-lg hover:bg-slate-100 transition-colors border-none cursor-pointer"
               >
                 <X className="h-4.5 w-4.5" />
               </button>
             </div>
 
-            {/* Body */}
             <div className="p-5 space-y-4">
-              
               <div className="p-3 bg-blue-50/50 border border-blue-100 rounded-xl">
                 <span className="text-[10px] font-bold text-[#468DFF] uppercase tracking-wider block">Inspección Seleccionada</span>
                 <span className="text-xs font-bold text-slate-800">
@@ -2597,7 +2743,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
                         key={email}
                         onClick={() => handleSendEmail([email])}
                         disabled={mailLoading}
-                        className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 hover:border-[#468DFF] hover:bg-blue-50/30 rounded-lg text-xs font-semibold text-slate-600 flex items-center gap-1 cursor-pointer transition-all disabled:opacity-50"
+                        className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 hover:border-[#468DFF] hover:bg-blue-50/30 rounded-lg text-xs font-semibold text-slate-650 flex items-center gap-1 cursor-pointer transition-all disabled:opacity-50"
                       >
                         <Send className="h-3 w-3 text-[#468DFF]" />
                         {email}
@@ -2615,7 +2761,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
                     value={manualEmail}
                     onChange={(e) => setManualEmail(e.target.value)}
                     placeholder="ejemplo@correo.com"
-                    className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs flex-grow focus:outline-none focus:ring-2 focus:ring-[#468DFF] transition-all"
+                    className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs flex-grow focus:outline-none focus:ring-2 focus:ring-[#468DFF] transition-all font-semibold"
                   />
                   <button
                     onClick={() => handleSendEmail([manualEmail])}
@@ -2626,7 +2772,6 @@ export default function ChecklistPersonalizadosPage({ params }) {
                   </button>
                 </div>
               </div>
-
             </div>
           </div>
         </div>
@@ -2636,45 +2781,63 @@ export default function ChecklistPersonalizadosPage({ params }) {
           TOAST ALERT & CONFIRMATION DIALOG
           ========================================== */}
       {toast.show && (
-        <div className="fixed bottom-5 right-5 z-50 animate-slideUp">
-          <div className={`flex items-center gap-2.5 py-3 px-4 rounded-2xl shadow-xl text-xs font-semibold text-white border ${
-            toast.type === 'error' ? 'bg-red-500 border-red-500' : toast.type === 'warning' ? 'bg-amber-500 border-amber-500' : toast.type === 'info' ? 'bg-[#468DFF] border-[#468DFF]' : 'bg-emerald-500 border-emerald-500'
+        <div className={`fixed bottom-6 right-6 z-[9999] px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 border animate-fade-in ${
+          toast.type === 'error' 
+            ? 'bg-red-50 border-red-200 text-red-800' 
+            : toast.type === 'info'
+            ? 'bg-blue-50 border-blue-200 text-blue-800'
+            : 'bg-green-50 border-green-200 text-green-800'
+        }`}>
+          <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+            toast.type === 'error' 
+              ? 'bg-red-500 text-white' 
+              : toast.type === 'info'
+              ? 'bg-[#468DFF] text-white'
+              : 'bg-[#00b050] text-white'
           }`}>
-            {toast.type === 'info' && <Loader2 className="h-4 w-4 animate-spin shrink-0" />}
-            {toast.type !== 'info' && <Info className="h-4.5 w-4.5 shrink-0" />}
-            <span>{toast.message}</span>
+            {toast.type === 'error' ? (
+              <AlertTriangle className="h-3.5 w-3.5" />
+            ) : toast.type === 'info' ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Check className="h-3.5 w-3.5" />
+            )}
           </div>
+          <span className="text-xs font-semibold leading-none">{toast.message}</span>
         </div>
       )}
 
       {modalAlert.show && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-scaleUp">
-            <div className="p-5 text-center flex flex-col items-center gap-3">
-              <div className="p-3 bg-red-50 text-red-500 rounded-full">
-                <AlertTriangle className="h-6 w-6" />
-              </div>
-              <h3 className="text-sm font-bold text-slate-800">{modalAlert.title}</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">{modalAlert.message}</p>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xl max-w-sm w-full animate-scaleUp space-y-4 text-center">
+            <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500 animate-pulse">
+              <AlertTriangle className="h-6 w-6" />
             </div>
-            <div className="px-5 py-4 bg-slate-50 border-t border-slate-100 flex gap-3 justify-end">
+            <div className="space-y-1">
+              <h4 className="font-outfit text-base font-extrabold text-slate-800">{modalAlert.title}</h4>
+              <p className="text-xs text-slate-500 leading-relaxed">{modalAlert.message}</p>
+            </div>
+            <div className="flex gap-2">
               <button
+                type="button"
                 onClick={closeAlert}
-                className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl text-xs font-bold cursor-pointer transition-all"
+                className="flex-1 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all cursor-pointer bg-transparent"
               >
                 Cancelar
               </button>
-              <button
-                onClick={modalAlert.onConfirm}
-                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl text-xs font-bold cursor-pointer transition-all"
-              >
-                {modalAlert.confirmText}
-              </button>
+              {modalAlert.onConfirm && (
+                <button
+                  type="button"
+                  onClick={modalAlert.onConfirm}
+                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer border-none"
+                >
+                  {modalAlert.confirmText || 'Confirmar'}
+                </button>
+              )}
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 }

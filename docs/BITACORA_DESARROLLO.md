@@ -1,5 +1,169 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-02] Estandarización de Toasts, Pestañas de Listado y Buscador en Checklist
+
+### Resumen de Cambios
+- **Homologación de Toasts**: Se reemplazó el Toast de fondo oscuro en `checklist-personalizados/page.js` por la alerta estándar claro de la plataforma (`bg-red-50/bg-blue-50/bg-green-50` con borde y texto específicos), manteniendo la consistencia de estilo y colores de feedback visual.
+- **Pestañas como Pill Selector**: Se rediseñó la barra de pestañas ("Inspecciones Realizadas" y "Plantillas / Configuración") como un control pill/switch selector (`bg-slate-100` con botones activos `bg-white shadow-sm`), haciéndolo claramente visible y clickable sin alterar el alto ni proporciones del contenedor.
+- **Buscador Permanente e Interactivo**:
+  - Se removió la condición de renderizado del buscador para mantenerlo visible en ambas pestañas.
+  - Se modificó su placeholder dinámicamente según la pestaña activa ("Buscar por plantilla, cliente..." vs "Buscar plantilla...").
+  - Se implementó el filtrado reactivo del listado de plantillas en base al input de búsqueda.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js (`npm run build`) exitosa.
+
+---
+
+## [2026-07-02] Homologación de Cabeceras (Plan y Fallbacks) y Ajuste de Contenedores
+
+### Resumen de Cambios
+- **Homologación de Cabeceras (Plan y Fallbacks)**: Se actualizaron los encabezados superiores de las secciones **Control Eléctrico**, **Nómina de Personal** y **Checklist Personalizados** para renderizar la insignia del Plan (`Plan Libre` por defecto) y asegurar que el nombre del tenant cuente con el fallback institucional `'Gestión SySO'` cuando cargue o si no está definido en base de datos.
+- **Ajuste de Dimensiones de Contenedor en Checklist**: Se unificó el contenedor del cuerpo principal de `checklist-personalizados/page.js` a las dimensiones estándar de la plataforma (`py-8` y `flex-1` en lugar de `py-6` y `flex-grow`).
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] src/app/[tenant-slug]/nomina/page.js`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js (`npm run build`) exitosa.
+
+---
+
+## [2026-07-02] Aplicación Definitiva del SySO Compact Layout a Checklist Personalizados
+
+### Resumen de Cambios
+- **Homologación Completa a SySO Compact Layout**: Se actualizaron todas las entradas de texto, textareas y selectores de plantillas (tanto en el Diseñador de Plantillas Nivel 1 como en el Runner de Inspección Nivel 2) para adoptar las dimensiones tipográficas y rellenos unificados del layout compacto (`text-sm`, `py-2`, `px-3.5`, `bg-slate-50/50` y color de texto `text-slate-700`), unificando además a fondo blanco (`bg-white`) las etiquetas y controles interactivos.
+- **Encabezados de Tabla con Efecto Sticky**: Se dotó a las cabeceras de columnas (`<th>`) de ambas tablas principales (Listado de Inspecciones y Listado de Plantillas) de interactividad (`hover:text-slate-700`) y visualización de anclaje (`sticky top-0 z-10 bg-slate-50 border-b border-slate-150`) para alinearse con *Constancia de Visita*.
+- **Validación del Proyecto**: Se ejecutó la compilación de Next.js (`npm run build`) resultando exitosa al 100%.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js (`npm run build`) exitosa.
+
+---
+
+## [2026-07-02] Homologación y Ajuste de Altura de Formularios de Checklist Personalizados
+
+### Resumen de Cambios
+- **Ajuste de Altura del Formulario (`max-h-[85vh]`)**: Se rediseñaron los contenedores del Diseñador de Plantillas y del Runner de Inspecciones en `checklist-personalizados/page.js` para aplicar la misma estructura y altura máxima que en *Constancia de Visita*.
+- **Scroll Interno y Layout Unificado**: Se removió el scroll del contenedor principal `<main>` cuando el formulario está abierto, aplicando overflow confinado de manera fluida en el interior del cuerpo del formulario (`overflow-y-auto flex-grow flex-1 scrollbar-thin`).
+- **Saneamiento y Homologación de Cabeceras**: Se ajustó la cabecera del Diseñador y Runner para adoptar el mismo diseño que en visitas, incluyendo el título de sección, botón de salida "Salir" de borde azul y hover de fondo azul, y la cruz de cierre.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js (`npm run build`) exitosa.
+
+---
+
+## [2026-07-02] Reescritura Completa y Homologación de la Sección de Checklist Personalizados
+
+### Resumen de Cambios
+- **Reescritura de Cero del Módulo**: Se rediseñó por completo el archivo `checklist-personalizados/page.js` para simplificar la lógica de React y resolver problemas de scroll de raíz.
+- **Implementación del SySO Compact Layout**:
+  - **Tabs y Filtros**: Se integraron las pestañas de navegación ("Inspecciones Realizadas" y "Plantillas / Configuración") dentro del panel superior de filtros compactos.
+  - **Tabla de Registros**: Altura adaptativa mediante cálculo dinámico (`style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}`) y espaciados internos compactos.
+  - **Runner de Inspecciones y Diseñador de Plantillas**: Se limitaron las alturas de ambos contenedores a `max-h-[calc(100vh-130px)]` acoplado al control de overflow condicional de `<main>`.
+- **Estandarización de Elementos UI**:
+  - Pictogramas de acciones del listado estandarizados según las pautas de marca de Gestión SySO (Ver PDF en azul, Descargar en gris, Enviar Mail en azul, Editar en ámbar y Eliminar en rojo).
+  - Empty state estandarizado con icono `AlertTriangle` de `h-10 w-10 text-slate-300` y llamado a la acción directa.
+- **Mantención de Lógica Core**: Se conservó toda la integración real de base de datos Supabase, carga de fotos a Supabase Storage, firmas digitales integradas, exportación jsPDF (con pie de página y anexo fotográfico) y endpoint de envío por correo `/api/send-email`.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js exitosa.
+
+---
+
+## [2026-07-02] Corrección de Scroll y Altura del Contenedor de Formulario en Checklist Personalizados
+
+### Resumen de Cambios
+- **Restauración de overflow-hidden condicional**: Se volvió a implementar la clase condicional en `<main>` (`${isFormOpen ? 'overflow-hidden' : 'overflow-y-auto'}`) para asegurar que cuando el formulario esté visible se inhabilite por completo el scroll a nivel de contenedor de página.
+- **Altura Máxima Dinámica (`calc(100vh - 130px)`)**: Se limitó la altura máxima del Diseñador de Plantillas y del Runner de Inspecciones a `max-h-[calc(100vh-130px)]` en lugar de valores estáticos en `vh`. Esto asegura matemáticamente que la tarjeta del formulario (que tiene un padding de `py-6` y el header de sección de `h-16`) quepa en el 100% de la altura visible, eliminando cualquier barra de desplazamiento en la ventana del navegador.
+- **Aislamiento de Scroll Interno**: El scroll se confina de manera fluida en el interior de la tarjeta blanca (`<form className="overflow-y-auto flex-1 scrollbar-thin">`), garantizando una experiencia de usuario donde el Sidebar y la cabecera del sistema se mantienen perfectamente fijos.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js (`npm run build`) validada.
+
+---
+
+## [2026-07-02] Ajustes, Homologación y Correcciones en Checklist Personalizados (Fases 1 a 6)
+
+### Resumen de Cambios
+- **Relocalización de Pestañas de Navegación**: Se removió el panel de navegación de la cabecera del módulo de Checklist Personalizados y se integró en la esquina superior izquierda del contenedor de filtros. El buscador y las acciones se muestran dinámicamente de acuerdo a la pestaña activa.
+- **Estandarización SySO Compact Layout**: Se aplicó el espaciado, bordes y estilos de sombra del layout compacto a todas las tablas y contenedores de la sección. Asimismo, se unificaron los pictogramas cromáticos de acciones para ver PDF, descargar, editar, enviar mail y eliminar registros.
+- **Selector de Tipos de Pregunta**: Se incorporó el tipo de respuesta `"check list"` en la lista desplegable de configuración del creador de plantillas (Builder). Se eliminó la opción y lógica de `"Permitir otro especificar"` (`con_otro`). Asimismo, se añadió una casilla "Obligatorio" para marcar si cada ítem es requerido o no (por defecto es requerido, guardándose como la propiedad `requerido` de tipo booleano en la estructura JSONB de la plantilla).
+- **Corrección de Coordenadas de Canvas y Homologación de Firmas**:
+  - Se corrigió el desfase físico del puntero en la firma manuscrita mediante un mapeo proporcional (`clientX - rect.left` / `rect.width` * `canvas.width`).
+  - Se reestructuraron las secciones de firmas ("Responsable del Establecimiento" y "Profesional de Higiene y Seguridad") para que sean idénticas en layout, etiquetas, opciones de origen (Perfil vs Firma a Mano) y botón "Limpiar Firma" a las de *Constancia de Visita*.
+- **Estandarización de Puntos de Verificación**:
+  - Se dio formato de tarjeta individual (`rounded-xl border border-slate-150 bg-white p-3`) a cada pregunta dentro del runner de inspección, incluyendo un asterisco rojo `*` al final de la pregunta si esta es de carácter obligatorio.
+  - Los botones de Ok, No Ok, N/A, Si y No adoptaron los colores semánticos activos (verde, rojo, gris oscuro) e inactivos del sistema.
+  - Se incorporó la casilla de verificación estilizada para el tipo `"check list"` con la leyenda "Verificado".
+- **Saneamiento de Textos y Validación al Guardar**:
+  - Se renombraron las secciones `"3. Observaciones Generales o Diagnóstico Final"` a `"3. Observaciones"` y `"5. Firmas y Validaciones"` a `"5. Firmas"`.
+  - Se resolvió el bug de validación que impedía guardar inspecciones válidas: la comprobación de respuestas vacías (`""`) ahora se limita exclusivamente a las preguntas que tienen configurada la propiedad de obligatoriedad (`requerido !== false`). Las respuestas para preguntas no requeridas que se dejen en blanco son admitidas sin generar advertencias o toasts falsos. Las respuestas de tipo check list continúan con su inicialización estándar en `"No"`.
+  - **Homologación de Formatos de Reportes PDF**: Se estandarizó el pie de página de los reportes PDF generados en Checklist Personalizados para alinearse con los demás módulos (Extintores, Control Eléctrico, Correctivas). Ahora incluye la barra azul inferior (`#3C78D8`), los datos de contacto institucional (teléfono y correo del profesional de Higiene y Seguridad o de la consultora) y el número de página relativo formateado (`Página X de Y`) centrado y alineado.
+  - **Corrección de Imagenes con Fondo Negro en PDF**: Se modificó el redimensionador de imágenes `resizeImageForPdf` para exportar a formato `'image/png'` por defecto, preservando la transparencia alfa de las firmas manuscritas y el logotipo de la empresa. Para el anexo fotográfico (JPEG), se rellenan las dimensiones del lienzo con fondo blanco antes de pintar la imagen para evitar rebordes o rellenos oscuros.
+  - **Carga de Firma de Perfil Profesional**: Se corrigió el mapeo de firma digital configurada al abrir un nuevo formulario de inspección. Ahora se busca automáticamente el miembro coincidente en base al identificador único de perfil (`m.profile_id === profile.id`), estableciendo la ruta de firma y el selector de firma del perfil de forma consistente.
+  - **Redimensionamiento y Organización de Campos en Reporte PDF**:
+    - Se ajustó el ancho de la columna de numeración (N°) en la tabla de ítems del PDF a cellWidth: 30 para permitir la correcta visualización de números de dos dígitos con el padding de celda.
+    - Se optimizó el encabezado de datos generales eliminando el campo "Establecimiento" y colocando la "Fecha" en la celda derecha (Col 2), de modo que acompaña a "Dirección" en la celda izquierda (Col 1, con 267.5 pt de ancho). La tercera fila donde antes se ubicaba la fecha aislada fue completamente removida, logrando una tabla más limpia de 2 filas.
+    - Se integró la lógica de salto de renglón automático (`splitTextToSize`) y disminución de tamaño de tipografía (8pt) para valores largos (como la Dirección) en el encabezado del PDF, evitando desbordamientos y solapamiento de textos.
+    - Se incrementó el espaciado vertical entre la tabla de datos del encabezado y la tabla de ítems a 15 pt para guardar proporción con el espaciado superior.
+    - Se incrementó la separación vertical entre el cuadro de preguntas y la sección `"OBSERVACIONES / RECOMENDACIONES:"` a **`25 pt`** (anteriormente 15 pt) para dar un mayor respiro visual al diseño.
+    - Se corrigió la deformación y dimensionamiento de las firmas del profesional y del responsable del establecimiento en el PDF: ahora la firma del profesional adopta exactamente el mismo tamaño estandarizado que en *Constancia de Visita* y *Aviso de Riesgo* (caja máxima de `240 x 120 pt` en alta resolución con redimensionamiento a `800 x 400 px`), mientras que la del responsable se ciñe a una caja máxima de `100 x 40 pt`. Ambas firmas se posicionan dinámicamente con un desfase vertical `sigY` (`finalY + 120 pt` con salto de página preventivo a partir de `550 pt`), centrándose simétricamente sobre sus respectivas líneas punteadas de aclaración.
+    - Se corrigió el tamaño y la deformación de las imágenes del anexo fotográfico: ahora se calculan las dimensiones y relación de aspecto de cada foto de forma dinámica, escalándolas proporcionalmente para caber en una caja contenedora máxima de `360 x 245 pt` y centrándolas horizontalmente en la página.
+  - **Estandarización de Notificaciones y Diálogos de Alerta**:
+    - Se unificó el tamaño de los pictogramas de acciones en las tablas del listado (`inspecciones` y `plantillas`) a la dimensión estándar de `h-4.5 w-4.5`.
+    - Se rediseñó la alerta toast para emplear el esquema de colores oscuros (`bg-slate-800 border-slate-700 text-white`) e iconos cromáticos definidos como estándar.
+    - Se incrementó el z-index de las alertas toast y los cuadros de diálogos confirmatorios (`modalAlert`) a `z-[9999]`, previniendo que se rendericen por debajo o queden tapados por otros elementos del formulario.
+    - Se configuró la confirmación de descarte al presionar "Salir" en el formulario de edición o carga si contiene cambios sin guardar, homologando el estilo del modal dialog interactivo.
+  - **Corrección de Formularios de Carga e Imágenes**:
+    - Se corrigió de forma definitiva el scroll e inviabilidad de altura del formulario de carga/edición de inspección y del diseñador de plantillas, aplicando la clase `max-h-[82vh]` (reemplazando la clase `flex-grow` por `flex-1 min-h-0`) y aplicando `h-screen` al contenedor `<main>`. Esto acota estrictamente los contenedores a un máximo de `82%` de la altura de la pantalla, previniendo por completo que expandan y provoquen desbordamiento o scroll general de la ventana y eliminando la ventana negra subyacente de forma garantizada en cualquier monitor.
+    - Se modificó la inicialización del formulario al cargar una nueva inspección para que el dropdown de "Cliente / Razón Social" se cargue con un valor vacío (`""`), mostrando la opción descriptiva `"Seleccionar cliente..."` por defecto en lugar de pre-seleccionar automáticamente al primer cliente de la lista.
+    - Se ajustó el estilo tipográfico de los campos autocompletados deshabilitados (C.U.I.T. y Dirección) en el formulario de carga de inspección, sustituyendo la clase `font-bold` por `font-semibold` para respetar rigurosamente los estándares estéticos y visuales del resto de la plataforma.
+    - Se solucionó el error de subida de imágenes a Supabase Storage (`400 Bad Request / RLS Policy violation`): las directivas de seguridad del bucket `documents` requieren que el prefijo del path del archivo comience obligatoriamente con el identificador único del usuario (`auth.uid()`). Modificamos la composición de la ruta para usar `${profile?.id || 'anonymous'}` como primer directorio en lugar de `${tenantSlug}` en la subida de fotos de la inspección y en el envío por correo de los archivos PDF.
+    - Se simplificó la leyenda de los botones de confirmación de guardado de plantillas e inspecciones a un único texto estándar: `"Guardar"`.
+    - Se integró el botón `"Editar"` (con color de marca de edición `#F59E0B` / Amber-500) en el pie del formulario de inspección cuando se accede en modo de solo lectura, permitiendo a los usuarios con permisos adecuados conmutar interactivamente a la edición del documento.
+
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `gestion-syso-multitenant-security`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+- `[MODIFY] C:/Users/sebas/.gemini/antigravity-ide/brain/e0b355ae-fb11-47ed-9766-0aca30e10b42/task.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js (`npm run build`) completada con éxito.
+
+### Próximo Paso Recomendado
+- Realizar pruebas de usuario en dispositivos móviles para corroborar la comodidad del tamaño y la responsividad del nuevo runner del checklist con formato tarjeta y firmas homologadas.
+
 ## [2026-07-01] Creación del Módulo de Checklist Personalizados (Dos Niveles)
 
 ### Resumen de Cambios
