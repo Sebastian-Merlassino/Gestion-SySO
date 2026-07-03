@@ -169,14 +169,15 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
     setTimeout(() => setErrorMessage(''), ms);
   };
 
-  const checkPermissionDenied = async () => {
+  // Devuelve 'granted' | 'denied' | 'prompt' | 'unknown'
+  const getPermissionState = async () => {
     try {
       if (navigator.permissions?.query) {
         const status = await navigator.permissions.query({ name: 'microphone' });
-        return status.state === 'denied';
+        return status.state; // 'granted' | 'denied' | 'prompt'
       }
     } catch (_) {}
-    return false;
+    return 'unknown';
   };
 
   const toggleListening = async () => {
@@ -196,24 +197,35 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
         return;
       }
 
-      // Si ya está bloqueado permanentemente → abrir modal directo
-      const isDenied = await checkPermissionDenied();
-      if (isDenied) {
+      const permState = await getPermissionState();
+
+      if (permState === 'denied') {
+        // Permiso bloqueado → modal con instrucciones
         setShowPermissionModal(true);
         return;
       }
 
-      // Solicitar permiso (dispara popup nativo la primera vez)
-      if (navigator.mediaDevices?.getUserMedia) {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          stream.getTracks().forEach(t => t.stop());
-        } catch (err) {
-          // El usuario rechazó el popup → mostrar modal
-          setShowPermissionModal(true);
-          return;
+      if (permState !== 'granted') {
+        // Permiso nunca pedido ('prompt' o 'unknown') → disparar popup nativo
+        if (navigator.mediaDevices?.getUserMedia) {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            stream.getTracks().forEach(t => t.stop());
+          } catch (err) {
+            // Solo mostrar modal si fue un rechazo real de permiso
+            const isPermissionError =
+              err.name === 'NotAllowedError' ||
+              err.name === 'PermissionDeniedError';
+            if (isPermissionError) {
+              setShowPermissionModal(true);
+            } else {
+              showError('No se pudo acceder al micrófono.');
+            }
+            return;
+          }
         }
       }
+      // Si permState === 'granted' → ir directo a SpeechRecognition sin getUserMedia
 
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
