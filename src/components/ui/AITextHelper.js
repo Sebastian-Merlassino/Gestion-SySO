@@ -2,72 +2,114 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, Sparkles, Loader2, Trash2, X, Settings, Smartphone, Monitor } from 'lucide-react';
+import { Mic, Sparkles, Loader2, Trash2, X, Smartphone, Monitor } from 'lucide-react';
 
-// ── Detectar tipo de dispositivo ──────────────────────────────────────────────
-function getDeviceType() {
-  if (typeof navigator === 'undefined') return 'desktop';
+// ── Detectar contexto de ejecución ─────────────────────────────────────────────
+function getContext() {
+  if (typeof navigator === 'undefined' || typeof window === 'undefined') return 'desktop_browser';
   const ua = navigator.userAgent || '';
-  if (/iPhone|iPad|iPod/.test(ua)) return 'ios';
-  if (/Android/.test(ua)) return 'android';
-  return 'desktop';
+  const isPWA = window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+
+  if (/iPhone|iPad|iPod/.test(ua)) return isPWA ? 'ios_pwa' : 'ios_browser';
+  if (/Android/.test(ua)) return isPWA ? 'android_pwa' : 'android_browser';
+  return isPWA ? 'desktop_pwa' : 'desktop_browser';
 }
 
-// ── Modal de Permisos (bloqueados) ────────────────────────────────────────────
+// ── Instrucciones por contexto ────────────────────────────────────────────────
+const INSTRUCTIONS = {
+  desktop_browser: {
+    label: 'Chrome / Edge en PC',
+    icon: Monitor,
+    steps: [
+      'Hacé clic en el ícono junto a la URL (puede ser un candado, un ojo o un signo de ajuste ⚙).',
+      'En el menú que aparece, seleccioná "Configuración del sitio".',
+      'Buscá "Micrófono" y cambiá el valor a Permitir.',
+      'Recargá la página con F5 y presioná el micrófono nuevamente.',
+    ],
+  },
+  desktop_pwa: {
+    label: 'App instalada en PC',
+    icon: Monitor,
+    steps: [
+      'Hacé clic en los tres puntos ⋮ en la esquina superior derecha de la ventana.',
+      'Seleccioná "Información de la app" (App info).',
+      'Dentro de la información, buscá y tocá "Configuración" (Settings).',
+      'Tocá "Permisos" y habilitá el Micrófono.',
+      'Volvé a la app y probá nuevamente.',
+    ],
+  },
+  android_browser: {
+    label: 'Chrome en Android',
+    icon: Smartphone,
+    steps: [
+      'Tocá el ícono de información ⓘ o el candado que aparece a la izquierda de la URL.',
+      'En el menú, seleccioná "Permisos" o "Configuración del sitio".',
+      'Tocá "Micrófono" y seleccioná Permitir.',
+      'Recargá la página y probá nuevamente.',
+    ],
+  },
+  android_pwa: {
+    label: 'App instalada en Android',
+    icon: Smartphone,
+    steps: [
+      'Salí de la app y volvé a la pantalla de inicio.',
+      'Mantenés presionado el ícono de la app Gestión SySO.',
+      'Seleccioná "Información de la app" (App info) o ⓘ.',
+      'Tocá "Permisos" → "Micrófono" → Seleccioná "Permitir".',
+      'Volvé a abrir la app y presioná el micrófono.',
+    ],
+  },
+  ios_browser: {
+    label: 'Safari en iPhone / iPad',
+    icon: Smartphone,
+    steps: [
+      'Abrí la app Ajustes de tu iPhone / iPad.',
+      'Buscá y tocá "Safari".',
+      'Bajá hasta "Configuración para sitios web" → "Micrófono".',
+      'Cambiá la opción a "Permitir".',
+      'Volvé a Safari, recargá la página y probá.',
+    ],
+  },
+  ios_pwa: {
+    label: 'App instalada en iPhone / iPad',
+    icon: Smartphone,
+    steps: [
+      'Abrí la app Ajustes de tu iPhone / iPad.',
+      'Bajá en la lista y buscá "Gestión SySO" (o el nombre de la app).',
+      'Tocá la app y activá el interruptor de "Micrófono".',
+      'Volvé a abrir la app y presioná el micrófono.',
+    ],
+  },
+};
+
+// ── Modal de Permisos ─────────────────────────────────────────────────────────
 function MicPermissionModal({ onClose }) {
-  const device = getDeviceType();
-
-  const steps = {
-    ios: [
-      'Cerrar la app o el navegador Safari.',
-      'Ir a Ajustes de tu iPhone / iPad.',
-      'Bajar hasta Safari (o la app Gestión SySO si está instalada).',
-      'Tocar "Micrófono" y seleccionar Permitir.',
-      'Volver a la app y probar nuevamente.',
-    ],
-    android: [
-      'Tocar el ícono 🔒 o ⋮ en la barra de dirección del navegador.',
-      'Seleccionar "Configuración del sitio" o "Permisos".',
-      'Tocar "Micrófono" y cambiar a Permitir.',
-      'Recargar la página y volver a intentarlo.',
-    ],
-    desktop: [
-      'Hacer clic en el ícono de candado 🔒 a la izquierda de la URL.',
-      'Seleccionar "Configuración del sitio" o "Permisos del sitio".',
-      'Cambiar "Micrófono" de Bloqueado → Permitir.',
-      'Recargar la página con F5.',
-    ],
-  };
-
-  const deviceLabel = {
-    ios: 'iPhone / iPad',
-    android: 'Android',
-    desktop: 'PC / Mac',
-  };
-
-  const DeviceIcon = device === 'desktop' ? Monitor : Smartphone;
+  const ctx = getContext();
+  const info = INSTRUCTIONS[ctx] || INSTRUCTIONS.desktop_browser;
+  const DeviceIcon = info.icon;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-slate-100">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-red-50 text-red-500">
-              <Mic className="h-4 w-4" />
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-orange-50">
+              <Mic className="h-4 w-4 text-orange-500" />
             </div>
             <div>
-              <p className="text-sm font-bold text-slate-800 leading-none">Micrófono bloqueado</p>
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                <DeviceIcon className="h-3 w-3 inline mr-0.5" />
-                {deviceLabel[device]}
+              <p className="text-sm font-bold text-slate-800">Habilitá el micrófono</p>
+              <p className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1">
+                <DeviceIcon className="h-3 w-3" />
+                {info.label}
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>
@@ -75,13 +117,13 @@ function MicPermissionModal({ onClose }) {
 
         {/* Cuerpo */}
         <div className="px-5 py-4">
-          <p className="text-xs text-slate-500 mb-4">
-            Tu navegador bloqueó el micrófono para esta página. Seguí estos pasos para habilitarlo:
+          <p className="text-[11px] text-slate-400 mb-3.5 leading-relaxed">
+            El permiso de micrófono fue bloqueado. Seguí estos pasos para activarlo:
           </p>
-          <ol className="space-y-2.5">
-            {steps[device].map((step, i) => (
-              <li key={i} className="flex items-start gap-2.5">
-                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-[#468DFF] text-white text-[10px] font-bold flex items-center justify-center mt-0.5">
+          <ol className="space-y-3">
+            {info.steps.map((step, i) => (
+              <li key={i} className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-[#468DFF] text-white text-[10px] font-bold flex items-center justify-center mt-px">
                   {i + 1}
                 </span>
                 <span className="text-xs text-slate-600 leading-relaxed">{step}</span>
@@ -91,27 +133,13 @@ function MicPermissionModal({ onClose }) {
         </div>
 
         {/* Footer */}
-        <div className="px-5 pb-5 pt-2 flex gap-2">
+        <div className="px-5 pb-5">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
+            className="w-full py-2.5 rounded-xl bg-[#468DFF] text-white text-sm font-bold hover:bg-[#0511F2] transition-colors cursor-pointer"
           >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              // En Desktop podemos abrir la página de configuración de permisos directamente (Chrome)
-              if (getDeviceType() === 'desktop' && navigator.userAgent.includes('Chrome')) {
-                window.open('chrome://settings/content/microphone', '_blank');
-              }
-              onClose();
-            }}
-            className="flex-1 py-2 rounded-xl bg-[#468DFF] text-white text-xs font-bold hover:bg-[#0511F2] transition-colors cursor-pointer flex items-center justify-center gap-1.5"
-          >
-            <Settings className="h-3.5 w-3.5" />
-            Abrir ajustes
+            Entendido
           </button>
         </div>
       </div>
@@ -129,34 +157,28 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
 
   const recognitionRef = useRef(null);
 
-  // Verificar soporte de Web Speech API
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        setHasSpeechSupport(true);
-      }
+      if (SpeechRecognition) setHasSpeechSupport(true);
     }
   }, []);
 
-  // Helper para limpiar mensaje de error automáticamente
-  const showError = (msg, durationMs = 5000) => {
+  const showError = (msg, ms = 5000) => {
     setErrorMessage(msg);
-    setTimeout(() => setErrorMessage(''), durationMs);
+    setTimeout(() => setErrorMessage(''), ms);
   };
 
-  // Determinar si el permiso está permanentemente bloqueado
   const checkPermissionDenied = async () => {
     try {
-      if (navigator.permissions && navigator.permissions.query) {
+      if (navigator.permissions?.query) {
         const status = await navigator.permissions.query({ name: 'microphone' });
         return status.state === 'denied';
       }
-    } catch (_) { /* API no soportada */ }
+    } catch (_) {}
     return false;
   };
 
-  // Inicializar o destruir el reconocimiento de voz
   const toggleListening = async () => {
     if (disabled || isRefining) return;
 
@@ -169,33 +191,30 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
     try {
       setErrorMessage('');
 
-      // Sin contexto HTTPS: bloqueo duro del sistema
       if (typeof window !== 'undefined' && !window.isSecureContext) {
-        showError('El micrófono requiere conexión HTTPS segura.');
+        showError('Se requiere conexión HTTPS para usar el micrófono.');
         return;
       }
 
-      // Verificar si el permiso ya fue denegado permanentemente → mostrar modal
+      // Si ya está bloqueado permanentemente → abrir modal directo
       const isDenied = await checkPermissionDenied();
       if (isDenied) {
         setShowPermissionModal(true);
         return;
       }
 
-      // Solicitar el permiso con getUserMedia (dispara el popup nativo la primera vez)
+      // Solicitar permiso (dispara popup nativo la primera vez)
       if (navigator.mediaDevices?.getUserMedia) {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          stream.getTracks().forEach(track => track.stop());
+          stream.getTracks().forEach(t => t.stop());
         } catch (err) {
-          console.error('getUserMedia rechazado:', err);
-          // El usuario rechazó el popup → mostrar modal con instrucciones
+          // El usuario rechazó el popup → mostrar modal
           setShowPermissionModal(true);
           return;
         }
       }
 
-      // Iniciar SpeechRecognition
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
       recognition.lang = 'es-AR';
@@ -215,8 +234,7 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
         }
       };
 
-      recognition.onerror = async (event) => {
-        console.error('Speech Recognition error:', event.error);
+      recognition.onerror = (event) => {
         setIsListening(false);
         if (event.error === 'not-allowed') {
           setShowPermissionModal(true);
@@ -232,13 +250,11 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
       recognitionRef.current = recognition;
       recognition.start();
     } catch (e) {
-      console.error('Error iniciando dictado:', e);
       showError('No se pudo iniciar el dictado.');
       setIsListening(false);
     }
   };
 
-  // Refinar texto con Gemini
   const handleRefineText = async () => {
     if (disabled || isListening || isRefining || !value?.trim()) return;
     setIsRefining(true);
@@ -253,7 +269,6 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
       if (!response.ok) throw new Error(data.error || 'Error al refinar el texto.');
       if (data.refinedText) onChange(data.refinedText);
     } catch (error) {
-      console.error('Error AI refine:', error);
       showError(error.message || 'Error al conectar con la IA.');
     } finally {
       setIsRefining(false);
@@ -264,21 +279,19 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
 
   return (
     <>
-      {/* Modal de permisos bloqueados */}
       {showPermissionModal && (
         <MicPermissionModal onClose={() => setShowPermissionModal(false)} />
       )}
 
       <div className="flex flex-col items-end gap-1 shrink-0">
         <div className="flex items-center gap-1.5">
-          {/* Indicador de error efímero */}
+
           {errorMessage && (
             <span className="text-[10px] font-bold text-red-500 flex items-center gap-1 bg-red-50 px-2 py-1 rounded-lg border border-red-100">
               {errorMessage}
             </span>
           )}
 
-          {/* Botón de Limpiar Texto */}
           {value?.trim() && (
             <button
               type="button"
@@ -290,7 +303,6 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
             </button>
           )}
 
-          {/* Botón de Dictado por Voz */}
           {hasSpeechSupport && (
             <button
               type="button"
@@ -306,7 +318,6 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
             </button>
           )}
 
-          {/* Botón de IA */}
           <button
             type="button"
             onClick={handleRefineText}
