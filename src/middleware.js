@@ -27,6 +27,8 @@ export async function middleware(request) {
 
     if (pathname.startsWith('/api/send-email')) {
       limit = 10;
+    } else if (pathname.startsWith('/api/ai/refine-text')) {
+      limit = 20; // Máximo 20 solicitudes de IA cada 15 minutos por IP
     } else if (pathname.startsWith('/api/clientes') || pathname.startsWith('/api/equipo')) {
       limit = 15;
     }

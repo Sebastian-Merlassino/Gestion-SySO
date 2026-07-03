@@ -7,6 +7,7 @@ import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
+import AITextHelper from '@/components/ui/AITextHelper';
 import { 
   PlusCircle, 
   AlertCircle,
@@ -3187,13 +3188,22 @@ export default function VisitasPage({ params }) {
                       
                       {/* Observaciones y recomendaciones preventivas */}
                       <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600">Observaciones y recomendaciones preventivas (Se imprimen en el PDF)</label>
+                        <div className="flex items-center justify-between gap-2 min-h-[28px]">
+                          <label className="text-xs font-bold text-slate-600">Observaciones y recomendaciones preventivas (Se imprimen en el PDF)</label>
+                          <AITextHelper
+                            value={observacionesRecomendaciones}
+                            onChange={setObservacionesRecomendaciones}
+                            context="Observaciones y recomendaciones preventivas sobre desvíos detectados en visitas de Higiene y Seguridad"
+                            disabled={!canEdit}
+                          />
+                        </div>
                         <textarea
                           rows="4"
                           placeholder="Escriba aquí los desvíos detectados y las recomendaciones preventivas específicas..."
                           value={observacionesRecomendaciones}
                           onChange={(e) => setObservacionesRecomendaciones(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50"
+                          disabled={!canEdit}
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
                         />
                       </div>
 

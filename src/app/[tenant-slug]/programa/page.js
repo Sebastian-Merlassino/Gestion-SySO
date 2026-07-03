@@ -7,6 +7,7 @@ import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
+import AITextHelper from '@/components/ui/AITextHelper';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import {
@@ -1693,9 +1694,17 @@ export default function ProgramaGestion({ params }) {
 
                     {/* 9. Observaciones */}
                     <div>
-                      <label className="text-xs font-bold text-slate-600 block mb-1.5">
-                        Observaciones Generales
-                      </label>
+                      <div className="flex items-center justify-between gap-2 min-h-[28px] mb-1.5">
+                        <label className="text-xs font-bold text-slate-600 block mb-0">
+                          Observaciones Generales
+                        </label>
+                        <AITextHelper
+                          value={observaciones}
+                          onChange={setObservaciones}
+                          context="Observaciones generales de la actividad programada en el programa de gestión anual"
+                          disabled={isReadOnlyView}
+                        />
+                      </div>
                       <textarea
                         placeholder="Escribe comentarios, novedades o detalles..."
                         value={observaciones}

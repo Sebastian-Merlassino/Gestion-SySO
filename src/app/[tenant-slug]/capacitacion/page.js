@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
+import AITextHelper from '@/components/ui/AITextHelper';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { 
@@ -1633,7 +1634,15 @@ export default function CapacitacionPage({ params }) {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-600 block mb-1">Observaciones y Notas</label>
+                      <div className="flex items-center justify-between gap-2 min-h-[28px] mb-1">
+                        <label className="text-xs font-bold text-slate-600 block mb-0">Observaciones y Notas</label>
+                        <AITextHelper
+                          value={observaciones}
+                          onChange={setObservaciones}
+                          context="Observaciones y notas sobre la capacitación dictada y el desempeño de los asistentes"
+                          disabled={isReadOnlyView}
+                        />
+                      </div>
                       <textarea
                         rows="3"
                         placeholder="Comentarios adicionales..."

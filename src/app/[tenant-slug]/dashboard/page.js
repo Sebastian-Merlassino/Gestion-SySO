@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { formatDate } from '@/lib/utils';
+import AITextHelper from '@/components/ui/AITextHelper';
 import {
   Building,
   Users,
@@ -2145,13 +2146,21 @@ export default function TenantDashboard({ params }) {
                     {/* Inline creation form */}
                     <form onSubmit={handleAddTask} className="border-t border-slate-150 pt-3 mt-3 flex flex-col gap-2 shrink-0">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <input
-                          type="text"
-                          placeholder="Nueva tarea..."
-                          value={newTaskTitle}
-                          onChange={e => setNewTaskTitle(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 font-semibold"
-                        />
+                        <div className="flex items-center gap-1.5 border border-slate-200 rounded-xl px-3 py-1 bg-slate-50/50 focus-within:border-[#468DFF] transition-all">
+                          <input
+                            type="text"
+                            placeholder="Nueva tarea..."
+                            value={newTaskTitle}
+                            onChange={e => setNewTaskTitle(e.target.value)}
+                            className="flex-1 text-xs text-slate-700 bg-transparent outline-none font-semibold py-0.5"
+                          />
+                          <AITextHelper
+                            value={newTaskTitle}
+                            onChange={setNewTaskTitle}
+                            context="Título de tarea pendiente o recordatorio técnico de higiene y seguridad"
+                            disabled={false}
+                          />
+                        </div>
                         <input
                           type="date"
                           value={newTaskFecha}

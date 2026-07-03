@@ -9,6 +9,7 @@ import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
+import AITextHelper from '@/components/ui/AITextHelper';
 import { 
   PlusCircle, 
   Search, 
@@ -1957,10 +1958,18 @@ export default function ControlElectricoPage({ params }) {
 
                   {/* SECCIÓN 3: OBSERVACIONES / RECOMENDACIONES */}
                   <div className="space-y-4">
-                    <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
-                      <ClipboardList className="h-4 w-4 text-[#468DFF]" />
-                      3. Observaciones / Recomendaciones
-                    </h3>
+                    <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-1.5 min-h-[28px]">
+                      <h3 className="font-outfit text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2 border-none pb-0">
+                        <ClipboardList className="h-4 w-4 text-[#468DFF]" />
+                        3. Observaciones / Recomendaciones
+                      </h3>
+                      <AITextHelper
+                        value={observaciones}
+                        onChange={setObservaciones}
+                        context="Observaciones y recomendaciones sobre instalaciones eléctricas y tableros"
+                        disabled={isFormDisabled}
+                      />
+                    </div>
                     <textarea
                       value={observaciones}
                       onChange={(e) => setObservaciones(e.target.value)}

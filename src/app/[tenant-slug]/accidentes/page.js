@@ -5,6 +5,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
+import AITextHelper from '@/components/ui/AITextHelper';
 import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import {
@@ -1013,7 +1014,15 @@ export default function AccidentesPage({ params }) {
                       <div className="space-y-4">
                         {/* Descripción de los hechos */}
                         <div>
-                          <label className="block text-xs font-bold text-slate-600 mb-1.5">Descripción de los hechos</label>
+                          <div className="flex items-center justify-between gap-2 min-h-[28px] mb-1.5">
+                            <label className="block text-xs font-bold text-slate-600 mb-0">Descripción de los hechos</label>
+                            <AITextHelper
+                              value={descripcionHechos}
+                              onChange={setDescripcionHechos}
+                              context="Descripción detallada de cómo ocurrió el accidente o incidente laboral"
+                              disabled={isReadOnlyView}
+                            />
+                          </div>
                           <textarea
                             value={descripcionHechos}
                             onChange={e => setDescripcionHechos(e.target.value)}
@@ -1147,7 +1156,15 @@ export default function AccidentesPage({ params }) {
 
                         {/* Observaciones */}
                         <div className="md:col-span-3">
-                          <label className="block text-xs font-bold text-slate-600 mb-1.5">Observaciones</label>
+                          <div className="flex items-center justify-between gap-2 min-h-[28px] mb-1.5">
+                            <label className="block text-xs font-bold text-slate-600 mb-0">Observaciones</label>
+                            <AITextHelper
+                              value={observaciones}
+                              onChange={setObservaciones}
+                              context="Observaciones y comentarios adicionales del reporte de accidente"
+                              disabled={isReadOnlyView}
+                            />
+                          </div>
                           <textarea
                             value={observaciones}
                             onChange={e => setObservaciones(e.target.value)}

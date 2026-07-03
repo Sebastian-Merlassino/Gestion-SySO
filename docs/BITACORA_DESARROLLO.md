@@ -1,5 +1,57 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-03] Integración y Estandarización a Gran Escala de Audio a Texto y Asistente de Refinamiento con IA (Gemini) - SySO-AI-Voice-Helper
+
+### Resumen de Cambios
+- **Estandarización bajo `SySO-AI-Voice-Helper`**: Creación del estándar de arquitectura y diseño para dictado por voz, pulido mediante IA (Gemini) y limpieza de campos.
+- **Creación de Skill local y Reglas**: Creación de la especificación técnica en la skill `.agents/skills/gestion-syso-ai-voice-helper/SKILL.md` y actualización del archivo `.agents/agents.md` para exigir la integración obligatoria de este estándar en cualquier formulario de largo formato del proyecto.
+- **API Backend de Gemini**: Creación del endpoint `/api/ai/refine-text` que se conecta de manera segura con el modelo `gemini-2.5-flash` en Google AI Studio utilizando la variable `GEMINI_API_KEY`, empleando `systemInstruction` para mitigar ataques de Prompt Injection.
+- **Componente Reusable `AITextHelper`**: Desarrollo de un componente modular y reactivo para inputs y textareas que integra la Web Speech API para dictado de voz nativo en español, un asistente de refinamiento por IA y un botón para limpiar el texto ingresado.
+- **Expansión a Gran Escala en 7 Módulos (13 campos)**: Implementación exitosa del estándar `<AITextHelper />` al lado de los labels/inputs de los siguientes campos de carga de texto:
+  * **Constancia de Visitas**: Observaciones y recomendaciones preventivas.
+  * **Control Eléctrico**: 3. Observaciones / Recomendaciones.
+  * **Checklist Personalizados**: 3. Observaciones del Runner.
+  * **Programa de Gestión Anual**: Nueva Actividad / Observaciones Generales.
+  * **Programa de Capacitación Anual**: Registrar Nueva Capacitación / Observaciones y Notas.
+  * **Seguimiento de Acciones Correctivas** (6 campos): Descripción Detallada del Hallazgo, Recomendaciones / sugerencias, Acción Preventiva, Causa Raíz, Acción Correctiva, y Observaciones Generales.
+  * **Registro y Seguimiento de Accidentes** (2 campos): Descripción de los hechos, y Observaciones.
+  * **Dashboard / Tareas Pendientes**: Input inline de creación de nueva tarea.
+
+### Decisiones Clave
+- **Llamadas REST directas a Gemini**: Para mantener el bundle liviano y optimizar el rendimiento de la aplicación, se utilizó una petición `fetch` directa a la API REST de Gemini 2.5 Flash en lugar de instalar SDKs pesadas de Google Generative AI en Node.
+- **Web Speech API Nativa**: La conversión de audio a texto se realiza íntegramente de forma local en el navegador del cliente para evitar incurrir en costos de procesamiento de audio en servidores propios y asegurar una respuesta en tiempo real.
+- **systemInstruction de Gemini**: Se migró el payload de consulta a Gemini para usar la clave estructurada nativa `systemInstruction` separada del input de usuario para blindar el endpoint contra Prompt Injections.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `gestion-syso-ai-voice-helper`
+- `next-best-practices`
+- `supabase`
+
+### Archivos Modificados / Creados
+- `[NEW] .agents/skills/gestion-syso-ai-voice-helper/SKILL.md`
+- `[NEW] src/app/api/ai/refine-text/route.js`
+- `[NEW] src/components/ui/AITextHelper.js`
+- `[MODIFY] .agents/agents.md`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js exitosa (`npm run build`).
+
+### Riesgos Detectados / Remanentes
+- Ninguno. El componente oculta el micrófono de manera silenciosa si el navegador no cuenta con soporte nativo para la Web Speech API (ej. Firefox en ciertas plataformas).
+
+---
+
 ## [2026-07-03] Reubicación y Estilización de Enlace de Inicio de Sesión
 
 ### Resumen de Cambios

@@ -319,6 +319,7 @@ Leé primero estos archivos si existen:
 - `.agents/skills/next-best-practices/SKILL.md`
 - `.agents/skills/vercel-react-best-practices/SKILL.md`
 - `.agents/skills/gestion-syso-bitacora/SKILL.md`
+- `.agents/skills/gestion-syso-ai-voice-helper/SKILL.md`
 
 Skills comunitarias recomendadas a buscar e instalar:
 - `a11y-best-practices`
@@ -364,6 +365,7 @@ Respetar siempre:
 - Toda pantalla debe ser usable desde escritorio, tablet y móvil.
 - Antes de cambiar UI, revisá bitácora y documentación de marca.
 - Toda generación o descarga de reporte PDF en cualquier sección (Visitas, Avisos de Riesgo, Control Eléctrico, etc.) debe usar la alerta informativa estándar "Generando reporte PDF..." de tipo info.
+- Todo campo de carga de texto de largo formato (observaciones generales, recomendaciones preventivas, causa raíz, etc.) debe integrar de forma obligatoria el estándar `SySO-AI-Voice-Helper` importando el componente `<AITextHelper />` para habilitar el dictado por voz, pulido de IA (Gemini) y limpieza dinámica.
 
 ## Archivos y carpetas objetivo
 

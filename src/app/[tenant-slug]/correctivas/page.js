@@ -7,6 +7,7 @@ import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
+import AITextHelper from '@/components/ui/AITextHelper';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { 
@@ -1499,7 +1500,15 @@ export default function AccionesCorrectivasPage({ params }) {
                       </div>
 
                       <div className="space-y-1 md:col-span-2">
-                        <label className="text-xs font-bold text-slate-600 block mb-1">Descripción Detallada del Hallazgo</label>
+                        <div className="flex items-center justify-between gap-2 min-h-[28px] mb-1">
+                          <label className="text-xs font-bold text-slate-600 block mb-0">Descripción Detallada del Hallazgo</label>
+                          <AITextHelper
+                            value={descripcionHallazgo}
+                            onChange={setDescripcionHallazgo}
+                            context="Descripción detallada de la condición insegura o desviación detectada"
+                            disabled={isReadOnlyView}
+                          />
+                        </div>
                         <textarea
                           rows="3"
                           placeholder="Describe detalladamente lo observado..."
@@ -1512,7 +1521,15 @@ export default function AccionesCorrectivasPage({ params }) {
 
                     {/* Recomendaciones / sugerencias */}
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-600 block mb-1">Recomendaciones / sugerencias</label>
+                      <div className="flex items-center justify-between gap-2 min-h-[28px] mb-1">
+                        <label className="text-xs font-bold text-slate-600 block mb-0">Recomendaciones / sugerencias</label>
+                        <AITextHelper
+                          value={recomendacion}
+                          onChange={setRecomendacion}
+                          context="Recomendaciones y sugerencias técnicas preventivas para mitigar el hallazgo"
+                          disabled={isReadOnlyView}
+                        />
+                      </div>
                       <textarea
                         rows="2"
                         placeholder="Recomendaciones o sugerencias..."
@@ -1556,7 +1573,15 @@ export default function AccionesCorrectivasPage({ params }) {
                     
                     {/* Acción Preventiva (Una sola fila) */}
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-600 block mb-1">Acción Preventiva</label>
+                      <div className="flex items-center justify-between gap-2 min-h-[28px] mb-1">
+                        <label className="text-xs font-bold text-slate-600 block mb-0">Acción Preventiva</label>
+                        <AITextHelper
+                          value={accionPreventiva}
+                          onChange={setAccionPreventiva}
+                          context="Acción preventiva planificada para evitar la ocurrencia de desvíos similares"
+                          disabled={isReadOnlyView}
+                        />
+                      </div>
                       <textarea
                         rows="2"
                         placeholder="Se aplica antes de que ocurra el evento no deseado"
@@ -1568,7 +1593,15 @@ export default function AccionesCorrectivasPage({ params }) {
 
                     {/* Causa Raíz (Una sola fila) */}
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-600 block mb-1">Causa Raíz</label>
+                      <div className="flex items-center justify-between gap-2 min-h-[28px] mb-1">
+                        <label className="text-xs font-bold text-slate-600 block mb-0">Causa Raíz</label>
+                        <AITextHelper
+                          value={causaRaiz}
+                          onChange={setCausaRaiz}
+                          context="Análisis de causa raíz de la desviación o hallazgo detectado"
+                          disabled={isReadOnlyView}
+                        />
+                      </div>
                       <textarea
                         rows="2"
                         placeholder="es la causa que, si se elimina o controla, evita la repetición del evento"
@@ -1580,7 +1613,15 @@ export default function AccionesCorrectivasPage({ params }) {
 
                     {/* Acción Correctiva (Una sola fila) */}
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-600 block mb-1">Acción Correctiva</label>
+                      <div className="flex items-center justify-between gap-2 min-h-[28px] mb-1">
+                        <label className="text-xs font-bold text-slate-600 block mb-0">Acción Correctiva</label>
+                        <AITextHelper
+                          value={accionCorrectiva}
+                          onChange={setAccionCorrectiva}
+                          context="Acción correctiva para eliminar la causa raíz y subsanar el hallazgo"
+                          disabled={isReadOnlyView}
+                        />
+                      </div>
                       <textarea
                         rows="2"
                         placeholder="Acción tomada para eliminar la causa raíz."
@@ -1667,7 +1708,15 @@ export default function AccionesCorrectivasPage({ params }) {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-600 block mb-1">Observaciones Generales</label>
+                      <div className="flex items-center justify-between gap-2 min-h-[28px] mb-1">
+                        <label className="text-xs font-bold text-slate-600 block mb-0">Observaciones Generales</label>
+                        <AITextHelper
+                          value={observaciones}
+                          onChange={setObservaciones}
+                          context="Observaciones y comentarios generales de la acción correctiva"
+                          disabled={isReadOnlyView}
+                        />
+                      </div>
                       <textarea
                         rows="3"
                         placeholder="Comentarios adicionales..."
