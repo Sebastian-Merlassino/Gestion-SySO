@@ -75,6 +75,8 @@ export default function ChecklistPersonalizadosPage({ params }) {
   });
   const [templateItems, setTemplateItems] = useState([]);
   const [bloqueImagenes, setBloqueImagenes] = useState(false);
+  const [bloqueObservaciones, setBloqueObservaciones] = useState(true);
+  const [openDropdownId, setOpenDropdownId] = useState(null);
   const [bloqueFirmas, setBloqueFirmas] = useState({
     responsable_establecimiento: false,
     responsable_higiene_seguridad: false
@@ -200,6 +202,25 @@ export default function ChecklistPersonalizadosPage({ params }) {
     resolveProfileSignaturePreview();
   }, [isInspeccionFormOpen, signaturePath, profesionalTipo, firmaTipo, isDevMode]);
 
+  // Manejar cierre de dropdown de botones al hacer clic afuera
+  useEffect(() => {
+    if (openDropdownId === null) return;
+    const handleOutsideClick = (e) => {
+      const dropdownEl = document.getElementById(`dropdown-buttons-${openDropdownId}`);
+      const buttonEl = document.getElementById(`btn-dropdown-${openDropdownId}`);
+      if (
+        dropdownEl && !dropdownEl.contains(e.target) && 
+        buttonEl && !buttonEl.contains(e.target)
+      ) {
+        setOpenDropdownId(null);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+    };
+  }, [openDropdownId]);
+
   // ==========================================
   // HELPERS Y TOASTS
   // ==========================================
@@ -283,6 +304,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
           { id: '4', pregunta: 'Observaciones sobre el uso de EPP', tipo_respuesta: 'texto', requerido: false }
         ],
         bloque_imagenes: true,
+        bloque_observaciones: true,
         bloque_firmas: { responsable_establecimiento: true, responsable_higiene_seguridad: true }
       }
     ];
@@ -396,6 +418,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
     setConfigCampos({ razon_social: true, establecimiento: true, direccion: true, cuit: true, fecha: true });
     setTemplateItems([]);
     setBloqueImagenes(false);
+    setBloqueObservaciones(true);
     setBloqueFirmas({ responsable_establecimiento: false, responsable_higiene_seguridad: false });
     setIsTemplateFormOpen(true);
   };
@@ -409,6 +432,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
       requerido: item.requerido !== false
     })) : []);
     setBloqueImagenes(tmpl.bloque_imagenes);
+    setBloqueObservaciones(tmpl.bloque_observaciones !== false);
     setBloqueFirmas(tmpl.bloque_firmas);
     setIsTemplateFormOpen(true);
   };
@@ -486,6 +510,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
         requerido: item.requerido !== false
       })),
       bloque_imagenes: bloqueImagenes,
+      bloque_observaciones: bloqueObservaciones,
       bloque_firmas: bloqueFirmas,
       tenant_id: tenant?.id || 'mock-tenant-1',
       created_by: profile?.id || null,
@@ -833,6 +858,10 @@ export default function ChecklistPersonalizadosPage({ params }) {
       triggerToast('Debe seleccionar el establecimiento.', 'error');
       return;
     }
+    if (!tmpl.config_campos.establecimiento && tmpl.config_campos.direccion && !inspeccionEstablecimientoId) {
+      triggerToast('Debe seleccionar la dirección del establecimiento.', 'error');
+      return;
+    }
     if (tmpl.config_campos.fecha && !inspeccionFecha) {
       triggerToast('Debe ingresar la fecha.', 'error');
       return;
@@ -902,7 +931,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
         responsable_higiene_seguridad_nombre: tmpl.bloque_firmas.responsable_higiene_seguridad ? profesionalNombre : '',
         responsable_higiene_seguridad_id: tmpl.bloque_firmas.responsable_higiene_seguridad && profesionalTipo === 'miembro' ? profesionalId : null,
         firma_tipo: firmaTipo,
-        observaciones: inspeccionObservaciones,
+        observaciones: tmpl.bloque_observaciones !== false ? inspeccionObservaciones : '',
         created_by: profile?.id || null,
         updated_at: new Date().toISOString()
       };
@@ -1218,7 +1247,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
       let finalY = doc.lastAutoTable.finalY + 25;
 
       // Observaciones
-      if (c.observaciones) {
+      if (tmpl?.bloque_observaciones !== false && c.observaciones) {
         if (finalY > 680) {
           doc.addPage();
           drawHeaderLogo(doc);
@@ -1443,7 +1472,10 @@ export default function ChecklistPersonalizadosPage({ params }) {
     if (emp && emp.id) {
       const loadEmails = async () => {
         if (isDevMode) {
-          setAvailableEmails(['ejemplo@cliente.com', 'admin@cliente.com']);
+          setAvailableEmails([
+            { valor: 'ejemplo@cliente.com', descripcion: 'ejemplo@cliente.com', checked: false },
+            { valor: 'admin@cliente.com', descripcion: 'admin@cliente.com', checked: false }
+          ]);
         } else {
           try {
             const { data } = await supabase
@@ -1457,7 +1489,19 @@ export default function ChecklistPersonalizadosPage({ params }) {
                 : typeof data.contactos_correos === 'string'
                 ? data.contactos_correos.split(',')
                 : [];
-              setAvailableEmails(emails.map(e => (typeof e === 'object' && e?.email) ? e.email : String(e)).filter(Boolean));
+              const formatted = emails.map(e => {
+                const mailStr = (typeof e === 'object') ? (e?.correo || e?.valor || '') : String(e);
+                const nameStr = (typeof e === 'object' && e?.nombre) ? e.nombre : '';
+                const cargoStr = (typeof e === 'object' && e?.cargo) ? e.cargo : '';
+                return {
+                  valor: mailStr,
+                  descripcion: nameStr 
+                    ? `${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${mailStr})` 
+                    : mailStr,
+                  checked: false
+                };
+              }).filter(item => item.valor);
+              setAvailableEmails(formatted);
             } else {
               setAvailableEmails([]);
             }
@@ -1474,8 +1518,14 @@ export default function ChecklistPersonalizadosPage({ params }) {
     setIsMailModalOpen(true);
   };
 
-  const handleSendEmail = async (selectedEmails) => {
-    if (selectedEmails.length === 0) {
+  const handleSendEmail = async () => {
+    if (!mailTargetInspeccion) return;
+
+    const checkedEmails = availableEmails.filter(e => e.checked).map(e => e.valor);
+    const manualList = manualEmail.split(',').map(e => e.trim()).filter(Boolean);
+    const recipients = [...checkedEmails, ...manualList];
+
+    if (recipients.length === 0) {
       triggerToast('Debe especificar al menos un destinatario.', 'error');
       return;
     }
@@ -1501,13 +1551,27 @@ export default function ChecklistPersonalizadosPage({ params }) {
         if (uploadErr) throw uploadErr;
       }
 
+      // Obtener logo del tenant como base64 (para el encabezado del email)
+      let tenantLogoBase64 = '';
+      if (tenant && tenant.logo_1_url) {
+        try {
+          tenantLogoBase64 = await getBase64ImageFromUrl(tenant.logo_1_url);
+          if (tenantLogoBase64) {
+            tenantLogoBase64 = await resizeImageForPdf(tenantLogoBase64, 400, 200);
+          }
+        } catch (logoErr) {
+          console.warn('No se pudo cargar el logo para el email:', logoErr);
+        }
+      }
+
       const mailBody = {
-        emails: selectedEmails,
+        emails: recipients,
         filePath: relativePath,
         companyName: emp?.razon_social || 'Cliente',
         establishmentName: est?.denominacion || 'N/A',
         date: formatDate(mailTargetInspeccion.fecha),
         inspectorName: mailTargetInspeccion.responsable_higiene_seguridad_nombre || 'Profesional SySO',
+        tenantLogoBase64: tenantLogoBase64 || null,
         tenantName: tenant?.name || 'Gestión SySO',
         documentType: 'checklist_personalizado',
         checklistName: tmpl?.nombre || 'Checklist'
@@ -2080,23 +2144,51 @@ export default function ChecklistPersonalizadosPage({ params }) {
                             </div>
 
                             {item.tipo_respuesta === 'botones' && (
-                              <div className="flex flex-col gap-1">
+                              <div className="flex flex-col gap-1 relative">
                                 <label className="text-[9px] font-bold text-slate-400 tracking-wider uppercase font-bold">Botones a mostrar</label>
-                                <div className="flex items-center gap-2 p-1.5 bg-white border border-slate-200 rounded-xl">
-                                  {['Ok', 'No Ok', 'N/A', 'Si', 'No'].map((opt) => (
-                                    <label key={opt} className="flex items-center gap-1 text-[11px] font-bold text-slate-655 cursor-pointer">
-                                      <input
-                                        type="checkbox"
-                                        checked={item.opciones_botones?.includes(opt)}
-                                        onChange={() => handleToggleOpcionBoton(item.id, opt)}
-                                        className="h-3.5 w-3.5 rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF] cursor-pointer"
-                                      />
-                                      <span>{opt}</span>
-                                    </label>
-                                  ))}
-                                </div>
+                                <button
+                                  id={`btn-dropdown-${item.id}`}
+                                  type="button"
+                                  onClick={() => setOpenDropdownId(openDropdownId === item.id ? null : item.id)}
+                                  className="h-[34px] px-3.5 py-1.5 border border-slate-200 rounded-xl text-xs bg-white font-semibold text-slate-700 hover:bg-slate-50 flex items-center justify-between gap-2 w-44 text-left cursor-pointer transition-all"
+                                >
+                                  <span className="truncate">
+                                    {item.opciones_botones?.length > 0 
+                                      ? item.opciones_botones.join(', ') 
+                                      : 'Seleccionar...'}
+                                  </span>
+                                  <ChevronDown className="h-3 w-3 text-slate-400 shrink-0" />
+                                </button>
+                                
+                                {openDropdownId === item.id && (
+                                  <div 
+                                    id={`dropdown-buttons-${item.id}`}
+                                    className="absolute top-[38px] left-0 w-44 bg-white border border-slate-200 rounded-xl shadow-lg p-2 space-y-1 z-35 max-h-48 overflow-y-auto scrollbar-thin animate-scaleUp"
+                                  >
+                                    {['Ok', 'No Ok', 'N/A', 'Si', 'No', 'Cumple', 'No Cumple'].map((opt) => {
+                                      const isSelected = item.opciones_botones?.includes(opt);
+                                      return (
+                                        <label 
+                                          key={opt} 
+                                          className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold cursor-pointer select-none transition-colors ${
+                                            isSelected ? 'bg-blue-50/50 text-[#468DFF]' : 'text-slate-750 hover:bg-slate-50'
+                                          }`}
+                                        >
+                                          <input
+                                            type="checkbox"
+                                            checked={isSelected}
+                                            onChange={() => handleToggleOpcionBoton(item.id, opt)}
+                                            className="h-3.5 w-3.5 rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF] cursor-pointer"
+                                          />
+                                          <span>{opt}</span>
+                                        </label>
+                                      );
+                                    })}
+                                  </div>
+                                )}
                               </div>
                             )}
+
 
                             <button
                               type="button"
@@ -2117,10 +2209,24 @@ export default function ChecklistPersonalizadosPage({ params }) {
                     </div>
                   </div>
 
-                  {/* Bloque Imagenes */}
+                  {/* Bloque Observaciones */}
                   <div className="border-t border-slate-100 pt-4 space-y-4">
                     <div className="flex flex-col gap-1.5">
-                      <h3 className="font-outfit text-sm font-bold text-slate-800 uppercase tracking-wider pb-1.5 border-b border-slate-100">3. Adjuntos Fotográficos</h3>
+                      <h3 className="font-outfit text-sm font-bold text-slate-800 uppercase tracking-wider pb-1.5 border-b border-slate-100">3. Bloque de Observaciones</h3>
+                      <label className="flex items-center gap-2.5 p-3.5 border border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-xs font-semibold text-slate-700 cursor-pointer select-none transition-all">
+                        <input
+                          type="checkbox"
+                          checked={bloqueObservaciones}
+                          onChange={(e) => setBloqueObservaciones(e.target.checked)}
+                          className="h-4.5 w-4.5 rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF] cursor-pointer"
+                        />
+                        <span>Habilitar bloque de Observaciones / Recomendaciones al pie de la evaluación</span>
+                      </label>
+                    </div>
+
+                    {/* Bloque Imagenes */}
+                    <div className="flex flex-col gap-1.5">
+                      <h3 className="font-outfit text-sm font-bold text-slate-800 uppercase tracking-wider pb-1.5 border-b border-slate-100">4. Adjuntos Fotográficos</h3>
                       <label className="flex items-center gap-2.5 p-3.5 border border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-xs font-semibold text-slate-700 cursor-pointer select-none transition-all">
                         <input
                           type="checkbox"
@@ -2134,7 +2240,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
 
                     {/* Bloque Firmas */}
                     <div className="flex flex-col gap-1.5">
-                      <h3 className="font-outfit text-sm font-bold text-slate-800 uppercase tracking-wider pb-1.5 border-b border-slate-100">4. Bloques de Firmas</h3>
+                      <h3 className="font-outfit text-sm font-bold text-slate-800 uppercase tracking-wider pb-1.5 border-b border-slate-100">5. Bloques de Firmas</h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <label className="flex items-center gap-2.5 p-3.5 border border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-xs font-semibold text-slate-700 cursor-pointer select-none transition-all">
                           <input
@@ -2264,8 +2370,14 @@ export default function ChecklistPersonalizadosPage({ params }) {
                                 disabled={isInspeccionReadOnly || !!editingInspeccionId}
                                 value={inspeccionEmpresaId}
                                 onChange={(e) => {
-                                  setInspeccionEmpresaId(e.target.value);
-                                  setInspeccionEstablecimientoId('');
+                                  const empId = e.target.value;
+                                  setInspeccionEmpresaId(empId);
+                                  const ests = allEstablecimientos.filter(est => est.empresa_id === empId);
+                                  if (ests.length > 0) {
+                                    setInspeccionEstablecimientoId(ests[0].id);
+                                  } else {
+                                    setInspeccionEstablecimientoId('');
+                                  }
                                 }}
                                 className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 cursor-pointer disabled:opacity-60 text-slate-700 font-semibold"
                               >
@@ -2308,13 +2420,29 @@ export default function ChecklistPersonalizadosPage({ params }) {
 
                           {activeTemplate.config_campos.direccion && (
                             <div className="flex flex-col gap-1.5">
-                              <label className="text-xs font-bold text-slate-500">Dirección</label>
-                              <input
-                                type="text"
-                                disabled
-                                value={selectedEstablecimientoObj?.direccion || ''}
-                                className="w-full border border-slate-200 bg-slate-100 text-slate-500 rounded-xl px-3.5 py-2 text-sm font-semibold"
-                              />
+                              <label className={`text-xs font-bold ${!activeTemplate.config_campos.establecimiento ? 'text-slate-600' : 'text-slate-500'}`}>
+                                Dirección {!activeTemplate.config_campos.establecimiento && '*'}
+                              </label>
+                              {!activeTemplate.config_campos.establecimiento ? (
+                                <select
+                                  disabled={isInspeccionReadOnly || !inspeccionEmpresaId}
+                                  value={inspeccionEstablecimientoId}
+                                  onChange={(e) => setInspeccionEstablecimientoId(e.target.value)}
+                                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 cursor-pointer disabled:opacity-60 text-slate-700 font-semibold"
+                                >
+                                  <option value="">Seleccionar dirección...</option>
+                                  {filteredEstablecimientos.map(est => (
+                                    <option key={est.id} value={est.id}>{est.direccion}</option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <input
+                                  type="text"
+                                  disabled
+                                  value={selectedEstablecimientoObj?.direccion || ''}
+                                  className="w-full border border-slate-200 bg-slate-100 text-slate-500 rounded-xl px-3.5 py-2 text-sm font-semibold"
+                                />
+                              )}
                             </div>
                           )}
 
@@ -2434,20 +2562,22 @@ export default function ChecklistPersonalizadosPage({ params }) {
                       </div>
 
                       {/* Sección 3: Observaciones */}
-                      <div className="space-y-3">
-                        <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
-                          <ClipboardList className="h-4 w-4 text-[#468DFF]" />
-                          3. Observaciones
-                        </h3>
-                        <textarea
-                          rows={3}
-                          disabled={isInspeccionReadOnly}
-                          value={inspeccionObservaciones}
-                          onChange={(e) => setInspeccionObservaciones(e.target.value)}
-                          placeholder="Escriba observaciones, comentarios o desvíos adicionales..."
-                          className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#468DFF] transition-all disabled:opacity-60 font-semibold text-slate-700"
-                        />
-                      </div>
+                      {activeTemplate.bloque_observaciones !== false && (
+                        <div className="space-y-3">
+                          <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
+                            <ClipboardList className="h-4 w-4 text-[#468DFF]" />
+                            3. Observaciones
+                          </h3>
+                          <textarea
+                            rows={3}
+                            disabled={isInspeccionReadOnly}
+                            value={inspeccionObservaciones}
+                            onChange={(e) => setInspeccionObservaciones(e.target.value)}
+                            placeholder="Escriba observaciones, comentarios o desvíos adicionales..."
+                            className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#468DFF] transition-all disabled:opacity-60 font-semibold text-slate-700"
+                          />
+                        </div>
+                      )}
 
                       {/* Sección 4: Registro Fotográfico */}
                       {activeTemplate.bloque_imagenes && (
@@ -2706,73 +2836,88 @@ export default function ChecklistPersonalizadosPage({ params }) {
           MODAL: ENVÍO POR CORREO
           ========================================== */}
       {isMailModalOpen && mailTargetInspeccion && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-scaleUp">
-            <div className="px-5 py-4 border-b border-slate-150 bg-slate-50 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Mail className="h-5 w-5 text-[#468DFF]" />
-                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Enviar Reporte por Correo</h3>
-              </div>
-              <button
-                onClick={() => setIsMailModalOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-655 rounded-lg hover:bg-slate-100 transition-colors border-none cursor-pointer"
-              >
-                <X className="h-4.5 w-4.5" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div onClick={() => setIsMailModalOpen(false)} className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="bg-white rounded-2xl border border-slate-150 p-6 max-w-md w-full z-10 shadow-2xl relative space-y-4 animate-fade-in">
+            
+            <div className="flex justify-between items-center">
+              <h4 className="font-outfit text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                <Mail className="h-4.5 w-4.5 text-[#468DFF]" />
+                Enviar Reporte por Correo
+              </h4>
+              <button onClick={() => setIsMailModalOpen(false)} className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 cursor-pointer">
+                <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="p-5 space-y-4">
-              <div className="p-3 bg-blue-50/50 border border-blue-100 rounded-xl">
-                <span className="text-[10px] font-bold text-[#468DFF] uppercase tracking-wider block">Inspección Seleccionada</span>
-                <span className="text-xs font-bold text-slate-800">
-                  {templates.find(t => t.id === mailTargetInspeccion.template_id)?.nombre || 'Reporte'}
-                </span>
-                <span className="text-[11px] text-slate-400 block pt-0.5">
-                  Fecha: {formatDate(mailTargetInspeccion.fecha)}
-                </span>
-              </div>
+            <p className="text-xs text-slate-500 font-medium">
+              Seleccione los contactos registrados de la empresa o ingrese correos electrónicos manualmente (separados por comas) para enviar el reporte de checklist en PDF.
+            </p>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Contactos del Cliente</label>
+            <div className="space-y-3">
+              
+              {/* Contactos de la empresa */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-600 block">Correos de la Empresa:</label>
                 {availableEmails.length === 0 ? (
-                  <span className="text-xs text-slate-400 italic">No hay contactos cargados para este cliente.</span>
+                  <p className="text-xs text-slate-400 italic font-semibold">No hay contactos registrados para esta empresa.</p>
                 ) : (
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    {availableEmails.map(email => (
-                      <button
-                        key={email}
-                        onClick={() => handleSendEmail([email])}
-                        disabled={mailLoading}
-                        className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 hover:border-[#468DFF] hover:bg-blue-50/30 rounded-lg text-xs font-semibold text-slate-650 flex items-center gap-1 cursor-pointer transition-all disabled:opacity-50"
-                      >
-                        <Send className="h-3 w-3 text-[#468DFF]" />
-                        {email}
-                      </button>
+                  <div className="bg-slate-50 p-3 border border-slate-200 rounded-xl max-h-36 overflow-y-auto space-y-1.5">
+                    {availableEmails.map((e, idx) => (
+                      <label key={idx} className="flex items-center gap-2.5 text-xs font-semibold text-slate-700 cursor-pointer hover:bg-slate-100/50 py-1 rounded">
+                        <input
+                          type="checkbox"
+                          checked={e.checked}
+                          onChange={() => {
+                            setAvailableEmails(prev => prev.map((item, i) => i === idx ? { ...item, checked: !item.checked } : item));
+                          }}
+                          className="accent-[#468DFF] h-4 w-4"
+                        />
+                        {e.descripcion}
+                      </label>
                     ))}
                   </div>
                 )}
               </div>
 
-              <div className="flex flex-col gap-1.5 border-t border-slate-100 pt-3">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Enviar a otra dirección</label>
-                <div className="flex gap-2">
-                  <input
-                    type="email"
-                    value={manualEmail}
-                    onChange={(e) => setManualEmail(e.target.value)}
-                    placeholder="ejemplo@correo.com"
-                    className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs flex-grow focus:outline-none focus:ring-2 focus:ring-[#468DFF] transition-all font-semibold"
-                  />
-                  <button
-                    onClick={() => handleSendEmail([manualEmail])}
-                    disabled={mailLoading || !manualEmail}
-                    className="py-1.5 px-3 bg-[#468DFF] text-white border border-[#468DFF] hover:bg-[#0511F2] hover:border-[#0511F2] rounded-xl text-xs font-bold cursor-pointer transition-all disabled:opacity-50"
-                  >
-                    Enviar
-                  </button>
-                </div>
+              {/* Ingreso manual */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-600">Correos Manuales:</label>
+                <textarea
+                  rows="2"
+                  placeholder="ejemplo1@correo.com, ejemplo2@correo.com..."
+                  value={manualEmail}
+                  onChange={(e) => setManualEmail(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 font-semibold"
+                />
               </div>
+
             </div>
+
+            {/* Acciones */}
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsMailModalOpen(false)}
+                className="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-100 cursor-pointer transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={mailLoading}
+                onClick={handleSendEmail}
+                className="px-4 py-2 bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold rounded-lg cursor-pointer transition-all flex items-center gap-1.5 shadow-md shadow-[#468DFF]/10 disabled:bg-slate-400"
+              >
+                {mailLoading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Send className="h-3.5 w-3.5" />
+                )}
+                Enviar Correo
+              </button>
+            </div>
+
           </div>
         </div>
       )}

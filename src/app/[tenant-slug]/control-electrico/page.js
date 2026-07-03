@@ -1567,11 +1567,18 @@ export default function ControlElectricoPage({ params }) {
     setMailTargetControl(c);
     const emp = empresas.find(e => e.id === c.empresa_id);
     if (emp && emp.contactos_correos && emp.contactos_correos.length > 0) {
-      const formatted = emp.contactos_correos.map((cont, i) => ({
-        valor: cont.valor,
-        descripcion: `${cont.nombre || 'Contacto'} - ${cont.cargo || 'General'} (${cont.valor})`,
-        checked: i === 0
-      }));
+      const formatted = emp.contactos_correos.map((cont, i) => {
+        const mailStr = (typeof cont === 'object') ? (cont.correo || cont.valor || '') : String(cont);
+        const nameStr = (typeof cont === 'object' && cont.nombre) ? cont.nombre : 'Contacto';
+        const cargoStr = (typeof cont === 'object' && cont.cargo) ? cont.cargo : '';
+        return {
+          valor: mailStr,
+          descripcion: nameStr 
+            ? `${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${mailStr})` 
+            : mailStr,
+          checked: i === 0
+        };
+      }).filter(item => item.valor);
       setAvailableEmails(formatted);
     } else {
       setAvailableEmails([]);

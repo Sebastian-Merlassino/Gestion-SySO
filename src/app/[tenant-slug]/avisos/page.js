@@ -1702,11 +1702,18 @@ export default function AvisosRiesgoPage({ params }) {
     setMailTargetAviso(av);
     const emp = empresas.find(e => e.id === av.empresa_id);
     if (emp && emp.contactos_correos && emp.contactos_correos.length > 0) {
-      const formatted = emp.contactos_correos.map((c, i) => ({
-        valor: c.valor,
-        descripcion: `${c.nombre || 'Contacto'} - ${c.cargo || 'General'} (${c.valor})`,
-        checked: i === 0
-      }));
+      const formatted = emp.contactos_correos.map((c, i) => {
+        const mailStr = (typeof c === 'object') ? (c.correo || c.valor || '') : String(c);
+        const nameStr = (typeof c === 'object' && c.nombre) ? c.nombre : 'Contacto';
+        const cargoStr = (typeof c === 'object' && c.cargo) ? c.cargo : '';
+        return {
+          valor: mailStr,
+          descripcion: nameStr 
+            ? `${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${mailStr})` 
+            : mailStr,
+          checked: i === 0
+        };
+      }).filter(item => item.valor);
       setAvailableEmails(formatted);
     } else {
       setAvailableEmails([]);

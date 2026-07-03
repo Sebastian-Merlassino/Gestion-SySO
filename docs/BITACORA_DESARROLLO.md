@@ -1,5 +1,102 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-03] Reubicación y Estilización de Enlace de Inicio de Sesión
+
+### Resumen de Cambios
+- **Reubicación de Enlace de Inicio de Sesión**: Se trasladó el bloque de enlace "¿Ya tenés una cuenta? Iniciá sesión" dentro de la tarjeta blanca (`bg-white` card) de la página de registro (`src/app/register/page.js`), posicionándose justo debajo del botón de envío del formulario.
+- **Estandarización de Estilos**: Se aplicaron clases y un diseño idénticos al enlace de registro en la pantalla de inicio de sesión (`src/app/login/page.js`) (`text-sm` y `min-h-[24px]` con centrado flex), unificando la tipografía y el comportamiento visual de la marca.
+
+### Decisiones Clave
+- **Renderizado Condicional en Formulario**: Se mantuvo el enlace dentro del bloque no registrado (`!registered`), debido a que tras registrarse con éxito, la pantalla muestra una vista de validación de email que ya posee un botón principal para iniciar sesión.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/register/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js exitosa (`npm run build`).
+
+### Riesgos Detectados / Remanentes
+- Ninguno.
+
+### Próximo Paso Recomendado
+- N/A
+
+---
+
+## [2026-07-03] Selector de Botones Multiselección, Nuevas Opciones y Bloque Opcional en Checklist
+
+### Resumen de Cambios
+- **Dropdown Multiselección para Botones**: Se reemplazaron los checkboxes horizontales de selección de botones del Diseñador de Plantillas (Nivel 1) por un control dropdown de multiselección premium con animación de entrada y resumen textual dinámico.
+- **Nuevos Botones "Cumple" y "No Cumple"**: Se agregaron las opciones `"Cumple"` y `"No Cumple"` al listado de botones elegibles por plantilla para flexibilizar la auditoría en campo.
+- **Corrección de Cierre y Bloqueo de Dropdown**: Se removió el overlay fijo transparente `fixed inset-0` que tapaba el dropdown (lo cual impedía hacer scroll y cancelaba el clic de selección al interpretarse como un clic afuera). Se implementó un detector de clics afuera reactivo mediante un `useEffect` con listener global `mousedown` y IDs de componentes, permitiendo un funcionamiento perfecto del scroll y selección de opciones.
+- **Aplicación de Migración**: Se ejecutó de forma remota la migración SQL `20260724000000_add_bloque_observaciones_to_checklist_templates` en el backend remoto de Supabase mediante herramientas MCP, creando la columna `bloque_observaciones` en `checklist_templates` y eliminando el error `PGRST204 (Bad Request)` al intentar guardar plantillas.
+- **Rediseño de Modal de Correo**: Se adaptó el diseño y comportamiento de la ventana emergente de envío de correo en la sección de Checklist Personalizados para alinearse al estándar estético de Aviso de Riesgo. Ahora permite la selección múltiple de contactos de la empresa mediante checkboxes, el ingreso de correos adicionales en un área de texto y cuenta con un botón unificado de envío. Al completarse el envío, el modal se cierra automáticamente.
+- **Logo del Tenant en Cuerpo de Correo**: Se implementó la carga y resize a `400x200` en Base64 del logo principal de la empresa (`tenant.logo_1_url`) para enviarlo en el payload a la API `/api/send-email`. La API de correo ahora procesa el parámetro `tenantLogoBase64` y reemplaza el encabezado textual `"Gestión SySO"` por la imagen corporativa del logo en el correo de constancia de checklist.
+- **Preselección de Establecimiento**: Al cambiar la selección del Cliente/Razón Social en el formulario de la Inspección, se implementó la preselección automática por defecto del primer establecimiento disponible de dicho cliente, permitiendo visualizar la dirección de forma inmediata y evitando que el campo quede vacío por defecto.
+- **Dirección como Dropdown Selectivo**: Si la plantilla de checklist está configurada para ocultar el selector de "Establecimiento" pero mostrar el de "Dirección", el campo Dirección en el formulario de la Inspección se transforma automáticamente en un selector desplegable (`select`) que lista las direcciones de todos los establecimientos del cliente. Al elegir una dirección, se asocia internamente el establecimiento correspondiente. Se añadió validación obligatoria al guardar.
+- **Robustez en Parseo de Contactos de Empresas**: Se corrigió el mapeo de los correos del cliente en el modal de envío de email en las 4 páginas principales (`checklist-personalizados`, `avisos`, `visitas` y `control-electrico`). Ahora el sistema evalúa y lee de forma robusta tanto la clave `correo` como la clave `valor` de los objetos almacenados en la columna `contactos_correos` de la base de datos de empresas, eliminando los molestos textos de error `[object Object]` y `undefined` en pantalla. También se simplificó el texto del cargo si está vacío.
+
+### Decisiones Clave
+- **Dropdown Compacto con Event Listener**: Desarrollar un dropdown multiselección nativo y reactivo mediante un listener global de `mousedown` en el documento previene intercepciones del puntero y bloqueos del scroll que ocurrían con la técnica anterior de overlays `fixed inset-0`, garantizando usabilidad en cualquier monitor o dispositivo móvil.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+- `supabase`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260724000000_add_bloque_observaciones_to_checklist_templates.sql`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js exitosa.
+- Migración de base de datos aplicada con éxito mediante MCP Supabase.
+
+### Riesgos Detectados / Remanentes
+- Ninguno.
+
+---
+
+## [2026-07-03] Bloque de Observaciones Opcional en Checklist Personalizados
+
+### Resumen de Cambios
+- **Opción de Bloque de Observaciones Opcional**: Se incorporó un nuevo control tipo checkbox en la sección de configuración de plantillas (Diseñador Nivel 1) que permite seleccionar si se incluye el bloque de Observaciones/Recomendaciones al pie.
+- **Visualización Condicional en el Runner**: El Runner de Inspecciones (Nivel 2) ahora renderiza la sección "3. Observaciones" de forma condicional, adaptándose al diseño y las preferencias configuradas en la plantilla respectiva.
+- **Saneamiento en Base de Datos**: Al registrar o modificar una inspección, si la plantilla no requiere observaciones, el campo se vacía automáticamente en el payload guardado.
+- **Generación de Reportes PDF Dinámica**: Se adaptó el generador de reportes jsPDF (`handleExportPdfReport`) para evaluar si la plantilla tiene habilitado el bloque de observaciones. En caso contrario, se omite por completo del documento, reorganizando el espaciado físico de firmas de manera automática y limpia.
+- **Migración de Base de Datos**: Se creó la migración SQL `supabase/migrations/20260724000000_add_bloque_observaciones_to_checklist_templates.sql` para añadir el campo `bloque_observaciones` a la tabla `checklist_templates`, estableciéndolo en `true` por defecto para garantizar compatibilidad retrospectiva.
+
+### Decisiones Clave
+- **Columna Estructurada en lugar de JSON**: Mantener el bloque de observaciones a nivel de columna nativa `BOOLEAN` en la tabla `checklist_templates` sigue la coherencia y robustez del campo `bloque_imagenes`.
+- **Compatibilidad Retrospectiva**: Establecer el valor por defecto de la nueva columna en `true` previene que se rompa la visualización y generación de PDFs de inspecciones históricas que asumen la presencia automática del bloque.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `supabase`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260724000000_add_bloque_observaciones_to_checklist_templates.sql`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js exitosa.
+
+### Riesgos Detectados / Remanentes
+- Ninguno.
+
+---
+
 ## [2026-07-02] Estandarización de Toasts, Pestañas de Listado y Buscador en Checklist
 
 ### Resumen de Cambios

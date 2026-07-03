@@ -278,17 +278,19 @@ export default function RegisterPage() {
                   )}
                 </button>
               </form>
+
+              {/* Registro link inside the card container with stable layout height to prevent jumping */}
+              <div className="mt-6 text-center text-sm text-slate-600 min-h-[24px] flex items-center justify-center">
+                <span>
+                  ¿Ya tenés una cuenta?{' '}
+                  <a href="/login" className="text-[#468DFF] hover:text-[#0511F2] font-bold transition-colors">
+                    Iniciá sesión
+                  </a>
+                </span>
+              </div>
             </>
           )}
         </div>
-
-        {/* Footer info */}
-        <p className="text-center text-xs text-slate-600 mt-8">
-          ¿Ya tenés una cuenta?{' '}
-          <a href="/login" className="text-[#468DFF] hover:text-[#0511F2] font-bold transition-colors">
-            Iniciá sesión
-          </a>
-        </p>
       </div>
 
       {/* CENTERED MODAL NOTIFICATION (VENTANA EMERGENTE) */}
