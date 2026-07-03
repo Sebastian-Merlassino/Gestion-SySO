@@ -2145,27 +2145,23 @@ export default function TenantDashboard({ params }) {
 
                     {/* Inline creation form */}
                     <form onSubmit={handleAddTask} className="border-t border-slate-150 pt-3 mt-3 flex flex-col gap-2 shrink-0">
-                      {/* Campo de Tarea tipo Textarea Expandible */}
-                      <div className="flex flex-col gap-1.5 border border-slate-200 rounded-xl p-2.5 bg-slate-50/50 focus-within:border-[#468DFF] transition-all">
-                        <textarea
-                          placeholder="Nueva tarea o recordatorio..."
-                          value={newTaskTitle}
-                          onChange={e => setNewTaskTitle(e.target.value)}
-                          rows={2}
-                          className="w-full text-xs text-slate-700 bg-transparent outline-none font-semibold resize-y min-h-[40px]"
-                        />
-                        <div className="flex justify-end">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div className="flex items-center gap-1.5 border border-slate-200 rounded-xl px-3 py-1.5 bg-slate-50/50 focus-within:border-[#468DFF] transition-all">
+                          <input
+                            type="text"
+                            placeholder="Nueva tarea..."
+                            value={newTaskTitle}
+                            onChange={e => setNewTaskTitle(e.target.value)}
+                            className="flex-1 text-xs text-slate-700 bg-transparent outline-none font-semibold py-0.5"
+                          />
                           <AITextHelper
                             value={newTaskTitle}
                             onChange={setNewTaskTitle}
                             context="Título de tarea pendiente o recordatorio técnico de higiene y seguridad"
                             disabled={false}
+                            allowExpand={true}
                           />
                         </div>
-                      </div>
-
-                      {/* Fila de campos secundarios (Fecha y Razón Social) */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <input
                           type="date"
                           value={newTaskFecha}
@@ -2173,6 +2169,9 @@ export default function TenantDashboard({ params }) {
                           className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 font-mono font-bold cursor-pointer"
                           title="Asignar fecha"
                         />
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <select
                           value={newTaskEmpresaId}
                           onChange={e => {
@@ -2186,10 +2185,7 @@ export default function TenantDashboard({ params }) {
                             <option key={emp.id} value={emp.id}>{emp.razon_social}</option>
                           ))}
                         </select>
-                      </div>
 
-                      {/* Fila de Establecimiento y Botón de Envío */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <select
                           value={newTaskEstablecimientoId}
                           onChange={e => setNewTaskEstablecimientoId(e.target.value)}

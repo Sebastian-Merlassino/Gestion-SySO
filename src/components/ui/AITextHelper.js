@@ -1,8 +1,4 @@
-// src/components/ui/AITextHelper.js
-'use client';
-
-import React, { useState, useEffect, useRef } from 'react';
-import { Mic, Sparkles, Loader2, Trash2, X, Smartphone, Monitor, Square } from 'lucide-react';
+import { Mic, Sparkles, Loader2, Trash2, X, Smartphone, Monitor, Square, Maximize2 } from 'lucide-react';
 
 const MAX_RECORDING_SEC = 60;
 
@@ -203,8 +199,124 @@ function RecordingOverlay({ seconds, maxSeconds, onStop, onCancel }) {
   );
 }
 
+// ── Modal de Ampliación de Campo (Expand Modal) ─────────────────────────────────
+function ExpandTextModal({ value, onChange, context, onClose, hasMediaSupport, isRecording, isTranscribing, isRefining, errorMessage, toggleRecording, handleRefineText, recordingSeconds, MAX_RECORDING_SEC }) {
+  return (
+    <div className="fixed inset-0 z-[9998] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-slate-100">
+          <div className="flex items-center gap-2">
+            <span className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF]">
+              <Maximize2 className="h-4 w-4" />
+            </span>
+            <p className="text-sm font-bold text-slate-800">Ampliar redacción</p>
+          </div>
+          <button type="button" onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors cursor-pointer">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Textarea */}
+        <div className="p-5 flex flex-col gap-3">
+          <textarea
+            value={value || ''}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder="Escribí o dictá observaciones detalladas..."
+            className="w-full h-48 border border-slate-200 rounded-xl p-3 text-xs text-slate-700 outline-none focus:border-[#468DFF] transition-all resize-none font-semibold bg-slate-50/30"
+          />
+        </div>
+
+        {/* Barra de estados */}
+        {(isRecording || isTranscribing || errorMessage) && (
+          <div className="px-5 pb-3 flex flex-wrap gap-2">
+            {isRecording && (
+              <span className="text-[10px] font-bold text-red-600 flex items-center gap-1 bg-red-50 px-2 py-1 rounded-lg border border-red-200 animate-pulse">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
+                {recordingSeconds}s / {MAX_RECORDING_SEC}s — Grabando
+              </span>
+            )}
+            {isTranscribing && (
+              <span className="text-[10px] font-bold text-[#468DFF] flex items-center gap-1 bg-blue-50 px-2 py-1 rounded-lg border border-blue-200">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Transcribiendo…
+              </span>
+            )}
+            {errorMessage && !isRecording && !isTranscribing && (
+              <span className="text-[10px] font-bold text-red-500 flex items-center gap-1 bg-red-50 px-2 py-1 rounded-lg border border-red-100">
+                {errorMessage}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="px-5 pb-5 pt-2 border-t border-slate-100 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-1.5">
+            {/* Limpiar */}
+            {value?.trim() && !isRecording && !isTranscribing && (
+              <button
+                type="button"
+                onClick={() => onChange('')}
+                title="Limpiar texto"
+                className="p-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 hover:text-red-600 hover:bg-red-50 transition-all duration-300 flex items-center justify-center cursor-pointer"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            )}
+
+            {/* Micrófono */}
+            {hasMediaSupport && (
+              <button
+                type="button"
+                onClick={toggleRecording}
+                disabled={isTranscribing || isRefining}
+                title={isRecording ? 'Detener grabación' : 'Grabar observaciones por voz'}
+                className={`p-2 rounded-lg border transition-all duration-300 flex items-center justify-center cursor-pointer ${
+                  isRecording
+                    ? 'bg-red-50 text-red-500 border-red-200 animate-pulse'
+                    : isTranscribing || isRefining
+                      ? 'bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed'
+                      : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                {isRecording ? <Square className="h-4 w-4 fill-current" /> : <Mic className="h-4 w-4" />}
+              </button>
+            )}
+
+            {/* Refinar */}
+            <button
+              type="button"
+              onClick={handleRefineText}
+              disabled={!value?.trim() || isRefining || isRecording || isTranscribing}
+              title="Refinar y formalizar redacción con IA (Gemini)"
+              className={`p-2 rounded-lg border transition-all duration-300 flex items-center justify-center cursor-pointer ${
+                isRefining
+                  ? 'bg-blue-50 border-blue-200 text-[#468DFF]'
+                  : !value?.trim() || isRecording || isTranscribing
+                    ? 'bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed'
+                    : 'bg-blue-50/50 border-[#468DFF]/15 text-[#468DFF] hover:bg-[#468DFF] hover:text-white hover:border-[#468DFF]'
+              }`}
+            >
+              {isRefining ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-5 py-2 rounded-xl bg-[#468DFF] text-white text-xs font-bold hover:bg-[#0511F2] transition-colors cursor-pointer"
+          >
+            Aceptar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Componente Principal ──────────────────────────────────────────────────────
-export default function AITextHelper({ value, onChange, context = '', disabled = false }) {
+export default function AITextHelper({ value, onChange, context = '', disabled = false, allowExpand = false }) {
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isRefining, setIsRefining] = useState(false);
@@ -366,6 +478,17 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
     stopRecording();
   };
 
+  const [showExpandModal, setShowExpandModal] = useState(false);
+
+  const toggleRecording = () => {
+    if (disabled || isTranscribing || isRefining) return;
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  };
+
   const handleRefineText = async () => {
     if (disabled || isRecording || isTranscribing || isRefining || !value?.trim()) return;
     setIsRefining(true);
@@ -404,6 +527,25 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
         />
       )}
 
+      {/* Modal de Ampliación de Campo */}
+      {showExpandModal && (
+        <ExpandTextModal
+          value={value}
+          onChange={onChange}
+          context={context}
+          onClose={() => setShowExpandModal(false)}
+          hasMediaSupport={hasMediaSupport}
+          isRecording={isRecording}
+          isTranscribing={isTranscribing}
+          isRefining={isRefining}
+          errorMessage={errorMessage}
+          toggleRecording={toggleRecording}
+          handleRefineText={handleRefineText}
+          recordingSeconds={recordingSeconds}
+          MAX_RECORDING_SEC={MAX_RECORDING_SEC}
+        />
+      )}
+
       <div className="flex flex-col items-end gap-1 shrink-0">
         <div className="flex items-center gap-1.5">
 
@@ -423,7 +565,7 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
           )}
 
           {/* Limpiar texto */}
-          {value?.trim() && !isRecording && !isTranscribing && (
+          {value?.trim() && !isRecording && !isTranscribing && !showExpandModal && (
             <button
               type="button"
               onClick={() => onChange('')}
@@ -435,7 +577,7 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
           )}
 
           {/* Botón Micrófono */}
-          {hasMediaSupport && (
+          {hasMediaSupport && !showExpandModal && (
             <button
               type="button"
               onClick={startRecording}
@@ -452,24 +594,38 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
           )}
 
           {/* Botón Refinar */}
-          <button
-            type="button"
-            onClick={handleRefineText}
-            disabled={!value?.trim() || isRefining || isRecording || isTranscribing}
-            title="Refinar y formalizar redacción con IA (Gemini)"
-            className={`p-1.5 rounded-lg border transition-all duration-300 flex items-center justify-center cursor-pointer ${
-              isRefining
-                ? 'bg-blue-50 border-blue-200 text-[#468DFF]'
-                : !value?.trim() || isRecording || isTranscribing
-                  ? 'bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed'
-                  : 'bg-blue-50/50 border-[#468DFF]/15 text-[#468DFF] hover:bg-[#468DFF] hover:text-white hover:border-[#468DFF]'
-            }`}
-          >
-            {isRefining
-              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              : <Sparkles className="h-3.5 w-3.5" />
-            }
-          </button>
+          {!showExpandModal && (
+            <button
+              type="button"
+              onClick={handleRefineText}
+              disabled={!value?.trim() || isRefining || isRecording || isTranscribing}
+              title="Refinar y formalizar redacción con IA (Gemini)"
+              className={`p-1.5 rounded-lg border transition-all duration-300 flex items-center justify-center cursor-pointer ${
+                isRefining
+                  ? 'bg-blue-50 border-blue-200 text-[#468DFF]'
+                  : !value?.trim() || isRecording || isTranscribing
+                    ? 'bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed'
+                    : 'bg-blue-50/50 border-[#468DFF]/15 text-[#468DFF] hover:bg-[#468DFF] hover:text-white hover:border-[#468DFF]'
+              }`}
+            >
+              {isRefining
+                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                : <Sparkles className="h-3.5 w-3.5" />
+              }
+            </button>
+          )}
+
+          {/* Botón Ampliar (Opcional) */}
+          {allowExpand && !isRecording && !isTranscribing && !showExpandModal && (
+            <button
+              type="button"
+              onClick={() => setShowExpandModal(true)}
+              title="Ampliar y redactar en pantalla completa"
+              className="p-1.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 hover:text-[#468DFF] hover:bg-blue-50 hover:border-blue-150 transition-all duration-300 flex items-center justify-center cursor-pointer"
+            >
+              <Maximize2 className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
       </div>
     </>
