@@ -2152,7 +2152,7 @@ export default function TenantDashboard({ params }) {
                             placeholder="Nueva tarea..."
                             value={newTaskTitle}
                             onChange={e => setNewTaskTitle(e.target.value)}
-                            className="flex-1 text-xs text-slate-700 bg-transparent outline-none font-semibold py-0.5"
+                            className="flex-1 min-w-0 text-xs text-slate-700 bg-transparent outline-none font-semibold py-0.5"
                           />
                           <AITextHelper
                             value={newTaskTitle}
