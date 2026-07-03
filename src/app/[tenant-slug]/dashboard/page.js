@@ -2145,8 +2145,8 @@ export default function TenantDashboard({ params }) {
 
                     {/* Inline creation form */}
                     <form onSubmit={handleAddTask} className="border-t border-slate-150 pt-3 mt-3 flex flex-col gap-2 shrink-0">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <div className="flex items-center gap-1.5 border border-slate-200 rounded-xl px-3 py-1.5 bg-slate-50/50 focus-within:border-[#468DFF] transition-all">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div className="sm:col-span-2 flex items-center gap-1.5 border border-slate-200 rounded-xl px-3 py-1.5 bg-slate-50/50 focus-within:border-[#468DFF] transition-all">
                           <input
                             type="text"
                             placeholder="Nueva tarea..."
@@ -2166,7 +2166,7 @@ export default function TenantDashboard({ params }) {
                           type="date"
                           value={newTaskFecha}
                           onChange={e => setNewTaskFecha(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 font-mono font-bold cursor-pointer"
+                          className="sm:col-span-1 w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 font-mono font-bold cursor-pointer"
                           title="Asignar fecha"
                         />
                       </div>
