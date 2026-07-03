@@ -1,5 +1,43 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-03] Auditoría Completa de Seguridad y Remediación por Etapas
+
+### Resumen de Cambios
+- **Triggers de Seguridad Críticos en Base de Datos (SEC-001 y SEC-002)**: Creación de la migración `20260725000000_critical_security_remediations.sql` que implementa triggers `BEFORE UPDATE` para impedir que los usuarios cambien su rol, tenant de perfil o plan comercial (`plan_id`) desde el navegador. Se removió el envío de `plan_id` en el frontend en `profile/page.js`.
+- **API Segura de Inicio de Sesión por CUIT (SEC-003)**: Revocación del RPC público `get_email_by_cuit` para evitar fuga de correos de clientes. Creación de una API Route `/api/auth/login-cuit` con validación Zod y un rate limit de 5 solicitudes por 15 minutos en middleware. Se adaptó la pantalla de login para realizar peticiones POST a este endpoint.
+- **Retrocompatibilidad de Variables de Entorno (SEC-007)**: Unificación del service role a `SUPABASE_SERVICE_ROLE_KEY` con soporte de fallback automático para `SUPABASE_SECRET_KEY` en endpoints de clientes, equipo y login.
+- **Hardening de Supabase Storage (SEC-004)**: Creación de la migración `20260725010000_storage_security_hardening.sql` que restringe el tamaño y tipos MIME admitidos en los buckets `documents`, `signatures` y `logos`.
+- **Suite de Pruebas de Seguridad RLS (SEC-005)**: Creación del script autónomo `scripts/test-security-rls.js` para validar el aislamiento multi-tenant y restricciones de rol simulando claims JWT.
+- **Defensa en Diferido en APIs de IA (SEC-006)**: Añadida verificación de sesión `auth.getUser()` con cookies en endpoints de refinado de texto y transcripción de voz.
+- **Parches de Dependencias (SEC-008, SEC-009)**: Actualización de Next.js a la versión `14.2.21` para mitigar vulnerabilidades DoS/SSRF y remoción de tokens de pruebas hardcodeados en Mercado Pago.
+
+### Decisiones Clave
+- **Triggers de base de datos vs RLS**: Para bloquear modificaciones en columnas específicas (como `role` y `plan_id`) que requieren comparar el estado anterior y nuevo de la fila, se optó por triggers `BEFORE UPDATE` con `RAISE EXCEPTION`. Esto es más limpio y evita recursiones en las políticas RLS.
+- **Búsqueda server-side en login CUIT**: Al validar CUIT y contraseña de forma unificada en el backend, se mantiene la usabilidad del login del portal de clientes sin exponer una consulta pública de emails en la base de datos de Supabase.
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260725000000_critical_security_remediations.sql`
+- `[NEW] supabase/migrations/20260725010000_storage_security_hardening.sql`
+- `[NEW] src/app/api/auth/login-cuit/route.js`
+- `[NEW] scripts/test-security-rls.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] src/app/login/page.js`
+- `[MODIFY] src/middleware.js`
+- `[MODIFY] src/app/api/ai/refine-text/route.js`
+- `[MODIFY] src/app/api/ai/transcribe-audio/route.js`
+- `[MODIFY] src/app/api/clientes/route.js`
+- `[MODIFY] src/app/api/equipo/route.js`
+- `[MODIFY] src/config/mpConfig.js`
+- `[MODIFY] package.json`
+- `[MODIFY] package-lock.json`
+- `[MODIFY] .env.example`
+
+### Validaciones Ejecutadas
+- Compilación del proyecto final exitosa (`npm run build`).
+- Implementación de script de test de RLS de base de datos.
+
+---
+
 ## [2026-07-03] Migración de Audio a MediaRecorder + Gemini Transcription y Fix de Permissions-Policy
 
 ### Resumen de Cambios
