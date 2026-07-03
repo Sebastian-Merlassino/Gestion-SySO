@@ -23,7 +23,7 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
   }, []);
 
   // Inicializar o destruir el reconocimiento de voz
-  const toggleListening = () => {
+  const toggleListening = async () => {
     if (disabled || isRefining) return;
 
     if (isListening) {
@@ -36,6 +36,28 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
 
     try {
       setErrorMessage('');
+
+      // Forzar el popup de permisos del navegador usando getUserMedia
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          // Detener el stream de audio inmediatamente después de asegurar el permiso
+          stream.getTracks().forEach(track => track.stop());
+        } catch (err) {
+          console.error('Permiso de micrófono denegado en getUserMedia:', err);
+          let msg = 'Permiso de micrófono denegado.';
+          if (typeof window !== 'undefined' && !window.isSecureContext) {
+            msg = 'El micrófono requiere una conexión segura (HTTPS).';
+          }
+          setErrorMessage(msg);
+          setIsListening(false);
+          setTimeout(() => {
+            setErrorMessage('');
+          }, 5000);
+          return;
+        }
+      }
+
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
       
