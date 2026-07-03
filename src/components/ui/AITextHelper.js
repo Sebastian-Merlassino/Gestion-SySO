@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, Sparkles, Loader2, Trash2, X, Smartphone, Monitor } from 'lucide-react';
+import { Mic, Sparkles, Loader2, Trash2, X, Smartphone, Monitor, HelpCircle } from 'lucide-react';
 
 // ── Detectar contexto de ejecución ─────────────────────────────────────────────
 function getContext() {
@@ -92,7 +92,6 @@ function MicPermissionModal({ onClose }) {
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
-        {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-slate-100">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-orange-50">
@@ -106,16 +105,10 @@ function MicPermissionModal({ onClose }) {
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors cursor-pointer"
-          >
+          <button type="button" onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors cursor-pointer">
             <X className="h-4 w-4" />
           </button>
         </div>
-
-        {/* Cuerpo */}
         <div className="px-5 py-4">
           <p className="text-[11px] text-slate-400 mb-3.5 leading-relaxed">
             El permiso de micrófono fue bloqueado. Seguí estos pasos para activarlo:
@@ -131,8 +124,6 @@ function MicPermissionModal({ onClose }) {
             ))}
           </ol>
         </div>
-
-        {/* Footer */}
         <div className="px-5 pb-5">
           <button
             type="button"
@@ -154,18 +145,26 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
   const [hasSpeechSupport, setHasSpeechSupport] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [showPermissionModal, setShowPermissionModal] = useState(false);
+  // Estado separado para error de permiso: muestra botón de ayuda inline sin abrir modal solo
+  const [permissionError, setPermissionError] = useState(null); // null | { code: string }
 
   const recognitionRef = useRef(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (SpeechRecognition) setHasSpeechSupport(true);
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SR) setHasSpeechSupport(true);
     }
   }, []);
 
+  const clearErrors = () => {
+    setErrorMessage('');
+    setPermissionError(null);
+  };
+
   const showError = (msg, ms = 5000) => {
     setErrorMessage(msg);
+    setPermissionError(null);
     setTimeout(() => setErrorMessage(''), ms);
   };
 
@@ -178,7 +177,7 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
       return;
     }
 
-    setErrorMessage('');
+    clearErrors();
 
     if (typeof window !== 'undefined' && !window.isSecureContext) {
       showError('Se requiere conexión HTTPS para usar el micrófono.');
@@ -198,7 +197,10 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
       recognition.continuous = false;
       recognition.maxAlternatives = 1;
 
-      recognition.onstart = () => setIsListening(true);
+      recognition.onstart = () => {
+        setIsListening(true);
+        clearErrors();
+      };
 
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
@@ -212,13 +214,23 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
 
       recognition.onerror = (event) => {
         setIsListening(false);
-        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-          // El micrófono está bloqueado → mostrar modal con instrucciones por dispositivo
-          setShowPermissionModal(true);
-        } else if (event.error === 'no-speech') {
+        const code = event.error;
+        // Loguear siempre para diagnóstico
+        console.warn('[AITextHelper] SpeechRecognition error:', code);
+
+        if (code === 'not-allowed' || code === 'service-not-allowed') {
+          // Mostrar error inline con botón de ayuda en lugar de abrir modal directamente.
+          // El usuario puede abrir el modal con el botón si necesita instrucciones.
+          setPermissionError({ code });
+          setErrorMessage('');
+        } else if (code === 'no-speech') {
           showError('No se detectó voz. Intentá de nuevo.');
+        } else if (code === 'audio-capture') {
+          showError('No se encontró micrófono en el dispositivo.');
+        } else if (code === 'network') {
+          showError('Error de red. Verificá la conexión.');
         } else {
-          showError('Error al capturar audio.');
+          showError(`Error al capturar audio (${code}).`);
         }
       };
 
@@ -227,6 +239,7 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
       recognitionRef.current = recognition;
       recognition.start();
     } catch (e) {
+      console.error('[AITextHelper] Error iniciando dictado:', e);
       showError('No se pudo iniciar el dictado.');
       setIsListening(false);
     }
@@ -235,7 +248,7 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
   const handleRefineText = async () => {
     if (disabled || isListening || isRefining || !value?.trim()) return;
     setIsRefining(true);
-    setErrorMessage('');
+    clearErrors();
     try {
       const response = await fetch('/api/ai/refine-text', {
         method: 'POST',
@@ -263,9 +276,25 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
       <div className="flex flex-col items-end gap-1 shrink-0">
         <div className="flex items-center gap-1.5">
 
+          {/* Error genérico inline */}
           {errorMessage && (
             <span className="text-[10px] font-bold text-red-500 flex items-center gap-1 bg-red-50 px-2 py-1 rounded-lg border border-red-100">
               {errorMessage}
+            </span>
+          )}
+
+          {/* Error de permiso inline con código + botón de ayuda */}
+          {permissionError && !showPermissionModal && (
+            <span className="text-[10px] font-bold text-orange-600 flex items-center gap-1.5 bg-orange-50 px-2 py-1 rounded-lg border border-orange-200">
+              <span>Mic. bloqueado ({permissionError.code})</span>
+              <button
+                type="button"
+                onClick={() => setShowPermissionModal(true)}
+                className="flex items-center gap-0.5 underline underline-offset-2 hover:text-orange-800 cursor-pointer font-bold"
+              >
+                <HelpCircle className="h-3 w-3" />
+                Ayuda
+              </button>
             </span>
           )}
 
