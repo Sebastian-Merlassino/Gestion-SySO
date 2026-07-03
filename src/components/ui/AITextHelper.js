@@ -48,12 +48,23 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
           let msg = 'Permiso de micrófono denegado.';
           if (typeof window !== 'undefined' && !window.isSecureContext) {
             msg = 'El micrófono requiere una conexión segura (HTTPS).';
+          } else {
+            try {
+              if (navigator.permissions && navigator.permissions.query) {
+                const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
+                if (permissionStatus.state === 'denied') {
+                  msg = 'Micrófono bloqueado. Habilitalo haciendo clic en el candado de la URL.';
+                }
+              }
+            } catch (pErr) {
+              console.error('Error consultando permisos:', pErr);
+            }
           }
           setErrorMessage(msg);
           setIsListening(false);
           setTimeout(() => {
             setErrorMessage('');
-          }, 5000);
+          }, 6000);
           return;
         }
       }
@@ -81,7 +92,7 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
         }
       };
 
-      recognition.onerror = (event) => {
+      recognition.onerror = async (event) => {
         console.error('Error de Speech Recognition:', event.error);
         let msg = 'Error al capturar audio.';
         if (event.error === 'not-allowed') {
@@ -89,6 +100,16 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
             msg = 'El micrófono requiere una conexión segura (HTTPS).';
           } else {
             msg = 'Permiso de micrófono denegado.';
+            try {
+              if (navigator.permissions && navigator.permissions.query) {
+                const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
+                if (permissionStatus.state === 'denied') {
+                  msg = 'Micrófono bloqueado. Habilitalo haciendo clic en el candado de la URL.';
+                }
+              }
+            } catch (pErr) {
+              console.error('Error consultando permisos:', pErr);
+            }
           }
         } else if (event.error === 'no-speech') {
           msg = 'No se detectó voz.';
