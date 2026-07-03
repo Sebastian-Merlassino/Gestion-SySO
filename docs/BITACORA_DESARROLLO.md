@@ -7,14 +7,16 @@
 - **Nuevo Endpoint de Transcripción**: Creación de la ruta API [transcribe-audio/route.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/api/ai/transcribe-audio/route.js) que recibe el flujo de voz codificado en base64 y utiliza inteligencia artificial para convertirlo a texto con excelente precisión, incluyendo modismos locales.
 - **Solución al Bloqueo en Producción (Permissions-Policy)**: Corrección en [vercel.json](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/vercel.json) de la directiva `Permissions-Policy: microphone=()`, cambiándola a `microphone=(self)`. Esta cabecera forzaba al navegador a bloquear el micrófono del origen `app.gestionsyso.com` e invalidaba cualquier permiso manual otorgado por el usuario.
 - **Estandarización de UX en Permisos**: Rediseño del modal explicativo en [AITextHelper.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/components/ui/AITextHelper.js) con instrucciones interactivas precisas de acuerdo a si el usuario ejecuta la aplicación como PWA instalada o desde un navegador en PC, Android o iOS, agregando un botón para copiar la ruta directa de configuración en PC.
+- **Rediseño de Formulario de Tareas Pendientes**: Conversión del input de creación de tarea de una sola línea a un `textarea` expandible multilínea en el Dashboard, reubicando los botones de dictado de audio y refinamiento por IA en la esquina inferior derecha del bloque del textarea para un diseño mucho más limpio y responsive.
 
 ### Decisiones Clave
-- **Gemini en lugar de Web Speech API**: Aunque la Web Speech API es local, es inestable en entornos PWA y propensa a lanzar errores falsos de permiso (`not-allowed`) debido a inconsistencias de Chrome. Delegar el audio grabado a Gemini garantiza compatibilidad del 100% en Safari (iOS), Chrome, Firefox y PWAs standalone, además de una precisión de transcripción muy superior.
+- **Textarea para Tareas**: Dado que el micrófono permite registrar tareas descriptivas de largo formato y notas técnicas detalladas por voz, un input estándar de texto simple quedaba demasiado corto y recortaba visualmente la redacción. Cambiarlo a un `textarea` con soporte de redimensionamiento vertical (`resize-y`) y posicionamiento del helper abajo a la derecha optimiza notablemente la experiencia de usuario y visualización del texto transcripto.
 
 ### Archivos Modificados / Creados
 - `[NEW] src/app/api/ai/transcribe-audio/route.js`
 - `[MODIFY] vercel.json`
 - `[MODIFY] src/components/ui/AITextHelper.js`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
 - `[MODIFY] docs/BITACORA_DESARROLLO.md`
 
 ### Validaciones Ejecutadas
