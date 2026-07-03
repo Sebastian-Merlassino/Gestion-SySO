@@ -169,7 +169,7 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
     setTimeout(() => setErrorMessage(''), ms);
   };
 
-  const toggleListening = async () => {
+  const toggleListening = () => {
     if (disabled || isRefining) return;
 
     if (isListening) {
@@ -185,32 +185,13 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
       return;
     }
 
-    // getUserMedia es la única fuente de verdad confiable para el estado del permiso:
-    // - Si está GRANTED: retorna el stream silenciosamente (sin popup alguno)
-    // - Si está PROMPT: muestra el popup nativo del sistema
-    // - Si está DENIED: lanza NotAllowedError inmediatamente (sin popup)
-    // La Permissions API se omite porque es poco confiable en contextos PWA.
-    if (navigator.mediaDevices?.getUserMedia) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach(t => t.stop());
-      } catch (err) {
-        const isPermissionError =
-          err.name === 'NotAllowedError' ||
-          err.name === 'PermissionDeniedError' ||
-          err.name === 'SecurityError';
-        if (isPermissionError) {
-          setShowPermissionModal(true);
-        } else {
-          showError('No se pudo acceder al micrófono.');
-        }
-        return;
-      }
-    }
-
-    // Permiso confirmado → iniciar SpeechRecognition
     try {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        showError('Tu navegador no soporta dictado por voz.');
+        return;
+      }
+
       const recognition = new SpeechRecognition();
       recognition.lang = 'es-AR';
       recognition.interimResults = false;
@@ -231,13 +212,11 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
 
       recognition.onerror = (event) => {
         setIsListening(false);
-        // 'not-allowed' en SpeechRecognition es un error transitorio del servicio,
-        // no significa que el permiso esté bloqueado (getUserMedia ya lo confirmó).
-        // Se muestra error inline, NO el modal.
-        if (event.error === 'no-speech') {
+        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+          // El micrófono está bloqueado → mostrar modal con instrucciones por dispositivo
+          setShowPermissionModal(true);
+        } else if (event.error === 'no-speech') {
           showError('No se detectó voz. Intentá de nuevo.');
-        } else if (event.error === 'not-allowed') {
-          showError('No se pudo iniciar el dictado. Intentá de nuevo.');
         } else {
           showError('Error al capturar audio.');
         }
