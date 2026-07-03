@@ -22,30 +22,32 @@ const INSTRUCTIONS = {
     label: 'Chrome / Edge en PC',
     icon: Monitor,
     steps: [
-      'Hacé clic en el ícono junto a la URL (puede ser un candado, un ojo o un signo de ajuste ⚙).',
-      'En el menú que aparece, seleccioná "Configuración del sitio".',
-      'Buscá "Micrófono" y cambiá el valor a Permitir.',
-      'Recargá la página con F5 y presioná el micrófono nuevamente.',
+      'En la barra de dirección, hacé clic en el ícono que aparece a la IZQUIERDA de la URL (ícono de ajuste ⚙, ojo o candado 🔒).',
+      'Se abre un menú: buscá "Micrófono" y cambialo de "Bloqueado" a "Permitir".',
+      'Si no ves "Micrófono" ahí, seleccioná "Configuración del sitio" y buscalo dentro.',
+      'La página se recarga sola. Presioná el micrófono nuevamente.',
     ],
+    settingsUrl: 'chrome://settings/content/microphone',
   },
   desktop_pwa: {
     label: 'App instalada en PC',
     icon: Monitor,
     steps: [
-      'Hacé clic en los tres puntos ⋮ en la esquina superior derecha de la ventana.',
-      'Seleccioná "Información de la app" (App info).',
-      'Dentro de la información, buscá y tocá "Configuración" (Settings).',
-      'Tocá "Permisos" y habilitá el Micrófono.',
-      'Volvé a la app y probá nuevamente.',
+      'Abrí Chrome (el navegador, no la app).',
+      'En una pestaña nueva, pegá esta dirección: chrome://settings/content/microphone',
+      'Buscá "app.gestionsyso.com" en la sección "Bloqueado" y hacé clic en la papelera para eliminarlo.',
+      'Cerrá Chrome, abrí nuevamente la app instalada y presioná el micrófono.',
+      'Chrome te va a pedir el permiso esta vez. Hacé clic en "Permitir".',
     ],
+    settingsUrl: 'chrome://settings/content/microphone',
   },
   android_browser: {
     label: 'Chrome en Android',
     icon: Smartphone,
     steps: [
-      'Tocá el ícono de información ⓘ o el candado que aparece a la izquierda de la URL.',
-      'En el menú, seleccioná "Permisos" o "Configuración del sitio".',
-      'Tocá "Micrófono" y seleccioná Permitir.',
+      'En la barra de dirección, tocá el ícono ⓘ o el candado a la izquierda de la URL.',
+      'Tocá "Permisos" en el menú que aparece.',
+      'Tocá "Micrófono" y seleccioná "Permitir".',
       'Recargá la página y probá nuevamente.',
     ],
   },
@@ -53,11 +55,10 @@ const INSTRUCTIONS = {
     label: 'App instalada en Android',
     icon: Smartphone,
     steps: [
-      'Salí de la app y volvé a la pantalla de inicio.',
-      'Mantenés presionado el ícono de la app Gestión SySO.',
-      'Seleccioná "Información de la app" (App info) o ⓘ.',
-      'Tocá "Permisos" → "Micrófono" → Seleccioná "Permitir".',
-      'Volvé a abrir la app y presioná el micrófono.',
+      'Abrí Chrome (el navegador, no la app).',
+      'Visitá https://app.gestionsyso.com en Chrome.',
+      'Tocá el ícono ⓘ a la izquierda de la URL → "Permisos" → "Micrófono" → "Permitir".',
+      'Volvé a abrir la app instalada y presioná el micrófono.',
     ],
   },
   ios_browser: {
@@ -88,6 +89,16 @@ function MicPermissionModal({ onClose }) {
   const ctx = getContext();
   const info = INSTRUCTIONS[ctx] || INSTRUCTIONS.desktop_browser;
   const DeviceIcon = info.icon;
+  const [copied, setCopied] = useState(false);
+
+  const copySettingsUrl = () => {
+    if (info.settingsUrl && navigator.clipboard) {
+      navigator.clipboard.writeText(info.settingsUrl).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 3000);
+      });
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
@@ -109,10 +120,27 @@ function MicPermissionModal({ onClose }) {
             <X className="h-4 w-4" />
           </button>
         </div>
+
         <div className="px-5 py-4">
           <p className="text-[11px] text-slate-400 mb-3.5 leading-relaxed">
-            El permiso de micrófono fue bloqueado. Seguí estos pasos para activarlo:
+            El micrófono está bloqueado para este sitio. Seguí estos pasos exactos:
           </p>
+
+          {/* Botón copiar URL de ajustes (solo desktop) */}
+          {info.settingsUrl && (
+            <button
+              type="button"
+              onClick={copySettingsUrl}
+              className="w-full mb-4 py-2 px-3 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 text-xs text-slate-500 hover:border-[#468DFF] hover:text-[#468DFF] hover:bg-blue-50 transition-all cursor-pointer flex items-center justify-center gap-2"
+            >
+              {copied ? (
+                <><span className="text-green-600 font-bold">✓ Copiado</span></>
+              ) : (
+                <><span className="font-mono text-[10px] truncate">{info.settingsUrl}</span><span className="shrink-0 font-bold">— Copiar y pegar en Chrome</span></>
+              )}
+            </button>
+          )}
+
           <ol className="space-y-3">
             {info.steps.map((step, i) => (
               <li key={i} className="flex items-start gap-3">
@@ -124,6 +152,7 @@ function MicPermissionModal({ onClose }) {
             ))}
           </ol>
         </div>
+
         <div className="px-5 pb-5">
           <button
             type="button"
