@@ -31,6 +31,8 @@ export async function middleware(request) {
       limit = 20; // Máximo 20 solicitudes de IA cada 15 minutos por IP
     } else if (pathname.startsWith('/api/clientes') || pathname.startsWith('/api/equipo')) {
       limit = 15;
+    } else if (pathname.startsWith('/api/auth/login-cuit')) {
+      limit = 5; // Máximo 5 intentos de inicio de sesión por CUIT cada 15 minutos por IP
     }
 
     const rateLimitResult = await checkRateLimit(ip, pathname, limit, windowMs);
@@ -115,6 +117,7 @@ export async function middleware(request) {
     pathname === '/login' || 
     pathname === '/register' || 
     pathname === '/reset-password' ||
+    pathname === '/api/auth/login-cuit' ||
     pathname.startsWith('/_next/') ||
     pathname.includes('.') || // archivos estáticos en public/
     pathname.startsWith('/brand/');

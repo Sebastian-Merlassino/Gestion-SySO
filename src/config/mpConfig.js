@@ -1,12 +1,21 @@
 const { MercadoPagoConfig, Preference } = require('mercadopago');
 require('dotenv').config();
 
-// Initialize Mercado Pago client with the access token from environment variables
+// Inicialización de Mercado Pago con Token de Acceso
+const accessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
+if (!accessToken) {
+  throw new Error('Crítico: La variable de entorno MERCADO_PAGO_ACCESS_TOKEN no está definida.');
+}
+
 const client = new MercadoPagoConfig({
-  accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN || 'TEST-54321-REPLACE-THIS-TOKEN-WITH-YOURS'
+  accessToken: accessToken,
+  options: {
+    timeout: 5000,
+    idempotencyKey: 'mp-init-key'
+  }
 });
 
-// Create a preference instance
+// Crear instancia de preferencia
 const preference = new Preference(client);
 
 module.exports = {

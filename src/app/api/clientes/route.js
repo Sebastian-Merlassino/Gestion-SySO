@@ -21,7 +21,7 @@ export async function POST(request) {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY;
+    const supabaseSecretKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
 
     if (!supabaseSecretKey) {
       return NextResponse.json({ error: 'La clave de rol de servicio (service_role) de Supabase no está configurada' }, { status: 500 });
@@ -194,7 +194,7 @@ export async function DELETE(request) {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY;
+    const supabaseSecretKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
 
     if (!supabaseSecretKey) {
       return NextResponse.json({ error: 'La clave de rol de servicio (service_role) de Supabase no está configurada' }, { status: 500 });

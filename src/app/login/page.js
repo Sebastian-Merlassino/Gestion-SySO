@@ -130,43 +130,23 @@ export default function LoginPage() {
       }
 
       try {
-        // 1. Obtener el email asociado al CUIT mediante el RPC en la base de datos
-        const { data: clientEmail, error: rpcError } = await supabase.rpc('get_email_by_cuit', {
-          p_cuit: cleanCuit
+        // Enviar cuit y contraseña al endpoint seguro en el backend para autenticar y redirigir
+        const response = await fetch('/api/auth/login-cuit', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ cuit: cleanCuit, password })
         });
 
-        if (rpcError) throw rpcError;
+        const result = await response.json();
 
-        if (!clientEmail) {
-          throw new Error('El CUIT ingresado no corresponde a ningún cliente registrado o con acceso habilitado.');
-        }
-
-        // 2. Autenticar en Supabase usando el email obtenido y la contraseña provista
-        const { data, error: authError } = await supabase.auth.signInWithPassword({
-          email: clientEmail,
-          password,
-        });
-
-        if (authError) throw authError;
-
-        // 3. Obtener el perfil y el tenant para redireccionar al dashboard
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('tenant_id, tenants(slug)')
-          .eq('id', data.user.id)
-          .single();
-
-        if (profileError) {
-          throw profileError;
+        if (!response.ok) {
+          throw new Error(result.error || 'Credenciales de inicio de sesión inválidas.');
         }
 
         setFailedAttempts(0); // Restablecer intentos al ingresar con éxito
-
-        if (profile?.tenant_id && profile?.tenants?.slug) {
-          window.location.href = `/${profile.tenants.slug}/dashboard`;
-        } else {
-          throw new Error('No se pudo encontrar la organización vinculada a tu cuenta de cliente.');
-        }
+        window.location.href = result.redirectUrl;
       } catch (err) {
         console.error('Login client error:', err);
         let friendlyMessage = err.message || 'Error al iniciar sesión. Verifica tus credenciales.';

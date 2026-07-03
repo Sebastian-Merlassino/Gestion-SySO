@@ -733,7 +733,6 @@ const [partidosList, setPartidosList] = useState([]);
             name: companyName || `${fullName} Consultora`,
             logo_1_url: logo1Url,
             logo_2_url: logo2Url,
-            plan_id: selectedPlan,
             website: website || null,
             social_linkedin: linkedin || null,
             social_instagram: instagram || null,
