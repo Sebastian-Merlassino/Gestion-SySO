@@ -1,3 +1,7 @@
+// src/components/ui/AITextHelper.js
+'use client';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { Mic, Sparkles, Loader2, Trash2, X, Smartphone, Monitor, Square, Maximize2 } from 'lucide-react';
 
 const MAX_RECORDING_SEC = 60;
