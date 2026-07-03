@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, Sparkles, Loader2, Trash2, X, Smartphone, Monitor, HelpCircle, Square } from 'lucide-react';
+import { Mic, Sparkles, Loader2, Trash2, X, Smartphone, Monitor, Square } from 'lucide-react';
 
 const MAX_RECORDING_SEC = 60;
 
@@ -98,7 +98,7 @@ function MicPermissionModal({ onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
         <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-slate-100">
           <div className="flex items-center gap-3">
@@ -151,6 +151,58 @@ function MicPermissionModal({ onClose }) {
   );
 }
 
+// ── Modal de Grabación Overlay (Solución Responsive Premium) ───────────────────
+function RecordingOverlay({ seconds, maxSeconds, onStop, onCancel }) {
+  const formatTime = (secs) => {
+    const mins = Math.floor(secs / 60);
+    const remainingSecs = secs % 60;
+    return `${mins.toString().padStart(2, '0')}:${remainingSecs.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xs overflow-hidden p-6 flex flex-col items-center">
+        <p className="text-xs font-bold text-slate-800 mb-0.5">Escuchando observaciones...</p>
+        <p className="text-[10px] text-slate-400 mb-5 text-center">Hablá fuerte cerca del micrófono.</p>
+
+        {/* Pulso de grabación */}
+        <div className="relative flex items-center justify-center h-20 w-20 mb-5">
+          <div className="absolute inset-0 rounded-full bg-red-500/10 animate-ping" style={{ animationDuration: '1.8s' }} />
+          <div className="absolute inset-2 rounded-full bg-red-500/15 animate-pulse" />
+          <div className="relative h-12 w-12 rounded-full bg-red-500 flex items-center justify-center shadow-lg shadow-red-500/20">
+            <Mic className="h-5 w-5 text-white animate-pulse" />
+          </div>
+        </div>
+
+        {/* Cronómetro */}
+        <div className="text-lg font-mono font-bold text-slate-800 mb-5 flex items-center gap-1.5">
+          <span className="text-red-500 animate-pulse">●</span>
+          {formatTime(seconds)} <span className="text-slate-300 font-normal text-xs">/ {formatTime(maxSeconds)}</span>
+        </div>
+
+        {/* Botones de acción */}
+        <div className="w-full flex gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors cursor-pointer"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={onStop}
+            className="flex-1 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1 shadow-md shadow-red-500/10"
+          >
+            <Square className="h-3 w-3 fill-current" />
+            Terminar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Componente Principal ──────────────────────────────────────────────────────
 export default function AITextHelper({ value, onChange, context = '', disabled = false }) {
   const [isRecording, setIsRecording] = useState(false);
@@ -165,6 +217,7 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
   const audioChunksRef = useRef([]);
   const timerRef = useRef(null);
   const streamRef = useRef(null);
+  const isCancelledRef = useRef(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
@@ -172,7 +225,6 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
     }
   }, []);
 
-  // Limpiar al desmontar
   useEffect(() => {
     return () => {
       stopRecordingCleanup();
@@ -196,11 +248,9 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
     setRecordingSeconds(0);
   };
 
-  // Convertir blob a base64
   const blobToBase64 = (blob) => new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onloadend = () => {
-      // reader.result = "data:audio/webm;base64,AAAA..."
       const base64 = reader.result.split(',')[1];
       resolve(base64);
     };
@@ -208,7 +258,6 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
     reader.readAsDataURL(blob);
   });
 
-  // Enviar audio grabado a Gemini para transcripción
   const transcribeAudio = async (audioBlob) => {
     setIsTranscribing(true);
     try {
@@ -240,10 +289,10 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
   const startRecording = async () => {
     try {
       setErrorMessage('');
+      isCancelledRef.current = false;
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
-      // Detectar formato soportado
       const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
         ? 'audio/webm;codecs=opus'
         : MediaRecorder.isTypeSupported('audio/webm')
@@ -264,6 +313,10 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
 
       recorder.onstop = async () => {
         stopRecordingCleanup();
+        if (isCancelledRef.current) {
+          audioChunksRef.current = [];
+          return;
+        }
         const audioBlob = new Blob(audioChunksRef.current, {
           type: recorder.mimeType || 'audio/webm',
         });
@@ -274,11 +327,10 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
       };
 
       mediaRecorderRef.current = recorder;
-      recorder.start(100); // chunk cada 100ms
+      recorder.start(100);
       setIsRecording(true);
       setRecordingSeconds(0);
 
-      // Timer: auto-stop a los MAX_RECORDING_SEC
       timerRef.current = setInterval(() => {
         setRecordingSeconds(prev => {
           if (prev + 1 >= MAX_RECORDING_SEC) {
@@ -309,13 +361,9 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
     setIsRecording(false);
   };
 
-  const toggleRecording = () => {
-    if (disabled || isTranscribing || isRefining) return;
-    if (isRecording) {
-      stopRecording();
-    } else {
-      startRecording();
-    }
+  const cancelRecording = () => {
+    isCancelledRef.current = true;
+    stopRecording();
   };
 
   const handleRefineText = async () => {
@@ -340,40 +388,42 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
 
   if (disabled) return null;
 
-  const isWorking = isRecording || isTranscribing;
-
   return (
     <>
       {showPermissionModal && (
         <MicPermissionModal onClose={() => setShowPermissionModal(false)} />
       )}
 
+      {/* Ventana Emergente Premium de Grabación */}
+      {isRecording && (
+        <RecordingOverlay
+          seconds={recordingSeconds}
+          maxSeconds={MAX_RECORDING_SEC}
+          onStop={stopRecording}
+          onCancel={cancelRecording}
+        />
+      )}
+
       <div className="flex flex-col items-end gap-1 shrink-0">
         <div className="flex items-center gap-1.5">
 
-          {/* Indicador de grabación / transcripción */}
-          {isRecording && (
-            <span className="text-[10px] font-bold text-red-600 flex items-center gap-1 bg-red-50 px-2 py-1 rounded-lg border border-red-200 animate-pulse">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
-              {recordingSeconds}s — Tocá ■ para detener
-            </span>
-          )}
+          {/* Estado de Transcripción */}
           {isTranscribing && (
-            <span className="text-[10px] font-bold text-[#468DFF] flex items-center gap-1 bg-blue-50 px-2 py-1 rounded-lg border border-blue-200">
+            <span className="text-[10px] font-bold text-[#468DFF] flex items-center gap-1 bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 animate-pulse">
               <Loader2 className="h-3 w-3 animate-spin" />
               Transcribiendo…
             </span>
           )}
 
-          {/* Error genérico */}
-          {errorMessage && !isWorking && (
+          {/* Mensajes de error en línea (no se solapan con inputs) */}
+          {errorMessage && !isRecording && !isTranscribing && (
             <span className="text-[10px] font-bold text-red-500 flex items-center gap-1 bg-red-50 px-2 py-1 rounded-lg border border-red-100">
               {errorMessage}
             </span>
           )}
 
           {/* Limpiar texto */}
-          {value?.trim() && !isWorking && (
+          {value?.trim() && !isRecording && !isTranscribing && (
             <button
               type="button"
               onClick={() => onChange('')}
@@ -384,38 +434,33 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
             </button>
           )}
 
-          {/* Botón micrófono / detener */}
+          {/* Botón Micrófono */}
           {hasMediaSupport && (
             <button
               type="button"
-              onClick={toggleRecording}
-              disabled={isTranscribing || isRefining}
-              title={isRecording ? 'Detener grabación' : 'Grabar observaciones por voz'}
+              onClick={startRecording}
+              disabled={isTranscribing || isRefining || isRecording}
+              title="Grabar observaciones por voz"
               className={`p-1.5 rounded-lg border transition-all duration-300 flex items-center justify-center cursor-pointer ${
-                isRecording
-                  ? 'bg-red-50 text-red-500 border-red-200 animate-pulse'
-                  : isTranscribing || isRefining
-                    ? 'bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed'
-                    : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-100'
+                isTranscribing || isRefining
+                  ? 'bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed'
+                  : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-100'
               }`}
             >
-              {isRecording
-                ? <Square className="h-3.5 w-3.5 fill-current" />
-                : <Mic className="h-3.5 w-3.5" />
-              }
+              <Mic className="h-3.5 w-3.5" />
             </button>
           )}
 
-          {/* Botón IA refinar */}
+          {/* Botón Refinar */}
           <button
             type="button"
             onClick={handleRefineText}
-            disabled={!value?.trim() || isRefining || isWorking}
+            disabled={!value?.trim() || isRefining || isRecording || isTranscribing}
             title="Refinar y formalizar redacción con IA (Gemini)"
             className={`p-1.5 rounded-lg border transition-all duration-300 flex items-center justify-center cursor-pointer ${
               isRefining
                 ? 'bg-blue-50 border-blue-200 text-[#468DFF]'
-                : !value?.trim() || isWorking
+                : !value?.trim() || isRecording || isTranscribing
                   ? 'bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed'
                   : 'bg-blue-50/50 border-[#468DFF]/15 text-[#468DFF] hover:bg-[#468DFF] hover:text-white hover:border-[#468DFF]'
             }`}
