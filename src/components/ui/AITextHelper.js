@@ -61,14 +61,23 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
 
       recognition.onerror = (event) => {
         console.error('Error de Speech Recognition:', event.error);
+        let msg = 'Error al capturar audio.';
         if (event.error === 'not-allowed') {
-          setErrorMessage('Permiso de micrófono denegado.');
+          if (typeof window !== 'undefined' && !window.isSecureContext) {
+            msg = 'El micrófono requiere una conexión segura (HTTPS).';
+          } else {
+            msg = 'Permiso de micrófono denegado.';
+          }
         } else if (event.error === 'no-speech') {
-          setErrorMessage('No se detectó voz.');
-        } else {
-          setErrorMessage('Error al capturar audio.');
+          msg = 'No se detectó voz.';
         }
+        setErrorMessage(msg);
         setIsListening(false);
+
+        // Limpiar mensaje de error después de 5 segundos
+        setTimeout(() => {
+          setErrorMessage('');
+        }, 5000);
       };
 
       recognition.onend = () => {
