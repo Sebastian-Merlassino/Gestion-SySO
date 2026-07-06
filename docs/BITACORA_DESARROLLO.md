@@ -1,5 +1,73 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-06] Integración de Inteligencia Artificial para Investigación y Generación de Informes Técnicos de Accidentes
+
+### Resumen de Cambios
+- **API de Generación Estructurada (`/api/ai/generate-accident-report`)**:
+  - Creación de una API Route protegida para conectar con la API de Gemini 2.5 Flash.
+  - Diseñada bajo la instrucción de un Especialista en Higiene y Seguridad del Trabajo en Argentina (Ley 19.587, Decreto 351/79, Resoluciones de la SRT) e ISO 45001:2018.
+  - Utiliza `responseMimeType: "application/json"` para garantizar una respuesta parseable con Ishikawa (6M), 5 Porqués, causa raíz y tablas de acciones correctivas/preventivas. El prompt se ajustó y restringió explícitamente para obligar a Gemini a condensar, sintetizar o unificar los porqués del análisis en **exactamente 5 etapas** consecutivas (evitando respuestas con más o menos ítems).
+- **Flujo Interactivo en el Frontend**:
+  - **Modal de Entrada**: Permite al usuario incorporar comentarios u observaciones adicionales para guiar el análisis técnico.
+  - **Modal de Edición**: Interfaz interactiva para previsualizar y editar de forma directa cada uno de los campos generados por la IA antes de la exportación final. Las **acciones preventivas** se ubicaron en la parte superior del cuerpo (antes del Ishikawa), ya que son medidas de mitigación temporal ejecutadas en paralelo a la investigación de causa raíz. Se reemplazaron los inputs lineales de los **5 Porqués** por controles del tipo `<textarea>` multi-renglón y expandibles verticalmente (`resize-y`) para permitir una visualización y edición total y sumamente holgada del texto.
+  - **Función de Reintento**: Permite realizar consultas incrementales y relanzar el análisis añadiendo instrucciones extras (ej: *"Enfocarse más en la falla de la traba de seguridad"*).
+- **Motor jsPDF de 2 Páginas Vertical (A4)**:
+  - Generación de un PDF estructurado respetando la paleta institucional (#3C78D8), encabezados, logos de empresas cargados y firmas de responsabilidad al pie de la página 2.
+  - Diagramación de la tabla Ishikawa 6M y la cuadrícula 5 Porqués con la fila inferior "Entonces" mediante trazados vectoriales.
+  - Incorporación de logo primario en cabecera y datos del consultor logueado (teléfono, email) en el pie.
+- **Integración de UI**:
+  - Añadido el botón de acceso directo "Generar Informe IA" (icono `Sparkles`, coincidente con el estándar del `SySO-AI-Voice-Helper`) en la botonera de acciones del formulario de edición.
+  - Añadido el botón con el mismo pictograma (`Sparkles`) y tamaño consistente (`h-4.5 w-4.5`) en la columna de Acciones de la tabla principal de listado de siniestros, homogeneizando su aspecto con las acciones de ver/editar y eliminar.
+  - Reemplazadas todas las referencias internas del antiguo icono `BrainCircuit` en las cabeceras, botones y paneles de los modales 1 y 2 por `Sparkles`, resolviendo los ReferenceError en tiempo de ejecución.
+  - **Dictado por Voz y Pulido de IA**: Se incorporó el componente de soporte de voz `AITextHelper` en el campo "Comentarios u observaciones adicionales (opcional)" del Modal 1, y en el campo de "Volver a intentar con nuevas directivas o comentarios" del Modal 2.
+  - **Títulos y Botones actualizados**:
+    - Modal 1: Renombrado a *"Generar Informe de investigación de accidente / enfermedad profesional con IA"*.
+    - Modal 2: Renombrado a *"Previsualización y Edición del Informe de investigación de accidente"*.
+    - Botón de descarga de PDF: Renombrado a *"Descargar PDF"* (removiendo la palabra "Técnico").
+
+## [2026-07-06] Reestructuración Integral de la Sección Siniestros (Accidentes y Enfermedades Profesionales)
+
+### Resumen de Cambios
+- **Ampliación del Modelo de Datos (DB)**: Creación y aplicación exitosa de la migración `supabase/migrations/20260726000000_add_fields_to_accidentes.sql` que agrega columnas de fecha de ingreso, turno de trabajo habitual, jornada habitual de trabajo, antigüedad (en empresa y en puesto), domicilio de ocurrencia, provincia, partido, localidad/barrio de ocurrencia y soporte para almacenar un arreglo de URLs de fotos (`fotos_urls`).
+- **Renombrado y Títulos**:
+  - Actualización del título de cabecera a `"Registro y Seguimiento de Accidentes y Enfermedades profesionales"`.
+  - Reemplazo de los labels y referencias en la interfaz del listado, placeholders y feedback visual de `"Accidentes"` a `"Siniestros"`.
+  - Se mantuvo el label de navegación del menú lateral en `Sidebar.js` como `'Accidentes'` por decisión del usuario.
+- **Formulario - Sección 1: Datos del empleador**:
+  - Cambiado el título de la sección a `"Datos del empleador"`.
+  - Creado un input/campo dedicado de CUIT (de sólo lectura) al seleccionar la Razón Social, dispuesto en la misma fila junto a Razón Social y Establecimiento.
+  - Implementación de un panel de detalles informativo que se despliega de manera automática y limpia al seleccionar un establecimiento, mostrando su dirección, provincia, partido y localidad/barrio.
+- **Formulario - Sección 2: Datos del trabajador**:
+  - Incorporada una sección específica e interactiva de `"Datos del trabajador"` conteniendo campos para: Apellido y nombre, CUIL, Área, Puesto (con etiqueta extendida), Fecha de ingreso, Turno de trabajo habitual (texto libre), Jornada habitual de trabajo (texto libre), Antigüedad en la empresa (texto libre) y Antigüedad en el puesto (texto libre).
+- **Formulario - Sección 3: Detalles del Siniestro y Ubicación Dinámica**:
+  - Campos de Fecha de siniestro/reingreso, Hora y Descripción de los hechos configurados como obligatorios (`required`) con asteriscos indicadores en el formulario. Tipo de siniestro y Gravedad estructurados en la misma fila del formulario en desktop.
+  - Reubicada debajo de Tipo y Gravedad, en una fila completa, la `"Descripción de los hechos"` vinculada al asistente de dictado de voz y pulido de IA `AITextHelper` tal como estaba originalmente en la plantilla previa.
+  - **Ubicación Dinámica (Domicilio de Ocurrencia)**:
+    - Selector desplegable que lista las direcciones de los establecimientos de la empresa o permite seleccionar `"Otro (agregar...)"`.
+    - Si se selecciona una dirección de establecimiento, el formulario autocompleta automáticamente y deshabilita los selectores geográficos de Provincia, Partido y Localidad/Barrio de ocurrencia.
+    - Si se selecciona `"Otro"`, se habilita un campo de entrada para ingresar el domicilio a mano, y se desbloquean los selectores interactivos de geografía en cascada (que realizan llamadas asíncronas a `fetchAllGeography` para consultar provincias, partidos y localidades).
+  - **Imágenes**:
+    - Integración al final del formulario del componente estándar de carga fotográfica `ImageUploadZone` para registrar imágenes del siniestro. Las imágenes son guardadas de manera segura en el bucket `documents/` respetando las políticas de RLS.
+- **Saneamiento del Formulario**:
+  - Actualizados los métodos de guardar (`handleSave`), editar (`handleEditClick`), cargar datos iniciales (`loadRealData` con firma en lote de las URLs de las fotos en el storage de Supabase) y limpiar estado (`handleCloseForm` / `handleExitForm`).
+  - Eliminación de la antigua sección duplicada de descripción e investigación, unificando todos sus campos dentro de la Sección 3 en el orden indicado.
+
+### Decisiones Clave
+- **Campos de Antigüedad y Turnos de Texto Libre**: En base al feedback del usuario, se decidió utilizar campos de texto libre para las variables de turnos, jornadas y antigüedad. Esto otorga gran flexibilidad operativa (ej. permite escribir `"2 años y 4 meses"` u horarios rotativos sin validaciones rígidas del frontend).
+- **Autocompletado vs Cascada Geográfica**: Se combinaron ambos enfoques para simplificar la experiencia de usuario: si el siniestro ocurre en un establecimiento de la empresa se reduce la carga manual, y si ocurre en tránsito ("in itinere") o en otro lugar, se activa la cascada de selección geográfica dinámica.
+- **Storage Seguro RLS**: Se cumple de forma rigurosa que la subida de imágenes al bucket `documents/` comience con `${user.id}/` en su ruta física, garantizando la aprobación de las políticas RLS de Supabase.
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260726000000_add_fields_to_accidentes.sql`
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+- `[MODIFY] src/components/Sidebar.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js completada con éxito (`npm run build` exitoso).
+
+---
+
 ## [2026-07-03] Auditoría Completa de Seguridad y Remediación por Etapas
 
 ### Resumen de Cambios
