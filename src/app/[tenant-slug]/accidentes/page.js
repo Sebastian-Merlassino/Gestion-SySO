@@ -765,7 +765,18 @@ export default function AccidentesPage({ params }) {
       hora: hora,
       tipo: tipo,
       gravedad: gravedad,
-      descripcion_hechos: descripcionHechos
+      descripcion_hechos: descripcionHechos,
+      fecha_ingreso: fechaIngreso,
+      turno_trabajo: turnoTrabajo,
+      jornada_habitual: jornadaHabitual,
+      antiguedad_empresa: antiguedadEmpresa,
+      antiguedad_puesto: antiguedadPuesto,
+      nombre_trabajador: nombreApellido,
+      cuil: cuil,
+      domicilio_ocurrencia: domicilioOcurrenciaSelect === 'Otro' ? domicilioOcurrenciaOtro : domicilioOcurrenciaSelect,
+      provincia_ocurrencia: provinciaOcurrencia,
+      partido_ocurrencia: partidoOcurrencia,
+      localidad_barrio_ocurrencia: localidadBarrioOcurrencia
     };
 
     setAiTargetAccident(payload);
@@ -782,7 +793,18 @@ export default function AccidentesPage({ params }) {
       hora: acc.hora,
       tipo: acc.tipo,
       gravedad: acc.gravedad,
-      descripcion_hechos: acc.descripcion_hechos
+      descripcion_hechos: acc.descripcion_hechos,
+      fecha_ingreso: acc.fecha_ingreso ? formatDate(acc.fecha_ingreso) : '',
+      turno_trabajo: acc.turno_trabajo,
+      jornada_habitual: acc.jornada_habitual,
+      antiguedad_empresa: acc.antiguedad_empresa,
+      antiguedad_puesto: acc.antiguedad_puesto,
+      nombre_trabajador: acc.nombre_trabajador,
+      cuil: acc.cuil,
+      domicilio_ocurrencia: acc.domicilio_ocurrencia,
+      provincia_ocurrencia: acc.provincia_ocurrencia,
+      partido_ocurrencia: acc.partido_ocurrencia,
+      localidad_barrio_ocurrencia: acc.localidad_barrio_ocurrencia
     };
     setAiTargetAccident(payload);
     setAiAdditionalComments('');

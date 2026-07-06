@@ -72,16 +72,33 @@ Reglas obligatorias:
 4. Si faltan datos en la entrada para realizar un análisis correcto, rellena los campos del JSON con inferencias lógicas razonables y técnicas en base al contexto para no romper la respuesta, pero prioriza el análisis formal de los datos entregados.
 5. El arreglo "cinco_porques" debe tener estrictamente 5 ítems. Debes resumir, condensar o unificar las deducciones necesarias para no sobrepasar ni quedar por debajo de este límite exacto.`;
 
-    // Formatear el prompt de entrada
+    // Formatear el prompt de entrada con el contexto integral del siniestro
     const userMessage = `Por favor, analiza el siguiente evento y genera el informe técnico:
 
-Área / Sector: ${accidentData.area_sector || 'No especificado'}
-Puesto de trabajo: ${accidentData.puesto_operacion || 'No especificado'}
-Fecha y hora del evento: ${accidentData.fecha_siniestro || 'No especificado'} ${accidentData.hora || ''}
-Tipo de evento: ${accidentData.tipo || 'No especificado'}
-Descripción del accidente/incidente/enfermedad profesional: ${accidentData.descripcion_hechos || 'No especificado'}
-Consecuencia: (lesión ${accidentData.gravedad || 'No especificado'})
-Observaciones adicionales aportadas por el usuario: ${additionalComments || 'Ninguna'}
+Datos del Trabajador:
+- Nombre y Apellido: ${accidentData.nombre_trabajador || 'No especificado'}
+- CUIL: ${accidentData.cuil || 'No especificado'}
+- Fecha de ingreso: ${accidentData.fecha_ingreso || 'No especificado'}
+- Antigüedad en la empresa: ${accidentData.antiguedad_empresa || 'No especificada'}
+- Antigüedad en el puesto: ${accidentData.antiguedad_puesto || 'No especificada'}
+
+Datos de la Tarea:
+- Área / Sector: ${accidentData.area_sector || 'No especificado'}
+- Puesto de trabajo / Operación: ${accidentData.puesto_operacion || 'No especificado'}
+- Turno de trabajo habitual: ${accidentData.turno_trabajo || 'No especificado'}
+- Jornada habitual de trabajo: ${accidentData.jornada_habitual || 'No especificada'}
+
+Datos del Siniestro y Ubicación:
+- Fecha y hora del siniestro: ${accidentData.fecha_siniestro || 'No especificado'} ${accidentData.hora || ''}
+- Tipo de evento: ${accidentData.tipo || 'No especificado'}
+- Gravedad del siniestro: ${accidentData.gravedad || 'No especificado'}
+- Lugar / Domicilio de ocurrencia: ${accidentData.domicilio_ocurrencia || 'No especificado'}, ${accidentData.localidad_barrio_ocurrencia || ''}, ${accidentData.partido_ocurrencia || ''}, ${accidentData.provincia_ocurrencia || ''}
+
+Descripción detallada de los hechos:
+${accidentData.descripcion_hechos || 'No especificado'}
+
+Observaciones adicionales del usuario:
+${additionalComments || 'Ninguna'}
 `;
 
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
