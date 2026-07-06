@@ -1,5 +1,58 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-06] Integración de Firmas Digitales y Persistencia del Informe de Investigación de Siniestros con IA
+
+### Resumen de Cambios
+- **Modelo de Base de Datos de Firmas**:
+  - Creación de la migración `supabase/migrations/20260727000000_add_signatures_to_accidentes.sql` para añadir soporte a las firmas de validación y sus aclaraciones (`firma_responsable_empresa`, `firma_profesional`, `firma_tipo`, `firma_responsable_aclaracion` y `firma_profesional_aclaracion`).
+- **Mapeo e Integración en Formulario principal**:
+  - Panel visual interactivo de firmas digitales agregadas al final del formulario principal de registro de siniestros.
+  - Soporte de dibujo a mano táctil y con mouse (usando canvas HTML5 reactivos responsivos con setup de listeners robusto).
+  - Selector de origen de firma para el profesional de higiene y seguridad: se corrigió la consulta asíncrona de `miembros_equipo` simplificándola a campos planos (`id, full_name, signature_url, profile_id`) y eliminando la unión no declarada de `profiles` que causaba el error 400 (Bad Request).
+  - Limpieza completa de canvas y estados de firma al cerrar/limpiar el formulario.
+  - Carga asíncrona de firmas existentes desde storage al editar un siniestro.
+- **Acción "Guardar informe"**:
+  - Incorporación en el Modal 2 de IA de la acción "Guardar informe" junto a "Descargar PDF", renombrada de forma exacta.
+  - Se añadieron alertas del estándar de la aplicación: se gatilla `triggerToast('Generando reporte PDF...', 'info')` para descargas/guardados, y si ya existe un informe guardado previamente, se muestra la alerta de confirmación estándar mediante `setModalAlert` previniendo sobreescrituras accidentales.
+  - Si el siniestro es existente, sube el reporte en memoria (como blob de PDF) a Supabase Storage (`documents/`) y actualiza el campo `informe_investigacion_url` en base de datos.
+  - Si el siniestro es nuevo, asocia el blob del PDF en memoria en el estado React para que se suba automáticamente al guardar el formulario de registro del siniestro.
+- **Refactorización Boundless en Modal 2**:
+  - Removido el límite fijo de 4 acciones preventivas y correctivas en el modal de IA. Las secciones se renombraron a "Acciones Preventivas Propuestas" y "Acciones Correctivas Propuestas" (eliminando el sufijo "(Hasta 4)").
+  - Se añadieron botones dinámicos "+ Añadir Acción" e iconos de papelera `Trash2` para agregar y remover acciones sin límite.
+  - Las descripciones se transformaron en controles `<textarea rows={2} className="resize-y" />` para que el usuario pueda visualizar y expandir cómodamente el texto de cada acción.
+- **Rediseño Estructural del PDF en 3 Páginas**:
+  - Separación lógica en 3 páginas limpias y amplias:
+    - **Página 1**: Identificación de Empleador (con CUIT), Identificación de Trabajador (con label corregido a *"Apellido y nombre del accidentado"* y mapeo de datos consistente), y Sección **"Datos del siniestro"** (renombrada y con campos ordenados idéntico al formulario). Los campos Forma, Agente, Lesión y Zona de Cuerpo ahora ocupan su propio renglón completo de forma secuencial sin peligro de superposiciones. Se calcula la altura dinámica de la Descripción de Hechos para inyectar dinámicamente el bloque de evidencias fotográficas en la parte inferior.
+    - **Página 2**: Tabla de Acciones Preventivas, diagrama de Ishikawa (6M), 5 Porqués con **encabezado delineado en negro y flechas secuenciales (→)**, sub-celdas inferiores que indican la transición **"← entonces"** (con alineación y bordes negros definidos), y Causa Raíz.
+    - **Página 3**: Tabla de Acciones Correctivas y bloque de firmas inyectadas digitalmente.
+  - El título del encabezado se simplificó a **"INFORME DE INVESTIGACIÓN DE ACCIDENTE / ENFERMEDAD PROFESIONAL"** (removiendo "técnico" y la línea de "Sistema de Gestión..."). Las líneas divisorias de encabezado y pie de página, al igual que el texto institucional inferior, se tiñeron de color negro sólido.
+- **Estilo de Botones del Modal 1 de IA**:
+  - Homogeneización de los botones "Cancelar" y "Generar análisis" del Modal 1 de IA otorgándoles carácter de botón secundario y primario institucional según las directivas de marca.
+- **Corrección del Icono Activity**:
+  - Se restauró la importación del icono `Activity` de `lucide-react` para resolver el ReferenceError y el crash de renderizado de React al abrir la edición/detalle del siniestro.
+- **Superposición de Alertas e Interfaz (z-index)**:
+  - Se incrementó el `z-index` del Toast Flotante y el Modal de Confirmación a `z-[100]` para asegurar que se posicionen por encima del Modal 2 de IA (`z-50`) al guardar o solicitar sobreescritura de informes.
+- **Visualización de Informe Directo en Detalle**:
+  - Se confirmó que el archivo existente de investigación de accidentes puede ser visualizado e inspeccionado de manera interactiva por cualquier perfil (incluido el rol de cliente) en la vista de sólo lectura haciendo clic directamente sobre el botón del icono de ojito (`Eye`) del cargador `DocumentUploadZone`, eliminando botones alternativos redundantes en la barra superior.
+- **Unificación del Módulo de Firmas**:
+  - Se homogeneizó el módulo de firmas del formulario de siniestros para que utilice exactamente el mismo formato, estructura visual de grilla (aspect-ratio 2:1), contenido de etiquetas (labels), estilo responsivo y tamaño del lienzo de dibujo que posee la sección "Checklist Personalizados / Cargar Nueva Inspección", asegurando coherencia estética en toda la suite.
+- **Saneamiento de URL de Firmas (Error 400)**:
+  - Se implementó la función helper `cleanSignaturePath` para extraer la ruta relativa limpia de los archivos de firmas. Esto previene peticiones incorrectas y errores HTTP 400 (Bad Request) cuando se leen registros que almacenan la URL pública completa en lugar del path relativo del storage de Supabase.
+- **Corrección de RLS en Subida de Firmas (StorageApiError)**:
+  - Se cambió el prefijo del directorio de subida en `uploadSignatureBlob` para utilizar `user.id` (el UID de Supabase Auth) en lugar de `tenant.id` como primer elemento del path. Esto alinea la subida con la política RLS `Permitir subir firmas miembro` basada en la función `can_access_member_asset` (que valida que la subida comience con el UID del usuario).
+- **Corrección de Ancho de Tablas (pdf-autoTable Warnings)**:
+  - Se redujo el ancho de las últimas columnas en las tablas de Acciones Preventivas, Ishikawa y Acciones Correctivas a `.5` unidades menos para eliminar por completo la advertencia de desbordamiento de 0.28 unidades en jsPDF.
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260727000000_add_signatures_to_accidentes.sql`
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js completada con éxito (`npm run build` exitoso).
+
+---
+
 ## [2026-07-06] Integración de Inteligencia Artificial para Investigación y Generación de Informes Técnicos de Accidentes
 
 ### Resumen de Cambios

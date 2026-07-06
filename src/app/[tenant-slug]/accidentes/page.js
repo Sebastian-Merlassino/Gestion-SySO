@@ -1,7 +1,7 @@
 // src/app/[tenant-slug]/accidentes/page.js
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
@@ -39,7 +39,9 @@ import {
   Clock,
   Activity,
   Sparkles,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Save,
+  PenTool
 } from 'lucide-react';
 
 import { jsPDF } from 'jspdf';
@@ -128,6 +130,15 @@ const GRAVEDAD_GUIA = [
 // PdfUploadZone removed in favor of reusable DocumentUploadZone component
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
+function cleanSignaturePath(path) {
+  if (!path) return '';
+  if (path.includes('signatures/')) {
+    const parts = path.split('signatures/');
+    return parts[parts.length - 1];
+  }
+  return path;
+}
+
 function parseDateISOorDMY(dateStr) {
   if (!dateStr) return null;
   if (dateStr.includes('/')) {
@@ -245,6 +256,20 @@ export default function AccidentesPage({ params }) {
   const [informeFile, setInformeFile] = useState(null);
   const [informeFileName, setInformeFileName] = useState('');
   const [informeUrl, setInformeUrl] = useState('');
+
+  // ── Firmas y Aclaraciones ─────────────────────────────────────────────────
+  const firmaRespCanvasRef = useRef(null);
+  const firmaProfCanvasRef = useRef(null);
+  const [hasSignedResp, setHasSignedResp] = useState(false);
+  const [hasSignedProf, setHasSignedProf] = useState(false);
+  const [firmaRespSavedUrl, setFirmaRespSavedUrl] = useState('');
+  const [firmaProfSavedUrl, setFirmaProfSavedUrl] = useState('');
+  const [firmaTipo, setFirmaTipo] = useState('perfil'); // 'perfil' o 'mano'
+  const [signaturePath, setSignaturePath] = useState('');
+  const [firmaPerfilPreviewUrl, setFirmaPerfilPreviewUrl] = useState('');
+  const [firmaResponsableAclaracion, setFirmaResponsableAclaracion] = useState('');
+  const [firmaProfesionalAclaracion, setFirmaProfesionalAclaracion] = useState('');
+  const [miembrosList, setMiembrosList] = useState([]);
 
   // ── Filtros ───────────────────────────────────────────────────────────────
   const [filterText, setFilterText] = useState('');
@@ -425,6 +450,24 @@ export default function AccidentesPage({ params }) {
       const { data: ests } = await estQ.order('denominacion');
       setAllEstablecimientos(ests || []);
 
+      // Cargar lista de miembros de equipo para la firma
+      const { data: members } = await supabase
+        .from('miembros_equipo')
+        .select('id, full_name, signature_url, profile_id')
+        .eq('tenant_id', ten.id);
+      setMiembrosList(members || []);
+
+      // Si el usuario tiene una firma guardada en su perfil, obtener URL firmada
+      if (prof.signature_path) {
+        const cleanedPath = cleanSignaturePath(prof.signature_path);
+        const { data: sigData } = await supabase.storage
+          .from('signatures')
+          .createSignedUrl(cleanedPath, 3600);
+        if (sigData?.signedUrl) {
+          setFirmaPerfilPreviewUrl(sigData.signedUrl);
+        }
+      }
+
       // Catálogos (lectura pública)
       const [
         { data: formas },
@@ -539,6 +582,123 @@ export default function AccidentesPage({ params }) {
       },
     ]);
     setLoading(false);
+  };
+
+
+  // ── Inicialización y Dibujo en Canvas de Firmas ───────────────────────────
+  const setupCanvas = (canvas, setHasSigned) => {
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    let drawing = false;
+    let lastX = 0;
+    let lastY = 0;
+
+    const getCoordinates = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return {
+        x: clientX - rect.left,
+        y: clientY - rect.top
+      };
+    };
+
+    const startDrawing = (e) => {
+      e.preventDefault();
+      drawing = true;
+      const coords = getCoordinates(e);
+      lastX = coords.x;
+      lastY = coords.y;
+    };
+
+    const draw = (e) => {
+      if (!drawing) return;
+      e.preventDefault();
+      const coords = getCoordinates(e);
+      ctx.beginPath();
+      ctx.moveTo(lastX, lastY);
+      ctx.lineTo(coords.x, coords.y);
+      ctx.stroke();
+      lastX = coords.x;
+      lastY = coords.y;
+      setHasSigned(true);
+    };
+
+    const stopDrawing = () => {
+      drawing = false;
+    };
+
+    // Mouse events
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseleave', stopDrawing);
+
+    // Touch events
+    canvas.addEventListener('touchstart', startDrawing, { passive: false });
+    canvas.addEventListener('touchmove', draw, { passive: false });
+    canvas.addEventListener('touchend', stopDrawing);
+  };
+
+  const firmaRespRefCallback = useCallback((canvas) => {
+    if (canvas) {
+      firmaRespCanvasRef.current = canvas;
+      setupCanvas(canvas, setHasSignedResp);
+    }
+  }, []);
+
+  const firmaProfRefCallback = useCallback((canvas) => {
+    if (canvas) {
+      firmaProfCanvasRef.current = canvas;
+      setupCanvas(canvas, setHasSignedProf);
+    }
+  }, []);
+
+  const clearFirmaResp = () => {
+    if (firmaRespCanvasRef.current) {
+      const ctx = firmaRespCanvasRef.current.getContext('2d');
+      ctx.clearRect(0, 0, firmaRespCanvasRef.current.width, firmaRespCanvasRef.current.height);
+      setHasSignedResp(false);
+    }
+  };
+
+  const clearFirmaProf = () => {
+    if (firmaProfCanvasRef.current) {
+      const ctx = firmaProfCanvasRef.current.getContext('2d');
+      ctx.clearRect(0, 0, firmaProfCanvasRef.current.width, firmaProfCanvasRef.current.height);
+      setHasSignedProf(false);
+    }
+  };
+
+  const uploadSignatureBlob = async (canvas, folderName) => {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          reject(new Error('No se pudo generar el blob del canvas de firma.'));
+          return;
+        }
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) throw new Error('No autorizado');
+          const fileName = `${folderName}_${Date.now()}.png`;
+          const filePath = `${user.id}/${fileName}`;
+          const { error } = await supabase.storage
+            .from('signatures')
+            .upload(filePath, blob, { contentType: 'image/png', cacheControl: '3600' });
+          if (error) throw error;
+          resolve(filePath);
+        } catch (err) {
+          reject(err);
+        }
+      }, 'image/png');
+    });
   };
 
   // ── Logout ────────────────────────────────────────────────────────────────
@@ -834,7 +994,7 @@ export default function AccidentesPage({ params }) {
       jornada_habitual: acc.jornada_habitual,
       antiguedad_empresa: acc.antiguedad_empresa,
       antiguedad_puesto: acc.antiguedad_puesto,
-      nombre_trabajador: acc.nombre_trabajador,
+      nombre_trabajador: acc.nombre_apellido,
       cuil: acc.cuil,
       domicilio_ocurrencia: acc.domicilio_ocurrencia,
       provincia_ocurrencia: acc.provincia_ocurrencia,
@@ -869,7 +1029,7 @@ export default function AccidentesPage({ params }) {
     setIsAiCommentsModalOpen(true);
   };
 
-  const handleExportTechnicalReportPdf = async (report, accData) => {
+  const handleExportTechnicalReportPdfOLD = async (report, accData) => {
     try {
       // 1. Inicializar jsPDF
       const doc = new jsPDF({
@@ -1479,6 +1639,27 @@ export default function AccidentesPage({ params }) {
       if (denunciaFile) finalDenunciaUrl = await uploadPdf(denunciaFile, 'denuncia');
       if (informeFile) finalInformeUrl = await uploadPdf(informeFile, 'informe');
 
+      // Procesar firmas
+      let finalFirmaRespUrl = firmaRespSavedUrl;
+      let finalFirmaProfUrl = firmaProfSavedUrl;
+
+      if (!isDevMode) {
+        if (hasSignedResp && firmaRespCanvasRef.current) {
+          finalFirmaRespUrl = await uploadSignatureBlob(firmaRespCanvasRef.current, 'resp');
+        }
+        if (firmaTipo === 'mano' && hasSignedProf && firmaProfCanvasRef.current) {
+          finalFirmaProfUrl = await uploadSignatureBlob(firmaProfCanvasRef.current, 'prof');
+        } else if (firmaTipo === 'perfil') {
+          const selectedMember = miembrosList.find(m => (m.full_name || '').trim() === firmaProfesionalAclaracion.trim());
+          if (selectedMember && selectedMember.signature_url) {
+            finalFirmaProfUrl = selectedMember.signature_url;
+          }
+        }
+      } else {
+        if (hasSignedResp) finalFirmaRespUrl = 'mock-resp-signature.png';
+        if (hasSignedProf) finalFirmaProfUrl = 'mock-prof-signature.png';
+      }
+
       // Procesar fotos adjuntas
       const uploadedFotoPaths = [];
       for (let i = 0; i < fotosFiles.length; i++) {
@@ -1526,6 +1707,11 @@ export default function AccidentesPage({ params }) {
         partido_ocurrencia: partidoOcurrencia || null,
         localidad_barrio_ocurrencia: localidadBarrioOcurrencia || null,
         fotos_urls: uploadedFotoPaths,
+        firma_tipo: firmaTipo,
+        firma_responsable_aclaracion: firmaResponsableAclaracion.trim() || null,
+        firma_profesional_aclaracion: firmaProfesionalAclaracion.trim() || null,
+        firma_responsable_empresa: finalFirmaRespUrl || null,
+        firma_profesional: finalFirmaProfUrl || null,
         updated_at: new Date().toISOString(),
       };
 
@@ -1622,6 +1808,42 @@ export default function AccidentesPage({ params }) {
     setInformeUrl(acc.informe_investigacion_url || '');
     setInformeFile(null);
     setInformeFileName(acc.informe_investigacion_url ? 'Archivo existente' : '');
+
+    // Firmas
+    setFirmaTipo(acc.firma_tipo || 'perfil');
+    setFirmaResponsableAclaracion(acc.firma_responsable_aclaracion || '');
+    setFirmaProfesionalAclaracion(acc.firma_profesional_aclaracion || '');
+    setFirmaRespSavedUrl('');
+    setFirmaProfSavedUrl('');
+    setHasSignedResp(false);
+    setHasSignedProf(false);
+
+    if (acc.firma_responsable_empresa) {
+      const cleanedPath = cleanSignaturePath(acc.firma_responsable_empresa);
+      supabase.storage
+        .from('signatures')
+        .createSignedUrl(cleanedPath, 3600)
+        .then(({ data }) => {
+          if (data?.signedUrl) {
+            setFirmaRespSavedUrl(data.signedUrl);
+            setHasSignedResp(true);
+          }
+        });
+    }
+
+    if (acc.firma_profesional) {
+      const cleanedPath = cleanSignaturePath(acc.firma_profesional);
+      supabase.storage
+        .from('signatures')
+        .createSignedUrl(cleanedPath, 3600)
+        .then(({ data }) => {
+          if (data?.signedUrl) {
+            setFirmaProfSavedUrl(data.signedUrl);
+            setHasSignedProf(true);
+          }
+        });
+    }
+
     setIsFormOpen(true);
   };
 
@@ -1651,6 +1873,591 @@ export default function AccidentesPage({ params }) {
         }
       },
     });
+  };
+
+  // ── Lógica de Generación, Descarga y Guardado del Informe de IA en PDF ──
+  const [saveReportLoading, setSaveReportLoading] = useState(false);
+
+  const generateTechnicalReportPdfDoc = async (report, accData) => {
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'pt',
+      format: 'a4'
+    });
+
+    let logoBase64 = '';
+    try {
+      if (tenant && tenant.logo_1_url) {
+        logoBase64 = await getBase64ImageFromUrl(tenant.logo_1_url);
+      }
+    } catch (logoErr) {
+      console.warn('No se pudo descargar el logo del tenant:', logoErr);
+    }
+    if (!logoBase64) {
+      try {
+        logoBase64 = await getBase64ImageFromUrl('/brand/logo-primary.png');
+      } catch (defLogoErr) {
+        console.warn('No se pudo cargar el logo por defecto:', defLogoErr);
+      }
+    }
+    if (logoBase64) {
+      logoBase64 = await resizeImage(logoBase64, 150, 150);
+    }
+
+    const drawHeaderAndFooter = (pageNumber) => {
+      if (logoBase64) {
+        try {
+          doc.addImage(logoBase64, 'PNG', 14, 10, 80, 40);
+        } catch (imgErr) {
+          console.error('Error inyectando el logo en el PDF:', imgErr);
+        }
+      }
+
+      doc.setFont('Helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      doc.text('INFORME DE INVESTIGACIÓN DE ACCIDENTE / ENFERMEDAD PROFESIONAL', 581, 29, { align: 'right' });
+
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(0.5);
+      doc.line(14, 53, 581, 53);
+
+      const footerText = `${tenant?.name || 'Gestión SySO'}  |  Tel: ${profile?.phone || profile?.telefono || '—'}  |  Email: ${profile?.email || 'sebastian.merlassino@gestionsyso.com'}`;
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(0.5);
+      doc.line(14, 815, 581, 815);
+      doc.setFont('Helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(0, 0, 0);
+      doc.text(footerText, 297.5, 825, { align: 'center' });
+      doc.text(`Página ${pageNumber} de 3`, 581, 825, { align: 'right' });
+    };
+
+    // ==========================================
+    // PAGINA 1: IDENTIFICACION Y SINIESTRO
+    // ==========================================
+    drawHeaderAndFooter(1);
+
+    doc.setFillColor(60, 120, 216);
+    doc.rect(14, 64, 567, 13, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.text('Datos de identificación del empleador (Principal)', 18, 73);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.setTextColor(0, 0, 0);
+    doc.text('Razón Social:', 17, 92);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(getEmpresaNombre(accData.empresa_id) || '—', 75, 92);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Establecimiento:', 276, 92);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(getEstabNombre(accData.establecimiento_id) || '—', 345, 92);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.text('CUIT:', 17, 107);
+    doc.setFont('Helvetica', 'normal');
+    const empCuit = empresas.find(e => e.id === accData.empresa_id)?.cuit || '—';
+    doc.text(empCuit, 45, 107);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Domicilio Ocurrencia:', 276, 107);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(accData.domicilio_ocurrencia || '—', 365, 107, { maxWidth: 210 });
+
+    doc.setFillColor(60, 120, 216);
+    doc.rect(14, 128, 567, 13, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Datos del trabajador accidentado', 18, 137);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.setTextColor(0, 0, 0);
+    doc.text('Apellido y nombre del accidentado:', 17, 156);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(accData.nombre_trabajador || accData.nombre_apellido || '—', 158, 156);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.text('CUIL:', 276, 156);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(accData.cuil || '—', 305, 156);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Fecha Ingreso:', 17, 171);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(formatDate(accData.fecha_ingreso) || '—', 80, 171);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Turno Trabajo:', 276, 171);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(accData.turno_trabajo || '—', 335, 171);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Jornada Habitual:', 415, 171);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(accData.jornada_habitual || '—', 490, 171);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Antigüedad Empresa:', 17, 186);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(accData.antiguedad_empresa || '—', 105, 186);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Antigüedad Puesto:', 276, 186);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(accData.antiguedad_puesto || '—', 355, 186);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Puesto de Trabajo:', 17, 201);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(accData.puesto_operacion || '—', 95, 201);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Área/Sector:', 276, 201);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(accData.area_sector || '—', 330, 201);
+
+    doc.setFillColor(60, 120, 216);
+    doc.rect(14, 219, 567, 13, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Datos del siniestro', 18, 228);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.setTextColor(0, 0, 0);
+    doc.text('Fecha Accidente / Siniestro:', 17, 247);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(formatDate(accData.fecha_siniestro) || '—', 132, 247);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Hora:', 276, 247);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(accData.hora || '—', 302, 247);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Fecha Denuncia:', 17, 262);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(formatDate(accData.fecha_denuncia) || '—', 92, 262);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.text('N° de Siniestro ART:', 276, 262);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(accData.nro_siniestro || '—', 368, 262);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Tipo:', 17, 277);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(accData.tipo || '—', 42, 277);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Gravedad:', 276, 277);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(accData.gravedad || '—', 324, 277);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Fecha Alta/Rechazo:', 17, 292);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(formatDate(accData.fecha_alta_rechazo) || '—', 105, 292);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Días de Baja:', 276, 292);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(accData.dias_baja !== null ? String(accData.dias_baja) : '—', 335, 292);
+
+    // Campos de clasificación uno por renglón completo
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Forma Accidente:', 17, 307);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(getFormaName(accData.forma_accidente_id) || '—', 92, 307, { maxWidth: 470 });
+
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Agente Material:', 17, 322);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(getAgenteName(accData.agente_material_id) || '—', 88, 322, { maxWidth: 470 });
+
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Descripción Lesión:', 17, 337);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(getDescLesionName(accData.descripcion_lesion_id) || '—', 100, 337, { maxWidth: 470 });
+
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Zona Cuerpo:', 17, 352);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(getZonaName(accData.zona_cuerpo_id) || '—', 78, 352, { maxWidth: 470 });
+
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Diagnóstico Médico:', 17, 367);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(accData.diagnostico || '—', 102, 367, { maxWidth: 470 });
+
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Descripción de los hechos denunciados:', 17, 387);
+    const descHechosLines = doc.splitTextToSize(accData.descripcion_hechos || '—', 560);
+    const descHechosHeight = descHechosLines.length * 12;
+    doc.setFont('Helvetica', 'normal');
+    doc.text(descHechosLines, 17, 399);
+
+    const fotos = accData.fotos_urls || [];
+    if (fotos.length > 0) {
+      const evidenciasTitleY = Math.max(490, 399 + descHechosHeight + 20);
+      const fotosY = evidenciasTitleY + 12;
+
+      doc.setFont('Helvetica', 'bold');
+      doc.text('Evidencias y registros fotográficos:', 17, evidenciasTitleY);
+
+      const loadedBase64Fotos = [];
+      for (const path of fotos) {
+        try {
+          if (path.startsWith('data:') || path.startsWith('mock')) {
+            loadedBase64Fotos.push('/brand/logo-primary.png');
+          } else {
+            const { data } = await supabase.storage.from('documents').createSignedUrl(path, 3600);
+            if (data?.signedUrl) {
+              const b64 = await getBase64ImageFromUrl(data.signedUrl);
+              loadedBase64Fotos.push(b64);
+            }
+          }
+        } catch (fErr) {
+          console.warn('Error cargando foto para PDF:', fErr);
+        }
+      }
+
+      const maxDraw = Math.min(loadedBase64Fotos.length, 3);
+      for (let i = 0; i < maxDraw; i++) {
+        const fX = 14 + (i * 192);
+        try {
+          doc.rect(fX, fotosY, 180, 120);
+          doc.addImage(loadedBase64Fotos[i], 'JPEG', fX + 2, fotosY + 2, 176, 116);
+        } catch (drawImgErr) {
+          console.error(drawImgErr);
+        }
+      }
+    }
+
+    // ==========================================
+    // PAGINA 2: ACCIONES PREVENTIVAS E ISHIKAWA
+    // ==========================================
+    doc.addPage();
+    drawHeaderAndFooter(2);
+
+    doc.setFillColor(60, 120, 216);
+    doc.rect(14, 64, 567, 13, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Acciones preventivas propuestas', 18, 73);
+
+    const preventivas = report.acciones_preventivas || [];
+    const tableDataPrev = preventivas.map(item => [
+      item.descripcion || '—',
+      item.responsable || '—',
+      item.fecha_planificada || '—'
+    ]);
+
+    autoTable(doc, {
+      startY: 90,
+      margin: { left: 14, right: 14 },
+      theme: 'grid',
+      styles: {
+        font: 'Helvetica',
+        fontSize: 7,
+        cellPadding: 4,
+        textColor: '#000000',
+        lineColor: '#000000',
+        lineWidth: 0.5
+      },
+      headStyles: {
+        fillColor: '#D9D9D9',
+        textColor: '#000000',
+        fontStyle: 'bold',
+        halign: 'center'
+      },
+      columnStyles: {
+        0: { cellWidth: 320 },
+        1: { cellWidth: 140 },
+        2: { cellWidth: 106.5 }
+      },
+      head: [['Acción preventiva propuesta', 'Responsable de ejecución', 'Plazo planificado']],
+      body: tableDataPrev.length > 0 ? tableDataPrev : [['— No se registraron acciones preventivas —', '—', '—']]
+    });
+
+    const ishikawaY = doc.lastAutoTable.finalY + 15;
+
+    doc.setFillColor(60, 120, 216);
+    doc.rect(14, ishikawaY, 567, 13, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Método de análisis de causa: Diagrama de Ishikawa (6M)', 18, ishikawaY + 9);
+
+    const ish = report.ishikawa || {};
+    const ishData = [
+      ['Mano de Obra:', ish.mano_de_obra || 'N/A', 'Maquinaria:', ish.maquinaria || 'N/A'],
+      ['Materiales:', ish.material || 'N/A', 'Método:', ish.metodo || 'N/A'],
+      ['Medio Ambiente:', ish.medio || 'N/A', 'Medida:', ish.medida || 'N/A']
+    ];
+
+    autoTable(doc, {
+      startY: ishikawaY + 18,
+      margin: { left: 14, right: 14 },
+      theme: 'grid',
+      styles: {
+        font: 'Helvetica',
+        fontSize: 7,
+        cellPadding: 4,
+        textColor: '#000000',
+        lineColor: '#000000',
+        lineWidth: 0.5
+      },
+      headStyles: {
+        fillColor: '#E2E8F0',
+        textColor: '#000000',
+        fontStyle: 'bold'
+      },
+      columnStyles: {
+        0: { cellWidth: 80, fontStyle: 'bold', fillColor: '#F8FAFC' },
+        1: { cellWidth: 200 },
+        2: { cellWidth: 80, fontStyle: 'bold', fillColor: '#F8FAFC' },
+        3: { cellWidth: 206.5 }
+      },
+      body: ishData
+    });
+
+    const porquesY = doc.lastAutoTable.finalY + 15;
+
+    doc.setFillColor(60, 120, 216);
+    doc.rect(14, porquesY, 567, 13, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Método de los 5 Porqués', 18, porquesY + 9);
+
+    const porques = report.cinco_porques || [];
+    const colWidth = 567 / 5;
+    
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(7);
+    const alturasCalculadas = [];
+    for (let i = 0; i < 5; i++) {
+      const lines = doc.splitTextToSize(porques[i] || '', colWidth - 8);
+      alturasCalculadas.push(Math.max(65, lines.length * 9 + 15));
+    }
+    const maxPorqueHeight = Math.max(...alturasCalculadas);
+
+    for (let i = 0; i < 5; i++) {
+      const px = 14 + (i * colWidth);
+      doc.setDrawColor(0, 0, 0);
+      doc.setFillColor(217, 217, 217);
+      doc.rect(px, porquesY + 18, colWidth, 12, 'FD');
+      doc.setTextColor(0, 0, 0);
+      doc.setFont('Helvetica', 'bold');
+      
+      const labelText = i < 4 ? `${i + 1}° ¿Por qué? →` : `${i + 1}° ¿Por qué?`;
+      doc.text(labelText, px + (colWidth / 2), porquesY + 27, { align: 'center' });
+
+      doc.setDrawColor(0, 0, 0);
+      doc.rect(px, porquesY + 30, colWidth, maxPorqueHeight);
+      doc.setFont('Helvetica', 'normal');
+      doc.text(porques[i] || '—', px + 4, porquesY + 40, { maxWidth: colWidth - 8 });
+
+      // Celda "← entonces" debajo de cada cuadro de detalle
+      doc.setFillColor(245, 245, 245);
+      doc.rect(px, porquesY + 30 + maxPorqueHeight, colWidth, 12, 'FD');
+      doc.setFont('Helvetica', 'bold');
+      doc.text('← entonces', px + (colWidth / 2), porquesY + 30 + maxPorqueHeight + 9, { align: 'center' });
+    }
+
+    const causaRaizY = porquesY + 30 + maxPorqueHeight + 12 + 15;
+    doc.setFillColor(60, 120, 216);
+    doc.rect(14, causaRaizY, 567, 13, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Causa Raíz Identificada', 18, causaRaizY + 9);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.setTextColor(0, 0, 0);
+    doc.text(report.causa_raiz || '—', 17, causaRaizY + 24, { maxWidth: 560 });
+
+    // ==========================================
+    // PAGINA 3: ACCIONES CORRECTIVAS Y FIRMAS
+    // ==========================================
+    doc.addPage();
+    drawHeaderAndFooter(3);
+
+    doc.setFillColor(60, 120, 216);
+    doc.rect(14, 64, 567, 13, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Acciones correctivas propuestas', 18, 73);
+
+    const correctivas = report.acciones_correctivas || [];
+    const tableDataCorr = correctivas.map(item => [
+      item.descripcion || '—',
+      item.responsable || '—',
+      item.fecha_planificada || '—'
+    ]);
+
+    autoTable(doc, {
+      startY: 90,
+      margin: { left: 14, right: 14 },
+      theme: 'grid',
+      styles: {
+        font: 'Helvetica',
+        fontSize: 7,
+        cellPadding: 4,
+        textColor: '#000000',
+        lineColor: '#000000',
+        lineWidth: 0.5
+      },
+      headStyles: {
+        fillColor: '#D9D9D9',
+        textColor: '#000000',
+        fontStyle: 'bold',
+        halign: 'center'
+      },
+      columnStyles: {
+        0: { cellWidth: 320 },
+        1: { cellWidth: 140 },
+        2: { cellWidth: 106.5 }
+      },
+      head: [['Acción correctiva propuesta', 'Responsable de ejecución', 'Plazo planificado']],
+      body: tableDataCorr.length > 0 ? tableDataCorr : [['— No se registraron acciones correctivas —', '—', '—']]
+    });
+
+    const signatureY = 680;
+
+    let finalFirmaRespBase64 = '';
+    try {
+      if (hasSignedResp && firmaRespCanvasRef.current) {
+        finalFirmaRespBase64 = firmaRespCanvasRef.current.toDataURL('image/png');
+      } else if (firmaRespSavedUrl) {
+        finalFirmaRespBase64 = await getBase64ImageFromUrl(firmaRespSavedUrl);
+      }
+    } catch (eSig) {
+      console.warn('Error al obtener la firma del responsable para PDF:', eSig);
+    }
+
+    let finalFirmaProfBase64 = '';
+    try {
+      if (firmaTipo === 'perfil' && firmaPerfilPreviewUrl) {
+        finalFirmaProfBase64 = await getBase64ImageFromUrl(firmaPerfilPreviewUrl);
+      } else if (firmaTipo === 'mano') {
+        if (hasSignedProf && firmaProfCanvasRef.current) {
+          finalFirmaProfBase64 = firmaProfCanvasRef.current.toDataURL('image/png');
+        } else if (firmaProfSavedUrl) {
+          finalFirmaProfBase64 = await getBase64ImageFromUrl(firmaProfSavedUrl);
+        }
+      }
+    } catch (eSigProf) {
+      console.warn('Error al obtener la firma del profesional para PDF:', eSigProf);
+    }
+
+    if (finalFirmaRespBase64) {
+      try {
+        doc.addImage(finalFirmaRespBase64, 'PNG', 61, signatureY - 60, 180, 55);
+      } catch (errSig1) {
+        console.error('Error dibujando firma del responsable en PDF:', errSig1);
+      }
+    }
+    doc.setLineDashPattern([1, 2], 0);
+    doc.setDrawColor(0, 0, 0);
+    doc.line(61, signatureY, 240, signatureY);
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(0, 0, 0);
+    doc.text('Firma y aclaración del responsable de la empresa', 150, signatureY + 8, { align: 'center' });
+    doc.setFont('Helvetica', 'bold');
+    doc.text(firmaResponsableAclaracion || '—', 150, signatureY + 18, { align: 'center' });
+
+    if (finalFirmaProfBase64) {
+      try {
+        doc.addImage(finalFirmaProfBase64, 'PNG', 354, signatureY - 60, 180, 55);
+      } catch (errSig2) {
+        console.error('Error dibujando firma del profesional en PDF:', errSig2);
+      }
+    }
+    doc.line(354, signatureY, 533, signatureY);
+    doc.setFont('Helvetica', 'normal');
+    doc.text('Firma y aclaración del profesional de Higiene y Seguridad', 443, signatureY + 8, { align: 'center' });
+    doc.setFont('Helvetica', 'bold');
+    doc.text(firmaProfesionalAclaracion || '—', 443, signatureY + 18, { align: 'center' });
+
+    return doc;
+  };
+
+  const handleExportTechnicalReportPdf = async (report, accData) => {
+    try {
+      triggerToast('Generando reporte PDF...', 'info');
+      const doc = await generateTechnicalReportPdfDoc(report, accData);
+      const pdfName = `Informe_Investigacion_${accData.nombre_apellido?.replace(/\s+/g, '_') || 'Accidente'}_${Date.now()}.pdf`;
+      doc.save(pdfName);
+      triggerToast('Reporte PDF descargado con éxito.');
+    } catch (pdfErr) {
+      console.error(pdfErr);
+      triggerToast('Error al generar el archivo PDF.', 'error');
+    }
+  };
+
+  const handleSaveTechnicalReportToSiniestro = async (report, accData) => {
+    const yaExiste = accData.informe_investigacion_url || informeUrl;
+    if (yaExiste) {
+      setModalAlert({
+        show: true,
+        title: 'Reemplazar informe existente',
+        message: 'Ya existe un informe de investigación guardado para este siniestro. ¿Deseas reemplazarlo con la nueva versión?',
+        confirmText: 'Reemplazar',
+        onConfirm: () => {
+          closeAlert();
+          executeSaveTechnicalReportToSiniestro(report, accData);
+        }
+      });
+    } else {
+      executeSaveTechnicalReportToSiniestro(report, accData);
+    }
+  };
+
+  const executeSaveTechnicalReportToSiniestro = async (report, accData) => {
+    setSaveReportLoading(true);
+    try {
+      triggerToast('Generando reporte PDF...', 'info');
+      const doc = await generateTechnicalReportPdfDoc(report, accData);
+      
+      const pdfBlob = doc.output('blob');
+      const pdfName = `Informe_Investigacion_${accData.nombre_apellido?.replace(/\s+/g, '_') || 'Accidente'}_${Date.now()}.pdf`;
+      const pdfFile = new File([pdfBlob], pdfName, { type: 'application/pdf' });
+
+      if (editingId) {
+        let finalPath = '';
+        if (isDevMode) {
+          finalPath = `mock-path/${pdfName}`;
+        } else {
+          finalPath = await uploadPdf(pdfFile, 'informe_investigacion');
+        }
+
+        if (isDevMode) {
+          setAccidentes(prev => prev.map(a => a.id === editingId ? { ...a, informe_investigacion_url: finalPath } : a));
+        } else {
+          const { error } = await supabase
+            .from('accidentes')
+            .update({ informe_investigacion_url: finalPath, updated_at: new Date().toISOString() })
+            .eq('id', editingId);
+          if (error) throw error;
+          await loadRealData();
+        }
+        setInformeUrl(finalPath);
+        setInformeFileName(pdfName);
+        triggerToast('Informe técnico guardado en el siniestro con éxito.');
+      } else {
+        setInformeFile(pdfFile);
+        setInformeFileName(pdfName);
+        setInformeUrl(URL.createObjectURL(pdfBlob));
+        triggerToast('Informe preparado. Se guardará automáticamente al registrar el siniestro.');
+      }
+    } catch (err) {
+      console.error('Error al guardar el informe en el siniestro:', err);
+      triggerToast('Error al guardar el informe en el siniestro.', 'error');
+    } finally {
+      setSaveReportLoading(false);
+    }
   };
 
   // ── Cierre de formulario ──────────────────────────────────────────────────
@@ -1690,6 +2497,16 @@ export default function AccidentesPage({ params }) {
     setPartidosOcurrencia([]);
     setLocalidadesOcurrencia([]);
     setFotosFiles([]);
+    // Limpieza de firmas
+    setFirmaTipo('perfil');
+    setFirmaResponsableAclaracion('');
+    setFirmaProfesionalAclaracion('');
+    setFirmaRespSavedUrl('');
+    setFirmaProfSavedUrl('');
+    setHasSignedResp(false);
+    setHasSignedProf(false);
+    setSignaturePath('');
+    setFirmaPerfilPreviewUrl('');
   };
 
   // ── Navegación del sidebar ────────────────────────────────────────────────
@@ -1785,9 +2602,11 @@ export default function AccidentesPage({ params }) {
                         : 'Registrar Nuevo Siniestro'}
                     </span>
                   </div>
-                  <button type="button" onClick={handleExitForm} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200 cursor-pointer">
-                    <X className="h-5 w-5" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button type="button" onClick={handleExitForm} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200 cursor-pointer">
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
                 </div>
 
                 <form onSubmit={handleSave} className="p-6 space-y-6 overflow-y-auto flex-1 scrollbar-thin">
@@ -2413,6 +3232,195 @@ export default function AccidentesPage({ params }) {
                       </div>
                     </div>
 
+                    {/* SECCIÓN 5: Firmas */}
+                    <div className="space-y-4 pt-4 border-t border-slate-100">
+                      <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
+                        <Users className="h-4.5 w-4.5 text-[#468DFF]" />
+                        5. Firmas
+                      </h3>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Responsable del Establecimiento */}
+                        <div className="space-y-2 flex flex-col">
+                          <div className="flex flex-row justify-between items-end gap-2 min-h-[18px]">
+                            <label className="text-xs font-bold text-slate-600 pr-2">Firma del Responsable del Establecimiento</label>
+                            {!isReadOnlyView && (hasSignedResp || firmaRespSavedUrl) && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const canvas = firmaRespCanvasRef.current;
+                                  if (canvas) {
+                                    const ctx = canvas.getContext('2d');
+                                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                                  }
+                                  setHasSignedResp(false);
+                                  setFirmaRespSavedUrl('');
+                                }}
+                                className="text-[10px] font-bold text-red-500 hover:text-red-700 cursor-pointer shrink-0 border-none bg-transparent"
+                              >
+                                Limpiar Firma
+                              </button>
+                            )}
+                          </div>
+                          <div className="hidden md:block h-[51px] shrink-0" />
+                          <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl aspect-[2/1] relative overflow-hidden flex items-center justify-center">
+                            {firmaRespSavedUrl && !hasSignedResp ? (
+                              <img src={firmaRespSavedUrl.startsWith('mock') ? '/brand/logo-primary.png' : firmaRespSavedUrl} alt="Firma Responsable" className="w-full h-full object-contain p-2" />
+                            ) : (
+                              <canvas
+                                ref={firmaRespRefCallback}
+                                width={400}
+                                height={200}
+                                className={`w-full h-full bg-white block ${!isReadOnlyView ? 'cursor-crosshair' : 'cursor-default'}`}
+                              />
+                            )}
+                            {!hasSignedResp && !firmaRespSavedUrl && (
+                              <span className="absolute pointer-events-none text-[10px] text-slate-400 font-bold uppercase tracking-wider">Dibuje la firma aquí</span>
+                            )}
+                          </div>
+                          <div className="flex flex-col gap-1 pt-1.5">
+                            <label className="text-xs font-bold text-slate-500">Aclaración / Nombre del Responsable</label>
+                            <input
+                              type="text"
+                              disabled={isReadOnlyView}
+                              value={firmaResponsableAclaracion}
+                              onChange={(e) => setFirmaResponsableAclaracion(e.target.value)}
+                              placeholder="Nombre completo..."
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all disabled:opacity-60 text-slate-700 font-semibold"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Profesional Higiene y Seguridad */}
+                        <div className="space-y-2 flex flex-col">
+                          <div className="flex flex-row justify-between items-end gap-2 min-h-[18px]">
+                            <label className="text-xs font-bold text-slate-600 pr-2">Firma del Profesional de Higiene y Seguridad</label>
+                            {firmaTipo === 'mano' && !isReadOnlyView && (hasSignedProf || firmaProfSavedUrl) && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const canvas = firmaProfCanvasRef.current;
+                                  if (canvas) {
+                                    const ctx = canvas.getContext('2d');
+                                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                                  }
+                                  setHasSignedProf(false);
+                                  setFirmaProfSavedUrl('');
+                                }}
+                                className="text-[10px] font-bold text-red-500 hover:text-red-700 cursor-pointer shrink-0 border-none bg-transparent"
+                              >
+                                Limpiar Firma
+                              </button>
+                            )}
+                          </div>
+
+                          <div className="space-y-1.5 h-[51px] flex flex-col justify-end">
+                            <label className="text-xs font-bold text-slate-500">Origen de Firma del Profesional</label>
+                            <div className="flex border border-slate-200 bg-white text-[11px] font-semibold shrink-0 rounded-lg overflow-hidden">
+                              <button
+                                type="button"
+                                disabled={isReadOnlyView}
+                                onClick={() => setFirmaTipo('perfil')}
+                                className={`flex-1 py-1 transition-colors cursor-pointer border-none ${
+                                  firmaTipo === 'perfil'
+                                    ? 'bg-[#468DFF] text-white'
+                                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                                }`}
+                              >
+                                Firma de Perfil
+                              </button>
+                              <button
+                                type="button"
+                                disabled={isReadOnlyView}
+                                onClick={() => setFirmaTipo('mano')}
+                                className={`flex-1 py-1 transition-colors cursor-pointer border-none ${
+                                  firmaTipo === 'mano'
+                                    ? 'bg-[#468DFF] text-white'
+                                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                                }`}
+                              >
+                                Firmar a mano
+                              </button>
+                            </div>
+                          </div>
+
+                          {firmaTipo === 'perfil' ? (
+                            <div className="border-2 border-dashed border-slate-200 bg-slate-50 rounded-xl aspect-[2/1] relative overflow-hidden flex items-center justify-center p-3 text-center">
+                              {firmaPerfilPreviewUrl ? (
+                                <div className="flex flex-col items-center justify-center h-full w-full">
+                                  <div className="bg-white border border-slate-200 rounded-lg p-2 max-w-[200px] h-[80px] flex items-center justify-center overflow-hidden shadow-sm">
+                                    <img 
+                                      src={firmaPerfilPreviewUrl} 
+                                      alt="Firma Perfil" 
+                                      className="max-w-full max-h-full object-contain"
+                                    />
+                                  </div>
+                                  <p className="text-[10px] text-green-600 font-bold mt-2">✓ Firma del perfil cargada correctamente.</p>
+                                </div>
+                              ) : (
+                                <p className="text-[10px] text-amber-600 font-bold p-4">⚠ El profesional seleccionado no tiene una firma digital configurada.</p>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl aspect-[2/1] relative overflow-hidden flex items-center justify-center">
+                              {firmaProfSavedUrl && !hasSignedProf ? (
+                                <img src={firmaProfSavedUrl.startsWith('mock') ? '/brand/logo-primary.png' : firmaProfSavedUrl} alt="Firma Profesional" className="w-full h-full object-contain p-2" />
+                              ) : (
+                                <canvas
+                                  ref={firmaProfRefCallback}
+                                  width={400}
+                                  height={200}
+                                  className={`w-full h-full bg-white block ${!isReadOnlyView ? 'cursor-crosshair' : 'cursor-default'}`}
+                                />
+                              )}
+                              {!hasSignedProf && !firmaProfSavedUrl && (
+                                <span className="absolute pointer-events-none text-[10px] text-slate-400 font-bold uppercase tracking-wider">Dibuje la firma aquí</span>
+                              )}
+                            </div>
+                          )}
+
+                          <div className="flex flex-col gap-1 pt-1.5">
+                            <label className="text-xs font-bold text-slate-500">Profesional Interviniente</label>
+                            {!isReadOnlyView ? (
+                              <select
+                                value={firmaProfesionalAclaracion}
+                                onChange={(e) => {
+                                  setFirmaProfesionalAclaracion(e.target.value);
+                                  const selectedMember = miembrosList.find(m => m.full_name === e.target.value);
+                                  if (selectedMember?.signature_url) {
+                                    const cleanedPath = cleanSignaturePath(selectedMember.signature_url);
+                                    supabase.storage
+                                      .from('signatures')
+                                      .createSignedUrl(cleanedPath, 3600)
+                                      .then(({ data }) => {
+                                        if (data?.signedUrl) {
+                                          setFirmaPerfilPreviewUrl(data.signedUrl);
+                                        }
+                                      });
+                                  } else {
+                                    setFirmaPerfilPreviewUrl('');
+                                  }
+                                }}
+                                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 cursor-pointer font-semibold text-slate-700"
+                              >
+                                <option value="">Seleccionar profesional...</option>
+                                {miembrosList.map(m => (
+                                  <option key={m.id} value={m.full_name}>{m.full_name}</option>
+                                ))}
+                              </select>
+                            ) : (
+                              <input
+                                type="text"
+                                disabled
+                                value={firmaProfesionalAclaracion || 'N/A'}
+                                className="w-full border border-slate-200 bg-slate-100 text-slate-500 rounded-xl px-3.5 py-2 text-sm font-semibold"
+                              />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                   </fieldset>
 
                   {/* Botones del Formulario */}
@@ -2836,7 +3844,7 @@ export default function AccidentesPage({ params }) {
 
       {/* ── Toast Flotante ── */}
       {toast.show && (
-        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-lg transition-all text-xs font-bold animate-fade-in
+        <div className={`fixed bottom-6 right-6 z-[100] flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-lg transition-all text-xs font-bold animate-fade-in
           ${toast.type === 'error' ? 'bg-red-50 border-red-200 text-red-600' : ''}
           ${toast.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : ''}
           ${toast.type === 'info' ? 'bg-blue-50 border-blue-200 text-blue-600' : ''}
@@ -2850,7 +3858,7 @@ export default function AccidentesPage({ params }) {
 
       {/* ── Modal Confirmación ── */}
       {modalAlert.show && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
           <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
             <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500">
               <AlertTriangle className="h-6 w-6" />
@@ -2958,7 +3966,7 @@ export default function AccidentesPage({ params }) {
               <button
                 type="button"
                 onClick={() => setIsAiCommentsModalOpen(false)}
-                className="px-4 py-2 border border-slate-350 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer"
+                className="px-4 py-2 bg-white text-[#468DFF] border border-[#468DFF] rounded-xl text-xs font-bold hover:bg-[#468DFF] hover:text-white transition-all active:scale-[0.98] cursor-pointer"
               >
                 Cancelar
               </button>
@@ -2966,7 +3974,7 @@ export default function AccidentesPage({ params }) {
                 type="button"
                 disabled={aiReportLoading}
                 onClick={() => handleCallGenerateReportApi(aiTargetAccident, aiAdditionalComments)}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer"
+                className="px-4 py-2 bg-[#468DFF] hover:bg-[#0511F2] text-white border border-transparent rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer shadow-md shadow-[#468DFF]/10"
               >
                 {aiReportLoading ? (
                   <>
@@ -3011,19 +4019,30 @@ export default function AccidentesPage({ params }) {
 
               {/* Acciones Preventivas (Ubicadas antes de Ishikawa) */}
               <div className="space-y-3">
-                <h4 className="font-outfit font-bold text-slate-800 text-xs border-b border-slate-100 pb-1 uppercase tracking-wider text-indigo-600">
-                  Acciones Preventivas Propuestas (Hasta 4)
-                </h4>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-1">
+                  <h4 className="font-outfit font-bold text-slate-800 text-xs uppercase tracking-wider text-indigo-600">
+                    Acciones Preventivas Propuestas
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newActs = [...(aiReportDataEdit.acciones_preventivas || [])];
+                      newActs.push({ descripcion: '', responsable: '', fecha_planificada: '', fecha_implementacion: '' });
+                      setAiReportDataEdit({ ...aiReportDataEdit, acciones_preventivas: newActs });
+                    }}
+                    className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-[10px] font-bold transition-all cursor-pointer"
+                  >
+                    + Añadir Acción
+                  </button>
+                </div>
                 <div className="space-y-3">
-                  {Array.from({ length: 4 }).map((_, idx) => {
-                    const act = aiReportDataEdit.acciones_preventivas?.[idx] || { descripcion: '', responsable: '', fecha_planificada: '', fecha_implementacion: '' };
+                  {(aiReportDataEdit.acciones_preventivas || []).map((act, idx) => {
                     return (
-                      <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-end bg-slate-50/30 border border-slate-150 p-2.5 rounded-xl">
-                        <div className="md:col-span-1 text-[10px] font-bold text-slate-400 text-center align-middle">#{idx + 1}</div>
+                      <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-start bg-slate-50/30 border border-slate-150 p-2.5 rounded-xl relative">
+                        <div className="md:col-span-1 text-[10px] font-bold text-slate-400 pt-2 text-center">#{idx + 1}</div>
                         <div className="md:col-span-6 space-y-1">
-                          <label className="text-[10px] font-bold text-slate-500">Descripción de la acción</label>
-                          <input
-                            type="text"
+                          <label className="text-[10px] font-bold text-slate-500 block">Descripción de la acción</label>
+                          <textarea
                             value={act.descripcion}
                             onChange={e => {
                               const newActs = [...(aiReportDataEdit.acciones_preventivas || [])];
@@ -3031,11 +4050,12 @@ export default function AccidentesPage({ params }) {
                               setAiReportDataEdit({ ...aiReportDataEdit, acciones_preventivas: newActs });
                             }}
                             placeholder="Acción preventiva..."
-                            className="w-full border border-slate-200 rounded-xl px-2.5 py-1 focus:outline-none focus:border-[#468DFF]"
+                            rows={2}
+                            className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-[#468DFF] resize-y text-xs"
                           />
                         </div>
                         <div className="md:col-span-3 space-y-1">
-                          <label className="text-[10px] font-bold text-slate-500">Responsable</label>
+                          <label className="text-[10px] font-bold text-slate-500 block">Responsable</label>
                           <input
                             type="text"
                             value={act.responsable}
@@ -3045,26 +4065,42 @@ export default function AccidentesPage({ params }) {
                               setAiReportDataEdit({ ...aiReportDataEdit, acciones_preventivas: newActs });
                             }}
                             placeholder="Ej: Mantenimiento"
-                            className="w-full border border-slate-200 rounded-xl px-2.5 py-1 focus:outline-none focus:border-[#468DFF]"
+                            className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-[#468DFF] text-xs"
                           />
                         </div>
-                        <div className="md:col-span-2 space-y-1">
-                          <label className="text-[10px] font-bold text-slate-500">Plazo/Fecha</label>
-                          <input
-                            type="text"
-                            value={act.fecha_planificada}
-                            onChange={e => {
-                              const newActs = [...(aiReportDataEdit.acciones_preventivas || [])];
-                              newActs[idx] = { ...act, fecha_planificada: e.target.value };
+                        <div className="md:col-span-2 space-y-1 flex gap-1.5 items-end">
+                          <div className="flex-grow space-y-1">
+                            <label className="text-[10px] font-bold text-slate-500 block">Plazo/Fecha</label>
+                            <input
+                              type="text"
+                              value={act.fecha_planificada}
+                              onChange={e => {
+                                const newActs = [...(aiReportDataEdit.acciones_preventivas || [])];
+                                newActs[idx] = { ...act, fecha_planificada: e.target.value };
+                                setAiReportDataEdit({ ...aiReportDataEdit, acciones_preventivas: newActs });
+                              }}
+                              placeholder="Plazo planificado"
+                              className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-[#468DFF] text-xs"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newActs = (aiReportDataEdit.acciones_preventivas || []).filter((_, i) => i !== idx);
                               setAiReportDataEdit({ ...aiReportDataEdit, acciones_preventivas: newActs });
                             }}
-                            placeholder="Plazo planificado"
-                            className="w-full border border-slate-200 rounded-xl px-2.5 py-1 focus:outline-none focus:border-[#468DFF]"
-                          />
+                            className="p-2 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl transition-colors cursor-pointer shrink-0"
+                            title="Eliminar acción"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
                         </div>
                       </div>
                     );
                   })}
+                  {(!aiReportDataEdit.acciones_preventivas || aiReportDataEdit.acciones_preventivas.length === 0) && (
+                    <div className="text-center text-slate-400 text-xs py-2 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">No hay acciones preventivas cargadas.</div>
+                  )}
                 </div>
               </div>
               
@@ -3185,19 +4221,30 @@ export default function AccidentesPage({ params }) {
 
               {/* 4. Acciones Correctivas */}
               <div className="space-y-3 pt-2">
-                <h4 className="font-outfit font-bold text-slate-800 text-xs border-b border-slate-100 pb-1 uppercase tracking-wider text-indigo-600">
-                  Acciones Correctivas Propuestas (Hasta 4)
-                </h4>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-1">
+                  <h4 className="font-outfit font-bold text-slate-800 text-xs uppercase tracking-wider text-indigo-600">
+                    Acciones Correctivas Propuestas
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newActs = [...(aiReportDataEdit.acciones_correctivas || [])];
+                      newActs.push({ descripcion: '', responsable: '', fecha_planificada: '', fecha_implementacion: '' });
+                      setAiReportDataEdit({ ...aiReportDataEdit, acciones_correctivas: newActs });
+                    }}
+                    className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-[10px] font-bold transition-all cursor-pointer"
+                  >
+                    + Añadir Acción
+                  </button>
+                </div>
                 <div className="space-y-3">
-                  {Array.from({ length: 4 }).map((_, idx) => {
-                    const act = aiReportDataEdit.acciones_correctivas?.[idx] || { descripcion: '', responsable: '', fecha_planificada: '', fecha_implementacion: '' };
+                  {(aiReportDataEdit.acciones_correctivas || []).map((act, idx) => {
                     return (
-                      <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-end bg-slate-50/30 border border-slate-150 p-2.5 rounded-xl">
-                        <div className="md:col-span-1 text-[10px] font-bold text-slate-400 text-center align-middle">#{idx + 1}</div>
+                      <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-start bg-slate-50/30 border border-slate-150 p-2.5 rounded-xl relative">
+                        <div className="md:col-span-1 text-[10px] font-bold text-slate-400 pt-2 text-center">#{idx + 1}</div>
                         <div className="md:col-span-6 space-y-1">
-                          <label className="text-[10px] font-bold text-slate-500">Descripción de la acción</label>
-                          <input
-                            type="text"
+                          <label className="text-[10px] font-bold text-slate-500 block">Descripción de la acción</label>
+                          <textarea
                             value={act.descripcion}
                             onChange={e => {
                               const newActs = [...(aiReportDataEdit.acciones_correctivas || [])];
@@ -3205,11 +4252,12 @@ export default function AccidentesPage({ params }) {
                               setAiReportDataEdit({ ...aiReportDataEdit, acciones_correctivas: newActs });
                             }}
                             placeholder="Acción correctiva..."
-                            className="w-full border border-slate-200 rounded-xl px-2.5 py-1 focus:outline-none focus:border-[#468DFF]"
+                            rows={2}
+                            className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-[#468DFF] resize-y text-xs"
                           />
                         </div>
                         <div className="md:col-span-3 space-y-1">
-                          <label className="text-[10px] font-bold text-slate-500">Responsable</label>
+                          <label className="text-[10px] font-bold text-slate-500 block">Responsable</label>
                           <input
                             type="text"
                             value={act.responsable}
@@ -3219,26 +4267,42 @@ export default function AccidentesPage({ params }) {
                               setAiReportDataEdit({ ...aiReportDataEdit, acciones_correctivas: newActs });
                             }}
                             placeholder="Ej: Mantenimiento"
-                            className="w-full border border-slate-200 rounded-xl px-2.5 py-1 focus:outline-none focus:border-[#468DFF]"
+                            className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-[#468DFF] text-xs"
                           />
                         </div>
-                        <div className="md:col-span-2 space-y-1">
-                          <label className="text-[10px] font-bold text-slate-500">Plazo/Fecha</label>
-                          <input
-                            type="text"
-                            value={act.fecha_planificada}
-                            onChange={e => {
-                              const newActs = [...(aiReportDataEdit.acciones_correctivas || [])];
-                              newActs[idx] = { ...act, fecha_planificada: e.target.value };
+                        <div className="md:col-span-2 space-y-1 flex gap-1.5 items-end">
+                          <div className="flex-grow space-y-1">
+                            <label className="text-[10px] font-bold text-slate-500 block">Plazo/Fecha</label>
+                            <input
+                              type="text"
+                              value={act.fecha_planificada}
+                              onChange={e => {
+                                const newActs = [...(aiReportDataEdit.acciones_correctivas || [])];
+                                newActs[idx] = { ...act, fecha_planificada: e.target.value };
+                                setAiReportDataEdit({ ...aiReportDataEdit, acciones_correctivas: newActs });
+                              }}
+                              placeholder="Plazo planificado"
+                              className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-[#468DFF] text-xs"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newActs = (aiReportDataEdit.acciones_correctivas || []).filter((_, i) => i !== idx);
                               setAiReportDataEdit({ ...aiReportDataEdit, acciones_correctivas: newActs });
                             }}
-                            placeholder="Plazo planificado"
-                            className="w-full border border-slate-200 rounded-xl px-2.5 py-1 focus:outline-none focus:border-[#468DFF]"
-                          />
+                            className="p-2 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl transition-colors cursor-pointer shrink-0"
+                            title="Eliminar acción"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
                         </div>
                       </div>
                     );
                   })}
+                  {(!aiReportDataEdit.acciones_correctivas || aiReportDataEdit.acciones_correctivas.length === 0) && (
+                    <div className="text-center text-slate-400 text-xs py-2 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">No hay acciones correctivas cargadas.</div>
+                  )}
                 </div>
               </div>
 
@@ -3297,14 +4361,34 @@ export default function AccidentesPage({ params }) {
               >
                 Cerrar
               </button>
-              <button
-                type="button"
-                onClick={() => handleExportTechnicalReportPdf(aiReportDataEdit, aiTargetAccident)}
-                className="px-5 py-2 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-md shadow-[#468DFF]/10"
-              >
-                <Download className="h-4 w-4" />
-                Descargar PDF
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  disabled={saveReportLoading}
+                  onClick={() => handleSaveTechnicalReportToSiniestro(aiReportDataEdit, aiTargetAccident)}
+                  className="px-5 py-2 bg-white text-[#468DFF] border border-[#468DFF] rounded-xl text-xs font-bold hover:bg-[#468DFF] hover:text-white transition-all cursor-pointer flex items-center gap-1.5 shadow-sm disabled:opacity-50"
+                >
+                  {saveReportLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Guardando...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      Guardar informe
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExportTechnicalReportPdf(aiReportDataEdit, aiTargetAccident)}
+                  className="px-5 py-2 bg-[#468DFF] hover:bg-[#0511F2] text-white border border-transparent rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-md shadow-[#468DFF]/10"
+                >
+                  <Download className="h-4 w-4" />
+                  Descargar PDF
+                </button>
+              </div>
             </div>
 
           </div>
