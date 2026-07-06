@@ -16,6 +16,7 @@
   - Generación de un PDF estructurado respetando la paleta institucional (#3C78D8), encabezados, logos de empresas cargados y firmas de responsabilidad al pie de la página 2.
   - Diagramación de la tabla Ishikawa 6M y la cuadrícula 5 Porqués con la fila inferior "Entonces" mediante trazados vectoriales.
   - Incorporación de logo primario en cabecera y datos del consultor logueado (teléfono, email) en el pie.
+  - **Aislamiento de variables (Shadowing de Estado)**: Se desacopló por completo la Página 1 del PDF respecto de los estados locales del formulario React. Ahora todas las variables de dibujo (establecimiento, empresa, trabajador, fechas, denuncias, fotos firmadas, etc.) se redefinen localmente en la función leyendo exclusivamente del parámetro estructurado `accData` (enriquecido con IDs y mapeos en los disparadores). Esto garantiza la consistencia del reporte tanto si se genera desde el formulario como directamente desde la tabla de listado.
 - **Integración de UI**:
   - Añadido el botón de acceso directo "Generar Informe IA" (icono `Sparkles`, coincidente con el estándar del `SySO-AI-Voice-Helper`) en la botonera de acciones del formulario de edición.
   - Añadido el botón con el mismo pictograma (`Sparkles`) y tamaño consistente (`h-4.5 w-4.5`) en la columna de Acciones de la tabla principal de listado de siniestros, homogeneizando su aspecto con las acciones de ver/editar y eliminar.

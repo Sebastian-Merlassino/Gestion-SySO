@@ -758,6 +758,9 @@ export default function AccidentesPage({ params }) {
     if (!gravedad) { triggerToast('La Gravedad es obligatoria para la IA.', 'error'); return; }
     if (!descripcionHechos || !descripcionHechos.trim()) { triggerToast('La Descripción de los hechos es obligatoria para la IA.', 'error'); return; }
 
+    const emp = empresas.find(e => e.id === empresaId) || {};
+    const estab = allEstablecimientos.find(e => e.id === establecimientoId) || {};
+
     const payload = {
       area_sector: areaSector,
       puesto_operacion: puestoOperacion,
@@ -776,7 +779,29 @@ export default function AccidentesPage({ params }) {
       domicilio_ocurrencia: domicilioOcurrenciaSelect === 'Otro' ? domicilioOcurrenciaOtro : domicilioOcurrenciaSelect,
       provincia_ocurrencia: provinciaOcurrencia,
       partido_ocurrencia: partidoOcurrencia,
-      localidad_barrio_ocurrencia: localidadBarrioOcurrencia
+      localidad_barrio_ocurrencia: localidadBarrioOcurrencia,
+      // Datos del Empleador y Establecimiento para el PDF
+      empresa_razon_social: emp.razon_social || '',
+      empresa_cuit: emp.cuit || '',
+      establecimiento_denominacion: estab.denominacion || '',
+      establecimiento_direccion: estab.direccion || '',
+      establecimiento_localidad: estab.localidad_barrio || '',
+      establecimiento_provincia: estab.provincia || '',
+      // Datos médicos y denuncia
+      nro_siniestro: nroSiniestro,
+      fecha_denuncia: fechaDenuncia,
+      forma_accidente_nombre: formasAccidente.find(f => f.id === formaAccidenteId)?.nombre || '—',
+      descripcion_lesion_nombre: descripcionesLesion.find(d => d.id === descripcionLesionId)?.nombre || '—',
+      zona_cuerpo_nombre: zonasCuerpo.find(z => z.id === zonaCuerpoId)?.nombre || '—',
+      agente_material_nombre: agentesMateriales.find(a => a.id === agenteMaterialId)?.nombre || '—',
+      fotos_files: fotosFiles || [],
+      // IDs de relación para búsqueda en PDF
+      empresa_id: empresaId,
+      establecimiento_id: establecimientoId,
+      forma_accidente_id: formaAccidenteId,
+      descripcion_lesion_id: descripcionLesionId,
+      zona_cuerpo_id: zonaCuerpoId,
+      agente_material_id: agenteMaterialId
     };
 
     setAiTargetAccident(payload);
@@ -786,6 +811,16 @@ export default function AccidentesPage({ params }) {
   };
 
   const handleOpenAiModalFromList = (acc) => {
+    const emp = empresas.find(e => e.id === acc.empresa_id) || {};
+    const estab = allEstablecimientos.find(e => e.id === acc.establecimiento_id) || {};
+    
+    // Mapear fotos firmadas
+    const fotosMapped = (acc.fotos_urls || []).map((path, index) => ({
+      file: null,
+      preview: acc.fotos_signed_urls?.[index] || '/brand/logo-primary.png',
+      path
+    }));
+
     const payload = {
       area_sector: acc.area_sector,
       puesto_operacion: acc.puesto_operacion,
@@ -804,7 +839,29 @@ export default function AccidentesPage({ params }) {
       domicilio_ocurrencia: acc.domicilio_ocurrencia,
       provincia_ocurrencia: acc.provincia_ocurrencia,
       partido_ocurrencia: acc.partido_ocurrencia,
-      localidad_barrio_ocurrencia: acc.localidad_barrio_ocurrencia
+      localidad_barrio_ocurrencia: acc.localidad_barrio_ocurrencia,
+      // Datos del Empleador y Establecimiento para el PDF
+      empresa_razon_social: emp.razon_social || '',
+      empresa_cuit: emp.cuit || '',
+      establecimiento_denominacion: estab.denominacion || '',
+      establecimiento_direccion: estab.direccion || '',
+      establecimiento_localidad: estab.localidad_barrio || '',
+      establecimiento_provincia: estab.provincia || '',
+      // Datos médicos y denuncia
+      nro_siniestro: acc.nro_siniestro || '',
+      fecha_denuncia: formatDate(acc.fecha_denuncia) || '',
+      forma_accidente_nombre: formasAccidente.find(f => f.id === acc.forma_accidente_id)?.nombre || '—',
+      descripcion_lesion_nombre: descripcionesLesion.find(d => d.id === acc.descripcion_lesion_id)?.nombre || '—',
+      zona_cuerpo_nombre: zonasCuerpo.find(z => z.id === acc.zona_cuerpo_id)?.nombre || '—',
+      agente_material_nombre: agentesMateriales.find(a => a.id === acc.agente_material_id)?.nombre || '—',
+      fotos_files: fotosMapped,
+      // IDs de relación para búsqueda en PDF
+      empresa_id: acc.empresa_id,
+      establecimiento_id: acc.establecimiento_id,
+      forma_accidente_id: acc.forma_accidente_id,
+      descripcion_lesion_id: acc.descripcion_lesion_id,
+      zona_cuerpo_id: acc.zona_cuerpo_id,
+      agente_material_id: acc.agente_material_id
     };
     setAiTargetAccident(payload);
     setAiAdditionalComments('');
@@ -841,9 +898,45 @@ export default function AccidentesPage({ params }) {
         logoBase64 = await resizeImage(logoBase64, 150, 150);
       }
 
-      // Información del establecimiento del accidente
-      const estab = allEstablecimientos.find(e => e.id === establecimientoId) || {};
-      const emp = empresas.find(e => e.id === empresaId) || {};
+      // Información del establecimiento del accidente obtenida de accData
+      const emp = {
+        razon_social: accData.empresa_razon_social || '',
+        cuit: accData.empresa_cuit || ''
+      };
+      const estab = {
+        denominacion: accData.establecimiento_denominacion || '',
+        direccion: accData.establecimiento_direccion || '',
+        localidad_barrio: accData.establecimiento_localidad || '',
+        provincia: accData.establecimiento_provincia || ''
+      };
+
+      // Redefinición local de variables para asegurar aislamiento completo del PDF respecto de estados de formulario React
+      const nombreApellido = accData.nombre_trabajador || '';
+      const cuil = accData.cuil || '';
+      const areaSector = accData.area_sector || '';
+      const puestoOperacion = accData.puesto_operacion || '';
+      const fechaIngreso = accData.fecha_ingreso || '';
+      const turnoTrabajo = accData.turno_trabajo || '';
+      const jornadaHabitual = accData.jornada_habitual || '';
+      const antiguedadEmpresa = accData.antiguedad_empresa || '';
+      const antiguedadPuesto = accData.antiguedad_puesto || '';
+      const fechaSiniestro = accData.fecha_siniestro || '';
+      const fechaDenuncia = accData.fecha_denuncia || '';
+      const hora = accData.hora || '';
+      const nroSiniestro = accData.nro_siniestro || '';
+      const domicilioOcurrenciaSelect = accData.domicilio_ocurrencia || '';
+      const domicilioOcurrenciaOtro = '';
+      const provinciaOcurrencia = accData.provincia_ocurrencia || '';
+      const partidoOcurrencia = accData.partido_ocurrencia || '';
+      const localidadBarrioOcurrencia = accData.localidad_barrio_ocurrencia || '';
+      const descripcionHechos = accData.descripcion_hechos || '';
+      const fotosFiles = accData.fotos_files || [];
+      const establecimientoId = accData.establecimiento_id || '';
+      const empresaId = accData.empresa_id || '';
+      const formaAccidenteId = accData.forma_accidente_id || '';
+      const descripcionLesionId = accData.descripcion_lesion_id || '';
+      const zonaCuerpoId = accData.zona_cuerpo_id || '';
+      const agenteMaterialId = accData.agente_material_id || '';
 
       // ───────────────────────────────────────────────────────────────────────
       // PAGINA 1
