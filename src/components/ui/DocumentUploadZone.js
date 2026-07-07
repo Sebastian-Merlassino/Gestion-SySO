@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Upload, FileText, Eye, Check, Loader2, ExternalLink } from 'lucide-react';
+import { Upload, FileText, Eye, Check, Loader2, ExternalLink, Trash2 } from 'lucide-react';
 
 /**
  * Validates if the file matches the accept criteria (extensions or mime types)
@@ -34,6 +34,7 @@ export default function DocumentUploadZone({
   onFileChange,
   onDriveImportSuccess,
   onViewPdf,
+  onDelete,
   disabled = false,
   accept = 'application/pdf',
   maxSizeMB = 10,
@@ -175,8 +176,8 @@ export default function DocumentUploadZone({
             onDrop={handleDrop}
             onClick={() => !disabled && inputRef.current?.click()}
             className={`relative border-2 border-dashed rounded-xl p-4 text-center transition-all flex-1 flex flex-col items-center justify-center ${minHeightClass}
-              ${isDragging ? 'border-[#468DFF] bg-blue-50' : 'border-slate-200 bg-white hover:border-[#468DFF] hover:bg-blue-50/30'}
-              ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+              ${isDragging ? 'border-[#468DFF] bg-blue-50' : 'border-slate-200 bg-white'}
+              ${disabled ? 'opacity-75 cursor-default' : 'hover:border-[#468DFF] hover:bg-blue-50/30 cursor-pointer'}`}
           >
             <input
               ref={inputRef}
@@ -191,17 +192,30 @@ export default function DocumentUploadZone({
                 <FileText className="h-4 w-4 text-[#468DFF]" />
                 <span className="font-medium truncate max-w-[200px]">{fileName}</span>
                 {(url || signedUrl) && onViewPdf && (
-                  <button
-                    type="button"
+                  <span
+                    role="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       onViewPdf(signedUrl || url);
                     }}
-                    className="text-[#468DFF] hover:text-[#0511F2] flex items-center gap-1 transition-colors"
+                    className="text-[#468DFF] hover:text-[#0511F2] flex items-center gap-1 transition-colors cursor-pointer pointer-events-auto"
                     title={`Ver ${label}`}
                   >
                     <Eye className="h-3.5 w-3.5" />
-                  </button>
+                  </span>
+                )}
+                {!disabled && onDelete && (
+                  <span
+                    role="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete();
+                    }}
+                    className="p-0.5 rounded text-red-500 hover:bg-red-50 hover:text-red-700 flex items-center gap-1 transition-colors cursor-pointer pointer-events-auto ml-1"
+                    title={`Eliminar ${label}`}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </span>
                 )}
               </div>
             ) : (
@@ -246,17 +260,30 @@ export default function DocumentUploadZone({
                 <Check className="h-3.5 w-3.5 text-green-500" />
                 <span>{fileName}</span>
                 {(url || signedUrl) && onViewPdf && (
-                  <button
-                    type="button"
+                  <span
+                    role="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       onViewPdf(signedUrl || url);
                     }}
-                    className="text-[#468DFF] hover:text-[#0511F2] flex items-center gap-1 transition-colors ml-1"
+                    className="text-[#468DFF] hover:text-[#0511F2] flex items-center gap-1 transition-colors ml-1 cursor-pointer pointer-events-auto"
                     title={`Ver ${label}`}
                   >
                     <Eye className="h-3.5 w-3.5" />
-                  </button>
+                  </span>
+                )}
+                {!disabled && onDelete && (
+                  <span
+                    role="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete();
+                    }}
+                    className="p-0.5 rounded text-red-500 hover:bg-red-50 hover:text-red-700 flex items-center gap-1 transition-colors cursor-pointer pointer-events-auto ml-1"
+                    title={`Eliminar ${label}`}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </span>
                 )}
               </div>
             )}

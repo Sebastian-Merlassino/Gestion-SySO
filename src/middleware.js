@@ -17,8 +17,8 @@ export async function middleware(request) {
     return res;
   };
 
-  // 1. Rate Limiting para APIs (se ejecuta antes de cualquier consulta a base de datos/auth)
-  if (pathname.startsWith('/api/')) {
+  // 1. Rate Limiting para APIs (se ejecuta antes de cualquier consulta a base de datos/auth, omitido en desarrollo)
+  if (pathname.startsWith('/api/') && process.env.NODE_ENV !== 'development') {
     const ipHeader = request.headers.get('x-forwarded-for');
     const ip = request.ip || (ipHeader ? ipHeader.split(',')[0].trim() : '127.0.0.1');
 
@@ -27,7 +27,7 @@ export async function middleware(request) {
 
     if (pathname.startsWith('/api/send-email')) {
       limit = 10;
-    } else if (pathname.startsWith('/api/ai/refine-text')) {
+    } else if (pathname.startsWith('/api/ai/')) {
       limit = 20; // Máximo 20 solicitudes de IA cada 15 minutos por IP
     } else if (pathname.startsWith('/api/clientes') || pathname.startsWith('/api/equipo')) {
       limit = 15;

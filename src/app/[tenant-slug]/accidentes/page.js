@@ -256,6 +256,8 @@ export default function AccidentesPage({ params }) {
   const [informeFile, setInformeFile] = useState(null);
   const [informeFileName, setInformeFileName] = useState('');
   const [informeUrl, setInformeUrl] = useState('');
+  const [denunciaDeleted, setDenunciaDeleted] = useState(false);
+  const [informeDeleted, setInformeDeleted] = useState(false);
 
   // ── Firmas y Aclaraciones ─────────────────────────────────────────────────
   const firmaRespCanvasRef = useRef(null);
@@ -602,11 +604,19 @@ export default function AccidentesPage({ params }) {
 
     const getCoordinates = (e) => {
       const rect = canvas.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      const clientX = (e.touches && e.touches.length > 0) ? e.touches[0].clientX : e.clientX;
+      const clientY = (e.touches && e.touches.length > 0) ? e.touches[0].clientY : e.clientY;
+      
+      const cssX = clientX - rect.left;
+      const cssY = clientY - rect.top;
+      
+      // Scale client viewport coordinates to canvas HTML layout size to resolve responsive offset
+      const canvasX = cssX * (canvas.width / rect.width);
+      const canvasY = cssY * (canvas.height / rect.height);
+      
       return {
-        x: clientX - rect.left,
-        y: clientY - rect.top
+        x: canvasX,
+        y: canvasY
       };
     };
 
@@ -766,6 +776,38 @@ export default function AccidentesPage({ params }) {
     setInformeFileName(file ? file.name : '');
   };
 
+  const handleClearDenuncia = () => {
+    setModalAlert({
+      show: true,
+      title: 'Eliminar denuncia de accidente',
+      message: '¿Estás seguro de que deseas quitar el archivo de la denuncia de accidente? Para guardar este cambio de forma permanente deberás hacer click en el botón Guardar al finalizar.',
+      confirmText: 'Eliminar',
+      onConfirm: () => {
+        closeAlert();
+        setDenunciaFile(null);
+        setDenunciaFileName('');
+        setDenunciaUrl('');
+        setDenunciaDeleted(true);
+      }
+    });
+  };
+
+  const handleClearInforme = () => {
+    setModalAlert({
+      show: true,
+      title: 'Eliminar informe de investigación',
+      message: '¿Estás seguro de que deseas quitar el informe de investigación de accidente? Para guardar este cambio de forma permanente deberás hacer click en el botón Guardar al finalizar.',
+      confirmText: 'Eliminar',
+      onConfirm: () => {
+        closeAlert();
+        setInformeFile(null);
+        setInformeFileName('');
+        setInformeUrl('');
+        setInformeDeleted(true);
+      }
+    });
+  };
+
   // Subir PDF a storage
   const uploadPdf = async (file, prefix) => {
     if (isDevMode) return `mock-path/${prefix}_${Date.now()}.pdf`;
@@ -795,7 +837,10 @@ export default function AccidentesPage({ params }) {
 
   // Ver PDF
   const handleViewPdf = async (url) => {
-    if (!url) return;
+    if (!url || url === 'N/A' || url === 'undefined' || url.trim() === '') {
+      triggerToast('No hay ningún archivo válido cargado.', 'error');
+      return;
+    }
     if (url.startsWith('http://') || url.startsWith('https://')) { window.open(url, '_blank'); return; }
     if (isDevMode) { triggerToast('Vista previa no disponible en modo desarrollo.', 'info'); return; }
     try {
@@ -911,6 +956,11 @@ export default function AccidentesPage({ params }) {
   };
 
   const handleOpenAiModalForCurrentForm = () => {
+    // Si el formulario está en modo vista/solo lectura, pasarlo automáticamente a modo edición (salvo si es cliente)
+    if (isReadOnlyView && profile?.role !== 'cliente') {
+      setIsReadOnlyView(false);
+    }
+
     // Validar campos obligatorios en el formulario actual
     if (!fechaSiniestro) { triggerToast('La Fecha del siniestro es obligatoria para la IA.', 'error'); return; }
     if (!hora) { triggerToast('La Hora del siniestro es obligatoria para la IA.', 'error'); return; }
@@ -971,6 +1021,9 @@ export default function AccidentesPage({ params }) {
   };
 
   const handleOpenAiModalFromList = (acc) => {
+    // Abrir el formulario en modo edición
+    handleEditClick(acc, false);
+
     const emp = empresas.find(e => e.id === acc.empresa_id) || {};
     const estab = allEstablecimientos.find(e => e.id === acc.establecimiento_id) || {};
     
@@ -1632,9 +1685,43 @@ export default function AccidentesPage({ params }) {
 
     setSaveLoading(true);
     try {
+      console.log('DEBUG handleSave - starting save. State values:', {
+        denunciaUrl,
+        informeUrl,
+        denunciaFile: denunciaFile ? denunciaFile.name : null,
+        informeFile: informeFile ? informeFile.name : null
+      });
+
+      console.log('DEBUG handleSave - Fotos y Firmas:', {
+        fotosFilesCount: fotosFiles.length,
+        fotosFiles: fotosFiles.map(f => ({ name: f.file ? f.file.name : null, path: f.path, preview: f.preview?.substring(0, 50) })),
+        hasSignedResp,
+        hasSignedProf,
+        firmaTipo,
+        firmaRespCanvas: !!firmaRespCanvasRef.current,
+        firmaProfCanvas: !!firmaProfCanvasRef.current,
+        firmaRespSavedUrl,
+        firmaProfSavedUrl,
+        firmaResponsableAclaracion,
+        firmaProfesionalAclaracion
+      });
+
       // Subir archivos si corresponde
       let finalDenunciaUrl = denunciaUrl;
       let finalInformeUrl = informeUrl;
+
+      // Salvaguarda: Si el url en el estado es 'N/A' o vacío, pero en la base de datos ya existía un archivo válido, no sobrescribirlo (a menos que haya sido eliminado explícitamente)
+      if (editingId) {
+        const existingAcc = accidentes.find(a => a.id === editingId);
+        if (existingAcc) {
+          if (!denunciaDeleted && (!finalDenunciaUrl || finalDenunciaUrl === 'N/A') && existingAcc.denuncia_accidente_url && existingAcc.denuncia_accidente_url !== 'N/A') {
+            finalDenunciaUrl = existingAcc.denuncia_accidente_url;
+          }
+          if (!informeDeleted && (!finalInformeUrl || finalInformeUrl === 'N/A') && existingAcc.informe_investigacion_url && existingAcc.informe_investigacion_url !== 'N/A') {
+            finalInformeUrl = existingAcc.informe_investigacion_url;
+          }
+        }
+      }
 
       if (denunciaFile) finalDenunciaUrl = await uploadPdf(denunciaFile, 'denuncia');
       if (informeFile) finalInformeUrl = await uploadPdf(informeFile, 'informe');
@@ -1802,6 +1889,8 @@ export default function AccidentesPage({ params }) {
     }
 
     // Archivos
+    setDenunciaDeleted(false);
+    setInformeDeleted(false);
     setDenunciaUrl(acc.denuncia_accidente_url || '');
     setDenunciaFile(null);
     setDenunciaFileName(acc.denuncia_accidente_url ? 'Archivo existente' : '');
@@ -2099,7 +2188,14 @@ export default function AccidentesPage({ params }) {
     doc.setFont('Helvetica', 'normal');
     doc.text(descHechosLines, 17, 399);
 
-    const fotos = accData.fotos_urls || [];
+    // Extraer fotos desde fotos_urls o fotos_files según corresponda para la visualización en el reporte técnico PDF
+    let fotos = [];
+    if (accData.fotos_urls && accData.fotos_urls.length > 0) {
+      fotos = accData.fotos_urls;
+    } else if (accData.fotos_files && accData.fotos_files.length > 0) {
+      fotos = accData.fotos_files.map(f => f.path || f.preview).filter(Boolean);
+    }
+
     if (fotos.length > 0) {
       const evidenciasTitleY = Math.max(490, 399 + descHechosHeight + 20);
       const fotosY = evidenciasTitleY + 12;
@@ -2108,12 +2204,19 @@ export default function AccidentesPage({ params }) {
       doc.text('Evidencias y registros fotográficos:', 17, evidenciasTitleY);
 
       const loadedBase64Fotos = [];
-      for (const path of fotos) {
+      for (const pathOrUrl of fotos) {
         try {
-          if (path.startsWith('data:') || path.startsWith('mock')) {
-            loadedBase64Fotos.push('/brand/logo-primary.png');
+          if (pathOrUrl.startsWith('data:') || pathOrUrl.startsWith('mock') || pathOrUrl.startsWith('/') || pathOrUrl.startsWith('http') || pathOrUrl.startsWith('blob:')) {
+            if (pathOrUrl.startsWith('data:')) {
+              loadedBase64Fotos.push(pathOrUrl);
+            } else if (pathOrUrl.startsWith('http') || pathOrUrl.startsWith('blob:')) {
+              const b64 = await getBase64ImageFromUrl(pathOrUrl);
+              loadedBase64Fotos.push(b64);
+            } else {
+              loadedBase64Fotos.push('/brand/logo-primary.png');
+            }
           } else {
-            const { data } = await supabase.storage.from('documents').createSignedUrl(path, 3600);
+            const { data } = await supabase.storage.from('documents').createSignedUrl(pathOrUrl, 3600);
             if (data?.signedUrl) {
               const b64 = await getBase64ImageFromUrl(data.signedUrl);
               loadedBase64Fotos.push(b64);
@@ -2129,7 +2232,8 @@ export default function AccidentesPage({ params }) {
         const fX = 14 + (i * 192);
         try {
           doc.rect(fX, fotosY, 180, 120);
-          doc.addImage(loadedBase64Fotos[i], 'JPEG', fX + 2, fotosY + 2, 176, 116);
+          const format = loadedBase64Fotos[i].startsWith('data:image/png') ? 'PNG' : 'JPEG';
+          doc.addImage(loadedBase64Fotos[i], format, fX + 2, fotosY + 2, 176, 116);
         } catch (drawImgErr) {
           console.error(drawImgErr);
         }
@@ -2325,6 +2429,9 @@ export default function AccidentesPage({ params }) {
 
     const signatureY = 680;
 
+    console.log('DEBUG PDF - hasSignedResp:', hasSignedResp, 'firmaRespCanvasRef.current:', !!firmaRespCanvasRef.current, 'firmaRespSavedUrl:', !!firmaRespSavedUrl);
+    console.log('DEBUG PDF - firmaTipo:', firmaTipo, 'firmaPerfilPreviewUrl:', !!firmaPerfilPreviewUrl, 'hasSignedProf:', hasSignedProf, 'firmaProfCanvasRef.current:', !!firmaProfCanvasRef.current, 'firmaProfSavedUrl:', !!firmaProfSavedUrl);
+
     let finalFirmaRespBase64 = '';
     try {
       if (hasSignedResp && firmaRespCanvasRef.current) {
@@ -2441,8 +2548,10 @@ export default function AccidentesPage({ params }) {
             .update({ informe_investigacion_url: finalPath, updated_at: new Date().toISOString() })
             .eq('id', editingId);
           if (error) throw error;
+          console.log('DEBUG executeSaveTechnicalReportToSiniestro - DB update successful for id:', editingId, 'with path:', finalPath);
           await loadRealData();
         }
+        console.log('DEBUG executeSaveTechnicalReportToSiniestro - setting informeUrl state to:', finalPath);
         setInformeUrl(finalPath);
         setInformeFileName(pdfName);
         triggerToast('Informe técnico guardado en el siniestro con éxito.');
@@ -2484,6 +2593,8 @@ export default function AccidentesPage({ params }) {
     setDiagnostico(''); setFechaAltaRechazo(''); setDiasBaja(null); setObservaciones('');
     setDenunciaFile(null); setDenunciaFileName(''); setDenunciaUrl('');
     setInformeFile(null); setInformeFileName(''); setInformeUrl('');
+    setDenunciaDeleted(false);
+    setInformeDeleted(false);
     setFechaIngreso('');
     setTurnoTrabajo('');
     setJornadaHabitual('');
@@ -3203,6 +3314,7 @@ export default function AccidentesPage({ params }) {
                               setDenunciaFileName('Archivo de Drive importado');
                             }}
                             onViewPdf={handleViewPdf}
+                            onDelete={handleClearDenuncia}
                             disabled={isFormDisabled}
                             tenantId={tenant?.id}
                             onToast={triggerToast}
@@ -3224,6 +3336,7 @@ export default function AccidentesPage({ params }) {
                               setInformeFileName('Archivo de Drive importado');
                             }}
                             onViewPdf={handleViewPdf}
+                            onDelete={handleClearInforme}
                             disabled={isFormDisabled}
                             tenantId={tenant?.id}
                             onToast={triggerToast}
@@ -3428,7 +3541,7 @@ export default function AccidentesPage({ params }) {
                     <button
                       type="button"
                       onClick={handleExitForm}
-                      className="px-5 py-2.5 bg-[#FFFFFF] text-[#468DFF] border border-[#468DFF] rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-[#FFFFFF] hover:border-[#FFFFFF] transition-all active:scale-[0.98] cursor-pointer"
+                      className="inline-flex items-center justify-center px-5 h-[42px] bg-[#FFFFFF] text-[#468DFF] border border-[#468DFF] rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-[#FFFFFF] hover:border-[#FFFFFF] transition-all active:scale-[0.98] cursor-pointer"
                     >
                       Salir
                     </button>
@@ -3437,9 +3550,9 @@ export default function AccidentesPage({ params }) {
                         <button
                           type="button"
                           onClick={handleOpenAiModalForCurrentForm}
-                          className="px-5 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-sm"
+                          className="inline-flex items-center justify-center px-5 h-[42px] bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-sm font-bold gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-sm"
                         >
-                          <Sparkles className="h-4.5 w-4.5" />
+                          <Sparkles className="h-4 w-4" />
                           Generar Informe IA
                         </button>
                       )}
@@ -3448,7 +3561,7 @@ export default function AccidentesPage({ params }) {
                           <button
                             type="button"
                             onClick={() => setIsReadOnlyView(false)}
-                            className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-amber-500/10"
+                            className="inline-flex items-center justify-center px-5 h-[42px] bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-amber-500/10"
                           >
                             Editar
                           </button>
@@ -3459,7 +3572,7 @@ export default function AccidentesPage({ params }) {
                             <button
                               type="button"
                               onClick={() => handleDeleteClick(editingId)}
-                              className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-red-600/10 animate-fade-in"
+                              className="inline-flex items-center justify-center px-5 h-[42px] bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-red-600/10 animate-fade-in"
                             >
                               Eliminar
                             </button>
@@ -3468,7 +3581,7 @@ export default function AccidentesPage({ params }) {
                             <button
                               type="submit"
                               disabled={saveLoading}
-                              className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
+                              className="inline-flex items-center justify-center px-5 h-[42px] bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
                             >
                               {saveLoading ? (
                                 <>
@@ -4362,24 +4475,26 @@ export default function AccidentesPage({ params }) {
                 Cerrar
               </button>
               <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  disabled={saveReportLoading}
-                  onClick={() => handleSaveTechnicalReportToSiniestro(aiReportDataEdit, aiTargetAccident)}
-                  className="px-5 py-2 bg-white text-[#468DFF] border border-[#468DFF] rounded-xl text-xs font-bold hover:bg-[#468DFF] hover:text-white transition-all cursor-pointer flex items-center gap-1.5 shadow-sm disabled:opacity-50"
-                >
-                  {saveReportLoading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Guardando...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4" />
-                      Guardar informe
-                    </>
-                  )}
-                </button>
+                {!isReadOnlyView && (
+                  <button
+                    type="button"
+                    disabled={saveReportLoading}
+                    onClick={() => handleSaveTechnicalReportToSiniestro(aiReportDataEdit, aiTargetAccident)}
+                    className="px-5 py-2 bg-white text-[#468DFF] border border-[#468DFF] rounded-xl text-xs font-bold hover:bg-[#468DFF] hover:text-white transition-all cursor-pointer flex items-center gap-1.5 shadow-sm disabled:opacity-50"
+                  >
+                    {saveReportLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Guardando...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4" />
+                        Guardar informe
+                      </>
+                    )}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => handleExportTechnicalReportPdf(aiReportDataEdit, aiTargetAccident)}

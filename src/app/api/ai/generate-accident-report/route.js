@@ -101,7 +101,7 @@ Observaciones adicionales del usuario:
 ${additionalComments || 'Ninguna'}
 `;
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
 
     const response = await fetch(geminiUrl, {
       method: 'POST',
@@ -134,6 +134,14 @@ ${additionalComments || 'Ninguna'}
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Error de respuesta de Gemini API:', errorText);
+
+      if (response.status === 429) {
+        return NextResponse.json(
+          { error: 'El servicio de IA (Gemini) ha superado su límite de solicitudes de cuota diaria. Por favor, esperá un minuto e intentá de nuevo.' },
+          { status: 429 }
+        );
+      }
+
       return NextResponse.json(
         { error: 'Error en la comunicación con el servicio de IA.' },
         { status: response.status }

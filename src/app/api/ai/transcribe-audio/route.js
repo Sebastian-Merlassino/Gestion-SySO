@@ -39,7 +39,7 @@ export async function POST(req) {
       );
     }
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
 
     const response = await fetch(geminiUrl, {
       method: 'POST',
@@ -73,6 +73,14 @@ export async function POST(req) {
     if (!response.ok) {
       const err = await response.text();
       console.error('Error Gemini transcribe:', err);
+
+      if (response.status === 429) {
+        return NextResponse.json(
+          { error: 'El servicio de IA (Gemini) ha superado su límite de solicitudes de cuota diaria. Por favor, esperá un minuto e intentá de nuevo.' },
+          { status: 429 }
+        );
+      }
+
       return NextResponse.json(
         { error: 'Error al transcribir el audio.' },
         { status: response.status }

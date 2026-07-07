@@ -1,5 +1,261 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-06] Soporte para Imágenes Locales Pre-Guardadas (blob:) en Reporte PDF y Depuración de Firmas
+
+### Resumen de Cambios
+- **Detalle de Siniestro (`page.js`)**:
+  - Se añadió soporte para el esquema de protocolo `blob:` dentro del procesador de imágenes fotográficas de `generateTechnicalReportPdfDoc`.
+  - Cuando el usuario añade nuevas imágenes al siniestro pero aún no ha guardado el formulario principal, las imágenes se mantienen en memoria del navegador como URLs locales de tipo `blob:http://localhost:3000/...`.
+  - Al no estar registradas en Supabase Storage todavía, las llamadas a `createSignedUrl` fallaban arrojando errores HTTP 400 Bad Request y omitiendo las fotos en el reporte. Con esta corrección, los esquemas `blob:` se interceptan y se cargan directamente mediante `getBase64ImageFromUrl` leyendo el archivo binario local con un `FileReader`, inyectando las fotos en tiempo real antes de persistirlas.
+  - Se incorporaron `console.log` de diagnóstico para imprimir el estado de las firmas (`hasSignedResp`, `firmaRespCanvasRef`, `firmaPerfilPreviewUrl`, etc.) justo antes de dibujar los vectores en el PDF, permitiendo trazar con precisión el estado del canvas en caso de un reporte vacío.
+
+### Decisiones Clave
+- **Carga de Evidencia en Caliente**: Permitir que el previsualizador del informe de IA recopile y dibuje las imágenes que el usuario acaba de seleccionar (que residen en memoria del navegador en formato blob) sin obligarlo a realizar un guardado en base de datos previamente.
+
+### Archivos Modificados / Creados
+- **[page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/accidentes/page.js)** (Modificado)
+
+### Validaciones Ejecutadas
+- Compilación de producción exitosa mediante `npm run build`.
+
+---
+
+## [2026-07-06] Corrección de Sección de Imágenes Desaparecida en PDF de Siniestros
+
+### Resumen de Cambios
+- **Detalle de Siniestro (`page.js`)**:
+  - Se corrigió el mapeo de fotos dentro del constructor del documento PDF (`generateTechnicalReportPdfDoc`).
+  - Anteriormente, el código intentaba leer la propiedad `accData.fotos_urls` para dibujar la sección "Evidencias y registros fotográficos". Sin embargo, al invocar la IA desde el formulario activo, los datos se compilan en un payload intermedio que almacena la lista de fotos en `accData.fotos_files` (que contiene objetos de tipo `{ file, preview, path }`).
+  - Ahora se soporta dinámicamente la extracción de imágenes desde ambas estructuras: `accData.fotos_urls` (filas de base de datos) y `accData.fotos_files` (estado local/payload en memoria).
+  - Se agregaron validaciones para admitir URLs firmadas de Supabase, URLs absolutas, y strings base64 (`data:image/png;base64`) de imágenes recién subidas, auto-detectando el formato de salida del archivo (`PNG` o `JPEG`) al inyectarlos con jsPDF, solucionando por completo la omisión de la sección de evidencias.
+
+### Decisiones Clave
+- **Compatibilidad Dual**: Soportar de manera simultánea la lectura de fotos desde objetos guardados persistidos en Supabase y el payload estructurado del estado de React local.
+
+### Archivos Modificados / Creados
+- **[page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/accidentes/page.js)** (Modificado)
+
+### Validaciones Ejecutadas
+- Compilación de producción exitosa mediante `npm run build`.
+
+---
+
+## [2026-07-06] Corrección de Desplazamiento del Trazo en Canvas de Firmas
+
+### Resumen de Cambios
+- **Detalle de Siniestro (`page.js`)**:
+  - Se corrigió el método `getCoordinates` dentro de la inicialización de los lienzos de firma (`setupCanvas`).
+  - Se reemplazó el cálculo de coordenadas absolutas del viewport por un mapeo escalado dinámicamente:
+    `canvasX = cssX * (canvas.width / rect.width)`
+    `canvasY = cssY * (canvas.height / rect.height)`
+  - Esto soluciona la desviación física ("trazo/cursor desplazado") al dibujar firmas con mouse o pantallas táctiles cuando el contenedor del canvas está redimensionado de forma responsiva en CSS (por la clase Tailwind `aspect-[2/1] w-full h-full`), asegurando que las líneas se dibujen exactamente debajo del cursor en cualquier resolución, densidad de pantalla o nivel de zoom.
+
+### Decisiones Clave
+- **Lienzo Proporcional**: Mapear de forma proactiva la relación de aspecto y dimensiones físicas de renderizado contra las dimensiones internas de buffer de píxeles (`getBoundingClientRect` vs `width`/`height` HTML) para resolver el desfase de coordenadas.
+
+### Archivos Modificados / Creados
+- **[page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/accidentes/page.js)** (Modificado)
+
+### Validaciones Ejecutadas
+- Compilación de producción exitosa mediante `npm run build`.
+
+---
+
+## [2026-07-06] Alineación Estética de Altura de Botones de Formulario de Siniestros
+
+### Resumen de Cambios
+- **Detalle de Siniestro (`page.js`)**:
+  - Se modificaron los estilos de clase Tailwind de todos los botones de acción del formulario inferior ("Salir", "Generar Informe IA", "Editar", "Eliminar", "Guardar").
+  - Se estandarizó la altura de los botones a `h-[42px]` utilizando un diseño flexible centrado (`inline-flex items-center justify-center`) en lugar de `py-2.5` y alturas dinámicas nativas.
+  - Esto previene discrepancias de 2-4px de altura visual causadas por la presencia o ausencia de íconos Lucide (`Sparkles`, `Loader2`) dentro del contenido interno de los botones, resultando en una interfaz pixel-perfect en todos los navegadores.
+
+### Decisiones Clave
+- **Consistencia Visual (Pixel-Perfect)**: Uniformar la altura física de los botones a través de un valor absoluto de altura de caja (`h-[42px]`) y centrado flexible para garantizar la simetría visual en el pie de página de la modal/detalle del siniestro.
+
+### Archivos Modificados / Creados
+- **[page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/accidentes/page.js)** (Modificado)
+
+### Validaciones Ejecutadas
+- Compilación de producción exitosa mediante `npm run build`.
+
+---
+
+## [2026-07-06] Incorporación de Eliminación de Documentos y Botón de Tacho en Siniestros
+
+### Resumen de Cambios
+- **Componente `DocumentUploadZone.js`**:
+  - Se agregó la propiedad `onDelete` (callback).
+  - Se importó el ícono `Trash2` de `lucide-react`.
+  - Se renderiza un botón con el ícono del cesto de basura (rojo, con hover y estilizado `text-red-500 hover:bg-red-50 hover:text-red-700`) cuando un archivo ya está cargado y el formulario no está en modo deshabilitado (`!disabled && onDelete`).
+  - Esto aplica tanto para la pestaña de **Archivo Local** como para la pestaña de **Enlace de Google Drive**.
+- **Detalle de Siniestro (`page.js`)**:
+  - Se añadieron estados de flag `denunciaDeleted` e `informeDeleted` para controlar si el usuario eliminó explícitamente algún archivo durante la edición actual.
+  - Se definieron los manejadores `handleClearDenuncia` y `handleClearInforme` los cuales abren una modal de confirmación estándar (`setModalAlert`) detallando la advertencia. Al confirmar, limpian el estado del archivo y activan la respectiva flag de borrado.
+  - Se actualizaron `handleEditClick` y `handleCloseForm` para resetear estas flags a `false` al abrir o cerrar el formulario.
+  - Se actualizó la salvaguarda de `handleSave` para que solo restaure las URLs de la base de datos si la flag de borrado correspondiente está en `false`. Si el usuario eliminó intencionalmente el archivo, se guarda como `null` en la base de datos de Supabase.
+
+### Decisiones Clave
+- **Borrado Explícito**: El uso de flags de borrado temporales (`denunciaDeleted` / `informeDeleted`) permite diferenciar entre una inicialización vacía del formulario (que requiere la salvaguarda para no destruir el documento) y una acción intencional del usuario de borrar el archivo a través del botón del cesto de basura.
+
+### Archivos Modificados / Creados
+- **[DocumentUploadZone.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/components/ui/DocumentUploadZone.js)** (Modificado)
+- **[page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/accidentes/page.js)** (Modificado)
+
+### Validaciones Ejecutadas
+- Compilación de producción exitosa mediante `npm run build`.
+
+---
+
+## [2026-07-06] Salvaguarda para Evitar Pérdida de Documentos en Guardado de Siniestros
+
+### Resumen de Cambios
+- **Detalle de Siniestro (`page.js`)**:
+  - Se implementó una **salvaguarda robusta** en el método `handleSave` para evitar la sobrescritura no deseada de las URLs de los documentos adjuntos (`denuncia_accidente_url` e `informe_investigacion_url`) cuando se guarda el formulario principal.
+  - Si el estado de React local tiene el valor predeterminado `'N/A'` o vacío pero la fila en la base de datos ya posee una URL válida del PDF generado por la IA (o cargado manualmente), la salvaguarda rescata el path existente de la base de datos y evita que sea reemplazado por `'N/A'`.
+  - Se agregaron console logs de depuración para trazar el flujo de datos.
+- **Base de Datos (Supabase)**:
+  - Se restauró manualmente la fila del accidente de `UCCELLO CINTIA ELIZABET` (ID `9768e2d2-7735-4592-896f-9330560065d3`) con su correspondiente archivo PDF del informe generado con IA (`acb9aefe-3f4d-400b-af54-b197f16c5800/informe_investigacion_1783387123877.pdf`) el cual se había sobrescrito con `'N/A'`.
+
+### Decisiones Clave
+- **Esquema de "No-Destrucción" de Archivos**: Puesto que en el diseño de la interfaz de usuario de `DocumentUploadZone` no hay opción/botón para eliminar un documento de forma definitiva (solo reemplazarlo), no existe ningún escenario lógico en el que el usuario desee pisar una URL válida con `'N/A'`. Por lo tanto, la salvaguarda de persistencia local en `handleSave` es 100% segura.
+
+### Archivos Modificados / Creados
+- **[page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/accidentes/page.js)** (Modificado)
+
+### Validaciones Ejecutadas
+- Compilación de producción exitosa mediante `npm run build`.
+- Actualización y restauración exitosa de la columna `informe_investigacion_url` en la base de datos remota.
+
+---
+
+## [2026-07-06] Aplicación de Migración de Firmas en Siniestros (PostgreSQL)
+
+### Resumen de Cambios
+- **Base de Datos Supabase (PostgreSQL)**:
+  - Se aplicó la migración `supabase/migrations/20260727000000_add_signatures_to_accidentes.sql` en la base de datos de producción/desarrollo de Supabase.
+  - Esto añade las columnas de firmas y aclaraciones requeridas para los siniestros (`firma_responsable_empresa`, `firma_profesional`, `firma_tipo`, `firma_responsable_aclaracion` y `firma_profesional_aclaracion`) a la tabla `public.accidentes`.
+  - Se recargó el esquema de PostgREST (`NOTIFY pgrst, 'reload schema'`) para solucionar el error `PGRST204 (Could not find the 'firma_profesional' column of 'accidentes' in the schema cache)`.
+
+### Decisiones Clave
+- **Ejecución de DDL**: Aplicar la migración pendiente para sincronizar la base de datos remota con las actualizaciones del código de firmas digitales.
+
+### Archivos Modificados / Creados
+- Ninguno (se aplicó el archivo SQL existente `supabase/migrations/20260727000000_add_signatures_to_accidentes.sql`).
+
+### Validaciones Ejecutadas
+- Consulta a `information_schema.columns` verificando la correcta existencia de todas las nuevas columnas en la tabla `accidentes`.
+
+### Riesgos Detectados / Remanentes
+- Ninguno.
+
+---
+
+## [2026-07-06] Resolución de Error 429 de Gemini mediante Migración a Modelo Estable
+
+### Resumen de Cambios
+- **Modificación en Endpoints de IA (generate-accident-report, refine-text, transcribe-audio)**:
+  - Se migró el modelo llamado en las APIs REST de `gemini-2.5-flash` a `gemini-flash-latest`. Esto se debe a que Google limita de forma drástica el modelo en desarrollo `gemini-2.5-flash` a un máximo de 20 solicitudes diarias por clave libre, provocando errores `429 (Resource Exhausted)` prematuros. El alias `gemini-flash-latest` está disponible y cuenta con la cuota estándar permisiva del plan gratuito (1,500 solicitudes por día y 15 por minuto).
+  - Se implementó un manejo estructurado de errores para el código HTTP `429`. Si la llamada a Gemini es rechazada por límites de cuota, el endpoint devuelve un mensaje explícito indicándole al usuario que espere un minuto en lugar de arrojar una alerta genérica de comunicación.
+
+### Decisiones Clave
+- **Uso de Alias Estable (`gemini-flash-latest`)**: Asegura la continuidad del servicio utilizando las cuotas estándar de la API de Google sin alterar la compatibilidad del prompt y respuestas en JSON estructurado.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/api/ai/generate-accident-report/route.js`
+- `[MODIFY] src/app/api/ai/refine-text/route.js`
+- `[MODIFY] src/app/api/ai/transcribe-audio/route.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción exitosa con Next.js (`npm run build`).
+
+### Riesgos Detectados / Remanentes
+- Ninguno.
+
+---
+
+## [2026-07-06] Omisión de Rate Limiting para APIs en Entorno de Desarrollo Local
+
+### Resumen de Cambios
+- **Modificación en Middleware (middleware.js)**:
+  - Se condicionó el bloque de ejecución del Rate Limiter en las APIs (`/api/*`) para que sea omitido cuando la aplicación se ejecute en entorno de desarrollo (`process.env.NODE_ENV === 'development'`). Esto resuelve los bloqueos por error `429 (Too Many Requests)` en `localhost:3000` ocasionados por las recargas constantes de página y testing repetitivo desde la misma IP.
+  - Se unificó el límite en producción para todos los endpoints bajo la subruta `/api/ai/*` (refinado, transcripción y generación de reportes) a un máximo de 20 solicitudes cada 15 minutos, protegiendo la cuota de la API de Gemini.
+
+### Decisiones Clave
+- **Desactivación selectiva en Desarrollo**: Dado que el rate limit es una defensa de infraestructura y presupuesto contra ataques y abusos, mantenerlo activo en local entorpece las pruebas rápidas de integración. Excluir el entorno `development` garantiza una experiencia fluida al programar localmente.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/middleware.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción exitosa con Next.js (`npm run build`).
+
+### Riesgos Detectados / Remanentes
+- Ninguno.
+
+---
+
+## [2026-07-06] Corrección de Guardado de Informe IA y Robustez en Apertura de Documentos
+
+### Resumen de Cambios
+- **Modificación en Registro de Siniestros (page.js)**:
+  - Se modificaron las funciones `handleOpenAiModalFromList` y `handleOpenAiModalForCurrentForm` para que transicionen automáticamente la pantalla al modo de edición de datos (`setIsReadOnlyView(false)` y cargando `editingId`). Esto asegura que cuando el usuario guarde el informe generado por la IA, el PDF se cargue en Supabase Storage y se persista la relación en la base de datos para ese siniestro.
+  - Se condicionó el botón **"Guardar informe"** en el modal de previsualización de la IA para que no se muestre si la vista es de solo lectura (`isReadOnlyView` es `true`), impidiendo que perfiles de tipo `cliente` intenten guardar cambios en la base de datos (lo cual fallaría por políticas RLS).
+  - Se robusteció `handleViewPdf` agregando validaciones para ignorar cadenas como `'N/A'`, `'undefined'`, vacías o nulas. Si se detecta un valor no válido, se muestra un Toast de error informativo en lugar de intentar obtener la firma en Supabase Storage y lanzar un error HTTP 400.
+
+### Decisiones Clave
+- **Transición Automática a Edición**: La transición a edición automática asegura la consistencia entre el formulario y el estado de guardado del PDF. Al estar en modo edición, `editingId` está presente, lo que permite que el guardado del informe persista correctamente en la fila del siniestro sin requerir acciones adicionales por parte del usuario.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `next-best-practices`
+- `gestion-syso-multitenant-security`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción exitosa con Next.js (`npm run build`).
+
+### Riesgos Detectados / Remanentes
+- Ninguno.
+
+---
+
+## [2026-07-06] Habilitación de Visualización de Documentos en Modo Vista de Siniestros
+
+### Resumen de Cambios
+- **Modificación en DocumentUploadZone**:
+  - Se cambiaron los botones (`<button type="button">`) que contienen el ojo de previsualización por elementos `<span role="button">` con clases de cursor pointer y habilitación explícita de interacción (`cursor-pointer pointer-events-auto`). Esto evade el comportamiento nativo del navegador que deshabilita los botones y controles de formulario dentro de un elemento `<fieldset disabled>`.
+  - Se reajustaron los estilos de la caja contenedora de carga en modo deshabilitado (`disabled`), cambiando la opacidad general a `opacity-75` (en lugar de `opacity-60`) para incrementar el contraste del texto y removiendo las clases de interacción hover (`hover:border-[#468DFF] hover:bg-blue-50/30`), logrando una apariencia limpia de solo lectura.
+  - Con esto, tanto los profesionales como los clientes podrán hacer clic en el ojito interactivo para ver o descargar la "Denuncia de accidente" y el "Informe de investigación" sin necesidad de entrar al modo edición.
+
+### Decisiones Clave
+- **Uso de spans interactivos**: En lugar de modificar el flujo del `<fieldset disabled>` o desactivar selectivamente los campos individuales del formulario (lo cual añadiría complejidad y redundancia en el renderizado), se optó por mutar el control interactivo a un elemento no-formulario (`span` con `role="button"`). Dado que el navegador no considera este elemento como un control de formulario nativo, no lo deshabilita y permite el flujo correcto de visualización del PDF.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `next-best-practices`
+- `gestion-syso-multitenant-security`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/components/ui/DocumentUploadZone.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción exitosa con Next.js (`npm run build`).
+
+### Riesgos Detectados / Remanentes
+- Ninguno. El comportamiento del componente en modo de edición permanece inalterado.
+
+---
+
 ## [2026-07-06] Integración de Firmas Digitales y Persistencia del Informe de Investigación de Siniestros con IA
 
 ### Resumen de Cambios
