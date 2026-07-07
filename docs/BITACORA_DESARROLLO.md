@@ -1,5 +1,24 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-07] Robustecimiento de APIs de IA con Fallback de Modelos y Reintentos para Errores 429
+
+### Resumen de Cambios
+- **API Routes de IA (`generate-accident-report`, `refine-text`, `transcribe-audio`)**:
+  - Se implementó un helper asíncrono robusto `callGeminiWithFallback` para gestionar los llamados a Google Gemini de manera resiliente.
+  - La función realiza hasta 3 intentos de consulta ante errores de cuota (HTTP 429) o sobrecarga (HTTP 503). 
+  - En cada intento, alterna de forma transparente entre los modelos **`gemini-2.0-flash`** (en la ruta `v1beta`) y **`gemini-1.5-flash`** (en la ruta `v1`), los cuales utilizan cuotas de uso y contadores de Google independientes.
+  - En el tercer intento, introduce una pausa asíncrona de 2 segundos para dar respiro a los límites por minuto de la API Key. Esto previene que los límites de cuotas de las claves de API gratuitas afecten la experiencia del usuario y asegura el funcionamiento ininterrumpido del servicio.
+
+### Archivos Modificados / Creados
+- **[route.js (generate-accident-report)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/api/ai/generate-accident-report/route.js)** (Modificado)
+- **[route.js (refine-text)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/api/ai/refine-text/route.js)** (Modificado)
+- **[route.js (transcribe-audio)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/api/ai/transcribe-audio/route.js)** (Modificado)
+
+### Validaciones Ejecutadas
+- Compilación de producción exitosa mediante `npm run build`.
+
+---
+
 ## [2026-07-07] Eliminación de Fetch Handler en Service Worker y Resolución de CSP
 
 ### Resumen de Cambios
