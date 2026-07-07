@@ -1,12 +1,12 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-07-07] Corrección de Compatibilidad en Fallback de Gemini (v1beta)
+## [2026-07-07] Restauración de Configuración de IA a Versión Estable (gemini-flash-latest)
 
 ### Resumen de Cambios
 - **API Routes de IA (`generate-accident-report`, `refine-text`, `transcribe-audio`)**:
-  - Se corrigió el pool de modelos alternativos en el helper `callGeminiWithFallback`.
-  - Se cambió el modelo de fallback desde `gemini-1.5-flash` (en la API `v1`) hacia el alias estable **`gemini-1.5-flash-latest` en la API `v1beta`**.
-  - Esto soluciona de raíz el error `Unknown name "systemInstruction": Cannot find field` en el segundo intento, ya que la versión `v1beta` de la API de Google Gemini soporta de forma nativa los campos `systemInstruction` y `responseMimeType: "application/json"`, mientras que la versión `v1` carece de dicho soporte directo en sus llamadas REST directas.
+  - Se revirtieron por completo las implementaciones de fallback y reintentos, restaurando la arquitectura estable del día de ayer.
+  - Se configuró el modelo **`gemini-flash-latest`** en la API **`v1beta`** de forma directa en todos los endpoints.
+  - Esto remueve la complejidad agregada que causaba errores de parseo y cuota, y permite aprovechar de inmediato la suscripción Gemini Advanced / Ultra del usuario en Google AI Studio sin restricciones del plan gratuito para modelos experimentales.
 
 ### Archivos Modificados / Creados
 - **[route.js (generate-accident-report)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/api/ai/generate-accident-report/route.js)** (Modificado)
