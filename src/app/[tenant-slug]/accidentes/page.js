@@ -866,7 +866,7 @@ export default function AccidentesPage({ params }) {
       triggerToast('No hay ningún archivo válido cargado.', 'error');
       return;
     }
-    if (url.startsWith('http://') || url.startsWith('https://')) { window.open(url, '_blank'); return; }
+    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:')) { window.open(url, '_blank'); return; }
     if (isDevMode) { triggerToast('Vista previa no disponible en modo desarrollo.', 'info'); return; }
     try {
       const { data, error } = await supabase.storage.from('documents').createSignedUrl(url, 3600);
@@ -2740,7 +2740,7 @@ export default function AccidentesPage({ params }) {
     // Limpieza de firmas
     setFirmaTipo('perfil');
     setFirmaResponsableAclaracion('');
-    setFirmaProfesionalAclaracion('');
+    setFirmaProfesionalAclaracion(profile?.role !== 'cliente' ? (profile?.full_name || '') : '');
     setFirmaRespSavedUrl('');
     setFirmaProfSavedUrl('');
     setHasSignedResp(false);
@@ -3528,7 +3528,6 @@ export default function AccidentesPage({ params }) {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Denuncia de accidente */}
                         <div>
-                          <label className="block text-xs font-bold text-slate-600 mb-2">Denuncia de accidente</label>
                           <DocumentUploadZone
                             label="Denuncia de accidente"
                             file={denunciaFile}
@@ -3550,9 +3549,8 @@ export default function AccidentesPage({ params }) {
 
                         {/* Informe de investigación */}
                         <div>
-                          <label className="block text-xs font-bold text-slate-600 mb-2">Informe de investigación de accidente</label>
                           <DocumentUploadZone
-                            label="Informe de investigación"
+                            label="Informe de investigación de accidente"
                             file={informeFile}
                             fileName={informeFileName}
                             url={informeUrl}

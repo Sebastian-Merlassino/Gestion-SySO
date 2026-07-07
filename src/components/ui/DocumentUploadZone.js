@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Upload, FileText, Eye, Check, Loader2, ExternalLink, Trash2 } from 'lucide-react';
+import { Upload, FileText, Eye, Check, Loader2, ExternalLink, Trash2, Download } from 'lucide-react';
 
 /**
  * Validates if the file matches the accept criteria (extensions or mime types)
@@ -60,6 +60,10 @@ export default function DocumentUploadZone({
   const [uploading, setUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef(null);
+
+  const fileUrl = file
+    ? (typeof window !== 'undefined' ? URL.createObjectURL(file) : '')
+    : (signedUrl || url || '');
 
   const handleDragOver = (e) => {
     e.preventDefault();
@@ -144,7 +148,7 @@ export default function DocumentUploadZone({
     }
   };
 
-  return (
+  const mainDropzone = (
     <div className={`overflow-hidden flex flex-col h-full w-full ${borderless ? '' : 'rounded-xl border border-slate-200 bg-slate-50'}`}>
       {/* Selector de Pestañas */}
       {showTabs && (
@@ -191,32 +195,6 @@ export default function DocumentUploadZone({
               <div className="flex items-center gap-2 justify-center text-sm text-slate-700 flex-wrap my-auto">
                 <FileText className="h-4 w-4 text-[#468DFF]" />
                 <span className="font-medium truncate max-w-[200px]">{fileName}</span>
-                {(url || signedUrl) && onViewPdf && (
-                  <span
-                    role="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onViewPdf(signedUrl || url);
-                    }}
-                    className="text-[#468DFF] hover:text-[#0511F2] flex items-center gap-1 transition-colors cursor-pointer pointer-events-auto"
-                    title={`Ver ${label}`}
-                  >
-                    <Eye className="h-3.5 w-3.5" />
-                  </span>
-                )}
-                {!disabled && onDelete && (
-                  <span
-                    role="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete();
-                    }}
-                    className="p-0.5 rounded text-red-500 hover:bg-red-50 hover:text-red-700 flex items-center gap-1 transition-colors cursor-pointer pointer-events-auto ml-1"
-                    title={`Eliminar ${label}`}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </span>
-                )}
               </div>
             ) : (
               <div className="my-auto flex flex-col items-center justify-center">
@@ -259,32 +237,6 @@ export default function DocumentUploadZone({
               <div className="flex items-center gap-2 text-xs text-slate-600">
                 <Check className="h-3.5 w-3.5 text-green-500" />
                 <span>{fileName}</span>
-                {(url || signedUrl) && onViewPdf && (
-                  <span
-                    role="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onViewPdf(signedUrl || url);
-                    }}
-                    className="text-[#468DFF] hover:text-[#0511F2] flex items-center gap-1 transition-colors ml-1 cursor-pointer pointer-events-auto"
-                    title={`Ver ${label}`}
-                  >
-                    <Eye className="h-3.5 w-3.5" />
-                  </span>
-                )}
-                {!disabled && onDelete && (
-                  <span
-                    role="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete();
-                    }}
-                    className="p-0.5 rounded text-red-500 hover:bg-red-50 hover:text-red-700 flex items-center gap-1 transition-colors cursor-pointer pointer-events-auto ml-1"
-                    title={`Eliminar ${label}`}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </span>
-                )}
               </div>
             )}
           </div>
@@ -294,4 +246,51 @@ export default function DocumentUploadZone({
       </div>
     </div>
   );
+
+  if (label) {
+    return (
+      <div className="flex flex-col h-full w-full space-y-2">
+        <div className="flex items-center justify-between">
+          <label className="block text-xs font-bold text-slate-600">{label}</label>
+          {(fileName || fileUrl) && (
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => onViewPdf ? onViewPdf(fileUrl) : (typeof window !== 'undefined' && window.open(fileUrl, '_blank'))}
+                title={`Ver ${label}`}
+                className="p-1.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 hover:text-[#468DFF] hover:bg-blue-50 hover:border-blue-150 transition-all duration-300 flex items-center justify-center cursor-pointer"
+              >
+                <Eye className="h-3.5 w-3.5" />
+              </button>
+              {fileUrl && (
+                <a
+                  href={fileUrl}
+                  download
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={`Descargar ${label}`}
+                  className="p-1.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 hover:text-[#468DFF] hover:bg-blue-50 hover:border-blue-150 transition-all duration-300 flex items-center justify-center cursor-pointer"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                </a>
+              )}
+              {!disabled && onDelete && (
+                <button
+                  type="button"
+                  onClick={onDelete}
+                  title={`Eliminar ${label}`}
+                  className="p-1.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 hover:text-red-600 hover:bg-red-50 transition-all duration-300 flex items-center justify-center cursor-pointer"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+        {mainDropzone}
+      </div>
+    );
+  }
+
+  return mainDropzone;
 }

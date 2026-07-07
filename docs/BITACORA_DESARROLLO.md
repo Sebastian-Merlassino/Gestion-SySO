@@ -1,5 +1,101 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-07] Encapsulación de Bloque Estándar para Carga de Documentos (DocumentUploadZone)
+
+### Resumen de Cambios
+- **Componente DocumentUploadZone (UI)**:
+  - Se unificó y encapsuló de forma nativa la cabecera flex (con el `<label>` del título y los botones premium de acciones: **Ver**, **Descargar** y **Eliminar** estilo `AITextHelper`) dentro de [DocumentUploadZone.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/components/ui/DocumentUploadZone.js#L151).
+  - El componente resuelve internamente las URLs de visualización para archivos locales (`URL.createObjectURL(file)`) y archivos remotos.
+  - Esto define un bloque estándar reutilizable que puede ser invocado en cualquier otra sección del proyecto mediante el componente `<DocumentUploadZone />`.
+- **Formulario de Registro/Detalle de Siniestro (UI)**:
+  - Se simplificó la invocación en [page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/accidentes/page.js#L3529) removiendo el maquetado manual de cabeceras flex y pasando únicamente la prop `label="Denuncia de accidente"` e `label="Informe de investigación de accidente"`.
+
+### Decisiones Clave
+- **Reutilización y Limpieza de Código**: Encapsular el comportamiento completo de la cabecera flex y las acciones dentro de `DocumentUploadZone` evita la duplicidad de maquetado en formularios y facilita la invocación estandarizada en cualquier sección futura de la aplicación.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/components/ui/DocumentUploadZone.js`
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+
+### Validaciones Ejecutadas
+- Compilación y build de producción Next.js exitosa (`npm run build` completado sin errores).
+
+---
+
+## [2026-07-07] Refinamiento de Pictogramas e Interacciones en la Visualización de Documentos
+
+### Resumen de Cambios
+- **Componente DocumentUploadZone (UI)**:
+  - Se eliminaron por completo los pictogramas internos (el ojo y la papelera) del contenedor de arrastrar/soltar en [DocumentUploadZone.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/components/ui/DocumentUploadZone.js#L190), tanto para archivos locales como enlaces de Drive. Ahora el contenedor sólo muestra de forma limpia el nombre del archivo cargado.
+- **Formulario de Registro/Detalle de Siniestro (UI)**:
+  - Se corrigió el visualizador `handleViewPdf` en [page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/accidentes/page.js#L869) para soportar URLs de blobs locales (`blob:`). Esto habilita que el botón de visualización (ojo) de la cabecera funcione plenamente tanto al crear un registro (archivo local temporal) como al visualizar un siniestro preexistente de solo lectura (sin requerir entrar en modo de edición).
+
+### Decisiones Clave
+- **Limpia Visual**: Mover la lógica de acciones de ver, descargar y eliminar a la cabecera permite que el área de dropzone quede libre de ruidos visuales repetidos.
+- **Permitir Lectura Sin Edición**: Permitir que el usuario abra y visualice/descargue archivos adjuntos directamente al inspeccionar el detalle del siniestro en modo de solo lectura ofrece una experiencia operativa mucho más fluida.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+- `[MODIFY] src/components/ui/DocumentUploadZone.js`
+
+### Validaciones Ejecutadas
+- Compilación y build de producción Next.js exitosa (`npm run build` completado sin errores).
+
+---
+
+## [2026-07-07] Estandarización Visual de Pictogramas de Acciones de Documentos en Formulario de Siniestros
+
+### Resumen de Cambios
+- **Formulario de Registro/Detalle de Siniestro (UI)**:
+  - Se modificó la cabecera de carga de archivos (Denuncia e Informe) en [page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/accidentes/page.js#L3529) para colocar los pictogramas de acciones de los documentos (**Ver**, **Descargar** y **Eliminar**) en la misma fila del título (alineados a la derecha del `<label>`).
+  - Se diseñó cada botón con el estilo visual del `SySO-AI-Voice-Helper` (bordes suaves, fondos sutiles de color y transiciones en hover altamente estilizadas).
+  - Se integró la resolución de URLs en caliente para archivos cargados localmente mediante `URL.createObjectURL(file)`, permitiendo visualizar o descargar borradores locales antes de ser persistidos.
+
+### Decisiones Clave
+- **Mejora en la UX y Accesibilidad**: Disponer los botones de acciones al lado de las etiquetas de los documentos optimiza el espacio vertical y proporciona un punto de interacción uniforme e intuitivo, alineado al diseño del asistente de voz de IA.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+
+### Validaciones Ejecutadas
+- Compilación y build de producción Next.js exitosa (`npm run build` completado sin errores).
+
+---
+
+## [2026-07-07] Pre-selección Automática del Profesional Logueado en Siniestros
+
+### Resumen de Cambios
+- **Formulario de Registro/Detalle de Siniestro (UI)**:
+  - Se modificó la inicialización del formulario en [page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/accidentes/page.js#L2743) para que, al registrar un nuevo siniestro, el dropdown del "Profesional Interviniente" tenga pre-seleccionado por defecto al usuario profesional logueado en la sesión (`profile?.full_name`), siempre que no sea un perfil de rol cliente.
+  - Esto dispara el `useEffect` reactivo que asocia y pre-carga automáticamente la firma de perfil del profesional en la sección de firmas del formulario.
+
+### Decisiones Clave
+- **Automatización y UX**: Reducir pasos redundantes para el profesional al registrar un accidente incrementa la agilidad del ingreso de datos. La inicialización en `handleCloseForm()` asegura que este comportamiento aplique para todos los botones de "Nuevo Siniestro" sin alterar la visualización de registros previamente guardados en la base de datos (que cargan su valor original al entrar en edición/detalle).
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+
+### Validaciones Ejecutadas
+- Compilación y build de producción Next.js exitosa (`npm run build` completado sin errores).
+
+---
+
 ## [2026-07-07] Unificación Estética de Detalles del Establecimiento en el Formulario de Siniestros
 
 ### Resumen de Cambios
