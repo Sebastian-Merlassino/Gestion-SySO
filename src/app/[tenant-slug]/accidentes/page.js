@@ -404,6 +404,31 @@ export default function AccidentesPage({ params }) {
     }
   }, [profile]);
 
+  // Auto-cargar preview de firma de perfil del profesional cuando cambia el profesional o miembrosList
+  useEffect(() => {
+    if (firmaTipo === 'perfil' && firmaProfesionalAclaracion && miembrosList.length > 0) {
+      const selectedMember = miembrosList.find(m => m.full_name === firmaProfesionalAclaracion);
+      if (selectedMember?.signature_url) {
+        const cleanedPath = cleanSignaturePath(selectedMember.signature_url);
+        supabase.storage
+          .from('signatures')
+          .createSignedUrl(cleanedPath, 3600)
+          .then(({ data, error }) => {
+            if (!error && data?.signedUrl) {
+              setFirmaPerfilPreviewUrl(data.signedUrl);
+            } else {
+              setFirmaPerfilPreviewUrl('');
+            }
+          })
+          .catch(() => setFirmaPerfilPreviewUrl(''));
+      } else {
+        setFirmaPerfilPreviewUrl('');
+      }
+    } else {
+      setFirmaPerfilPreviewUrl('');
+    }
+  }, [firmaTipo, firmaProfesionalAclaracion, miembrosList]);
+
   const triggerToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 4000);

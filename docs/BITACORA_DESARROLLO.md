@@ -1,5 +1,20 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-07] Solución de Carga Automática de Firma Digital del Profesional al Editar/Seleccionar
+
+### Resumen de Cambios
+- **Formulario de Siniestros (`page.js`)**:
+  - Se implementó un hook reactivo `useEffect` que vigila los cambios de `firmaTipo`, `firmaProfesionalAclaracion` y `miembrosList`.
+  - Cuando se entra al modo edición de un siniestro existente o se selecciona un miembro, se resuelve de manera automática la firma de perfil cargada para ese profesional desde Supabase Storage, eliminando la advertencia errónea `⚠ El profesional seleccionado no tiene una firma digital configurada.` y asegurando que se previsualice correctamente la firma digital del perfil.
+
+### Archivos Modificados / Creados
+- **[page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/accidentes/page.js)** (Modificado)
+
+### Validaciones Ejecutadas
+- Compilación de producción exitosa mediante `npm run build`.
+
+---
+
 ## [2026-07-07] Migración a Modelo Estable de Producción Gemini 1.5 Flash en Endpoints de IA
 
 ### Resumen de Cambios
