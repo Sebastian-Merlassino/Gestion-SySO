@@ -1,5 +1,20 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-07] Restauración de Campos de Clasificación en el Formulario de Registrar Nuevo Siniestro
+
+### Resumen de Cambios
+- **Formulario de Registro/Edición de Siniestros (`page.js`)**:
+  - Se volvieron a incorporar al JSX del formulario de registro y edición los campos de clasificación que habían quedado omitidos: **Forma Accidente**, **Agente Material Asociado**, **Descripción Lesión**, **Zona Cuerpo** y **Diagnóstico Médico**.
+  - Estos campos se situaron por debajo de *Tipo de accidente* y *Gravedad*, y por encima de *Descripción de los hechos* dentro del bloque de Información sobre el Siniestro (Sección 3), asegurando coherencia visual y consistencia con las políticas de persistencia en la base de datos de Supabase y el reporte PDF.
+
+### Archivos Modificados / Creados
+- **[page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/accidentes/page.js)** (Modificado)
+
+### Validaciones Ejecutadas
+- Compilación de producción exitosa mediante `npm run build` sin advertencias de tipos ni errores de sintaxis.
+
+---
+
 ## [2026-07-06] Soporte para Imágenes Locales Pre-Guardadas (blob:) en Reporte PDF y Depuración de Firmas
 
 ### Resumen de Cambios

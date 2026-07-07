@@ -3163,6 +3163,75 @@ export default function AccidentesPage({ params }) {
                           </div>
                         </div>
 
+                        {/* Forma Accidente */}
+                        <div>
+                          <label className="block text-xs font-bold text-slate-600 mb-1.5">Forma Accidente</label>
+                          <select
+                            value={formaAccidenteId}
+                            onChange={e => setFormaAccidenteId(e.target.value)}
+                            disabled={isFormDisabled}
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer disabled:opacity-50 disabled:bg-slate-50/50 text-slate-700 font-sans"
+                          >
+                            <option value="">Seleccionar Forma...</option>
+                            {formasAccidente.map(f => <option key={f.id} value={f.id}>{f.nombre}</option>)}
+                          </select>
+                        </div>
+
+                        {/* Agente Material Asociado */}
+                        <div>
+                          <label className="block text-xs font-bold text-slate-600 mb-1.5">Agente Material Asociado</label>
+                          <select
+                            value={agenteMaterialId}
+                            onChange={e => setAgenteMaterialId(e.target.value)}
+                            disabled={isFormDisabled}
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer disabled:opacity-50 disabled:bg-slate-50/50 text-slate-700 font-sans"
+                          >
+                            <option value="">Seleccionar Agente...</option>
+                            {agentesMateriales.map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)}
+                          </select>
+                        </div>
+
+                        {/* Descripción Lesión */}
+                        <div>
+                          <label className="block text-xs font-bold text-slate-600 mb-1.5">Descripción Lesión</label>
+                          <select
+                            value={descripcionLesionId}
+                            onChange={e => setDescripcionLesionId(e.target.value)}
+                            disabled={isFormDisabled}
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer disabled:opacity-50 disabled:bg-slate-50/50 text-slate-700 font-sans"
+                          >
+                            <option value="">Seleccionar Lesión...</option>
+                            {descripcionesLesion.map(d => <option key={d.id} value={d.id}>{d.nombre}</option>)}
+                          </select>
+                        </div>
+
+                        {/* Zona Cuerpo */}
+                        <div>
+                          <label className="block text-xs font-bold text-slate-600 mb-1.5">Zona Cuerpo</label>
+                          <select
+                            value={zonaCuerpoId}
+                            onChange={e => setZonaCuerpoId(e.target.value)}
+                            disabled={isFormDisabled}
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer disabled:opacity-50 disabled:bg-slate-50/50 text-slate-700 font-sans"
+                          >
+                            <option value="">Seleccionar Zona...</option>
+                            {zonasCuerpo.map(z => <option key={z.id} value={z.id}>{z.nombre}</option>)}
+                          </select>
+                        </div>
+
+                        {/* Diagnóstico Médico */}
+                        <div>
+                          <label className="block text-xs font-bold text-slate-600 mb-1.5">Diagnóstico Médico</label>
+                          <input
+                            type="text"
+                            value={diagnostico}
+                            onChange={e => setDiagnostico(e.target.value)}
+                            disabled={isFormDisabled}
+                            placeholder="Ingrese el diagnóstico médico..."
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all disabled:opacity-70 disabled:bg-slate-50/50 font-sans"
+                          />
+                        </div>
+
                         {/* Descripción de los hechos */}
                         <div className="md:col-span-2 xl:col-span-3">
                           <div className="flex items-center justify-between gap-2 min-h-[28px] mb-1.5">
