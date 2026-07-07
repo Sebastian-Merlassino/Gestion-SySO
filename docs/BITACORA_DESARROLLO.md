@@ -5,6 +5,7 @@
 ### Resumen de Cambios
 - **Formulario de Registro/Edición de Siniestros (`page.js`)**:
   - Se volvieron a incorporar al JSX del formulario de registro y edición los campos de clasificación que habían quedado omitidos: **Forma Accidente**, **Agente Material Asociado**, **Descripción Lesión**, **Zona Cuerpo** y **Diagnóstico Médico**.
+  - El campo **Diagnóstico Médico** se configuró como texto de largo formato en el formulario ocupando el ancho completo (`md:col-span-2 xl:col-span-3`), utilizando un elemento `<textarea rows={2} className="resize-y" />` e integrando el estándar obligatorio `SySO-AI-Voice-Helper` mediante el componente `<AITextHelper />` (para dictado por voz y pulido de IA con Gemini).
   - Estos campos se situaron por debajo de *Tipo de accidente* y *Gravedad*, y por encima de *Descripción de los hechos* dentro del bloque de Información sobre el Siniestro (Sección 3), asegurando coherencia visual y consistencia con las políticas de persistencia en la base de datos de Supabase y el reporte PDF.
 
 ### Archivos Modificados / Creados

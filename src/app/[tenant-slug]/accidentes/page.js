@@ -3220,15 +3220,23 @@ export default function AccidentesPage({ params }) {
                         </div>
 
                         {/* Diagnóstico Médico */}
-                        <div>
-                          <label className="block text-xs font-bold text-slate-600 mb-1.5">Diagnóstico Médico</label>
-                          <input
-                            type="text"
+                        <div className="md:col-span-2 xl:col-span-3">
+                          <div className="flex items-center justify-between gap-2 min-h-[28px] mb-1.5">
+                            <label className="block text-xs font-bold text-slate-600 mb-0">Diagnóstico Médico</label>
+                            <AITextHelper
+                              value={diagnostico}
+                              onChange={setDiagnostico}
+                              context="Diagnóstico médico formal emitido por la institución de salud o ART para el trabajador accidentado"
+                              disabled={isReadOnlyView}
+                            />
+                          </div>
+                          <textarea
                             value={diagnostico}
                             onChange={e => setDiagnostico(e.target.value)}
                             disabled={isFormDisabled}
-                            placeholder="Ingrese el diagnóstico médico..."
-                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all disabled:opacity-70 disabled:bg-slate-50/50 font-sans"
+                            rows={2}
+                            placeholder="Ingrese el diagnóstico médico detallado..."
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all resize-y disabled:opacity-70 disabled:bg-slate-50/50 font-sans"
                           />
                         </div>
 
