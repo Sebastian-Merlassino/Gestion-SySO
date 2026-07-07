@@ -2,6 +2,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { callGemini } from '../../../../lib/gemini';
 
 export async function POST(req) {
   try {
@@ -38,6 +39,13 @@ export async function POST(req) {
       );
     }
 
+    if (context && (typeof context !== 'string' || context.length > 100)) {
+      return NextResponse.json(
+        { error: 'El contexto del reporte no debe superar los 100 caracteres.' },
+        { status: 400 }
+      );
+    }
+
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       console.error('Error: GEMINI_API_KEY no está configurada en las variables de entorno.');
@@ -61,15 +69,9 @@ Reglas obligatorias:
     // Cuerpo del mensaje del usuario
     const userMessage = `Contexto específico del reporte: ${context || 'General'}\nTexto a refinar:\n"${text.trim()}"`;
 
-    // Llamada REST directa a Gemini 2.5 Flash con systemInstruction
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
-
-    const response = await fetch(geminiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    let data;
+    try {
+      data = await callGemini({
         contents: [
           {
             parts: [
@@ -79,27 +81,14 @@ Reglas obligatorias:
             ],
           },
         ],
-        systemInstruction: {
-          parts: [
-            {
-              text: systemInstruction,
-            },
-          ],
-        },
-      }),
-    });
+        systemInstruction,
+      });
+    } catch (errInfo) {
+      console.error('Error al llamar al helper de Gemini en refine-text:', errInfo);
+      const status = errInfo.status || 500;
+      const message = errInfo.message || 'Error desconocido';
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Error de respuesta de Gemini API:', errorText);
-
-      let errJson = {};
-      try {
-        errJson = JSON.parse(errorText);
-      } catch (e) {}
-      const geminiErrorMsg = errJson.error?.message || errorText || 'Error desconocido';
-
-      if (response.status === 429) {
+      if (status === 429) {
         return NextResponse.json(
           { error: 'El servicio de IA (Gemini) ha superado su límite de solicitudes de cuota diaria. Por favor, esperá un minuto e intentá de nuevo.' },
           { status: 429 }
@@ -107,12 +96,10 @@ Reglas obligatorias:
       }
 
       return NextResponse.json(
-        { error: `Error en la comunicación con el servicio de IA: ${geminiErrorMsg}` },
-        { status: response.status }
+        { error: `Error en la comunicación con el servicio de IA: ${message}` },
+        { status }
       );
     }
-
-    const data = await response.json();
     const refinedText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
 
     if (!refinedText) {

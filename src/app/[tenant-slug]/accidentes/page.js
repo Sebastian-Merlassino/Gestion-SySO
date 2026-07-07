@@ -1021,10 +1021,12 @@ export default function AccidentesPage({ params }) {
       establecimiento_denominacion: estab.denominacion || '',
       establecimiento_direccion: estab.direccion || '',
       establecimiento_localidad: estab.localidad_barrio || '',
+      establecimiento_partido: estab.partido || '',
       establecimiento_provincia: estab.provincia || '',
       // Datos médicos y denuncia
       nro_siniestro: nroSiniestro,
       fecha_denuncia: fechaDenuncia,
+      diagnostico: diagnostico || '',
       forma_accidente_nombre: formasAccidente.find(f => f.id === formaAccidenteId)?.nombre || '—',
       descripcion_lesion_nombre: descripcionesLesion.find(d => d.id === descripcionLesionId)?.nombre || '—',
       zona_cuerpo_nombre: zonasCuerpo.find(z => z.id === zonaCuerpoId)?.nombre || '—',
@@ -1084,10 +1086,12 @@ export default function AccidentesPage({ params }) {
       establecimiento_denominacion: estab.denominacion || '',
       establecimiento_direccion: estab.direccion || '',
       establecimiento_localidad: estab.localidad_barrio || '',
+      establecimiento_partido: estab.partido || '',
       establecimiento_provincia: estab.provincia || '',
       // Datos médicos y denuncia
       nro_siniestro: acc.nro_siniestro || '',
       fecha_denuncia: formatDate(acc.fecha_denuncia) || '',
+      diagnostico: acc.diagnostico || '',
       forma_accidente_nombre: formasAccidente.find(f => f.id === acc.forma_accidente_id)?.nombre || '—',
       descripcion_lesion_nombre: descripcionesLesion.find(d => d.id === acc.descripcion_lesion_id)?.nombre || '—',
       zona_cuerpo_nombre: zonasCuerpo.find(z => z.id === acc.zona_cuerpo_id)?.nombre || '—',
@@ -1989,6 +1993,23 @@ export default function AccidentesPage({ params }) {
     });
   };
 
+  const getImageDimensions = (base64) => {
+    return new Promise((resolve) => {
+      if (!base64 || typeof window === 'undefined') {
+        resolve({ width: 180, height: 90 });
+        return;
+      }
+      const img = new Image();
+      img.onload = () => {
+        resolve({ width: img.naturalWidth || img.width, height: img.naturalHeight || img.height });
+      };
+      img.onerror = () => {
+        resolve({ width: 180, height: 90 });
+      };
+      img.src = base64;
+    });
+  };
+
   // ── Lógica de Generación, Descarga y Guardado del Informe de IA en PDF ──
   const [saveReportLoading, setSaveReportLoading] = useState(false);
 
@@ -2057,7 +2078,7 @@ export default function AccidentesPage({ params }) {
     doc.setTextColor(255, 255, 255);
     doc.setFont('Helvetica', 'bold');
     doc.setFontSize(7);
-    doc.text('Datos de identificación del empleador (Principal)', 18, 73);
+    doc.text('Datos del empleador', 18, 73);
 
     doc.setFont('Helvetica', 'bold');
     doc.setTextColor(0, 0, 0);
@@ -2066,152 +2087,180 @@ export default function AccidentesPage({ params }) {
     doc.text(getEmpresaNombre(accData.empresa_id) || '—', 75, 92);
 
     doc.setFont('Helvetica', 'bold');
-    doc.text('Establecimiento:', 276, 92);
-    doc.setFont('Helvetica', 'normal');
-    doc.text(getEstabNombre(accData.establecimiento_id) || '—', 345, 92);
-
-    doc.setFont('Helvetica', 'bold');
-    doc.text('CUIT:', 17, 107);
+    doc.text('CUIT:', 276, 92);
     doc.setFont('Helvetica', 'normal');
     const empCuit = empresas.find(e => e.id === accData.empresa_id)?.cuit || '—';
-    doc.text(empCuit, 45, 107);
+    doc.text(empCuit, 302, 92);
+
+    // Dirección del establecimiento seleccionado (sola en la fila)
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Dirección:', 17, 107);
+    doc.setFont('Helvetica', 'normal');
+    const estab = allEstablecimientos.find(e => e.id === accData.establecimiento_id) || {};
+    const estabDireccion = accData.establecimiento_direccion || estab.direccion || '—';
+    const estabLocalidad = accData.establecimiento_localidad || estab.localidad_barrio || '—';
+    const estabPartido = accData.establecimiento_partido || estab.partido || '—';
+    const estabProvincia = accData.establecimiento_provincia || estab.provincia || '—';
+    doc.text(estabDireccion, 62, 107, { maxWidth: 470 });
 
     doc.setFont('Helvetica', 'bold');
-    doc.text('Domicilio Ocurrencia:', 276, 107);
+    doc.text('Provincia:', 17, 122);
     doc.setFont('Helvetica', 'normal');
-    doc.text(accData.domicilio_ocurrencia || '—', 365, 107, { maxWidth: 210 });
+    doc.text(estabProvincia, 65, 122);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Partido:', 200, 122);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(estabPartido, 235, 122);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Localidad/Barrio:', 380, 122);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(estabLocalidad, 455, 122);
 
     doc.setFillColor(60, 120, 216);
-    doc.rect(14, 128, 567, 13, 'F');
+    doc.rect(14, 143, 567, 13, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFont('Helvetica', 'bold');
-    doc.text('Datos del trabajador accidentado', 18, 137);
+    doc.text('Datos del trabajador', 18, 152);
 
     doc.setFont('Helvetica', 'bold');
     doc.setTextColor(0, 0, 0);
-    doc.text('Apellido y nombre del accidentado:', 17, 156);
+    doc.text('Apellido y nombre del accidentado:', 17, 171);
     doc.setFont('Helvetica', 'normal');
-    doc.text(accData.nombre_trabajador || accData.nombre_apellido || '—', 158, 156);
+    doc.text(accData.nombre_trabajador || accData.nombre_apellido || '—', 158, 171);
 
     doc.setFont('Helvetica', 'bold');
-    doc.text('CUIL:', 276, 156);
+    doc.text('CUIL:', 276, 171);
     doc.setFont('Helvetica', 'normal');
-    doc.text(accData.cuil || '—', 305, 156);
+    doc.text(accData.cuil || '—', 305, 171);
 
     doc.setFont('Helvetica', 'bold');
-    doc.text('Fecha Ingreso:', 17, 171);
+    doc.text('Fecha Ingreso:', 17, 186);
     doc.setFont('Helvetica', 'normal');
-    doc.text(formatDate(accData.fecha_ingreso) || '—', 80, 171);
+    doc.text(formatDate(accData.fecha_ingreso) || '—', 80, 186);
 
     doc.setFont('Helvetica', 'bold');
-    doc.text('Turno Trabajo:', 276, 171);
+    doc.text('Turno Trabajo:', 276, 186);
     doc.setFont('Helvetica', 'normal');
-    doc.text(accData.turno_trabajo || '—', 335, 171);
+    doc.text(accData.turno_trabajo || '—', 335, 186);
 
     doc.setFont('Helvetica', 'bold');
-    doc.text('Jornada Habitual:', 415, 171);
+    doc.text('Jornada Habitual:', 415, 186);
     doc.setFont('Helvetica', 'normal');
-    doc.text(accData.jornada_habitual || '—', 490, 171);
+    doc.text(accData.jornada_habitual || '—', 490, 186);
 
     doc.setFont('Helvetica', 'bold');
-    doc.text('Antigüedad Empresa:', 17, 186);
+    doc.text('Antigüedad Empresa:', 17, 201);
     doc.setFont('Helvetica', 'normal');
-    doc.text(accData.antiguedad_empresa || '—', 105, 186);
+    doc.text(accData.antiguedad_empresa || '—', 105, 201);
 
     doc.setFont('Helvetica', 'bold');
-    doc.text('Antigüedad Puesto:', 276, 186);
+    doc.text('Antigüedad Puesto:', 276, 201);
     doc.setFont('Helvetica', 'normal');
-    doc.text(accData.antiguedad_puesto || '—', 355, 186);
+    doc.text(accData.antiguedad_puesto || '—', 355, 201);
 
     doc.setFont('Helvetica', 'bold');
-    doc.text('Puesto de Trabajo:', 17, 201);
+    doc.text('Puesto de Trabajo:', 17, 216);
     doc.setFont('Helvetica', 'normal');
-    doc.text(accData.puesto_operacion || '—', 95, 201);
+    doc.text(accData.puesto_operacion || '—', 95, 216);
 
     doc.setFont('Helvetica', 'bold');
-    doc.text('Área/Sector:', 276, 201);
+    doc.text('Área/Sector:', 276, 216);
     doc.setFont('Helvetica', 'normal');
-    doc.text(accData.area_sector || '—', 330, 201);
+    doc.text(accData.area_sector || '—', 330, 216);
 
     doc.setFillColor(60, 120, 216);
-    doc.rect(14, 219, 567, 13, 'F');
+    doc.rect(14, 237, 567, 13, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFont('Helvetica', 'bold');
-    doc.text('Datos del siniestro', 18, 228);
+    doc.text('Datos del siniestro', 18, 246);
 
     doc.setFont('Helvetica', 'bold');
     doc.setTextColor(0, 0, 0);
-    doc.text('Fecha Accidente / Siniestro:', 17, 247);
+    doc.text('Fecha Accidente / Siniestro:', 17, 265);
     doc.setFont('Helvetica', 'normal');
-    doc.text(formatDate(accData.fecha_siniestro) || '—', 132, 247);
+    doc.text(formatDate(accData.fecha_siniestro) || '—', 132, 265);
 
     doc.setFont('Helvetica', 'bold');
-    doc.text('Hora:', 276, 247);
+    doc.text('Hora:', 276, 265);
     doc.setFont('Helvetica', 'normal');
-    doc.text(accData.hora || '—', 302, 247);
+    doc.text(accData.hora || '—', 302, 265);
 
     doc.setFont('Helvetica', 'bold');
-    doc.text('Fecha Denuncia:', 17, 262);
+    doc.text('Fecha Denuncia:', 17, 280);
     doc.setFont('Helvetica', 'normal');
-    doc.text(formatDate(accData.fecha_denuncia) || '—', 92, 262);
+    doc.text(formatDate(accData.fecha_denuncia) || '—', 92, 280);
 
     doc.setFont('Helvetica', 'bold');
-    doc.text('N° de Siniestro ART:', 276, 262);
+    doc.text('N° de Siniestro ART:', 276, 280);
     doc.setFont('Helvetica', 'normal');
-    doc.text(accData.nro_siniestro || '—', 368, 262);
+    doc.text(accData.nro_siniestro || '—', 368, 280);
+
+    // Domicilio de Ocurrencia del siniestro (solo en la fila)
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Domicilio Ocurrencia:', 17, 295);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(accData.domicilio_ocurrencia || '—', 115, 295, { maxWidth: 460 });
+
+    // Fila de abajo: Provincia, Partido, Localidad/Barrio
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Provincia:', 17, 310);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(accData.provincia_ocurrencia || '—', 65, 310);
 
     doc.setFont('Helvetica', 'bold');
-    doc.text('Tipo:', 17, 277);
+    doc.text('Partido:', 200, 310);
     doc.setFont('Helvetica', 'normal');
-    doc.text(accData.tipo || '—', 42, 277);
+    doc.text(accData.partido_ocurrencia || '—', 235, 310);
 
     doc.setFont('Helvetica', 'bold');
-    doc.text('Gravedad:', 276, 277);
+    doc.text('Localidad/Barrio:', 380, 310);
     doc.setFont('Helvetica', 'normal');
-    doc.text(accData.gravedad || '—', 324, 277);
+    doc.text(accData.localidad_barrio_ocurrencia || '—', 455, 310);
 
     doc.setFont('Helvetica', 'bold');
-    doc.text('Fecha Alta/Rechazo:', 17, 292);
+    doc.text('Tipo:', 17, 322);
     doc.setFont('Helvetica', 'normal');
-    doc.text(formatDate(accData.fecha_alta_rechazo) || '—', 105, 292);
+    doc.text(accData.tipo || '—', 42, 322);
 
     doc.setFont('Helvetica', 'bold');
-    doc.text('Días de Baja:', 276, 292);
+    doc.text('Gravedad:', 276, 322);
     doc.setFont('Helvetica', 'normal');
-    doc.text(accData.dias_baja !== null ? String(accData.dias_baja) : '—', 335, 292);
+    doc.text(accData.gravedad || '—', 324, 322);
 
-    // Campos de clasificación uno por renglón completo
+    // Campos de clasificación uno por renglón completo (reposicionados tras remover fecha alta / días baja)
     doc.setFont('Helvetica', 'bold');
-    doc.text('Forma Accidente:', 17, 307);
+    doc.text('Forma Accidente:', 17, 337);
     doc.setFont('Helvetica', 'normal');
-    doc.text(getFormaName(accData.forma_accidente_id) || '—', 92, 307, { maxWidth: 470 });
-
-    doc.setFont('Helvetica', 'bold');
-    doc.text('Agente Material:', 17, 322);
-    doc.setFont('Helvetica', 'normal');
-    doc.text(getAgenteName(accData.agente_material_id) || '—', 88, 322, { maxWidth: 470 });
+    doc.text(getFormaName(accData.forma_accidente_id) || '—', 92, 337, { maxWidth: 470 });
 
     doc.setFont('Helvetica', 'bold');
-    doc.text('Descripción Lesión:', 17, 337);
+    doc.text('Agente Material:', 17, 352);
     doc.setFont('Helvetica', 'normal');
-    doc.text(getDescLesionName(accData.descripcion_lesion_id) || '—', 100, 337, { maxWidth: 470 });
+    doc.text(getAgenteName(accData.agente_material_id) || '—', 88, 352, { maxWidth: 470 });
 
     doc.setFont('Helvetica', 'bold');
-    doc.text('Zona Cuerpo:', 17, 352);
+    doc.text('Descripción Lesión:', 17, 367);
     doc.setFont('Helvetica', 'normal');
-    doc.text(getZonaName(accData.zona_cuerpo_id) || '—', 78, 352, { maxWidth: 470 });
+    doc.text(getDescLesionName(accData.descripcion_lesion_id) || '—', 100, 367, { maxWidth: 470 });
 
     doc.setFont('Helvetica', 'bold');
-    doc.text('Diagnóstico Médico:', 17, 367);
+    doc.text('Zona Cuerpo:', 17, 382);
     doc.setFont('Helvetica', 'normal');
-    doc.text(accData.diagnostico || '—', 102, 367, { maxWidth: 470 });
+    doc.text(getZonaName(accData.zona_cuerpo_id) || '—', 78, 382, { maxWidth: 470 });
 
     doc.setFont('Helvetica', 'bold');
-    doc.text('Descripción de los hechos denunciados:', 17, 387);
+    doc.text('Diagnóstico Médico:', 17, 397);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(accData.diagnostico || '—', 102, 397, { maxWidth: 470 });
+
+    doc.setFont('Helvetica', 'bold');
+    doc.text('Descripción de los hechos denunciados:', 17, 417);
     const descHechosLines = doc.splitTextToSize(accData.descripcion_hechos || '—', 560);
     const descHechosHeight = descHechosLines.length * 12;
     doc.setFont('Helvetica', 'normal');
-    doc.text(descHechosLines, 17, 399);
+    doc.text(descHechosLines, 17, 429);
 
     // Extraer fotos desde fotos_urls o fotos_files según corresponda para la visualización en el reporte técnico PDF
     let fotos = [];
@@ -2222,11 +2271,14 @@ export default function AccidentesPage({ params }) {
     }
 
     if (fotos.length > 0) {
-      const evidenciasTitleY = Math.max(490, 399 + descHechosHeight + 20);
-      const fotosY = evidenciasTitleY + 12;
+      const evidenciasTitleY = Math.max(530, 429 + descHechosHeight + 15);
+      const fotosY = evidenciasTitleY + 22;
 
+      doc.setFillColor(60, 120, 216);
+      doc.rect(14, evidenciasTitleY, 567, 13, 'F');
+      doc.setTextColor(255, 255, 255);
       doc.setFont('Helvetica', 'bold');
-      doc.text('Evidencias y registros fotográficos:', 17, evidenciasTitleY);
+      doc.text('Imágenes', 18, evidenciasTitleY + 9);
 
       const loadedBase64Fotos = [];
       for (const pathOrUrl of fotos) {
@@ -2380,7 +2432,7 @@ export default function AccidentesPage({ params }) {
       doc.setTextColor(0, 0, 0);
       doc.setFont('Helvetica', 'bold');
       
-      const labelText = i < 4 ? `${i + 1}° ¿Por qué? →` : `${i + 1}° ¿Por qué?`;
+      const labelText = i < 4 ? `${i + 1}° ¿Por qué? ->` : `${i + 1}° ¿Por qué?`;
       doc.text(labelText, px + (colWidth / 2), porquesY + 27, { align: 'center' });
 
       doc.setDrawColor(0, 0, 0);
@@ -2392,7 +2444,7 @@ export default function AccidentesPage({ params }) {
       doc.setFillColor(245, 245, 245);
       doc.rect(px, porquesY + 30 + maxPorqueHeight, colWidth, 12, 'FD');
       doc.setFont('Helvetica', 'bold');
-      doc.text('← entonces', px + (colWidth / 2), porquesY + 30 + maxPorqueHeight + 9, { align: 'center' });
+      doc.text('<- Entonces', px + (colWidth / 2), porquesY + 30 + maxPorqueHeight + 9, { align: 'center' });
     }
 
     const causaRaizY = porquesY + 30 + maxPorqueHeight + 12 + 15;
@@ -2483,9 +2535,61 @@ export default function AccidentesPage({ params }) {
       console.warn('Error al obtener la firma del profesional para PDF:', eSigProf);
     }
 
+    // Resolver dimensiones de la firma del responsable
+    let respWidth = 180;
+    let respHeight = 90;
+    let respX = 61;
+    let respY = signatureY - 95;
+
     if (finalFirmaRespBase64) {
       try {
-        doc.addImage(finalFirmaRespBase64, 'PNG', 61, signatureY - 60, 180, 55);
+        const dimensions = await getImageDimensions(finalFirmaRespBase64);
+        const ratio = dimensions.width / dimensions.height;
+        // Escalar con un ancho máximo de 180 y alto máximo de 90
+        respWidth = 180;
+        respHeight = respWidth / ratio;
+        if (respHeight > 90) {
+          respHeight = 90;
+          respWidth = respHeight * ratio;
+        }
+        // Centrar en el espacio de 61 a 240 (ancho de 179)
+        const centerX = 61 + 179 / 2;
+        respX = centerX - respWidth / 2;
+        respY = signatureY - respHeight - 5;
+      } catch (errSigDim) {
+        console.warn('Error resolviendo dimensiones de la firma del responsable:', errSigDim);
+      }
+    }
+
+    // Resolver dimensiones de la firma del profesional
+    let profWidth = 130;
+    let profHeight = 90;
+    let profX = 379;
+    let profY = signatureY - 95;
+
+    if (finalFirmaProfBase64) {
+      try {
+        const dimensions = await getImageDimensions(finalFirmaProfBase64);
+        const ratio = dimensions.width / dimensions.height;
+        // Escalar con un ancho máximo de 130 y alto máximo de 100
+        profWidth = 130;
+        profHeight = profWidth / ratio;
+        if (profHeight > 100) {
+          profHeight = 100;
+          profWidth = profHeight * ratio;
+        }
+        // Centrar en el espacio de 354 a 533 (ancho de 179)
+        const centerX = 354 + 179 / 2;
+        profX = centerX - profWidth / 2;
+        profY = signatureY - profHeight - 5;
+      } catch (errSigDim2) {
+        console.warn('Error resolviendo dimensiones de la firma del profesional:', errSigDim2);
+      }
+    }
+
+    if (finalFirmaRespBase64) {
+      try {
+        doc.addImage(finalFirmaRespBase64, 'PNG', respX, respY, respWidth, respHeight);
       } catch (errSig1) {
         console.error('Error dibujando firma del responsable en PDF:', errSig1);
       }
@@ -2502,7 +2606,7 @@ export default function AccidentesPage({ params }) {
 
     if (finalFirmaProfBase64) {
       try {
-        doc.addImage(finalFirmaProfBase64, 'PNG', 354, signatureY - 60, 180, 55);
+        doc.addImage(finalFirmaProfBase64, 'PNG', profX, profY, profWidth, profHeight);
       } catch (errSig2) {
         console.error('Error dibujando firma del profesional en PDF:', errSig2);
       }
@@ -2797,32 +2901,53 @@ export default function AccidentesPage({ params }) {
                           </select>
                         </div>
 
-                        {/* Información del Establecimiento Seleccionado */}
-                        {allEstablecimientos.find(est => est.id === establecimientoId) && (
-                          <div className="md:col-span-2 xl:col-span-3 p-3 bg-slate-50 border border-slate-150 rounded-xl space-y-1.5 animate-fade-in text-xs font-semibold text-slate-600">
-                            <div className="flex justify-between border-b border-slate-150 pb-1">
-                              <span className="font-bold text-slate-700">Detalles del Establecimiento</span>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-1">
-                              <div>
-                                <span className="text-[10px] text-slate-400 block uppercase tracking-wider">Dirección</span>
-                                <span className="text-slate-700 font-bold">{allEstablecimientos.find(est => est.id === establecimientoId)?.direccion || '—'}</span>
-                              </div>
-                              <div>
-                                <span className="text-[10px] text-slate-400 block uppercase tracking-wider">Provincia</span>
-                                <span className="text-slate-700 font-bold">{allEstablecimientos.find(est => est.id === establecimientoId)?.provincia || '—'}</span>
-                              </div>
-                              <div>
-                                <span className="text-[10px] text-slate-400 block uppercase tracking-wider">Partido</span>
-                                <span className="text-slate-700 font-bold">{allEstablecimientos.find(est => est.id === establecimientoId)?.partido || '—'}</span>
-                              </div>
-                              <div>
-                                <span className="text-[10px] text-slate-400 block uppercase tracking-wider">Localidad / Barrio</span>
-                                <span className="text-slate-700 font-bold">{allEstablecimientos.find(est => est.id === establecimientoId)?.localidad_barrio || '—'}</span>
-                              </div>
-                            </div>
-                          </div>
-                        )}
+                        {/* Dirección del establecimiento */}
+                        <div>
+                          <label className="block text-xs font-bold text-slate-600 mb-1.5">Dirección</label>
+                          <input
+                            type="text"
+                            value={allEstablecimientos.find(est => est.id === establecimientoId)?.direccion || ''}
+                            disabled
+                            placeholder="Dirección del establecimiento..."
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-700 bg-slate-100/60 transition-all disabled:opacity-70 disabled:bg-slate-100"
+                          />
+                        </div>
+
+                        {/* Provincia del establecimiento */}
+                        <div>
+                          <label className="block text-xs font-bold text-slate-600 mb-1.5">Provincia</label>
+                          <input
+                            type="text"
+                            value={allEstablecimientos.find(est => est.id === establecimientoId)?.provincia || ''}
+                            disabled
+                            placeholder="Provincia..."
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-700 bg-slate-100/60 transition-all disabled:opacity-70 disabled:bg-slate-100"
+                          />
+                        </div>
+
+                        {/* Partido del establecimiento */}
+                        <div>
+                          <label className="block text-xs font-bold text-slate-600 mb-1.5">Partido</label>
+                          <input
+                            type="text"
+                            value={allEstablecimientos.find(est => est.id === establecimientoId)?.partido || ''}
+                            disabled
+                            placeholder="Partido..."
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-700 bg-slate-100/60 transition-all disabled:opacity-70 disabled:bg-slate-100"
+                          />
+                        </div>
+
+                        {/* Localidad / Barrio del establecimiento */}
+                        <div>
+                          <label className="block text-xs font-bold text-slate-600 mb-1.5">Localidad / Barrio</label>
+                          <input
+                            type="text"
+                            value={allEstablecimientos.find(est => est.id === establecimientoId)?.localidad_barrio || ''}
+                            disabled
+                            placeholder="Localidad / Barrio..."
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-700 bg-slate-100/60 transition-all disabled:opacity-70 disabled:bg-slate-100"
+                          />
+                        </div>
                       </div>
                     </div>
 
@@ -3286,10 +3411,10 @@ export default function AccidentesPage({ params }) {
                           />
                         </div>
 
-                        {/* Imágenes del Siniestro */}
+                        {/* Imágenes */}
                         <div className="md:col-span-2 xl:col-span-3 space-y-2 pt-4">
                           <ImageUploadZone
-                            label="Imágenes del Siniestro"
+                            label="Imágenes"
                             multiple={true}
                             images={fotosFiles}
                             onAddPhotos={(validFiles) => {
@@ -4008,13 +4133,15 @@ export default function AccidentesPage({ params }) {
                                 </td>
                                 <td className="px-6 py-4 text-center" onClick={e => e.stopPropagation()}>
                                   <div className="flex items-center justify-center gap-1.5">
-                                    <button
-                                      onClick={e => { e.stopPropagation(); handleOpenAiModalFromList(acc); }}
-                                      title="Generar informe con IA"
-                                      className="p-1.5 rounded-lg text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 transition-colors bg-indigo-50 cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                    >
-                                      <Sparkles className="h-4.5 w-4.5" />
-                                    </button>
+                                    {profile?.role !== 'cliente' && (
+                                      <button
+                                        onClick={e => { e.stopPropagation(); handleOpenAiModalFromList(acc); }}
+                                        title="Generar informe con IA"
+                                        className="p-1.5 rounded-lg text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 transition-colors bg-indigo-50 cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                      >
+                                        <Sparkles className="h-4.5 w-4.5" />
+                                      </button>
+                                    )}
                                     {canEditar ? (
                                       <button
                                         onClick={e => { e.stopPropagation(); handleEditClick(acc, false); }}

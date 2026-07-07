@@ -1,5 +1,273 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-07] Unificación Estética de Detalles del Establecimiento en el Formulario de Siniestros
+
+### Resumen de Cambios
+- **Formulario de Registro/Detalle de Siniestro (UI)**:
+  - Se eliminó el contenedor especial de fondo gris `"Detalles del Establecimiento"`.
+  - En su lugar, se añadieron cuatro campos de datos individuales desactivados (`disabled` inputs) dentro del grid principal para: **Dirección**, **Provincia**, **Partido** y **Localidad / Barrio** (en ese orden exacto).
+  - Los campos se auto-completan con los datos del establecimiento seleccionado y mantienen la estética visual unificada de los demás campos del formulario.
+
+### Decisiones Clave
+- **Consistencia en la UI**: Utilizar los mismos inputs con labels de datos automáticos (con estilo idéntico al CUIT de la empresa) en lugar de una tarjeta informativa de fondo gris mejora notablemente la homogeneidad visual de todo el formulario.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+
+### Validaciones Ejecutadas
+- Compilación y build de producción Next.js exitosa (`npm run build` completado sin errores).
+
+---
+
+## [2026-07-07] Solución de Duplicación del Contenedor de Estadísticas en el Dashboard del Cliente
+
+### Resumen de Cambios
+- **Dashboard (UI)**:
+  - Se corrigió la duplicación del contenedor `"Estadísticas e Índices de Siniestralidad"` en el dashboard de clientes. Se condicionó la renderización del panel secundario inferior en [page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/dashboard/page.js#L2268) para que sólo se dibuje si el usuario **NO** tiene el rol de cliente (`profile && profile.role !== 'cliente'`).
+
+### Decisiones Clave
+- **Distribución de Prioridad por Rol**: Dado que el cliente tiene el panel de siniestralidad posicionado prioritariamente en la parte superior del layout (para un acceso directo a sus métricas), evitar la invocación de renderizado al final del dashboard erradica la duplicidad del widget sin alterar la vista inferior de acciones correctivas. El profesional, por su parte, sigue visualizando correctamente el panel de siniestralidad al pie de la página, por debajo de sus herramientas de control diario.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+
+### Validaciones Ejecutadas
+- Compilación y build de producción Next.js exitosa (`npm run build` completado sin errores).
+
+---
+
+## [2026-07-07] Restricción de Generación de Informes de IA para Rol Cliente en Siniestros
+
+### Resumen de Cambios
+- **Tabla de Siniestros (UI)**:
+  - Se ocultó el botón de generación de informes con IA (`Sparkles`) de la columna de Acciones en la tabla de listado para usuarios con el rol `'cliente'` (`profile?.role === 'cliente'`). Esto previene que usuarios clientes intenten ejecutar tareas administrativas o editar siniestros.
+
+### Decisiones Clave
+- **Seguridad en la UI**: Puesto que el rol de cliente tiene vistas de solo lectura y carece de permisos para persistir informes técnicos o firmas del profesional, ocultar el botón de la IA en la tabla de listado evita errores de API e inconsistencias de permisos server-side.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+
+### Validaciones Ejecutadas
+- Compilación y build de producción Next.js exitosa (`npm run build` completado sin errores).
+
+---
+
+## [2026-07-07] Escalamiento Dinámico de Aspect-Ratio en Firmas y Reemplazo ASCII en 5 Porqués (PDF)
+
+### Resumen de Cambios
+- **Firmas Digitales Dinámicas (Página 3)**:
+  - Se implementó la función helper asíncrona `getImageDimensions(base64)` para leer el ancho y alto original de las firmas en tiempo de ejecución.
+  - Se modificó la inyección en jsPDF para calcular la relación de aspecto real (`ratio = width / height`) y escalar proporcionalmente las imágenes (con ancho máximo de 180 para el responsable y 130 para el profesional), impidiendo distorsiones o estiramientos verticales/horizontales.
+  - Las firmas se centran automáticamente sobre sus líneas de guía basándose en su ancho calculado.
+- **Sección 5 Porqués (Página 2)**:
+  - Se reemplazaron las flechas unicode `→` y `←` que causaban caracteres extraños/corruptos (`!’` y `!•`) en los visores de PDF por caracteres ASCII estándar seguros: `->` en la cabecera de las columnas y `<- Entonces` en las celdas de transición inferior.
+
+### Decisiones Clave
+- **Cálculo de Proporción en Caliente**: Determinar las dimensiones físicas nativas de la imagen base64 de la firma del profesional soluciona de raíz cualquier desproporción causada por firmas verticales, cuadradas o apaisadas en el Storage de Supabase.
+- **Evitar Codificaciones Incompatibles**: Usar `->` y `<- Entonces` esquiva las limitaciones de WinAnsiEncoding en las fuentes nativas de jsPDF (Helvetica), garantizando una renderización libre de caracteres basura en cualquier lector de PDF.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `webapp-testing`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+
+### Validaciones Ejecutadas
+- Compilación y build de producción Next.js exitosa (`npm run build` completado sin errores).
+
+---
+
+## [2026-07-07] Estandarización de Grillas de Domicilios y Proporción de Firma del Profesional en PDF
+
+### Resumen de Cambios
+- **Sección Datos del Empleador (PDF)**:
+  - Se quitó la etiqueta `"Establecimiento:"` y en su lugar se colocó `"CUIT"` en el renglón superior (Y = 92).
+  - En la fila intermedia (Y = 107), se colocó `"Dirección:"` (removiendo la palabra "Sucursal"), asignándole todo el ancho de renglón libre (`maxWidth: 470`).
+  - En el renglón inferior (Y = 122), se dispusieron los datos de localización en este orden exacto: **Provincia**, **Partido** y **Localidad/Barrio**.
+- **Sección Datos del Siniestro (PDF)**:
+  - En la fila Y = 295, se dispuso únicamente el `"Domicilio Ocurrencia:"` permitiendo direcciones extensas sin peligro de superposiciones (`maxWidth: 460`).
+  - En la fila Y = 310, se dispuso la geografía de ocurrencia en este orden exacto: **Provincia**, **Partido** y **Localidad/Barrio**.
+  - Se adaptaron secuencialmente todas las posiciones `Y` de las clasificaciones subsiguientes en incrementos de 15 pt para preservar la separación homogénea.
+- **Firma del Profesional**:
+  - Para evitar deformaciones o estiramientos en firmas digitalizadas (las cuales suelen ser cuadradas o verticales y no alargadas), se redujo el ancho a **`130`** y se mantuvo la altura en **`90`** (relación `1.4:1` aprox.), centrándola en X = `379` sobre su línea. La firma del responsable del lado izquierdo mantiene su proporción nativa del canvas `180 x 90` (X = 61).
+
+### Decisiones Clave
+- **Simetría y Coherencia Visual**: Estructurar los bloques de dirección del establecimiento y del siniestro usando idéntico ordenamiento vertical y horizontal (Dirección en el primer renglón y Provincia, Partido, Localidad en el segundo) provee una lectura rápida y un diseño altamente simétrico.
+- **Centrado de Firmas**: Ajustar el X de inicio de la firma del profesional a 379 y su tamaño a 130x90 pt asegura que la firma quede prolijamente suspendida en el centro de su línea guía.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+
+### Validaciones Ejecutadas
+- Compilación y build de producción Next.js exitosa (`npm run build` completado sin errores).
+
+---
+
+## [2026-07-07] Refactorización de Direcciones y Dimensiones de Firma en PDF de Siniestros
+
+### Resumen de Cambios
+- **Sección de Empleador en PDF**:
+  - Se eliminó el campo `"Domicilio Ocurrencia"` de esta sección.
+  - Se agregaron los campos correspondientes al domicilio completo de la sucursal/establecimiento seleccionado: Dirección, Localidad/Barrio, Partido y Provincia.
+- **Sección de Siniestro en PDF**:
+  - Se incorporaron las coordenadas y etiquetas para detallar de forma completa la geografía del siniestro debajo de la Fecha de Denuncia: Domicilio de ocurrencia, Localidad/Barrio, Partido y Provincia de ocurrencia.
+- **Corrección de Firmas**:
+  - Se ajustaron las proporciones de inyección del jsPDF para la firma del responsable y la del profesional de Higiene y Seguridad a `180 x 90` (relación de aspecto `2:1`, coincidente con el canvas de dibujo del frontend), evitando que se rendericen deformadas/achatadas verticalmente. Se ajustó su coordenada `Y` inicial a `signatureY - 95`.
+- **Alineación Vertical**:
+  - Se recalculó el posicionamiento vertical de todas las secciones en la Página 1 para evitar superposiciones con los nuevos campos de geografía agregados a la cabecera de Empleador (+18 pt) y de Siniestro (+30 pt).
+
+### Decisiones Clave
+- **Aspecto Nativo de la Firma**: Al inyectar la firma con una relación de aspecto `2:1` exacta (180x90 pt), el trazo del vector de firma se visualiza con la proporción exacta en la que el usuario dibujó sobre el lienzo o subió a su perfil, logrando un acabado profesional.
+- **Geografías Diferenciadas**: Separar el domicilio de la sucursal (en los datos del empleador) frente al domicilio de ocurrencia real (en los datos del siniestro) brinda máxima precisión operacional al informe técnico legal.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+
+### Validaciones Ejecutadas
+- Compilación y build de producción Next.js exitosa (`npm run build` completado sin errores).
+
+---
+
+## [2026-07-07] Ajustes en Registro de Siniestros y Generación del Reporte PDF
+
+### Resumen de Cambios
+- **Interfaz de Usuario (UI)**:
+  - Se renombró la etiqueta de la zona de subida de imágenes en el formulario de edición de `"Imágenes del Siniestro"` a `"Imágenes"`.
+- **Generación de Reportes PDF**:
+  - Se eliminaron del PDF los campos `"Fecha de alta / rechazo"` y `"Días de baja"`.
+  - Se reordenó verticalmente la Página 1 para compensar el espacio liberado por los campos removidos (restando 15 unidades a las coordenadas `Y` de las clasificaciones y de la descripción de los hechos).
+  - Se solucionó la omisión del campo `"Diagnóstico Médico"` en el reporte agregando el mapeo de `diagnostico` en el payload de `aiTargetAccident` tanto en `handleOpenAiModalForCurrentForm` como en `handleOpenAiModalFromList`.
+  - Se transformó la sección `"Imágenes"` (antes `"Evidencias y registros fotográficos"`) en una sección estructurada del reporte con cabecera de fondo azul institucional (`#3C78D8`), reubicándola adecuadamente por debajo de la descripción de hechos.
+  - Se cambiaron las etiquetas de cabecera de la sección de identificación del empleador a `"Datos del empleador"` (removiendo *"de identificación..."* y *"(Principal)"*) y del trabajador accidentado a `"Datos del trabajador"`.
+
+### Decisiones Clave
+- **Distribución Compacta**: Al restar 15 unidades en las coordenadas verticales de los campos subsecuentes, evitamos un espacio en blanco excesivo en la Página 1 tras eliminar la fecha de alta y días de baja, logrando una presentación prolija.
+- **Secciones Uniformes**: Convertir el título de imágenes simples en una barra azul institucional iguala la estética visual del resto de los encabezados del informe, robusteciendo el diseño premium del PDF.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+
+### Validaciones Ejecutadas
+- Compilación y build de producción Next.js exitosa (`npm run build` completado sin errores).
+
+---
+
+## [2026-07-07] Auditoría de Seguridad y Hardening de Endpoints de Inteligencia Artificial
+
+### Resumen de Cambios
+- **Límites de Tamaño de Payload (Anti-Abuso)**:
+  - En `/api/ai/generate-accident-report`, se incorporó validación para garantizar que `additionalComments` no supere los 2,000 caracteres, que `descripcion_hechos` no supere los 5,000 caracteres y que el payload completo `accidentData` no supere los 20,000 caracteres de string serializado.
+  - En `/api/ai/refine-text`, se añadió validación de longitud máxima para el parámetro `context` (máximo 100 caracteres).
+  - En `/api/ai/transcribe-audio`, se implementó una validación para limitar el tamaño del archivo de audio base64 a un máximo de 10MB (previniendo consumos masivos de memoria/tokens).
+- **Defensa ante Inyección de Prompt**:
+  - Se incorporó la Regla 6 en el `systemInstruction` de generación de informes de accidentes para indicar de forma explícita al modelo que ignore cualquier intento de cambio de rol o de instrucciones maliciosas embebidas en los campos de comentarios o hechos.
+- **Validación de Esquema JSON de Salida de la IA**:
+  - En el endpoint de reporte técnico, se añadió una verificación de estructura del objeto JSON devuelto por Gemini (`ishikawa`, `acciones_preventivas`, `acciones_correctivas`, `cinco_porques`, `causa_raiz`) antes de responder al cliente, protegiendo al frontend de renderizados rotos o inyecciones que alteren la UI.
+
+### Decisiones Clave
+- **Validación Rápida de Payload**: Utilizar validaciones simples de longitud a nivel de ruta permite rechazar al instante peticiones maliciosas o excesivamente pesadas antes de consumir recursos de red o tokens de Gemini.
+- **Defensa en Profundidad**: Sanitizar tanto los datos de entrada como estructurar la validación del objeto JSON de salida asegura una alta robustez contra ataques de inyección y deformación de respuestas de IA.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/api/ai/generate-accident-report/route.js`
+- `[MODIFY] src/app/api/ai/refine-text/route.js`
+- `[MODIFY] src/app/api/ai/transcribe-audio/route.js`
+
+### Validaciones Ejecutadas
+- Compilación del build de producción Next.js (`npm run build`) completada con éxito.
+
+---
+
+## [2026-07-07] Optimización del Pool de Modelos en Gemini Helper (Priorización de Gemini 3.1 Flash Lite)
+
+### Resumen de Cambios
+- **Biblioteca de Lógica de IA (`src/lib/gemini.js`)**:
+  - Se modificó la lista `models` para priorizar los modelos más eficientes y con mayor cuota diaria gratuita en el entorno de desarrollo y pruebas del usuario.
+  - Se colocó al inicio a **`gemini-3.1-flash-lite`** (que provee 500 peticiones diarias gratis / RPD y 15 RPM en el plan gratuito), seguido por `gemini-3.5-flash` y `gemini-3-flash`.
+  - Se mantuvieron los modelos anteriores (`gemini-1.5-flash`, `gemini-flash-latest`, etc.) al final del pool como fallbacks adicionales.
+
+### Decisiones Clave
+- **Priorizar Modelos de Alta Cuota**: La inclusión de `gemini-3.1-flash-lite` al principio de la cadena aprovecha al máximo la asignación diaria gratuita de 500 solicitudes del usuario en AI Studio, resolviendo de raíz el bloqueo diario por pruebas.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/lib/gemini.js`
+
+### Validaciones Ejecutadas
+- Compilación del build de producción Next.js (`npm run build`) completada con éxito.
+
+---
+
+## [2026-07-07] Resiliencia de IA y Fallback Automático en APIs de Gemini
+
+### Resumen de Cambios
+- **Biblioteca de Lógica de IA (`src/lib/gemini.js`)**:
+  - Se creó un módulo centralizado `callGemini` que gestiona las peticiones de la API de Google Gemini utilizando la ruta `v1beta`.
+  - Se diseñó un pool de modelos estables (`gemini-1.5-flash`, `gemini-flash-latest`, `gemini-2.0-flash`, `gemini-1.5-pro`) con lógica de fallback transparente y reintento con backoff de 1 segundo ante fallos de tipo `503` (alta demanda/sobrecarga) y `429` (límite de cuota).
+  - Ante errores fatales de cliente (ej: `400 Bad Request`), el helper aborta de inmediato para optimizar tiempos y cuota de API.
+- **API Routes (`generate-accident-report`, `refine-text`, `transcribe-audio`)**:
+  - Se migró el código de las tres rutas de IA para usar la nueva biblioteca compartida en reemplazo de los bloques `fetch` directos redundantes.
+
+### Decisiones Clave
+- **Helper Común**: Centralizar la lógica de integración y reintento evita la duplicación de código y simplifica el mantenimiento futuro de las llamadas a servicios de IA.
+- **Rotación de Modelos**: Intentar con varios modelos estables garantiza que si uno de ellos está caído u overloaded, la plataforma continúe ofreciendo sus funciones al usuario de forma transparente.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `next-best-practices`
+- `gestion-syso-multitenant-security`
+
+### Archivos Modificados / Creados
+- `[NEW] src/lib/gemini.js`
+- `[MODIFY] src/app/api/ai/generate-accident-report/route.js`
+- `[MODIFY] src/app/api/ai/refine-text/route.js`
+- `[MODIFY] src/app/api/ai/transcribe-audio/route.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción Next.js (`npm run build`) exitosa.
+
+### Riesgos Detectados / Remanentes
+- Monitorear el consumo de cuota si se cae el modelo principal de forma recurrente, ya que los fallbacks a `gemini-1.5-pro` pueden consumir más cuota o tardar un poco más en responder.
+
+### Próximo Paso Recomendado
+- Validar las funciones de IA en el entorno de producción (o staging) interactuando con los botones de refinado, generación de informes y dictado por voz.
+
+---
+
 ## [2026-07-07] Restauración de Configuración de IA a Versión Estable (gemini-flash-latest)
 
 ### Resumen de Cambios

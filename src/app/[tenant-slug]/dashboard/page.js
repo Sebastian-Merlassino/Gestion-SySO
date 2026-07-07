@@ -2265,7 +2265,7 @@ export default function TenantDashboard({ params }) {
             )}
 
             {/* Estadísticas de Siniestralidad (debajo de contadores y tareas pendientes) */}
-            {profile && renderSiniestralidadPanel()}
+            {profile && profile.role !== 'cliente' && renderSiniestralidadPanel()}
 
             {/* Secciones de Trabajo y Acciones Rápidas */}
             {profile && profile.role === 'cliente' ? (
