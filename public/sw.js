@@ -10,18 +10,9 @@ self.addEventListener('activate', (event) => {
 });
 
 // El fetch event handler es requerido por Chrome para habilitar la instalación nativa.
-// IMPORTANTE: No interceptamos peticiones de navegación (type === 'navigate') para evitar
-// errores de red en rutas dinámicas de Next.js (SSR). Solo se delegan recursos estáticos.
+// IMPORTANTE: No llamamos a event.respondWith(). Esto delega todo el tráfico de red de forma 100%
+// nativa al navegador, evitando violar directivas de CSP para conexiones directas (connect-src)
+// en fuentes externas y asegurando el correcto funcionamiento del routing de Next.js.
 self.addEventListener('fetch', (event) => {
-  // Ignorar peticiones de navegación (páginas): Next.js SSR las maneja directamente
-  if (event.request.mode === 'navigate') {
-    return;
-  }
-  // Para recursos estáticos: pass-through sin caché
-  event.respondWith(
-    fetch(event.request).catch(() => {
-      // Si el recurso no está disponible online, simplemente falla silenciosamente
-      return new Response('', { status: 503, statusText: 'Offline' });
-    })
-  );
+  // Pass-through nativo por defecto
 });

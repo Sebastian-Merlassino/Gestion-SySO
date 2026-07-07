@@ -1,5 +1,20 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-07] Solución de Violaciones de CSP y Errores de Red en PWA por Service Worker
+
+### Resumen de Cambios
+- **Service Worker (`public/sw.js`)**:
+  - Se modificó el callback del event listener de `fetch`. Se eliminó la interceptación activa mediante `event.respondWith(fetch(...))` delegando de forma nativa todo el tráfico de red de la aplicación al navegador.
+  - Esto soluciona las excepciones `TypeError: Failed to fetch` en las páginas dinámicas de Next.js (SSR) y las violaciones de la política de Content Security Policy (`connect-src` bloqueado para Google Fonts `fonts.googleapis.com`), manteniendo al mismo tiempo la estructura mínima requerida para cumplir con la instalabilidad PWA en Google Chrome e iOS.
+
+### Archivos Modificados / Creados
+- **[sw.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/public/sw.js)** (Modificado)
+
+### Validaciones Ejecutadas
+- Compilación de producción exitosa mediante `npm run build`.
+
+---
+
 ## [2026-07-07] Diagnóstico Enriquecido y Manejo de Errores de API de Gemini
 
 ### Resumen de Cambios
