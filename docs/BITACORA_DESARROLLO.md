@@ -1,11 +1,11 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-07-07] Solución de Violaciones de CSP y Errores de Red en PWA por Service Worker
+## [2026-07-07] Eliminación de Fetch Handler en Service Worker y Resolución de CSP
 
 ### Resumen de Cambios
 - **Service Worker (`public/sw.js`)**:
-  - Se modificó el callback del event listener de `fetch`. Se eliminó la interceptación activa mediante `event.respondWith(fetch(...))` delegando de forma nativa todo el tráfico de red de la aplicación al navegador.
-  - Esto soluciona las excepciones `TypeError: Failed to fetch` en las páginas dinámicas de Next.js (SSR) y las violaciones de la política de Content Security Policy (`connect-src` bloqueado para Google Fonts `fonts.googleapis.com`), manteniendo al mismo tiempo la estructura mínima requerida para cumplir con la instalabilidad PWA en Google Chrome e iOS.
+  - Se eliminó por completo el event listener `fetch` no-op para corregir la advertencia de Chrome (`Fetch event handler is recognized as no-op. No-op fetch handler may bring overhead during navigation.`).
+  - Esto erradica al 100% las violaciones a las directivas de Content Security Policy (`connect-src` de Google Fonts) y los problemas de red/caches en rutas dinámicas de Next.js, delegando todo el tráfico de forma nativa al navegador. El Service Worker se limita ahora a los eventos `install` y `activate` necesarios y suficientes para asegurar la instalabilidad de la PWA.
 
 ### Archivos Modificados / Creados
 - **[sw.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/public/sw.js)** (Modificado)

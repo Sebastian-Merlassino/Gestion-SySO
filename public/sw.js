@@ -9,10 +9,5 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
 });
 
-// El fetch event handler es requerido por Chrome para habilitar la instalación nativa.
-// IMPORTANTE: No llamamos a event.respondWith(). Esto delega todo el tráfico de red de forma 100%
-// nativa al navegador, evitando violar directivas de CSP para conexiones directas (connect-src)
-// en fuentes externas y asegurando el correcto funcionamiento del routing de Next.js.
-self.addEventListener('fetch', (event) => {
-  // Pass-through nativo por defecto
-});
+// El Service Worker se limita a inicializar y activar para cumplir con la instalabilidad PWA,
+// delegando toda la resolución de red de forma 100% nativa al navegador.
