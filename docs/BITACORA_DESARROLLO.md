@@ -1,13 +1,12 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-07-07] Robustecimiento de APIs de IA con Fallback de Modelos y Reintentos para Errores 429
+## [2026-07-07] Corrección de Compatibilidad en Fallback de Gemini (v1beta)
 
 ### Resumen de Cambios
 - **API Routes de IA (`generate-accident-report`, `refine-text`, `transcribe-audio`)**:
-  - Se implementó un helper asíncrono robusto `callGeminiWithFallback` para gestionar los llamados a Google Gemini de manera resiliente.
-  - La función realiza hasta 3 intentos de consulta ante errores de cuota (HTTP 429) o sobrecarga (HTTP 503). 
-  - En cada intento, alterna de forma transparente entre los modelos **`gemini-2.0-flash`** (en la ruta `v1beta`) y **`gemini-1.5-flash`** (en la ruta `v1`), los cuales utilizan cuotas de uso y contadores de Google independientes.
-  - En el tercer intento, introduce una pausa asíncrona de 2 segundos para dar respiro a los límites por minuto de la API Key. Esto previene que los límites de cuotas de las claves de API gratuitas afecten la experiencia del usuario y asegura el funcionamiento ininterrumpido del servicio.
+  - Se corrigió el pool de modelos alternativos en el helper `callGeminiWithFallback`.
+  - Se cambió el modelo de fallback desde `gemini-1.5-flash` (en la API `v1`) hacia el alias estable **`gemini-1.5-flash-latest` en la API `v1beta`**.
+  - Esto soluciona de raíz el error `Unknown name "systemInstruction": Cannot find field` en el segundo intento, ya que la versión `v1beta` de la API de Google Gemini soporta de forma nativa los campos `systemInstruction` y `responseMimeType: "application/json"`, mientras que la versión `v1` carece de dicho soporte directo en sus llamadas REST directas.
 
 ### Archivos Modificados / Creados
 - **[route.js (generate-accident-report)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/api/ai/generate-accident-report/route.js)** (Modificado)

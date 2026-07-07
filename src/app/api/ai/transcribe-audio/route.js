@@ -43,7 +43,7 @@ export async function POST(req) {
     const callGeminiWithFallback = async () => {
       const models = [
         { name: 'gemini-2.0-flash', version: 'v1beta' },
-        { name: 'gemini-1.5-flash', version: 'v1' } // Alternativa robusta
+        { name: 'gemini-1.5-flash-latest', version: 'v1beta' } // Alternativa robusta compatible
       ];
 
       let lastError = null;
