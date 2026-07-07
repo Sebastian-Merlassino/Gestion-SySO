@@ -62,7 +62,7 @@ Reglas obligatorias:
     const userMessage = `Contexto específico del reporte: ${context || 'General'}\nTexto a refinar:\n"${text.trim()}"`;
 
     // Llamada REST directa a Gemini 2.5 Flash con systemInstruction
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
     const response = await fetch(geminiUrl, {
       method: 'POST',
