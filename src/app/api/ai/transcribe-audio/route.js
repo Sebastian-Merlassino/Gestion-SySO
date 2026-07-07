@@ -74,6 +74,12 @@ export async function POST(req) {
       const err = await response.text();
       console.error('Error Gemini transcribe:', err);
 
+      let errJson = {};
+      try {
+        errJson = JSON.parse(err);
+      } catch (e) {}
+      const geminiErrorMsg = errJson.error?.message || err || 'Error desconocido';
+
       if (response.status === 429) {
         return NextResponse.json(
           { error: 'El servicio de IA (Gemini) ha superado su límite de solicitudes de cuota diaria. Por favor, esperá un minuto e intentá de nuevo.' },
@@ -82,8 +88,8 @@ export async function POST(req) {
       }
 
       return NextResponse.json(
-        { error: 'Error al transcribir el audio.' },
-        { status: response.status }
+        { error: `Error al transcribir el audio: ${geminiErrorMsg}` },
+        { status: 500 }
       );
     }
 

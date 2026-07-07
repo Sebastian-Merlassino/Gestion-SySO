@@ -1,5 +1,22 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-07] Diagnóstico Enriquecido y Manejo de Errores de API de Gemini
+
+### Resumen de Cambios
+- **API Routes de Inteligencia Artificial (`route.js`)**:
+  - Se modificó el bloque de captura de errores HTTP de la llamada fetch de la API de Google Gemini en los 3 endpoints del proyecto (`/api/ai/generate-accident-report`, `/api/ai/refine-text` y `/api/ai/transcribe-audio`).
+  - Ahora, si la API de Gemini devuelve un error (como `404 Not Found` por API Key inactiva, modelo inexistente o restricciones de acceso), el endpoint del backend parsea la respuesta de error de Google, extrae el mensaje de error descriptivo y lo retorna en un status `500` con el mensaje original (`Error en la comunicación con el servicio de IA: [Mensaje de Google]`). Esto evita que el navegador reciba un `404` crudo que simule una ruta rota de la aplicación local/producción, permitiendo diagnosticar al instante en la interfaz del cliente.
+
+### Archivos Modificados / Creados
+- **[route.js (generate-accident-report)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/api/ai/generate-accident-report/route.js)** (Modificado)
+- **[route.js (refine-text)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/api/ai/refine-text/route.js)** (Modificado)
+- **[route.js (transcribe-audio)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/api/ai/transcribe-audio/route.js)** (Modificado)
+
+### Validaciones Ejecutadas
+- Compilación de producción exitosa mediante `npm run build`.
+
+---
+
 ## [2026-07-07] Solución de Carga Automática de Firma Digital del Profesional al Editar/Seleccionar
 
 ### Resumen de Cambios

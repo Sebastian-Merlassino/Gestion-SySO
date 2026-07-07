@@ -93,6 +93,12 @@ Reglas obligatorias:
       const errorText = await response.text();
       console.error('Error de respuesta de Gemini API:', errorText);
 
+      let errJson = {};
+      try {
+        errJson = JSON.parse(errorText);
+      } catch (e) {}
+      const geminiErrorMsg = errJson.error?.message || errorText || 'Error desconocido';
+
       if (response.status === 429) {
         return NextResponse.json(
           { error: 'El servicio de IA (Gemini) ha superado su límite de solicitudes de cuota diaria. Por favor, esperá un minuto e intentá de nuevo.' },
@@ -101,8 +107,8 @@ Reglas obligatorias:
       }
 
       return NextResponse.json(
-        { error: 'Error en la comunicación con el servicio de IA.' },
-        { status: response.status }
+        { error: `Error en la comunicación con el servicio de IA: ${geminiErrorMsg}` },
+        { status: 500 }
       );
     }
 
