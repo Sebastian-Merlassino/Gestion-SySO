@@ -1,5 +1,22 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-07] Migración a Modelo Estable de Producción Gemini 1.5 Flash en Endpoints de IA
+
+### Resumen de Cambios
+- **API Routes de Inteligencia Artificial (`route.js`)**:
+  - Se modificaron las llamadas REST de Google Gemini en todos los endpoints de la aplicación: `/api/ai/generate-accident-report`, `/api/ai/refine-text` y `/api/ai/transcribe-audio`.
+  - Se migró el modelo de consulta desde la versión inestable alias `gemini-flash-latest` hacia el modelo oficial estable de producción **`gemini-1.5-flash`**. Esto previene y soluciona fallas de tipo `503 Service Unavailable` por indisponibilidad, cuotas, descontinuaciones de alias temporales o inestabilidad regional en los servidores de Google.
+
+### Archivos Modificados / Creados
+- **[route.js (generate-accident-report)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/api/ai/generate-accident-report/route.js)** (Modificado)
+- **[route.js (refine-text)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/api/ai/refine-text/route.js)** (Modificado)
+- **[route.js (transcribe-audio)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/api/ai/transcribe-audio/route.js)** (Modificado)
+
+### Validaciones Ejecutadas
+- Compilación de producción exitosa mediante `npm run build`.
+
+---
+
 ## [2026-07-07] Restauración de Campos de Clasificación en el Formulario de Registrar Nuevo Siniestro
 
 ### Resumen de Cambios
