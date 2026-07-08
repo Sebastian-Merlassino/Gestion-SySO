@@ -1,6 +1,24 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-08] Resolución de Bloqueo por Content Security Policy (CSP) en Descarga de Reportes con Imágenes de AppSheet
+
+### Resumen de Cambios
+- **Configuración de Seguridad (`src/middleware.js`)**:
+  - Se modificó la política de seguridad de contenido (CSP) dinámica inyectada en el middleware para añadir los dominios de AppSheet (`https://*.appsheet.com` y `https://www.appsheet.com`) en las directivas `connect-src` (que causaba el bloqueo del `fetch` al generar los PDFs) e `img-src` (para posibilitar la previsualización directa en el navegador de fotos históricas migradas del sistema anterior).
+  
+### Decisiones Clave
+- **Habilitación Controlada de Orígenes**: Permitir explícitamente los subdominios de AppSheet en la CSP mitiga la interrupción del servicio al generar reportes PDF con registros históricos cuyas imágenes aún apuntan a los servidores de AppSheet, preservando las defensas generales contra Cross-Site Scripting (XSS) y filtración de datos.
+
+### Archivos Modificados / Creados
+- **[middleware.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/middleware.js)** (Modificado)
+
+### Validaciones Ejecutadas
+- Compilación de producción exitosa (`npm run build`) verificando que la inyección dinámica de cabeceras en el middleware no afecte la integridad del enrutamiento o el build del proyecto.
+
+---
+
 ## [2026-07-08] Rediseño de Galería Integrada para Evidencias Fotográficas Múltiples (Estándar SySO-Multiple-Evidence-Photo-Grid)
+
 
 ### Resumen de Cambios
 - **Componente Reutilizable (`src/components/ui/ImageUploadZone.js`)**:
