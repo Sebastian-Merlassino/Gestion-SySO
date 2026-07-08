@@ -8,11 +8,37 @@ export async function middleware(request) {
   const pathname = url.pathname;
   let rateLimitHeaders = null;
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  let supabaseHost = '';
+  let supabaseWsUrl = '';
+  try {
+    if (supabaseUrl) {
+      const parsed = new URL(supabaseUrl);
+      supabaseHost = parsed.host;
+      supabaseWsUrl = `wss://${supabaseHost}`;
+    }
+  } catch (e) {
+    console.error('[Middleware CSP Error] Invalid NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl);
+  }
+
+  const cspValue = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com",
+    `img-src 'self' data: blob: ${supabaseUrl ? supabaseUrl : ''}`,
+    `connect-src 'self' ${supabaseUrl ? supabaseUrl : ''} ${supabaseWsUrl ? supabaseWsUrl : ''}`,
+    "frame-ancestors 'none'"
+  ].filter(Boolean).join('; ');
+
   const withRateLimit = (res) => {
-    if (rateLimitHeaders && res) {
-      for (const [key, value] of Object.entries(rateLimitHeaders)) {
-        res.headers.set(key, value);
+    if (res) {
+      if (rateLimitHeaders) {
+        for (const [key, value] of Object.entries(rateLimitHeaders)) {
+          res.headers.set(key, value);
+        }
       }
+      res.headers.set('Content-Security-Policy', cspValue);
     }
     return res;
   };
@@ -35,8 +61,17 @@ export async function middleware(request) {
       limit = 5; // Máximo 5 intentos de inicio de sesión por CUIT cada 15 minutos por IP
     }
 
-    const rateLimitResult = await checkRateLimit(ip, pathname, limit, windowMs);
-    rateLimitHeaders = getRateLimitHeaders(rateLimitResult.limit, rateLimitResult.remaining, rateLimitResult.resetTime);
+    let rateLimitResult;
+    try {
+      rateLimitResult = await checkRateLimit(ip, pathname, limit, windowMs);
+      rateLimitHeaders = getRateLimitHeaders(rateLimitResult.limit, rateLimitResult.remaining, rateLimitResult.resetTime);
+    } catch (err) {
+      console.error('[RateLimit Error]:', err.message);
+      return NextResponse.json(
+        { error: 'Error de configuración de seguridad del sistema.' },
+        { status: 500 }
+      );
+    }
 
     if (!rateLimitResult.success) {
       return NextResponse.json(
@@ -55,7 +90,6 @@ export async function middleware(request) {
     },
   });
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   // Si no hay variables de Supabase configuradas, saltamos el middleware en desarrollo

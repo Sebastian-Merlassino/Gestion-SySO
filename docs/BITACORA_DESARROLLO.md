@@ -1,5 +1,57 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-08] Auditoría de Seguridad e Implementación del Plan de Remediación (Fase 1 y 2)
+
+### Resumen de Cambios
+- **Actualización de Seguridad de Next.js**:
+  - Se actualizó Next.js a la versión `14.2.35` en [package.json](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/package.json) remediando vulnerabilidades críticas de DoS, SSRF en WebSocket upgrades e Information Exposure.
+- **Remediación de Dependencias Secundarias**:
+  - Se reemplazó la dependencia `"xlsx": "^0.18.5"` por la versión oficial segura `"xlsx": "https://cdn.sheetjs.com/xlsx-0.20.2/xlsx-0.20.2.tgz"` (SheetJS CDN) para corregir Prototype Pollution y ReDoS.
+  - Se añadió la sección `"overrides"` en `package.json` para postcss a `^8.5.16`, corrigiendo una vulnerabilidad XSS moderada.
+- **Hardening del Rate Limiting (Evitar Bypass Serverless)**:
+  - Se modificó [rateLimit.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/lib/rateLimit.js) para forzar un error explícito (*fail-closed*) en entornos de producción/staging si no se configuran las credenciales de Upstash Redis, evitando el fallback inseguro en memoria local en entornos serverless.
+  - Se ajustó [middleware.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/middleware.js) para capturar las excepciones del rate limiter y retornar un error HTTP 500.
+- **Content Security Policy (CSP) Dinámica**:
+  - Se eliminó el bloque estático de CSP de [vercel.json](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/vercel.json).
+  - Se implementó la inyección dinámica de CSP en `middleware.js` basada en la variable de entorno `NEXT_PUBLIC_SUPABASE_URL`.
+- **Integración de Webhooks y Acreditación de Mercado Pago**:
+  - Se creó la migración SQL [20260728000000_create_pagos_procesados.sql](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/supabase/migrations/20260728000000_create_pagos_procesados.sql) para implementar la tabla de idempotencia `pagos_procesados` con RLS.
+  - Se migró [mpConfig.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/config/mpConfig.js) a ESM y se removió la constante estática de idempotencia.
+  - Se implementó el endpoint seguro en [route.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/api/webhooks/mercadopago/route.js) que valida la firma criptográfica `x-signature` del webhook, verifica el estado en la API de Mercado Pago, comprueba idempotencia en `pagos_procesados` y actualiza el plan en `tenants` mediante la clave de administrador `service_role`.
+- **Prevención de Cuentas Huérfanas**:
+  - Se creó la migración SQL [20260729000000_update_delete_own_account.sql](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/supabase/migrations/20260729000000_update_delete_own_account.sql) para actualizar la función `delete_own_account()`, borrando a todos los usuarios del tenant en `auth.users` antes de eliminar el tenant de la base de datos.
+
+### Decisiones Clave
+- **Versión de Parche Seguro**: Se optó por actualizar Next.js a la v14.2.35 para resolver vulnerabilidades críticas del core sin romper la compatibilidad de Supabase/React 18.
+- **Seguridad Fail-Closed**: Forzar errores HTTP 500 en producción si faltan variables de Upstash previene que la aplicación funcione de forma insegura (sin rate limits compartidos en Vercel).
+- **Idempotencia en Transacciones**: La tabla `pagos_procesados` previene ataques de replay y la doble acreditación ante reintentos automáticos del webhook.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `supabase`
+
+### Archivos Modificados / Creados
+- `[NEW] .gemini/antigravity-ide/brain/f14c6650-e5e1-4d0a-8cbd-413f41ce1d55/plan_remediacion_etapas.md`
+- `[NEW] .gemini/antigravity-ide/brain/f14c6650-e5e1-4d0a-8cbd-413f41ce1d55/task.md`
+- `[NEW] .gemini/antigravity-ide/brain/f14c6650-e5e1-4d0a-8cbd-413f41ce1d55/walkthrough.md`
+- `[NEW] supabase/migrations/20260728000000_create_pagos_procesados.sql`
+- `[NEW] supabase/migrations/20260729000000_update_delete_own_account.sql`
+- `[NEW] src/app/api/webhooks/mercadopago/route.js`
+- `[MODIFY] package.json`
+- `[MODIFY] vercel.json`
+- `[MODIFY] src/lib/rateLimit.js`
+- `[MODIFY] src/middleware.js`
+- `[MODIFY] src/config/mpConfig.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación del proyecto (`next build`) completada con éxito.
+- Comprobación de `npm audit` mostrando la resolución de `xlsx` y `postcss`.
+- Verificación del comportamiento del rate limiter ante variables locales nulas.
+
+---
+
 ## [2026-07-07] Encapsulación de Bloque Estándar para Carga de Documentos (DocumentUploadZone)
 
 ### Resumen de Cambios

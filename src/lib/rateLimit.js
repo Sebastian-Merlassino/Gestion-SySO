@@ -31,6 +31,12 @@ export async function checkRateLimit(ip, route, limit = 100, windowMs = 15 * 60 
   const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
   const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
 
+  // En staging o producción, exigir obligatoriamente Upstash Redis para evitar bypasses en Vercel
+  const isEnvRestricted = process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging';
+  if (isEnvRestricted && (!redisUrl || !redisToken)) {
+    throw new Error('[RateLimit] Se requiere la configuración de Upstash Redis (UPSTASH_REDIS_REST_URL y UPSTASH_REDIS_REST_TOKEN) en producción/staging.');
+  }
+
   if (redisUrl && redisToken) {
     try {
       const key = `ratelimit:${ip}:${route}`;
