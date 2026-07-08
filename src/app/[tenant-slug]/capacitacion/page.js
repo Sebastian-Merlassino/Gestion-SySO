@@ -1662,11 +1662,9 @@ export default function CapacitacionPage({ params }) {
                     
                     <div className="grid md:grid-cols-2 gap-6">
                       {/* Subsección Fotos */}
-                      <div className="rounded-xl border border-slate-200 bg-slate-50 overflow-hidden flex flex-col h-full shadow-sm">
-                        <div className="flex border-b border-slate-200 bg-white text-xs font-bold text-slate-500 h-[33px] items-center px-4 shrink-0">
-                          Imágenes
-                        </div>
-                        <div className="p-3 flex-1 flex flex-col justify-center">
+                      <div className="flex flex-col h-full w-full space-y-2">
+                        <label className="block text-xs font-bold text-slate-600">Imágenes</label>
+                        <div className="flex-1 flex flex-col justify-center">
                           <ImageUploadZone
                             multiple={true}
                             images={fotosFiles}
@@ -1684,7 +1682,7 @@ export default function CapacitacionPage({ params }) {
                                 if (target && target.preview && target.preview.startsWith('blob:')) {
                                   URL.revokeObjectURL(target.preview);
                                 }
-                                return prev.filter((_, idx) => idx !== index);
+                                  return prev.filter((_, idx) => idx !== index);
                               });
                             }}
                             disabled={!canEdit}
@@ -1695,9 +1693,9 @@ export default function CapacitacionPage({ params }) {
                       </div>
 
                       {/* Subsección Documentos PDF, Enlaces Drive y Legajo */}
-                      <div className="rounded-xl border border-slate-200 bg-slate-50 overflow-hidden flex flex-col h-full shadow-sm">
+                      <div className="flex flex-col h-full w-full space-y-2">
                         <DocumentUploadZone
-                          label="Agregar Registro PDF / Drive / Legajo"
+                          label="Documentos"
                           file={null}
                           fileName=""
                           onFileChange={(file) => {
@@ -1731,7 +1729,7 @@ export default function CapacitacionPage({ params }) {
                             { id: 'legajo', name: 'Legajo Técnico' }
                           ]}
                           minHeightClass="min-h-[148px] flex flex-col justify-center"
-                          borderless={true}
+                          borderless={false}
                         >
                           {uploadType === 'legajo' && (
                             <div className="space-y-2">
@@ -1798,21 +1796,21 @@ export default function CapacitacionPage({ params }) {
 
                         {/* Lista de PDFs / Links cargados */}
                         {pdfFiles.length > 0 && (
-                          <div className="p-3 pt-0 border-t border-slate-200">
-                            <div className="space-y-2 max-h-48 overflow-y-auto border border-slate-150 rounded-xl p-3 bg-white shadow-sm">
+                          <div className="pt-2">
+                            <div className="space-y-1.5 max-h-48 overflow-y-auto scrollbar-thin">
                               {pdfFiles.map((doc, idx) => (
-                                <div key={idx} className="flex items-center justify-between text-xs p-2 bg-slate-50 rounded-lg border border-slate-200 animate-scaleUp">
+                                <div key={idx} className="flex items-center justify-between text-xs p-2 bg-white rounded-xl border border-slate-150 shadow-sm animate-scaleUp">
                                   <div className="flex items-center gap-2 truncate flex-1 pr-2">
                                     <FileText className="h-4 w-4 text-[#468DFF] shrink-0" />
                                     <span className="font-semibold text-slate-700 truncate" title={doc.fileName}>{doc.fileName}</span>
                                   </div>
-                                  <div className="flex items-center gap-1.5 shrink-0">
+                                  <div className="flex items-center gap-1 shrink-0">
                                     {doc.url && (
                                       <a
                                         href={doc.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="p-1 text-[#468DFF] hover:text-[#0511F2] transition-colors"
+                                        className="p-1.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 hover:text-[#468DFF] hover:bg-blue-50 hover:border-blue-150 transition-all duration-300 flex items-center justify-center cursor-pointer"
                                         title="Ver documento"
                                       >
                                         <Eye className="h-3.5 w-3.5" />
@@ -1830,7 +1828,7 @@ export default function CapacitacionPage({ params }) {
                                             return prev.filter((_, i) => i !== idx);
                                           });
                                         }}
-                                        className="p-1 text-red-500 hover:text-red-700 transition-colors cursor-pointer"
+                                        className="p-1.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 hover:text-red-600 hover:bg-red-50 hover:border-red-150 transition-all duration-300 flex items-center justify-center cursor-pointer"
                                         title="Quitar"
                                       >
                                         <Trash2 className="h-3.5 w-3.5" />
