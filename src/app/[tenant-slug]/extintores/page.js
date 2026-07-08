@@ -74,14 +74,32 @@ const CHECK_OPTIONS = ['Ok', 'No Ok', 'N/A'];
 
 const getPathsFromImagenUrl = (imagenUrl) => {
   if (!imagenUrl || imagenUrl === 'N/A') return [];
+
+  const isInvalidAppSheetUrl = (url) => {
+    if (typeof url === 'string' && url.includes('gettablefileurl')) {
+      try {
+        const urlObj = new URL(url);
+        const fileName = urlObj.searchParams.get('fileName');
+        return !fileName || fileName.trim() === '';
+      } catch (e) {
+        return url.endsWith('fileName=') || url.includes('fileName=&');
+      }
+    }
+    return false;
+  };
+
   if (imagenUrl.startsWith('[') && imagenUrl.endsWith(']')) {
     try {
-      return JSON.parse(imagenUrl);
+      const parsed = JSON.parse(imagenUrl);
+      if (Array.isArray(parsed)) {
+        return parsed.filter(url => url && url !== 'N/A' && !isInvalidAppSheetUrl(url));
+      }
+      return isInvalidAppSheetUrl(imagenUrl) ? [] : [imagenUrl];
     } catch (e) {
-      return [imagenUrl];
+      return isInvalidAppSheetUrl(imagenUrl) ? [] : [imagenUrl];
     }
   }
-  return [imagenUrl];
+  return isInvalidAppSheetUrl(imagenUrl) ? [] : [imagenUrl];
 };
 
 export default function ExtintoresPage({ params }) {
@@ -478,6 +496,19 @@ export default function ExtintoresPage({ params }) {
 
   const getBase64ImageFromUrl = async (imageUrl) => {
     if (!imageUrl) return '';
+    if (typeof imageUrl === 'string' && imageUrl.includes('gettablefileurl')) {
+      try {
+        const urlObj = new URL(imageUrl);
+        const fileName = urlObj.searchParams.get('fileName');
+        if (!fileName || fileName.trim() === '') {
+          return '';
+        }
+      } catch (e) {
+        if (imageUrl.endsWith('fileName=') || imageUrl.includes('fileName=&')) {
+          return '';
+        }
+      }
+    }
     try {
       const res = await fetch(imageUrl);
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);

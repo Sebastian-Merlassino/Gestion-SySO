@@ -1,5 +1,21 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-08] Corrección de Error 400 (Bad Request) en Descarga de PDF por URLs Vacías de AppSheet
+
+### Resumen de Cambios
+- **Sanitización de URLs de AppSheet en Correctivas y Extintores**: Se actualizó la función helper `getPathsFromImagenUrl` para detectar y filtrar URLs del servidor de plantillas de AppSheet (`https://www.appsheet.com/template/gettablefileurl...`) que carecen del parámetro `fileName` (indicando que no se subió una imagen para ese registro en el sistema anterior). Esto evita que se rendericen previsualizaciones rotas y que falle la exportación a PDF.
+- **Robustecimiento de `getBase64ImageFromUrl`**: Se integró una validación previa en la función `getBase64ImageFromUrl` de `correctivas/page.js`, `extintores/page.js` y `avisos/page.js` para abortar inmediatamente y retornar una cadena vacía en caso de URLs nulas, vacías o con plantillas vacías de AppSheet, previniendo peticiones de red inválidas (HTTP 400 Bad Request).
+
+### Archivos Modificados
+- `src/app/[tenant-slug]/correctivas/page.js`
+- `src/app/[tenant-slug]/extintores/page.js`
+- `src/app/[tenant-slug]/avisos/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción Next.js (`npm run build`) ejecutada y finalizada con éxito (exit code 0).
+
+---
+
 ## [2026-07-08] Implementación Integral de Estandarización UI en Todas las Secciones
 
 ### Resumen de Cambios

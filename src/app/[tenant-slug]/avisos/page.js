@@ -953,6 +953,20 @@ export default function AvisosRiesgoPage({ params }) {
   // Helpers de Imagen
   // ----------------------------------------------------
   const getBase64ImageFromUrl = async (imageUrl) => {
+    if (!imageUrl) return '';
+    if (typeof imageUrl === 'string' && imageUrl.includes('gettablefileurl')) {
+      try {
+        const urlObj = new URL(imageUrl);
+        const fileName = urlObj.searchParams.get('fileName');
+        if (!fileName || fileName.trim() === '') {
+          return '';
+        }
+      } catch (e) {
+        if (imageUrl.endsWith('fileName=') || imageUrl.includes('fileName=&')) {
+          return '';
+        }
+      }
+    }
     try {
       const res = await fetch(imageUrl);
       const blob = await res.blob();
