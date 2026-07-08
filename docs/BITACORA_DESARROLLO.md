@@ -20,6 +20,9 @@
   - Se implementó el endpoint seguro en [route.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/api/webhooks/mercadopago/route.js) que valida la firma criptográfica `x-signature` del webhook, verifica el estado en la API de Mercado Pago, comprueba idempotencia en `pagos_procesados` y actualiza el plan en `tenants` mediante la clave de administrador `service_role`.
 - **Prevención de Cuentas Huérfanas**:
   - Se creó la migración SQL [20260729000000_update_delete_own_account.sql](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/supabase/migrations/20260729000000_update_delete_own_account.sql) para actualizar la función `delete_own_account()`, borrando a todos los usuarios del tenant en `auth.users` antes de eliminar el tenant de la base de datos.
+- **Corrección de Adaptador de Cookies de Supabase**:
+  - Se removió la decodificación manual con `decodeURIComponent` en el método `get` del adaptador de cookies del middleware. Con la versión `^0.12.0` de `@supabase/ssr`, esta llamada manual provocaba la corrupción de la reconstrucción de cookies fragmentadas (chunked cookies), causando el error de JSON inválido al parsear la sesión.
+  - Se eliminó el parámetro `maxAge: -1` manual del método `remove` delegando en la expiración nativa controlada por la API de Supabase.
 
 ### Decisiones Clave
 - **Versión de Parche Seguro**: Se optó por actualizar Next.js a la v14.2.35 para resolver vulnerabilidades críticas del core sin romper la compatibilidad de Supabase/React 18.

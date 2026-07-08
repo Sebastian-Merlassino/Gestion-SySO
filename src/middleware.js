@@ -100,8 +100,7 @@ export async function middleware(request) {
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       get(name) {
-        const val = request.cookies.get(name)?.value;
-        return val ? decodeURIComponent(val) : undefined;
+        return request.cookies.get(name)?.value;
       },
       set(name, value, options) {
         request.cookies.set({
@@ -125,7 +124,6 @@ export async function middleware(request) {
           name,
           value: '',
           ...options,
-          maxAge: -1,
         });
         response = NextResponse.next({
           request: {
@@ -136,7 +134,6 @@ export async function middleware(request) {
           name,
           value: '',
           ...options,
-          maxAge: -1,
         });
       },
     },
