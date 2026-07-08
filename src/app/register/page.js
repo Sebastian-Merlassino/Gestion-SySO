@@ -4,7 +4,9 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Mail, Lock, User, ShieldAlert, ArrowRight, Loader2, Award, AlertTriangle, X, CheckCircle, Eye, EyeOff } from 'lucide-react';
-
+import AppCard from '@/components/ui/AppCard';
+import AppInput from '@/components/ui/AppInput';
+import AppButton from '@/components/ui/AppButton';
 export default function RegisterPage() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');

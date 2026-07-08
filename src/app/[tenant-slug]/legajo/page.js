@@ -8,6 +8,13 @@ import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
 import { useToast } from '@/components/providers/ToastProvider';
+import AppPageHeader from '@/components/ui/AppPageHeader';
+import AppButton from '@/components/ui/AppButton';
+import AppInput from '@/components/ui/AppInput';
+import AppSelect from '@/components/ui/AppSelect';
+import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
+import AppCard from '@/components/ui/AppCard';
+import AppEmptyState from '@/components/ui/AppEmptyState';
 import { 
   Folder, 
   FolderOpen, 
@@ -1008,28 +1015,14 @@ export default function LegajoPage({ params }) {
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         
         {/* Cabecera */}
-        <header className="h-16 border-b border-slate-200 flex items-center justify-between px-4 md:px-6 bg-white shrink-0 sticky top-0 z-20">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <button
-              onClick={() => setIsMobileMenuOpen(true)}
-              className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 md:hidden cursor-pointer shrink-0"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-            <FolderOpen className="h-5 w-5 text-[#468DFF] shrink-0" />
-            <h1 className="font-outfit text-base md:text-lg font-bold text-slate-900 truncate leading-none">
-              Legajo Técnico
-            </h1>
-          </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <span className="text-xs font-semibold text-slate-500 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-150 hidden sm:inline-block">
-              {tenant?.name || 'Cargando...'}
-            </span>
-            <span className={`px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider ${(!profile || profile.role === 'cliente') ? 'hidden' : ''}`} suppressHydrationWarning>
-              {tenant?.plan_id ? (tenant.plan_id.toLowerCase() === 'libre' ? 'Plan Libre' : tenant.plan_id.toLowerCase().startsWith('standard') ? 'Plan Standard' : tenant.plan_id.toLowerCase().startsWith('basic') ? 'Plan Basic' : `Plan ${tenant.plan_id}`) : 'Plan Pro'}
-            </span>
-          </div>
-        </header>
+        <AppPageHeader
+          title="Legajo Técnico"
+          icon={FolderOpen}
+          tenantName={tenant?.name || 'Cargando...'}
+          planId={tenant?.plan_id}
+          showPlanBadge={profile && profile.role !== 'cliente'}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+        />
 
         {loading ? (
           <div className="flex-1 flex items-center justify-center p-8">
@@ -1043,8 +1036,8 @@ export default function LegajoPage({ params }) {
             
             {isFormOpen ? (
               // FORMULARIO DE CARGA/EDICIÓN INLINE
-              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
-                <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-150 flex items-center justify-between shrink-0">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
+                <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
                     <button
                       type="button"
@@ -1307,7 +1300,7 @@ export default function LegajoPage({ params }) {
               <div className="space-y-6">
                 
                 {/* Navegación Breadcrumbs (Migas de Pan) */}
-                <div className="bg-white rounded-xl border border-slate-150 p-3.5 shadow-sm flex items-center gap-2 text-xs font-semibold text-slate-500 select-none">
+                <div className="bg-white rounded-xl border border-slate-200 p-3.5 shadow-sm flex items-center gap-2 text-xs font-semibold text-slate-500 select-none">
                   <button
                     onClick={navigateToRoot}
                     className="hover:text-[#468DFF] cursor-pointer flex items-center gap-1 transition-colors"
@@ -1355,7 +1348,7 @@ export default function LegajoPage({ params }) {
                         <div
                           key={folder.id}
                           onClick={() => navigateToFolder(folder)}
-                          className="bg-white rounded-2xl border border-slate-150 p-5 shadow-sm hover:shadow-md hover:border-[#468DFF]/40 cursor-pointer transition-all flex flex-col justify-between group"
+                          className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md hover:border-[#468DFF]/40 cursor-pointer transition-all flex flex-col justify-between group"
                         >
                           <div className="flex items-center gap-4">
                             <div className="p-3.5 rounded-xl bg-slate-100 text-[#468DFF] group-hover:bg-[#468DFF]/10 transition-colors shrink-0">
@@ -1405,7 +1398,7 @@ export default function LegajoPage({ params }) {
                           <div
                             key={sub.id}
                             onClick={() => setCurrentSubfolder(sub)}
-                            className="bg-white rounded-2xl border border-slate-150 p-5 shadow-sm hover:shadow-md hover:border-[#468DFF]/40 cursor-pointer transition-all flex flex-col justify-between group"
+                            className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md hover:border-[#468DFF]/40 cursor-pointer transition-all flex flex-col justify-between group"
                           >
                             <div className="flex items-center gap-4">
                               <div className="p-3.5 rounded-xl bg-slate-100 text-[#468DFF] group-hover:bg-[#468DFF]/10 transition-colors shrink-0">
@@ -1435,7 +1428,7 @@ export default function LegajoPage({ params }) {
                   <div className="space-y-4">
 
                     {/* Herramientas, Búsqueda y Filtros */}
-                    <div className="bg-white rounded-2xl border border-slate-150 p-3 shadow-sm space-y-3 shrink-0">
+                    <div className="bg-white rounded-2xl border border-slate-200 p-3 shadow-sm space-y-3 shrink-0">
 
                       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
                         
@@ -1606,36 +1599,36 @@ export default function LegajoPage({ params }) {
                     </div>
 
                     {/* Tabla de Documentos */}
-                    <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col transition-all duration-300 ease-in-out" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col transition-all duration-300 ease-in-out" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
                       <div className="overflow-auto flex-grow">
                         <table className="w-full text-left border-collapse min-w-[800px]">
                           <thead>
-                            <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider select-none">
-                              <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150 transition-colors" onClick={() => handleSort('cliente')}>
+                            <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider select-none">
+                              <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200 transition-colors" onClick={() => handleSort('cliente')}>
                                 <div className="flex items-center gap-1">
                                   Razón Social
                                   {sortField === 'cliente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                                 </div>
                               </th>
-                              <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150 transition-colors" onClick={() => handleSort('establecimiento')}>
+                              <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200 transition-colors" onClick={() => handleSort('establecimiento')}>
                                 <div className="flex items-center gap-1">
                                   Establecimiento
                                   {sortField === 'establecimiento' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                                 </div>
                               </th>
-                              <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150 transition-colors" onClick={() => handleSort('documento_nombre')}>
+                              <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200 transition-colors" onClick={() => handleSort('documento_nombre')}>
                                 <div className="flex items-center gap-1">
                                   Documento / Tipo
                                   {sortField === 'documento_nombre' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                                 </div>
                               </th>
-                              <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150 transition-colors" onClick={() => handleSort('fecha')}>
+                              <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200 transition-colors" onClick={() => handleSort('fecha')}>
                                 <div className="flex items-center gap-1">
                                   Fecha
                                   {sortField === 'fecha' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                                 </div>
                               </th>
-                              <th className="px-6 py-4 text-right sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Acciones</th>
+                              <th className="px-6 py-4 text-right sticky top-0 z-10 bg-slate-50 border-b border-slate-200">Acciones</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 text-xs font-normal text-slate-700">
@@ -1742,7 +1735,7 @@ export default function LegajoPage({ params }) {
       {/* MODAL DE ALERTA GENERAL */}
       {modalAlert.show && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
             {modalAlert.type === 'warning' && (
               <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500">
                 <AlertTriangle className="h-6 w-6" />
@@ -1777,7 +1770,7 @@ export default function LegajoPage({ params }) {
       {/* MODAL DEL ÍNDICE DE CARPETAS Y SUBCARPETAS */}
       {showIndexModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xl max-w-2xl w-full animate-scale-up flex flex-col max-h-[85vh]">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xl max-w-2xl w-full animate-scale-up flex flex-col max-h-[85vh]">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100 shrink-0">
               <div className="flex items-center gap-2">
                 <HelpCircle className="h-5 w-5 text-[#468DFF]" />
@@ -1800,7 +1793,7 @@ export default function LegajoPage({ params }) {
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {LEGAJO_FOLDERS.map((folder) => (
-                  <div key={folder.id} className="border border-slate-150 rounded-xl p-3 bg-slate-50/50">
+                  <div key={folder.id} className="border border-slate-200 rounded-xl p-3 bg-slate-50/50">
                     <div className="flex items-center gap-2 font-bold text-slate-900 text-xs">
                       <FolderIconHelper name={folder.icon} className="h-4 w-4 text-[#468DFF] shrink-0" />
                       <span>{folder.name}</span>

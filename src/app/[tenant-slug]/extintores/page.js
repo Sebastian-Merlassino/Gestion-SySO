@@ -9,6 +9,13 @@ import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import { jsPDF } from 'jspdf';
 import { useToast } from '@/components/providers/ToastProvider';
+import AppPageHeader from '@/components/ui/AppPageHeader';
+import AppButton from '@/components/ui/AppButton';
+import AppInput from '@/components/ui/AppInput';
+import AppSelect from '@/components/ui/AppSelect';
+import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
+import AppCard from '@/components/ui/AppCard';
+import AppEmptyState from '@/components/ui/AppEmptyState';
 import autoTable from 'jspdf-autotable';
 import { 
   PlusCircle, 
@@ -1142,28 +1149,14 @@ export default function ExtintoresPage({ params }) {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <header className="h-16 border-b border-slate-200 flex items-center justify-between px-4 md:px-6 bg-white shrink-0 sticky top-0 z-20">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <button 
-              onClick={() => setIsMobileMenuOpen(true)} 
-              className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 md:hidden cursor-pointer shrink-0"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-            <Flame className="h-5 w-5 text-[#468DFF] shrink-0" />
-            <h1 className="font-outfit text-base md:text-lg font-bold text-slate-900 truncate leading-none">
-              Control de Extintores
-            </h1>
-          </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <span className="text-xs font-semibold text-slate-500 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-150 hidden sm:inline-block">
-              {tenant?.name || 'Cargando...'}
-            </span>
-            <span className={`px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider ${(!profile || profile.role === 'cliente') ? 'hidden' : ''}`} suppressHydrationWarning>
-              {tenant?.plan_id ? (tenant.plan_id.toLowerCase() === 'libre' ? 'Plan Libre' : tenant.plan_id.toLowerCase().startsWith('standard') ? 'Plan Standard' : tenant.plan_id.toLowerCase().startsWith('basic') ? 'Plan Basic' : `Plan ${tenant.plan_id}`) : 'Plan Pro'}
-            </span>
-          </div>
-        </header>
+        <AppPageHeader
+          title="Control de Extintores"
+          icon={Flame}
+          tenantName={tenant?.name || 'Cargando...'}
+          planId={tenant?.plan_id}
+          showPlanBadge={profile && profile.role !== 'cliente'}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+        />
 
         {loading ? (
           <div className="flex-1 flex items-center justify-center p-8">
@@ -1177,8 +1170,8 @@ export default function ExtintoresPage({ params }) {
             
             {isFormOpen ? (
               // FORMULARIO DE ALTA Y EDICIÓN INLINE
-              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
-                <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-150 flex items-center justify-between shrink-0">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
+                <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
                     <button 
                       onClick={handleExitForm}
@@ -1415,7 +1408,7 @@ export default function ExtintoresPage({ params }) {
                         { id: 6, label: 'Cilindro', value: cilindro, setter: setCilindro, options: CHECK_OPTIONS },
                         { id: 7, label: 'Señalización', value: senalizacion, setter: setSenalizacion, options: CHECK_OPTIONS },
                       ].map((item) => (
-                        <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-150 bg-white">
+                        <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-white">
                           <div className="flex gap-2 items-start">
                             <span className="font-mono text-xs font-bold text-slate-400 mt-0.5">{item.id}.</span>
                             <span className="text-xs font-bold text-slate-700 leading-normal">{item.label}</span>
@@ -1590,7 +1583,7 @@ export default function ExtintoresPage({ params }) {
               <div className="space-y-6 flex-1 flex flex-col min-h-0">
                 
                 {/* Panel de Filtros y Búsqueda */}
-                <div className="bg-white border border-slate-150 rounded-2xl p-3 shadow-sm space-y-3 shrink-0">
+                <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm space-y-3 shrink-0">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
                     {/* Espaciador para empujar el buscador y botón a la derecha en desktop */}
                     <div className="hidden md:block flex-1"></div>
@@ -1762,40 +1755,40 @@ export default function ExtintoresPage({ params }) {
                 </div>
 
                 {/* Listado / Tabla */}
-                <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden flex flex-col transition-all duration-300 ease-in-out" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
+                <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col transition-all duration-300 ease-in-out" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
                   <div className="overflow-auto flex-grow">
                     <table className="w-full text-left border-collapse min-w-[850px]">
                       <thead>
-                        <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                          <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 py-4 px-6 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('cliente')}>
+                        <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                          <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 py-4 px-6 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('cliente')}>
                             Cliente / Establecimiento
                             {sortField === 'cliente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                           </th>
-                          <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 py-4 px-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('area_sector')}>
+                          <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 py-4 px-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('area_sector')}>
                             Sector
                             {sortField === 'area_sector' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                           </th>
-                          <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 py-4 px-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('n_puesto')}>
+                          <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 py-4 px-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('n_puesto')}>
                             Puesto / N° de extintor
                             {sortField === 'n_puesto' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                           </th>
-                          <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 py-4 px-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('tipo')}>
+                          <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 py-4 px-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('tipo')}>
                             Tipo / Capacidad
                             {sortField === 'tipo' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                           </th>
-                          <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 py-4 px-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('venc_recarga')}>
+                          <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 py-4 px-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('venc_recarga')}>
                             Venc. Recarga
                             {sortField === 'venc_recarga' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                           </th>
-                          <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 py-4 px-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('venc_ph')}>
+                          <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 py-4 px-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('venc_ph')}>
                             Venc. P.H.
                             {sortField === 'venc_ph' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                           </th>
-                          <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 py-4 px-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('estado')}>
+                          <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 py-4 px-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('estado')}>
                             Estado
                             {sortField === 'estado' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                           </th>
-                          {(canEditar || canEliminar || profile?.role === 'cliente') && <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 py-4 px-6 text-right">Acciones</th>}
+                          {(canEditar || canEliminar || profile?.role === 'cliente') && <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 py-4 px-6 text-right">Acciones</th>}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-sm">
@@ -1936,7 +1929,7 @@ export default function ExtintoresPage({ params }) {
       {/* Alertas y Confirmaciones */}
       {modalAlert.show && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
             <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500">
               <AlertTriangle className="h-6 w-6" />
             </div>

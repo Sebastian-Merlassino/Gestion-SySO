@@ -7,6 +7,13 @@ import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import { useToast } from '@/components/providers/ToastProvider';
+import AppPageHeader from '@/components/ui/AppPageHeader';
+import AppButton from '@/components/ui/AppButton';
+import AppInput from '@/components/ui/AppInput';
+import AppSelect from '@/components/ui/AppSelect';
+import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
+import AppCard from '@/components/ui/AppCard';
+import AppEmptyState from '@/components/ui/AppEmptyState';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
@@ -1739,28 +1746,14 @@ export default function ControlElectricoPage({ params }) {
       <main className="flex-grow flex flex-col min-w-0 overflow-y-auto">
         
         {/* HEADER */}
-        <header className="h-16 border-b border-slate-200 flex items-center justify-between px-4 md:px-6 bg-white shrink-0 sticky top-0 z-20">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <button
-              onClick={() => setIsMobileMenuOpen(true)}
-              className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 md:hidden cursor-pointer shrink-0"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-            <Zap className="h-5 w-5 text-[#468DFF] shrink-0" />
-            <h1 className="font-outfit text-base md:text-lg font-bold text-slate-900 truncate leading-none">
-              Control Visual de Instalaciones Eléctricas
-            </h1>
-          </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <span className="text-xs font-semibold text-slate-500 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-150 hidden sm:inline-block">
-              {tenant?.name || 'Gestión SySO'}
-            </span>
-            <span className="px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider" suppressHydrationWarning>
-              {tenant?.plan_id ? (tenant.plan_id.toLowerCase() === 'libre' ? 'Plan Libre' : tenant.plan_id.toLowerCase().startsWith('standard') ? 'Plan Standard' : tenant.plan_id.toLowerCase().startsWith('basic') ? 'Plan Basic' : `Plan ${tenant.plan_id}`) : 'Plan Libre'}
-            </span>
-          </div>
-        </header>
+        <AppPageHeader
+          title="Control Visual de Instalaciones Eléctricas"
+          icon={Zap}
+          tenantName={tenant?.name || 'Cargando...'}
+          planId={tenant?.plan_id}
+          showPlanBadge={profile && profile.role !== 'cliente'}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+        />
 
         {loading ? (
           <div className="flex-grow flex items-center justify-center p-8">
@@ -1774,10 +1767,10 @@ export default function ControlElectricoPage({ params }) {
             
             {/* SI FORMULARIO ESTÁ ABIERTO */}
             {isFormOpen ? (
-              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
                 
                 {/* Cabecera del formulario */}
-                <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-150 flex items-center justify-between shrink-0">
+                <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
                     <button 
                       type="button" 
@@ -1856,7 +1849,7 @@ export default function ControlElectricoPage({ params }) {
                           value={derivedCuit}
                           readOnly
                           placeholder="CUIT automático"
-                          className="w-full border border-slate-150 rounded-xl px-3.5 py-2 text-sm bg-slate-100 text-slate-500 outline-none"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm bg-slate-100 text-slate-500 outline-none"
                         />
                       </div>
 
@@ -1868,7 +1861,7 @@ export default function ControlElectricoPage({ params }) {
                           value={derivedDireccion}
                           readOnly
                           placeholder="Dirección automática"
-                          className="w-full border border-slate-150 rounded-xl px-3.5 py-2 text-sm bg-slate-100 text-slate-500 outline-none truncate"
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm bg-slate-100 text-slate-500 outline-none truncate"
                         />
                       </div>
 
@@ -1919,7 +1912,7 @@ export default function ControlElectricoPage({ params }) {
                     
                     <div className="space-y-3.5">
                       {formItems.map((item) => (
-                        <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-150 bg-white">
+                        <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-white">
                           <div className="flex gap-2 items-start">
                             <span className="font-mono text-xs font-bold text-slate-400 mt-0.5">{item.id}.</span>
                             <span className="text-xs font-bold text-slate-700 leading-normal">{item.text}</span>
@@ -2210,7 +2203,7 @@ export default function ControlElectricoPage({ params }) {
               <div className="space-y-6 flex-grow flex flex-col min-h-0">
                 
                 {/* PANEL DE FILTROS (SySO Compact Layout) */}
-                <div className="bg-white border border-slate-150 rounded-2xl p-3 shadow-sm space-y-3 shrink-0">
+                <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm space-y-3 shrink-0">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
                     {/* Espaciador para empujar el buscador a la derecha en desktop */}
                     <div className="hidden md:block flex-1"></div>
@@ -2314,7 +2307,7 @@ export default function ControlElectricoPage({ params }) {
 
                 {/* CONTENEDOR DE TABLA (SySO Compact Layout) */}
                 <div 
-                  className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden flex flex-col flex-1 min-h-0 transition-all duration-300 ease-in-out"
+                  className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col flex-1 min-h-0 transition-all duration-300 ease-in-out"
                   style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}
                 >
                   <div className="overflow-auto flex-grow scrollbar-thin">
@@ -2335,7 +2328,7 @@ export default function ControlElectricoPage({ params }) {
                     ) : (
                       <table className="w-full border-collapse text-left text-xs min-w-[850px]">
                         <thead>
-                          <tr className="bg-slate-50 border-b border-slate-150 text-[10px] font-bold text-slate-400 uppercase tracking-wider sticky top-0 z-10">
+                          <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wider sticky top-0 z-10">
                             <th onClick={() => toggleSort('empresa')} className="px-6 py-4 cursor-pointer select-none">
                               Cliente / Razón Social {sortField === 'empresa' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
                             </th>
@@ -2512,7 +2505,7 @@ export default function ControlElectricoPage({ params }) {
       {isMailModalOpen && mailTargetControl && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div onClick={() => setIsMailModalOpen(false)} className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
-          <div className="bg-white rounded-2xl border border-slate-150 p-6 max-w-md w-full z-10 shadow-2xl relative space-y-4 animate-fade-in">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 max-w-md w-full z-10 shadow-2xl relative space-y-4 animate-fade-in">
             
             <div className="flex justify-between items-center">
               <h4 className="font-outfit text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
@@ -2601,7 +2594,7 @@ export default function ControlElectricoPage({ params }) {
       {/* MODAL DIALOG PREGUNTA/ALERTA */}
       {modalAlert.show && (
         <div className="fixed inset-0 z-55 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
             <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500 animate-pulse">
               <AlertTriangle className="h-6 w-6" />
             </div>

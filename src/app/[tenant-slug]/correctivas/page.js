@@ -8,6 +8,14 @@ import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import { useToast } from '@/components/providers/ToastProvider';
+import AppPageHeader from '@/components/ui/AppPageHeader';
+import AppButton from '@/components/ui/AppButton';
+import AppInput from '@/components/ui/AppInput';
+import AppSelect from '@/components/ui/AppSelect';
+import AppTextarea from '@/components/ui/AppTextarea';
+import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
+import AppCard from '@/components/ui/AppCard';
+import AppEmptyState from '@/components/ui/AppEmptyState';
 import AITextHelper from '@/components/ui/AITextHelper';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -1253,28 +1261,14 @@ export default function AccionesCorrectivasPage({ params }) {
 
       {/* Main Container */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <header className="h-16 border-b border-slate-200 flex items-center justify-between px-4 md:px-6 bg-white shrink-0 sticky top-0 z-20">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <button 
-              onClick={() => setIsMobileMenuOpen(true)} 
-              className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 md:hidden cursor-pointer shrink-0"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-            <ClipboardList className="h-5 w-5 text-[#468DFF] shrink-0" />
-            <h1 className="font-outfit text-base md:text-lg font-bold text-slate-900 truncate leading-none">
-              Seguimiento de Acciones Correctivas
-            </h1>
-          </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <span className="text-xs font-semibold text-slate-500 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-150 hidden sm:inline-block">
-              {tenant?.name || 'Cargando...'}
-            </span>
-            <span className={`px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider ${(!profile || profile.role === 'cliente') ? 'hidden' : ''}`} suppressHydrationWarning>
-              {tenant?.plan_id ? (tenant.plan_id.toLowerCase() === 'libre' ? 'Plan Libre' : tenant.plan_id.toLowerCase().startsWith('standard') ? 'Plan Standard' : tenant.plan_id.toLowerCase().startsWith('basic') ? 'Plan Basic' : `Plan ${tenant.plan_id}`) : 'Plan Pro'}
-            </span>
-          </div>
-        </header>
+        <AppPageHeader
+          title="Seguimiento de Acciones Correctivas"
+          icon={ClipboardList}
+          tenantName={tenant?.name || 'Cargando...'}
+          planId={tenant?.plan_id}
+          showPlanBadge={profile && profile.role !== 'cliente'}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+        />
 
         {loading ? (
           <div className="flex-1 flex items-center justify-center p-8">
@@ -1288,8 +1282,8 @@ export default function AccionesCorrectivasPage({ params }) {
             
             {/* VISTA FORMULARIO O TABLA */}
             {isFormOpen ? (
-              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
-                <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-150 flex items-center justify-between shrink-0">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
+                <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
                     <button 
                       type="button"
@@ -1820,7 +1814,7 @@ export default function AccionesCorrectivasPage({ params }) {
               <div className="space-y-6 flex-1 flex flex-col min-h-0">
                 
                 {/* Panel de Filtros y Búsqueda */}
-                <div className="bg-white border border-slate-150 rounded-2xl p-3 shadow-sm space-y-3 shrink-0">
+                <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm space-y-3 shrink-0">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
                     {/* Espaciador para empujar el buscador y botón a la derecha en desktop */}
                     <div className="hidden md:block flex-1"></div>
@@ -2000,7 +1994,7 @@ export default function AccionesCorrectivasPage({ params }) {
                 </div>
 
                 {/* Listado / Tabla */}
-                <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
                   {sortedAcciones.length === 0 ? (
                     <div className="flex-grow flex flex-col items-center justify-center p-8 text-center gap-3 h-full">
                       <AlertCircle className="h-10 w-10 text-slate-300" />
@@ -2027,56 +2021,56 @@ export default function AccionesCorrectivasPage({ params }) {
                     <div className="overflow-auto flex-grow">
                       <table className="w-full text-left border-collapse min-w-[850px]">
                         <thead>
-                          <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('cliente')}>
+                          <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('cliente')}>
                               <div className="flex items-center gap-1">
                                 Cliente / Establecimiento
                                 {sortField === 'cliente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                               </div>
                             </th>
-                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('fuente')}>
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('fuente')}>
                               <div className="flex items-center gap-1">
                                 Fuente / Fecha
                                 {sortField === 'fuente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                               </div>
                             </th>
-                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('hallazgo')}>
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('hallazgo')}>
                               <div className="flex items-center gap-1">
                                 Hallazgo / Tipo
                                 {sortField === 'hallazgo' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                               </div>
                             </th>
-                            <th className="px-6 py-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('nivel_riesgo')}>
+                            <th className="px-6 py-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('nivel_riesgo')}>
                               <div className="flex items-center justify-center gap-1">
                                 Nivel Riesgo
                                 {sortField === 'nivel_riesgo' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                               </div>
                             </th>
-                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('responsable')}>
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('responsable')}>
                               <div className="flex items-center gap-1">
                                 Responsable
                                 {sortField === 'responsable' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                               </div>
                             </th>
-                            <th className="px-6 py-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('fecha_planificada')}>
+                            <th className="px-6 py-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('fecha_planificada')}>
                               <div className="flex items-center justify-center gap-1">
                                 Fecha Planificada
                                 {sortField === 'fecha_planificada' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                               </div>
                             </th>
-                            <th className="px-6 py-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('fecha_implementacion')}>
+                            <th className="px-6 py-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('fecha_implementacion')}>
                               <div className="flex items-center justify-center gap-1">
                                 Fecha de Realización / Implementación
                                 {sortField === 'fecha_implementacion' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                               </div>
                             </th>
-                            <th className="px-6 py-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('estado')}>
+                            <th className="px-6 py-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('estado')}>
                               <div className="flex items-center justify-center gap-1">
                                 Estado
                                 {sortField === 'estado' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                               </div>
                             </th>
-                             {(canEditar || canEliminar || profile?.role === 'cliente') && <th className="px-6 py-4 text-right sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Acciones</th>}
+                             {(canEditar || canEliminar || profile?.role === 'cliente') && <th className="px-6 py-4 text-right sticky top-0 z-10 bg-slate-50 border-b border-slate-200">Acciones</th>}
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-xs font-normal text-slate-700">
@@ -2200,7 +2194,7 @@ export default function AccionesCorrectivasPage({ params }) {
       {/* MODAL DE CONFIRMACIÓN */}
       {modalAlert.show && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
             <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500">
               <AlertTriangle className="h-6 w-6" />
             </div>
@@ -2233,9 +2227,9 @@ export default function AccionesCorrectivasPage({ params }) {
       {/* Modal Informativo Nivel de Riesgo (Método BS 8800) */}
       {showRiskMatrix && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-150 shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-scale-up">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-scale-up">
             {/* Cabecera */}
-            <div className="px-6 py-4 bg-slate-50 border-b border-slate-150 flex items-center justify-between shrink-0">
+            <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
               <h3 className="font-outfit text-base font-bold text-slate-900">
                 Nivel de Riesgo y Acciones <span className="font-normal text-slate-500 text-sm">(Método BS 8800)</span>
               </h3>
@@ -2259,19 +2253,19 @@ export default function AccionesCorrectivasPage({ params }) {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr className="border-b border-slate-150">
+                    <tr className="border-b border-slate-200">
                       <td className="p-3 font-bold text-white bg-[#00B050] border-r border-slate-200 text-center whitespace-nowrap">Riesgo trivial</td>
                       <td className="p-3 text-slate-600 bg-white">No se requiere ninguna acción y no es necesario guardar registros documentados.</td>
                     </tr>
-                    <tr className="border-b border-slate-150">
+                    <tr className="border-b border-slate-200">
                       <td className="p-3 font-bold text-slate-900 bg-[#00FF00] border-r border-slate-200 text-center whitespace-nowrap">Riesgo tolerable</td>
                       <td className="p-3 text-slate-600 bg-white">No hacen falta controles adicionales. Puede prestarse mayor consideración a una mejor costo/beneficio, o mejora que no imponga una carga de costos adicionales. Se requiere monitoreo para asegurar que se mantengan los controles.</td>
                     </tr>
-                    <tr className="border-b border-slate-150">
+                    <tr className="border-b border-slate-200">
                       <td className="p-3 font-bold text-slate-900 bg-[#FFFF00] border-r border-slate-200 text-center whitespace-nowrap">Riesgo moderado</td>
                       <td className="p-3 text-slate-600 bg-white">Deben tomarse los recaudos para reducir el riesgo, pero los costos de prevención deben medirse y restringirse cuidadosamente. Deben implementarse medidas de reducción de riesgo dentro de un lapso definido. Cuando el riesgo moderado está asociado con consecuencias de daño extremo, pueden resultar necesarias ulteriores evaluaciones para establecer con más precisión la probabilidad de daño como base para determinar la necesidad de tomar mejores medidas de control.</td>
                     </tr>
-                    <tr className="border-b border-slate-150">
+                    <tr className="border-b border-slate-200">
                       <td className="p-3 font-bold text-white bg-[#FF9900] border-r border-slate-200 text-center whitespace-nowrap">Riesgo sustancial</td>
                       <td className="p-3 text-slate-600 bg-white">No debe comenzar el trabajo hasta que se haya reducido el riesgo. Puede ser necesario asignar recursos considerables para reducir el riesgo. Cuando éste involucra trabajo en proceso, debe tomarse acción urgente.</td>
                     </tr>
@@ -2285,7 +2279,7 @@ export default function AccionesCorrectivasPage({ params }) {
             </div>
             
             {/* Pie de página */}
-            <div className="px-6 py-3 bg-slate-50 border-t border-slate-150 flex justify-end shrink-0">
+            <div className="px-6 py-3 bg-slate-50 border-t border-slate-200 flex justify-end shrink-0">
               <button
                 type="button"
                 onClick={() => setShowRiskMatrix(false)}

@@ -9,6 +9,13 @@ import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
 import AITextHelper from '@/components/ui/AITextHelper';
 import { useToast } from '@/components/providers/ToastProvider';
+import AppPageHeader from '@/components/ui/AppPageHeader';
+import AppButton from '@/components/ui/AppButton';
+import AppInput from '@/components/ui/AppInput';
+import AppSelect from '@/components/ui/AppSelect';
+import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
+import AppCard from '@/components/ui/AppCard';
+import AppEmptyState from '@/components/ui/AppEmptyState';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import {
@@ -1316,28 +1323,14 @@ export default function ProgramaGestion({ params }) {
 
       {/* Main Container */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <header className="h-16 border-b border-slate-200 flex items-center justify-between px-4 md:px-6 bg-white shrink-0 sticky top-0 z-20">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <button
-              onClick={() => setIsMobileMenuOpen(true)}
-              className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 md:hidden cursor-pointer shrink-0"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-            <Calendar className="h-5 w-5 text-[#468DFF] shrink-0" />
-            <h1 className="font-outfit text-base md:text-lg font-bold text-slate-900 truncate leading-none">
-              Programa de Gestión Anual
-            </h1>
-          </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <span className="text-xs font-semibold text-slate-500 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-150 hidden sm:inline-block">
-              {tenant?.name || 'Cargando...'}
-            </span>
-            <span className={`px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider ${(!profile || profile.role === 'cliente') ? 'hidden' : ''}`} suppressHydrationWarning>
-              {tenant?.plan_id ? (tenant.plan_id.toLowerCase() === 'libre' ? 'Plan Libre' : tenant.plan_id.toLowerCase().startsWith('standard') ? 'Plan Standard' : tenant.plan_id.toLowerCase().startsWith('basic') ? 'Plan Basic' : `Plan ${tenant.plan_id}`) : 'Plan Pro'}
-            </span>
-          </div>
-        </header>
+        <AppPageHeader
+          title="Programa de Gestión Anual"
+          icon={Calendar}
+          tenantName={tenant?.name || 'Cargando...'}
+          planId={tenant?.plan_id}
+          showPlanBadge={profile && profile.role !== 'cliente'}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+        />
 
         {loading ? (
           <div className="flex-1 flex items-center justify-center p-8">
@@ -1350,8 +1343,8 @@ export default function ProgramaGestion({ params }) {
           <div className="max-w-[95%] mx-auto w-full py-8 px-4 md:px-0 flex-1 flex flex-col min-h-0">
             {showForm ? (
               // FORMULARIO DE ALTA Y EDICIÓN INLINE
-              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
-                <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-150 flex items-center justify-between shrink-0">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
+                <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
                     <button
                       type="button"
@@ -1456,7 +1449,7 @@ export default function ProgramaGestion({ params }) {
                           onChange={(e) => setMarcoLegal(e.target.value)}
                           className={
                             catalogoId && catalogoId !== '__custom__'
-                              ? "w-full border border-slate-150 rounded-xl px-3.5 py-2 text-sm bg-slate-100 text-slate-500 outline-none"
+                              ? "w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm bg-slate-100 text-slate-500 outline-none"
                               : "w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
                           }
                           readOnly={!!(catalogoId && catalogoId !== '__custom__')}
@@ -1746,7 +1739,7 @@ export default function ProgramaGestion({ params }) {
             ) : (
               <div className="space-y-6 flex-1 flex flex-col min-h-0">
                 {/* Panel de Filtros y Búsqueda */}
-                <div className="bg-white border border-slate-150 rounded-2xl p-3 shadow-sm space-y-3 shrink-0">
+                <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm space-y-3 shrink-0">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
                     
                     {/* Espaciador para empujar el buscador y botón a la derecha en desktop */}
@@ -1933,49 +1926,49 @@ export default function ProgramaGestion({ params }) {
                     )}
                   </div>
                 </div>
-                  <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden flex flex-col" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
+                  <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
                     <div className="overflow-auto flex-grow">
                       <table className="w-full border-collapse text-left min-w-[850px]">
                         <thead className="sticky top-0 z-10 bg-slate-50">
-                          <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                            <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('cliente')}>
+                          <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                            <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('cliente')}>
                               <div className="flex items-center gap-1">
                                 Cliente / Establecimiento
                                 {sortField === 'cliente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                               </div>
                             </th>
-                            <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('actividad')}>
+                            <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('actividad')}>
                               <div className="flex items-center gap-1">
                                 Actividad / Legal
                                 {sortField === 'actividad' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                               </div>
                             </th>
-                            <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('responsable')}>
+                            <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('responsable')}>
                               <div className="flex items-center gap-1">
                                 Responsable
                                 {sortField === 'responsable' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                               </div>
                             </th>
-                            <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('fecha_planificada')}>
+                            <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('fecha_planificada')}>
                               <div className="flex items-center gap-1">
                                 F. Planificada
                                 {sortField === 'fecha_planificada' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                               </div>
                             </th>
-                            <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('fecha_realizacion')}>
+                            <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('fecha_realizacion')}>
                               <div className="flex items-center gap-1">
                                 F. Realización
                                 {sortField === 'fecha_realizacion' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                               </div>
                             </th>
-                            <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[15%]" onClick={() => handleSort('progreso')}>
+                            <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[15%]" onClick={() => handleSort('progreso')}>
                               <div className="flex items-center gap-1">
                                 Progreso / Estado
                                 {sortField === 'progreso' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                               </div>
                             </th>
-                            <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 px-6 py-4 text-center">Doc</th>
-                            {(canEditar || canEliminar) && <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-150 px-6 py-4 text-right">Acciones</th>}
+                            <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 px-6 py-4 text-center">Doc</th>
+                            {(canEditar || canEliminar) && <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 px-6 py-4 text-right">Acciones</th>}
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-xs">
@@ -2070,7 +2063,7 @@ export default function ProgramaGestion({ params }) {
                                         }`}>
                                         {statusInfo.estadoText} ({act.progreso}%)
                                       </span>
-                                      <div className="w-16 h-1.5 bg-slate-100 border border-slate-150 rounded-full overflow-hidden">
+                                      <div className="w-16 h-1.5 bg-slate-100 border border-slate-200 rounded-full overflow-hidden">
                                         <div className="bg-[#468DFF] h-full" style={{ width: `${act.progreso}%` }} />
                                       </div>
                                     </div>
@@ -2150,7 +2143,7 @@ export default function ProgramaGestion({ params }) {
         {/* MODAL DE CONFIRMACIÓN */}
         {confirmModal.show && (
           <div className="fixed inset-0 z-55 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-            <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
               <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500">
                 <AlertTriangle className="h-6 w-6" />
               </div>

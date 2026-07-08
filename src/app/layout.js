@@ -18,7 +18,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="es" className="dark scroll-smooth">
+    <html lang="es" className="scroll-smooth">
       <head>
         {/* Enlace a Google Fonts para Outfit e Inter */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -26,7 +26,7 @@ export default function RootLayout({ children }) {
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
-      <body className="min-h-screen bg-slate-950 font-sans text-slate-100 antialiased selection:bg-slate-500/30">
+      <body className="min-h-screen bg-background font-sans text-foreground antialiased selection:bg-slate-500/30">
         <Providers>
           <div className="relative flex min-h-screen flex-col">
             {children}

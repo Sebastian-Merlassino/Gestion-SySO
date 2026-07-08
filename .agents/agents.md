@@ -368,6 +368,8 @@ Respetar siempre:
 - Toda generación o descarga de reporte PDF en cualquier sección (Visitas, Avisos de Riesgo, Control Eléctrico, etc.) debe usar la alerta informativa estándar "Generando reporte PDF..." de tipo info.
 - Todo campo de carga de texto de largo formato (observaciones generales, recomendaciones preventivas, causa raíz, etc.) debe integrar de forma obligatoria el estándar `SySO-AI-Voice-Helper` importando el componente `<AITextHelper />` para habilitar el dictado por voz, pulido de IA (Gemini) y limpieza dinámica.
 - Consumí de forma obligatoria el `ToastProvider` global mediante `useToast()` y los diálogos Radix unificados (`AppConfirmDialog`, `AppDestructiveConfirmDialog`, `AppUnsavedChangesDialog`) para notificaciones y alertas, siguiendo estrictamente el estándar de diseño `docs/design/ALERTS_AND_FEEDBACK_STANDARD.md`.
+- Todo elemento interactivo y de maquetación (botones, inputs, selectores, áreas de texto, cabeceras, tarjetas y estados vacíos) debe ser implementado obligatoriamente importando y consumiendo la biblioteca de componentes unificados en `src/components/ui/` (`AppButton`, `AppInput`, `AppSelect`, `AppTextarea`, `AppPageHeader`, `AppCard`, `AppEmptyState`). Queda estrictamente prohibido utilizar etiquetas HTML crudas con estilos Tailwind inline para estos componentes base.
+
 
 ## Archivos y carpetas objetivo
 

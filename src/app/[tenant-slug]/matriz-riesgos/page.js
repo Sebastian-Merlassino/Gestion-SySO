@@ -9,6 +9,12 @@ import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useToast } from '@/components/providers/ToastProvider';
+import AppPageHeader from '@/components/ui/AppPageHeader';
+import AppButton from '@/components/ui/AppButton';
+import AppInput from '@/components/ui/AppInput';
+import AppSelect from '@/components/ui/AppSelect';
+import AppCard from '@/components/ui/AppCard';
+import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import { 
   PlusCircle, 
   Search, 
@@ -1391,28 +1397,14 @@ export default function MatrizRiesgosPage({ params }) {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <header className="h-16 border-b border-slate-200 flex items-center justify-between px-4 md:px-6 bg-white shrink-0 sticky top-0 z-20">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <button 
-              onClick={() => setIsMobileMenuOpen(true)} 
-              className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 md:hidden cursor-pointer shrink-0"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-            <ClipboardList className="h-5 w-5 text-[#468DFF] shrink-0" />
-            <h1 className="font-outfit text-base md:text-lg font-bold text-slate-900 truncate leading-none">
-              Matriz de identificación de peligros y valoración de riesgos
-            </h1>
-          </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <span className="text-xs font-semibold text-slate-500 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-150 hidden sm:inline-block">
-              {tenant?.name || 'Cargando...'}
-            </span>
-            <span className={`px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider ${(!profile || profile.role === 'cliente') ? 'hidden' : ''}`} suppressHydrationWarning>
-              {tenant?.plan_id ? (tenant.plan_id.toLowerCase() === 'libre' ? 'Plan Libre' : tenant.plan_id.toLowerCase().startsWith('standard') ? 'Plan Standard' : tenant.plan_id.toLowerCase().startsWith('basic') ? 'Plan Basic' : `Plan ${tenant.plan_id}`) : 'Plan Pro'}
-            </span>
-          </div>
-        </header>
+        <AppPageHeader
+          title="Matriz de identificación de peligros y valoración de riesgos"
+          icon={ClipboardList}
+          tenantName={tenant?.name || 'Cargando...'}
+          planId={tenant?.plan_id}
+          showPlanBadge={profile && profile.role !== 'cliente'}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+        />
 
         {loading ? (
           <div className="flex-1 flex items-center justify-center p-8">
@@ -1426,8 +1418,8 @@ export default function MatrizRiesgosPage({ params }) {
             
             {isFormOpen ? (
               // FORMULARIO DE ALTA O EDICIÓN INLINE
-              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
-                <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-150 flex items-center justify-between shrink-0">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
+                <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
                     <button 
                       type="button"
@@ -1500,7 +1492,7 @@ export default function MatrizRiesgosPage({ params }) {
                     {isBulkMode ? (
                       // CARGA BULK / MASIVA (SECTORES -> PUESTOS)
                       <div className="space-y-6">
-                        <div className="flex items-center justify-between border-b border-slate-150 pb-2">
+                        <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                           <h3 className="font-outfit text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
                             <PlusCircle className="h-4 w-4 text-[#468DFF]" />
                             Sectores y Puestos de Trabajo
@@ -1573,7 +1565,7 @@ export default function MatrizRiesgosPage({ params }) {
                                 <button
                                   type="button"
                                   onClick={() => handleRemoveBulkSector(sec.id)}
-                                  className="p-1 text-red-500 hover:bg-red-55 rounded transition-colors border border-red-200 flex items-center justify-center cursor-pointer"
+                                  className="p-1 text-red-500 hover:bg-red-50 rounded transition-colors border border-red-200 flex items-center justify-center cursor-pointer"
                                   title="Eliminar Sector"
                                 >
                                   <Trash2 className="h-3.5 w-3.5" />
@@ -1647,7 +1639,7 @@ export default function MatrizRiesgosPage({ params }) {
                                     const predefPuestos = sectorEstObj?.puestos || [];
 
                                     return (
-                                      <div key={pst.id} className="border border-slate-150 rounded-xl bg-white p-4 space-y-4">
+                                      <div key={pst.id} className="border border-slate-200 rounded-xl bg-white p-4 space-y-4">
                                         {/* Cabecera del Puesto */}
                                         <div className="flex items-center justify-between gap-4 pb-2 border-b border-slate-100">
                                           <div className="flex items-center gap-2">
@@ -1698,7 +1690,7 @@ export default function MatrizRiesgosPage({ params }) {
                                             <button
                                               type="button"
                                               onClick={() => handleRemoveBulkPuesto(sec.id, pst.id)}
-                                              className="text-[9px] text-red-500 hover:text-red-700 bg-red-55 hover:bg-red-100 font-bold px-2 py-0.5 rounded-md border border-red-200 transition-all cursor-pointer flex items-center gap-0.5 shadow-sm"
+                                              className="text-[9px] text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 font-bold px-2 py-0.5 rounded-md border border-red-200 transition-all cursor-pointer flex items-center gap-0.5 shadow-sm"
                                             >
                                               <Trash2 className="h-2.5 w-2.5" /> Quitar
                                             </button>
@@ -2481,7 +2473,7 @@ export default function MatrizRiesgosPage({ params }) {
                             4. Valoración Inicial del Riesgo
                           </h3>
 
-                          <div className="grid md:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-150">
+                          <div className="grid md:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
                             <div className="flex flex-col gap-1.5">
                               <label className="text-xs font-bold text-slate-600 flex items-center gap-1">
                                 Probabilidad Inicial *
@@ -2743,7 +2735,7 @@ export default function MatrizRiesgosPage({ params }) {
                           </div>
 
                           {singlePostProbabilidad && singlePostGravedad && (
-                            <div className="flex items-center justify-end gap-3 bg-slate-50 p-4 rounded-xl border border-slate-150">
+                            <div className="flex items-center justify-end gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
                               <div className="flex items-center gap-1.5">
                                 <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Nivel de Riesgo Residual:</span>
                                 <button type="button" onClick={() => setHelpModal({ show: true, type: 'nivelRiesgo' })} className="text-slate-400 hover:text-[#468DFF] cursor-pointer focus:outline-none"><HelpCircle className="h-3.5 w-3.5" /></button>
@@ -2834,7 +2826,7 @@ export default function MatrizRiesgosPage({ params }) {
               <div className="space-y-6 flex-1 flex flex-col min-h-0">
                 
                 {/* Contenedor 1: Panel de Filtros y Búsqueda */}
-                <div className="bg-white border border-slate-150 rounded-2xl p-3 shadow-sm space-y-3 shrink-0">
+                <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm space-y-3 shrink-0">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
                     <div className="hidden md:block flex-1"></div>
 
@@ -2983,7 +2975,7 @@ export default function MatrizRiesgosPage({ params }) {
                 </div>
 
                 {/* Contenedor 2: Tabla del Listado */}
-                <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden flex flex-col transition-all duration-300 ease-in-out" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
+                <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col transition-all duration-300 ease-in-out" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
                   {sortedMatriz.length === 0 ? (
                     <div className="flex-grow flex flex-col items-center justify-center p-8 text-center gap-3 h-full">
                       <AlertCircle className="h-10 w-10 text-slate-300" />
@@ -3004,7 +2996,7 @@ export default function MatrizRiesgosPage({ params }) {
                   ) : (
                     <div className="overflow-auto flex-grow">
                       <table className="w-full text-left text-xs border-collapse min-w-[1200px]">
-                        <thead className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider sticky top-0 z-10">
+                        <thead className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider sticky top-0 z-10">
                           <tr>
                             <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[18%]" onClick={() => handleSort('cliente')}>
                               <div className="flex items-center gap-1">
@@ -3330,19 +3322,19 @@ export default function MatrizRiesgosPage({ params }) {
                       </tr>
                     </thead>
                     <tbody>
-                      <tr className="border-b border-slate-150">
+                      <tr className="border-b border-slate-200">
                         <td className="p-3 font-bold text-white bg-[#00B050] border-r border-slate-200 text-center whitespace-nowrap">Riesgo trivial</td>
                         <td className="p-3 text-slate-600 bg-white">No se requiere ninguna acción y no es necesario guardar registros documentados.</td>
                       </tr>
-                      <tr className="border-b border-slate-150">
+                      <tr className="border-b border-slate-200">
                         <td className="p-3 font-bold text-slate-900 bg-[#00FF00] border-r border-slate-200 text-center whitespace-nowrap">Riesgo tolerable</td>
                         <td className="p-3 text-slate-600 bg-white">No hacen falta controles adicionales. Puede prestarse mayor consideración a una mejor costo/beneficio, o mejora que no imponga una carga de costos adicionales. Se requiere monitoreo para asegurar que se mantengan los controles.</td>
                       </tr>
-                      <tr className="border-b border-slate-150">
+                      <tr className="border-b border-slate-200">
                         <td className="p-3 font-bold text-slate-900 bg-[#FFFF00] border-r border-slate-200 text-center whitespace-nowrap">Riesgo moderado</td>
                         <td className="p-3 text-slate-600 bg-white">Deben tomarse los recaudos para reducir el riesgo, pero los costos de prevención deben medirse y restringirse cuidadosamente. Deben implementarse medidas de reducción de riesgo dentro de un lapso definido. Cuando el riesgo moderado está asociado con consecuencias de daño extremo, pueden resultar necesarias ulteriores evaluaciones para establecer con más precisión la probabilidad de daño como base para determinar la necesidad de tomar mejores medidas de control.</td>
                       </tr>
-                      <tr className="border-b border-slate-150">
+                      <tr className="border-b border-slate-200">
                         <td className="p-3 font-bold text-white bg-[#FF9900] border-r border-slate-200 text-center whitespace-nowrap">Riesgo sustancial</td>
                         <td className="p-3 text-slate-600 bg-white">No debe comenzar el trabajo hasta que se haya reducido el riesgo. Puede ser necesario asignar recursos considerables para reducir el riesgo. Cuando éste involucra trabajo en proceso, debe tomarse acción urgente.</td>
                       </tr>
@@ -3372,7 +3364,7 @@ export default function MatrizRiesgosPage({ params }) {
       {/* CONFIRMATION / ALERT MODAL */}
       {modalAlert.show && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
             <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500">
               <AlertTriangle className="h-6 w-6" />
             </div>

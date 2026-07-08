@@ -6,6 +6,12 @@ import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import { supabase, fetchAllGeography } from '@/lib/supabase';
 import { useToast } from '@/components/providers/ToastProvider';
+import AppPageHeader from '@/components/ui/AppPageHeader';
+import AppButton from '@/components/ui/AppButton';
+import AppInput from '@/components/ui/AppInput';
+import AppSelect from '@/components/ui/AppSelect';
+import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
+import AppCard from '@/components/ui/AppCard';
 import { 
   Building, 
   Users, 
@@ -1450,28 +1456,14 @@ export default function EmpresasClientes({ params }) {
 
       {/* Area del Contenido Principal */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <header className="h-16 border-b border-slate-200 flex items-center justify-between px-4 md:px-6 bg-white shrink-0 sticky top-0 z-20">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <button 
-              onClick={() => setIsMobileMenuOpen(true)} 
-              className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 md:hidden cursor-pointer shrink-0"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-            <Building className="h-5 w-5 text-[#468DFF] shrink-0" />
-            <h1 className="font-outfit text-base md:text-lg font-bold text-slate-900 truncate leading-none">
-              Clientes / Empresas
-            </h1>
-          </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <span className="text-xs font-semibold text-slate-500 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-150 hidden sm:inline-block">
-              {tenant?.name || 'Cargando...'}
-            </span>
-            <span className={`px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider ${(!profile || profile.role === 'cliente') ? 'hidden' : ''}`} suppressHydrationWarning>
-              {tenant?.plan_id ? (tenant.plan_id.toLowerCase() === 'libre' ? 'Plan Libre' : tenant.plan_id.toLowerCase().startsWith('standard') ? 'Plan Standard' : tenant.plan_id.toLowerCase().startsWith('basic') ? 'Plan Basic' : `Plan ${tenant.plan_id}`) : 'Plan Pro'}
-            </span>
-          </div>
-        </header>
+        <AppPageHeader
+          title="Clientes / Empresas"
+          icon={Building}
+          tenantName={tenant?.name || 'Cargando...'}
+          planId={tenant?.plan_id}
+          showPlanBadge={profile && profile.role !== 'cliente'}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+        />
 
         <div className="max-w-[95%] mx-auto w-full py-8 px-4 md:px-0 flex-1 flex flex-col min-h-0">
           
@@ -1488,7 +1480,7 @@ export default function EmpresasClientes({ params }) {
             <div className="space-y-6 flex-1 flex flex-col min-h-0">
               
               {empresas.length === 0 ? (
-                <div className="bg-white rounded-2xl border border-slate-150 p-20 text-center shadow-sm bg-slate-50/10">
+                <div className="bg-white rounded-2xl border border-slate-200 p-20 text-center shadow-sm bg-slate-50/10">
                   <Building className="h-10 w-10 mx-auto mb-2 text-slate-350 shrink-0" />
                   <p className="font-outfit text-sm text-slate-700 font-bold">No hay clientes registrados</p>
                   <p className="text-[11px] text-slate-400 font-normal mt-1">Registra un nuevo cliente para comenzar.</p>
@@ -1504,7 +1496,7 @@ export default function EmpresasClientes({ params }) {
               ) : (
                 <>
                   {/* Toolbar y Filtros Unificados */}
-                  <div className="bg-white rounded-2xl border border-slate-150 p-3 shadow-sm space-y-3">
+                  <div className="bg-white rounded-2xl border border-slate-200 p-3 shadow-sm space-y-3">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                       {/* Espaciador para empujar el buscador y botón a la derecha en desktop */}
                       <div className="hidden md:block flex-1"></div>
@@ -1583,13 +1575,13 @@ export default function EmpresasClientes({ params }) {
                   </div>
  
                   {/* Tabla */}
-                  <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden flex-1 flex flex-col min-h-0 transition-all duration-300 ease-in-out">
+                  <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex-1 flex flex-col min-h-0 transition-all duration-300 ease-in-out">
                     <div className="overflow-auto flex-grow">
                       <table className="w-full text-left border-collapse min-w-[850px]">
                         <thead>
-                          <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider font-outfit">
+                          <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider font-outfit">
                             <th 
-                              className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[30%] sticky top-0 z-10 bg-slate-50 border-b border-slate-150"
+                              className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[30%] sticky top-0 z-10 bg-slate-50 border-b border-slate-200"
                               onClick={() => handleSort('razon_social')}
                             >
                               <div className="flex items-center gap-1">
@@ -1598,7 +1590,7 @@ export default function EmpresasClientes({ params }) {
                               </div>
                             </th>
                             <th 
-                              className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[28%] sticky top-0 z-10 bg-slate-50 border-b border-slate-150"
+                              className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[28%] sticky top-0 z-10 bg-slate-50 border-b border-slate-200"
                               onClick={() => handleSort('nombre_comercial')}
                             >
                               <div className="flex items-center gap-1">
@@ -1607,7 +1599,7 @@ export default function EmpresasClientes({ params }) {
                               </div>
                             </th>
                             <th 
-                              className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[18%] sticky top-0 z-10 bg-slate-50 border-b border-slate-150"
+                              className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[18%] sticky top-0 z-10 bg-slate-50 border-b border-slate-200"
                               onClick={() => handleSort('cuit')}
                             >
                               <div className="flex items-center gap-1">
@@ -1615,8 +1607,8 @@ export default function EmpresasClientes({ params }) {
                                 {sortField === 'cuit' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                               </div>
                             </th>
-                            <th className="px-6 py-4 text-center w-[12%] sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Establecimientos</th>
-                            {(canEditar || canEliminar) && <th className="px-6 py-4 text-right w-[12%] sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Acciones</th>}
+                            <th className="px-6 py-4 text-center w-[12%] sticky top-0 z-10 bg-slate-50 border-b border-slate-200">Establecimientos</th>
+                            {(canEditar || canEliminar) && <th className="px-6 py-4 text-right w-[12%] sticky top-0 z-10 bg-slate-50 border-b border-slate-200">Acciones</th>}
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
@@ -1697,8 +1689,8 @@ export default function EmpresasClientes({ params }) {
             // ==========================================
             // VISTA: FORMULARIO DE CARGA / EDICIÓN (TABS)
             // ==========================================
-            <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
-              <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-150 flex items-center justify-between shrink-0">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
+              <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
                   <button 
                     type="button"
@@ -1723,7 +1715,7 @@ export default function EmpresasClientes({ params }) {
               <form onSubmit={handleSaveAll} className="p-6 md:p-8 space-y-6 overflow-y-auto flex-1 scrollbar-thin">
 
               {/* Encabezado Ficha */}
-              <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4">
+              <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
                 <div className="flex items-start gap-4">
                   <div className="p-3 bg-blue-50 text-[#468DFF] rounded-xl shrink-0">
                     <Building className="h-6 w-6" />
@@ -1768,7 +1760,7 @@ export default function EmpresasClientes({ params }) {
                 {/* TAB 1: DATOS GENERALES Y CONTACTOS */}
                 {activeTab === 'general' && (
                   <div className="space-y-6">
-                    <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4">
+                    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
                       <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Identidad de la empresa</h4>
                       
                       <div className="grid md:grid-cols-2 gap-4">
@@ -1874,7 +1866,7 @@ export default function EmpresasClientes({ params }) {
                     </div>
 
                     {/* CONTACTOS (TELEFONOS, CORREOS, FACTURACION) */}
-                    <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-6">
+                    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
                       <div className="space-y-1">
                         <h4 className="text-sm font-bold text-slate-900">Contactos y Administración</h4>
                         <p className="text-[10px] text-slate-500">Agrega múltiples contactos para teléfonos, correos y notificaciones de cobro.</p>
@@ -1893,7 +1885,7 @@ export default function EmpresasClientes({ params }) {
                           </button>
                         </div>
                         {telefonos.map((tel, idx) => (
-                          <div key={idx} className="grid grid-cols-1 md:grid-cols-3 gap-2 items-center bg-slate-50/50 p-3 rounded-2xl border border-slate-150 shadow-sm">
+                          <div key={idx} className="grid grid-cols-1 md:grid-cols-3 gap-2 items-center bg-slate-50/50 p-3 rounded-2xl border border-slate-200 shadow-sm">
                             <input
                               type="text"
                               placeholder="Nombre y Apellido"
@@ -1953,7 +1945,7 @@ export default function EmpresasClientes({ params }) {
                           </button>
                         </div>
                         {correos.map((cor, idx) => (
-                          <div key={idx} className="grid grid-cols-1 md:grid-cols-3 gap-2 items-center bg-slate-50/50 p-3 rounded-2xl border border-slate-150 shadow-sm">
+                          <div key={idx} className="grid grid-cols-1 md:grid-cols-3 gap-2 items-center bg-slate-50/50 p-3 rounded-2xl border border-slate-200 shadow-sm">
                             <input
                               type="text"
                               placeholder="Nombre y Apellido"
@@ -2013,7 +2005,7 @@ export default function EmpresasClientes({ params }) {
                           </button>
                         </div>
                         {facturacion.map((fac, idx) => (
-                          <div key={idx} className="grid grid-cols-1 md:grid-cols-3 gap-2 items-center bg-slate-50/50 p-3 rounded-2xl border border-slate-150 shadow-sm">
+                          <div key={idx} className="grid grid-cols-1 md:grid-cols-3 gap-2 items-center bg-slate-50/50 p-3 rounded-2xl border border-slate-200 shadow-sm">
                             <input
                               type="text"
                               placeholder="Nombre y Apellido"
@@ -2068,7 +2060,7 @@ export default function EmpresasClientes({ params }) {
                 {/* TAB 3: ESTABLECIMIENTOS */}
                 {activeTab === 'establecimientos' && (
                   <div className="space-y-6">
-                    <div className="flex justify-between items-center bg-white border border-slate-150 rounded-2xl p-5 shadow-sm">
+                    <div className="flex justify-between items-center bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
                       <div>
                         <h4 className="text-sm font-bold text-slate-900">Listado de Establecimientos</h4>
                         <p className="text-[10px] text-slate-500 mt-0.5">Una empresa puede constar de múltiples sedes, fábricas u oficinas.</p>
@@ -2084,7 +2076,7 @@ export default function EmpresasClientes({ params }) {
                     </div>
 
                     {establecimientos.length === 0 ? (
-                      <div className="bg-white border border-slate-150 rounded-2xl p-10 text-center space-y-3 shadow-sm">
+                      <div className="bg-white border border-slate-200 rounded-2xl p-10 text-center space-y-3 shadow-sm">
                         <MapPin className="h-6 w-6 text-slate-400 mx-auto" />
                         <h5 className="font-bold text-slate-800 text-xs">No hay establecimientos cargados</h5>
                         <p className="text-[10px] text-slate-500 max-w-xs mx-auto">
@@ -2094,7 +2086,7 @@ export default function EmpresasClientes({ params }) {
                     ) : (
                       <div className="space-y-8">
                         {establecimientos.map((est, idx) => (
-                          <div key={idx} className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-6 relative hover:border-[#468DFF]/20 transition-all">
+                          <div key={idx} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6 relative hover:border-[#468DFF]/20 transition-all">
                             
                             {/* Header Establecimiento */}
                             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
@@ -2312,7 +2304,7 @@ export default function EmpresasClientes({ params }) {
                             </div>
 
                             {/* Dotación y Trabajadores Equivalentes */}
-                            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-150 space-y-4">
+                            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
                               <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wider block">Dotación de trabajadores</span>
                               <div className="grid md:grid-cols-3 gap-4">
                                 <div className="space-y-1">
@@ -2351,9 +2343,9 @@ export default function EmpresasClientes({ params }) {
                                 <span className="text-[10px] text-slate-500 block">Indica los capítulos de cumplimiento obligatorio aplicables al establecimiento.</span>
                               </div>
                               
-                              <div className="grid md:grid-cols-2 gap-2 max-h-60 overflow-y-auto p-4 border border-slate-150 rounded-2xl bg-slate-50/50">
+                              <div className="grid md:grid-cols-2 gap-2 max-h-60 overflow-y-auto p-4 border border-slate-200 rounded-2xl bg-slate-50/50">
                                 {DECRETO_CHAPTERS.map((cap) => (
-                                  <label key={cap.id} className="flex items-start gap-2.5 p-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-150 text-[11px] font-semibold text-slate-700 transition-all cursor-pointer">
+                                  <label key={cap.id} className="flex items-start gap-2.5 p-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-[11px] font-semibold text-slate-700 transition-all cursor-pointer">
                                     <input
                                       type="checkbox"
                                       checked={!!est.capitulos_decreto[cap.id]}
@@ -2377,7 +2369,7 @@ export default function EmpresasClientes({ params }) {
                                 </p>
                               </div>
                               <div className="flex gap-4">
-                                <div className="text-center bg-white px-5 py-2.5 rounded-2xl border border-slate-150 shadow-sm shrink-0 min-w-[100px]">
+                                <div className="text-center bg-white px-5 py-2.5 rounded-2xl border border-slate-200 shadow-sm shrink-0 min-w-[100px]">
                                   <span className="text-[9px] text-slate-400 font-bold block uppercase tracking-wider">Categoría</span>
                                   <span className="font-outfit text-xl font-extrabold text-slate-800 block mt-0.5">
                                     {est.capitulos_decreto.cap_8 || est.capitulos_decreto.cap_9 || est.capitulos_decreto.cap_10 
@@ -2425,7 +2417,7 @@ export default function EmpresasClientes({ params }) {
                                   {(est.sectores || []).map((sec, secIdx) => (
                                     <div key={sec.id || secIdx} className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm hover:border-slate-300/80 transition-all">
                                       {/* Cabecera del Sector */}
-                                      <div className="bg-slate-50/70 px-4 py-2.5 flex justify-between items-center border-b border-slate-150">
+                                      <div className="bg-slate-50/70 px-4 py-2.5 flex justify-between items-center border-b border-slate-200">
                                         <div className="flex items-center gap-2">
                                           <span className="text-[10px] font-bold text-slate-700 uppercase bg-slate-200/80 px-2 py-0.5 rounded-lg border border-slate-300/40">
                                             Sector #{secIdx + 1}
@@ -2515,15 +2507,15 @@ export default function EmpresasClientes({ params }) {
                                             </div>
 
                                             {(sec.puestos || []).length === 0 ? (
-                                              <div className="text-center py-2 px-3 border border-dashed border-slate-150 rounded-xl bg-slate-50/30">
+                                              <div className="text-center py-2 px-3 border border-dashed border-slate-200 rounded-xl bg-slate-50/30">
                                                 <span className="text-[9px] text-slate-400 font-medium">No se han agregado puestos a este sector.</span>
                                               </div>
                                             ) : (
                                               <div className="space-y-2">
                                                 {(sec.puestos || []).map((pst, pstIdx) => (
-                                                  <div key={pst.id || pstIdx} className="border border-slate-150 rounded-xl overflow-hidden bg-slate-50/10">
+                                                  <div key={pst.id || pstIdx} className="border border-slate-200 rounded-xl overflow-hidden bg-slate-50/10">
                                                     {/* Cabecera del Puesto */}
-                                                    <div className="bg-slate-100/50 px-3 py-1.5 flex justify-between items-center border-b border-slate-150/60">
+                                                    <div className="bg-slate-100/50 px-3 py-1.5 flex justify-between items-center border-b border-slate-200/60">
                                                       <div className="flex items-center gap-1.5">
                                                         <span className="text-[9px] font-bold text-slate-600 bg-slate-200/50 px-1.5 py-0.5 rounded border border-slate-350/20">
                                                           Puesto #{pstIdx + 1}
@@ -2622,7 +2614,7 @@ export default function EmpresasClientes({ params }) {
                                 { key: 'equipos_elevacion', label: 'Equipos de Elevación de Personas', options: EQUIPOS_ELEVACION_OPTS, customKey: 'customElevacion', setCustomKey: (val) => { const copy = [...establecimientos]; copy[idx].customElevacion = val; setEstablecimientos(copy); } },
                                 { key: 'equipos_izaje', label: 'Equipos de Izaje de Cargas', options: EQUIPOS_IZAJE_OPTS, customKey: 'customIzaje', setCustomKey: (val) => { const copy = [...establecimientos]; copy[idx].customIzaje = val; setEstablecimientos(copy); } }
                               ].map((item) => (
-                                <div key={item.key} className="space-y-2 p-4 rounded-2xl border border-slate-150 bg-slate-50/20">
+                                <div key={item.key} className="space-y-2 p-4 rounded-2xl border border-slate-200 bg-slate-50/20">
                                   <span className="text-[11px] font-bold text-slate-700 block">{item.label}</span>
                                   
                                   {/* Listado de Opciones Fijas */}
@@ -2637,7 +2629,7 @@ export default function EmpresasClientes({ params }) {
                                           className={`px-3 py-1.5 rounded-xl text-[10px] font-bold border transition-all cursor-pointer ${
                                             isSelected 
                                               ? 'bg-slate-800 text-white border-slate-800' 
-                                              : 'bg-white text-slate-600 border-slate-150 hover:bg-slate-50'
+                                              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                                           }`}
                                         >
                                           {opt}
@@ -2710,7 +2702,7 @@ export default function EmpresasClientes({ params }) {
                     )}
 
                     {/* Observaciones en Establecimientos */}
-                    <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4 mt-6">
+                    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4 mt-6">
                       <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Observaciones Generales</h4>
                       <div className="space-y-1">
                         <label className="text-xs font-bold text-slate-600 block">Notas / Observaciones sobre la empresa</label>
@@ -2730,7 +2722,7 @@ export default function EmpresasClientes({ params }) {
                 {/* TAB 4: PLATAFORMAS & CREDENCIALES */}
                 {activeTab === 'credenciales' && (
                   <div className="space-y-6">
-                    <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4">
+                    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
                       <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Aseguradora de Riesgos del Trabajo (ART)</h4>
                       
                       <div className="grid md:grid-cols-3 gap-4">
@@ -2792,7 +2784,7 @@ export default function EmpresasClientes({ params }) {
                       </div>
                     </div>
 
-                    <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4">
+                    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
                       <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Plataforma MiBA / Trámites a Distancia (TAD)</h4>
                       
                       <div className="grid md:grid-cols-3 gap-4">
@@ -2831,7 +2823,7 @@ export default function EmpresasClientes({ params }) {
                       </div>
                     </div>
 
-                    <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4">
+                    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
                       <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Ministerio de Ambiente PBA / APRA</h4>
                       
                       <div className="grid md:grid-cols-3 gap-4">
@@ -2871,7 +2863,7 @@ export default function EmpresasClientes({ params }) {
                     </div>
 
                     {/* Observaciones en Plataformas */}
-                    <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4 mt-6">
+                    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4 mt-6">
                       <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Observaciones Generales</h4>
                       <div className="space-y-1">
                         <label className="text-xs font-bold text-slate-600 block">Notas / Observaciones sobre la empresa</label>
@@ -2891,7 +2883,7 @@ export default function EmpresasClientes({ params }) {
                 {/* TAB 5: PORTAL DE CLIENTE */}
                 {activeTab === 'portal' && (
                   <div className="space-y-6">
-                    <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-6">
+                    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
                       <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                         <div className="flex items-center gap-3">
                           <div className={`p-2.5 rounded-xl ${clientProfile ? 'bg-emerald-50 text-emerald-500' : 'bg-slate-100 text-slate-400'}`}>
@@ -2917,20 +2909,20 @@ export default function EmpresasClientes({ params }) {
 
                       {clientProfile ? (
                         <div className="space-y-6">
-                          <div className="p-4 rounded-xl bg-slate-50/50 border border-slate-150 space-y-4">
+                          <div className="p-4 rounded-xl bg-slate-50/50 border border-slate-200 space-y-4">
                             <div className="grid md:grid-cols-2 gap-4">
                               <div>
                                 <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Nombre de Usuario (CUIT)</span>
-                                <span className="text-sm font-semibold text-slate-800 block bg-white border border-slate-150 rounded-xl px-3 py-2">{cuit}</span>
+                                <span className="text-sm font-semibold text-slate-800 block bg-white border border-slate-200 rounded-xl px-3 py-2">{cuit}</span>
                               </div>
                               <div>
                                 <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Correo Electrónico de Acceso</span>
-                                <span className="text-sm font-semibold text-slate-800 block bg-white border border-slate-150 rounded-xl px-3 py-2">{clientProfile.email}</span>
+                                <span className="text-sm font-semibold text-slate-800 block bg-white border border-slate-200 rounded-xl px-3 py-2">{clientProfile.email}</span>
                               </div>
                             </div>
                             <div>
                               <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Nombre del Responsable</span>
-                              <span className="text-sm font-semibold text-slate-800 block bg-white border border-slate-150 rounded-xl px-3 py-2">{clientProfile.full_name}</span>
+                              <span className="text-sm font-semibold text-slate-800 block bg-white border border-slate-200 rounded-xl px-3 py-2">{clientProfile.full_name}</span>
                             </div>
                           </div>
 
@@ -2967,7 +2959,7 @@ export default function EmpresasClientes({ params }) {
                           </div>
 
                           {(!cuit || cuit.length !== 11) ? (
-                            <div className="p-4 rounded-xl bg-amber-50 border border-amber-250 text-amber-800 text-xs flex items-start gap-2.5">
+                            <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-2.5">
                               <AlertTriangle className="h-4.5 w-4.5 text-amber-600 shrink-0 mt-0.5" />
                               <div>
                                 <strong>CUIT no configurado o inválido:</strong> Para poder habilitar el portal de clientes, debes ingresar primero un número de CUIT válido de 11 dígitos en la pestaña <strong>Datos Generales</strong> y guardar la empresa.
@@ -3105,7 +3097,7 @@ export default function EmpresasClientes({ params }) {
       {/* Ventanas Emergentes Modales Centradas (Backdrop-blur-sm) */}
       {modalAlert.show && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
             <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500">
               <AlertTriangle className="h-6 w-6" />
             </div>

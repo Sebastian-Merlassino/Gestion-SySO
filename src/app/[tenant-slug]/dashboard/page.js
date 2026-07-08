@@ -8,6 +8,9 @@ import { supabase } from '@/lib/supabase';
 import { formatDate } from '@/lib/utils';
 import AITextHelper from '@/components/ui/AITextHelper';
 import { useToast } from '@/components/providers/ToastProvider';
+import AppPageHeader from '@/components/ui/AppPageHeader';
+import AppButton from '@/components/ui/AppButton';
+import AppCard from '@/components/ui/AppCard';
 import {
   Building,
   Users,
@@ -1395,9 +1398,9 @@ export default function TenantDashboard({ params }) {
 
   const renderSiniestralidadPanel = () => {
     return (
-      <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-6">
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
         {/* Cabecera del contenedor con el título y modal clickeable de ayuda */}
-        <div className="flex flex-col gap-4 border-b border-slate-150 pb-4">
+        <div className="flex flex-col gap-4 border-b border-slate-200 pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
             <div className="flex items-center gap-2">
               <Activity className="h-5 w-5 text-[#468DFF]" />
@@ -1502,25 +1505,25 @@ export default function TenantDashboard({ params }) {
           <div className="xl:col-span-5 grid grid-cols-2 sm:grid-cols-5 gap-3 border-b xl:border-b-0 xl:border-r border-slate-100 pb-4 xl:pb-0 pr-0 xl:pr-4">
 
             {/* AT */}
-            <div className="p-3 sm:p-4 rounded-xl border border-slate-150 bg-slate-50/30 hover:border-[#468DFF]/20 transition-all flex flex-col justify-between shadow-sm">
+            <div className="p-3 sm:p-4 rounded-xl border border-slate-200 bg-slate-50/30 hover:border-[#468DFF]/20 transition-all flex flex-col justify-between shadow-sm">
               <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider leading-none">Acc. Trabajo</span>
               <span className="font-outfit text-2xl font-extrabold text-slate-800 mt-2">{countTrabajo}</span>
             </div>
 
             {/* In itinere */}
-            <div className="p-3 sm:p-4 rounded-xl border border-slate-150 bg-slate-50/30 hover:border-[#468DFF]/20 transition-all flex flex-col justify-between shadow-sm">
+            <div className="p-3 sm:p-4 rounded-xl border border-slate-200 bg-slate-50/30 hover:border-[#468DFF]/20 transition-all flex flex-col justify-between shadow-sm">
               <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider leading-none">In Itinere</span>
               <span className="font-outfit text-2xl font-extrabold text-slate-800 mt-2">{countItinere}</span>
             </div>
 
             {/* Enfermedad Profesional */}
-            <div className="p-3 sm:p-4 rounded-xl border border-slate-150 bg-slate-50/30 hover:border-[#468DFF]/20 transition-all flex flex-col justify-between shadow-sm">
+            <div className="p-3 sm:p-4 rounded-xl border border-slate-200 bg-slate-50/30 hover:border-[#468DFF]/20 transition-all flex flex-col justify-between shadow-sm">
               <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider leading-none">Enf. Profesional</span>
               <span className="font-outfit text-2xl font-extrabold text-slate-800 mt-2">{countEnfermedad}</span>
             </div>
 
             {/* Reingreso */}
-            <div className="p-3 sm:p-4 rounded-xl border border-slate-150 bg-slate-50/30 hover:border-[#468DFF]/20 transition-all flex flex-col justify-between shadow-sm">
+            <div className="p-3 sm:p-4 rounded-xl border border-slate-200 bg-slate-50/30 hover:border-[#468DFF]/20 transition-all flex flex-col justify-between shadow-sm">
               <span className="text-[9px] text-slate-400 uppercase font-bold tracking-wider leading-none">Reingreso</span>
               <span className="font-outfit text-2xl font-extrabold text-slate-800 mt-2">{countReingreso}</span>
             </div>
@@ -1564,7 +1567,7 @@ export default function TenantDashboard({ params }) {
         </div>
 
         {/* Gráfico de Barras Custom de Índices de Siniestralidad */}
-        <div className="border-t border-slate-150 pt-6 space-y-4">
+        <div className="border-t border-slate-200 pt-6 space-y-4">
 
           {/* Selector de Índices (4 Botones) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
@@ -1607,7 +1610,7 @@ export default function TenantDashboard({ params }) {
           </div>
 
           {/* Gráfico propiamente dicho */}
-          <div className="bg-slate-50/40 border border-slate-150 rounded-2xl p-6 shadow-inner space-y-4 overflow-x-auto scrollbar-thin select-none">
+          <div className="bg-slate-50/40 border border-slate-200 rounded-2xl p-6 shadow-inner space-y-4 overflow-x-auto scrollbar-thin select-none">
             <div className="flex items-end justify-between gap-2 md:gap-4 h-64 border-b border-slate-200 pb-3 pt-6 px-2 min-w-[650px]">
 
               {/* Barra Año Anterior */}
@@ -1825,28 +1828,14 @@ export default function TenantDashboard({ params }) {
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <header className="h-16 border-b border-slate-200 flex items-center justify-between px-4 md:px-6 bg-white shrink-0 sticky top-0 z-20">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <button
-              onClick={() => setIsMobileMenuOpen(true)}
-              className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 md:hidden cursor-pointer shrink-0"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-            <Building className="h-5 w-5 text-[#468DFF] shrink-0" />
-            <h1 className="font-outfit text-base md:text-lg font-bold text-slate-900 truncate leading-none">
-              Dashboard
-            </h1>
-          </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <span className="text-xs font-semibold text-slate-500 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-150 hidden sm:inline-block">
-              {tenant?.name || 'Cargando...'}
-            </span>
-            <span className={`px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider ${(!profile || profile.role === 'cliente') ? 'hidden' : ''}`} suppressHydrationWarning>
-              {tenant?.plan_id ? (tenant.plan_id.toLowerCase() === 'libre' ? 'Plan Libre' : tenant.plan_id.toLowerCase().startsWith('standard') ? 'Plan Standard' : tenant.plan_id.toLowerCase().startsWith('basic') ? 'Plan Basic' : `Plan ${tenant.plan_id}`) : 'Plan Pro'}
-            </span>
-          </div>
-        </header>
+        <AppPageHeader
+          title="Dashboard"
+          icon={Building}
+          tenantName={tenant?.name || 'Cargando...'}
+          planId={tenant?.plan_id}
+          showPlanBadge={profile && profile.role !== 'cliente'}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+        />
         {loading ? (
           <div className="flex-1 flex items-center justify-center p-8">
             <div className="text-center space-y-4">
@@ -1864,10 +1853,10 @@ export default function TenantDashboard({ params }) {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
                   {/* Contenedor Unificado: Vencimientos o Calendario */}
-                  <div className="bg-white border border-slate-150 rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col justify-between h-[460px] overflow-hidden">
+                  <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col justify-between h-[460px] overflow-hidden">
                     <div className="flex flex-col flex-1 min-h-0">
                       {/* Pestañas de Selección con estilo segmentado similar a DocumentUploadZone */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-150 pb-3 mb-4 shrink-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3 mb-4 shrink-0">
                         <div className="flex items-center gap-2.5">
                           <Calendar className="h-5 w-5 text-[#468DFF] shrink-0" />
                           <div className="flex border border-slate-200 rounded-xl overflow-hidden text-[11px] font-bold bg-slate-50 shrink-0 min-w-[250px]">
@@ -1920,7 +1909,7 @@ export default function TenantDashboard({ params }) {
                         <div className="overflow-auto flex-1 scrollbar-thin">
                           <table className="w-full border-collapse text-left text-xs min-w-[500px]">
                             <thead>
-                              <tr className="bg-slate-50 border-b border-slate-150 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                              <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                                 <th className="px-4 py-3">Cliente / Razón Social</th>
                                 <th className="px-4 py-3">Establecimiento</th>
                                 <th className="px-4 py-3">Actividad</th>
@@ -2021,7 +2010,7 @@ export default function TenantDashboard({ params }) {
                             </div>
                           </div>
 
-                          <div className="border-t border-slate-150 pt-2 flex flex-col gap-2 mt-2.5 shrink-0">
+                          <div className="border-t border-slate-200 pt-2 flex flex-col gap-2 mt-2.5 shrink-0">
                             <div className="flex items-center justify-between">
                               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
                                 Tareas del día ({selectedDateStr}):
@@ -2100,9 +2089,9 @@ export default function TenantDashboard({ params }) {
                   </div>
 
                   {/* Contenedor B: Tareas Pendientes */}
-                  <div className="bg-white border border-slate-150 rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col justify-between h-[460px] overflow-hidden">
+                  <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col justify-between h-[460px] overflow-hidden">
                     <div className="flex flex-col flex-1 min-h-0">
-                      <div className="flex items-center gap-2 border-b border-slate-150 pb-3 mb-4">
+                      <div className="flex items-center gap-2 border-b border-slate-200 pb-3 mb-4">
                         <ClipboardCheck className="h-5 w-5 text-[#468DFF]" />
                         <h3 className="font-outfit text-base font-extrabold text-slate-900">Tareas Pendientes</h3>
                       </div>
@@ -2157,7 +2146,7 @@ export default function TenantDashboard({ params }) {
                     </div>
 
                     {/* Inline creation form */}
-                    <form onSubmit={handleAddTask} className="border-t border-slate-150 pt-3 mt-3 flex flex-col gap-2 shrink-0">
+                    <form onSubmit={handleAddTask} className="border-t border-slate-200 pt-3 mt-3 flex flex-col gap-2 shrink-0">
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <div className="sm:col-span-2 flex items-center gap-1.5 border border-slate-200 rounded-xl px-3 py-1.5 bg-slate-50/50 focus-within:border-[#468DFF] transition-all">
                           <input
@@ -2231,7 +2220,7 @@ export default function TenantDashboard({ params }) {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
                 {/* 1. Clientes */}
-                <div className="bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
+                <div className="bg-white border border-slate-200 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
                   <div className="text-slate-400 group-hover:text-[#468DFF] transition-colors mb-3">
                     <Users className="h-6 w-6" />
                   </div>
@@ -2243,7 +2232,7 @@ export default function TenantDashboard({ params }) {
                 </div>
 
                 {/* 2. Acciones Correctivas */}
-                <div className="bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
+                <div className="bg-white border border-slate-200 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
                   <div className="text-slate-400 group-hover:text-[#468DFF] transition-colors mb-3">
                     <ClipboardList className="h-6 w-6" />
                   </div>
@@ -2255,7 +2244,7 @@ export default function TenantDashboard({ params }) {
                 </div>
 
                 {/* 3. % Cumplimiento */}
-                <div className="bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
+                <div className="bg-white border border-slate-200 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
                   <div className="text-slate-400 group-hover:text-emerald-500 transition-colors mb-3">
                     <ShieldCheck className="h-6 w-6" />
                   </div>
@@ -2265,7 +2254,7 @@ export default function TenantDashboard({ params }) {
                 </div>
 
                 {/* 4. Pendientes */}
-                <div className="bg-white border border-slate-150 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
+                <div className="bg-white border border-slate-200 rounded-2xl p-5 relative overflow-hidden group hover:border-[#468DFF]/30 transition-all shadow-sm">
                   <div className="text-slate-400 group-hover:text-amber-500 transition-colors mb-3">
                     <Calendar className="h-6 w-6" />
                   </div>
@@ -2282,8 +2271,8 @@ export default function TenantDashboard({ params }) {
 
             {/* Secciones de Trabajo y Acciones Rápidas */}
             {profile && profile.role === 'cliente' ? (
-              <div className="bg-white border border-slate-150 rounded-2xl p-6 space-y-6 shadow-sm">
-                <div className="flex items-center justify-between border-b border-slate-150 pb-3">
+              <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-6 shadow-sm">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                   <h3 className="font-outfit text-base font-extrabold text-slate-900 flex items-center gap-2">
                     <ClipboardList className="h-5 w-5 text-[#468DFF]" />
                     Resumen de Acciones Correctivas
@@ -2301,7 +2290,7 @@ export default function TenantDashboard({ params }) {
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
 
                   {/* 1. Total */}
-                  <div className="p-4 rounded-xl border border-slate-150 bg-slate-50/50 flex flex-col justify-between">
+                  <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 flex flex-col justify-between">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Cantidad Total</span>
                       <ClipboardList className="h-4 w-4 text-[#468DFF]" />
@@ -2313,7 +2302,7 @@ export default function TenantDashboard({ params }) {
                   </div>
 
                   {/* 2. Cerradas */}
-                  <div className="p-4 rounded-xl border border-slate-150 bg-slate-50/50 flex flex-col justify-between">
+                  <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 flex flex-col justify-between">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Cerradas</span>
                       <ShieldCheck className="h-4 w-4 text-[#00b050]" />
@@ -2325,7 +2314,7 @@ export default function TenantDashboard({ params }) {
                   </div>
 
                   {/* 3. En Análisis */}
-                  <div className="p-4 rounded-xl border border-slate-150 bg-slate-50/50 flex flex-col justify-between">
+                  <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 flex flex-col justify-between">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">En Análisis</span>
                       <HelpCircle className="h-4 w-4 text-slate-500" />
@@ -2337,7 +2326,7 @@ export default function TenantDashboard({ params }) {
                   </div>
 
                   {/* 4. En Tiempo */}
-                  <div className="p-4 rounded-xl border border-slate-150 bg-slate-50/50 flex flex-col justify-between">
+                  <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 flex flex-col justify-between">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">En Tiempo</span>
                       <Calendar className="h-4 w-4 text-[#468DFF]" />
@@ -2356,7 +2345,7 @@ export default function TenantDashboard({ params }) {
                   </div>
 
                   {/* 5. Vencidas */}
-                  <div className="p-4 rounded-xl border border-slate-150 bg-slate-50/50 flex flex-col justify-between">
+                  <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 flex flex-col justify-between">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Vencidas</span>
                       <AlertTriangle className="h-4 w-4 text-red-500" />
@@ -2380,7 +2369,7 @@ export default function TenantDashboard({ params }) {
               <div className="grid md:grid-cols-3 gap-6">
 
                 {/* Listado de accesos rápidos */}
-                <div className="md:col-span-2 bg-white border border-slate-150 rounded-2xl p-6 space-y-4 shadow-sm">
+                <div className="md:col-span-2 bg-white border border-slate-200 rounded-2xl p-6 space-y-4 shadow-sm">
                   <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                     <Sparkles className="h-4.5 w-4.5 text-[#468DFF]" />
                     Accesos rápidos
@@ -2388,7 +2377,7 @@ export default function TenantDashboard({ params }) {
 
                   <div className="grid md:grid-cols-2 gap-4">
 
-                    <a href={`/${tenantSlug}/correctivas?new=true`} className="p-4 rounded-xl border border-slate-150 bg-slate-50/50 hover:bg-[#468DFF]/5 hover:border-[#468DFF]/30 transition-all flex items-start gap-3 group">
+                    <a href={`/${tenantSlug}/correctivas?new=true`} className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-[#468DFF]/5 hover:border-[#468DFF]/30 transition-all flex items-start gap-3 group">
                       <div className="p-2 rounded-lg bg-blue-500/10 text-[#468DFF] shrink-0 mt-0.5">
                         <ClipboardList className="h-4 w-4" />
                       </div>
@@ -2398,7 +2387,7 @@ export default function TenantDashboard({ params }) {
                       </div>
                     </a>
 
-                    <a href={`/${tenantSlug}/visitas?new=true`} className="p-4 rounded-xl border border-slate-150 bg-slate-50/50 hover:bg-[#468DFF]/5 hover:border-[#468DFF]/30 transition-all flex items-start gap-3 group">
+                    <a href={`/${tenantSlug}/visitas?new=true`} className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-[#468DFF]/5 hover:border-[#468DFF]/30 transition-all flex items-start gap-3 group">
                       <div className="p-2 rounded-lg bg-blue-500/10 text-[#468DFF] shrink-0 mt-0.5">
                         <ShieldCheck className="h-4 w-4" />
                       </div>
@@ -2408,7 +2397,7 @@ export default function TenantDashboard({ params }) {
                       </div>
                     </a>
 
-                    <a href={`/${tenantSlug}/avisos?new=true`} className="p-4 rounded-xl border border-slate-150 bg-slate-50/50 hover:bg-[#468DFF]/5 hover:border-[#468DFF]/30 transition-all flex items-start gap-3 group">
+                    <a href={`/${tenantSlug}/avisos?new=true`} className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-[#468DFF]/5 hover:border-[#468DFF]/30 transition-all flex items-start gap-3 group">
                       <div className="p-2 rounded-lg bg-blue-500/10 text-[#468DFF] shrink-0 mt-0.5">
                         <AlertTriangle className="h-4 w-4" />
                       </div>
@@ -2418,7 +2407,7 @@ export default function TenantDashboard({ params }) {
                       </div>
                     </a>
 
-                    <a href={`/${tenantSlug}/accidentes?new=true`} className="p-4 rounded-xl border border-slate-150 bg-slate-50/50 hover:bg-[#468DFF]/5 hover:border-[#468DFF]/30 transition-all flex items-start gap-3 group">
+                    <a href={`/${tenantSlug}/accidentes?new=true`} className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-[#468DFF]/5 hover:border-[#468DFF]/30 transition-all flex items-start gap-3 group">
                       <div className="p-2 rounded-lg bg-blue-500/10 text-[#468DFF] shrink-0 mt-0.5">
                         <Activity className="h-4 w-4" />
                       </div>
@@ -2432,7 +2421,7 @@ export default function TenantDashboard({ params }) {
                 </div>
 
                 {/* Sidebar info plan */}
-                <div className="bg-white border border-slate-150 rounded-2xl p-6 flex flex-col justify-between space-y-6 shadow-sm">
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col justify-between space-y-6 shadow-sm">
                   <div className="space-y-4">
                     <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                       <Award className="h-4.5 w-4.5 text-[#468DFF]" />
@@ -2474,10 +2463,10 @@ export default function TenantDashboard({ params }) {
       {/* ── Modal Guía de Fórmulas e Índices de Siniestralidad ── */}
       {showIndicesGuide && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white border border-slate-150 rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
 
             {/* Cabecera */}
-            <div className="p-6 border-b border-slate-150 flex items-center justify-between bg-slate-50/50">
+            <div className="p-6 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-xl bg-blue-500/10 text-[#468DFF]">
                   <Activity className="h-5 w-5" />
@@ -2509,7 +2498,7 @@ export default function TenantDashboard({ params }) {
                 <p className="text-slate-500 text-[11px] font-medium leading-normal">
                   Se computa como la cantidad de accidentes de trabajo o enfermedades profesionales (AT y EP) con al menos un día de baja laboral o secuela incapacitante sin días de baja laboral cada mil personas trabajadoras cubiertas. El índice se calcula para el período de un año (por razón social o establecimiento).
                 </p>
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-150 font-mono text-[10px] text-slate-800 font-bold text-left sm:text-center overflow-x-auto whitespace-nowrap scrollbar-thin">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 font-mono text-[10px] text-slate-800 font-bold text-left sm:text-center overflow-x-auto whitespace-nowrap scrollbar-thin">
                   Índice de Incidencia = (Casos AT y EP con baja o secuela / Personas cubiertas) x 1.000
                 </div>
               </div>
@@ -2523,7 +2512,7 @@ export default function TenantDashboard({ params }) {
                 <p className="text-slate-500 text-[11px] font-medium leading-normal">
                   Se calcula como la cantidad de casos mortales por accidentes de trabajo o enfermedades profesionales, cada millón de personas cubiertas. El índice se calcula para el período de un año (por razón social o establecimiento).
                 </p>
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-150 font-mono text-[10px] text-slate-800 font-bold text-left sm:text-center overflow-x-auto whitespace-nowrap scrollbar-thin">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 font-mono text-[10px] text-slate-800 font-bold text-left sm:text-center overflow-x-auto whitespace-nowrap scrollbar-thin">
                   Índice de Mortalidad = (Casos mortales de AT y EP / Personas cubiertas) x 1.000.000
                 </div>
               </div>
@@ -2537,7 +2526,7 @@ export default function TenantDashboard({ params }) {
                 <p className="text-slate-500 text-[11px] font-medium leading-normal">
                   El índice de pérdida refleja la cantidad de jornadas no trabajadas en el año debido a siniestros, por cada mil personas cubiertas.
                 </p>
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-150 font-mono text-[10px] text-slate-800 font-bold text-left sm:text-center overflow-x-auto whitespace-nowrap scrollbar-thin">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 font-mono text-[10px] text-slate-800 font-bold text-left sm:text-center overflow-x-auto whitespace-nowrap scrollbar-thin">
                   Índice de Pérdida (IP) = (Jornadas no trabajadas / Personas cubiertas) x 1.000
                 </div>
               </div>
@@ -2551,7 +2540,7 @@ export default function TenantDashboard({ params }) {
                 <p className="text-slate-500 text-[11px] font-medium leading-normal">
                   La duración media de las bajas indica el promedio de jornadas no trabajadas por cada persona damnificada, incluyendo solamente aquellas con baja laboral.
                 </p>
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-150 font-mono text-[10px] text-slate-800 font-bold text-left sm:text-center overflow-x-auto whitespace-nowrap scrollbar-thin">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 font-mono text-[10px] text-slate-800 font-bold text-left sm:text-center overflow-x-auto whitespace-nowrap scrollbar-thin">
                   Duración Media (DMB) = Jornadas no trabajadas / Casos con días de baja laboral
                 </div>
               </div>
@@ -2570,7 +2559,7 @@ export default function TenantDashboard({ params }) {
             </div>
 
             {/* Pie de modal */}
-            <div className="p-4 border-t border-slate-150 bg-slate-50/50 flex justify-end">
+            <div className="p-4 border-t border-slate-200 bg-slate-50/50 flex justify-end">
               <button
                 onClick={() => setShowIndicesGuide(false)}
                 className="px-5 py-2 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white font-bold text-xs transition-colors cursor-pointer"

@@ -9,6 +9,14 @@ import AITextHelper from '@/components/ui/AITextHelper';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import { supabase, fetchAllGeography } from '@/lib/supabase';
 import { useToast } from '@/components/providers/ToastProvider';
+import AppPageHeader from '@/components/ui/AppPageHeader';
+import AppButton from '@/components/ui/AppButton';
+import AppInput from '@/components/ui/AppInput';
+import AppSelect from '@/components/ui/AppSelect';
+import AppTextarea from '@/components/ui/AppTextarea';
+import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
+import AppCard from '@/components/ui/AppCard';
+import AppEmptyState from '@/components/ui/AppEmptyState';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import {
   ShieldAlert,
@@ -2789,28 +2797,14 @@ export default function AccidentesPage({ params }) {
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         
         {/* ── Header Estático ── */}
-        <header className="h-16 border-b border-slate-200 flex items-center justify-between px-4 md:px-6 bg-white shrink-0 sticky top-0 z-20">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <button 
-              onClick={() => setIsMobileMenuOpen(true)} 
-              className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 md:hidden cursor-pointer shrink-0"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-            <ShieldAlert className="h-5 w-5 text-[#468DFF] shrink-0" />
-            <h1 className="font-outfit text-base md:text-lg font-bold text-slate-900 truncate leading-none">
-              Registro y Seguimiento de Accidentes y Enfermedades profesionales
-            </h1>
-          </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <span className="text-xs font-semibold text-slate-500 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-150 hidden sm:inline-block">
-              {tenant?.name || 'Cargando...'}
-            </span>
-            <span className={`px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider ${(!profile || profile.role === 'cliente') ? 'hidden' : ''}`} suppressHydrationWarning>
-              {tenant?.plan_id ? (tenant.plan_id.toLowerCase() === 'libre' ? 'Plan Libre' : tenant.plan_id.toLowerCase().startsWith('standard') ? 'Plan Standard' : tenant.plan_id.toLowerCase().startsWith('basic') ? 'Plan Basic' : `Plan ${tenant.plan_id}`) : 'Plan Pro'}
-            </span>
-          </div>
-        </header>
+        <AppPageHeader
+          title="Registro y Seguimiento de Accidentes y Enfermedades profesionales"
+          icon={ShieldAlert}
+          tenantName={tenant?.name || 'Cargando...'}
+          planId={tenant?.plan_id}
+          showPlanBadge={profile && profile.role !== 'cliente'}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+        />
 
         {loading ? (
           <div className="flex-1 flex items-center justify-center p-8">
@@ -2824,10 +2818,10 @@ export default function AccidentesPage({ params }) {
             
             {isFormOpen ? (
               /* ────────── VISTA FORMULARIO UNIFICADO ────────── */
-              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
                 
                 {/* Encabezado del Formulario */}
-                <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-150 flex items-center justify-between shrink-0">
+                <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
                     <button 
                       type="button"
@@ -3829,7 +3823,7 @@ export default function AccidentesPage({ params }) {
               <div className="space-y-6 flex-1 flex flex-col min-h-0">
 
                 {/* Panel de Filtros y Búsqueda */}
-                <div className="bg-white border border-slate-150 rounded-2xl p-3 shadow-sm space-y-3 shrink-0">
+                <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm space-y-3 shrink-0">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
                     {/* Espaciador para empujar el buscador a la derecha en desktop */}
                     <div className="hidden md:block flex-1"></div>
@@ -3986,7 +3980,7 @@ export default function AccidentesPage({ params }) {
                 </div>
 
                 {/* Listado / Tabla */}
-                <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
                   {filteredAccidentes.length === 0 ? (
                     <div className="flex-grow flex flex-col items-center justify-center p-8 text-center gap-3 h-full">
                       <AlertCircle className="h-10 w-10 text-slate-300" />
@@ -4013,9 +4007,9 @@ export default function AccidentesPage({ params }) {
                     <div className="overflow-auto font-sans flex-grow h-full">
                       <table className="w-full text-left border-collapse min-w-[850px]">
                         <thead>
-                          <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider select-none">
+                          <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider select-none">
                             <th
-                              className="px-6 py-4 cursor-pointer hover:text-slate-700 transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150 whitespace-nowrap"
+                              className="px-6 py-4 cursor-pointer hover:text-slate-700 transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-200 whitespace-nowrap"
                               onClick={() => handleSort('empresa_id')}
                             >
                               <div className="flex items-center gap-1">
@@ -4023,7 +4017,7 @@ export default function AccidentesPage({ params }) {
                               </div>
                             </th>
                             <th
-                              className="px-6 py-4 cursor-pointer hover:text-slate-700 transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150 whitespace-nowrap"
+                              className="px-6 py-4 cursor-pointer hover:text-slate-700 transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-200 whitespace-nowrap"
                               onClick={() => handleSort('nombre_apellido')}
                             >
                               <div className="flex items-center gap-1">
@@ -4031,31 +4025,31 @@ export default function AccidentesPage({ params }) {
                               </div>
                             </th>
                             <th
-                              className="px-6 py-4 cursor-pointer hover:text-slate-700 transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150 whitespace-nowrap"
+                              className="px-6 py-4 cursor-pointer hover:text-slate-700 transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-200 whitespace-nowrap"
                               onClick={() => handleSort('fecha_siniestro')}
                             >
                               <div className="flex items-center gap-1">
                                 Fecha siniestro <SortIcon field="fecha_siniestro" />
                               </div>
                             </th>
-                            <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-150 whitespace-nowrap">
+                            <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-200 whitespace-nowrap">
                               Tipo
                             </th>
                             <th
-                              className="px-6 py-4 cursor-pointer hover:text-slate-700 transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-150 whitespace-nowrap"
+                              className="px-6 py-4 cursor-pointer hover:text-slate-700 transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-200 whitespace-nowrap"
                               onClick={() => handleSort('gravedad')}
                             >
                               <div className="flex items-center gap-1">
                                 Gravedad <SortIcon field="gravedad" />
                               </div>
                             </th>
-                            <th className="px-6 py-4 text-center sticky top-0 z-10 bg-slate-50 border-b border-slate-150 whitespace-nowrap">
+                            <th className="px-6 py-4 text-center sticky top-0 z-10 bg-slate-50 border-b border-slate-200 whitespace-nowrap">
                               Días de baja
                             </th>
-                            <th className="px-6 py-4 text-center sticky top-0 z-10 bg-slate-50 border-b border-slate-150 whitespace-nowrap">
+                            <th className="px-6 py-4 text-center sticky top-0 z-10 bg-slate-50 border-b border-slate-200 whitespace-nowrap">
                               Docs.
                             </th>
-                            <th className="px-6 py-4 text-center sticky top-0 z-10 bg-slate-50 border-b border-slate-150 whitespace-nowrap">
+                            <th className="px-6 py-4 text-center sticky top-0 z-10 bg-slate-50 border-b border-slate-200 whitespace-nowrap">
                               Acciones
                             </th>
                           </tr>
@@ -4186,7 +4180,7 @@ export default function AccidentesPage({ params }) {
       {/* ── Modal Confirmación ── */}
       {modalAlert.show && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
             <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500">
               <AlertTriangle className="h-6 w-6" />
             </div>
@@ -4258,7 +4252,7 @@ export default function AccidentesPage({ params }) {
       {/* ── Modal 1: Comentarios Adicionales para IA ── */}
       {isAiCommentsModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xl max-w-lg w-full animate-scale-up space-y-4">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xl max-w-lg w-full animate-scale-up space-y-4">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
               <Sparkles className="h-5 w-5 text-indigo-600" />
               <h3 className="font-outfit font-bold text-slate-800 text-sm leading-snug">Generar Informe de investigación de accidente / enfermedad profesional con IA</h3>
@@ -4323,7 +4317,7 @@ export default function AccidentesPage({ params }) {
       {/* ── Modal 2: Previsualización y Edición de Informe de IA ── */}
       {isAiReportModalOpen && aiReportDataEdit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in overflow-y-auto">
-          <div className="bg-white rounded-2xl border border-slate-150 shadow-2xl max-w-4xl w-full animate-scale-up flex flex-col my-8 max-h-[85vh]">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-4xl w-full animate-scale-up flex flex-col my-8 max-h-[85vh]">
             {/* Cabecera */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-indigo-50/50 to-white">
               <div className="flex items-center gap-2">
@@ -4365,7 +4359,7 @@ export default function AccidentesPage({ params }) {
                 <div className="space-y-3">
                   {(aiReportDataEdit.acciones_preventivas || []).map((act, idx) => {
                     return (
-                      <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-start bg-slate-50/30 border border-slate-150 p-2.5 rounded-xl relative">
+                      <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-start bg-slate-50/30 border border-slate-200 p-2.5 rounded-xl relative">
                         <div className="md:col-span-1 text-[10px] font-bold text-slate-400 pt-2 text-center">#{idx + 1}</div>
                         <div className="md:col-span-6 space-y-1">
                           <label className="text-[10px] font-bold text-slate-500 block">Descripción de la acción</label>
@@ -4567,7 +4561,7 @@ export default function AccidentesPage({ params }) {
                 <div className="space-y-3">
                   {(aiReportDataEdit.acciones_correctivas || []).map((act, idx) => {
                     return (
-                      <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-start bg-slate-50/30 border border-slate-150 p-2.5 rounded-xl relative">
+                      <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-start bg-slate-50/30 border border-slate-200 p-2.5 rounded-xl relative">
                         <div className="md:col-span-1 text-[10px] font-bold text-slate-400 pt-2 text-center">#{idx + 1}</div>
                         <div className="md:col-span-6 space-y-1">
                           <label className="text-[10px] font-bold text-slate-500 block">Descripción de la acción</label>

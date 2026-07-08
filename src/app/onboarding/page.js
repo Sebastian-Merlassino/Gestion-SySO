@@ -4,6 +4,10 @@
 import React, { useState, useEffect } from 'react';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import { supabase, fetchAllGeography } from '@/lib/supabase';
+import AppCard from '@/components/ui/AppCard';
+import AppInput from '@/components/ui/AppInput';
+import AppSelect from '@/components/ui/AppSelect';
+import AppButton from '@/components/ui/AppButton';
 import { 
   User, 
   Briefcase, 
@@ -932,7 +936,7 @@ export default function OnboardingPage() {
         <form onSubmit={handleSaveData} className="space-y-8">
           
           {/* SECCIÓN 1: INFORMACIÓN DEL USUARIO */}
-          <div className="bg-white border border-slate-150 rounded-2xl p-8 shadow-sm space-y-6">
+          <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm space-y-6">
             <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
               <User className="text-[#468DFF] h-5 w-5" />
               Información del usuario
@@ -1100,7 +1104,7 @@ export default function OnboardingPage() {
           </div>
 
           {/* SECCIÓN 2: MATRÍCULAS PROFESIONALES (OPCIONAL) */}
-          <div className="bg-white border border-slate-150 rounded-2xl p-8 shadow-sm space-y-6">
+          <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm space-y-6">
             <div className="flex justify-between items-center border-b border-slate-200 pb-3">
               <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                 <Briefcase className="text-[#468DFF] h-5 w-5" />
@@ -1218,7 +1222,7 @@ export default function OnboardingPage() {
           </div>
 
             {/* SECCIÓN 3: FIRMA DIGITALIZADA (OPCIONAL) */}
-            <div className="bg-white border border-slate-150 rounded-2xl p-8 shadow-sm space-y-6">
+            <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm space-y-6">
               <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
                 <Upload className="text-[#468DFF] h-5 w-5" />
                 Firma digitalizada (opcional)

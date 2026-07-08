@@ -4,7 +4,9 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Mail, Hash, Lock, ShieldAlert, ArrowRight, Loader2, X, CheckCircle, Eye, EyeOff } from 'lucide-react';
-
+import AppCard from '@/components/ui/AppCard';
+import AppInput from '@/components/ui/AppInput';
+import AppButton from '@/components/ui/AppButton';
 export default function LoginPage() {
   const [activeTab, setActiveTab] = useState('profesional'); // 'profesional' or 'cliente'
   const [email, setEmail] = useState('');

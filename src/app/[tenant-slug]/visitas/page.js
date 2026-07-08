@@ -9,6 +9,14 @@ import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import AITextHelper from '@/components/ui/AITextHelper';
 import { useToast } from '@/components/providers/ToastProvider';
+import AppButton from '@/components/ui/AppButton';
+import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
+import AppPageHeader from '@/components/ui/AppPageHeader';
+import AppInput from '@/components/ui/AppInput';
+import AppSelect from '@/components/ui/AppSelect';
+import AppTextarea from '@/components/ui/AppTextarea';
+import AppEmptyState from '@/components/ui/AppEmptyState';
+import AppCard from '@/components/ui/AppCard';
 import { 
   PlusCircle, 
   AlertCircle,
@@ -2207,29 +2215,14 @@ export default function VisitasPage({ params }) {
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         
         {/* Navbar / Top Bar */}
-        <header className="h-16 border-b border-slate-200 flex items-center justify-between px-4 md:px-6 bg-white shrink-0 sticky top-0 z-20">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <button 
-              onClick={() => setIsMobileMenuOpen(true)} 
-              className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 md:hidden cursor-pointer shrink-0"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-            <ClipboardCheck className="h-5 w-5 text-[#468DFF] shrink-0" />
-            <h1 className="font-outfit text-base md:text-lg font-bold text-slate-900 truncate leading-none">
-              Constancia de Visita
-            </h1>
-          </div>
-
-          <div className="flex items-center gap-3 shrink-0">
-            <span className="text-xs font-semibold text-slate-500 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-150 hidden sm:inline-block">
-              {tenant?.name || 'Cargando...'}
-            </span>
-            <span className={`px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider ${(!profile || profile.role === 'cliente') ? 'hidden' : ''}`} suppressHydrationWarning>
-              {tenant?.plan_id ? (tenant.plan_id.toLowerCase() === 'libre' ? 'Plan Libre' : tenant.plan_id.toLowerCase().startsWith('standard') ? 'Plan Standard' : tenant.plan_id.toLowerCase().startsWith('basic') ? 'Plan Basic' : `Plan ${tenant.plan_id}`) : 'Plan Pro'}
-            </span>
-          </div>
-        </header>
+        <AppPageHeader
+          title="Constancia de Visita"
+          icon={ClipboardCheck}
+          tenantName={tenant?.name || 'Cargando...'}
+          planId={tenant?.plan_id}
+          showPlanBadge={profile && profile.role !== 'cliente'}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+        />
 
         {/* Content Body */}
         <div className="max-w-[95%] mx-auto w-full py-8 px-4 md:px-0 flex-1 flex flex-col min-h-0">
@@ -2238,7 +2231,7 @@ export default function VisitasPage({ params }) {
             {!isFormOpen && (
               <div className="space-y-6 flex-1 flex flex-col min-h-0">
                 {/* Herramientas, Búsqueda y Filtros */}
-                <div className="bg-white rounded-2xl border border-slate-150 p-3 shadow-sm space-y-3 shrink-0">
+                <div className="bg-white rounded-2xl border border-slate-200 p-3 shadow-sm space-y-3 shrink-0">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
                     {/* Espaciador para empujar el buscador a la derecha en desktop */}
                     <div className="hidden md:block flex-1"></div>
@@ -2387,7 +2380,7 @@ export default function VisitasPage({ params }) {
                 </div>
 
                 {/* Tabla de Resultados */}
-                <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col transition-all duration-300 ease-in-out" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col transition-all duration-300 ease-in-out" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
                   {sortedVisitas.length === 0 ? (
                     <div className="flex-grow flex flex-col items-center justify-center p-8 text-center gap-3 h-full">
                       <AlertCircle className="h-10 w-10 text-slate-300" />
@@ -2409,13 +2402,13 @@ export default function VisitasPage({ params }) {
                     <div className="overflow-auto flex-grow">
                       <table className="w-full text-left border-collapse min-w-[850px]">
                         <thead>
-                          <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('cliente')}>Cliente</th>
-                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('establecimiento')}>Establecimiento</th>
-                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('fecha')}>Fecha</th>
-                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('profesional_nombre')}>Profesional</th>
-                            <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Responsable Presente</th>
-                            <th className="px-6 py-4 text-right sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Acciones</th>
+                          <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('cliente')}>Cliente</th>
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('establecimiento')}>Establecimiento</th>
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('fecha')}>Fecha</th>
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('profesional_nombre')}>Profesional</th>
+                            <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-200">Responsable Presente</th>
+                            <th className="px-6 py-4 text-right sticky top-0 z-10 bg-slate-50 border-b border-slate-200">Acciones</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-xs font-normal text-slate-700">
@@ -2456,31 +2449,35 @@ export default function VisitasPage({ params }) {
                                     )}
                                     {profile && profile.role !== 'cliente' && (
                                       canEditar ? (
-                                        <button 
+                                        <AppButton 
+                                          variant="edit-table"
+                                          size="icon"
                                           onClick={() => { setIsReadOnlyView(false); handleEditClick(v); }}
-                                          className="p-1.5 rounded-lg transition-all cursor-pointer bg-amber-50 hover:bg-amber-100 text-amber-600"
                                           title="Editar Constancia"
                                         >
                                           <Edit className="h-4.5 w-4.5" />
-                                        </button>
+                                        </AppButton>
                                       ) : (
-                                        <button 
+                                        <AppButton 
+                                          variant="ghost"
+                                          size="icon"
+                                          className="bg-slate-100 hover:bg-slate-200 text-slate-600"
                                           onClick={() => { setIsReadOnlyView(true); handleEditClick(v); }}
-                                          className="p-1.5 rounded-lg transition-all cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-600"
                                           title="Ver Detalle"
                                         >
                                           <Eye className="h-4.5 w-4.5" />
-                                        </button>
+                                        </AppButton>
                                       )
                                     )}
                                     {profile && profile.role !== 'cliente' && canEliminar && (
-                                      <button 
+                                      <AppButton 
+                                        variant="delete-table"
+                                        size="icon"
                                         onClick={() => handleDeleteClick(v.id)}
-                                        className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer"
                                         title="Eliminar Constancia"
                                       >
                                         <Trash2 className="h-4.5 w-4.5" />
-                                      </button>
+                                      </AppButton>
                                     )}
                                   </div>
                                 </td>
@@ -2497,10 +2494,10 @@ export default function VisitasPage({ params }) {
 
             {/* FORMULARIO INLINE */}
             {isFormOpen && (
-              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
                 
                 {/* Cabecera del formulario */}
-                <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-150 flex items-center justify-between shrink-0">
+                <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
                     <button 
                       type="button"
@@ -2568,28 +2565,22 @@ export default function VisitasPage({ params }) {
                       </div>
 
                       {/* CUIT (Auto) */}
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-500">C.U.I.T. (Lectura)</label>
-                        <input
-                          type="text"
-                          value={derivedCuit}
-                          readOnly
-                          placeholder="CUIT automático"
-                          className="w-full border border-slate-150 rounded-xl px-3.5 py-2 text-sm bg-slate-100 text-slate-500 outline-none"
-                        />
-                      </div>
+                      <AppInput
+                        label="C.U.I.T. (Lectura)"
+                        value={derivedCuit}
+                        readOnly
+                        placeholder="CUIT automático"
+                        disabled
+                      />
 
                       {/* Dirección (Auto) */}
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-500">Dirección (Lectura)</label>
-                        <input
-                          type="text"
-                          value={derivedDireccion}
-                          readOnly
-                          placeholder="Dirección automática"
-                          className="w-full border border-slate-150 rounded-xl px-3.5 py-2 text-sm bg-slate-100 text-slate-500 outline-none truncate"
-                        />
-                      </div>
+                      <AppInput
+                        label="Dirección (Lectura)"
+                        value={derivedDireccion}
+                        readOnly
+                        placeholder="Dirección automática"
+                        disabled
+                      />
 
                       {/* Fecha de visita */}
                       <div className="flex flex-col gap-1.5">
@@ -2675,7 +2666,7 @@ export default function VisitasPage({ params }) {
 
                     <div className="space-y-3">
                       {/* Ocurrencia de incidentes */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-150 bg-white">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-white">
                         <div className="flex gap-2 items-start">
                           <label className="text-xs font-bold text-slate-700 leading-normal">¿Ocurrieron incidentes o accidentes laborales desde la última visita? *</label>
                         </div>
@@ -2712,10 +2703,10 @@ export default function VisitasPage({ params }) {
 
                       {/* Campos dinámicos condicionales a Sí */}
                       {ocurrieronIncidentes && (
-                        <div className="bg-slate-50/50 p-4 border border-slate-150 rounded-2xl space-y-3 animate-fade-in">
+                        <div className="bg-slate-50/50 p-4 border border-slate-200 rounded-2xl space-y-3 animate-fade-in">
                           
                           {/* Análisis de causa */}
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-150 bg-white">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-white">
                             <div className="flex gap-2 items-start">
                               <label className="text-xs font-bold text-slate-700 leading-normal">¿Se realizó el análisis correspondiente (causa raíz, correctivas)? *</label>
                             </div>
@@ -2739,7 +2730,7 @@ export default function VisitasPage({ params }) {
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {/* Causa raíz */}
-                            <div className="flex flex-col gap-2 p-3 rounded-xl border border-slate-150 bg-white">
+                            <div className="flex flex-col gap-2 p-3 rounded-xl border border-slate-200 bg-white">
                               <label className="text-xs font-bold text-slate-700">¿Cuál fue la causa raíz? *</label>
                               <input
                                 type="text"
@@ -2752,7 +2743,7 @@ export default function VisitasPage({ params }) {
                             </div>
 
                             {/* Acción correctiva */}
-                            <div className="flex flex-col gap-2 p-3 rounded-xl border border-slate-150 bg-white">
+                            <div className="flex flex-col gap-2 p-3 rounded-xl border border-slate-200 bg-white">
                               <label className="text-xs font-bold text-slate-700">¿Qué acción correctiva se planificó / realizó? *</label>
                               <input
                                 type="text"
@@ -2794,7 +2785,7 @@ export default function VisitasPage({ params }) {
                           options: ['Sí', 'No', 'N/A']
                         }
                       ].map((item, idx) => (
-                        <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-150 bg-white">
+                        <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-white">
                           <div className="flex gap-2 items-start">
                             <span className="text-xs font-bold text-slate-700 leading-normal">{item.label}</span>
                           </div>
@@ -2823,7 +2814,7 @@ export default function VisitasPage({ params }) {
 
                     {/* Mediciones condicionales a Sí */}
                     {realizaronMediciones === 'Sí' && (
-                      <div className="bg-slate-50/50 p-4 border border-slate-150 rounded-2xl space-y-3 animate-fade-in">
+                      <div className="bg-slate-50/50 p-4 border border-slate-200 rounded-2xl space-y-3 animate-fade-in">
                         <label className="text-xs font-bold text-slate-600 block">Mediciones de contaminantes físicos/químicos o evaluaciones técnicas:</label>
                         
                         <div className="flex flex-wrap gap-2">
@@ -2876,7 +2867,7 @@ export default function VisitasPage({ params }) {
 
                     <div className="space-y-3">
                       {/* ¿Verificó correctivas previas? */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-150 bg-white">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-white">
                         <div className="flex gap-2 items-start">
                           <label className="text-xs font-bold text-slate-700 leading-normal">¿Verificó correctivas previas? *</label>
                         </div>
@@ -2899,7 +2890,7 @@ export default function VisitasPage({ params }) {
                       </div>
 
                       {/* ¿Se dictaron capacitaciones? */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-150 bg-white">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-white">
                         <div className="flex gap-2 items-start">
                           <label className="text-xs font-bold text-slate-700 leading-normal">¿Se dictaron capacitaciones? *</label>
                         </div>
@@ -2933,7 +2924,7 @@ export default function VisitasPage({ params }) {
                       </div>
 
                       {/* ¿Se realizaron simulacros? */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-150 bg-white">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-white">
                         <div className="flex gap-2 items-start">
                           <label className="text-xs font-bold text-slate-700 leading-normal">¿Se realizaron simulacros? *</label>
                         </div>
@@ -2969,7 +2960,7 @@ export default function VisitasPage({ params }) {
 
                     {/* Especificar temas capacitados (condicional) */}
                     {dictaronCapacitaciones && (
-                      <div className="bg-slate-50/50 p-4 border border-slate-150 rounded-2xl space-y-3 animate-fade-in relative">
+                      <div className="bg-slate-50/50 p-4 border border-slate-200 rounded-2xl space-y-3 animate-fade-in relative">
                         <label className="text-xs font-bold text-slate-600 block">Especificar Temas Capacitados:</label>
                         
                         {/* Selector multiselect dropdown interactivo */}
@@ -3056,7 +3047,7 @@ export default function VisitasPage({ params }) {
 
                     {/* Especificar simulacros (condicional) */}
                     {realizaronSimulacros && (
-                      <div className="bg-slate-50/50 p-4 border border-slate-150 rounded-2xl space-y-3 animate-fade-in">
+                      <div className="bg-slate-50/50 p-4 border border-slate-200 rounded-2xl space-y-3 animate-fade-in">
                         <label className="text-xs font-bold text-slate-600 block">Especificar tipo de simulacro:</label>
                         
                         <div className="flex flex-wrap gap-2">
@@ -3100,7 +3091,7 @@ export default function VisitasPage({ params }) {
                     )}
 
                       {/* ¿Se emite aviso de riesgo? */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-150 bg-white">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-white">
                         <div className="flex gap-2 items-start">
                           <label className="text-xs font-bold text-slate-700 leading-normal">¿Se emite aviso de riesgo por condiciones inseguras / actos inseguros? *</label>
                         </div>
@@ -3131,7 +3122,7 @@ export default function VisitasPage({ params }) {
                       </div>
 
                     {/* Documentación incorporada al Legajo */}
-                    <div className="bg-slate-50/50 p-4 border border-slate-150 rounded-2xl space-y-3">
+                    <div className="bg-slate-50/50 p-4 border border-slate-200 rounded-2xl space-y-3">
                       <label className="text-xs font-bold text-slate-600 block">Documentación incorporada al Legajo de SySO:</label>
                       
                       <div className="flex flex-wrap gap-2">
@@ -3373,44 +3364,42 @@ export default function VisitasPage({ params }) {
 
                   {/* Acciones del formulario */}
                   <div className="flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center gap-3 pt-6 border-t border-slate-100">
-                    <button
-                      type="button"
+                    <AppButton
+                      variant="secondary"
                       onClick={handleExitForm}
-                      className="px-5 py-2.5 bg-[#FFFFFF] text-[#468DFF] border border-[#468DFF] rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-[#FFFFFF] hover:border-[#FFFFFF] transition-all active:scale-[0.98] cursor-pointer text-center w-full sm:w-auto"
+                      className="w-full sm:w-auto"
                     >
                       Salir
-                    </button>
+                    </AppButton>
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                       {isReadOnlyView ? (
                         canEditar && (
-                          <button
-                            type="button"
+                          <AppButton
+                            className="bg-amber-500 hover:bg-amber-600 border-amber-500 hover:border-amber-600 text-white shadow-lg shadow-amber-500/10 text-center w-full sm:w-auto"
                             onClick={() => setIsReadOnlyView(false)}
-                            className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-amber-500/10 text-center w-full sm:w-auto"
                           >
                             Editar
-                          </button>
+                          </AppButton>
                         )
                       ) : (
                         <>
                           {editingId && canEliminar && (
-                            <button
-                              type="button"
+                            <AppButton
+                              variant="destructive"
+                              className="w-full sm:w-auto"
                               onClick={() => handleDeleteClick(editingId)}
-                              className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-red-600/10 text-center w-full sm:w-auto"
                             >
                               Eliminar
-                            </button>
+                            </AppButton>
                           )}
                           {canEdit && (
-                            <button
+                            <AppButton
                               type="submit"
-                              disabled={saveLoading}
-                              className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50 w-full sm:w-auto"
+                              loading={saveLoading}
+                              className="w-full sm:w-auto"
                             >
-                              {saveLoading && <Loader2 className="h-4 w-4 animate-spin" />}
                               {editingId ? 'Guardar Cambios' : 'Registrar Constancia'}
-                            </button>
+                            </AppButton>
                           )}
                         </>
                       )}
@@ -3428,7 +3417,7 @@ export default function VisitasPage({ params }) {
       {isMailModalOpen && mailTargetVisita && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div onClick={() => setIsMailModalOpen(false)} className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
-          <div className="bg-white rounded-2xl border border-slate-150 p-6 max-w-md w-full z-10 shadow-2xl relative space-y-4 animate-fade-in">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 max-w-md w-full z-10 shadow-2xl relative space-y-4 animate-fade-in">
             
             <div className="flex justify-between items-center">
               <h4 className="font-outfit text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
@@ -3516,7 +3505,7 @@ export default function VisitasPage({ params }) {
       {viewingFotosVisita && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div onClick={() => setViewingFotosVisita(null)} className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
-          <div className="bg-white rounded-2xl border border-slate-150 p-6 max-w-4xl w-full z-10 shadow-2xl relative space-y-4 animate-fade-in flex flex-col max-h-[85vh]">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 max-w-4xl w-full z-10 shadow-2xl relative space-y-4 animate-fade-in flex flex-col max-h-[85vh]">
             <div className="flex justify-between items-center shrink-0">
               <div>
                 <h4 className="font-outfit text-sm font-bold text-slate-900 uppercase tracking-wider">Registros de Visita</h4>
@@ -3533,7 +3522,7 @@ export default function VisitasPage({ params }) {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {viewingFotosUrls.map((url, i) => (
-                    <div key={i} className="border border-slate-150 rounded-xl overflow-hidden shadow-sm aspect-video bg-slate-50 relative group">
+                    <div key={i} className="border border-slate-200 rounded-xl overflow-hidden shadow-sm aspect-video bg-slate-50 relative group">
                       <img src={url} alt={`Registro ${i + 1}`} className="w-full h-full object-contain" />
                       <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/60 text-white text-[10px] font-bold rounded">
                         Registro #{i + 1}
@@ -3554,37 +3543,16 @@ export default function VisitasPage({ params }) {
       )}
 
       {/* MODAL DE CONFIRMACIÓN */}
-      {modalAlert.show && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
-            <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500">
-              <AlertTriangle className="h-6 w-6" />
-            </div>
-            <div className="space-y-1">
-              <h4 className="font-outfit text-base font-bold text-slate-800">{modalAlert.title}</h4>
-              <p className="text-xs text-slate-500 leading-relaxed">{modalAlert.message}</p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={closeAlert}
-                className="flex-1 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer"
-              >
-                Cancelar
-              </button>
-              {modalAlert.onConfirm && (
-                <button
-                  type="button"
-                  onClick={modalAlert.onConfirm}
-                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer"
-                >
-                  {modalAlert.confirmText || 'Confirmar'}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <AppConfirmDialog
+        open={modalAlert.show}
+        onOpenChange={(open) => setModalAlert(prev => ({ ...prev, show: open }))}
+        title={modalAlert.title}
+        description={modalAlert.message}
+        type={modalAlert.title?.toLowerCase().includes('eliminar') ? 'destructive' : 'warning'}
+        onConfirm={modalAlert.onConfirm}
+        confirmText={modalAlert.confirmText}
+        cancelText="Cancelar"
+      />
 
       {/* TOAST DE FEEDBACK removido - consumidos globalmente */}
 

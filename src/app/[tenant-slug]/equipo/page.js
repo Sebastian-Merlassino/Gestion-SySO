@@ -7,6 +7,13 @@ import Sidebar from '@/components/Sidebar';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import { supabase, fetchAllGeography } from '@/lib/supabase';
 import { useToast } from '@/components/providers/ToastProvider';
+import AppPageHeader from '@/components/ui/AppPageHeader';
+import AppButton from '@/components/ui/AppButton';
+import AppInput from '@/components/ui/AppInput';
+import AppSelect from '@/components/ui/AppSelect';
+import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
+import AppCard from '@/components/ui/AppCard';
+import AppEmptyState from '@/components/ui/AppEmptyState';
 import { 
   Users, 
   Building,
@@ -1169,28 +1176,14 @@ export default function EquipoPage({ params }) {
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <header className="h-16 border-b border-slate-200 flex items-center justify-between px-4 md:px-6 bg-white shrink-0 sticky top-0 z-20">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <button 
-              onClick={() => setIsMobileMenuOpen(true)} 
-              className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 md:hidden cursor-pointer shrink-0"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-            <Users className="h-5 w-5 text-[#468DFF] shrink-0" />
-            <h1 className="font-outfit text-base md:text-lg font-bold text-slate-900 truncate leading-none">
-              Equipo de Trabajo
-            </h1>
-          </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <span className="text-xs font-semibold text-slate-500 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-150 hidden sm:inline-block">
-              {tenant?.name || 'Cargando...'}
-            </span>
-            <span className={`px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider ${(!profile || profile.role === 'cliente') ? 'hidden' : ''}`} suppressHydrationWarning>
-              {tenant?.plan_id ? (tenant.plan_id.toLowerCase() === 'libre' ? 'Plan Libre' : tenant.plan_id.toLowerCase().startsWith('standard') ? 'Plan Standard' : tenant.plan_id.toLowerCase().startsWith('basic') ? 'Plan Basic' : `Plan ${tenant.plan_id}`) : 'Plan Pro'}
-            </span>
-          </div>
-        </header>
+        <AppPageHeader
+          title="Equipo de Trabajo"
+          icon={Users}
+          tenantName={tenant?.name || 'Cargando...'}
+          planId={tenant?.plan_id}
+          showPlanBadge={profile && profile.role !== 'cliente'}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+        />
 
         <div className="max-w-[95%] mx-auto w-full py-8 px-4 md:px-0 flex-1 flex flex-col min-h-0">
           
@@ -1207,7 +1200,7 @@ export default function EquipoPage({ params }) {
             <div className="space-y-6 flex-1 flex flex-col min-h-0">
               
               {/* Panel de Filtros y Búsqueda */}
-              <div className="bg-white rounded-2xl border border-slate-150 p-3 shadow-sm">
+              <div className="bg-white rounded-2xl border border-slate-200 p-3 shadow-sm">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                   {/* Espaciador para empujar el buscador y botón a la derecha en desktop */}
                   <div className="hidden md:block flex-1"></div>
@@ -1249,7 +1242,7 @@ export default function EquipoPage({ params }) {
               </div>
 
               {/* Members Grid/List */}
-              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex-1 flex flex-col min-h-0 transition-all duration-300 ease-in-out">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex-1 flex flex-col min-h-0 transition-all duration-300 ease-in-out">
                 {miembros.length === 0 ? (
                   <div className="flex-grow flex flex-col items-center justify-center p-20 text-center bg-slate-50/10 h-full">
                     <Briefcase className="h-10 w-10 text-slate-350 mx-auto mb-2 shrink-0" />
@@ -1268,13 +1261,13 @@ export default function EquipoPage({ params }) {
                   <div className="overflow-auto flex-grow">
                     <table className="w-full text-left border-collapse min-w-[800px]">
                       <thead>
-                        <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                          <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Nombre</th>
-                          <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-150">CUIT</th>
-                          <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Contacto</th>
-                          <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Ubicación</th>
-                          <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Acceso Login</th>
-                          {(canEditar || canEliminar) && <th className="px-6 py-4 text-right sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Acciones</th>}
+                        <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                          <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-200">Nombre</th>
+                          <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-200">CUIT</th>
+                          <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-200">Contacto</th>
+                          <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-200">Ubicación</th>
+                          <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-200">Acceso Login</th>
+                          {(canEditar || canEliminar) && <th className="px-6 py-4 text-right sticky top-0 z-10 bg-slate-50 border-b border-slate-200">Acciones</th>}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
@@ -1375,8 +1368,8 @@ export default function EquipoPage({ params }) {
             // ==========================================
             // VIEW: CREATE / EDIT FORM
             // ==========================================
-            <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
-              <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-150 flex items-center justify-between shrink-0">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
+              <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
                   <button 
                     type="button"
@@ -1401,7 +1394,7 @@ export default function EquipoPage({ params }) {
               <form onSubmit={handleSave} className="p-6 md:p-8 space-y-8 overflow-y-auto flex-1 scrollbar-thin">
                 <fieldset disabled={!canEdit} className="space-y-8">
                   {/* 1. INFORMACIÓN PERSONAL */}
-                  <div className="bg-white rounded-2xl border border-slate-150 p-6 md:p-8 shadow-sm space-y-6">
+                  <div className="bg-white rounded-2xl border border-slate-200 p-6 md:p-8 shadow-sm space-y-6">
                   <h4 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
                     <User className="text-[#468DFF] h-4.5 w-4.5" />
                     Información Personal
@@ -1561,7 +1554,7 @@ export default function EquipoPage({ params }) {
                 </div>
 
                 {/* 2. ACCESO Y LOGIN */}
-                <div className="bg-white rounded-2xl border border-slate-150 p-6 md:p-8 shadow-sm space-y-6">
+                <div className="bg-white rounded-2xl border border-slate-200 p-6 md:p-8 shadow-sm space-y-6">
                   <h4 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
                     <Lock className="text-[#468DFF] h-4.5 w-4.5" />
                     Acceso a la plataforma
@@ -1652,7 +1645,7 @@ export default function EquipoPage({ params }) {
 
                 {/* PERMISOS DE EDICIÓN (Se muestra si tiene acceso habilitado) */}
                 {tieneAcceso && (
-                  <div className="bg-white rounded-2xl border border-slate-150 p-6 md:p-8 shadow-sm space-y-6 animate-fade-in">
+                  <div className="bg-white rounded-2xl border border-slate-200 p-6 md:p-8 shadow-sm space-y-6 animate-fade-in">
                     <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                       <h4 className="font-outfit text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
                         <Lock className="text-[#468DFF] h-4.5 w-4.5" />
@@ -1755,7 +1748,7 @@ export default function EquipoPage({ params }) {
                 )}
 
                 {/* 3. MATRÍCULAS PROFESIONALES */}
-                <div className="bg-white rounded-2xl border border-slate-150 p-6 md:p-8 shadow-sm space-y-6">
+                <div className="bg-white rounded-2xl border border-slate-200 p-6 md:p-8 shadow-sm space-y-6">
                   <div className="flex justify-between items-center border-b border-slate-100 pb-3">
                     <h4 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
                       <Award className="text-[#468DFF] h-4.5 w-4.5" />
@@ -1835,7 +1828,7 @@ export default function EquipoPage({ params }) {
                         {/* Photos of License (Frente and Dorso) */}
                         <div className="grid md:grid-cols-2 gap-6">
                           {/* Frente */}
-                          <div className="border border-slate-150 rounded-2xl p-4 bg-slate-50/50 flex flex-col justify-center">
+                          <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 flex flex-col justify-center">
                             <div className="max-w-[280px] w-full mx-auto">
                               <ImageUploadZone
                                 label="Foto de Matrícula (Frente)"
@@ -1850,7 +1843,7 @@ export default function EquipoPage({ params }) {
                           </div>
 
                           {/* Dorso */}
-                          <div className="border border-slate-150 rounded-2xl p-4 bg-slate-50/50 flex flex-col justify-center">
+                          <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 flex flex-col justify-center">
                             <div className="max-w-[280px] w-full mx-auto">
                               <ImageUploadZone
                                 label="Foto de Matrícula (Dorso)"
@@ -1870,13 +1863,13 @@ export default function EquipoPage({ params }) {
                 </div>
 
                 {/* 4. FIRMA DIGITAL */}
-                <div className="bg-white rounded-2xl border border-slate-150 p-6 md:p-8 shadow-sm space-y-6">
+                <div className="bg-white rounded-2xl border border-slate-200 p-6 md:p-8 shadow-sm space-y-6">
                   <h4 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
                     <FileText className="text-[#468DFF] h-4.5 w-4.5" />
                     Firma Digital
                   </h4>
 
-                  <div className="border border-slate-150 rounded-2xl p-4 bg-slate-50/50 max-w-[320px] mx-auto flex flex-col justify-center">
+                  <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 max-w-[320px] mx-auto flex flex-col justify-center">
                     <div className="w-full mx-auto">
                       <ImageUploadZone
                         label="Imagen de Firma Digital (Opcional)"
@@ -1959,7 +1952,7 @@ export default function EquipoPage({ params }) {
       {/* MODAL DIALOG ALERT */}
       {modalAlert.show && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
             <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500">
               <AlertTriangle className="h-6 w-6" />
             </div>

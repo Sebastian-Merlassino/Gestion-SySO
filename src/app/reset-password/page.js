@@ -4,7 +4,9 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Lock, ShieldAlert, CheckCircle, Loader2, ArrowRight, X, Eye, EyeOff } from 'lucide-react';
-
+import AppCard from '@/components/ui/AppCard';
+import AppInput from '@/components/ui/AppInput';
+import AppButton from '@/components/ui/AppButton';
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');

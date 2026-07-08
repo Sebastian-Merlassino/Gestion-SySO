@@ -8,6 +8,11 @@ import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import { supabase, fetchAllGeography } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import { useToast } from '@/components/providers/ToastProvider';
+import AppPageHeader from '@/components/ui/AppPageHeader';
+import AppButton from '@/components/ui/AppButton';
+import AppInput from '@/components/ui/AppInput';
+import AppSelect from '@/components/ui/AppSelect';
+import AppCard from '@/components/ui/AppCard';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppDestructiveConfirmDialog from '@/components/ui/AppDestructiveConfirmDialog';
 import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
@@ -1084,28 +1089,14 @@ const [partidosList, setPartidosList] = useState([]);
         <div className="absolute bottom-[-10%] right-[-20%] w-[600px] h-[600px] rounded-full bg-[#0511F2]/5 blur-[150px] pointer-events-none" />
 
         {/* Navbar */}
-        <header className="h-16 border-b border-slate-200 flex items-center justify-between px-4 md:px-6 bg-white shrink-0 sticky top-0 z-20">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <button 
-              onClick={() => setIsMobileMenuOpen(true)} 
-              className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 md:hidden cursor-pointer shrink-0"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-            <Settings className="h-5 w-5 text-[#468DFF] shrink-0" />
-            <h1 className="font-outfit text-base md:text-lg font-bold text-slate-900 truncate leading-none">
-              Editar Perfil
-            </h1>
-          </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <span className="text-xs font-semibold text-slate-500 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-150 hidden sm:inline-block">
-              {tenantData?.name || 'Cargando...'}
-            </span>
-            <span className={`px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider ${(!profileData || profileData.role === 'cliente') ? 'hidden' : ''}`} suppressHydrationWarning>
-              {tenantData?.plan_id ? (tenantData.plan_id.toLowerCase() === 'libre' ? 'Plan Libre' : tenantData.plan_id.toLowerCase().startsWith('standard') ? 'Plan Standard' : tenantData.plan_id.toLowerCase().startsWith('basic') ? 'Plan Basic' : `Plan ${tenantData.plan_id}`) : 'Plan Pro'}
-            </span>
-          </div>
-        </header>
+        <AppPageHeader
+          title="Editar Perfil"
+          icon={Settings}
+          tenantName={tenantData?.name || 'Cargando...'}
+          planId={tenantData?.plan_id}
+          showPlanBadge={profileData && profileData.role !== 'cliente'}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+        />
 
         {initialLoading ? (
           <div className="flex-1 flex items-center justify-center p-8">
@@ -1120,7 +1111,7 @@ const [partidosList, setPartidosList] = useState([]);
         <form onSubmit={handleSaveChanges} className="space-y-6">
           
           {/* SECCIÓN 1: INFORMACIÓN DEL USUARIO */}
-          <div className="bg-white border border-slate-150 rounded-2xl p-5 md:p-6 shadow-sm space-y-5">
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 md:p-6 shadow-sm space-y-5">
             <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 flex items-center gap-2 uppercase tracking-wider">
               <User className="text-[#468DFF] h-4 w-4" />
               Información del usuario
@@ -1158,7 +1149,7 @@ const [partidosList, setPartidosList] = useState([]);
                     required
                     value={email}
                     autoComplete="username"
-                    className="w-full border border-slate-150 rounded-xl pl-10 pr-4 py-2 text-sm bg-slate-100 text-slate-500 outline-none cursor-not-allowed focus:outline-none"
+                    className="w-full border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-sm bg-slate-100 text-slate-500 outline-none cursor-not-allowed focus:outline-none"
                     disabled
                   />
                 </div>
@@ -1316,7 +1307,7 @@ const [partidosList, setPartidosList] = useState([]);
               </h4>
 
               {matriculas.map((m, index) => (
-                <div key={index} className="p-6 rounded-2xl border border-slate-150 bg-slate-50/50 space-y-6 relative">
+                <div key={index} className="p-6 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-6 relative">
                   {matriculas.length > 1 && (
                     <button
                       type="button"
@@ -1465,7 +1456,7 @@ const [partidosList, setPartidosList] = useState([]);
           </div>
 
           {/* SECCIÓN: SEGURIDAD (CAMBIAR CONTRASEÑA) */}
-          <div className="bg-white border border-slate-150 rounded-2xl p-5 md:p-6 shadow-sm space-y-5">
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 md:p-6 shadow-sm space-y-5">
             <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 flex items-center gap-2 uppercase tracking-wider">
               <Lock className="text-[#468DFF] h-4 w-4" />
               Seguridad (Cambiar Contraseña)
@@ -1568,7 +1559,7 @@ const [partidosList, setPartidosList] = useState([]);
           {profileData?.role === 'admin' && (
             <>
               {/* SECCIÓN 2: IDENTIDAD DE LA EMPRESA */}
-              <div className="bg-white border border-slate-150 rounded-2xl p-5 md:p-6 shadow-sm space-y-5">
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 md:p-6 shadow-sm space-y-5">
             <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 flex items-center gap-2 uppercase tracking-wider">
               <Building className="text-[#468DFF] h-4 w-4" />
               Identidad de la empresa
@@ -1696,7 +1687,7 @@ const [partidosList, setPartidosList] = useState([]);
           </div>
 
           {/* SECCIÓN 3: PLAN */}
-          <div className="bg-white border border-slate-150 rounded-2xl p-5 md:p-6 shadow-sm space-y-5">
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 md:p-6 shadow-sm space-y-5">
             <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 flex items-center gap-2 uppercase tracking-wider">
               <Award className="text-[#468DFF] h-4 w-4" />
               Plan Suscrito

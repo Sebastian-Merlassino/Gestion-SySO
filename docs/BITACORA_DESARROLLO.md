@@ -1,5 +1,57 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-08] Implementación Integral de Estandarización UI en Todas las Secciones
+
+### Resumen de Cambios
+- **Migración Integral de Encabezados (Fases A a D)**: Refactorizados todos los módulos privados de la aplicación (los 18 restantes, incluyendo `dashboard`, `empresas`, `equipo`, `nomina`, `matriz-riesgos`, `avisos`, `accidentes`, `correctivas`, `extintores`, `control-electrico`, `checklist-personalizados`, `capacitacion`, `legajo` y `programa`) para reemplazar las cabeceras HTML locales e inline por el componente unificado `<AppPageHeader />`.
+- **Integración de Componentes Atómicos en Vistas de Acceso (Fase E)**: Adaptados los flujos públicos de autenticación e incorporación (`login`, `register`, `reset-password` y `onboarding`) importando y consumiendo la biblioteca oficial (`AppCard`, `AppInput`, `AppSelect` y `AppButton`).
+- **Eliminación de Clases Obsoletas**: Verificado que los reemplazos masivos de bordes y colores erróneos se mantengan consistentes en la compilación de producción.
+
+### Archivos Modificados
+- `src/app/[tenant-slug]/dashboard/page.js`
+- `src/app/[tenant-slug]/profile/page.js`
+- `src/app/[tenant-slug]/empresas/page.js`
+- `src/app/[tenant-slug]/equipo/page.js`
+- `src/app/[tenant-slug]/nomina/page.js`
+- `src/app/[tenant-slug]/matriz-riesgos/page.js`
+- `src/app/[tenant-slug]/avisos/page.js`
+- `src/app/[tenant-slug]/accidentes/page.js`
+- `src/app/[tenant-slug]/correctivas/page.js`
+- `src/app/[tenant-slug]/extintores/page.js`
+- `src/app/[tenant-slug]/control-electrico/page.js`
+- `src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `src/app/[tenant-slug]/capacitacion/page.js`
+- `src/app/[tenant-slug]/legajo/page.js`
+- `src/app/[tenant-slug]/programa/page.js`
+- `src/app/login/page.js`
+- `src/app/register/page.js`
+- `src/app/reset-password/page.js`
+- `src/app/onboarding/page.js`
+
+### Validaciones Ejecutadas
+- Compilación final Next.js (`npm run build`) completada de forma 100% exitosa sin errores de importación de módulos o tipos.
+
+---
+
+## [2026-07-08] Implementación de Fase 3 (Depuración Masiva y Piloto de Visitas)
+
+### Resumen de Cambios
+- **Depuración Masiva Estética**: Ejecutado un script de reemplazo en bloque para sustituir `border-slate-150` por `border-slate-200`, `border-amber-250` por `border-amber-200` y `bg-red-55` por `bg-red-50` a lo largo de todos los archivos del código en la carpeta `src/`. Esto reactiva las líneas de borde finas en las 16 páginas.
+- **Migración Piloto de Visitas**: Refactorizado por completo el archivo [visitas/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/visitas/page.js) integrando:
+  - `<AppPageHeader />` en reemplazo del Navbar superior duplicado.
+  - `<AppInput />` para los campos automáticos de lectura de CUIT y Dirección.
+  - `<AppButton />` para todas las acciones principales del formulario (Salir, Editar, Eliminar, Guardar) y las acciones rápidas de fila de la tabla (Editar, Ver Detalle, Eliminar).
+  - `<AppConfirmDialog />` de Radix UI para el modal de confirmación de eliminación en lugar de la maquetación HTML inline `{modalAlert.show && ...}`.
+
+### Archivos Modificados
+- `src/app/[tenant-slug]/visitas/page.js`
+- `src/app/[tenant-slug]/*/page.js` (Modificaciones masivas de clases estéticas)
+
+### Validaciones Ejecutadas
+- Compilación de producción de Next.js (`npm run build`) completada con éxito (exit code 0) sin advertencias de tipos o linting.
+
+---
+
 ## [2026-07-08] Corrección de ReferenceError en Edición de Perfil
 
 ### Resumen de Cambios

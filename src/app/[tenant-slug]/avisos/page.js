@@ -7,6 +7,14 @@ import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import { useToast } from '@/components/providers/ToastProvider';
+import AppPageHeader from '@/components/ui/AppPageHeader';
+import AppButton from '@/components/ui/AppButton';
+import AppInput from '@/components/ui/AppInput';
+import AppSelect from '@/components/ui/AppSelect';
+import AppTextarea from '@/components/ui/AppTextarea';
+import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
+import AppCard from '@/components/ui/AppCard';
+import AppEmptyState from '@/components/ui/AppEmptyState';
 import { 
   PlusCircle, 
   AlertCircle,
@@ -1879,25 +1887,14 @@ export default function AvisosRiesgoPage({ params }) {
 
       {/* Main Area */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <header className="h-16 border-b border-slate-200 flex items-center justify-between px-4 md:px-6 bg-white shrink-0 sticky top-0 z-20">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 md:hidden cursor-pointer shrink-0">
-              <Menu className="h-5 w-5" />
-            </button>
-            <AlertTriangle className="h-5 w-5 text-[#468DFF] shrink-0" />
-            <h1 className="font-outfit text-base md:text-lg font-bold text-slate-900 truncate leading-none">
-              Avisos de Riesgo
-            </h1>
-          </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <span className="text-xs font-semibold text-slate-500 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-150 hidden sm:inline-block">
-              {tenant?.name || 'Cargando...'}
-            </span>
-            <span className={`px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider ${(!profile || profile.role === 'cliente') ? 'hidden' : ''}`} suppressHydrationWarning>
-              {tenant?.plan_id ? (tenant.plan_id.toLowerCase() === 'libre' ? 'Plan Libre' : tenant.plan_id.toLowerCase().startsWith('standard') ? 'Plan Standard' : tenant.plan_id.toLowerCase().startsWith('basic') ? 'Plan Basic' : `Plan ${tenant.plan_id}`) : 'Plan Pro'}
-            </span>
-          </div>
-        </header>
+        <AppPageHeader
+          title="Avisos de Riesgo"
+          icon={AlertTriangle}
+          tenantName={tenant?.name || 'Cargando...'}
+          planId={tenant?.plan_id}
+          showPlanBadge={profile && profile.role !== 'cliente'}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+        />
 
         {loading ? (
           <div className="flex-1 flex items-center justify-center p-8">
@@ -1911,8 +1908,8 @@ export default function AvisosRiesgoPage({ params }) {
             
             {view === 'form' ? (
               // FORMULARIO DE ALTA Y EDICIÓN INLINE
-              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
-                <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-150 flex items-center justify-between shrink-0">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
+                <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
                     <button type="button" onClick={handleExitForm} className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 cursor-pointer">
                       <ArrowLeft className="h-5 w-5" />
@@ -2020,7 +2017,7 @@ export default function AvisosRiesgoPage({ params }) {
                     </div>
 
                     {/* Previsualización de Hallazgos Cargados */}
-                    <div className="bg-slate-50 rounded-2xl border border-slate-150 p-4 space-y-3">
+                    <div className="bg-slate-50 rounded-2xl border border-slate-200 p-4 space-y-3">
                       <span className="font-outfit text-xs font-extrabold text-slate-800 block uppercase tracking-wider flex items-center gap-1.5">
                         <ClipboardList className="h-4 w-4 text-[#468DFF]" />
                         Condiciones Inseguras Cargadas ({loadedFindings.length})
@@ -2261,7 +2258,7 @@ export default function AvisosRiesgoPage({ params }) {
             ) : (
               // VISTA: TABLA Y BUSCADOR
               <div className="space-y-6 flex-1 flex flex-col min-h-0">
-                <div className="bg-white rounded-2xl border border-slate-150 p-3 shadow-sm space-y-3 shrink-0">
+                <div className="bg-white rounded-2xl border border-slate-200 p-3 shadow-sm space-y-3 shrink-0">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
                     {/* Espaciador para empujar el buscador a la derecha en desktop */}
                     <div className="hidden md:block flex-1"></div>
@@ -2408,7 +2405,7 @@ export default function AvisosRiesgoPage({ params }) {
                 </div>
 
                 {/* Tabla de Avisos */}
-                <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden flex flex-col transition-all duration-300 ease-in-out" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
+                <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col transition-all duration-300 ease-in-out" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
                   {sortedAvisos.length === 0 ? (
                     <div className="flex-grow flex flex-col items-center justify-center p-8 text-center gap-3 h-full">
                       <AlertCircle className="h-10 w-10 text-slate-300" />
@@ -2430,13 +2427,13 @@ export default function AvisosRiesgoPage({ params }) {
                     <div className="overflow-auto flex-grow">
                       <table className="w-full text-left border-collapse min-w-[850px]">
                         <thead>
-                          <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('aviso_numero')}>N° Aviso</th>
-                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('cliente')}>Cliente / Razón Social</th>
-                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('establecimiento')}>Establecimiento</th>
-                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('fecha')}>Fecha</th>
-                            <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Profesional</th>
-                            <th className="px-6 py-4 text-right sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Acciones</th>
+                          <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('aviso_numero')}>N° Aviso</th>
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('cliente')}>Cliente / Razón Social</th>
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('establecimiento')}>Establecimiento</th>
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('fecha')}>Fecha</th>
+                            <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-200">Profesional</th>
+                            <th className="px-6 py-4 text-right sticky top-0 z-10 bg-slate-50 border-b border-slate-200">Acciones</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-xs font-normal text-slate-700">
@@ -2523,7 +2520,7 @@ export default function AvisosRiesgoPage({ params }) {
         {isMailModalOpen && mailTargetAviso && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div onClick={() => setIsMailModalOpen(false)} className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
-            <div className="bg-white rounded-2xl border border-slate-150 p-6 max-w-md w-full z-10 shadow-2xl relative space-y-4 animate-fade-in">
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 max-w-md w-full z-10 shadow-2xl relative space-y-4 animate-fade-in">
               
               <div className="flex justify-between items-center">
                 <h4 className="font-outfit text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
@@ -2610,7 +2607,7 @@ export default function AvisosRiesgoPage({ params }) {
         {/* Modal de Alerta Global */}
         {modalAlert.show && (
           <div className="fixed inset-0 z-55 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-            <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
               <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500">
                 <AlertTriangle className="h-6 w-6" />
               </div>

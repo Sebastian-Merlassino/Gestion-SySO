@@ -6,6 +6,13 @@ import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import { useToast } from '@/components/providers/ToastProvider';
+import AppPageHeader from '@/components/ui/AppPageHeader';
+import AppButton from '@/components/ui/AppButton';
+import AppInput from '@/components/ui/AppInput';
+import AppSelect from '@/components/ui/AppSelect';
+import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
+import AppCard from '@/components/ui/AppCard';
+import AppEmptyState from '@/components/ui/AppEmptyState';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
@@ -1669,28 +1676,14 @@ export default function ChecklistPersonalizadosPage({ params }) {
 
       <main className="flex-grow flex flex-col min-w-0 bg-syso-bg overflow-y-auto">
         {/* HEADER PRINCIPAL */}
-        <header className="h-16 border-b border-slate-200 flex items-center justify-between px-4 md:px-6 bg-white shrink-0 sticky top-0 z-20">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <button
-              onClick={() => setIsMobileMenuOpen(true)}
-              className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 md:hidden cursor-pointer shrink-0"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-            <Sliders className="h-5 w-5 text-[#468DFF] shrink-0" />
-            <h1 className="font-outfit text-base md:text-lg font-bold text-slate-900 truncate leading-none">
-              Checklist Personalizados
-            </h1>
-          </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <span className="text-xs font-semibold text-slate-500 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-150 hidden sm:inline-block">
-              {tenant?.name || 'Gestión SySO'}
-            </span>
-            <span className="px-2.5 py-1.5 rounded-lg bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider" suppressHydrationWarning>
-              {tenant?.plan_id ? (tenant.plan_id.toLowerCase() === 'libre' ? 'Plan Libre' : tenant.plan_id.toLowerCase().startsWith('standard') ? 'Plan Standard' : tenant.plan_id.toLowerCase().startsWith('basic') ? 'Plan Basic' : `Plan ${tenant.plan_id}`) : 'Plan Libre'}
-            </span>
-          </div>
-        </header>
+        <AppPageHeader
+          title="Checklist Personalizados"
+          icon={Sliders}
+          tenantName={tenant?.name || 'Cargando...'}
+          planId={tenant?.plan_id}
+          showPlanBadge={profile && profile.role !== 'cliente'}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+        />
 
         {loading ? (
           <div className="flex-grow flex items-center justify-center p-8">
@@ -1704,7 +1697,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
             
             {/* TABS Y FILTROS COMPACTOS (Solo si no está abierto ningún formulario) */}
             {!isFormOpen && (
-              <div className="bg-white border border-slate-150 rounded-2xl p-3 shadow-sm shrink-0 flex flex-col gap-3 mb-4 transition-all">
+              <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm shrink-0 flex flex-col gap-3 mb-4 transition-all">
                 {/* Fila superior: Tabs y Buscador */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 select-none">
                   <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 gap-1 flex-shrink-0 items-center">
@@ -1841,7 +1834,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
             {/* TAB 1: LISTADO DE INSPECCIONES */}
             {activeTab === 'inspecciones' && !isFormOpen && (
               <div 
-                className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden flex flex-col flex-grow min-h-[300px] transition-all duration-300 ease-in-out"
+                className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col flex-grow min-h-[300px] transition-all duration-300 ease-in-out"
                 style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}
               >
                 {sortedInspecciones.length === 0 ? (
@@ -1862,12 +1855,12 @@ export default function ChecklistPersonalizadosPage({ params }) {
                   <div className="overflow-auto flex-grow scrollbar-thin">
                     <table className="w-full text-left border-collapse min-w-[850px] text-xs">
                       <thead>
-                        <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider select-none">
-                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('template')}>Plantilla</th>
-                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('empresa')}>Cliente</th>
-                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-150" onClick={() => handleSort('fecha')}>Fecha</th>
-                          <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Responsable H&S</th>
-                          <th className="px-6 py-4 text-right w-36 sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Acciones</th>
+                        <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider select-none">
+                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('template')}>Plantilla</th>
+                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('empresa')}>Cliente</th>
+                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('fecha')}>Fecha</th>
+                          <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-200">Responsable H&S</th>
+                          <th className="px-6 py-4 text-right w-36 sticky top-0 z-10 bg-slate-50 border-b border-slate-200">Acciones</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -1943,7 +1936,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
 
             {/* TAB 2: LISTADO DE PLANTILLAS */}
             {activeTab === 'plantillas' && !isFormOpen && (
-              <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden flex flex-col flex-grow min-h-[300px] transition-all">
+              <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col flex-grow min-h-[300px] transition-all">
                 {templates.length === 0 ? (
                   <div className="flex-grow flex flex-col items-center justify-center p-8 text-center gap-3 h-full">
                     <AlertTriangle className="h-10 w-10 text-slate-300" />
@@ -1962,12 +1955,12 @@ export default function ChecklistPersonalizadosPage({ params }) {
                   <div className="overflow-auto flex-grow scrollbar-thin">
                     <table className="w-full text-left border-collapse min-w-[700px] text-xs">
                       <thead>
-                        <tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider select-none">
-                          <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Nombre de Plantilla</th>
-                          <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Ítems</th>
-                          <th className="px-6 py-4 text-center sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Firma Resp.</th>
-                          <th className="px-6 py-4 text-center sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Firma H&S</th>
-                          <th className="px-6 py-4 text-right w-28 sticky top-0 z-10 bg-slate-50 border-b border-slate-150">Acciones</th>
+                        <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider select-none">
+                          <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-200">Nombre de Plantilla</th>
+                          <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-200">Ítems</th>
+                          <th className="px-6 py-4 text-center sticky top-0 z-10 bg-slate-50 border-b border-slate-200">Firma Resp.</th>
+                          <th className="px-6 py-4 text-center sticky top-0 z-10 bg-slate-50 border-b border-slate-200">Firma H&S</th>
+                          <th className="px-6 py-4 text-right w-28 sticky top-0 z-10 bg-slate-50 border-b border-slate-200">Acciones</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -2020,9 +2013,9 @@ export default function ChecklistPersonalizadosPage({ params }) {
                 FORMULARIO: DISEÑADOR DE PLANTILLAS (LEVEL 1)
                 ========================================== */}
             {activeTab === 'plantillas' && isTemplateFormOpen && (
-              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
                 {/* Cabecera del formulario */}
-                <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-150 flex items-center justify-between shrink-0">
+                <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
                     <button 
                       type="button" 
@@ -2301,9 +2294,9 @@ export default function ChecklistPersonalizadosPage({ params }) {
                 FORMULARIO: EJECUCIÓN / EDICIÓN DE INSPECCIÓN (LEVEL 2)
                 ========================================== */}
             {isInspeccionFormOpen && (
-              <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
                 {/* Cabecera del formulario */}
-                <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-150 flex items-center justify-between shrink-0">
+                <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
                     <button 
                       type="button"
@@ -2496,7 +2489,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
                             const isActive = (val) => respObj.respuesta === val;
 
                             return (
-                              <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-150 bg-white shadow-sm transition-all duration-300 hover:bg-slate-50/10">
+                              <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:bg-slate-50/10">
                                 <div className="flex gap-2 items-start">
                                   <span className="font-mono text-xs font-bold text-slate-400 mt-0.5">{index + 1}.</span>
                                   <span className="text-xs font-bold text-slate-700 leading-normal">
@@ -2845,7 +2838,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
       {isMailModalOpen && mailTargetInspeccion && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div onClick={() => setIsMailModalOpen(false)} className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
-          <div className="bg-white rounded-2xl border border-slate-150 p-6 max-w-md w-full z-10 shadow-2xl relative space-y-4 animate-fade-in">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 max-w-md w-full z-10 shadow-2xl relative space-y-4 animate-fade-in">
             
             <div className="flex justify-between items-center">
               <h4 className="font-outfit text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
@@ -2935,7 +2928,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
 
       {modalAlert.show && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xl max-w-sm w-full animate-scaleUp space-y-4 text-center">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xl max-w-sm w-full animate-scaleUp space-y-4 text-center">
             <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500 animate-pulse">
               <AlertTriangle className="h-6 w-6" />
             </div>
