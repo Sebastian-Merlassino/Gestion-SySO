@@ -2034,42 +2034,6 @@ const [partidosList, setPartidosList] = useState([]);
         onLeave={unsavedChangesConfig.onLeave}
       />
 
-      {/* CENTERED MODAL NOTIFICATION (VENTANA EMERGENTE) */}
-      {toast.show && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="w-full max-w-md p-6 rounded-2xl border shadow-2xl text-center bg-white border-slate-150 animate-scaleUp">
-            <div className="flex justify-center mb-4">
-              {toast.type === 'error' ? (
-                <div className="p-3 rounded-full bg-red-50 border border-red-100 text-red-500">
-                  <AlertTriangle className="h-8 w-8" />
-                </div>
-              ) : (
-                <div className="p-3 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-500">
-                  <CheckCircle className="h-8 w-8" />
-                </div>
-              )}
-            </div>
-            <h3 className="font-outfit text-lg font-bold text-slate-900 mb-2">
-              {toast.type === 'error' ? 'Notificación de Error' : 'Operación Exitosa'}
-            </h3>
-            <p className="text-sm text-slate-600 mb-6 leading-relaxed font-medium">
-              {toast.message}
-            </p>
-            <button
-              type="button"
-              onClick={() => setToast({ show: false, message: '', type: 'success' })}
-              className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs transition-all active:scale-[0.98] cursor-pointer ${
-                toast.type === 'error'
-                  ? 'bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-500/10'
-                  : 'bg-[#468DFF] hover:bg-[#0511F2] text-white shadow-lg shadow-blue-500/10'
-              }`}
-            >
-              Aceptar
-            </button>
-          </div>
-        </div>
-      )}
-
 
     </div>
   );

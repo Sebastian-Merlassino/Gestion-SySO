@@ -1,6 +1,20 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-08] Corrección de ReferenceError en Edición de Perfil
+
+### Resumen de Cambios
+- **Corrección de ReferenceError en Perfil**: Eliminado un bloque de maquetación JSX redundante (`{toast.show && ...}`) al final de `profile/page.js` que intentaba consumir e interactuar con el antiguo estado local de toast (`toast` y `setToast`), el cual había sido removido en la refactorización de alertas de la Fase 1 y 2.
+
+### Archivos Modificados
+- `src/app/[tenant-slug]/profile/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción de Next.js (`npm run build`) completada con éxito.
+
+---
+
 ## [2026-07-08] Implementación de la Fase 3 y 4 de Normalización de Alertas y Diálogos
+
 
 ### Resumen de Cambios
 - **Erradicación total de Alertas Nativas (alert())**: Refactorizados todos los métodos de carga de imágenes auxiliares locales en `profile/page.js`, `onboarding/page.js` y `equipo/page.js` para usar el toast unificado. Se eliminó la alerta nativa de descarga en `programa/page.js`.
