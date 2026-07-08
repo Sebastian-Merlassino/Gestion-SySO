@@ -6,7 +6,8 @@ import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import { supabase, fetchAllGeography } from '@/lib/supabase';
-import { 
+import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
+import {
   User, 
   Briefcase, 
   Building, 
@@ -263,7 +264,7 @@ const [partidosList, setPartidosList] = useState([]);
         setProvincia(profile.provincia || '');
         setPartido(profile.departamento_partido || '');
         setLocalidad(profile.localidad || '');
-        setBirthDate(profile.birth_date || '');
+        setBirthDate(formatDate(profile.birth_date) || '');
         
         const signatureSignedUrl = profile.signature_url ? await getSignedUrl('signatures', profile.signature_url) : '';
         setFotoFirmaPreview(signatureSignedUrl);
@@ -277,7 +278,7 @@ const [partidosList, setPartidosList] = useState([]);
               id: null,
               institucion: profile.matricula_institucion || '',
               numero: profile.matricula_numero || '',
-              vencimiento: profile.matricula_vencimiento || '',
+              vencimiento: formatDate(profile.matricula_vencimiento) || '',
               fotoFrentePreview: profile.matricula_foto_frente_url || '',
               fotoDorsoPreview: profile.matricula_foto_dorso_url || '',
               fotoFrentePath: profile.matricula_foto_frente_url || '',
@@ -300,7 +301,7 @@ const [partidosList, setPartidosList] = useState([]);
                 id: m.id,
                 institucion: m.institucion || '',
                 numero: m.numero || '',
-                vencimiento: m.vencimiento || '',
+                vencimiento: formatDate(m.vencimiento) || '',
                 fotoFrentePreview: m.foto_frente_url ? await getSignedUrl('documents', m.foto_frente_url) : '',
                 fotoDorsoPreview: m.foto_dorso_url ? await getSignedUrl('documents', m.foto_dorso_url) : '',
                 fotoFrentePath: m.foto_frente_url || '',
@@ -403,7 +404,7 @@ const [partidosList, setPartidosList] = useState([]);
           provincia: profile.provincia || '',
           partido: profile.departamento_partido || '',
           localidad: profile.localidad || '',
-          birthDate: profile.birth_date || '',
+          birthDate: formatDate(profile.birth_date) || '',
           matriculas: initialMatriculas.map(m => ({
             institucion: m.institucion,
             numero: m.numero,
@@ -756,11 +757,11 @@ const [partidosList, setPartidosList] = useState([]);
           provincia: provincia,
           departamento_partido: partido,
           localidad: localidad,
-          birth_date: birthDate,
+          birth_date: convertToDbDate(birthDate) || null,
           signature_url: signatureUrl,
           matricula_institucion: firstMatricula.institucion || null,
           matricula_numero: firstMatricula.numero || null,
-          matricula_vencimiento: firstMatricula.vencimiento || null,
+          matricula_vencimiento: convertToDbDate(firstMatricula.vencimiento) || null,
           matricula_foto_frente_url: firstMatricula.fotoFrentePreview || null,
           matricula_foto_dorso_url: firstMatricula.fotoDorsoPreview || null,
         })
@@ -779,7 +780,7 @@ const [partidosList, setPartidosList] = useState([]);
           provincia: provincia,
           departamento_partido: partido,
           localidad: localidad,
-          birth_date: birthDate,
+          birth_date: convertToDbDate(birthDate) || null,
           signature_url: signatureUrl
         }));
       }
@@ -798,7 +799,7 @@ const [partidosList, setPartidosList] = useState([]);
           profile_id: userId,
           institucion: m.institucion,
           numero: m.numero,
-          vencimiento: m.vencimiento || null,
+          vencimiento: convertToDbDate(m.vencimiento) || null,
           foto_frente_url: m.fotoFrentePreview || null,
           foto_dorso_url: m.fotoDorsoPreview || null
         }));
@@ -1108,18 +1109,18 @@ const [partidosList, setPartidosList] = useState([]);
             </div>
           </div>
         ) : (
-          <div className="p-6 md:p-8 space-y-8 max-w-[95%] mx-auto w-full z-10">
+          <div className="py-6 px-4 md:px-0 space-y-6 max-w-[95%] mx-auto w-full z-10">
         
-        <form onSubmit={handleSaveChanges} className="space-y-8">
+        <form onSubmit={handleSaveChanges} className="space-y-6">
           
           {/* SECCIÓN 1: INFORMACIÓN DEL USUARIO */}
-          <div className="bg-white border border-slate-150 rounded-2xl p-8 shadow-sm space-y-6">
-            <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
-              <User className="text-[#468DFF] h-5 w-5" />
+          <div className="bg-white border border-slate-150 rounded-2xl p-5 md:p-6 shadow-sm space-y-5">
+            <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 flex items-center gap-2 uppercase tracking-wider">
+              <User className="text-[#468DFF] h-4 w-4" />
               Información del usuario
             </h3>
 
-            <fieldset disabled={profileData?.role === 'cliente'} className="space-y-6">
+            <fieldset disabled={profileData?.role === 'cliente'} className="space-y-5">
 
             {/* Datos Personales */}
             <div className="grid md:grid-cols-2 gap-6">
@@ -1196,13 +1197,36 @@ const [partidosList, setPartidosList] = useState([]);
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                   Fecha de Nacimiento <span className="text-[#468DFF]">*</span>
                 </label>
-                <input
-                  type="date"
-                  required
-                  value={birthDate}
-                  onChange={(e) => setBirthDate(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    required
+                    placeholder="DD/MM/YYYY"
+                    maxLength={10}
+                    value={birthDate}
+                    onChange={(e) => setBirthDate(formatAsDateInput(e.target.value))}
+                    className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono text-slate-700"
+                    disabled={profileData?.role === 'cliente'}
+                  />
+                  {profileData?.role !== 'cliente' && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center" onClick={(e) => e.stopPropagation()}>
+                      <Calendar className="h-4 w-4" />
+                      <input
+                        type="date"
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val) {
+                            const parts = val.split('-');
+                            if (parts.length === 3) {
+                              setBirthDate(`${parts[2]}/${parts[1]}/${parts[0]}`);
+                            }
+                          }
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -1329,12 +1353,35 @@ const [partidosList, setPartidosList] = useState([]);
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                         Vencimiento
                       </label>
-                      <input
-                        type="date"
-                        value={m.vencimiento}
-                        onChange={(e) => handleMatriculaChange(index, 'vencimiento', e.target.value)}
-                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
-                      />
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="DD/MM/YYYY"
+                          maxLength={10}
+                          value={m.vencimiento}
+                          onChange={(e) => handleMatriculaChange(index, 'vencimiento', formatAsDateInput(e.target.value))}
+                          className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono text-slate-700"
+                          disabled={profileData?.role === 'cliente'}
+                        />
+                        {profileData?.role !== 'cliente' && (
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center" onClick={(e) => e.stopPropagation()}>
+                            <Calendar className="h-4 w-4" />
+                            <input
+                              type="date"
+                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val) {
+                                  const parts = val.split('-');
+                                  if (parts.length === 3) {
+                                    handleMatriculaChange(index, 'vencimiento', `${parts[2]}/${parts[1]}/${parts[0]}`);
+                                  }
+                                }
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -1383,8 +1430,8 @@ const [partidosList, setPartidosList] = useState([]);
               </div>
 
               {/* Firma Digital (Separada de las matrículas en su propia sección) */}
-              <div className="pt-6 border-t border-slate-200 space-y-4">
-                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+              <div className="pt-5 border-t border-slate-100 space-y-4">
+                <h4 className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
                   <FileText className="h-4 w-4 text-[#468DFF]" />
                   Firma Digital
                 </h4>
@@ -1412,9 +1459,9 @@ const [partidosList, setPartidosList] = useState([]);
           </div>
 
           {/* SECCIÓN: SEGURIDAD (CAMBIAR CONTRASEÑA) */}
-          <div className="bg-white border border-slate-150 rounded-2xl p-8 shadow-sm space-y-6">
-            <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
-              <Lock className="text-[#468DFF] h-5 w-5" />
+          <div className="bg-white border border-slate-150 rounded-2xl p-5 md:p-6 shadow-sm space-y-5">
+            <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 flex items-center gap-2 uppercase tracking-wider">
+              <Lock className="text-[#468DFF] h-4 w-4" />
               Seguridad (Cambiar Contraseña)
             </h3>
             
@@ -1515,9 +1562,9 @@ const [partidosList, setPartidosList] = useState([]);
           {profileData?.role === 'admin' && (
             <>
               {/* SECCIÓN 2: IDENTIDAD DE LA EMPRESA */}
-              <div className="bg-white border border-slate-150 rounded-2xl p-8 shadow-sm space-y-6">
-            <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
-              <Building className="text-[#468DFF] h-5 w-5" />
+              <div className="bg-white border border-slate-150 rounded-2xl p-5 md:p-6 shadow-sm space-y-5">
+            <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 flex items-center gap-2 uppercase tracking-wider">
+              <Building className="text-[#468DFF] h-4 w-4" />
               Identidad de la empresa
             </h3>
 
@@ -1643,9 +1690,9 @@ const [partidosList, setPartidosList] = useState([]);
           </div>
 
           {/* SECCIÓN 3: PLAN */}
-          <div className="bg-white border border-slate-150 rounded-2xl p-8 shadow-sm space-y-6">
-            <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
-              <Award className="text-[#468DFF] h-5 w-5" />
+          <div className="bg-white border border-slate-150 rounded-2xl p-5 md:p-6 shadow-sm space-y-5">
+            <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 flex items-center gap-2 uppercase tracking-wider">
+              <Award className="text-[#468DFF] h-4 w-4" />
               Plan Suscrito
             </h3>
 
@@ -1728,7 +1775,7 @@ const [partidosList, setPartidosList] = useState([]);
 
         {/* ELIMINAR CUENTA (Disponible para todos los usuarios) */}
         {profileData && profileData.role !== 'cliente' && (
-          <div className="mt-8 border-t border-slate-200 pt-6">
+          <div className="mt-6 border-t border-slate-100 pt-5">
             {!showDeleteSection ? (
               <div className="flex justify-start">
                 <button
@@ -1741,10 +1788,10 @@ const [partidosList, setPartidosList] = useState([]);
                 </button>
               </div>
             ) : (
-              <div className="bg-white border border-red-200 rounded-2xl p-6 shadow-sm space-y-6 animate-scaleUp">
-                <div className="flex items-center justify-between border-b border-red-100 pb-3">
-                  <h3 className="text-base font-bold text-red-600 flex items-center gap-2">
-                    <AlertTriangle className="h-4.5 w-4.5 text-red-600" />
+              <div className="bg-white border border-red-150 rounded-2xl p-5 shadow-sm space-y-5 animate-scaleUp">
+                <div className="flex items-center justify-between border-b border-red-100 pb-2">
+                  <h3 className="font-outfit text-sm font-bold text-red-600 flex items-center gap-2 uppercase tracking-wider">
+                    <AlertTriangle className="h-4 w-4 text-red-600" />
                     {profileData?.role === 'admin' ? 'Eliminar Cuenta y Organización' : 'Eliminar Cuenta de Acceso'}
                   </h3>
                   <button

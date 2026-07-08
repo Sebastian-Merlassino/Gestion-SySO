@@ -1664,7 +1664,7 @@ export default function CapacitacionPage({ params }) {
                       {/* Subsección Fotos */}
                       <div className="rounded-xl border border-slate-200 bg-slate-50 overflow-hidden flex flex-col h-full shadow-sm">
                         <div className="flex border-b border-slate-200 bg-white text-xs font-bold text-slate-500 h-[33px] items-center px-4 shrink-0">
-                          Fotos de Registro (Galería)
+                          Imágenes
                         </div>
                         <div className="p-3 flex-1 flex flex-col justify-center">
                           <ImageUploadZone

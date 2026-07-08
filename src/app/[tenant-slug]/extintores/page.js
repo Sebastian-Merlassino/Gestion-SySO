@@ -64,6 +64,18 @@ const TIPO_EXTINTORES = [
 const PRESION_OPTIONS = ['Ok', 'Despresurizado', 'Sobrepresurizado', 'N/A'];
 const CHECK_OPTIONS = ['Ok', 'No Ok', 'N/A'];
 
+const getPathsFromImagenUrl = (imagenUrl) => {
+  if (!imagenUrl || imagenUrl === 'N/A') return [];
+  if (imagenUrl.startsWith('[') && imagenUrl.endsWith(']')) {
+    try {
+      return JSON.parse(imagenUrl);
+    } catch (e) {
+      return [imagenUrl];
+    }
+  }
+  return [imagenUrl];
+};
+
 export default function ExtintoresPage({ params }) {
   const tenantSlug = params['tenant-slug'];
 
@@ -147,10 +159,8 @@ export default function ExtintoresPage({ params }) {
   const [cilindro, setCilindro] = useState('N/A');
   const [senalizacion, setSenalizacion] = useState('N/A');
   
-  // Archivo e Imagenes
-  const [imagenFile, setImagenFile] = useState(null);
-  const [imagenPreview, setImagenPreview] = useState('');
-  const [imagenPath, setImagenPath] = useState(''); 
+  // Archivo e Imagenes (Múltiple)
+  const [fotosFiles, setFotosFiles] = useState([]); // array de { file: File | null, preview: string, path: string }
 
   const [fechaControl, setFechaControl] = useState('');
   const [observaciones, setObservaciones] = useState('');
@@ -345,11 +355,12 @@ export default function ExtintoresPage({ params }) {
       // Recopilar paths de Supabase para firmar en lote (en una sola llamada de red)
       const pathsToSign = [];
       (exts || []).forEach(ext => {
-        if (ext.imagen_url && ext.imagen_url !== 'N/A') {
-          if (!ext.imagen_url.startsWith('http://') && !ext.imagen_url.startsWith('https://')) {
-            pathsToSign.push(ext.imagen_url);
+        const paths = getPathsFromImagenUrl(ext.imagen_url);
+        paths.forEach(ppath => {
+          if (ppath && ppath !== 'N/A' && !ppath.startsWith('http://') && !ppath.startsWith('https://')) {
+            pathsToSign.push(ppath);
           }
-        }
+        });
       });
 
       let signedUrlsMap = {};
@@ -371,17 +382,19 @@ export default function ExtintoresPage({ params }) {
       }
 
       const resolvedExtintores = (exts || []).map(ext => {
-        let signedUrl = '';
-        if (ext.imagen_url && ext.imagen_url !== 'N/A') {
-          if (ext.imagen_url.startsWith('http://') || ext.imagen_url.startsWith('https://')) {
-            signedUrl = ext.imagen_url;
-          } else {
-            signedUrl = signedUrlsMap[ext.imagen_url] || '';
+        const paths = getPathsFromImagenUrl(ext.imagen_url);
+        const resolvedUrls = paths.map(ppath => {
+          if (ppath.startsWith('http://') || ppath.startsWith('https://')) {
+            return ppath;
           }
-        }
+          return signedUrlsMap[ppath] || '';
+        }).filter(url => url !== '');
+
         return {
           ...ext,
-          imagen_preview_url: signedUrl
+          imagen_preview_url: resolvedUrls[0] || '',
+          fotos_urls: resolvedUrls,
+          fotos_paths: paths
         };
       });
 
@@ -805,12 +818,18 @@ export default function ExtintoresPage({ params }) {
 
     setSaveLoading(true);
     try {
-      let finalImagenUrl = imagenPath;
-
-      // Subir archivo si hay
-      if (imagenFile) {
-        finalImagenUrl = await uploadImageToStorage(imagenFile);
+      // Subir fotos
+      const finalImagenPaths = [];
+      for (let i = 0; i < fotosFiles.length; i++) {
+        const foto = fotosFiles[i];
+        if (foto.file) {
+          const uploadedPath = await uploadImageToStorage(foto.file);
+          finalImagenPaths.push(uploadedPath);
+        } else if (foto.path) {
+          finalImagenPaths.push(foto.path);
+        }
       }
+      const finalImagenUrlVal = finalImagenPaths.length > 0 ? JSON.stringify(finalImagenPaths) : null;
 
       const dbTipo = tipo === 'Otro' ? tipoOtro.trim() : tipo;
 
@@ -833,7 +852,7 @@ export default function ExtintoresPage({ params }) {
         manguera_boquilla: mangueraBoquilla || null,
         cilindro: cilindro || null,
         senalizacion: senalizacion || null,
-        imagen_url: finalImagenUrl || null,
+        imagen_url: finalImagenUrlVal,
         fecha_control: convertToDbDate(fechaControl) || null,
         observaciones: observaciones || null,
         updated_at: new Date().toISOString()
@@ -910,9 +929,13 @@ export default function ExtintoresPage({ params }) {
     setCilindro(ext.cilindro || 'N/A');
     setSenalizacion(ext.senalizacion || 'N/A');
 
-    setImagenFile(null);
-    setImagenPreview(ext.imagen_preview_url || '');
-    setImagenPath(ext.imagen_url || '');
+    // Cargar fotos guardadas
+    const loadedFotos = (ext.fotos_paths || []).map((ppath, idx) => ({
+      file: null,
+      preview: ext.fotos_urls?.[idx] || '',
+      path: ppath
+    })).filter(f => f.preview !== '');
+    setFotosFiles(loadedFotos);
     
     setFechaControl(formatDate(ext.fecha_control) || '');
     setObservaciones(ext.observaciones || '');
@@ -1020,9 +1043,7 @@ export default function ExtintoresPage({ params }) {
     setMangueraBoquilla('N/A');
     setCilindro('N/A');
     setSenalizacion('N/A');
-    setImagenFile(null);
-    setImagenPreview('');
-    setImagenPath('');
+    setFotosFiles([]);
     setFechaControl('');
     setObservaciones('');
   };
@@ -1430,20 +1451,25 @@ export default function ExtintoresPage({ params }) {
                     {/* Foto / Evidencia de Control */}
                     <div>
                       <ImageUploadZone
-                        label="Imagen / Evidencia Fotográfica"
-                        preview={imagenPreview}
-                        onFileChange={(file) => {
-                          setImagenFile(file);
-                          const reader = new FileReader();
-                          reader.onloadend = () => {
-                            setImagenPreview(reader.result);
-                          };
-                          reader.readAsDataURL(file);
+                        label="Imagen / Evidencia Fotográfica (Mediciones, estado físico, señalización, etc.)"
+                        multiple={true}
+                        images={fotosFiles}
+                        onAddPhotos={(validFiles) => {
+                          const newPhotos = validFiles.map(file => ({
+                            file,
+                            preview: URL.createObjectURL(file),
+                            path: ''
+                          }));
+                          setFotosFiles(prev => [...prev, ...newPhotos]);
                         }}
-                        onClear={() => {
-                          setImagenFile(null);
-                          setImagenPreview('');
-                          setImagenPath('');
+                        onRemovePhoto={(index) => {
+                          setFotosFiles(prev => {
+                            const target = prev[index];
+                            if (target && target.preview && target.preview.startsWith('blob:')) {
+                              URL.revokeObjectURL(target.preview);
+                            }
+                            return prev.filter((_, idx) => idx !== index);
+                          });
                         }}
                         disabled={!canEdit}
                         maxSizeMB={5}

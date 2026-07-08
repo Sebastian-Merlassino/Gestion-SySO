@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Camera, Upload, Trash2, Image as ImageIcon, Loader2, Eye } from 'lucide-react';
+import { Camera, Upload, Trash2, Image as ImageIcon, Loader2, Eye, PlusCircle } from 'lucide-react';
 
 /**
  * Validates file size and format for images
@@ -102,7 +102,7 @@ export default function ImageUploadZone({
   };
 
   return (
-    <div className="space-y-3">
+    <div className={`space-y-3 ${!multiple ? 'max-w-md w-full' : ''}`}>
       {/* Label above */}
       {label && (
         <label className="text-xs font-bold text-slate-600 block mb-1.5">{label}</label>
@@ -110,33 +110,106 @@ export default function ImageUploadZone({
 
       {/* Upload Zone */}
       {!multiple && preview ? (
-        <div className="relative w-full h-48 bg-white border border-slate-200 rounded-xl overflow-hidden group shadow-sm flex items-center justify-center">
-          <img src={preview} alt={label || "Vista previa"} className="w-full h-full object-cover" />
-          {!disabled && (
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                className="p-2 bg-white hover:bg-slate-100 text-slate-800 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
-              >
-                <Upload className="h-3.5 w-3.5 text-[#468DFF]" />
-                Cambiar
-              </button>
-              <button
-                type="button"
-                onClick={onClear}
-                className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                Quitar
-              </button>
-            </div>
-          )}
+        <div className="relative w-full h-64 bg-slate-50 border border-slate-200 rounded-xl overflow-hidden group shadow-sm flex items-center justify-center">
+          <img src={preview} alt={label || "Vista previa"} className="w-full h-full object-contain bg-slate-50" />
+          <div className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 duration-200">
+            <a
+              href={preview}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Ver en pantalla completa"
+              className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors cursor-pointer shadow-sm"
+            >
+              <Eye className="h-4 w-4" />
+            </a>
+            {!disabled && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  title="Cambiar imagen"
+                  className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors cursor-pointer shadow-sm"
+                >
+                  <Upload className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={onClear}
+                  title="Quitar"
+                  className="p-1.5 rounded-lg bg-red-600/80 hover:bg-red-600 text-white transition-colors cursor-pointer shadow-sm"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </>
+            )}
+          </div>
           {/* Fallback inputs for changing file */}
           <input
             ref={fileRef}
             type="file"
             accept="image/*"
+            className="hidden"
+            disabled={disabled}
+            onChange={handleFileChangeInternal}
+          />
+        </div>
+      ) : multiple && images.length > 0 ? (
+        <div
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={`relative border border-slate-200 bg-slate-50/50 rounded-xl p-4 transition-all
+            ${isDragging ? 'border-[#468DFF] bg-blue-50/50' : ''}`}
+        >
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
+            {images.map((img, idx) => (
+              <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 bg-white group shadow-sm flex items-center justify-center">
+                <img src={img.preview || img} alt="Vista previa" className="w-full h-full object-cover" />
+                
+                {/* Hover overlay with action buttons */}
+                <div className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity duration-200">
+                  <a
+                    href={img.preview || img}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Ver en pantalla completa"
+                    className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors cursor-pointer shadow-sm"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </a>
+                  {!disabled && onRemovePhoto && (
+                    <button
+                      type="button"
+                      onClick={() => onRemovePhoto(idx)}
+                      title="Eliminar"
+                      className="p-1.5 rounded-lg bg-red-600/80 hover:bg-red-600 text-white transition-colors cursor-pointer shadow-sm"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {/* Tarjeta de añadir foto */}
+            {!disabled && (
+              <div
+                onClick={() => fileRef.current?.click()}
+                className="relative aspect-square rounded-xl border-2 border-dashed border-slate-200 bg-white hover:border-[#468DFF] hover:bg-blue-50/20 transition-all flex flex-col items-center justify-center gap-1.5 cursor-pointer shadow-sm group"
+              >
+                <div className="p-1.5 rounded-lg bg-slate-50 text-slate-400 group-hover:bg-[#468DFF]/10 group-hover:text-[#468DFF] transition-colors">
+                  <PlusCircle className="h-5 w-5" />
+                </div>
+                <span className="text-[10px] font-bold text-slate-500 group-hover:text-[#468DFF] transition-colors">Añadir foto</span>
+              </div>
+            )}
+          </div>
+
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            multiple={true}
             className="hidden"
             disabled={disabled}
             onChange={handleFileChangeInternal}
@@ -200,39 +273,6 @@ export default function ImageUploadZone({
           </div>
           
           <p className="text-[9px] text-slate-400 font-medium">PNG, JPG, JPEG o WEBP de hasta {maxSizeMB} MB por archivo</p>
-        </div>
-      )}
-
-      {/* Grid of previews for multiple mode */}
-      {multiple && images.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 pt-2">
-          {images.map((img, idx) => (
-            <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-100 group shadow-sm flex items-center justify-center">
-              <img src={img.preview || img} alt="Vista previa" className="w-full h-full object-cover" />
-              {/* Hover overlay with action buttons */}
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
-                <a
-                  href={img.preview || img}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="Ver en pantalla completa"
-                  className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors"
-                >
-                  <Eye className="h-4 w-4" />
-                </a>
-                {!disabled && onRemovePhoto && (
-                  <button
-                    type="button"
-                    onClick={() => onRemovePhoto(idx)}
-                    title="Eliminar"
-                    className="p-1.5 rounded-lg bg-red-600/80 hover:bg-red-600 text-white transition-colors cursor-pointer"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
         </div>
       )}
     </div>

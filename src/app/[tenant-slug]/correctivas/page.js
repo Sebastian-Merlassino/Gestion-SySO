@@ -129,6 +129,18 @@ const NIVEL_RIESGO_OPTIONS = [
   'N/A'
 ];
 
+const getPathsFromImagenUrl = (imagenUrl) => {
+  if (!imagenUrl || imagenUrl === 'N/A') return [];
+  if (imagenUrl.startsWith('[') && imagenUrl.endsWith(']')) {
+    try {
+      return JSON.parse(imagenUrl);
+    } catch (e) {
+      return [imagenUrl];
+    }
+  }
+  return [imagenUrl];
+};
+
 export default function AccionesCorrectivasPage({ params }) {
   const tenantSlug = params['tenant-slug'];
 
@@ -207,10 +219,8 @@ export default function AccionesCorrectivasPage({ params }) {
   const [descripcionHallazgo, setDescripcionHallazgo] = useState('');
   const [nivelRiesgo, setNivelRiesgo] = useState('N/A');
   
-  // Archivo e Imagenes
-  const [imagenFile, setImagenFile] = useState(null);
-  const [imagenPreview, setImagenPreview] = useState('');
-  const [imagenPath, setImagenPath] = useState(''); // relative path stored in database
+  // Archivo e Imagenes (Múltiple)
+  const [fotosFiles, setFotosFiles] = useState([]); // array de { file: File | null, preview: string, path: string }
 
   const [recomendacion, setRecomendacion] = useState('');
   const [accionPreventiva, setAccionPreventiva] = useState('');
@@ -429,11 +439,12 @@ export default function AccionesCorrectivasPage({ params }) {
       // Recopilar paths de Supabase para firmar en lote (en una sola llamada de red)
       const pathsToSign = [];
       (accs || []).forEach(acc => {
-        if (acc.imagen_url && acc.imagen_url !== 'N/A') {
-          if (!acc.imagen_url.startsWith('http://') && !acc.imagen_url.startsWith('https://')) {
-            pathsToSign.push(acc.imagen_url);
+        const paths = getPathsFromImagenUrl(acc.imagen_url);
+        paths.forEach(ppath => {
+          if (ppath && ppath !== 'N/A' && !ppath.startsWith('http://') && !ppath.startsWith('https://')) {
+            pathsToSign.push(ppath);
           }
-        }
+        });
       });
 
       let signedUrlsMap = {};
@@ -455,17 +466,19 @@ export default function AccionesCorrectivasPage({ params }) {
       }
 
       const resolvedAcciones = (accs || []).map(acc => {
-        let signedUrl = '';
-        if (acc.imagen_url && acc.imagen_url !== 'N/A') {
-          if (acc.imagen_url.startsWith('http://') || acc.imagen_url.startsWith('https://')) {
-            signedUrl = acc.imagen_url;
-          } else {
-            signedUrl = signedUrlsMap[acc.imagen_url] || '';
+        const paths = getPathsFromImagenUrl(acc.imagen_url);
+        const resolvedUrls = paths.map(ppath => {
+          if (ppath.startsWith('http://') || ppath.startsWith('https://')) {
+            return ppath;
           }
-        }
+          return signedUrlsMap[ppath] || '';
+        }).filter(url => url !== '');
+
         return {
           ...acc,
-          imagen_preview_url: signedUrl
+          imagen_preview_url: resolvedUrls[0] || '',
+          fotos_urls: resolvedUrls,
+          fotos_paths: paths
         };
       });
 
@@ -897,12 +910,22 @@ export default function AccionesCorrectivasPage({ params }) {
 
     setSaveLoading(true);
     try {
-      let finalImagenUrl = imagenPath;
-
-      // Subir archivo de imagen si se seleccionó uno nuevo
-      if (imagenFile) {
-        finalImagenUrl = await uploadImageToStorage(imagenFile);
+      // Procesar y subir todas las fotos en fotosFiles
+      const uploadedPaths = [];
+      for (const foto of fotosFiles) {
+        if (foto.file) {
+          // Subir archivo nuevo
+          const path = await uploadImageToStorage(foto.file);
+          if (path) {
+            uploadedPaths.push(path);
+          }
+        } else if (foto.path) {
+          // Mantener path existente
+          uploadedPaths.push(foto.path);
+        }
       }
+
+      const finalImagenUrl = uploadedPaths.length > 0 ? JSON.stringify(uploadedPaths) : '';
 
       const dbFuente = fuente === 'Otra' ? fuenteOtra.trim() : fuente;
       const dbTipoHallazgo = tipoHallazgo === 'Otro' ? tipoHallazgoOtro.trim() : tipoHallazgo;
@@ -1003,9 +1026,13 @@ export default function AccionesCorrectivasPage({ params }) {
     setDescripcionHallazgo(acc.descripcion_hallazgo || '');
     setNivelRiesgo(acc.nivel_riesgo);
 
-    setImagenFile(null);
-    setImagenPreview(acc.imagen_preview_url || '');
-    setImagenPath(acc.imagen_url || '');
+    // Inicializar fotos múltiples
+    const initialFotos = (acc.fotos_paths || []).map((path, idx) => ({
+      file: null,
+      preview: acc.fotos_urls[idx] || '',
+      path: path
+    }));
+    setFotosFiles(initialFotos);
 
     setRecomendacion(acc.recomendacion || '');
     setAccionPreventiva(acc.accion_preventiva || '');
@@ -1113,9 +1140,12 @@ export default function AccionesCorrectivasPage({ params }) {
     setTipoHallazgoOtro('');
     setDescripcionHallazgo('');
     setNivelRiesgo('N/A');
-    setImagenFile(null);
-    setImagenPreview('');
-    setImagenPath('');
+    fotosFiles.forEach(foto => {
+      if (foto.preview && foto.preview.startsWith('blob:')) {
+        URL.revokeObjectURL(foto.preview);
+      }
+    });
+    setFotosFiles([]);
     setRecomendacion('');
     setAccionPreventiva('');
     setCausaRaiz('');
@@ -1543,19 +1573,24 @@ export default function AccionesCorrectivasPage({ params }) {
                     <div>
                       <ImageUploadZone
                         label="Imagen de Evidencia (Hallazgo)"
-                        preview={imagenPreview}
-                        onFileChange={(file) => {
-                          setImagenFile(file);
-                          const reader = new FileReader();
-                          reader.onloadend = () => {
-                            setImagenPreview(reader.result);
-                          };
-                          reader.readAsDataURL(file);
+                        multiple={true}
+                        images={fotosFiles}
+                        onAddPhotos={(validFiles) => {
+                          const newPhotos = validFiles.map(file => ({
+                            file,
+                            preview: URL.createObjectURL(file),
+                            path: ''
+                          }));
+                          setFotosFiles(prev => [...prev, ...newPhotos]);
                         }}
-                        onClear={() => {
-                          setImagenFile(null);
-                          setImagenPreview('');
-                          setImagenPath('');
+                        onRemovePhoto={(index) => {
+                          setFotosFiles(prev => {
+                            const target = prev[index];
+                            if (target && target.preview && target.preview.startsWith('blob:')) {
+                              URL.revokeObjectURL(target.preview);
+                            }
+                            return prev.filter((_, idx) => idx !== index);
+                          });
                         }}
                         disabled={!canEdit}
                         maxSizeMB={5}

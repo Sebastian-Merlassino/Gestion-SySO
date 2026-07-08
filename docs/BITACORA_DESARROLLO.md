@@ -1,5 +1,45 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-08] Rediseño de Galería Integrada para Evidencias Fotográficas Múltiples (Estándar SySO-Multiple-Evidence-Photo-Grid)
+
+### Resumen de Cambios
+- **Componente Reutilizable (`src/components/ui/ImageUploadZone.js`)**:
+  - Se rediseñó el componente en modo `multiple={true}` para que, al cargar imágenes, la previsualización se visualice **dentro** del contenedor de carga (diseño integrado de galería) en lugar de flotar de forma desordenada debajo de él.
+  - La caja dashed grande se sustituye en caliente por una caja contenedora de bordes limpios y fondo gris suave (`border border-slate-200 bg-slate-50/50 rounded-xl p-4`) que contiene la grilla de fotos.
+  - Se incorporó una **tarjeta interactiva especial de "+" (Añadir foto)** al final del grid de fotos (con borde dashed y un ícono `PlusCircle`), que sirve como disparador para agregar más imágenes al formulario. Esta tarjeta se oculta automáticamente en modo de solo lectura (lectura del cliente), mostrando una galería limpia.
+  - Se rediseñó el hover overlay en modo de imagen simple (`!multiple`) para que coincida exactamente con la estética del estándar: los antiguos botones de fondo blanco con texto ("Ver", "Cambiar", "Quitar") se sustituyeron por botones de ícono translúcidos flotantes (`bg-white/20` para Ver/Cambiar, `bg-red-600/80` para Quitar) con íconos de tamaño `h-4 w-4`, unificando las dos variantes.
+  - Todo el contenedor integrado sigue escuchando eventos de Drag & Drop, permitiendo soltar nuevas imágenes directamente en cualquier parte del componente.
+- **Formulario de Registro/Edición de Extintor (`src/app/[tenant-slug]/extintores/page.js`)**:
+  - Se adaptaron los estados y el guardado para serializar y deserializar de forma compatible la lista de múltiples evidencias fotográficas en formato JSON en la columna `imagen_url` existente (retrocompatibilidad del 100%).
+  - Se actualizó el listado y el generador de PDF para tomar la primera imagen de la lista.
+- **Formulario de Acciones Correctivas (`src/app/[tenant-slug]/correctivas/page.js`)**:
+  - Se implementó la carga y previsualización múltiple adaptando la columna de base de datos `imagen_url` a JSON serializado y aplicando el componente de galería integrada bajo el estándar `SySO-Multiple-Evidence-Photo-Grid`.
+- **Formulario de Capacitaciones (`src/app/[tenant-slug]/capacitacion/page.js`)**:
+  - Se modificó la etiqueta de cabecera "Fotos de Registro (Galería)" por "Imágenes" para estandarizar el vocabulario técnico de evidencias visuales.
+- **Formulario de Perfil de Usuario (`src/app/[tenant-slug]/profile/page.js`)**:
+  - Se aplicó el estándar **"SySO Compact Layout"** para optimizar el tamaño y ubicación de los contenedores dentro de la ventana de visualización. Se redujo el padding de las tarjetas de `p-8` a `p-5 md:p-6`, se disminuyó el espaciado de `space-y-6` a `space-y-5`, se adaptaron los títulos de sección a una escala compacta y se alineó horizontalmente el contenedor principal de la página (`py-6 px-4 md:px-0 max-w-[95%]`).
+  - Se remaquetaron los selectores de fecha (`birthDate` y vencimiento de matrículas) para implementar el estándar de selector de fechas del software: un input de texto visible formateado como `DD/MM/YYYY` con el botón de calendario Lucide posicionado absolutamente a la derecha con cursor pointer e interactividad hover azul.
+- **Brand Guidelines (`.agents/skills/gestion-syso-brand-guidelines/SKILL.md`)**:
+  - Se formalizó y documentó el estándar bajo el nombre **`SySO-Multiple-Evidence-Photo-Grid`**, incluyendo el nuevo diseño de galería integrada con tarjeta de carga rápida y simetría con el modo simple.
+
+### Decisiones Clave
+- **Optimización de Espacio y UI Premium**: Integrar la galería y el botón "+" dentro de un único contenedor evita desordenar verticalmente el formulario, simplificando la visualización móvil y de escritorio, logrando un diseño digno de aplicaciones de nivel de producción (como Airbnb o Mercado Libre).
+- **Consistencia Estética Total**: Unificar el formato de los botones sobre el hover de las fotos (tanto en galerías múltiples como en inputs simples de firmas o logotipos) consolida la identidad premium del diseño y reduce la carga cognitiva del usuario.
+- **Compatibilidad de Esquema**: Guardar la lista como JSON string en la columna `imagen_url` original evita alteraciones físicas a la tabla de base de datos en producción y mantiene la compatibilidad con registros antiguos.
+
+### Archivos Modificados / Creados
+- **[page.js (extintores)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/extintores/page.js)** (Modificado)
+- **[page.js (correctivas)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/correctivas/page.js)** (Modificado)
+- **[page.js (capacitacion)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/capacitacion/page.js)** (Modificado)
+- **[page.js (profile)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/profile/page.js)** (Modificado)
+- **[ImageUploadZone.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/components/ui/ImageUploadZone.js)** (Modificado)
+- **[SKILL.md (brand-guidelines)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/.agents/skills/gestion-syso-brand-guidelines/SKILL.md)** (Modificado)
+
+### Validaciones Ejecutadas
+- Compilación de producción de Next.js exitosa mediante `npm run build` sin errores de tipos o sintaxis.
+
+---
+
 ## [2026-07-08] Solución a Inoperabilidad de Documentos en Detalle de Siniestro (Sesión de Cliente)
 
 ### Resumen de Cambios
