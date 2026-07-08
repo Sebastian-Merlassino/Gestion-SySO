@@ -7,9 +7,13 @@
   - Se modificó la ubicación del tag `<fieldset>` en el modal del formulario.
   - Se cerró el `<fieldset disabled={isFormDisabled}>` inmediatamente al finalizar la Sección 3 (Información sobre el siniestro), dejando las secciones de Documentos (Sección 4) y Firmas (Sección 5) fuera de esta envoltura deshabilitadora del navegador.
   - Esto soluciona el bloqueo nativo del navegador que inhabilitaba los eventos `onClick` de los botones de visualización (`Eye`) y descarga de PDF de `DocumentUploadZone` en modo de solo lectura (como ocurre en la sesión del cliente), mientras mantiene a la perfección el bloqueo del resto de los inputs del siniestro.
+- **Componente Reutilizable (`src/components/ui/DocumentUploadZone.js`)**:
+  - Se reemplazó el tag de descarga directo `<a>` con un botón interactivo `<button type="button">` que cuenta con lógica de validación de URLs.
+  - Si la URL provista es una ruta de almacenamiento relativa de Supabase Storage, se redirige el evento para firmar el recurso en caliente a través del prop `onViewPdf` de manera idéntica al botón del ojo, evitando fallos de redirección 404 a páginas internas inexistentes. Si es una URL completa, se abre de forma transparente.
 
 ### Archivos Modificados / Creados
 - **[page.js (accidentes)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/accidentes/page.js)** (Modificado)
+- **[DocumentUploadZone.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/components/ui/DocumentUploadZone.js)** (Modificado)
 
 ### Validaciones Ejecutadas
 - Compilación de producción exitosa mediante `npm run build`.

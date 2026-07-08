@@ -263,16 +263,26 @@ export default function DocumentUploadZone({
                 <Eye className="h-3.5 w-3.5" />
               </button>
               {fileUrl && (
-                <a
-                  href={fileUrl}
-                  download
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!fileUrl.startsWith('http://') && !fileUrl.startsWith('https://') && !fileUrl.startsWith('blob:')) {
+                      // Es una ruta relativa de storage → firmar en caliente mediante onViewPdf
+                      if (onViewPdf) {
+                        onViewPdf(fileUrl);
+                      }
+                    } else {
+                      // Ya es una URL completa/firmada → abrir directamente para descarga
+                      if (typeof window !== 'undefined') {
+                        window.open(fileUrl, '_blank');
+                      }
+                    }
+                  }}
                   title={`Descargar ${label}`}
                   className="p-1.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 hover:text-[#468DFF] hover:bg-blue-50 hover:border-blue-150 transition-all duration-300 flex items-center justify-center cursor-pointer"
                 >
                   <Download className="h-3.5 w-3.5" />
-                </a>
+                </button>
               )}
               {!disabled && onDelete && (
                 <button
