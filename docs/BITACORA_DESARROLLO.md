@@ -1,5 +1,21 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-08] Solución a Inoperabilidad de Documentos en Detalle de Siniestro (Sesión de Cliente)
+
+### Resumen de Cambios
+- **Detalle de Siniestro (`src/app/[tenant-slug]/accidentes/page.js`)**:
+  - Se modificó la ubicación del tag `<fieldset>` en el modal del formulario.
+  - Se cerró el `<fieldset disabled={isFormDisabled}>` inmediatamente al finalizar la Sección 3 (Información sobre el siniestro), dejando las secciones de Documentos (Sección 4) y Firmas (Sección 5) fuera de esta envoltura deshabilitadora del navegador.
+  - Esto soluciona el bloqueo nativo del navegador que inhabilitaba los eventos `onClick` de los botones de visualización (`Eye`) y descarga de PDF de `DocumentUploadZone` en modo de solo lectura (como ocurre en la sesión del cliente), mientras mantiene a la perfección el bloqueo del resto de los inputs del siniestro.
+
+### Archivos Modificados / Creados
+- **[page.js (accidentes)](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/accidentes/page.js)** (Modificado)
+
+### Validaciones Ejecutadas
+- Compilación de producción exitosa mediante `npm run build`.
+
+---
+
 ## [2026-07-08] Auditoría de Seguridad e Implementación del Plan de Remediación (Fase 1 y 2)
 
 ### Resumen de Cambios

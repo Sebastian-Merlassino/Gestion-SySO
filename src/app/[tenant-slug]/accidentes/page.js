@@ -3514,12 +3514,13 @@ export default function AccidentesPage({ params }) {
                             placeholder="Observaciones adicionales..."
                             className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all resize-y disabled:opacity-70 disabled:bg-slate-50/50"
                           />
-                        </div>
                       </div>
                     </div>
+                  </div>
+                  </fieldset>
 
-                    {/* SECCIÓN 4: Documentos */}
-                    <div className="space-y-4">
+                  {/* SECCIÓN 4: Documentos */}
+                  <div className="space-y-4">
                       <span className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
                         <Upload className="h-4 w-4 text-[#468DFF]" />
                         Documentos
@@ -3759,9 +3760,7 @@ export default function AccidentesPage({ params }) {
                       </div>
                     </div>
 
-                  </fieldset>
-
-                  {/* Botones del Formulario */}
+                    {/* Botones del Formulario */}
                   <div className="flex justify-between items-center pt-6 border-t border-slate-100">
                     <button
                       type="button"
