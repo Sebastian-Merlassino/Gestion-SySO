@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Camera, Upload, Trash2, Image as ImageIcon, Loader2, Eye, PlusCircle } from 'lucide-react';
+import { useToast } from '../providers/ToastProvider';
 
 /**
  * Validates file size and format for images
@@ -14,7 +15,7 @@ const validateImage = (file, maxSizeMB, onToast) => {
     if (onToast) {
       onToast(errorMsg, 'error');
     } else {
-      alert(errorMsg);
+      console.error(errorMsg);
     }
     return false;
   }
@@ -26,7 +27,7 @@ const validateImage = (file, maxSizeMB, onToast) => {
     if (onToast) {
       onToast(errorMsg, 'error');
     } else {
-      alert(errorMsg);
+      console.error(errorMsg);
     }
     return false;
   }
@@ -51,6 +52,14 @@ export default function ImageUploadZone({
   const fileRef = useRef(null);
   const cameraRef = useRef(null);
 
+  let globalToast = null;
+  try {
+    globalToast = useToast();
+  } catch (e) {
+    // ignorar si se renderiza fuera de ToastProvider en tests
+  }
+  const activeToast = onToast || globalToast?.toast;
+
   const handleDragOver = (e) => {
     e.preventDefault();
     if (!disabled) {
@@ -69,13 +78,13 @@ export default function ImageUploadZone({
 
     if (multiple) {
       const droppedFiles = Array.from(e.dataTransfer.files || []);
-      const validFiles = droppedFiles.filter(file => validateImage(file, maxSizeMB, onToast));
+      const validFiles = droppedFiles.filter(file => validateImage(file, maxSizeMB, activeToast));
       if (validFiles.length > 0 && onAddPhotos) {
         onAddPhotos(validFiles);
       }
     } else {
       const file = e.dataTransfer.files?.[0];
-      if (file && validateImage(file, maxSizeMB, onToast) && onFileChange) {
+      if (file && validateImage(file, maxSizeMB, activeToast) && onFileChange) {
         onFileChange(file);
       }
     }
@@ -86,13 +95,13 @@ export default function ImageUploadZone({
     if (selectedFiles.length === 0) return;
 
     if (multiple) {
-      const validFiles = selectedFiles.filter(file => validateImage(file, maxSizeMB, onToast));
+      const validFiles = selectedFiles.filter(file => validateImage(file, maxSizeMB, activeToast));
       if (validFiles.length > 0 && onAddPhotos) {
         onAddPhotos(validFiles);
       }
     } else {
       const file = selectedFiles[0];
-      if (file && validateImage(file, maxSizeMB, onToast) && onFileChange) {
+      if (file && validateImage(file, maxSizeMB, activeToast) && onFileChange) {
         onFileChange(file);
       }
     }

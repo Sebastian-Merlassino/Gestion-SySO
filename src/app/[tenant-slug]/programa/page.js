@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
 import AITextHelper from '@/components/ui/AITextHelper';
+import { useToast } from '@/components/providers/ToastProvider';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import {
@@ -196,7 +197,7 @@ export default function ProgramaGestion({ params }) {
 
 
   // Modales y Toasts
-  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const globalToast = useToast();
   const [confirmModal, setConfirmModal] = useState({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Eliminar' });
 
   // 1. Cargar datos iniciales
@@ -214,10 +215,7 @@ export default function ProgramaGestion({ params }) {
   }, []);
 
   const triggerToast = (message, type = 'success') => {
-    setToast({ show: true, message, type });
-    setTimeout(() => {
-      setToast({ show: false, message: '', type: 'success' });
-    }, 4000);
+    globalToast.toast(message, type);
   };
 
   const loadRealData = async () => {
@@ -521,6 +519,7 @@ export default function ProgramaGestion({ params }) {
 
   const handleExportPdfReport = async (shouldPrint = false) => {
     try {
+      triggerToast('Generando reporte PDF...', 'info');
       const doc = new jsPDF({
         orientation: 'landscape',
         unit: 'pt',
@@ -677,11 +676,14 @@ export default function ProgramaGestion({ params }) {
         doc.autoPrint();
         const blobUrl = doc.output('bloburl');
         window.open(blobUrl, '_blank');
+        triggerToast('Vista previa abierta.');
       } else {
         doc.save(`Programa_Gestion_Anual_${new Date().getFullYear()}.pdf`);
+        triggerToast('PDF descargado exitosamente.');
       }
     } catch (e) {
       console.error('Error generating PDF:', e);
+      triggerToast('Error al generar el reporte PDF.', 'error');
     }
   };
 
@@ -1198,7 +1200,7 @@ export default function ProgramaGestion({ params }) {
   const handleViewPdf = async (path) => {
     if (!path || path === 'N/A') return;
     if (isDevMode || path === 'mock-pdf-url' || path === 'mock-uploaded-pdf-path' || path === 'mock-drive-uploaded-pdf-path') {
-      alert('Simulación: Abriendo documento en nueva pestaña.');
+      triggerToast('Simulación: Abriendo documento en nueva pestaña.', 'info');
       return;
     }
 
@@ -2178,15 +2180,7 @@ export default function ProgramaGestion({ params }) {
           </div>
         )}
 
-        {/* TOAST NOTIFICACIÓN */}
-        {toast.show && (
-          <div className="fixed bottom-5 right-5 z-50 animate-slideOver">
-            <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border shadow-xl ${toast.type === 'error' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'}`}>
-              {toast.type === 'error' ? <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" /> : <Check className="h-4 w-4 text-green-500 shrink-0" />}
-              <span className="text-xs font-bold leading-tight">{toast.message}</span>
-            </div>
-          </div>
-        )}
+        {/* TOAST NOTIFICACIÓN removido - consumido globalmente */}
 
       </main>
     </div>

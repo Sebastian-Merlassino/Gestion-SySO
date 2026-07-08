@@ -7,6 +7,7 @@ import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
+import { useToast } from '@/components/providers/ToastProvider';
 import AITextHelper from '@/components/ui/AITextHelper';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -251,7 +252,7 @@ export default function AccionesCorrectivasPage({ params }) {
   const [sortOrder, setSortOrder] = useState('desc');
 
   // Modales y Feedback
-  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const globalToast = useToast();
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
   const [saveLoading, setSaveLoading] = useState(false);
 
@@ -286,10 +287,7 @@ export default function AccionesCorrectivasPage({ params }) {
   }, [profile]);
 
   const triggerToast = (message, type = 'success') => {
-    setToast({ show: true, message, type });
-    setTimeout(() => {
-      setToast({ show: false, message: '', type: 'success' });
-    }, 4000);
+    globalToast.toast(message, type);
   };
 
   const closeAlert = () => setModalAlert({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
@@ -2300,17 +2298,7 @@ export default function AccionesCorrectivasPage({ params }) {
         </div>
       )}
 
-      {/* Notificación Toast flotante */}
-      {toast.show && (
-        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl border shadow-lg transition-all text-xs font-bold ${
-          toast.type === 'error'
-            ? 'bg-red-50 border-red-200 text-red-600'
-            : 'bg-emerald-50 border-emerald-200 text-emerald-600'
-        }`}>
-          <Check className="h-4 w-4 shrink-0" />
-          <span>{toast.message}</span>
-        </div>
-      )}
+      {/* Notificación Toast flotante removido - consumido globalmente */}
 
     </div>
   );

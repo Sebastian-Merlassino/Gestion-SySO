@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { useToast } from '@/components/providers/ToastProvider';
 import { 
   PlusCircle, 
   Search, 
@@ -227,7 +228,7 @@ export default function MatrizRiesgosPage({ params }) {
   const [showExportMobile, setShowExportMobile] = useState(false);
 
   // Modales y Feedback
-  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const globalToast = useToast();
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
   const [saveLoading, setSaveLoading] = useState(false);
 
@@ -261,10 +262,7 @@ export default function MatrizRiesgosPage({ params }) {
   }, [profile]);
 
   const triggerToast = (message, type = 'success') => {
-    setToast({ show: true, message, type });
-    setTimeout(() => {
-      setToast({ show: false, message: '', type: 'success' });
-    }, 4000);
+    globalToast.toast(message, type);
   };
 
   const closeAlert = () => setModalAlert({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
@@ -414,7 +412,8 @@ export default function MatrizRiesgosPage({ params }) {
       setLoading(false);
     } catch (err) {
       console.error('Error cargando datos reales:', err);
-      triggerToast('Error al conectar con Supabase: ' + err.message, 'error');
+      // Sanitizar el error para no revelar estructura SQL interna
+      triggerToast('Error al cargar la matriz de riesgos. Por favor, reintente en unos minutos.', 'error');
       // No hacemos fallback silencioso en modo real para alertar errores del esquema
       setLoading(false);
     }
@@ -3403,17 +3402,7 @@ export default function MatrizRiesgosPage({ params }) {
         </div>
       )}
 
-      {/* TOAST ALERT FEEDBACK */}
-      {toast.show && (
-        <div className={`fixed bottom-5 right-5 z-50 flex items-center gap-2 px-4 py-3 rounded-xl border shadow-lg animate-fade-in-up ${
-          toast.type === 'error' 
-            ? 'bg-red-50 text-red-700 border-red-200' 
-            : 'bg-green-50 text-green-700 border-green-200'
-        }`}>
-          {toast.type === 'success' ? <Check className="h-4 w-4 shrink-0" /> : <X className="h-4 w-4 shrink-0" />}
-          <span className="text-xs font-bold">{toast.message}</span>
-        </div>
-      )}
+      {/* TOAST ALERT FEEDBACK removidos - consumidos globalmente */}
 
     </div>
   );

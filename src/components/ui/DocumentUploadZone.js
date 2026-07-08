@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Upload, FileText, Eye, Check, Loader2, ExternalLink, Trash2, Download } from 'lucide-react';
+import { useToast } from '../providers/ToastProvider';
 
 /**
  * Validates if the file matches the accept criteria (extensions or mime types)
@@ -61,6 +62,14 @@ export default function DocumentUploadZone({
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef(null);
 
+  let globalToast = null;
+  try {
+    globalToast = useToast();
+  } catch (e) {
+    // ignorar si no hay provider
+  }
+  const activeToast = onToast || globalToast?.toast;
+
   const fileUrl = file
     ? (typeof window !== 'undefined' ? URL.createObjectURL(file) : '')
     : (signedUrl || url || '');
@@ -92,10 +101,10 @@ export default function DocumentUploadZone({
       const isAccepted = validateAccept(selectedFile, accept);
       if (!isAccepted) {
         const errorMsg = `Solo se permiten archivos con formato: ${accept}`;
-        if (onToast) {
-          onToast(errorMsg, 'error');
+        if (activeToast) {
+          activeToast(errorMsg, 'error');
         } else {
-          alert(errorMsg);
+          console.error(errorMsg);
         }
         return;
       }
@@ -105,10 +114,10 @@ export default function DocumentUploadZone({
     const maxSizeBytes = maxSizeMB * 1024 * 1024;
     if (selectedFile.size > maxSizeBytes) {
       const errorMsg = `El archivo no debe superar los ${maxSizeMB} MB.`;
-      if (onToast) {
-        onToast(errorMsg, 'error');
+      if (activeToast) {
+        activeToast(errorMsg, 'error');
       } else {
-        alert(errorMsg);
+        console.error(errorMsg);
       }
       return;
     }

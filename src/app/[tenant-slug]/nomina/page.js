@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import * as XLSX from 'xlsx';
 import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
+import { useToast } from '@/components/providers/ToastProvider';
 import {
   PlusCircle,
   Search,
@@ -67,12 +68,9 @@ export default function NominaPage({ params }) {
   const [legajoFiles, setLegajoFiles] = useState([]);
 
   // Toast notification
-  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const globalToast = useToast();
   const triggerToast = (message, type = 'success') => {
-    setToast({ show: true, message, type });
-    setTimeout(() => {
-      setToast(prev => ({ ...prev, show: false }));
-    }, 4500);
+    globalToast.toast(message, type);
   };
 
   // Main list filters
@@ -1673,17 +1671,7 @@ export default function NominaPage({ params }) {
         </div>
       )}
 
-      {/* Notificación Toast flotante */}
-      {toast.show && (
-        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl border shadow-lg transition-all text-xs font-bold ${
-          toast.type === 'error'
-            ? 'bg-red-50 border-red-200 text-red-600'
-            : 'bg-emerald-50 border-emerald-200 text-emerald-600'
-        }`}>
-          <Check className="h-4 w-4 shrink-0" />
-          <span>{toast.message}</span>
-        </div>
-      )}
+      {/* Notificación Toast flotante removido - consumido globalmente */}
 
     </div>
   );

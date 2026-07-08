@@ -26,6 +26,9 @@ import {
   PlusCircle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { useToast } from '@/components/providers/ToastProvider';
+import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
+import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
 
 const PROVINCIAS_ARGENTINAS = [
   'BUENOS AIRES',
@@ -58,15 +61,17 @@ export default function OnboardingPage() {
   const [error, setError] = useState(null);
   const [isDevMode, setIsDevMode] = useState(false);
   
-  // Notificación de tipo Toast
-  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
-
+  // Toasts y Diálogos accesibles Radix
+  const globalToast = useToast();
   const triggerToast = (message, type = 'success') => {
-    setToast({ show: true, message, type });
-    setTimeout(() => {
-      setToast({ show: false, message: '', type: 'success' });
-    }, 3500);
+    globalToast.toast(message, type);
   };
+
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [confirmDialogConfig, setConfirmDialogConfig] = useState({ title: '', description: '', type: 'info', onConfirm: null, confirmText: 'Confirmar', cancelText: 'Cancelar' });
+
+  const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
+  const [unsavedChangesConfig, setUnsavedChangesConfig] = useState({ onLeave: null });
   
   // Datos del Usuario
   const [currentUser, setCurrentUser] = useState(null);
@@ -322,13 +327,13 @@ export default function OnboardingPage() {
     if (!file) return;
 
     if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
-      alert('Por favor, selecciona una imagen en formato JPG o PNG.');
+      triggerToast('Por favor, selecciona una imagen en formato JPG o PNG.', 'error');
       return;
     }
 
     const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
     if (file.size > MAX_FILE_SIZE) {
-      alert('El archivo no debe superar los 5 MB.');
+      triggerToast('El archivo no debe superar los 5 MB.', 'error');
       return;
     }
 
@@ -369,13 +374,13 @@ export default function OnboardingPage() {
     if (!file) return;
 
     if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
-      alert('Por favor, selecciona una imagen en formato JPG o PNG.');
+      triggerToast('Por favor, selecciona una imagen en formato JPG o PNG.', 'error');
       return;
     }
 
     const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
     if (file.size > MAX_FILE_SIZE) {
-      alert('El archivo no debe superar los 5 MB.');
+      triggerToast('El archivo no debe superar los 5 MB.', 'error');
       return;
     }
 
@@ -681,7 +686,7 @@ export default function OnboardingPage() {
   };
 
   // Guardar solo campos obligatorios mínimos y redirigir
-  const handleSaveOnlyRequired = async () => {
+  const handleSaveOnlyRequired = () => {
     // Validar únicamente campos obligatorios (localidad es opcional)
     if (!fullName || !email || !phone || !cuit || !provincia || !partido || !birthDate) {
       triggerToast('Por favor completa todos los campos obligatorios (*) antes de salir.', 'error');
@@ -741,10 +746,18 @@ export default function OnboardingPage() {
       logo2 !== null;
 
     if (isDirty) {
-      const confirmExit = window.confirm('Tienes cambios sin guardar. ¿Deseas salir sin guardar los cambios?');
-      if (!confirmExit) return;
+      setUnsavedChangesConfig({
+        onLeave: () => {
+          executeSaveOnlyRequired();
+        }
+      });
+      setShowUnsavedChangesDialog(true);
+    } else {
+      executeSaveOnlyRequired();
     }
+  };
 
+  const executeSaveOnlyRequired = async () => {
     setLoading(true);
     const userId = currentUser?.id || 'd290f1ee-6c54-4b01-90e6-d701748f0851'; // fallback en dev
     const finalCompanyName = companyName || `${fullName} Consultora`;
@@ -878,14 +891,23 @@ export default function OnboardingPage() {
     }
   };
 
-  const handleExitWithoutSaving = async () => {
-    const confirmExit = window.confirm('¿Estás seguro de que deseas salir? Perderás todos los datos cargados.');
-    if (confirmExit) {
-      localStorage.removeItem('onboarding_email');
-      localStorage.removeItem('onboarding_full_name');
-      await supabase.auth.signOut();
-      window.location.href = '/login';
-    }
+  const handleExitWithoutSaving = () => {
+    setConfirmDialogConfig({
+      title: '¿Estás seguro de que deseas salir?',
+      description: 'Perderás todos los datos cargados en esta sesión y se cerrará tu sesión activa.',
+      type: 'warning',
+      onConfirm: executeExitWithoutSaving,
+      confirmText: 'Salir y borrar',
+      cancelText: 'Cancelar'
+    });
+    setShowConfirmDialog(true);
+  };
+
+  const executeExitWithoutSaving = async () => {
+    localStorage.removeItem('onboarding_email');
+    localStorage.removeItem('onboarding_full_name');
+    await supabase.auth.signOut();
+    window.location.href = '/login';
   };
 
   return (
@@ -1548,41 +1570,23 @@ export default function OnboardingPage() {
         </div>
       )}
 
-      {/* CENTERED MODAL NOTIFICATION (VENTANA EMERGENTE) */}
-      {toast.show && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="w-full max-w-md p-6 rounded-2xl border shadow-2xl text-center bg-white border-slate-200 animate-scaleUp">
-            <div className="flex justify-center mb-4">
-              {toast.type === 'error' ? (
-                <div className="p-3 rounded-full bg-red-50 border border-red-100 text-red-500">
-                  <AlertTriangle className="h-8 w-8" />
-                </div>
-              ) : (
-                <div className="p-3 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-500">
-                  <CheckCircle className="h-8 w-8" />
-                </div>
-              )}
-            </div>
-            <h3 className="font-outfit text-lg font-bold text-slate-900 mb-2">
-              {toast.type === 'error' ? 'Notificación de Error' : 'Operación Exitosa'}
-            </h3>
-            <p className="text-sm text-slate-600 mb-6 leading-relaxed font-medium">
-              {toast.message}
-            </p>
-            <button
-              type="button"
-              onClick={() => setToast({ show: false, message: '', type: 'success' })}
-              className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs transition-all active:scale-[0.98] cursor-pointer ${
-                toast.type === 'error'
-                  ? 'bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-500/10'
-                  : 'bg-[#468DFF] hover:bg-[#0511F2] text-white shadow-lg shadow-blue-500/10'
-              }`}
-            >
-              Aceptar
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Diálogos accesibles Radix */}
+      <AppConfirmDialog
+        open={showConfirmDialog}
+        onOpenChange={setShowConfirmDialog}
+        title={confirmDialogConfig.title}
+        description={confirmDialogConfig.description}
+        type={confirmDialogConfig.type}
+        onConfirm={confirmDialogConfig.onConfirm}
+        confirmText={confirmDialogConfig.confirmText}
+        cancelText={confirmDialogConfig.cancelText}
+      />
+
+      <AppUnsavedChangesDialog
+        open={showUnsavedChangesDialog}
+        onOpenChange={setShowUnsavedChangesDialog}
+        onLeave={unsavedChangesConfig.onLeave}
+      />
 
     </div>
   );

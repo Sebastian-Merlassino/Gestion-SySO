@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import { supabase, fetchAllGeography } from '@/lib/supabase';
+import { useToast } from '@/components/providers/ToastProvider';
 import { 
   Building, 
   Users, 
@@ -251,8 +252,8 @@ export default function EmpresasClientes({ params }) {
   const [showAmbienteClave, setShowAmbienteClave] = useState(false);
 
   // Diálogo modal de alerta / confirmación
+  const globalToast = useToast();
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', type: 'info', onConfirm: null, confirmText: 'Confirmar' });
-  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   // Estados para el Portal de Cliente
   const [clientProfile, setClientProfile] = useState(null);
@@ -288,10 +289,7 @@ export default function EmpresasClientes({ params }) {
   }, [view, loading]);
 
   const triggerToast = (message, type = 'success') => {
-    setToast({ show: true, message, type });
-    setTimeout(() => {
-      setToast({ show: false, message: '', type: 'success' });
-    }, 4000);
+    globalToast.toast(message, type);
   };
 
   const showAlert = (title, message, type = 'info', onConfirm = null, confirmText = 'Confirmar') => {
@@ -3137,17 +3135,7 @@ export default function EmpresasClientes({ params }) {
         </div>
       )}
 
-      {/* Notificación Toast flotante en esquina */}
-      {toast.show && (
-        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl border shadow-lg transition-all text-xs font-bold ${
-          toast.type === 'error'
-            ? 'bg-red-50 border-red-200 text-red-600'
-            : 'bg-emerald-50 border-emerald-200 text-emerald-600'
-        }`}>
-          <Check className="h-4 w-4 shrink-0" />
-          <span>{toast.message}</span>
-        </div>
-      )}
+      {/* Notificación Toast flotante en esquina removido - consumido globalmente */}
 
     </div>
   );

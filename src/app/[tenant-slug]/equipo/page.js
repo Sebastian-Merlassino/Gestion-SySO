@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import { supabase, fetchAllGeography } from '@/lib/supabase';
+import { useToast } from '@/components/providers/ToastProvider';
 import { 
   Users, 
   Building,
@@ -215,15 +216,12 @@ export default function EquipoPage({ params }) {
   const [filterText, setFilterText] = useState('');
 
   // Modals / Toasts
+  const globalToast = useToast();
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', type: 'info', onConfirm: null, confirmText: 'Confirmar' });
-  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const triggerToast = (message, type = 'success') => {
-    setToast({ show: true, message, type });
-    setTimeout(() => {
-      setToast({ show: false, message: '', type: 'success' });
-    }, 4000);
+    globalToast.toast(message, type);
   };
 
   const showAlert = (title, message, type = 'info', onConfirm = null, confirmText = 'Confirmar') => {
@@ -493,13 +491,13 @@ export default function EquipoPage({ params }) {
     if (!file) return;
 
     if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
-      alert('Por favor, selecciona una imagen en formato JPG o PNG.');
+      triggerToast('Por favor, selecciona una imagen en formato JPG o PNG.', 'error');
       return;
     }
 
     const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
     if (file.size > MAX_FILE_SIZE) {
-      alert('El archivo no debe superar los 5 MB.');
+      triggerToast('El archivo no debe superar los 5 MB.', 'error');
       return;
     }
 
@@ -540,13 +538,13 @@ export default function EquipoPage({ params }) {
     if (!file) return;
 
     if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
-      alert('Por favor, selecciona una imagen en formato JPG o PNG.');
+      triggerToast('Por favor, selecciona una imagen en formato JPG o PNG.', 'error');
       return;
     }
 
     const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
     if (file.size > MAX_FILE_SIZE) {
-      alert('El archivo no debe superar los 5 MB.');
+      triggerToast('El archivo no debe superar los 5 MB.', 'error');
       return;
     }
 
@@ -1956,20 +1954,7 @@ export default function EquipoPage({ params }) {
       </main>
 
       {/* TOAST NOTIFICATION */}
-      {toast.show && (
-        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2.5 bg-slate-900 border border-slate-800 px-4 py-3.5 rounded-xl shadow-2xl animate-fade-in-up">
-          {toast.type === 'success' ? (
-            <div className="h-5 w-5 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400">
-              <Check className="h-3 w-3" />
-            </div>
-          ) : (
-            <div className="h-5 w-5 rounded-full bg-red-500/10 flex items-center justify-center text-red-400">
-              <AlertTriangle className="h-3 w-3" />
-            </div>
-          )}
-          <span className="text-xs font-bold text-white tracking-wide">{toast.message}</span>
-        </div>
-      )}
+      {/* Toast notifications removidos - consumidos globalmente */}
 
       {/* MODAL DIALOG ALERT */}
       {modalAlert.show && (

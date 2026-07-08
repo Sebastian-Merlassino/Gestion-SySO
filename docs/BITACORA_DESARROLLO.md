@@ -1,5 +1,108 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-08] Implementación de la Fase 3 y 4 de Normalización de Alertas y Diálogos
+
+### Resumen de Cambios
+- **Erradicación total de Alertas Nativas (alert())**: Refactorizados todos los métodos de carga de imágenes auxiliares locales en `profile/page.js`, `onboarding/page.js` y `equipo/page.js` para usar el toast unificado. Se eliminó la alerta nativa de descarga en `programa/page.js`.
+- **Estandarización de 15 Módulos Operativos (Fase 3 y 4)**: Migradas por completo todas las páginas del tenant slug (`visitas`, `legajo`, `matriz-riesgos`, `extintores`, `nomina`, `programa`, `equipo`, `empresas`, `correctivas`, `control-electrico`, `checklist-personalizados`, `capacitacion`, `accidentes`, `avisos` y `dashboard`) para consumir el hook unificado `useToast()`.
+- **Sanitización de Errores de Base de Datos**: Corregida la fuga de información SQL/Supabase cruda en el catch de `matriz-riesgos/page.js` (hallazgo de seguridad **HC-02**), sanitizándola con un mensaje amigable al usuario.
+- **Auto-cierre de Toasts Informativos**: Se eliminó la restricción en `ToastProvider.js` que impedía el cierre automático de las alertas de tipo `'info'` (como la de generación de PDF), para que todas se auto-cierren a menos que se les configure explícitamente una duración de `0`.
+
+### Archivos Modificados
+- `src/app/[tenant-slug]/legajo/page.js`
+- `src/app/[tenant-slug]/matriz-riesgos/page.js`
+- `src/app/[tenant-slug]/extintores/page.js`
+- `src/app/[tenant-slug]/visitas/page.js`
+- `src/app/[tenant-slug]/programa/page.js`
+- `src/app/[tenant-slug]/equipo/page.js`
+- `src/app/[tenant-slug]/nomina/page.js`
+- `src/app/[tenant-slug]/empresas/page.js`
+- `src/app/[tenant-slug]/dashboard/page.js`
+- `src/app/[tenant-slug]/correctivas/page.js`
+- `src/app/[tenant-slug]/control-electrico/page.js`
+- `src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `src/app/[tenant-slug]/capacitacion/page.js`
+- `src/app/[tenant-slug]/accidentes/page.js`
+- `src/app/[tenant-slug]/avisos/page.js`
+- `src/app/[tenant-slug]/profile/page.js`
+- `src/app/onboarding/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de Next.js (`npm run build`) completada con éxito.
+
+## [2026-07-08] Implementación de la Fase 1 y 2 de Normalización de Alertas y Diálogos
+
+### Resumen de Cambios
+- **Auditoría Técnica y de UX/UI**: Se realizó un relevamiento completo de los mecanismos de retroalimentación de la aplicación, documentado en [informe_auditoria_alertas.md](file:///C:/Users/sebas/.gemini/antigravity-ide/brain/ee5f48b6-2771-44c9-ba7c-6e3aed3e5555/informe_auditoria_alertas.md).
+- **ToastProvider Global**: Creado e integrado en el wrapper global de `Providers` para posibilitar alertas flotantes no bloqueantes (`useToast`) con variantes responsivas y soporte ARIA.
+- **Diálogos Radix UI**: Creados wrappers accesibles (`AppConfirmDialog`, `AppDestructiveConfirmDialog`, `AppUnsavedChangesDialog`) basados en la librería `@radix-ui/react-dialog`.
+- **Remoción de Alertas Nativas**: Reemplazadas las llamadas a `alert()` de navegador en `ImageUploadZone` y `DocumentUploadZone` con avisos usando el nuevo Toast global.
+- **Refactorización de Perfil**: Sustituido el modal local simulado, quitadas las alertas de salida nativas y la confirmación destructiva nativa de cuenta por modales estilizados en React. Sanitizados los mensajes de error para evitar la exposición directa de logs SQL/Postgres.
+- **Refactorización de Onboarding**: Removidos el renderizado local de toast y su estado duplicado de la página de onboarding, conectándola al hook de `useToast()`. Reemplazadas las llamadas nativas de confirmación de salida (`window.confirm`) por diálogos accesibles de Radix.
+
+### Decisiones Clave
+- **Uso de Radix UI**: Se instaló `@radix-ui/react-dialog` como base estructural para garantizar cumplimiento normativo de accesibilidad (foco capturado, lectura por pantalla, cierre con `Esc`) de forma nativa.
+- **Animaciones en Tailwind**: Añadidas animaciones `fade-in`, `scale-up` y `scale-down` a `tailwind.config.js` para asegurar transiciones fluidas en modales y notificaciones.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `gestion-syso-multitenant-security`
+
+### Archivos Modificados / Creados
+- `[NEW] C:/Users/sebas/.gemini/antigravity-ide/brain/ee5f48b6-2771-44c9-ba7c-6e3aed3e5555/informe_auditoria_alertas.md` (Creado)
+- `[NEW] src/components/providers/ToastProvider.js` (Creado)
+- `[NEW] src/components/ui/AppConfirmDialog.js` (Creado)
+- `[NEW] src/components/ui/AppDestructiveConfirmDialog.js` (Creado)
+- `[NEW] src/components/ui/AppUnsavedChangesDialog.js` (Creado)
+- `[MODIFY] tailwind.config.js` (Modificado)
+- `[MODIFY] src/app/providers.js` (Modificado)
+- `[MODIFY] src/components/ui/ImageUploadZone.js` (Modificado)
+- `[MODIFY] src/components/ui/DocumentUploadZone.js` (Modificado)
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js` (Modificado)
+- `[MODIFY] src/app/onboarding/page.js` (Modificado)
+- `[MODIFY] docs/BITACORA_DESARROLLO.md` (Modificado)
+
+### Validaciones Ejecutadas
+- Compilaciones y optimizaciones de producción de Next.js (`npm run build`) completadas con éxito sin advertencias ni errores en ninguno de los componentes y páginas modificados.
+
+### Riesgos Detectados / Remanentes
+- Migrar progresivamente los demás 15 módulos del tenant slug (por ejemplo, `visitas/page.js`, `extintores/page.js`) para que consuman el nuevo `useToast()` y la confirmación en lugar de sus estados y modales locales duplicados.
+
+### Próximo Paso Recomendado
+- Proceder con la Fase 3, migrando pantallas de administración de entidades operativas en el tenant slug.
+
+---
+
+## [2026-07-08] Estandarización de Alertas Toast de Feedback en la Generación de PDFs
+
+### Resumen de Cambios
+- **Dashboard e Indicadores (`src/app/[tenant-slug]/dashboard/page.js`)**:
+  - Se importaron `Check` y `AlertTriangle` de `lucide-react`.
+  - Se definieron el estado `toast` y la función `triggerToast`.
+  - Se incorporó la alerta de carga `'Generando reporte PDF...'` de tipo `info` (con Loader2 animado) al inicio de `handleDownloadPdfReport`.
+  - Se añadieron alertas de éxito (`'PDF descargado exitosamente.'` o `'Vista previa abierta.'`) tras completarse la exportación, y de error en caso de fallo.
+  - Se renderizó el componente Toast al pie de la página con los estilos e iconos institucionales unificados.
+- **Programa de Gestión Anual (`src/app/[tenant-slug]/programa/page.js`)**:
+  - Se implementaron las alertas Toast de estado al principio, fin y error en la función `handleExportPdfReport`.
+  - Se actualizó el render del Toast en el JSX del archivo.
+- **Programa de Capacitación Anual (`src/app/[tenant-slug]/capacitacion/page.js`)**:
+  - Se implementaron las alertas Toast de estado en la función `handleExportPdfReport` y se reemplazó el Toast simplificado por el componente Toast unificado de tipo responsivo con soporte de tipo `info` (Loader2).
+- **Extintores (`src/app/[tenant-slug]/extintores/page.js`)**:
+  - Se unificó el mensaje de inicio a `'Generando reporte PDF...'` (removiendo *"con imágenes"*) y se añadieron los mensajes y visualización de éxito/error correspondientes a `handleExportPdfReport`.
+  - Se reemplazó el Toast simplificado del JSX con el Toast del estándar de constancia de visitas.
+
+### Decisiones Clave
+- **Coherencia y Consistencia de UX**: Unificar los textos, colores y diseño de las notificaciones al pie de la página reduce la fricción y la asimetría visual al interactuar con el sistema de exportación de reportes de la consultora, mejorando la estética premium general.
+
+### Archivos Modificados / Creados
+- **[dashboard/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/dashboard/page.js)** (Modificado)
+- **[programa/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/programa/page.js)** (Modificado)
+- **[capacitacion/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/capacitacion/page.js)** (Modificado)
+- **[extintores/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/extintores/page.js)** (Modificado)
+
+---
+
 ## [2026-07-08] Resolución de Bloqueo por Content Security Policy (CSP) en Descarga de Reportes con Imágenes de AppSheet
 
 ### Resumen de Cambios

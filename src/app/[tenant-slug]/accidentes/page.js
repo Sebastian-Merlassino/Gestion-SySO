@@ -8,6 +8,7 @@ import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
 import AITextHelper from '@/components/ui/AITextHelper';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import { supabase, fetchAllGeography } from '@/lib/supabase';
+import { useToast } from '@/components/providers/ToastProvider';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import {
   ShieldAlert,
@@ -298,7 +299,7 @@ export default function AccidentesPage({ params }) {
   const [aiTargetAccident, setAiTargetAccident] = useState(null);
 
   // ── UI/Modales ────────────────────────────────────────────────────────────
-  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const globalToast = useToast();
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
   const [saveLoading, setSaveLoading] = useState(false);
   const [showGravedadGuide, setShowGravedadGuide] = useState(false);
@@ -430,8 +431,7 @@ export default function AccidentesPage({ params }) {
   }, [firmaTipo, firmaProfesionalAclaracion, miembrosList]);
 
   const triggerToast = (message, type = 'success') => {
-    setToast({ show: true, message, type });
-    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 4000);
+    globalToast.toast(message, type);
   };
 
   const closeAlert = () =>
@@ -4181,19 +4181,7 @@ export default function AccidentesPage({ params }) {
         )}
       </main>
 
-      {/* ── Toast Flotante ── */}
-      {toast.show && (
-        <div className={`fixed bottom-6 right-6 z-[100] flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-lg transition-all text-xs font-bold animate-fade-in
-          ${toast.type === 'error' ? 'bg-red-50 border-red-200 text-red-600' : ''}
-          ${toast.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : ''}
-          ${toast.type === 'info' ? 'bg-blue-50 border-blue-200 text-blue-600' : ''}
-        `}>
-          {toast.type === 'success' && <Check className="h-4 w-4 text-emerald-500 shrink-0" />}
-          {toast.type === 'error' && <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />}
-          {toast.type === 'info' && <Check className="h-4 w-4 text-blue-500 shrink-0" />}
-          <span>{toast.message}</span>
-        </div>
-      )}
+      {/* ── Toast Flotante ── removido - consumido globalmente */}
 
       {/* ── Modal Confirmación ── */}
       {modalAlert.show && (

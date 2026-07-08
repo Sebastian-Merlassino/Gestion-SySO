@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import { jsPDF } from 'jspdf';
+import { useToast } from '@/components/providers/ToastProvider';
 import autoTable from 'jspdf-autotable';
 import { 
   PlusCircle, 
@@ -185,7 +186,7 @@ export default function ExtintoresPage({ params }) {
   const [sortOrder, setSortOrder] = useState('asc');
 
   // Modales y Feedback
-  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const globalToast = useToast();
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
   const [saveLoading, setSaveLoading] = useState(false);
 
@@ -211,10 +212,7 @@ export default function ExtintoresPage({ params }) {
   }, [profile]);
 
   const triggerToast = (message, type = 'success') => {
-    setToast({ show: true, message, type });
-    setTimeout(() => {
-      setToast({ show: false, message: '', type: 'success' });
-    }, 4000);
+    globalToast.toast(message, type);
   };
 
   const closeAlert = () => setModalAlert({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
@@ -529,7 +527,7 @@ export default function ExtintoresPage({ params }) {
 
   const handleExportPdfReport = async (shouldPrint = false) => {
     try {
-      triggerToast('Generando reporte PDF con imágenes...', 'info');
+      triggerToast('Generando reporte PDF...', 'info');
 
       const doc = new jsPDF({
         orientation: 'landscape',
@@ -713,11 +711,14 @@ export default function ExtintoresPage({ params }) {
         doc.autoPrint();
         const blobUrl = doc.output('bloburl');
         window.open(blobUrl, '_blank');
+        triggerToast('Vista previa abierta.');
       } else {
         doc.save(`Extintores_${new Date().getFullYear()}.pdf`);
+        triggerToast('PDF descargado exitosamente.');
       }
     } catch (e) {
       console.error('Error generating PDF:', e);
+      triggerToast('Error al generar el reporte PDF.', 'error');
     }
   };
 
@@ -1965,17 +1966,7 @@ export default function ExtintoresPage({ params }) {
         </div>
       )}
 
-      {/* Toast notifications */}
-      {toast.show && (
-        <div className={`fixed bottom-5 right-5 z-50 flex items-center gap-2 px-4 py-3 rounded-xl border shadow-lg animate-fade-in-up ${
-          toast.type === 'error' 
-            ? 'bg-red-50 text-red-700 border-red-200' 
-            : 'bg-green-50 text-green-700 border-green-200'
-        }`}>
-          {toast.type === 'success' ? <Check className="h-4 w-4 shrink-0" /> : <X className="h-4 w-4 shrink-0" />}
-          <span className="text-xs font-bold">{toast.message}</span>
-        </div>
-      )}
+      {/* Toast notifications removidos - consumidos globalmente */}
 
     </div>
   );

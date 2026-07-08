@@ -7,6 +7,10 @@ import Sidebar from '@/components/Sidebar';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import { supabase, fetchAllGeography } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
+import { useToast } from '@/components/providers/ToastProvider';
+import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
+import AppDestructiveConfirmDialog from '@/components/ui/AppDestructiveConfirmDialog';
+import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
 import {
   User, 
   Briefcase, 
@@ -114,12 +118,30 @@ export default function ProfilePage({ params }) {
   const [tenantData, setTenantData] = useState(null);
   const [initialValues, setInitialValues] = useState(null);
 
-  // Notificación de tipo Toast
-  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  // Toasts y Diálogos accesibles Radix
+  const globalToast = useToast();
+  const triggerToast = (message, type = 'success') => {
+    globalToast.toast(message, type);
+  };
 
-  // Modal Alert
-  const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null, confirmText: '' });
-  const closeAlert = () => setModalAlert({ show: false, title: '', message: '', onConfirm: null, confirmText: '' });
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [confirmDialogConfig, setConfirmDialogConfig] = useState({ title: '', description: '', type: 'info', onConfirm: null, confirmText: 'Confirmar' });
+
+  const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
+
+  const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
+  const [unsavedChangesConfig, setUnsavedChangesConfig] = useState({ onLeave: null });
+
+  const showAlert = (title, message, type = 'info', onConfirm = null, confirmText = 'Confirmar') => {
+    setConfirmDialogConfig({
+      title,
+      description: message,
+      type,
+      onConfirm,
+      confirmText
+    });
+    setShowConfirmDialog(true);
+  };
 
   // Campos Obligatorios
   const [fullName, setFullName] = useState('');
@@ -186,12 +208,7 @@ const [partidosList, setPartidosList] = useState([]);
   const [showDeleteSection, setShowDeleteSection] = useState(false);
 
   // Función para mostrar Toast auto-cerrable
-  const triggerToast = (message, type = 'success') => {
-    setToast({ show: true, message, type });
-    setTimeout(() => {
-      setToast({ show: false, message: '', type: 'success' });
-    }, 3500);
-  };
+  // triggerToast ya está definido usando useToast() global al inicio del componente
 
   const getSignedUrl = async (bucket, pathOrUrl) => {
     if (!pathOrUrl || pathOrUrl === 'N/A') return '';
@@ -506,13 +523,13 @@ const [partidosList, setPartidosList] = useState([]);
     if (!file) return;
 
     if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
-      alert('Por favor, selecciona una imagen en formato JPG o PNG.');
+      triggerToast('Por favor, selecciona una imagen en formato JPG o PNG.', 'error');
       return;
     }
 
     const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
     if (file.size > MAX_FILE_SIZE) {
-      alert('El archivo no debe superar los 5 MB.');
+      triggerToast('El archivo no debe superar los 5 MB.', 'error');
       return;
     }
 
@@ -553,13 +570,13 @@ const [partidosList, setPartidosList] = useState([]);
     if (!file) return;
 
     if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
-      alert('Por favor, selecciona una imagen en formato JPG o PNG.');
+      triggerToast('Por favor, selecciona una imagen en formato JPG o PNG.', 'error');
       return;
     }
 
     const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
     if (file.size > MAX_FILE_SIZE) {
-      alert('El archivo no debe superar los 5 MB.');
+      triggerToast('El archivo no debe superar los 5 MB.', 'error');
       return;
     }
 
@@ -870,16 +887,12 @@ const [partidosList, setPartidosList] = useState([]);
   };
 
   const handleExitWithoutSave = () => {
-    setModalAlert({
-      show: true,
-      title: 'Salir sin guardar',
-      message: '¿Estás seguro de que deseas salir del formulario de perfil? Todos los cambios no guardados se perderán.',
-      confirmText: 'Confirmar',
-      onConfirm: () => {
-        closeAlert();
+    setUnsavedChangesConfig({
+      onLeave: () => {
         window.location.href = `/${tenantSlug}/dashboard`;
       }
     });
+    setShowUnsavedChangesDialog(true);
   };
 
   const handleSidebarNavigation = (e, path) => {
@@ -1000,31 +1013,16 @@ const [partidosList, setPartidosList] = useState([]);
     }
   };
 
-  const handleDeleteAccount = async () => {
+  const handleDeleteAccount = () => {
     if (!deletePassword) {
       triggerToast('Por favor, ingresá tu contraseña para confirmar.', 'error');
       return;
     }
+    setShowDeleteConfirmDialog(true);
+  };
 
-    const isOwner = profileData?.role === 'admin';
-    const messageConfirm = isOwner
-      ? '¿Estás ABSOLUTAMENTE seguro de que deseas eliminar tu cuenta? Esta acción destruirá por completo tu organización y todos sus datos.'
-      : '¿Estás seguro de que deseas eliminar tu cuenta de usuario y revocar tu acceso a la organización?';
-
-    const confirmFirst = window.confirm(messageConfirm);
-    if (!confirmFirst) return;
-
-    const promptPlaceholder = isOwner ? 'ELIMINAR MI CUENTA' : 'ELIMINAR MI ACCESO';
-    const confirmSecond = window.prompt(
-      `Para confirmar la eliminación definitiva, escribe "${promptPlaceholder}" en mayúsculas:`
-    );
-    if (confirmSecond !== promptPlaceholder) {
-      triggerToast('Confirmación incorrecta. No se eliminó la cuenta.', 'error');
-      return;
-    }
-
+  const executeDeleteAccount = async () => {
     setDeleteLoading(true);
-
     try {
       // 1. Re-autenticar al usuario para validar su contraseña
       const { error: authError } = await supabase.auth.signInWithPassword({
@@ -1038,19 +1036,27 @@ const [partidosList, setPartidosList] = useState([]);
 
       // 2. Llamar a la función RPC delete_own_account
       const { error: rpcError } = await supabase.rpc('delete_own_account');
-      if (rpcError) throw rpcError;
+      if (rpcError) {
+        console.error('RPC Error:', rpcError);
+        throw new Error('No se pudo procesar la eliminación de la cuenta. Intente de nuevo.');
+      }
 
       // 3. Cerrar sesión local
       await supabase.auth.signOut();
       localStorage.clear();
 
-      triggerToast('Tu cuenta y organización han sido eliminadas correctamente.', 'success');
+      triggerToast('Tu cuenta ha sido eliminada correctamente.');
       setTimeout(() => {
-        window.location.href = '/register';
-      }, 2000);
+        window.location.href = '/login';
+      }, 1500);
     } catch (err) {
       console.error('Error deleting account:', err);
-      triggerToast(err.message || 'Error al eliminar la cuenta.', 'error');
+      // Sanitizar el error técnico
+      const friendlyMsg = err.message && (err.message.includes('Database') || err.message.includes('policy') || err.message.includes('security'))
+        ? 'Error interno del servidor. Por favor, reintente en unos minutos.'
+        : err.message || 'Error al eliminar la cuenta.';
+      triggerToast(friendlyMsg, 'error');
+    } finally {
       setDeleteLoading(false);
     }
   };
@@ -1999,6 +2005,35 @@ const [partidosList, setPartidosList] = useState([]);
         </div>
       )}
 
+      {/* Diálogos accesibles Radix */}
+      <AppConfirmDialog
+        open={showConfirmDialog}
+        onOpenChange={setShowConfirmDialog}
+        title={confirmDialogConfig.title}
+        description={confirmDialogConfig.description}
+        type={confirmDialogConfig.type}
+        onConfirm={confirmDialogConfig.onConfirm}
+        confirmText={confirmDialogConfig.confirmText}
+      />
+
+      <AppDestructiveConfirmDialog
+        open={showDeleteConfirmDialog}
+        onOpenChange={setShowDeleteConfirmDialog}
+        title="Eliminar Cuenta Definitivamente"
+        description={profileData?.role === 'admin'
+          ? '¿Estás ABSOLUTAMENTE seguro de que deseas eliminar tu cuenta? Esta acción destruirá por completo tu organización y todos sus datos.'
+          : '¿Estás seguro de que deseas eliminar tu cuenta de usuario y revocar tu acceso a la organización?'}
+        requiredText={profileData?.role === 'admin' ? 'ELIMINAR MI CUENTA' : 'ELIMINAR MI ACCESO'}
+        onConfirm={executeDeleteAccount}
+        confirmText="Eliminar permanentemente"
+      />
+
+      <AppUnsavedChangesDialog
+        open={showUnsavedChangesDialog}
+        onOpenChange={setShowUnsavedChangesDialog}
+        onLeave={unsavedChangesConfig.onLeave}
+      />
+
       {/* CENTERED MODAL NOTIFICATION (VENTANA EMERGENTE) */}
       {toast.show && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
@@ -2035,38 +2070,6 @@ const [partidosList, setPartidosList] = useState([]);
         </div>
       )}
 
-      {/* MODAL DE CONFIRMACIÓN */}
-      {modalAlert.show && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-150 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
-            <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500">
-              <AlertTriangle className="h-6 w-6" />
-            </div>
-            <div className="space-y-1">
-              <h4 className="font-outfit text-base font-bold text-slate-800">{modalAlert.title}</h4>
-              <p className="text-xs text-slate-500 leading-relaxed">{modalAlert.message}</p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={closeAlert}
-                className="flex-1 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer"
-              >
-                Cancelar
-              </button>
-              {modalAlert.onConfirm && (
-                <button
-                  type="button"
-                  onClick={modalAlert.onConfirm}
-                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer"
-                >
-                  {modalAlert.confirmText || 'Confirmar'}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
     </div>
   );

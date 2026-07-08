@@ -7,6 +7,7 @@ import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { formatDate } from '@/lib/utils';
 import AITextHelper from '@/components/ui/AITextHelper';
+import { useToast } from '@/components/providers/ToastProvider';
 import {
   Building,
   Users,
@@ -36,7 +37,8 @@ import {
   Folder,
   Activity,
   Trash2,
-  Printer
+  Printer,
+  Check
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { jsPDF } from 'jspdf';
@@ -89,6 +91,13 @@ export default function TenantDashboard({ params }) {
   const [newTaskFecha, setNewTaskFecha] = useState('');
   const [newTaskEmpresaId, setNewTaskEmpresaId] = useState('');
   const [newTaskEstablecimientoId, setNewTaskEstablecimientoId] = useState('');
+
+  // Toast notifications
+  const globalToast = useToast();
+
+  const triggerToast = (message, type = 'success') => {
+    globalToast.toast(message, type);
+  };
 
   // Estados de filtros para accidentes en el portal de clientes / admin
   const [accidentFilterEmpresa, setAccidentFilterEmpresa] = useState('');
@@ -710,6 +719,7 @@ export default function TenantDashboard({ params }) {
 
   const handleDownloadPdfReport = async (shouldPrint = false) => {
     try {
+      triggerToast('Generando reporte PDF...', 'info');
       const emp = empresas.find(e => e.id === accidentFilterEmpresa);
       const est = establecimientos.find(e => e.id === accidentFilterEstablecimiento);
       
@@ -1058,12 +1068,15 @@ export default function TenantDashboard({ params }) {
         doc.autoPrint();
         const blobUrl = doc.output('bloburl');
         window.open(blobUrl, '_blank');
+        triggerToast('Vista previa abierta.');
       } else {
         const formattedEmpName = empName.replace(/\s+/g, '_');
         doc.save(`Reporte_Siniestralidad_${formattedEmpName}_${selectedYear}.pdf`);
+        triggerToast('PDF descargado exitosamente.');
       }
     } catch (e) {
       console.error('Error al generar reporte PDF:', e);
+      triggerToast('Error al generar el reporte PDF.', 'error');
     }
   };
 
@@ -2569,6 +2582,8 @@ export default function TenantDashboard({ params }) {
           </div>
         </div>
       )}
+
+      {/* TOAST DE FEEDBACK removido - consumido globalmente */}
 
     </div>
   );

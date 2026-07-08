@@ -7,6 +7,7 @@ import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
+import { useToast } from '@/components/providers/ToastProvider';
 import { 
   Folder, 
   FolderOpen, 
@@ -338,7 +339,7 @@ export default function LegajoPage({ params }) {
   const [showExportMobile, setShowExportMobile] = useState(false);
 
   // Alertas, Toast y Modales
-  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const globalToast = useToast();
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', type: 'info', onConfirm: null, confirmText: 'Confirmar' });
   const [showIndexModal, setShowIndexModal] = useState(false);
 
@@ -405,10 +406,7 @@ export default function LegajoPage({ params }) {
   }, [profile]);
 
   const triggerToast = (message, type = 'success') => {
-    setToast({ show: true, message, type });
-    setTimeout(() => {
-      setToast({ show: false, message: '', type: 'success' });
-    }, 4000);
+    globalToast.toast(message, type);
   };
 
   const closeAlert = () => setModalAlert({ show: false, title: '', message: '', type: 'info', onConfirm: null, confirmText: 'Confirmar' });
@@ -1739,19 +1737,7 @@ export default function LegajoPage({ params }) {
 
       </main>
 
-      {/* TOAST ALERTS */}
-      {toast.show && (
-        <div className="fixed bottom-5 right-5 z-50 animate-bounce">
-          <div className={`flex items-center gap-2.5 px-4 py-3 rounded-xl border text-sm font-bold shadow-xl ${
-            toast.type === 'success' 
-              ? 'bg-emerald-50 border-emerald-250 text-emerald-600 shadow-emerald-500/5' 
-              : 'bg-red-50 border-red-250 text-red-600 shadow-red-500/5'
-          }`}>
-            {toast.type === 'success' ? <Check className="h-4.5 w-4.5 shrink-0" /> : <X className="h-4.5 w-4.5 shrink-0" />}
-            <span>{toast.message}</span>
-          </div>
-        </div>
-      )}
+      {/* TOAST ALERTS removidos - consumidos globalmente */}
 
       {/* MODAL DE ALERTA GENERAL */}
       {modalAlert.show && (

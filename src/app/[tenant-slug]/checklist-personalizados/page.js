@@ -5,6 +5,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
+import { useToast } from '@/components/providers/ToastProvider';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
@@ -121,7 +122,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
   const [sortOrder, setSortOrder] = useState('desc');
 
   // Toasts y Modal Alert
-  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const globalToast = useToast();
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
   const [saveLoading, setSaveLoading] = useState(false);
 
@@ -226,10 +227,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
   // HELPERS Y TOASTS
   // ==========================================
   const triggerToast = (message, type = 'success') => {
-    setToast({ show: true, message, type });
-    setTimeout(() => {
-      setToast({ show: false, message: '', type: 'success' });
-    }, 4000);
+    globalToast.toast(message, type);
   };
 
   const closeAlert = () => setModalAlert({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
@@ -2932,34 +2930,8 @@ export default function ChecklistPersonalizadosPage({ params }) {
       )}
 
       {/* ==========================================
-          TOAST ALERT & CONFIRMATION DIALOG
+          TOAST ALERT & CONFIRMATION DIALOG removidos - consumido globalmente
           ========================================== */}
-      {toast.show && (
-        <div className={`fixed bottom-6 right-6 z-[9999] px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 border animate-fade-in ${
-          toast.type === 'error' 
-            ? 'bg-red-50 border-red-200 text-red-800' 
-            : toast.type === 'info'
-            ? 'bg-blue-50 border-blue-200 text-blue-800'
-            : 'bg-green-50 border-green-200 text-green-800'
-        }`}>
-          <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
-            toast.type === 'error' 
-              ? 'bg-red-500 text-white' 
-              : toast.type === 'info'
-              ? 'bg-[#468DFF] text-white'
-              : 'bg-[#00b050] text-white'
-          }`}>
-            {toast.type === 'error' ? (
-              <AlertTriangle className="h-3.5 w-3.5" />
-            ) : toast.type === 'info' ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Check className="h-3.5 w-3.5" />
-            )}
-          </div>
-          <span className="text-xs font-semibold leading-none">{toast.message}</span>
-        </div>
-      )}
 
       {modalAlert.show && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">

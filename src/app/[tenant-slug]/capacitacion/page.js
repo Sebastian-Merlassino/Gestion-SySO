@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
+import { useToast } from '@/components/providers/ToastProvider';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
 import AITextHelper from '@/components/ui/AITextHelper';
@@ -156,7 +157,7 @@ export default function CapacitacionPage({ params }) {
   const [sortOrder, setSortOrder] = useState('asc');
 
   // Modales y Feedback
-  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const globalToast = useToast();
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
   const [saveLoading, setSaveLoading] = useState(false);
 
@@ -195,10 +196,7 @@ export default function CapacitacionPage({ params }) {
   }, [profile]);
 
   const triggerToast = (message, type = 'success') => {
-    setToast({ show: true, message, type });
-    setTimeout(() => {
-      setToast({ show: false, message: '', type: 'success' });
-    }, 4000);
+    globalToast.toast(message, type);
   };
 
   const closeAlert = () => setModalAlert({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
@@ -514,6 +512,7 @@ export default function CapacitacionPage({ params }) {
 
   const handleExportPdfReport = async (shouldPrint = false) => {
     try {
+      triggerToast('Generando reporte PDF...', 'info');
       const doc = new jsPDF({
         orientation: 'landscape',
         unit: 'pt',
@@ -662,11 +661,14 @@ export default function CapacitacionPage({ params }) {
         doc.autoPrint();
         const blobUrl = doc.output('bloburl');
         window.open(blobUrl, '_blank');
+        triggerToast('Vista previa abierta.');
       } else {
         doc.save(`Programa_Capacitaciones_${new Date().getFullYear()}.pdf`);
+        triggerToast('PDF descargado exitosamente.');
       }
     } catch (e) {
       console.error('Error generating PDF:', e);
+      triggerToast('Error al generar el reporte PDF.', 'error');
     }
   };
 
@@ -2366,17 +2368,7 @@ export default function CapacitacionPage({ params }) {
         </div>
       )}
 
-      {/* Notificación Toast flotante */}
-      {toast.show && (
-        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl border shadow-lg transition-all text-xs font-bold ${
-          toast.type === 'error'
-            ? 'bg-red-50 border-red-200 text-red-600'
-            : 'bg-emerald-50 border-emerald-200 text-emerald-600'
-        }`}>
-          <Check className="h-4 w-4 shrink-0" />
-          <span>{toast.message}</span>
-        </div>
-      )}
+      {/* Notificación Toast flotante removido - consumido globalmente */}
 
     </div>
   );
