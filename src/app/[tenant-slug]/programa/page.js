@@ -163,10 +163,10 @@ export default function ProgramaGestion({ params }) {
   const [loadingLegajoDocs, setLoadingLegajoDocs] = useState(false);
 
   useEffect(() => {
-    if (!documentoFile) {
+    if (!documentoFile && !documentoUrl) {
       setSelectedFileName('');
     }
-  }, [documentoFile]);
+  }, [documentoFile, documentoUrl]);
 
   useEffect(() => {
     if (showForm && empresaId && uploadType === 'legajo') {
@@ -955,6 +955,7 @@ export default function ProgramaGestion({ params }) {
     setFechaPlanificada(formatDate(item.fecha_planificada) || '');
     setFechaRealizacion(formatDate(item.fecha_realizacion) || '');
     setDocumentoUrl(item.documento_url || '');
+    setSelectedFileName(item.documento_url ? 'Archivo de respaldo existente' : '');
     setDocumentoFile(null);
     setObservaciones(item.observaciones || '');
     setFormErrors({});
@@ -1600,44 +1601,16 @@ export default function ProgramaGestion({ params }) {
 
                     {/* 8. Carga de Documento */}
                     <div>
-                      <label className="text-xs font-bold text-slate-600 block mb-1.5">
-                        Documento de Respaldo / Evidencia (PDF)
-                      </label>
-
-                      {documentoUrl ? (
-                        <div className="flex items-center justify-between border border-[#468DFF]/20 rounded-xl bg-blue-50/50 p-3 mb-2.5">
-                          <div className="flex items-center gap-2 truncate pr-2">
-                            <FileText className="h-5 w-5 text-[#468DFF] shrink-0" />
-                            <span className="text-xs text-slate-600 truncate font-semibold">
-                              PDF subido anteriormente
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <button
-                              type="button"
-                              onClick={() => handleViewPdf(documentoUrl)}
-                              className="p-1.5 rounded-lg bg-slate-100 hover:bg-[#468DFF] text-slate-500 hover:text-white transition-all cursor-pointer inline-flex items-center shadow-sm"
-                              title="Ver PDF en otra pestaña"
-                            >
-                              <ExternalLink className="h-3.5 w-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setDocumentoUrl('')}
-                              className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-50 text-red-400 hover:text-white transition-all cursor-pointer inline-flex items-center shadow-sm"
-                              title="Eliminar documento cargado"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                      ) : null}
-
                       <DocumentUploadZone
-                        label="Documento de Respaldo"
+                        label="Documento de Respaldo / Evidencia (PDF)"
                         file={documentoFile}
                         fileName={selectedFileName}
                         url={documentoUrl}
+                        onDelete={() => {
+                          setDocumentoUrl('');
+                          setDocumentoFile(null);
+                          setSelectedFileName('');
+                        }}
                         onFileChange={handleFileChange}
                         onDriveImportSuccess={(filePath) => {
                           setDocumentoUrl(filePath);
