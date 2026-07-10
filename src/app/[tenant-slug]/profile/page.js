@@ -1966,7 +1966,7 @@ const [partidosList, setPartidosList] = useState([]);
       {/* PLAN SELECTION MODAL */}
       {showPlanModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-5xl p-8 md:p-10 shadow-2xl relative animate-scaleUp">
+          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-6xl p-8 md:p-10 shadow-2xl relative animate-scaleUp max-h-[90vh] overflow-y-auto scrollbar-thin">
             <button 
               onClick={() => setShowPlanModal(false)}
               className="absolute top-6 right-6 p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors border border-slate-200 cursor-pointer"
@@ -1975,7 +1975,7 @@ const [partidosList, setPartidosList] = useState([]);
             </button>
 
             <div className="text-center mb-8">
-              <img src="/brand/logo-black.png" alt="Gestión SySO" className="h-16 w-16 object-contain mx-auto mb-3" />
+              <img src="/brand/logo-black.png" alt="Gestión SySO" className="h-24 w-24 object-contain mx-auto mb-3" />
               <h3 className="font-outfit text-3xl font-black text-slate-900">
                 Modificar tu Plan
               </h3>
@@ -1986,7 +1986,7 @@ const [partidosList, setPartidosList] = useState([]);
               const currentActivePlan = tenantData ? getEffectivePlan(tenantData) : 'free';
               
               return (
-                <div className="grid md:grid-cols-4 gap-6">
+                <div className="grid md:grid-cols-4 gap-6 items-stretch">
                   
                   {/* Plan Free */}
                   <div className={`rounded-2xl border p-5 flex flex-col justify-between transition-all ${currentActivePlan === 'free' ? 'border-[#468DFF] bg-[#468DFF]/5 ring-2 ring-[#468DFF]/20 shadow-md' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
@@ -1994,10 +1994,14 @@ const [partidosList, setPartidosList] = useState([]);
                       <h4 className="text-base font-bold text-slate-900">Plan Gratis</h4>
                       <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">Ideal para probar la herramienta.</p>
                       <span className="font-outfit text-2xl font-extrabold text-[#468DFF] mt-3 block">$0 <span className="text-xs text-slate-500 font-normal">/ permanente</span></span>
-                      <ul className="text-xs text-slate-600 mt-4 space-y-2 border-t border-slate-200 pt-4 font-semibold">
-                        <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#468DFF] shrink-0" /> 1 Empresa cliente</li>
-                        <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#468DFF] shrink-0" /> 1 Miembro de equipo</li>
-                        <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#468DFF] shrink-0" /> Funciones esenciales</li>
+                      <ul className="text-[11px] text-slate-600 mt-4 space-y-1.5 border-t border-slate-200 pt-4 font-semibold leading-relaxed">
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 1 cliente</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 1 miembro equipo</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Gestión Anual</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Capacitación Anual</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Acciones Correctivas</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Accidentes + Informe IA</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Matriz de Riesgos</li>
                       </ul>
                     </div>
                     <button
@@ -2019,10 +2023,16 @@ const [partidosList, setPartidosList] = useState([]);
                       <h4 className="text-base font-bold text-slate-900">Plan Básico</h4>
                       <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">Para profesionales de campo.</p>
                       <span className="font-outfit text-2xl font-extrabold text-[#468DFF] mt-3 block">$25.000 <span className="text-xs text-slate-500 font-normal">/ mes</span></span>
-                      <ul className="text-xs text-slate-600 mt-4 space-y-2 border-t border-slate-200 pt-4 font-semibold">
-                        <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#468DFF] shrink-0" /> 5 Empresas clientes</li>
-                        <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#468DFF] shrink-0" /> 5 Miembros de equipo</li>
-                        <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#468DFF] shrink-0" /> Extintores y Eléctrico</li>
+                      <ul className="text-[11px] text-slate-600 mt-4 space-y-1.5 border-t border-slate-200 pt-4 font-semibold leading-relaxed">
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 5 clientes</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 5 miembros equipo</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Gestión Anual</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Capacitación Anual</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Acciones Correctivas</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Accidentes + Informe IA</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Matriz de Riesgos</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Extintores + PDF</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Eléctrico + PDF</li>
                       </ul>
                     </div>
                     <button
@@ -2041,10 +2051,18 @@ const [partidosList, setPartidosList] = useState([]);
                       <h4 className="text-base font-bold text-slate-900">Plan Profesional</h4>
                       <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">Para consultoras medianas.</p>
                       <span className="font-outfit text-2xl font-extrabold text-[#468DFF] mt-3 block">$35.000 <span className="text-xs text-slate-500 font-normal">/ mes</span></span>
-                      <ul className="text-xs text-slate-600 mt-4 space-y-2 border-t border-slate-200 pt-4 font-semibold">
-                        <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#468DFF] shrink-0" /> 15 Empresas clientes</li>
-                        <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#468DFF] shrink-0" /> 15 Miembros de equipo</li>
-                        <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#468DFF] shrink-0" /> Visitas y Avisos</li>
+                      <ul className="text-[11px] text-slate-600 mt-4 space-y-1.5 border-t border-slate-200 pt-4 font-semibold leading-relaxed">
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 15 clientes</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 15 miembros equipo</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Gestión Anual</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Capacitación Anual</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Acciones Correctivas</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Accidentes + Informe IA</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Matriz de Riesgos</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Extintores + PDF</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Eléctrico + PDF</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Constancias de Visita</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Avisos de Riesgo</li>
                       </ul>
                     </div>
                     <button
@@ -2063,10 +2081,21 @@ const [partidosList, setPartidosList] = useState([]);
                       <h4 className="text-base font-bold text-slate-900">Plan Libre</h4>
                       <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">Constructoras y corporaciones.</p>
                       <span className="font-outfit text-2xl font-extrabold text-[#468DFF] mt-3 block">$45.000 <span className="text-xs text-slate-500 font-normal">/ mes</span></span>
-                      <ul className="text-xs text-slate-600 mt-4 space-y-2 border-t border-slate-200 pt-4 font-semibold">
-                        <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#468DFF] shrink-0" /> Empresas ilimitadas</li>
-                        <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#468DFF] shrink-0" /> Checklist e Informes</li>
-                        <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#468DFF] shrink-0" /> Portal de Clientes</li>
+                      <ul className="text-[11px] text-slate-600 mt-4 space-y-1.5 border-t border-slate-200 pt-4 font-semibold leading-relaxed">
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Clientes ilimitados</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Equipo de trabajo ilimitado</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Gestión Anual</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Capacitación Anual</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Acciones Correctivas</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Accidentes + Informe IA</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Matriz de Riesgos</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Extintores + PDF</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Eléctrico + PDF</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Constancias de Visita</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Avisos de Riesgo</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Check list personalizados</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Legajo técnico online</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Portal de clientes</li>
                       </ul>
                     </div>
                     <button
