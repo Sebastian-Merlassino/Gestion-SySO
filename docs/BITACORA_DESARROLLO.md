@@ -30,8 +30,8 @@
 - **Inyección de Tabla Comparativa de Servicios**: Modificadas las tarjetas de planes en el modal de selección de planes de [profile/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/profile/page.js) para reflejar detalladamente todos los módulos incluidos por cada plan comercial según las pautas comerciales (ej. Plan Gratis con 1 cliente/miembro y funciones anuales/correctivas; Plan Básico agregando Extintores y Eléctrico; Plan Profesional sumando Constancias y Avisos con envío de correo; y Plan Libre con todas las prestaciones de checklists personalizados, legajos y portal de clientes ilimitados).
 - **Hardening de UX y Scroll Seguro**:
   - Aumentadas las dimensiones del modal a `max-w-6xl` para alojar cómodamente la nueva densidad de información en una grilla de 4 columnas.
-  - Añadidas las clases `max-h-[90vh] overflow-y-auto scrollbar-thin` para asegurar que el modal se renderice de forma segura y scrollable sin cortarse en pantallas de menor resolución o en dispositivos móviles.
-  - Agrandada la visualización del logo negro de la marca (`logo-black.png`) de `h-16` a `h-24` para darle una presencia institucional imponente.
+  - Implementada una estructura de flexbox con scroll independiente en un contenedor interno (`overflow-y-auto scrollbar-thin` en el sub-contenedor de contenido y `overflow-hidden` en el marco exterior) para que la barra de desplazamiento se renderice **por dentro** de los bordes redondeados y de la tarjeta del modal.
+  - Agrandada la visualización del logo negro de la marca (`logo-black.png`) a un tamaño destacado de `h-28` y optimizados al mínimo los márgenes de cabecera (`mb-1.5` en logo, `mb-5` en título, y relleno superior del contenedor ajustado a `pt-6`) para aprovechar de forma idónea el área útil vertical.
 
 ### Archivos Modificados / Creados
 - `src/app/[tenant-slug]/profile/page.js`
