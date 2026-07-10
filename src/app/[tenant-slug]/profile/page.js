@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import { supabase, fetchAllGeography } from '@/lib/supabase';
-import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
+import { formatDate, formatAsDateInput, convertToDbDate, getEffectivePlan, PLAN_FEATURES } from '@/lib/utils';
 import { useToast } from '@/components/providers/ToastProvider';
 import AppPageHeader from '@/components/ui/AppPageHeader';
 import AppButton from '@/components/ui/AppButton';
@@ -212,8 +212,70 @@ const [partidosList, setPartidosList] = useState([]);
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [showDeleteSection, setShowDeleteSection] = useState(false);
 
-  // Función para mostrar Toast auto-cerrable
-  // triggerToast ya está definido usando useToast() global al inicio del componente
+  // Efecto para abrir el modal si viene desde una redirección por falta de plan
+  useEffect(() => {
+    if (!initialLoading && typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('upgrade') === 'true') {
+        setShowPlanModal(true);
+        const section = params.get('section');
+        const sectionNames = {
+          'extintores': 'Control de Extintores',
+          'control-electrico': 'Control Eléctrico',
+          'visitas': 'Constancia de Visita',
+          'avisos': 'Aviso de Riesgo',
+          'checklist-personalizados': 'Checklist Personalizados',
+          'legajo': 'Legajo Técnico',
+          'portal-clientes': 'Portal de Clientes'
+        };
+        const sectionName = sectionNames[section] || 'la sección solicitada';
+        setTimeout(() => {
+          triggerToast(`Tu plan actual no incluye acceso a ${sectionName}. Selecciona un plan superior para habilitarla.`, 'info');
+        }, 500);
+      }
+    }
+  }, [initialLoading]);
+
+  // Manejar redireccionamiento a checkout de Mercado Pago para cambiar de plan
+  const handleUpgradePlan = async (planId) => {
+    if (planId === tenantData?.plan_id) {
+      triggerToast('Tu organización ya tiene este plan contratado.', 'info');
+      setShowPlanModal(false);
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          planId,
+          tenantId: tenantData?.id
+        })
+      });
+      
+      const data = await response.json();
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      
+      if (data.initPoint) {
+        triggerToast('Redirigiendo a la pasarela de pagos seguros de Mercado Pago...', 'info');
+        setTimeout(() => {
+          window.location.href = data.initPoint;
+        }, 1000);
+      } else {
+        throw new Error('No se recibió la URL de pago de la pasarela.');
+      }
+    } catch (err) {
+      console.error('Error al iniciar el checkout de plan:', err);
+      triggerToast(err.message || 'Error al conectar con la pasarela de pagos. Intente de nuevo.', 'error');
+      setLoading(false);
+    }
+  };
 
   const getSignedUrl = async (bucket, pathOrUrl) => {
     if (!pathOrUrl || pathOrUrl === 'N/A') return '';
@@ -1693,47 +1755,69 @@ const [partidosList, setPartidosList] = useState([]);
               Plan Suscrito
             </h3>
 
-            <div className="relative rounded-2xl border border-[#468DFF]/15 bg-gradient-to-br from-blue-50/50 via-slate-50 to-indigo-50/10 p-6 overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
-              <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-[#468DFF]/5 blur-xl pointer-events-none" />
-              
-              <div className="space-y-2">
-                <span className="px-2 py-0.5 rounded-full bg-[#468DFF]/10 border border-[#468DFF]/20 text-[#468DFF] text-[10px] font-semibold uppercase tracking-wider">
-                  Plan Activo
-                </span>
-                <h4 className="font-outfit text-xl font-extrabold text-slate-900">
-                  {selectedPlan === 'free' && 'Plan Gratis Permanente'}
-                  {selectedPlan === 'basic_5' && 'Plan 5 Empresas'}
-                  {selectedPlan === 'standard_25' && 'Plan 25 Empresas'}
-                  {selectedPlan === 'libre' && 'Plan Libre (Ilimitado)'}
-                </h4>
-                <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                  {selectedPlan === 'free' && 'Límite de hasta 1 empresa cliente en base de datos, sin vencimiento de prueba.'}
-                  {selectedPlan === 'basic_5' && 'Límite de hasta 5 empresas clientes en simultáneo.'}
-                  {selectedPlan === 'standard_25' && 'Límite de hasta 25 empresas clientes en simultáneo.'}
-                  {selectedPlan === 'libre' && 'Soporte ilimitado de empresas, inspectores y marca personal.'}
-                </p>
-              </div>
+            {(() => {
+              const effectivePlan = tenantData ? getEffectivePlan(tenantData) : 'free';
+              const isGift = tenantData?.gift_plan_id && tenantData?.gift_ends_at && new Date(tenantData.gift_ends_at) > new Date();
+              const isExempt = tenantData?.is_exempt;
+              const isDiscountActive = tenantData?.discount_percentage > 0 && tenantData?.discount_ends_at && new Date(tenantData.discount_ends_at) > new Date();
 
-              <div className="flex flex-col items-stretch md:items-end gap-3 shrink-0">
-                <div className="text-right">
-                  <span className="text-[10px] text-slate-500 block">Costo mensual</span>
-                  <span className="font-outfit text-2xl font-extrabold text-[#468DFF]">
-                    {selectedPlan === 'free' && '$0'}
-                    {selectedPlan === 'basic_5' && '$3.500'}
-                    {selectedPlan === 'standard_25' && '$7.500'}
-                    {selectedPlan === 'libre' && '$12.000'}
-                  </span>
+              return (
+                <div className="relative rounded-2xl border border-[#468DFF]/15 bg-gradient-to-br from-blue-50/50 via-slate-50 to-indigo-50/10 p-6 overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-[#468DFF]/5 blur-xl pointer-events-none" />
+                  
+                  <div className="space-y-2">
+                    <span className="px-2 py-0.5 rounded-full bg-[#468DFF]/10 border border-[#468DFF]/20 text-[#468DFF] text-[10px] font-semibold uppercase tracking-wider">
+                      Plan Activo
+                    </span>
+                    <h4 className="font-outfit text-xl font-extrabold text-slate-900">
+                      {isExempt ? 'Plan Owner' : (isGift ? `${PLAN_FEATURES[effectivePlan]?.name} (Bonificado)` : PLAN_FEATURES[effectivePlan]?.name)}
+                    </h4>
+                    <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                      {isExempt && 'Acceso total e ilimitado de por vida a la plataforma como dueño de la aplicación.'}
+                      {isGift && `Tu organización tiene un beneficio especial y acceso completo al plan ${PLAN_FEATURES[effectivePlan]?.name} bonificado hasta el ${formatDate(tenantData.gift_ends_at.slice(0, 10))}.`}
+                      {!isExempt && !isGift && (
+                        <>
+                          {effectivePlan === 'free' && 'Límite de hasta 1 empresa cliente en base de datos, sin vencimiento de prueba.'}
+                          {effectivePlan === 'basic_5' && 'Límite de hasta 5 empresas clientes y 5 miembros de equipo.'}
+                          {effectivePlan === 'standard_25' && 'Límite de hasta 15 empresas clientes y 15 miembros de equipo.'}
+                          {effectivePlan === 'libre' && 'Soporte ilimitado de empresas, inspectores y marca personal.'}
+                        </>
+                      )}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col items-stretch md:items-end gap-3 shrink-0">
+                    <div className="text-right">
+                      <span className="text-[10px] text-slate-500 block">Costo mensual</span>
+                      <span className="font-outfit text-2xl font-extrabold text-[#468DFF]">
+                        {isExempt || isGift ? 'Bonificado' : (
+                          isDiscountActive ? (
+                            `$${Math.round(PLAN_FEATURES[effectivePlan]?.price * (1 - tenantData.discount_percentage / 100)).toLocaleString()}`
+                          ) : (
+                            `$${(PLAN_FEATURES[effectivePlan]?.price || 0).toLocaleString()}`
+                          )
+                        )}
+                      </span>
+                      {isDiscountActive && !isExempt && !isGift && (
+                        <span className="text-[10px] text-green-600 block font-semibold mt-0.5">
+                          ¡Descuento del {tenantData.discount_percentage}% aplicado!
+                        </span>
+                      )}
+                    </div>
+                    {!isExempt && (
+                      <button
+                        type="button"
+                        onClick={() => setShowPlanModal(true)}
+                        className="py-2.5 px-4 rounded-xl border border-[#468DFF]/40 hover:bg-[#468DFF]/5 text-[#468DFF] font-semibold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
+                      >
+                        <Sparkles className="h-3.5 w-3.5" />
+                        Cambiar / Subir Plan
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setShowPlanModal(true)}
-                  className="py-2.5 px-4 rounded-xl border border-[#468DFF]/40 hover:bg-[#468DFF]/5 text-[#468DFF] font-semibold text-xs transition-all flex items-center justify-center gap-2"
-                >
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Cambiar / Subir Plan
-                </button>
-              </div>
-            </div>
+              );
+            })()}
           </div>
         </>
       )}
@@ -1909,89 +1993,106 @@ const [partidosList, setPartidosList] = useState([]);
             </div>
 
             {/* Grid of Plans */}
-            <div className="grid md:grid-cols-4 gap-4">
+            {(() => {
+              const currentActivePlan = tenantData ? getEffectivePlan(tenantData) : 'free';
               
-              {/* Plan Free */}
-              <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all ${selectedPlan === 'free' ? 'border-[#468DFF] bg-[#468DFF]/5' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900">Plan Gratis</h4>
-                  <p className="text-[9px] text-slate-500 mt-1 font-medium leading-tight">Ideal para probar la herramienta.</p>
-                  <span className="font-outfit text-base font-extrabold text-[#468DFF] mt-2 block">$0 <span className="text-[9px] text-slate-500 font-normal">/ permanente</span></span>
-                  <ul className="text-[8px] text-slate-600 mt-3 space-y-1 border-t border-slate-200 pt-2 font-medium">
-                    <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> 1 Empresa cliente</li>
-                    <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> Sin límite tiempo</li>
-                  </ul>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => { setSelectedPlan('free'); setShowPlanModal(false); }}
-                  className={`w-full py-1 rounded-lg mt-3 text-[10px] font-semibold transition-all ${selectedPlan === 'free' ? 'bg-[#468DFF] text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
-                >
-                  {selectedPlan === 'free' ? 'Seleccionado' : 'Elegir'}
-                </button>
-              </div>
+              return (
+                <div className="grid md:grid-cols-4 gap-4">
+                  
+                  {/* Plan Free */}
+                  <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all ${currentActivePlan === 'free' ? 'border-[#468DFF] bg-[#468DFF]/5' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900">Plan Gratis</h4>
+                      <p className="text-[9px] text-slate-500 mt-1 font-medium leading-tight">Ideal para probar la herramienta.</p>
+                      <span className="font-outfit text-base font-extrabold text-[#468DFF] mt-2 block">$0 <span className="text-[9px] text-slate-500 font-normal">/ permanente</span></span>
+                      <ul className="text-[8px] text-slate-600 mt-3 space-y-1 border-t border-slate-200 pt-2 font-medium">
+                        <li className="flex items-center gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> 1 Empresa cliente</li>
+                        <li className="flex items-center gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> 1 Miembro de equipo</li>
+                        <li className="flex items-center gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> Funciones esenciales</li>
+                      </ul>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={currentActivePlan === 'free'}
+                      onClick={() => {
+                        triggerToast('Para cancelar tu suscripción activa debes hacerlo desde tu cuenta de Mercado Pago.', 'info');
+                        setShowPlanModal(false);
+                      }}
+                      className={`w-full py-1 rounded-lg mt-3 text-[10px] font-semibold transition-all ${currentActivePlan === 'free' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer'}`}
+                    >
+                      {currentActivePlan === 'free' ? 'Activo' : 'Elegir'}
+                    </button>
+                  </div>
 
-              {/* Plan 5 */}
-              <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all ${selectedPlan === 'basic_5' ? 'border-[#468DFF] bg-[#468DFF]/5' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900">Plan 5</h4>
-                  <p className="text-[9px] text-slate-500 mt-1 font-medium leading-tight">Para profesionales de campo.</p>
-                  <span className="font-outfit text-base font-extrabold text-[#468DFF] mt-2 block">$3.500 <span className="text-[9px] text-slate-500 font-normal">/ mes</span></span>
-                  <ul className="text-[8px] text-slate-600 mt-3 space-y-1 border-t border-slate-200 pt-2 font-medium">
-                    <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> 5 Empresas clientes</li>
-                    <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> Todas las funciones</li>
-                  </ul>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => { setSelectedPlan('basic_5'); setShowPlanModal(false); }}
-                  className={`w-full py-1 rounded-lg mt-3 text-[10px] font-semibold transition-all ${selectedPlan === 'basic_5' ? 'bg-[#468DFF] text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
-                >
-                  {selectedPlan === 'basic_5' ? 'Seleccionado' : 'Elegir'}
-                </button>
-              </div>
+                  {/* Plan 25000 */}
+                  <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all ${currentActivePlan === 'basic_5' ? 'border-[#468DFF] bg-[#468DFF]/5' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900">Plan Básico</h4>
+                      <p className="text-[9px] text-slate-500 mt-1 font-medium leading-tight">Para profesionales de campo.</p>
+                      <span className="font-outfit text-base font-extrabold text-[#468DFF] mt-2 block">$25.000 <span className="text-[9px] text-slate-500 font-normal">/ mes</span></span>
+                      <ul className="text-[8px] text-slate-600 mt-3 space-y-1 border-t border-slate-200 pt-2 font-medium">
+                        <li className="flex items-center gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> 5 Empresas clientes</li>
+                        <li className="flex items-center gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> 5 Miembros de equipo</li>
+                        <li className="flex items-center gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> Extintores y Eléctrico</li>
+                      </ul>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={currentActivePlan === 'basic_5'}
+                      onClick={() => handleUpgradePlan('basic_5')}
+                      className={`w-full py-1 rounded-lg mt-3 text-[10px] font-semibold transition-all ${currentActivePlan === 'basic_5' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-[#468DFF] hover:bg-[#0511F2] text-white cursor-pointer'}`}
+                    >
+                      {currentActivePlan === 'basic_5' ? 'Activo' : 'Contratar'}
+                    </button>
+                  </div>
 
-              {/* Plan 25 */}
-              <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all ${selectedPlan === 'standard_25' ? 'border-[#468DFF] bg-[#468DFF]/5' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900">Plan 25</h4>
-                  <p className="text-[9px] text-slate-500 mt-1 font-medium leading-tight">Para consultoras medianas.</p>
-                  <span className="font-outfit text-base font-extrabold text-[#468DFF] mt-2 block">$7.500 <span className="text-[9px] text-slate-500 font-normal">/ mes</span></span>
-                  <ul className="text-[8px] text-slate-600 mt-3 space-y-1 border-t border-slate-200 pt-2 font-medium">
-                    <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> 25 Empresas clientes</li>
-                    <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> Soporte priorizado</li>
-                  </ul>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => { setSelectedPlan('standard_25'); setShowPlanModal(false); }}
-                  className={`w-full py-1 rounded-lg mt-3 text-[10px] font-semibold transition-all ${selectedPlan === 'standard_25' ? 'bg-[#468DFF] text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
-                >
-                  {selectedPlan === 'standard_25' ? 'Seleccionado' : 'Elegir'}
-                </button>
-              </div>
+                  {/* Plan 35000 */}
+                  <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all ${currentActivePlan === 'standard_25' ? 'border-[#468DFF] bg-[#468DFF]/5' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900">Plan Profesional</h4>
+                      <p className="text-[9px] text-slate-500 mt-1 font-medium leading-tight">Para consultoras medianas.</p>
+                      <span className="font-outfit text-base font-extrabold text-[#468DFF] mt-2 block">$35.000 <span className="text-[9px] text-slate-500 font-normal">/ mes</span></span>
+                      <ul className="text-[8px] text-slate-600 mt-3 space-y-1 border-t border-slate-200 pt-2 font-medium">
+                        <li className="flex items-center gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> 15 Empresas clientes</li>
+                        <li className="flex items-center gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> 15 Miembros de equipo</li>
+                        <li className="flex items-center gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> Visitas y Avisos</li>
+                      </ul>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={currentActivePlan === 'standard_25'}
+                      onClick={() => handleUpgradePlan('standard_25')}
+                      className={`w-full py-1 rounded-lg mt-3 text-[10px] font-semibold transition-all ${currentActivePlan === 'standard_25' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-[#468DFF] hover:bg-[#0511F2] text-white cursor-pointer'}`}
+                    >
+                      {currentActivePlan === 'standard_25' ? 'Activo' : 'Contratar'}
+                    </button>
+                  </div>
 
-              {/* Plan Libre */}
-              <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all ${selectedPlan === 'libre' ? 'border-[#468DFF] bg-[#468DFF]/5' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900">Plan Libre</h4>
-                  <p className="text-[9px] text-slate-500 mt-1 font-medium leading-tight">Constructoras y corporaciones.</p>
-                  <span className="font-outfit text-base font-extrabold text-[#468DFF] mt-2 block">$12.000 <span className="text-[9px] text-slate-500 font-normal">/ mes</span></span>
-                  <ul className="text-[8px] text-slate-600 mt-3 space-y-1 border-t border-slate-200 pt-2 font-medium">
-                    <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> Empresas ilimitadas</li>
-                    <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> Branding completo</li>
-                  </ul>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => { setSelectedPlan('libre'); setShowPlanModal(false); }}
-                  className={`w-full py-1 rounded-lg mt-3 text-[10px] font-semibold transition-all ${selectedPlan === 'libre' ? 'bg-[#468DFF] text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
-                >
-                  {selectedPlan === 'libre' ? 'Seleccionado' : 'Elegir'}
-                </button>
-              </div>
+                  {/* Plan Libre */}
+                  <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all ${currentActivePlan === 'libre' ? 'border-[#468DFF] bg-[#468DFF]/5' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900">Plan Libre</h4>
+                      <p className="text-[9px] text-slate-500 mt-1 font-medium leading-tight">Constructoras y corporaciones.</p>
+                      <span className="font-outfit text-base font-extrabold text-[#468DFF] mt-2 block">$45.000 <span className="text-[9px] text-slate-500 font-normal">/ mes</span></span>
+                      <ul className="text-[8px] text-slate-600 mt-3 space-y-1 border-t border-slate-200 pt-2 font-medium">
+                        <li className="flex items-center gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> Empresas ilimitadas</li>
+                        <li className="flex items-center gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> Checklist e Informes</li>
+                        <li className="flex items-center gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> Portal de Clientes</li>
+                      </ul>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={currentActivePlan === 'libre'}
+                      onClick={() => handleUpgradePlan('libre')}
+                      className={`w-full py-1 rounded-lg mt-3 text-[10px] font-semibold transition-all ${currentActivePlan === 'libre' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-[#468DFF] hover:bg-[#0511F2] text-white cursor-pointer'}`}
+                    >
+                      {currentActivePlan === 'libre' ? 'Activo' : 'Contratar'}
+                    </button>
+                  </div>
 
-            </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}

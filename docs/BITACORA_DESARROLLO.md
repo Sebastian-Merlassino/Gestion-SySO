@@ -1,5 +1,73 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-10] Instalación de MCP Server de Mercado Pago en Entorno de Desarrollo
+
+### Resumen de Cambios
+- **Configuración del IDE**:
+  - Creado el archivo de configuración global `mcp_config.json` en el directorio de configuración del IDE del usuario.
+  - Registrado el servidor MCP remoto de Mercado Pago (`mercadopago-mcp-server`) apuntando al endpoint oficial y utilizando el token de acceso de desarrollo de Mercado Pago obtenido de las variables de entorno locales del proyecto.
+
+### Decisiones Clave
+- Habilitar herramientas de asistencia de IA para integraciones y validaciones con las APIs de Mercado Pago directamente en el editor.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+
+### Archivos Modificados / Creados
+- `[NEW] C:/Users/sebas/.gemini/antigravity-ide/mcp_config.json`
+
+### Validaciones Ejecutadas
+- Verificada la existencia y el formato JSON del archivo de configuración generado.
+
+### Riesgos Detectados / Remanentes
+- En caso de cambiar el token de acceso de Mercado Pago en el archivo `.env`, se deberá actualizar también el token en `mcp_config.json` manualmente para que el servidor MCP mantenga acceso autorizado.
+
+### Próximo Paso Recomendado
+- Proceder con el testeo de llamadas de API utilizando el nuevo MCP Server si se requiere para futuras tareas del flujo de cobro.
+
+---
+
+## [2026-07-10] Integración del Sistema de Suscripciones, Límites y Cobros Mensuales de Mercado Pago
+
+### Resumen de Cambios
+- **Modelo de Base de Datos y RLS**:
+  - Incorporadas nuevas columnas en `public.tenants` para rastrear planes con vencimiento (`plan_ends_at`), asignaciones de membresía de regalo (`gift_plan_id`, `gift_ends_at`), porcentaje de descuento (`discount_percentage`, `discount_ends_at`) y estado de exención (`is_exempt`).
+  - Creada la función `public.get_effective_plan_id(tenant_id)` en PostgreSQL para computar dinámicamente el plan efectivo considerando exenciones, regalos promocionales y vencimientos.
+  - Redefinida la función RLS de permisos de escritura `public.user_has_action_permission(section, action)` para restringir de forma nativa la inserción y edición en base al plan contratado.
+  - Actualizadas las políticas SELECT de RLS para las tablas operativas (`extintores`, `control_electrico`, `visitas`, `avisos_riesgo`, `checklist_templates`, `checklist_inspecciones` y `legajo_tecnico`) para restringir de forma segura las consultas si el plan no incluye el módulo.
+  - Añadidos triggers de base de datos (`before_empresa_insert` y `before_miembro_insert`) para garantizar el cumplimiento de límites de empresas clientes y técnicos/miembros.
+  - Provistas funciones RPC seguras para que la administración del sistema pueda asignar regalos, descuentos y exenciones por base de datos de manera limpia.
+- **Utilidades de Configuración**:
+  * Modificado `src/lib/utils.js` agregando la constante de límites de planes `PLAN_FEATURES` y los helpers `getEffectivePlan` y `hasFeatureAccess` para evaluar de manera unificada el plan comercial activo.
+- **Middleware de Navegación**:
+  * Actualizado `src/middleware.js` para consultar el plan del tenant del usuario y realizar un bloqueo por URL redirigiendo automáticamente a la página de perfil con el parámetro `upgrade=true` si se intenta entrar a una sección no permitida.
+- **APIs de Creación y Validación**:
+  * Modificadas las APIs de creación de técnicos (`api/equipo/route.js`) y de usuarios clientes (`api/clientes/route.js`) para validar dinámicamente los límites asignados al plan comercial efectivo.
+- **Checkout y Webhook de Mercado Pago**:
+  * Creada la API de checkout (`api/checkout/route.js`) para inicializar el checkout recurrente `PreApproval` (suscripción) de Mercado Pago, aplicando descuentos vigentes del tenant.
+  * Actualizado el webhook de Mercado Pago (`api/webhooks/mercadopago/route.js`) para capturar el estado `preapproval` y activar el plan por 30 días si el pago es `authorized`, o degradarlo al plan free si se cancela o pausa.
+- **Interfaz de Usuario y UX**:
+  * Refactorizado `src/app/[tenant-slug]/profile/page.js` para detectar si el usuario fue redirigido por límites y abrir el modal con un Toast unificado e informativo.
+  * Integrada la redirección segura a Mercado Pago en el modal de selección de planes de pago.
+  * Adaptado el renderizado del plan para indicar explícitamente las etiquetas **"Plan Owner"**, **"Bonificado"** o descuentos activos del tenant en la interfaz.
+
+### Archivos Modificados / Creados
+- **[NEW] supabase/migrations/20260730000000_billing_plans_enhancements.sql**
+- **[NEW] src/app/api/checkout/route.js**
+- **[MODIFY] src/lib/utils.js**
+- **[MODIFY] src/middleware.js**
+- **[MODIFY] src/app/api/equipo/route.js**
+- **[MODIFY] src/app/api/clientes/route.js**
+- **[MODIFY] src/app/api/webhooks/mercadopago/route.js**
+- **[MODIFY] src/app/[tenant-slug]/profile/page.js**
+- **[MODIFY] docs/BITACORA_DESARROLLO.md**
+
+### Validaciones Ejecutadas
+- Compilación de optimización de producción (`npm run build`) completada de manera exitosa sin errores de enrutamiento, sintaxis ni tipos.
+- Ejecutada exitosamente la migración SQL en la base de datos Supabase vinculada.
+
+---
+
 ## [2026-07-08] Corrección de Error 400 (Bad Request) en Descarga de PDF por URLs Vacías de AppSheet
 
 ### Resumen de Cambios

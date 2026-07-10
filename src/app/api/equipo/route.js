@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { getEffectivePlan, PLAN_FEATURES } from '../../../lib/utils';
 
 const createMiembroSchema = z.object({
   email: z.string().email('Dirección de correo electrónico inválida.'),
@@ -86,7 +87,7 @@ export async function POST(request) {
     // --- Validación de Límites de Plan Comercial (Miembros de Equipo) ---
     const { data: tenant, error: tenantErr } = await serverClient
       .from('tenants')
-      .select('plan_id')
+      .select('plan_id, plan_ends_at, is_exempt, gift_plan_id, gift_ends_at')
       .eq('id', profile.tenant_id)
       .single();
 
@@ -104,15 +105,12 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Error al verificar límites del plan' }, { status: 500 });
     }
 
-    let maxMembers = Infinity;
-    if (tenant.plan_id === 'free') maxMembers = 1;
-    else if (tenant.plan_id === 'basic_5') maxMembers = 2; // Plan básico permite 2 técnicos adicionales
-    else if (tenant.plan_id === 'standard_25') maxMembers = 5; // Plan standard permite 5 técnicos adicionales
-    else if (tenant.plan_id === 'trial') maxMembers = 5;
+    const effectivePlan = getEffectivePlan(tenant);
+    const maxMembers = PLAN_FEATURES[effectivePlan]?.maxMembers || 1;
 
     if (memberCount >= maxMembers) {
       return NextResponse.json({ 
-        error: `Límite de plan excedido. Tu plan actual (${tenant.plan_id}) permite un máximo de ${maxMembers} miembros de equipo técnico.` 
+        error: `Límite de plan excedido. Tu plan actual permite un máximo de ${maxMembers} miembros de equipo técnico.` 
       }, { status: 403 });
     }
     // --------------------------------------------------------------------

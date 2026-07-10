@@ -55,3 +55,73 @@ export function formatAsDateInput(val) {
   return `${numbers.slice(0, 2)}/${numbers.slice(2, 4)}/${numbers.slice(4, 8)}`;
 }
 
+/**
+ * Constante que define los límites y características habilitadas para cada plan comercial.
+ */
+export const PLAN_FEATURES = {
+  free: {
+    name: 'Plan Gratis',
+    price: 0,
+    maxClients: 1,
+    maxMembers: 1,
+    features: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina']
+  },
+  basic_5: {
+    name: 'Plan 25000',
+    price: 25000,
+    maxClients: 5,
+    maxMembers: 5,
+    features: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'extintores', 'control-electrico']
+  },
+  standard_25: {
+    name: 'Plan 35000',
+    price: 35000,
+    maxClients: 15,
+    maxMembers: 15,
+    features: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'extintores', 'control-electrico', 'visitas', 'avisos']
+  },
+  libre: {
+    name: 'Plan Libre',
+    price: 45000,
+    maxClients: Infinity,
+    maxMembers: Infinity,
+    features: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'extintores', 'control-electrico', 'visitas', 'avisos', 'checklist-personalizados', 'legajo', 'portal-clientes']
+  }
+};
+
+/**
+ * Resuelve el plan comercial efectivo de un tenant, evaluando exenciones por dueño global,
+ * regalos promocionales activos o vencimiento de la suscripción.
+ * @param {object} tenant - Datos del tenant.
+ * @returns {string} - ID del plan efectivo ('free', 'basic_5', 'standard_25', 'libre').
+ */
+export function getEffectivePlan(tenant) {
+  if (!tenant) return 'free';
+  if (tenant.is_exempt) return 'libre';
+  
+  // Evaluar regalo activo primero
+  if (tenant.gift_plan_id && tenant.gift_ends_at && new Date(tenant.gift_ends_at) > new Date()) {
+    return tenant.gift_plan_id;
+  }
+  
+  // Evaluar si expiró su suscripción
+  if (tenant.plan_ends_at && new Date(tenant.plan_ends_at) < new Date()) {
+    return 'free';
+  }
+  
+  return tenant.plan_id || 'free';
+}
+
+/**
+ * Comprueba si el plan efectivo del tenant tiene acceso a un módulo o característica.
+ * @param {object} tenant - Datos del tenant.
+ * @param {string} sectionId - ID de la sección.
+ * @returns {boolean} - true si tiene acceso, false en caso contrario.
+ */
+export function hasFeatureAccess(tenant, sectionId) {
+  const plan = getEffectivePlan(tenant);
+  const features = PLAN_FEATURES[plan]?.features || [];
+  return features.includes(sectionId);
+}
+
+

@@ -1,7 +1,7 @@
 // src/app/api/webhooks/mercadopago/route.js
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
-import { Payment } from 'mercadopago';
+import { Payment, PreApproval } from 'mercadopago';
 import { NextResponse } from 'next/server';
 import { client as mpClient } from '../../../../config/mpConfig';
 
@@ -63,9 +63,16 @@ export async function POST(request) {
 
     console.log(`[Webhook MP] Recibida notificación de tipo: "${type}", ID: "${dataId}"`);
 
-    // Si no es un evento de pago, retornamos 200 para ignorar el evento de forma limpia
-    if (type !== 'payment' || !dataId) {
+    // Soportar pagos ('payment') y suscripciones ('preapproval')
+    const isPayment = type === 'payment';
+    const isPreApproval = type === 'preapproval' || body.type === 'preapproval' || (body.resource && body.resource.includes('preapproval'));
+
+    if (!isPayment && !isPreApproval) {
       return NextResponse.json({ message: 'Evento ignorado de forma exitosa.' }, { status: 200 });
+    }
+
+    if (!dataId) {
+      return NextResponse.json({ error: 'Falta data.id de notificación.' }, { status: 400 });
     }
 
     const webhookSecret = process.env.MERCADO_PAGO_WEBHOOK_SECRET;
@@ -81,10 +88,10 @@ export async function POST(request) {
       // Validar firma
       const isValid = verifySignature(request, body, webhookSecret);
       if (!isValid) {
-        console.warn(`[Webhook MP Unauthorized] Firma del webhook inválida para el ID de pago: ${dataId}`);
+        console.warn(`[Webhook MP Unauthorized] Firma del webhook inválida para el ID: ${dataId}`);
         return NextResponse.json({ error: 'Firma inválida.' }, { status: 401 });
       }
-      console.log(`[Webhook MP] Firma del webhook validada correctamente para el ID de pago: ${dataId}`);
+      console.log(`[Webhook MP] Firma del webhook validada correctamente para el ID: ${dataId}`);
     }
 
     if (!supabaseSecretKey) {
@@ -100,6 +107,104 @@ export async function POST(request) {
       }
     });
 
+    // ============================================
+    // CASO A: EVENTO DE SUSCRIPCIÓN (PREAPPROVAL)
+    // ============================================
+    if (isPreApproval) {
+      console.log(`[Webhook MP] Consultando detalles de preapproval ${dataId} en Mercado Pago...`);
+      const preApprovalClient = new PreApproval(mpClient);
+      
+      let preApprovalData;
+      try {
+        preApprovalData = await preApprovalClient.get({ id: dataId });
+      } catch (mpErr) {
+        console.error(`[Webhook MP Error] Error al obtener preapproval ${dataId} desde MP:`, mpErr);
+        return NextResponse.json({ error: 'Fallo al verificar preapproval con la pasarela.' }, { status: 502 });
+      }
+      
+      const { status, external_reference } = preApprovalData;
+      console.log(`[Webhook MP] Preapproval obtenido. Estado: "${status}", Referencia: "${external_reference}"`);
+      
+      if (!external_reference) {
+        console.warn(`[Webhook MP] Preapproval ${dataId} carece de external_reference.`);
+        return NextResponse.json({ message: 'Suscripción sin referencia de tenant ignorada.' }, { status: 200 });
+      }
+      
+      let refData;
+      try {
+        refData = JSON.parse(external_reference);
+      } catch (e) {
+        console.error('[Webhook MP] Error al deserializar external_reference:', external_reference);
+        return NextResponse.json({ error: 'Referencia externa de suscripción inválida.' }, { status: 400 });
+      }
+      
+      const { tenant_id, plan_id } = refData;
+      
+      if (!tenant_id || !plan_id) {
+        console.error('[Webhook MP] Datos incompletos en external_reference:', refData);
+        return NextResponse.json({ error: 'Tenant ID o Plan ID faltantes en referencia.' }, { status: 400 });
+      }
+      
+      if (status === 'authorized') {
+        console.log(`[Webhook MP] Activando plan ${plan_id} para Tenant ${tenant_id} por suscripción autorizada.`);
+        
+        // Registrar activación en auditoría
+        const { error: insertErr } = await adminClient
+          .from('pagos_procesados')
+          .insert({
+            payment_id: `sub_${dataId}`,
+            tenant_id: tenant_id,
+            status: 'approved',
+            amount: 0, // Las suscripciones registran cobros mensuales en cobros individuales
+            event_id: request.headers.get('x-request-id') || `sub_${Date.now()}`
+          });
+          
+        if (insertErr) {
+          console.error('[Webhook MP Warning] No se pudo guardar auditoría de activación:', insertErr);
+        }
+        
+        // Actualizar plan del tenant y setear vencimiento (30 días de gracia)
+        const { error: tenantErr } = await adminClient
+          .from('tenants')
+          .update({
+            plan_id: plan_id,
+            plan_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 días
+          })
+          .eq('id', tenant_id);
+          
+        if (tenantErr) {
+          console.error('[Webhook MP Error] Error al actualizar plan en base de datos:', tenantErr);
+          return NextResponse.json({ error: 'Error al activar plan en base de datos.' }, { status: 500 });
+        }
+        
+        return NextResponse.json({ success: true, message: 'Plan activado por suscripción con éxito.' }, { status: 201 });
+      } else if (status === 'cancelled' || status === 'paused') {
+        console.log(`[Webhook MP] Cancelando plan para Tenant ${tenant_id} por suscripción en estado "${status}".`);
+        
+        // Volver al plan free si se cancela o pausa la suscripción
+        const { error: tenantErr } = await adminClient
+          .from('tenants')
+          .update({
+            plan_id: 'free',
+            plan_ends_at: null
+          })
+          .eq('id', tenant_id);
+          
+        if (tenantErr) {
+          console.error('[Webhook MP Error] Error al restablecer plan a free:', tenantErr);
+          return NextResponse.json({ error: 'Error al cancelar plan en base de datos.' }, { status: 500 });
+        }
+        
+        return NextResponse.json({ success: true, message: 'Plan revertido a gratis por cancelación.' }, { status: 200 });
+      }
+      
+      return NextResponse.json({ success: true, message: `Suscripción registrada en estado: ${status}` }, { status: 200 });
+    }
+
+    // ============================================
+    // CASO B: EVENTO DE COBRO INDIVIDUAL (PAYMENT)
+    // ============================================
+    
     // 1. Control de Idempotencia: Verificar si el pago ya fue procesado
     const { data: existingPayment, error: queryErr } = await adminClient
       .from('pagos_procesados')
@@ -157,20 +262,20 @@ export async function POST(request) {
 
       if (insertErr) {
         console.error('[Webhook MP Error] Error al registrar el pago en la base de datos:', insertErr);
-        return NextResponse.json({ error: 'Error al registrar transación.' }, { status: 500 });
+        return NextResponse.json({ error: 'Error al registrar transacción.' }, { status: 500 });
       }
 
-      // Actualizar el plan del tenant
+      // Actualizar el plan del tenant y renovar vencimiento (+30 días)
       const { error: tenantErr } = await adminClient
         .from('tenants')
         .update({
-          plan_id: planId || 'basic'
+          plan_id: planId || 'basic_5',
+          plan_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
         })
         .eq('id', tenantId);
 
       if (tenantErr) {
         console.error('[Webhook MP Error] Error al actualizar el plan de suscripción del tenant:', tenantErr);
-        // Si falló actualizar el plan, eliminamos el registro del pago para que Mercado Pago intente el webhook de nuevo
         await adminClient.from('pagos_procesados').delete().eq('payment_id', String(dataId));
         return NextResponse.json({ error: 'Error al actualizar suscripción.' }, { status: 500 });
       }
@@ -179,7 +284,7 @@ export async function POST(request) {
       return NextResponse.json({ success: true, message: 'Pago acreditado y plan actualizado con éxito.' }, { status: 201 });
     }
 
-    // Si el pago no está aprobado (ej. rechazado, pendiente, en mediación), solo registramos el estado pero no activamos plan
+    // Si el pago no está aprobado (ej. rechazado, pendiente), solo registramos el estado
     console.log(`[Webhook MP] El pago ${dataId} se encuentra en estado: "${status}". No se actualiza el plan.`);
     
     const { error: insertNonApprovedErr } = await adminClient
@@ -204,3 +309,4 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Error interno del servidor. Intente más tarde.' }, { status: 500 });
   }
 }
+

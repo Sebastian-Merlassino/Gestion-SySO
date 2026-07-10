@@ -175,7 +175,7 @@ export async function middleware(request) {
   // Si está autenticado, obtener su perfil para ver si completó el onboarding (tiene tenant_id)
   const { data: profile } = await supabase
     .from('profiles')
-    .select('tenant_id, role, tenants(slug)')
+    .select('tenant_id, role, tenants(slug, plan_id, plan_ends_at, is_exempt, gift_plan_id, gift_ends_at)')
     .eq('id', user.id)
     .single();
 
@@ -220,7 +220,51 @@ export async function middleware(request) {
     }
   }
 
+  // Validar restricciones de plan para rutas del tipo /[tenant_slug]/[seccion]
+  if (hasTenant && pathSegments.length >= 2) {
+    const routeTenantSlug = pathSegments[0];
+    const section = pathSegments[1];
+    
+    const reservedRoutes = ['login', 'register', 'onboarding', 'api', 'brand', 'assets'];
+    if (!reservedRoutes.includes(routeTenantSlug) && !routeTenantSlug.includes('.')) {
+      const tenant = profile.tenants;
+      
+      // Obtener plan efectivo en el middleware
+      let effectivePlan = 'free';
+      if (tenant) {
+        if (tenant.is_exempt) {
+          effectivePlan = 'libre';
+        } else if (tenant.gift_plan_id && tenant.gift_ends_at && new Date(tenant.gift_ends_at) > new Date()) {
+          effectivePlan = tenant.gift_plan_id;
+        } else if (tenant.plan_ends_at && new Date(tenant.plan_ends_at) < new Date()) {
+          effectivePlan = 'free';
+        } else {
+          effectivePlan = tenant.plan_id || 'free';
+        }
+      }
+      
+      // Definir características habilitadas por plan
+      const planFeatures = {
+        free: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile'],
+        basic_5: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico'],
+        standard_25: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'visitas', 'avisos'],
+        libre: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'visitas', 'avisos', 'checklist-personalizados', 'legajo', 'portal-clientes']
+      };
+      
+      const allowedFeatures = planFeatures[effectivePlan] || planFeatures.free;
+      
+      // Si la sección no está permitida por el plan, redirigir a perfil con banner de actualización
+      if (!allowedFeatures.includes(section)) {
+        url.pathname = `/${profile.tenants.slug}/profile`;
+        url.searchParams.set('upgrade', 'true');
+        url.searchParams.set('section', section);
+        return NextResponse.redirect(url);
+      }
+    }
+  }
+
   return withRateLimit(response);
+
 }
 
 export const config = {
