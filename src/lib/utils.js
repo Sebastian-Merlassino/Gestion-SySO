@@ -64,28 +64,28 @@ export const PLAN_FEATURES = {
     price: 0,
     maxClients: 1,
     maxMembers: 1,
-    features: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina']
+    features: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'empresas', 'equipo']
   },
   basic_5: {
     name: 'Plan 25000',
     price: 25000,
     maxClients: 5,
     maxMembers: 5,
-    features: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'extintores', 'control-electrico']
+    features: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'extintores', 'control-electrico', 'empresas', 'equipo']
   },
   standard_25: {
     name: 'Plan 35000',
     price: 35000,
     maxClients: 15,
     maxMembers: 15,
-    features: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'extintores', 'control-electrico', 'visitas', 'avisos']
+    features: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'extintores', 'control-electrico', 'visitas', 'avisos', 'empresas', 'equipo']
   },
   libre: {
     name: 'Plan Libre',
     price: 45000,
     maxClients: Infinity,
     maxMembers: Infinity,
-    features: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'extintores', 'control-electrico', 'visitas', 'avisos', 'checklist-personalizados', 'legajo', 'portal-clientes']
+    features: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'extintores', 'control-electrico', 'visitas', 'avisos', 'checklist-personalizados', 'legajo', 'portal-clientes', 'empresas', 'equipo']
   }
 };
 
