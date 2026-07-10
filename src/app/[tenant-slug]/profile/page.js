@@ -1966,24 +1966,19 @@ const [partidosList, setPartidosList] = useState([]);
       {/* PLAN SELECTION MODAL */}
       {showPlanModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-2xl p-6 shadow-2xl relative animate-scaleUp">
+          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-5xl p-8 md:p-10 shadow-2xl relative animate-scaleUp">
             <button 
               onClick={() => setShowPlanModal(false)}
-              className="absolute top-4 right-4 p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors border border-slate-200"
+              className="absolute top-6 right-6 p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors border border-slate-200 cursor-pointer"
             >
-              <X className="h-4 w-4" />
+              <X className="h-5 w-5" />
             </button>
 
-            <div className="text-center mb-6">
-              <span className="px-2 py-0.5 rounded-full bg-[#468DFF]/10 text-[#468DFF] text-[10px] font-semibold uppercase tracking-wider">
-                Suscripciones SaaS
-              </span>
-              <h3 className="font-outfit text-2xl font-extrabold text-slate-900 mt-2">
-                Modificar tu Plan Comercial
+            <div className="text-center mb-8">
+              <img src="/brand/logo-primary.png" alt="Gestión SySO" className="h-16 w-16 object-contain mx-auto mb-3" />
+              <h3 className="font-outfit text-3xl font-black text-slate-900">
+                Modificar tu Plan
               </h3>
-              <p className="text-xs text-slate-600 mt-1 font-medium">
-                Elegí el plan que mejor se adapte a tus necesidades de seguridad e higiene.
-              </p>
             </div>
 
             {/* Grid of Plans */}
@@ -1991,18 +1986,18 @@ const [partidosList, setPartidosList] = useState([]);
               const currentActivePlan = tenantData ? getEffectivePlan(tenantData) : 'free';
               
               return (
-                <div className="grid md:grid-cols-4 gap-4">
+                <div className="grid md:grid-cols-4 gap-6">
                   
                   {/* Plan Free */}
-                  <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all ${currentActivePlan === 'free' ? 'border-[#468DFF] bg-[#468DFF]/5' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
+                  <div className={`rounded-2xl border p-5 flex flex-col justify-between transition-all ${currentActivePlan === 'free' ? 'border-[#468DFF] bg-[#468DFF]/5 ring-2 ring-[#468DFF]/20 shadow-md' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
                     <div>
-                      <h4 className="text-xs font-bold text-slate-900">Plan Gratis</h4>
-                      <p className="text-[9px] text-slate-500 mt-1 font-medium leading-tight">Ideal para probar la herramienta.</p>
-                      <span className="font-outfit text-base font-extrabold text-[#468DFF] mt-2 block">$0 <span className="text-[9px] text-slate-500 font-normal">/ permanente</span></span>
-                      <ul className="text-[8px] text-slate-600 mt-3 space-y-1 border-t border-slate-200 pt-2 font-medium">
-                        <li className="flex items-center gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> 1 Empresa cliente</li>
-                        <li className="flex items-center gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> 1 Miembro de equipo</li>
-                        <li className="flex items-center gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> Funciones esenciales</li>
+                      <h4 className="text-base font-bold text-slate-900">Plan Gratis</h4>
+                      <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">Ideal para probar la herramienta.</p>
+                      <span className="font-outfit text-2xl font-extrabold text-[#468DFF] mt-3 block">$0 <span className="text-xs text-slate-500 font-normal">/ permanente</span></span>
+                      <ul className="text-xs text-slate-600 mt-4 space-y-2 border-t border-slate-200 pt-4 font-semibold">
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#468DFF] shrink-0" /> 1 Empresa cliente</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#468DFF] shrink-0" /> 1 Miembro de equipo</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#468DFF] shrink-0" /> Funciones esenciales</li>
                       </ul>
                     </div>
                     <button
@@ -2012,73 +2007,73 @@ const [partidosList, setPartidosList] = useState([]);
                         triggerToast('Para cancelar tu suscripción activa debes hacerlo desde tu cuenta de Mercado Pago.', 'info');
                         setShowPlanModal(false);
                       }}
-                      className={`w-full py-1 rounded-lg mt-3 text-[10px] font-semibold transition-all ${currentActivePlan === 'free' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer'}`}
+                      className={`w-full py-2.5 rounded-xl mt-6 text-xs font-bold transition-all ${currentActivePlan === 'free' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer'}`}
                     >
                       {currentActivePlan === 'free' ? 'Activo' : 'Elegir'}
                     </button>
                   </div>
 
                   {/* Plan 25000 */}
-                  <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all ${currentActivePlan === 'basic_5' ? 'border-[#468DFF] bg-[#468DFF]/5' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
+                  <div className={`rounded-2xl border p-5 flex flex-col justify-between transition-all ${currentActivePlan === 'basic_5' ? 'border-[#468DFF] bg-[#468DFF]/5 ring-2 ring-[#468DFF]/20 shadow-md' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
                     <div>
-                      <h4 className="text-xs font-bold text-slate-900">Plan Básico</h4>
-                      <p className="text-[9px] text-slate-500 mt-1 font-medium leading-tight">Para profesionales de campo.</p>
-                      <span className="font-outfit text-base font-extrabold text-[#468DFF] mt-2 block">$25.000 <span className="text-[9px] text-slate-500 font-normal">/ mes</span></span>
-                      <ul className="text-[8px] text-slate-600 mt-3 space-y-1 border-t border-slate-200 pt-2 font-medium">
-                        <li className="flex items-center gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> 5 Empresas clientes</li>
-                        <li className="flex items-center gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> 5 Miembros de equipo</li>
-                        <li className="flex items-center gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> Extintores y Eléctrico</li>
+                      <h4 className="text-base font-bold text-slate-900">Plan Básico</h4>
+                      <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">Para profesionales de campo.</p>
+                      <span className="font-outfit text-2xl font-extrabold text-[#468DFF] mt-3 block">$25.000 <span className="text-xs text-slate-500 font-normal">/ mes</span></span>
+                      <ul className="text-xs text-slate-600 mt-4 space-y-2 border-t border-slate-200 pt-4 font-semibold">
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#468DFF] shrink-0" /> 5 Empresas clientes</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#468DFF] shrink-0" /> 5 Miembros de equipo</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#468DFF] shrink-0" /> Extintores y Eléctrico</li>
                       </ul>
                     </div>
                     <button
                       type="button"
                       disabled={currentActivePlan === 'basic_5'}
                       onClick={() => handleUpgradePlan('basic_5')}
-                      className={`w-full py-1 rounded-lg mt-3 text-[10px] font-semibold transition-all ${currentActivePlan === 'basic_5' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-[#468DFF] hover:bg-[#0511F2] text-white cursor-pointer'}`}
+                      className={`w-full py-2.5 rounded-xl mt-6 text-xs font-bold transition-all ${currentActivePlan === 'basic_5' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-[#468DFF] hover:bg-[#0511F2] text-white cursor-pointer'}`}
                     >
                       {currentActivePlan === 'basic_5' ? 'Activo' : 'Contratar'}
                     </button>
                   </div>
 
                   {/* Plan 35000 */}
-                  <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all ${currentActivePlan === 'standard_25' ? 'border-[#468DFF] bg-[#468DFF]/5' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
+                  <div className={`rounded-2xl border p-5 flex flex-col justify-between transition-all ${currentActivePlan === 'standard_25' ? 'border-[#468DFF] bg-[#468DFF]/5 ring-2 ring-[#468DFF]/20 shadow-md' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
                     <div>
-                      <h4 className="text-xs font-bold text-slate-900">Plan Profesional</h4>
-                      <p className="text-[9px] text-slate-500 mt-1 font-medium leading-tight">Para consultoras medianas.</p>
-                      <span className="font-outfit text-base font-extrabold text-[#468DFF] mt-2 block">$35.000 <span className="text-[9px] text-slate-500 font-normal">/ mes</span></span>
-                      <ul className="text-[8px] text-slate-600 mt-3 space-y-1 border-t border-slate-200 pt-2 font-medium">
-                        <li className="flex items-center gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> 15 Empresas clientes</li>
-                        <li className="flex items-center gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> 15 Miembros de equipo</li>
-                        <li className="flex items-center gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> Visitas y Avisos</li>
+                      <h4 className="text-base font-bold text-slate-900">Plan Profesional</h4>
+                      <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">Para consultoras medianas.</p>
+                      <span className="font-outfit text-2xl font-extrabold text-[#468DFF] mt-3 block">$35.000 <span className="text-xs text-slate-500 font-normal">/ mes</span></span>
+                      <ul className="text-xs text-slate-600 mt-4 space-y-2 border-t border-slate-200 pt-4 font-semibold">
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#468DFF] shrink-0" /> 15 Empresas clientes</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#468DFF] shrink-0" /> 15 Miembros de equipo</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#468DFF] shrink-0" /> Visitas y Avisos</li>
                       </ul>
                     </div>
                     <button
                       type="button"
                       disabled={currentActivePlan === 'standard_25'}
                       onClick={() => handleUpgradePlan('standard_25')}
-                      className={`w-full py-1 rounded-lg mt-3 text-[10px] font-semibold transition-all ${currentActivePlan === 'standard_25' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-[#468DFF] hover:bg-[#0511F2] text-white cursor-pointer'}`}
+                      className={`w-full py-2.5 rounded-xl mt-6 text-xs font-bold transition-all ${currentActivePlan === 'standard_25' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-[#468DFF] hover:bg-[#0511F2] text-white cursor-pointer'}`}
                     >
                       {currentActivePlan === 'standard_25' ? 'Activo' : 'Contratar'}
                     </button>
                   </div>
 
                   {/* Plan Libre */}
-                  <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all ${currentActivePlan === 'libre' ? 'border-[#468DFF] bg-[#468DFF]/5' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
+                  <div className={`rounded-2xl border p-5 flex flex-col justify-between transition-all ${currentActivePlan === 'libre' ? 'border-[#468DFF] bg-[#468DFF]/5 ring-2 ring-[#468DFF]/20 shadow-md' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
                     <div>
-                      <h4 className="text-xs font-bold text-slate-900">Plan Libre</h4>
-                      <p className="text-[9px] text-slate-500 mt-1 font-medium leading-tight">Constructoras y corporaciones.</p>
-                      <span className="font-outfit text-base font-extrabold text-[#468DFF] mt-2 block">$45.000 <span className="text-[9px] text-slate-500 font-normal">/ mes</span></span>
-                      <ul className="text-[8px] text-slate-600 mt-3 space-y-1 border-t border-slate-200 pt-2 font-medium">
-                        <li className="flex items-center gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> Empresas ilimitadas</li>
-                        <li className="flex items-center gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> Checklist e Informes</li>
-                        <li className="flex items-center gap-1"><CheckCircle2 className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> Portal de Clientes</li>
+                      <h4 className="text-base font-bold text-slate-900">Plan Libre</h4>
+                      <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">Constructoras y corporaciones.</p>
+                      <span className="font-outfit text-2xl font-extrabold text-[#468DFF] mt-3 block">$45.000 <span className="text-xs text-slate-500 font-normal">/ mes</span></span>
+                      <ul className="text-xs text-slate-600 mt-4 space-y-2 border-t border-slate-200 pt-4 font-semibold">
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#468DFF] shrink-0" /> Empresas ilimitadas</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#468DFF] shrink-0" /> Checklist e Informes</li>
+                        <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#468DFF] shrink-0" /> Portal de Clientes</li>
                       </ul>
                     </div>
                     <button
                       type="button"
                       disabled={currentActivePlan === 'libre'}
                       onClick={() => handleUpgradePlan('libre')}
-                      className={`w-full py-1 rounded-lg mt-3 text-[10px] font-semibold transition-all ${currentActivePlan === 'libre' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-[#468DFF] hover:bg-[#0511F2] text-white cursor-pointer'}`}
+                      className={`w-full py-2.5 rounded-xl mt-6 text-xs font-bold transition-all ${currentActivePlan === 'libre' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-[#468DFF] hover:bg-[#0511F2] text-white cursor-pointer'}`}
                     >
                       {currentActivePlan === 'libre' ? 'Activo' : 'Contratar'}
                     </button>
