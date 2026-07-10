@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { getEffectivePlan } from '@/lib/utils';
 import { 
   Building, 
   Users, 
@@ -34,6 +35,7 @@ export default function Sidebar({
   onNavigate
 }) {
   const [mounted, setMounted] = useState(isHydratedGlobal);
+  const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null });
 
   useEffect(() => {
     if (!isHydratedGlobal) {
@@ -64,9 +66,48 @@ export default function Sidebar({
     { id: 'profile', label: 'Editar Perfil', path: `/${tenantSlug}/profile`, icon: Settings, shrink: true }
   ];
 
-  const handleLinkClick = (e, path) => {
+  const handleLinkClick = (e, item) => {
+    if (item.type === 'divider') return;
+
+    // Obtener plan efectivo del tenant
+    const tenant = profile?.tenants;
+    let effectivePlan = 'free';
+    if (tenant) {
+      if (tenant.is_exempt) {
+        effectivePlan = 'libre';
+      } else if (tenant.gift_plan_id && tenant.gift_ends_at && new Date(tenant.gift_ends_at) > new Date()) {
+        effectivePlan = tenant.gift_plan_id;
+      } else if (tenant.plan_ends_at && new Date(tenant.plan_ends_at) < new Date()) {
+        effectivePlan = 'free';
+      } else {
+        effectivePlan = tenant.plan_id || 'free';
+      }
+    }
+
+    const planFeatures = {
+      free: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'empresas', 'equipo'],
+      basic_5: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'empresas', 'equipo'],
+      standard_25: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'visitas', 'avisos', 'empresas', 'equipo'],
+      libre: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'visitas', 'avisos', 'checklist-personalizados', 'legajo', 'portal-clientes', 'empresas', 'equipo']
+    };
+
+    const allowedFeatures = planFeatures[effectivePlan] || planFeatures.free;
+
+    if (!allowedFeatures.includes(item.id)) {
+      e.preventDefault();
+      setModalAlert({
+        show: true,
+        title: 'Límite de Plan Excedido',
+        message: `Tu plan actual no incluye acceso a la sección de ${item.label}. Por favor actualiza tu suscripción en el Perfil para habilitar esta funcionalidad.`,
+        onConfirm: () => {
+          window.location.href = `/${tenantSlug}/profile?upgrade=true`;
+        }
+      });
+      return;
+    }
+
     if (onNavigate) {
-      onNavigate(e, path);
+      onNavigate(e, item.path);
     }
   };
 
@@ -93,7 +134,7 @@ export default function Sidebar({
         title={item.label}
         onClick={(e) => {
           if (isMobile) setIsMobileMenuOpen(false);
-          handleLinkClick(e, item.path);
+          handleLinkClick(e, item);
         }}
         className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all shrink-0 ${
           isActive 
@@ -194,6 +235,39 @@ export default function Sidebar({
               </div>
             </div>
           </aside>
+        </div>
+      )}
+
+      {/* MODAL DIALOG ALERT EN SIDEBAR */}
+      {modalAlert.show && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
+            <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500">
+              <ShieldAlert className="h-6 w-6" />
+            </div>
+            <div className="space-y-1">
+              <h4 className="font-outfit text-base font-bold text-slate-800">{modalAlert.title}</h4>
+              <p className="text-xs text-slate-500 leading-relaxed">{modalAlert.message}</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setModalAlert({ show: false, title: '', message: '', onConfirm: null })}
+                className="flex-1 py-2.5 bg-white border border-[#468DFF] text-[#468DFF] rounded-xl text-xs font-bold hover:bg-[#468DFF] hover:text-white hover:border-[#468DFF] transition-all active:scale-[0.98] cursor-pointer"
+              >
+                Cancelar
+              </button>
+              {modalAlert.onConfirm && (
+                <button
+                  type="button"
+                  onClick={modalAlert.onConfirm}
+                  className="flex-1 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-blue-500/10"
+                >
+                  Actualizar Plan
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </>

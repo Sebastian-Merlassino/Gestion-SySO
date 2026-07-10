@@ -57,13 +57,7 @@ export default function NominaPage({ params }) {
   const closeAlert = () => setModalAlert({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
 
   // Tenant and profile
-  const [profile, setProfile] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const cached = sessionStorage.getItem('user-profile');
-      return cached ? JSON.parse(cached) : null;
-    }
-    return null;
-  });
+  const [profile, setProfile] = useState(null);
   const [tenant, setTenant] = useState(null);
 
   // Data lists
