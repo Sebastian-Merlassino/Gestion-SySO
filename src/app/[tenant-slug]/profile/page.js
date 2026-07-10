@@ -1975,7 +1975,7 @@ const [partidosList, setPartidosList] = useState([]);
             </button>
 
             <div className="text-center mb-8">
-              <img src="/brand/logo-primary.png" alt="Gestión SySO" className="h-16 w-16 object-contain mx-auto mb-3" />
+              <img src="/brand/logo-black.png" alt="Gestión SySO" className="h-16 w-16 object-contain mx-auto mb-3" />
               <h3 className="font-outfit text-3xl font-black text-slate-900">
                 Modificar tu Plan
               </h3>
