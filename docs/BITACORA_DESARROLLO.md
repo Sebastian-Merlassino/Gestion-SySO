@@ -24,6 +24,22 @@
 
 ### Próximo Paso Recomendado
 - Proceder con el testeo de llamadas de API utilizando el nuevo MCP Server si se requiere para futuras tareas del flujo de cobro.
+## [2026-07-10] Mejora en Modal de Límite Excedido con Enlace de Pago y Botones Estándar
+
+### Resumen de Cambios
+- **Redirección y Estilizado Condicional de Modales**:
+  - Modificados los modales de diálogo `modalAlert` en [empresas/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/empresas/page.js) y [equipo/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/equipo/page.js) para pintar de color azul `#468DFF` (hover `#0511F2`) el botón de confirmación cuando no se trate de una eliminación de registros (evaluando `modalAlert.type`).
+  - Actualizadas las llamadas a `showAlert` en la validación de límites de clientes y miembros de equipo para pasarle un callback que redirige automáticamente al usuario a su perfil con el modal de Mercado Pago abierto (`/${tenant.slug}/profile?upgrade=true`), junto al texto del botón de acción `'Actualizar Plan'`. Ahora el usuario cuenta con dos botones claros: "Cancelar" y "Actualizar Plan" con estética unificada.
+
+### Archivos Modificados / Creados
+- `src/app/[tenant-slug]/empresas/page.js`
+- `src/app/[tenant-slug]/equipo/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción en Vercel completada con éxito.
+
+---
+
 ## [2026-07-10] Alertas Preventivas de Límite de Plan en Secciones de Clientes y Equipo
 
 ### Resumen de Cambios
