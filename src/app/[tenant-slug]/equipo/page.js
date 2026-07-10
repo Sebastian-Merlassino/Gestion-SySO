@@ -604,7 +604,11 @@ export default function EquipoPage({ params }) {
       showAlert(
         'Límite de Plan Excedido',
         `Tu plan actual permite un máximo de ${maxMembers} miembros de equipo técnico. Por favor actualiza tu suscripción en el Perfil para agregar más miembros de equipo.`,
-        'warning'
+        'warning',
+        () => {
+          window.location.href = `/${tenant.slug}/profile?upgrade=true`;
+        },
+        'Actualizar Plan'
       );
       return;
     }
@@ -1986,7 +1990,11 @@ export default function EquipoPage({ params }) {
                 <button
                   type="button"
                   onClick={modalAlert.onConfirm}
-                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer"
+                  className={`flex-1 py-2.5 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer ${
+                    modalAlert.type === 'danger' || modalAlert.type === 'destructive'
+                      ? 'bg-red-500 hover:bg-red-600'
+                      : 'bg-[#468DFF] hover:bg-[#0511F2]'
+                  }`}
                 >
                   {modalAlert.confirmText || 'Confirmar'}
                 </button>

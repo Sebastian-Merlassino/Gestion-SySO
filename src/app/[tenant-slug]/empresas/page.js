@@ -492,7 +492,11 @@ export default function EmpresasClientes({ params }) {
       showAlert(
         'Límite de Plan Excedido',
         `Tu plan actual permite un máximo de ${maxClients} empresas clientes. Por favor actualiza tu suscripción en el Perfil para agregar más clientes.`,
-        'warning'
+        'warning',
+        () => {
+          window.location.href = `/${tenant.slug}/profile?upgrade=true`;
+        },
+        'Actualizar Plan'
       );
       return false;
     }
@@ -3103,7 +3107,11 @@ export default function EmpresasClientes({ params }) {
                 <button
                   type="button"
                   onClick={modalAlert.onConfirm}
-                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-red-600/10"
+                  className={`flex-1 py-2.5 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg ${
+                    modalAlert.type === 'danger' || modalAlert.type === 'destructive'
+                      ? 'bg-red-550 hover:bg-red-650 shadow-red-500/10'
+                      : 'bg-[#468DFF] hover:bg-[#0511F2] shadow-blue-500/10'
+                  }`}
                 >
                   {modalAlert.confirmText || 'Confirmar'}
                 </button>
