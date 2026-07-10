@@ -24,6 +24,21 @@
 
 ### Próximo Paso Recomendado
 - Proceder con el testeo de llamadas de API utilizando el nuevo MCP Server si se requiere para futuras tareas del flujo de cobro.
+## [2026-07-10] Solución a Conflicto de Usuarios en Checkout de Mercado Pago (Error 500)
+
+### Resumen de Cambios
+- **Mapeo Seguro de Payer Email en Checkout**: Modificado el endpoint de checkout [route.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/api/checkout/route.js) para soportar la variable de entorno `MERCADO_PAGO_TEST_PAYER_EMAIL`. Esto soluciona de raíz el error crítico `Both payer and collector must be real or test users` de Mercado Pago, que ocurría al intentar hacer pruebas usando credenciales/token de prueba (como cobrador de test) con el correo real de producción del usuario logueado. Si la variable está configurada, el backend la utiliza como `payer_email` para todas las pre-aprobaciones de pruebas, mientras que en producción por defecto se utilizará el correo real del cliente (`user.email`).
+- **Trazabilidad Detallada de Errores en Frontend**: Actualizado el método `handleUpgradePlan` de [profile/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/profile/page.js) para que, al detectarse un fallo de red o un código de respuesta HTTP no exitoso de la API del checkout, se capture el objeto de error JSON devuelto por el servidor completo (`data`) y se muestre en el Toast y consola el mensaje interno detallado (`data.message`) en lugar del texto de error genérico.
+
+### Archivos Modificados / Creados
+- `src/app/api/checkout/route.js`
+- `src/app/[tenant-slug]/profile/page.js`
+
+### Validaciones Ejecutadas
+- Validado el error de la API mediante un script local autónomo (`test-mp.js`) confirmando la respuesta de rechazo de tipo de usuario mezclado de Mercado Pago.
+
+---
+
 ## [2026-07-10] Carga Detallada de Servicios y Costos en Modal de Modificación de Planes
 
 ### Resumen de Cambios
