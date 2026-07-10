@@ -24,6 +24,21 @@
 
 ### Próximo Paso Recomendado
 - Proceder con el testeo de llamadas de API utilizando el nuevo MCP Server si se requiere para futuras tareas del flujo de cobro.
+## [2026-07-10] Bloqueo Preventivo en Sidebar e Hidratación en Nómina del Personal
+
+### Resumen de Cambios
+- **Intercepción de Clics del Sidebar**: Modificado el componente de navegación global [Sidebar.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/components/Sidebar.js) para inyectar una validación del plan efectivo del tenant antes de autorizar el redireccionamiento a páginas bloqueadas. Si el usuario intenta hacer clic en una sección protegida que su plan actual no cubre (ej. *Extintores* estando en plan *Gratis*), el Sidebar detiene el evento y despliega el modal unificado de alerta preventivo Radix con las opciones "Cancelar" y "Actualizar Plan" (esta última llevándolo directamente al panel de Mercado Pago en Perfil).
+- **Corrección de Hidratación en Nómina**: Modificado el archivo [nomina/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/nomina/page.js) para corregir el fallo de hidratación de React #418 inicializando el estado local `profile` como `null` sincrónicamente, en lugar de invocar `sessionStorage` en el inicializador del `useState`.
+
+### Archivos Modificados / Creados
+- `src/components/Sidebar.js`
+- `src/app/[tenant-slug]/nomina/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción en Vercel completada con éxito.
+
+---
+
 ## [2026-07-10] Rediseño y Ampliación de Modal de Modificación de Planes en Perfil
 
 ### Resumen de Cambios
