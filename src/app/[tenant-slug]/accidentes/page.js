@@ -185,13 +185,7 @@ export default function AccidentesPage({ params }) {
   const tenantSlug = params['tenant-slug'];
 
   // ── Estados estructurales ─────────────────────────────────────────────────
-  const [profile, setProfile] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const cached = sessionStorage.getItem('user-profile');
-      return cached ? JSON.parse(cached) : null;
-    }
-    return null;
-  });
+  const [profile, setProfile] = useState(null);
   const [tenant, setTenant] = useState(null);
   const [empresas, setEmpresas] = useState([]);
   const [allEstablecimientos, setAllEstablecimientos] = useState([]);
