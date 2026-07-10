@@ -7,6 +7,7 @@ import Sidebar from '@/components/Sidebar';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import { supabase, fetchAllGeography } from '@/lib/supabase';
 import { useToast } from '@/components/providers/ToastProvider';
+import { getEffectivePlan, PLAN_FEATURES } from '@/lib/utils';
 import AppPageHeader from '@/components/ui/AppPageHeader';
 import AppButton from '@/components/ui/AppButton';
 import AppInput from '@/components/ui/AppInput';
@@ -595,6 +596,19 @@ export default function EquipoPage({ params }) {
   };
 
   const handleAddNew = () => {
+    // Validar límites por plan antes de permitir crear
+    const effectivePlan = getEffectivePlan(tenant);
+    const maxMembers = PLAN_FEATURES[effectivePlan]?.maxMembers || 1;
+    
+    if (miembros.length >= maxMembers) {
+      showAlert(
+        'Límite de Plan Excedido',
+        `Tu plan actual permite un máximo de ${maxMembers} miembros de equipo técnico. Por favor actualiza tu suscripción en el Perfil para agregar más miembros de equipo.`,
+        'warning'
+      );
+      return;
+    }
+
     setIsReadOnlyView(false);
     setEditingId(null);
     setFullName('');

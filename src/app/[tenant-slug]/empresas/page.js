@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import { supabase, fetchAllGeography } from '@/lib/supabase';
 import { useToast } from '@/components/providers/ToastProvider';
+import { getEffectivePlan, PLAN_FEATURES } from '@/lib/utils';
 import AppPageHeader from '@/components/ui/AppPageHeader';
 import AppButton from '@/components/ui/AppButton';
 import AppInput from '@/components/ui/AppInput';
@@ -484,28 +485,13 @@ export default function EmpresasClientes({ params }) {
   const checkPlanLimits = () => {
     if (!tenant) return true;
     const count = empresas.length;
-    const plan = tenant.plan_id;
+    const effectivePlan = getEffectivePlan(tenant);
+    const maxClients = PLAN_FEATURES[effectivePlan]?.maxClients || 1;
 
-    if (plan === 'free' && count >= 1) {
+    if (count >= maxClients) {
       showAlert(
         'Límite de Plan Excedido',
-        'Tu Plan Gratis Permanente está limitado a 1 empresa cliente. Por favor actualiza tu suscripción en el Perfil para agregar más clientes.',
-        'warning'
-      );
-      return false;
-    }
-    if (plan === 'basic_5' && count >= 5) {
-      showAlert(
-        'Límite de Plan Excedido',
-        'Tu Plan 5 está limitado a un máximo de 5 empresas clientes. Por favor actualiza tu plan para continuar agregando.',
-        'warning'
-      );
-      return false;
-    }
-    if (plan === 'standard_25' && count >= 25) {
-      showAlert(
-        'Límite de Plan Excedido',
-        'Tu Plan 25 está limitado a un máximo de 25 empresas clientes. Por favor actualiza tu plan para continuar agregando.',
+        `Tu plan actual permite un máximo de ${maxClients} empresas clientes. Por favor actualiza tu suscripción en el Perfil para agregar más clientes.`,
         'warning'
       );
       return false;
