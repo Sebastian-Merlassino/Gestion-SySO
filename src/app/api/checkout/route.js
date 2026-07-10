@@ -100,9 +100,11 @@ export async function POST(request) {
 
     console.log(`[Checkout API] Creando Preapproval para Tenant: ${tenantId}, Plan: ${planId}, Monto: $${finalAmount}`);
 
+    const payerEmail = process.env.MERCADO_PAGO_TEST_PAYER_EMAIL || user.email;
+
     const preApprovalResponse = await preApprovalClient.create({
       body: {
-        payer_email: user.email,
+        payer_email: payerEmail,
         back_url: backUrl,
         reason: `Suscripción Mensual - ${planConfig.name} (${tenant.name})`,
         external_reference: JSON.stringify({ tenant_id: tenantId, plan_id: planId }),

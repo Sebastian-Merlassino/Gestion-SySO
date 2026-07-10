@@ -252,8 +252,9 @@ const [partidosList, setPartidosList] = useState([]);
       });
       
       const data = await response.json();
-      if (data.error) {
-        throw new Error(data.error);
+      if (!response.ok || data.error) {
+        console.error('[Checkout API Error Completo]:', data);
+        throw new Error(data.message || data.error || 'Fallo al procesar el checkout de Mercado Pago. Intente de nuevo.');
       }
       
       if (data.initPoint) {
