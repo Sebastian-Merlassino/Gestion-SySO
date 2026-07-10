@@ -24,6 +24,22 @@
 
 ### Próximo Paso Recomendado
 - Proceder con el testeo de llamadas de API utilizando el nuevo MCP Server si se requiere para futuras tareas del flujo de cobro.
+## [2026-07-10] Alertas Preventivas de Límite de Plan en Secciones de Clientes y Equipo
+
+### Resumen de Cambios
+- **Refactorización de Validación de Límites en Frontend**: 
+  - Modificado el archivo [empresas/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/empresas/page.js) para que `checkPlanLimits` resuelva dinámicamente el plan efectivo del tenant (usando `getEffectivePlan`) y aplique los topes correctos configurados globalmente en `PLAN_FEATURES` (por ejemplo, 15 clientes en el Plan Estándar), en lugar de tener números e identificadores de plan hardcodeados que ignoraban descuentos o regalos promocionales.
+  - Modificado el archivo [equipo/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/equipo/page.js) para inyectar la misma validación de límites dentro del disparador `handleAddNew()`. Ahora, si un usuario del plan gratis (o cualquier otro plan) ya ha alcanzado la cuota de integrantes permitida, al presionar el botón "Agregar Miembro" se le bloquea preventivamente la acción mostrando de inmediato un modal de advertencia Radix unificado (`showAlert`), evitando que llene el formulario para recibir un error 400 tardío de base de datos.
+
+### Archivos Modificados / Creados
+- `src/app/[tenant-slug]/empresas/page.js`
+- `src/app/[tenant-slug]/equipo/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción en Vercel exitosa.
+
+---
+
 ## [2026-07-10] Corrección de Fallos de Hidratación de React (Error 418/423) en Accidentes y Dashboard
 
 ### Resumen de Cambios
