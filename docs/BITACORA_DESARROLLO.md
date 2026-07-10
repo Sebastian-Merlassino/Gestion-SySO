@@ -24,6 +24,21 @@
 
 ### Próximo Paso Recomendado
 - Proceder con el testeo de llamadas de API utilizando el nuevo MCP Server si se requiere para futuras tareas del flujo de cobro.
+## [2026-07-10] Corrección de Fallos de Hidratación de React (Error 418/423) en Perfil, Clientes y Equipo
+
+### Resumen de Cambios
+- **Corrección Global de Fallos de Hidratación**: Modificados los inicializadores del estado `profile` / `profileData` en [profile/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/profile/page.js), [empresas/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/empresas/page.js) y [equipo/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/equipo/page.js) para establecer su valor por defecto sincrónico en `null` de forma consistente con el renderizado SSR del servidor. Esto evita que el renderizado inicial explote con los errores de hidratación #418 y #423 de React cuando la aplicación es accedida o redirigida mediante cambios de `window.location.href`.
+
+### Archivos Modificados / Creados
+- `src/app/[tenant-slug]/profile/page.js`
+- `src/app/[tenant-slug]/empresas/page.js`
+- `src/app/[tenant-slug]/equipo/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción exitosa.
+
+---
+
 ## [2026-07-10] Mejora en Modal de Límite Excedido con Enlace de Pago y Botones Estándar
 
 ### Resumen de Cambios
