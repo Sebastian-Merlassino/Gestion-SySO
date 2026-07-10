@@ -3093,7 +3093,7 @@ export default function EmpresasClientes({ params }) {
               <button
                 type="button"
                 onClick={closeAlert}
-                className="flex-1 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer"
+                className="flex-1 py-2.5 bg-white border border-[#468DFF] text-[#468DFF] rounded-xl text-xs font-bold hover:bg-[#468DFF] hover:text-white hover:border-[#468DFF] transition-all active:scale-[0.98] cursor-pointer"
               >
                 {modalAlert.onConfirm ? 'Cancelar' : 'Entendido'}
               </button>
