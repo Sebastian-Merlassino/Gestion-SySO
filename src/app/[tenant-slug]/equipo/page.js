@@ -113,13 +113,7 @@ export default function EquipoPage({ params }) {
   const [isDevMode, setIsDevMode] = useState(false);
 
   // Tenant and Profile data
-  const [profile, setProfile] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const cached = sessionStorage.getItem('user-profile');
-      return cached ? JSON.parse(cached) : null;
-    }
-    return null;
-  });
+  const [profile, setProfile] = useState(null);
   const [tenant, setTenant] = useState(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [editingId, setEditingId] = useState(null);

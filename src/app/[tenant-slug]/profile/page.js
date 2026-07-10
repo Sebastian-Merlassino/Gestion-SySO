@@ -113,13 +113,7 @@ export default function ProfilePage({ params }) {
   
   // Datos de Usuario y Empresa
   const [currentUser, setCurrentUser] = useState(null);
-  const [profileData, setProfileData] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const cached = sessionStorage.getItem('user-profile');
-      return cached ? JSON.parse(cached) : null;
-    }
-    return null;
-  });
+  const [profileData, setProfileData] = useState(null);
   const [tenantData, setTenantData] = useState(null);
   const [initialValues, setInitialValues] = useState(null);
 

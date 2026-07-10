@@ -129,13 +129,7 @@ export default function EmpresasClientes({ params }) {
   };
 
   // Datos del Tenant y Perfil
-  const [profile, setProfile] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const cached = sessionStorage.getItem('user-profile');
-      return cached ? JSON.parse(cached) : null;
-    }
-    return null;
-  });
+  const [profile, setProfile] = useState(null);
   const [tenant, setTenant] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [isReadOnlyView, setIsReadOnlyView] = useState(false);
