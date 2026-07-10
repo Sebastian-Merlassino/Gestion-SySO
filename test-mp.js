@@ -14,10 +14,10 @@ const preApprovalClient = new PreApproval(client);
 
 async function run() {
   try {
-    console.log('Llamando a PreApproval.create con un email de pagador real...');
+    console.log('Llamando a PreApproval.create con el email del Buyer Test User de Sebastian...');
     const response = await preApprovalClient.create({
       body: {
-        payer_email: "sebasmerla@hotmail.com", // Cuenta real de pagador
+        payer_email: "test_user_3533829850@testuser.com", // El email oficial del Buyer con ID 3533829850
         back_url: "https://gestionsyso.com/test-slug/profile",
         reason: "Suscripción Mensual - Plan Básico (Test)",
         external_reference: JSON.stringify({ tenant_id: "test-tenant-id", plan_id: "basic_5" }),
@@ -30,7 +30,7 @@ async function run() {
         status: "pending"
       }
     });
-    console.log('¡Éxito!', response);
+    console.log('¡Éxito total!', response);
   } catch (error) {
     console.error('Error al crear PreApproval:', error);
     if (error.response) {
