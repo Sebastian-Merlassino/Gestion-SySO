@@ -25,6 +25,17 @@
 ### Próximo Paso Recomendado
 - Proceder con el testeo de llamadas de API utilizando el nuevo MCP Server si se requiere para futuras tareas del flujo de cobro.
 
+## [2026-07-10] Corrección de Restricción de Fecha de Nacimiento en Alta de Miembros de Equipo
+
+### Resumen de Cambios
+- **Modificación de Esquema en Supabase**: Se alteró la columna `birth_date` de la tabla `public.miembros_equipo` eliminando la restricción `NOT NULL`. Esto soluciona el error 400 (Bad Request / violates not-null constraint) provocado cuando el usuario intenta dar de alta a un miembro de equipo técnico en el formulario del frontend dejando el campo de la fecha de nacimiento vacío, haciéndolo opcional y consistente con el perfil de usuario.
+
+### Archivos Modificados / Creados
+- **[NEW] supabase/migrations/20260731000000_make_birth_date_nullable.sql**
+
+### Validaciones Ejecutadas
+- Ejecutada con éxito la instrucción SQL de alteración en la base de datos de Supabase en producción.
+
 ---
 
 ## [2026-07-10] Integración del Sistema de Suscripciones, Límites y Cobros Mensuales de Mercado Pago
