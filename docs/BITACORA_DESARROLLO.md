@@ -28,7 +28,7 @@
 
 ### Resumen de Cambios
 - **Ampliación de Dimensiones y Tipografías**: Modificado el modal de selección de planes `PLAN SELECTION MODAL` en [profile/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/profile/page.js) para aumentar el ancho del modal de `max-w-2xl` a `max-w-5xl` e incrementar el padding. Se agrandaron considerablemente las fuentes y márgenes internos de cada tarjeta de plan (las fuentes de los títulos aumentaron de `text-xs` a `text-base` y los beneficios de `text-[8px]` a `text-xs`), haciendo las descripciones legibles y estéticas.
-- **Identidad de Marca**: Se removió el texto introductorio genérico y la etiqueta "Suscripciones SaaS" y se inyectó el logo oficial de la marca (`logo-primary.png`) centrado con el encabezado limpio: "Modificar tu Plan".
+- **Identidad de Marca**: Se removió el texto introductorio genérico y la etiqueta "Suscripciones SaaS" y se inyectó el logo oficial negro de la marca (`logo-black.png`) centrado con el encabezado limpio: "Modificar tu Plan".
 
 ### Archivos Modificados / Creados
 - `src/app/[tenant-slug]/profile/page.js`
