@@ -24,6 +24,19 @@
 
 ### Próximo Paso Recomendado
 - Proceder con el testeo de llamadas de API utilizando el nuevo MCP Server si se requiere para futuras tareas del flujo de cobro.
+## [2026-07-10] Corrección de Fallos de Hidratación de React (Error 418/423) en Accidentes y Dashboard
+
+### Resumen de Cambios
+- **Corrección de Inicialización Asíncrona**: Modificados los componentes principales de [accidentes/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/accidentes/page.js) y [dashboard/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/dashboard/page.js) para inicializar el estado del perfil de usuario (`profile`) como `null` directamente en el `useState(null)` en lugar de evaluar sincrónicamente el `sessionStorage` en el cliente. Esto previene que el HTML renderizado por el servidor difiera del hidratado en el cliente (fallo de hidratación de React #418/#423), salvaguardando la integridad del renderizado de la barra lateral (Sidebar) y otras vistas basadas en roles.
+
+### Archivos Modificados / Creados
+- `src/app/[tenant-slug]/accidentes/page.js`
+- `src/app/[tenant-slug]/dashboard/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción completada con éxito.
+
+---
 
 ## [2026-07-10] Corrección de Restricción de Fecha de Nacimiento en Alta de Miembros de Equipo
 
