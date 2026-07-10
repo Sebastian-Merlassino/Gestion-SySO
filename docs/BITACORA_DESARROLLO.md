@@ -24,6 +24,23 @@
 
 ### Próximo Paso Recomendado
 - Proceder con el testeo de llamadas de API utilizando el nuevo MCP Server si se requiere para futuras tareas del flujo de cobro.
+## [2026-07-10] Carga Detallada de Servicios y Costos en Modal de Modificación de Planes
+
+### Resumen de Cambios
+- **Inyección de Tabla Comparativa de Servicios**: Modificadas las tarjetas de planes en el modal de selección de planes de [profile/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/profile/page.js) para reflejar detalladamente todos los módulos incluidos por cada plan comercial según las pautas comerciales (ej. Plan Gratis con 1 cliente/miembro y funciones anuales/correctivas; Plan Básico agregando Extintores y Eléctrico; Plan Profesional sumando Constancias y Avisos con envío de correo; y Plan Libre con todas las prestaciones de checklists personalizados, legajos y portal de clientes ilimitados).
+- **Hardening de UX y Scroll Seguro**:
+  - Aumentadas las dimensiones del modal a `max-w-6xl` para alojar cómodamente la nueva densidad de información en una grilla de 4 columnas.
+  - Añadidas las clases `max-h-[90vh] overflow-y-auto scrollbar-thin` para asegurar que el modal se renderice de forma segura y scrollable sin cortarse en pantallas de menor resolución o en dispositivos móviles.
+  - Agrandada la visualización del logo negro de la marca (`logo-black.png`) de `h-16` a `h-24` para darle una presencia institucional imponente.
+
+### Archivos Modificados / Creados
+- `src/app/[tenant-slug]/profile/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción en Vercel completada con éxito.
+
+---
+
 ## [2026-07-10] Bloqueo Preventivo en Sidebar e Hidratación en Nómina del Personal
 
 ### Resumen de Cambios
