@@ -69,13 +69,7 @@ export default function ProgramaGestion({ params }) {
   const [isDevMode, setIsDevMode] = useState(false);
 
   // Sesión y Datos Contexto
-  const [profile, setProfile] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const cached = sessionStorage.getItem('user-profile');
-      return cached ? JSON.parse(cached) : null;
-    }
-    return null;
-  });
+  const [profile, setProfile] = useState(null);
   const [tenant, setTenant] = useState(null);
   const [adminContact, setAdminContact] = useState({ email: 'info@gestionsyso.com', phone: '1159969956 / 1132296691' });
 
@@ -209,6 +203,12 @@ export default function ProgramaGestion({ params }) {
 
   // 1. Cargar datos iniciales
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const cached = sessionStorage.getItem('user-profile');
+      if (cached) {
+        setProfile(JSON.parse(cached));
+      }
+    }
     const checkEnvAndLoad = async () => {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
       if (!supabaseUrl || supabaseUrl.includes('placeholder')) {

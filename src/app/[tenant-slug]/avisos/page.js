@@ -100,13 +100,7 @@ export default function AvisosRiesgoPage({ params }) {
   const [isDevMode, setIsDevMode] = useState(false);
 
   // Sesión y Contexto
-  const [profile, setProfile] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const cached = sessionStorage.getItem('user-profile');
-      return cached ? JSON.parse(cached) : null;
-    }
-    return null;
-  });
+  const [profile, setProfile] = useState(null);
   const [tenant, setTenant] = useState(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -186,6 +180,12 @@ export default function AvisosRiesgoPage({ params }) {
   // Efectos Iniciales
   // ----------------------------------------------------
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const cached = sessionStorage.getItem('user-profile');
+      if (cached) {
+        setProfile(JSON.parse(cached));
+      }
+    }
     const collapsed = localStorage.getItem('sidebar-collapsed');
     if (collapsed === 'true') {
       setIsSidebarCollapsed(true);

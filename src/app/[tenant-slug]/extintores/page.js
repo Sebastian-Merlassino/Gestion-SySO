@@ -106,13 +106,7 @@ export default function ExtintoresPage({ params }) {
   const tenantSlug = params['tenant-slug'];
 
   // Estados estructurales
-  const [profile, setProfile] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const cached = sessionStorage.getItem('user-profile');
-      return cached ? JSON.parse(cached) : null;
-    }
-    return null;
-  });
+  const [profile, setProfile] = useState(null);
   const [tenant, setTenant] = useState(null);
   const [adminContact, setAdminContact] = useState({ email: 'info@gestionsyso.com', phone: '1159969956 / 1132296691' });
   const [empresas, setEmpresas] = useState([]);
@@ -217,6 +211,12 @@ export default function ExtintoresPage({ params }) {
 
   // Cargar datos
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const cached = sessionStorage.getItem('user-profile');
+      if (cached) {
+        setProfile(JSON.parse(cached));
+      }
+    }
     const checkEnvAndLoad = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {

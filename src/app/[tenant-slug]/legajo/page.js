@@ -293,13 +293,7 @@ export default function LegajoPage({ params }) {
   const tenantSlug = params['tenant-slug'];
 
   // Estados estructurales
-  const [profile, setProfile] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const cached = sessionStorage.getItem('user-profile');
-      return cached ? JSON.parse(cached) : null;
-    }
-    return null;
-  });
+  const [profile, setProfile] = useState(null);
   const [tenant, setTenant] = useState(null);
   const [empresas, setEmpresas] = useState([]);
   const [allEstablecimientos, setAllEstablecimientos] = useState([]);
@@ -393,6 +387,12 @@ export default function LegajoPage({ params }) {
 
   // Cargar datos
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const cached = sessionStorage.getItem('user-profile');
+      if (cached) {
+        setProfile(JSON.parse(cached));
+      }
+    }
     const checkEnvAndLoad = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {

@@ -1,5 +1,40 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-13] Mitigación Global de Fallos de Hidratación de React (Error 418/423) en Secciones Restantes
+
+### Resumen de Cambios
+- **Corrección de Inicialización Asíncrona**: Modificados los componentes principales de 8 secciones privadas (`extintores`, `control-electrico`, `visitas`, `programa`, `legajo`, `checklist-personalizados`, `avisos` y `capacitacion`) para establecer su valor por defecto del perfil de usuario (`profile`) en `null` de forma síncrona en el constructor `useState(null)`.
+- **Carga Diferida**: Se migró la consulta de caché en `sessionStorage.getItem('user-profile')` al gancho `useEffect` de montaje, ejecutado exclusivamente del lado del cliente. Esto soluciona los errores de hidratación de React #418 y #423, que ocurrían al diferir el renderizado de la barra lateral basada en permisos entre el HTML estático del servidor y el DOM dinámico de cliente.
+
+### Archivos Modificados / Creados
+- `src/app/[tenant-slug]/extintores/page.js`
+- `src/app/[tenant-slug]/control-electrico/page.js`
+- `src/app/[tenant-slug]/visitas/page.js`
+- `src/app/[tenant-slug]/programa/page.js`
+- `src/app/[tenant-slug]/legajo/page.js`
+- `src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `src/app/[tenant-slug]/avisos/page.js`
+- `src/app/[tenant-slug]/capacitacion/page.js`
+
+### Validaciones Ejecutadas
+- Compilación del proyecto (`npm run build`) para verificar la integridad del enrutamiento y tipos.
+
+---
+
+## [2026-07-13] Reordenamiento de Barra Lateral (Sidebar)
+
+### Resumen de Cambios
+- **Reubicación de Accesos**: Se modificó el orden del menú `menuItems` en [Sidebar.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/components/Sidebar.js) para mover las opciones **Extintores** (`extintores`) y **Control Eléctrico** (`control-electrico`) inmediatamente debajo de **Matriz de riesgos** (`matriz-riesgos`).
+- **Preservación de Elementos**: No se eliminó ningún elemento de la lista y se mantuvo la navegación, validación de plan efectivo y roles.
+
+### Archivos Modificados / Creados
+- `src/components/Sidebar.js`
+
+### Validaciones Ejecutadas
+- Compilación del proyecto (`npm run build`) para garantizar que no existan fallos de sintaxis ni importación.
+
+---
+
 ## [2026-07-13] Estandarización de Cargador de Documentos en Legajo Técnico (Estándar SySO-Document-Compact-Layout)
 
 - **Implementación de Layout Compacto**: Se refactorizó la carga de documentos de soporte/evidencia en [legajo/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/legajo/page.js) para remover la etiqueta de título manual y el contenedor condicional manual flex para archivos existentes.
