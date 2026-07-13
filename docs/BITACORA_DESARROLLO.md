@@ -1,5 +1,20 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-13] Estandarización de Cargador de Documentos en Legajo Técnico (Estándar SySO-Document-Compact-Layout)
+
+### Resumen de Cambios
+- **Implementación de Layout Compacto**: Se refactorizó la carga de documentos de soporte/evidencia en [legajo/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/legajo/page.js) para remover la etiqueta de título manual y el contenedor condicional manual flex para archivos existentes.
+- **Invocación Unificada**: Se configuró la llamada de `<DocumentUploadZone />` de forma directa, pasándole el label descriptivo y la lógica de eliminación `onDelete` mediante props nativas, aplicando el estándar visual e interactivo **`SySO-Document-Compact-Layout`**.
+- **Sincronización de Estados**: Se ajustó la inicialización y limpieza del estado `selectedFileName` en los disparadores `handleAddNew`, `handleEditClick` y `handleCloseForm` para garantizar que la caja de arrastre de archivos refleje el nombre del documento existente o se limpie para nuevas cargas.
+
+### Archivos Modificados / Creados
+- `src/app/[tenant-slug]/legajo/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de optimización de producción (`npm run build`) completada de forma 100% exitosa sin fallos de importación de módulos o tipos.
+
+---
+
 ## [2026-07-12] Mitigación de Mismatch de Hidratación en Matriz de Riesgos
 
 ### Resumen de Cambios

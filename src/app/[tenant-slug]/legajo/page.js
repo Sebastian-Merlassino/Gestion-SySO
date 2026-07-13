@@ -608,6 +608,7 @@ export default function LegajoPage({ params }) {
     setDocumentoFile(null);
     setDocumentoUrl('');
     setDocumentoCustom('');
+    setSelectedFileName('');
 
     // Pre-seleccionar documento si es único de la subcarpeta
     const subName = currentSubfolder?.name || null;
@@ -671,6 +672,7 @@ export default function LegajoPage({ params }) {
     setFecha('');
     setDocumentoFile(null);
     setDocumentoUrl('');
+    setSelectedFileName('');
   };
 
   const handleEditClick = async (doc, forceReadOnly = false) => {
@@ -693,6 +695,7 @@ export default function LegajoPage({ params }) {
 
     setDocumentoUrl(doc.documento_url);
     setDocumentoFile(null);
+    setSelectedFileName(doc.documento_url ? (doc.documento_url.startsWith('http') ? 'Enlace de Google Drive' : 'Archivo PDF existente') : '');
     setIsFormOpen(true);
   };
 
@@ -1186,58 +1189,26 @@ export default function LegajoPage({ params }) {
 
                     {/* Documento de Respaldo */}
                     <div>
-                      <label className="text-xs font-bold text-slate-600 block mb-1.5">
-                        Archivo o Enlace del Documento <span className="text-[#468DFF]">*</span>
-                      </label>
-
-                      {documentoUrl ? (
-                        <div className="flex items-center justify-between border border-[#468DFF]/20 rounded-xl bg-blue-50/50 p-3 mb-3">
-                          <div className="flex items-center gap-2 truncate pr-2">
-                            <FileText className="h-5 w-5 text-[#468DFF] shrink-0" />
-                            <span className="text-xs text-slate-600 truncate font-semibold">
-                              {documentoUrl.startsWith('http') ? 'Enlace cargado' : 'Archivo PDF subido'}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <button
-                              type="button"
-                              onClick={() => handleViewPdf(documentoUrl)}
-                              className="p-1.5 rounded-lg bg-slate-100 hover:bg-[#468DFF] text-slate-500 hover:text-white transition-all cursor-pointer inline-flex items-center shadow-sm"
-                              title="Ver en otra pestaña"
-                            >
-                              <ExternalLink className="h-3.5 w-3.5" />
-                            </button>
-                            {canEdit && (
-                              <button
-                                type="button"
-                                onClick={() => setDocumentoUrl('')}
-                                className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-50 text-red-400 hover:text-white transition-all cursor-pointer inline-flex items-center shadow-sm"
-                                title="Eliminar documento"
-                              >
-                                <Trash className="h-3.5 w-3.5" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ) : null}
-
-                      {!documentoUrl && (
-                        <DocumentUploadZone
-                          label="Documento"
-                          file={documentoFile}
-                          fileName={selectedFileName}
-                          url={documentoUrl}
-                          onFileChange={handleFileChange}
-                          onDriveImportSuccess={(filePath) => {
-                            setDocumentoUrl(filePath);
-                            setSelectedFileName('Archivo de Drive importado');
-                          }}
-                          onViewPdf={handleViewPdf}
-                          disabled={!canEdit}
-                          tenantId={tenant?.id}
-                          onToast={triggerToast}
-                        />
-                      )}
+                      <DocumentUploadZone
+                        label="Archivo o Enlace del Documento"
+                        file={documentoFile}
+                        fileName={selectedFileName}
+                        url={documentoUrl}
+                        onFileChange={handleFileChange}
+                        onDriveImportSuccess={(filePath) => {
+                          setDocumentoUrl(filePath);
+                          setSelectedFileName('Archivo de Drive importado');
+                        }}
+                        onViewPdf={handleViewPdf}
+                        onDelete={() => {
+                          setDocumentoUrl('');
+                          setDocumentoFile(null);
+                          setSelectedFileName('');
+                        }}
+                        disabled={!canEdit}
+                        tenantId={tenant?.id}
+                        onToast={triggerToast}
+                      />
                     </div>
 
                   </fieldset>
