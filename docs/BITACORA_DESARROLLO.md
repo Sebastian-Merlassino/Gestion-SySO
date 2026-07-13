@@ -1,5 +1,20 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-13] Estilizado Premium de Secciones Restringidas por Plan en Sidebar
+
+### Resumen de Cambios
+- **Lógica de Permisos de Navegación**: Se extrajo el cálculo de características permitidas (`allowedFeatures`) al cuerpo principal del renderizado del componente [Sidebar.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/components/Sidebar.js).
+- **Estilo de Bloqueo Visual**: Se adaptó el método `renderLink` para aplicar opacidad, color gris apagado (`text-white/35`) y hover sutil (`hover:bg-white/5 hover:text-white/60`) a aquellos enlaces que el tenant del usuario no tenga habilitados.
+- **Indicador Premium (Candado)**: Se incorporó la visualización del ícono `Lock` (color celeste `#468DFF/70`) a la derecha de los textos de secciones bloqueadas y se añadió el tooltip informativo `(Módulo Premium)` en su atributo `title`.
+
+### Archivos Modificados / Creados
+- `src/components/Sidebar.js`
+
+### Validaciones Ejecutadas
+- Compilación del proyecto (`npm run build`) para verificar la integridad del enrutamiento y tipos.
+
+---
+
 ## [2026-07-13] Mitigación Global de Fallos de Hidratación de React (Error 418/423) en Secciones Restantes
 
 ### Resumen de Cambios

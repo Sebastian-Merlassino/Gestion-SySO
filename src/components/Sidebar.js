@@ -19,7 +19,8 @@ import {
   ChevronRight, 
   X,
   ShieldAlert,
-  Zap
+  Zap,
+  Lock
 } from 'lucide-react';
 
 let isHydratedGlobal = false;
@@ -91,32 +92,32 @@ export default function Sidebar({
     { id: 'profile', label: 'Editar Perfil', path: `/${tenantSlug}/profile`, icon: Settings, shrink: true }
   ];
 
+  // Obtener plan efectivo del tenant
+  const tenant = tenantData || profile?.tenants;
+  let effectivePlan = 'free';
+  if (tenant) {
+    if (tenant.is_exempt) {
+      effectivePlan = 'libre';
+    } else if (tenant.gift_plan_id && tenant.gift_ends_at && new Date(tenant.gift_ends_at) > new Date()) {
+      effectivePlan = tenant.gift_plan_id;
+    } else if (tenant.plan_ends_at && new Date(tenant.plan_ends_at) < new Date()) {
+      effectivePlan = 'free';
+    } else {
+      effectivePlan = tenant.plan_id || 'free';
+    }
+  }
+
+  const planFeatures = {
+    free: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'empresas', 'equipo'],
+    basic_5: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'empresas', 'equipo'],
+    standard_25: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'visitas', 'avisos', 'empresas', 'equipo'],
+    libre: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'visitas', 'avisos', 'checklist-personalizados', 'legajo', 'portal-clientes', 'empresas', 'equipo']
+  };
+
+  const allowedFeatures = planFeatures[effectivePlan] || planFeatures.free;
+
   const handleLinkClick = (e, item) => {
     if (item.type === 'divider') return;
-
-    // Obtener plan efectivo del tenant
-    const tenant = tenantData || profile?.tenants;
-    let effectivePlan = 'free';
-    if (tenant) {
-      if (tenant.is_exempt) {
-        effectivePlan = 'libre';
-      } else if (tenant.gift_plan_id && tenant.gift_ends_at && new Date(tenant.gift_ends_at) > new Date()) {
-        effectivePlan = tenant.gift_plan_id;
-      } else if (tenant.plan_ends_at && new Date(tenant.plan_ends_at) < new Date()) {
-        effectivePlan = 'free';
-      } else {
-        effectivePlan = tenant.plan_id || 'free';
-      }
-    }
-
-    const planFeatures = {
-      free: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'empresas', 'equipo'],
-      basic_5: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'empresas', 'equipo'],
-      standard_25: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'visitas', 'avisos', 'empresas', 'equipo'],
-      libre: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'visitas', 'avisos', 'checklist-personalizados', 'legajo', 'portal-clientes', 'empresas', 'equipo']
-    };
-
-    const allowedFeatures = planFeatures[effectivePlan] || planFeatures.free;
 
     if (!allowedFeatures.includes(item.id)) {
       e.preventDefault();
@@ -149,14 +150,15 @@ export default function Sidebar({
     }
 
     const Icon = item.icon;
-    const isActive = currentSection === item.id;
+    const isAllowed = allowedFeatures.includes(item.id);
+    const isActive = isAllowed && currentSection === item.id;
     const isCollapsed = !isMobile && isSidebarCollapsed;
 
     return (
       <Link
         key={item.id}
         href={item.path}
-        title={item.label}
+        title={isAllowed ? item.label : `${item.label} (Módulo Premium)`}
         onClick={(e) => {
           if (isMobile) setIsMobileMenuOpen(false);
           handleLinkClick(e, item);
@@ -164,14 +166,18 @@ export default function Sidebar({
         className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all shrink-0 ${
           isActive 
             ? 'bg-[#468DFF] text-white shadow-md shadow-[#468DFF]/10' 
-            : 'text-white/70 hover:text-white hover:bg-[#468DFF]'
+            : !isAllowed
+              ? 'text-white/35 hover:text-white/60 hover:bg-white/5 cursor-pointer'
+              : 'text-white/70 hover:text-white hover:bg-[#468DFF]'
         } ${isCollapsed ? 'justify-center' : ''} ${item.shrink ? 'shrink-0' : ''}`}
       >
-        <Icon className="h-4 w-4 shrink-0" />
+        <Icon className={`h-4 w-4 shrink-0 ${!isAllowed ? 'opacity-40' : ''}`} />
         {(!isCollapsed) && (
           <span className="animate-fade-in leading-tight">{item.label}</span>
         )}
-
+        {(!isAllowed && !isCollapsed) && (
+          <Lock className="h-3 w-3 text-[#468DFF]/70 ml-auto shrink-0 animate-fade-in" />
+        )}
       </Link>
     );
   };
