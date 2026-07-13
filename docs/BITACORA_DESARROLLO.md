@@ -1,5 +1,19 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-13] Eliminación de Parpadeo de Candados en Sidebar (Mitigación de Flicker de Hidratación)
+
+### Resumen de Cambios
+- **Caché en Memoria y Storage**: Se incorporó una variable global a nivel de módulo `cachedTenantGlobal` y se optimizó el `useEffect` de carga del tenant en [Sidebar.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/components/Sidebar.js) para resolver sincrónicamente del caché de `sessionStorage` los datos de plan del tenant, evitando demoras de llamadas de red en transiciones.
+- **Renderizado de Hidratación Seguro**: Se ajustó `renderLink` para omitir la aplicación de candados y estilos restringidos de forma temporal si el componente aún no se encuentra montado (`mounted === false`). Esto garantiza compatibilidad de HTML inicial (SSR) y aplica los bloqueos en el mismo frame de montaje inicial síncronamente, eliminando por completo el parpadeo de candados premium al recargar o cambiar de sección.
+
+### Archivos Modificados / Creados
+- `src/components/Sidebar.js`
+
+### Validaciones Ejecutadas
+- Compilación del proyecto (`npm run build`) para verificar la integridad del enrutamiento y tipos.
+
+---
+
 ## [2026-07-13] Estilizado Premium de Secciones Restringidas por Plan en Sidebar
 
 ### Resumen de Cambios

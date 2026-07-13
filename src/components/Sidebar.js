@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 
 let isHydratedGlobal = false;
+let cachedTenantGlobal = null;
 
 export default function Sidebar({
   tenantSlug,
@@ -38,7 +39,7 @@ export default function Sidebar({
 }) {
   const [mounted, setMounted] = useState(isHydratedGlobal);
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null });
-  const [tenantData, setTenantData] = useState(null);
+  const [tenantData, setTenantData] = useState(cachedTenantGlobal);
 
   useEffect(() => {
     if (!isHydratedGlobal) {
@@ -48,10 +49,27 @@ export default function Sidebar({
   }, []);
 
   useEffect(() => {
+    if (!tenantSlug) return;
+
+    // 1. Intentar cargar síncronamente de la caché local primero para evitar parpadeos
+    if (typeof window !== 'undefined') {
+      const cached = sessionStorage.getItem(`tenant-data-${tenantSlug}`);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        cachedTenantGlobal = parsed;
+        if (JSON.stringify(parsed) !== JSON.stringify(tenantData)) {
+          setTenantData(parsed);
+        }
+      }
+    }
+
+    // 2. Traer datos frescos de Supabase de forma paralela
     const fetchTenantData = async () => {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      if (!supabaseUrl || supabaseUrl.includes('placeholder') || !tenantSlug) {
-        setTenantData({ plan_id: 'free' });
+      if (!supabaseUrl || supabaseUrl.includes('placeholder')) {
+        const fallback = { plan_id: 'free' };
+        cachedTenantGlobal = fallback;
+        setTenantData(fallback);
         return;
       }
       try {
@@ -61,7 +79,9 @@ export default function Sidebar({
           .eq('slug', tenantSlug)
           .single();
         if (!error && data) {
+          cachedTenantGlobal = data;
           setTenantData(data);
+          sessionStorage.setItem(`tenant-data-${tenantSlug}`, JSON.stringify(data));
         }
       } catch (err) {
         console.error('Error fetching tenant for sidebar:', err);
@@ -150,7 +170,7 @@ export default function Sidebar({
     }
 
     const Icon = item.icon;
-    const isAllowed = allowedFeatures.includes(item.id);
+    const isAllowed = !mounted ? true : allowedFeatures.includes(item.id);
     const isActive = isAllowed && currentSection === item.id;
     const isCollapsed = !isMobile && isSidebarCollapsed;
 
