@@ -1186,32 +1186,31 @@ export default function LegajoPage({ params }) {
                         </div>
                       </div>
                     </div>
-
-                    {/* Documento de Respaldo */}
-                    <div>
-                      <DocumentUploadZone
-                        label="Archivo o Enlace del Documento"
-                        file={documentoFile}
-                        fileName={selectedFileName}
-                        url={documentoUrl}
-                        onFileChange={handleFileChange}
-                        onDriveImportSuccess={(filePath) => {
-                          setDocumentoUrl(filePath);
-                          setSelectedFileName('Archivo de Drive importado');
-                        }}
-                        onViewPdf={handleViewPdf}
-                        onDelete={() => {
-                          setDocumentoUrl('');
-                          setDocumentoFile(null);
-                          setSelectedFileName('');
-                        }}
-                        disabled={!canEdit}
-                        tenantId={tenant?.id}
-                        onToast={triggerToast}
-                      />
-                    </div>
-
                   </fieldset>
+
+                  {/* Documento de Respaldo */}
+                  <div>
+                    <DocumentUploadZone
+                      label="Archivo o Enlace del Documento"
+                      file={documentoFile}
+                      fileName={selectedFileName}
+                      url={documentoUrl}
+                      onFileChange={handleFileChange}
+                      onDriveImportSuccess={(filePath) => {
+                        setDocumentoUrl(filePath);
+                        setSelectedFileName('Archivo de Drive importado');
+                      }}
+                      onViewPdf={handleViewPdf}
+                      onDelete={() => {
+                        setDocumentoUrl('');
+                        setDocumentoFile(null);
+                        setSelectedFileName('');
+                      }}
+                      disabled={!canEdit}
+                      tenantId={tenant?.id}
+                      onToast={triggerToast}
+                    />
+                  </div>
 
                   {/* Botones de acción del formulario */}
                   <div className="flex justify-between items-center pt-6 border-t border-slate-100 shrink-0">
