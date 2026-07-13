@@ -1647,6 +1647,7 @@ export default function CapacitacionPage({ params }) {
                       />
                     </div>
                   </div>
+                  </fieldset>
 
                   {/* Sección 4: Registros de capacitación */}
                   <div className="space-y-6">
@@ -1838,7 +1839,6 @@ export default function CapacitacionPage({ params }) {
                       </div>
                     </div>
                   </div>
-                  </fieldset>
 
                   {/* Botones del Formulario */}
                   <div className="flex justify-between items-center pt-6 border-t border-slate-100">

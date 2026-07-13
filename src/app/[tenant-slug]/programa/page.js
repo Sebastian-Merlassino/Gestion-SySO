@@ -1593,73 +1593,75 @@ export default function ProgramaGestion({ params }) {
                         </div>
                       </div>
                     </div>
+                  </fieldset>
 
-                    {/* 8. Carga de Documento */}
-                    <div>
-                      <DocumentUploadZone
-                        label="Documento de Respaldo / Evidencia (PDF)"
-                        file={documentoFile}
-                        fileName={selectedFileName}
-                        url={documentoUrl}
-                        onDelete={() => {
-                          setDocumentoUrl('');
-                          setDocumentoFile(null);
-                          setSelectedFileName('');
-                        }}
-                        onFileChange={handleFileChange}
-                        onDriveImportSuccess={(filePath) => {
-                          setDocumentoUrl(filePath);
-                          setSelectedFileName('Archivo de Drive importado');
-                        }}
-                        onViewPdf={handleViewPdf}
-                        disabled={!canEdit}
-                        tenantId={tenant?.id}
-                        onToast={triggerToast}
-                        uploadType={uploadType}
-                        setUploadType={handleSwitchUploadType}
-                        showTabs={true}
-                        tabs={[
-                          { id: 'local', name: 'Archivo Local' },
-                          { id: 'drive', name: 'Enlace Drive' },
-                          { id: 'legajo', name: 'Legajo Técnico' }
-                        ]}
-                      >
-                        {uploadType === 'legajo' && (
-                          <div className="space-y-2">
-                            {!empresaId ? (
-                              <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-xl p-3 font-semibold">
-                                ⚠️ Debes seleccionar un Cliente / Razón Social para listar los documentos del legajo técnico.
-                              </p>
-                            ) : loadingLegajoDocs ? (
-                              <div className="flex items-center gap-2 text-xs text-slate-500 py-2">
-                                <Loader2 className="h-4 w-4 animate-spin text-[#468DFF] shrink-0" />
-                                Cargando documentos del legajo técnico...
-                              </div>
-                            ) : legajoDocuments.length === 0 ? (
-                              <p className="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-xl p-3 italic">
-                                No se encontraron documentos en el legajo técnico para este cliente.
-                              </p>
-                            ) : (
-                              <div>
-                                <select
-                                  value={selectedLegajoDocUrl}
-                                  onChange={(e) => setSelectedLegajoDocUrl(e.target.value)}
-                                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer font-semibold"
-                                >
-                                  <option value="">-- Selecciona un documento del legajo --</option>
-                                  {legajoDocuments.map(doc => (
-                                    <option key={doc.id} value={doc.documento_url}>
-                                      {doc.documento_nombre} ({formatDate(doc.fecha)})
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </DocumentUploadZone>
-                    </div>
+                  {/* 8. Carga de Documento */}
+                  <div>
+                    <DocumentUploadZone
+                      label="Documento de Respaldo / Evidencia (PDF)"
+                      file={documentoFile}
+                      fileName={selectedFileName}
+                      url={documentoUrl}
+                      onDelete={() => {
+                        setDocumentoUrl('');
+                        setDocumentoFile(null);
+                        setSelectedFileName('');
+                      }}
+                      onFileChange={handleFileChange}
+                      onDriveImportSuccess={(filePath) => {
+                        setDocumentoUrl(filePath);
+                        setSelectedFileName('Archivo de Drive importado');
+                      }}
+                      onViewPdf={handleViewPdf}
+                      disabled={!canEdit}
+                      tenantId={tenant?.id}
+                      onToast={triggerToast}
+                      uploadType={uploadType}
+                      setUploadType={handleSwitchUploadType}
+                      showTabs={true}
+                      tabs={[
+                        { id: 'local', name: 'Archivo Local' },
+                        { id: 'drive', name: 'Enlace Drive' },
+                        { id: 'legajo', name: 'Legajo Técnico' }
+                      ]}
+                    >
+                      {uploadType === 'legajo' && (
+                        <div className="space-y-2">
+                          {!empresaId ? (
+                            <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-xl p-3 font-semibold">
+                              ⚠️ Debes seleccionar un Cliente / Razón Social para listar los documentos del legajo técnico.
+                            </p>
+                          ) : loadingLegajoDocs ? (
+                            <div className="flex items-center gap-2 text-xs text-slate-500 py-2">
+                              <Loader2 className="h-4 w-4 animate-spin text-[#468DFF] shrink-0" />
+                              Cargando documentos del legajo técnico...
+                            </div>
+                          ) : legajoDocuments.length === 0 ? (
+                            <p className="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-xl p-3 italic">
+                              No se encontraron documentos en el legajo técnico para este cliente.
+                            </p>
+                          ) : (
+                            <div>
+                              <select
+                                value={selectedLegajoDocUrl}
+                                onChange={(e) => setSelectedLegajoDocUrl(e.target.value)}
+                                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer font-semibold"
+                              >
+                                <option value="">-- Selecciona un documento del legajo --</option>
+                                {legajoDocuments.map(doc => (
+                                  <option key={doc.id} value={doc.documento_url}>
+                                    {doc.documento_nombre} ({formatDate(doc.fecha)})
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </DocumentUploadZone>
+                  </div>
 
+                  <fieldset disabled={!canEdit} className="space-y-6">
                     {/* 9. Observaciones */}
                     <div>
                       <div className="flex items-center justify-between gap-2 min-h-[28px] mb-1.5">
@@ -1680,7 +1682,6 @@ export default function ProgramaGestion({ params }) {
                         className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all h-24 resize-none"
                       />
                     </div>
-
                   </fieldset>
 
                   {/* Botones de acción del formulario */}
