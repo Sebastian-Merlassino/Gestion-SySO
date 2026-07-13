@@ -36,8 +36,11 @@ export async function POST(req) {
       return NextResponse.json({ error: 'El archivo de audio es demasiado grande (máximo 10MB).' }, { status: 400 });
     }
 
-    if (mimeType && (typeof mimeType !== 'string' || mimeType.length > 100)) {
-      return NextResponse.json({ error: 'MimeType de audio inválido.' }, { status: 400 });
+    const allowedMimeTypes = ['audio/webm', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/m4a', 'audio/mpeg', 'audio/aac'];
+    if (mimeType) {
+      if (typeof mimeType !== 'string' || mimeType.length > 100 || !allowedMimeTypes.includes(mimeType)) {
+        return NextResponse.json({ error: 'Formato de audio no soportado por el motor de IA.' }, { status: 400 });
+      }
     }
 
     const apiKey = process.env.GEMINI_API_KEY;

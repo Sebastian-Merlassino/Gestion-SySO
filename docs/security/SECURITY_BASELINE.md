@@ -71,8 +71,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 
 SUPABASE_SERVICE_ROLE_KEY=
 
-MERCADOPAGO_ACCESS_TOKEN=
-MERCADOPAGO_WEBHOOK_SECRET=
+MERCADO_PAGO_ACCESS_TOKEN=
+MERCADO_PAGO_WEBHOOK_SECRET=
 
 SMTP_HOST=
 SMTP_PORT=
@@ -517,7 +517,7 @@ Para generación de PDFs:
 
 ## 14.1 Reglas generales
 
-- Nunca exponer `MERCADOPAGO_ACCESS_TOKEN` al cliente.
+- Nunca exponer `MERCADO_PAGO_ACCESS_TOKEN` al cliente.
 - Crear preferencias, planes, suscripciones y validaciones desde servidor.
 - No confiar en datos de pago enviados desde frontend.
 - Verificar el estado real del pago consultando la API de Mercado Pago antes de activar una membresía.

@@ -13,6 +13,7 @@ import AppInput from '@/components/ui/AppInput';
 import AppSelect from '@/components/ui/AppSelect';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppCard from '@/components/ui/AppCard';
+import AppEmptyState from '@/components/ui/AppEmptyState';
 import { 
   Building, 
   Users, 
@@ -1463,24 +1464,8 @@ export default function EmpresasClientes({ params }) {
             // ==========================================
             <div className="space-y-6 flex-1 flex flex-col min-h-0">
               
-              {empresas.length === 0 ? (
-                <div className="bg-white rounded-2xl border border-slate-200 p-20 text-center shadow-sm bg-slate-50/10">
-                  <Building className="h-10 w-10 mx-auto mb-2 text-slate-350 shrink-0" />
-                  <p className="font-outfit text-sm text-slate-700 font-bold">No hay clientes registrados</p>
-                  <p className="text-[11px] text-slate-400 font-normal mt-1">Registra un nuevo cliente para comenzar.</p>
-                  {canCargar && (
-                    <button
-                      onClick={handleAddNew}
-                      className="mt-3 text-xs text-[#468DFF] hover:underline font-bold block mx-auto"
-                    >
-                      + Registrar el primero
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <>
-                  {/* Toolbar y Filtros Unificados */}
-                  <div className="bg-white rounded-2xl border border-slate-200 p-3 shadow-sm space-y-3">
+              {/* Toolbar y Filtros Unificados */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-3 shadow-sm space-y-3">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                       {/* Espaciador para empujar el buscador y botón a la derecha en desktop */}
                       <div className="hidden md:block flex-1"></div>
@@ -1560,9 +1545,26 @@ export default function EmpresasClientes({ params }) {
  
                   {/* Tabla */}
                   <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex-1 flex flex-col min-h-0 transition-all duration-300 ease-in-out">
-                    <div className="overflow-auto flex-grow">
-                      <table className="w-full text-left border-collapse min-w-[850px]">
-                        <thead>
+                    {empresas.length === 0 ? (
+                      <AppEmptyState
+                        title="No hay clientes registrados"
+                        description="Registra un nuevo cliente para comenzar."
+                        actionButton={canCargar && (
+                          <AppButton
+                            onClick={handleAddNew}
+                            variant="primary"
+                            size="sm"
+                            className="shadow-md shadow-[#468DFF]/10 flex items-center gap-1.5"
+                          >
+                            <PlusCircle className="h-3.5 w-3.5" />
+                            Registrar el primero
+                          </AppButton>
+                        )}
+                      />
+                    ) : (
+                      <div className="overflow-auto flex-grow">
+                        <table className="w-full text-left border-collapse min-w-[850px]">
+                          <thead>
                           <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider font-outfit">
                             <th 
                               className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[30%] sticky top-0 z-10 bg-slate-50 border-b border-slate-200"
@@ -1597,11 +1599,12 @@ export default function EmpresasClientes({ params }) {
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
                           {sortedEmpresas.length === 0 ? (
-                            <tr>
-                              <td colSpan={(canEditar || canEliminar) ? 5 : 4} className="px-6 py-10 text-center text-slate-400 font-semibold">
-                                No se encontraron clientes con los filtros aplicados.
-                              </td>
-                            </tr>
+                            <AppEmptyState
+                              title="No se encontraron clientes"
+                              description="Probá modificando los filtros de búsqueda o registrá un elemento nuevo."
+                              icon={Search}
+                              colSpan={(canEditar || canEliminar) ? 5 : 4}
+                            />
                           ) : (
                             sortedEmpresas.map((emp) => (
                               <tr 
@@ -1663,9 +1666,8 @@ export default function EmpresasClientes({ params }) {
                         </tbody>
                       </table>
                     </div>
+                    )}
                   </div>
-                </>
-              )}
             </div>
 
           ) : (

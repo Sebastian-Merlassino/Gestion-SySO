@@ -1256,19 +1256,21 @@ export default function EquipoPage({ params }) {
               {/* Members Grid/List */}
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex-1 flex flex-col min-h-0 transition-all duration-300 ease-in-out">
                 {miembros.length === 0 ? (
-                  <div className="flex-grow flex flex-col items-center justify-center p-20 text-center bg-slate-50/10 h-full">
-                    <Briefcase className="h-10 w-10 text-slate-350 mx-auto mb-2 shrink-0" />
-                    <p className="font-outfit text-sm text-slate-700 font-bold">No hay miembros de equipo registrados</p>
-                    <p className="text-[11px] text-slate-400 font-normal mt-1">Registra un nuevo miembro de equipo para comenzar.</p>
-                    {canCargar && (
-                      <button
+                  <AppEmptyState
+                    title="No hay miembros de equipo registrados"
+                    description="Registra un nuevo miembro de equipo para comenzar."
+                    actionButton={canCargar && (
+                      <AppButton
                         onClick={handleAddNew}
-                        className="mt-3 text-xs text-[#468DFF] hover:underline font-bold block mx-auto"
+                        variant="primary"
+                        size="sm"
+                        className="shadow-md shadow-[#468DFF]/10 flex items-center gap-1.5"
                       >
-                        + Registrar el primero
-                      </button>
+                        <PlusCircle className="h-3.5 w-3.5" />
+                        Registrar el primero
+                      </AppButton>
                     )}
-                  </div>
+                  />
                 ) : (
                   <div className="overflow-auto flex-grow">
                     <table className="w-full text-left border-collapse min-w-[800px]">
@@ -1284,11 +1286,12 @@ export default function EquipoPage({ params }) {
                       </thead>
                       <tbody className="divide-y divide-slate-100">
                         {filteredMiembros.length === 0 ? (
-                          <tr>
-                            <td colSpan={(canEditar || canEliminar) ? 6 : 5} className="py-12 px-6 text-center text-slate-400 italic">
-                              No se encontraron integrantes que coincidan con la búsqueda.
-                            </td>
-                          </tr>
+                          <AppEmptyState
+                            title="No se encontraron miembros de equipo"
+                            description="Probá modificando los filtros de búsqueda o registrá un miembro nuevo."
+                            icon={Search}
+                            colSpan={(canEditar || canEliminar) ? 6 : 5}
+                          />
                         ) : (
                           filteredMiembros.map((m) => (
                             <tr key={m.id} className="hover:bg-slate-50/50 cursor-pointer transition-colors" onClick={() => { setIsReadOnlyView(true); handleEdit(m.id); }}>

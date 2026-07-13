@@ -1,5 +1,56 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-13] Remediación de Seguridad Integral (SEC-008, SEC-009, SEC-010)
+
+### Resumen de Cambios
+- **Aseguramiento de RPCs Administrativas**: Se creó la migración [20260801000000_secure_billing_rpc.sql](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/supabase/migrations/20260801000000_secure_billing_rpc.sql) para revocar permisos de ejecución pública de PostgREST y validar el rol `service_role` dentro de `gift_plan_to_tenant`, `apply_discount_to_tenant` y `set_tenant_exempt`.
+- **Habilitación de Webhook de Mercado Pago**: Se agregó el endpoint `/api/webhooks/mercadopago` a las excepciones de rutas públicas en [middleware.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/middleware.js), solucionando el bloqueo 401 que sufrían los servidores externos de Mercado Pago.
+- **Sanitización de Errores de Checkout**: Se modificó la API de checkout [checkout/route.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/api/checkout/route.js) para evitar la fuga de stack traces y metadatos hacia el cliente en caso de errores en la pasarela.
+- **Idempotencia en Suscripciones**: Se incorporó una verificación de existencia por ID en [mercadopago/route.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/api/webhooks/mercadopago/route.js) para notificaciones `preapproval`, previniendo excepciones SQL 500 duplicadas.
+- **Protección CSRF en APIs**: Se incorporó validación de cabeceras `Origin` y `Referer` en [middleware.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/middleware.js) para solicitudes API de tipo POST/PUT/DELETE, exceptuando webhooks.
+- **Validación de Audio en IA**: Se restringió la entrada de mimeType en la transcripción de IA [transcribe-audio/route.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/api/ai/transcribe-audio/route.js) a un listado cerrado de formatos de audio.
+- **Alineación de Variables y Documentación**: Se normalizaron los nombres de las variables de entorno de Mercado Pago de `MERCADOPAGO_*` a `MERCADO_PAGO_*` en [SECURITY_BASELINE.md](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/docs/security/SECURITY_BASELINE.md) para reflejar exactamente el comportamiento real del código.
+
+### Archivos Modificados / Creados
+- `supabase/migrations/20260801000000_secure_billing_rpc.sql`
+- `src/middleware.js`
+- `src/app/api/checkout/route.js`
+- `src/app/api/webhooks/mercadopago/route.js`
+- `src/app/api/ai/transcribe-audio/route.js`
+- `docs/security/SECURITY_BASELINE.md`
+
+### Validaciones Ejecutadas
+- Aplicación exitosa de la migración en base de datos.
+- Re-verificación de dependencias en package.json (revertido a Next 14.2.35 por ser el tag estable de la versión 14.x en npm).
+
+---
+
+## [2026-07-13] Normalización de Estados Vacíos y Alineación de Diseño (Estándar SySO Compact Layout)
+
+### Resumen de Cambios
+- **Refinamiento de AppEmptyState**: Se adaptó [AppEmptyState.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/components/ui/AppEmptyState.js) para remover el marco circular decorativo del icono, permitiendo renderizar pictogramas directos (`h-10 w-10 text-slate-300`). Se definió **`AlertCircle`** como el icono predeterminado. Se configuraron las propiedades `flex-grow h-full w-full` por defecto, garantizando centrado vertical y horizontal completos dentro de las tarjetas de tablas vacías.
+- **Reestablecimiento de toolbar de Clientes**: Se reestructuró [empresas/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/empresas/page.js) para que el Toolbar de filtros rápidos y búsqueda permanezca visible aun con la base de datos de clientes vacía, trasladando la condicional del estado vacío al interior del contenedor de la tabla.
+- **Solución de ReferenceError en Nómina**: Se incorporó la importación omitida de `AppEmptyState` en [nomina/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/nomina/page.js), corrigiendo el error de ejecución.
+- **Migración de Control Eléctrico e Inspecciones**: Se reemplazaron los bloques locales con pictogramas `AlertTriangle` en [control-electrico/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/control-electrico/page.js) y [checklist-personalizados/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/checklist-personalizados/page.js) por el componente base `<AppEmptyState />` consumiendo el pictograma estándar `AlertCircle` de forma centralizada.
+- **Homologación y Ajuste de Altura en Legajo Técnico**: Se adaptó [legajo/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/legajo/page.js) modificando la clase del contenedor de retorno a `max-w-[95%] mx-auto w-full py-8 px-4 md:px-0 flex-1 flex flex-col min-h-0` para homologarlo exactamente con visitas (`visitas/page.js`). Asimismo, se adaptaron las dimensiones `calc` de la tabla interna (a `calc(100vh - 370px)` y `calc(100vh - 300px)`) para descontar la altura del panel de breadcrumbs superior y evitar desbordes. Para evitar el colapso del padding inferior al hacer scroll en resoluciones menores, se añadió un div espaciador de scroll `<div className="h-8 w-full shrink-0" />` al final de la grilla de carpetas en la raíz y subcarpetas, garantizando que la tarjeta de Nómina de Personal mantenga siempre su separación respecto al borde inferior de la pantalla.
+
+### Archivos Modificados / Creados
+- `src/components/ui/AppEmptyState.js`
+- `src/app/[tenant-slug]/empresas/page.js`
+- `src/app/[tenant-slug]/equipo/page.js`
+- `src/app/[tenant-slug]/programa/page.js`
+- `src/app/[tenant-slug]/capacitacion/page.js`
+- `src/app/[tenant-slug]/extintores/page.js`
+- `src/app/[tenant-slug]/legajo/page.js`
+- `src/app/[tenant-slug]/nomina/page.js`
+- `src/app/[tenant-slug]/control-electrico/page.js`
+- `src/app/[tenant-slug]/checklist-personalizados/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción (`npm run build`) para certificar que el empaquetamiento finalice de forma exitosa sin errores de hidratación, sintaxis ni ReferenceErrors en ninguna de las 9 secciones.
+
+---
+
 ## [2026-07-13] Eliminación de Parpadeo de Candados en Sidebar (Mitigación de Flicker de Hidratación)
 
 ### Resumen de Cambios

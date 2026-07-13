@@ -1035,7 +1035,7 @@ export default function LegajoPage({ params }) {
             </div>
           </div>
         ) : (
-          <div className="p-6 md:p-8 space-y-6 max-w-[98%] mx-auto w-full">
+          <div className="max-w-[95%] mx-auto w-full py-8 px-4 md:px-0 flex-1 flex flex-col min-h-0">
             
             {isFormOpen ? (
               // FORMULARIO DE CARGA/EDICIÓN INLINE
@@ -1266,8 +1266,8 @@ export default function LegajoPage({ params }) {
                 </form>
               </div>
             ) : (
-              // VISTA DEL EXPLORADOR
-              <div className="space-y-6">
+               // VISTA DEL EXPLORADOR
+              <div className="space-y-4 flex-1 flex flex-col min-h-0">
                 
                 {/* Navegación Breadcrumbs (Migas de Pan) */}
                 <div className="bg-white rounded-xl border border-slate-200 p-3.5 shadow-sm flex items-center gap-2 text-xs font-semibold text-slate-500 select-none">
@@ -1311,43 +1311,46 @@ export default function LegajoPage({ params }) {
 
                 {/* 1. VISTA DE RAÍZ: MUESTRA LAS CARPETAS PRINCIPALES */}
                 {!currentFolder && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {LEGAJO_FOLDERS.map((folder) => {
-                      const fileCount = getFileCountForFolder(folder);
-                      return (
-                        <div
-                          key={folder.id}
-                          onClick={() => navigateToFolder(folder)}
-                          className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md hover:border-[#468DFF]/40 cursor-pointer transition-all flex flex-col justify-between group"
-                        >
-                          <div className="flex items-center gap-4">
-                            <div className="p-3.5 rounded-xl bg-slate-100 text-[#468DFF] group-hover:bg-[#468DFF]/10 transition-colors shrink-0">
-                              <FolderIconHelper name={folder.icon} className="h-6 w-6" />
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                      {LEGAJO_FOLDERS.map((folder) => {
+                        const fileCount = getFileCountForFolder(folder);
+                        return (
+                          <div
+                            key={folder.id}
+                            onClick={() => navigateToFolder(folder)}
+                            className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md hover:border-[#468DFF]/40 cursor-pointer transition-all flex flex-col justify-between group"
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="p-3.5 rounded-xl bg-slate-100 text-[#468DFF] group-hover:bg-[#468DFF]/10 transition-colors shrink-0">
+                                <FolderIconHelper name={folder.icon} className="h-6 w-6" />
+                              </div>
+                              <div className="min-w-0">
+                                <h3 className="font-bold text-slate-900 text-sm leading-tight truncate group-hover:text-[#468DFF] transition-colors">
+                                  {folder.name}
+                                </h3>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mt-1">
+                                  {folder.subfolders ? `${folder.subfolders.length} subcarpetas` : 'Carpeta directa'}
+                                </p>
+                              </div>
                             </div>
-                            <div className="min-w-0">
-                              <h3 className="font-bold text-slate-900 text-sm leading-tight truncate group-hover:text-[#468DFF] transition-colors">
-                                {folder.name}
-                              </h3>
-                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mt-1">
-                                {folder.subfolders ? `${folder.subfolders.length} subcarpetas` : 'Carpeta directa'}
-                              </p>
+                            <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-400">
+                              <span>Total registros</span>
+                              <span className="font-bold text-slate-700 bg-slate-100 py-0.5 px-2 rounded-full text-[10px]">
+                                {fileCount}
+                              </span>
                             </div>
                           </div>
-                          <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-400">
-                            <span>Total registros</span>
-                            <span className="font-bold text-slate-700 bg-slate-100 py-0.5 px-2 rounded-full text-[10px]">
-                              {fileCount}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        );
+                      })}
+                    </div>
+                    <div className="h-8 w-full shrink-0" />
+                  </>
                 )}
 
                 {/* 2. VISTA DE CARPETA CON SUBCARPETAS */}
                 {currentFolder && currentFolder.subfolders && !currentSubfolder && (
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     <div className="flex items-center gap-2">
                       <button
                         onClick={navigateToRoot}
@@ -1390,12 +1393,13 @@ export default function LegajoPage({ params }) {
                         );
                       })}
                     </div>
+                    <div className="h-8 w-full shrink-0" />
                   </div>
                 )}
 
                 {/* 3. VISTA DE ARCHIVOS (TABLA DE REGISTROS) */}
                 {currentFolder && (!currentFolder.subfolders || currentSubfolder) && (
-                  <div className="space-y-4">
+                  <div className="space-y-4 flex-1 flex flex-col min-h-0">
 
                     {/* Herramientas, Búsqueda y Filtros */}
                     <div className="bg-white rounded-2xl border border-slate-200 p-3 shadow-sm space-y-3 shrink-0">
@@ -1569,10 +1573,27 @@ export default function LegajoPage({ params }) {
                     </div>
 
                     {/* Tabla de Documentos */}
-                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col transition-all duration-300 ease-in-out" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
-                      <div className="overflow-auto flex-grow">
-                        <table className="w-full text-left border-collapse min-w-[800px]">
-                          <thead>
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col transition-all duration-300 ease-in-out" style={{ height: showFilters ? 'calc(100vh - 370px)' : 'calc(100vh - 300px)' }}>
+                      {documents.length === 0 ? (
+                        <AppEmptyState
+                          title="No hay documentos registrados"
+                          description="Registra un nuevo documento para comenzar."
+                          actionButton={canCargar && (
+                            <AppButton
+                              onClick={handleAddNew}
+                              variant="primary"
+                              size="sm"
+                              className="shadow-md shadow-[#468DFF]/10 flex items-center gap-1.5"
+                            >
+                              <PlusCircle className="h-3.5 w-3.5" />
+                              Registrar el primero
+                            </AppButton>
+                          )}
+                        />
+                      ) : (
+                        <div className="overflow-auto flex-grow">
+                          <table className="w-full text-left border-collapse min-w-[800px]">
+                            <thead>
                             <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider select-none">
                               <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200 transition-colors" onClick={() => handleSort('cliente')}>
                                 <div className="flex items-center gap-1">
@@ -1602,24 +1623,14 @@ export default function LegajoPage({ params }) {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 text-xs font-normal text-slate-700">
-                             {sortedDocuments.length === 0 ? (
-                               <tr>
-                                 <td colSpan="5" className="text-center py-20 text-slate-400 font-bold bg-slate-50/10">
-                                   <FileText className="h-10 w-10 mx-auto mb-2 text-slate-350 shrink-0" />
-                                   <p className="font-outfit text-sm text-slate-700">No hay documentos registrados</p>
-                                   <p className="text-[11px] text-slate-400 font-normal mt-1">Registra un nuevo documento para comenzar.</p>
-                                   {canCargar && (
-                                     <button
-                                       type="button"
-                                       onClick={handleAddNew}
-                                       className="mt-3 text-xs text-[#468DFF] hover:underline font-bold block mx-auto"
-                                     >
-                                       + Registrar el primero
-                                     </button>
-                                   )}
-                                 </td>
-                               </tr>
-                             ) : (
+                              {sortedDocuments.length === 0 ? (
+                                <AppEmptyState
+                                  title="No se encontraron documentos"
+                                  description="Probá modificando los filtros de búsqueda o registrá un nuevo documento."
+                                  icon={Search}
+                                  colSpan={5}
+                                />
+                              ) : (
                               sortedDocuments.map((doc) => {
                                 const emp = empresas.find(e => e.id === doc.empresa_id);
                                 const est = allEstablecimientos.find(es => es.id === doc.establecimiento_id);
@@ -1684,8 +1695,9 @@ export default function LegajoPage({ params }) {
                               })
                             )}
                           </tbody>
-                        </table>
-                      </div>
+                          </table>
+                        </div>
+                      )}
                     </div>
 
 

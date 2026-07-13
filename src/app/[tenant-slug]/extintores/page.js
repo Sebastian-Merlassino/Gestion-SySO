@@ -1787,9 +1787,31 @@ export default function ExtintoresPage({ params }) {
 
                 {/* Listado / Tabla */}
                 <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col transition-all duration-300 ease-in-out" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
-                  <div className="overflow-auto flex-grow">
-                    <table className="w-full text-left border-collapse min-w-[850px]">
-                      <thead>
+                  {extintores.length === 0 ? (
+                    <AppEmptyState
+                      title="No hay extintores registrados"
+                      description="Registra un nuevo extintor para comenzar."
+                      actionButton={canCargar && (
+                        <AppButton
+                          onClick={() => {
+                            setIsReadOnlyView(false);
+                            setEditingId(null);
+                            handleCloseForm();
+                            setTimeout(() => setIsFormOpen(true), 0);
+                          }}
+                          variant="primary"
+                          size="sm"
+                          className="shadow-md shadow-[#468DFF]/10 flex items-center gap-1.5"
+                        >
+                          <PlusCircle className="h-3.5 w-3.5" />
+                          Registrar el primero
+                        </AppButton>
+                      )}
+                    />
+                  ) : (
+                    <div className="overflow-auto flex-grow">
+                      <table className="w-full text-left border-collapse min-w-[850px]">
+                        <thead>
                         <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider">
                           <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 py-4 px-6 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('cliente')}>
                             Cliente / Establecimiento
@@ -1824,27 +1846,12 @@ export default function ExtintoresPage({ params }) {
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-sm">
                         {sortedExtintores.length === 0 ? (
-                          <tr>
-                            <td colSpan={(canEditar || canEliminar || profile?.role === 'cliente') ? 8 : 7} className="text-center py-20 text-slate-400 font-bold bg-slate-50/10">
-                              <Flame className="h-10 w-10 mx-auto mb-2 text-slate-350 shrink-0" />
-                              <p className="font-outfit text-sm text-slate-700">No hay extintores registrados</p>
-                              <p className="text-[11px] text-slate-400 font-normal mt-1">Registra un nuevo extintor para comenzar.</p>
-                              {canCargar && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setIsReadOnlyView(false);
-                                    setEditingId(null);
-                                    handleCloseForm();
-                                    setTimeout(() => setIsFormOpen(true), 0);
-                                  }}
-                                  className="mt-3 text-xs text-[#468DFF] hover:underline font-bold block mx-auto"
-                                >
-                                  + Registrar el primero
-                                </button>
-                              )}
-                            </td>
-                          </tr>
+                          <AppEmptyState
+                            title="No se encontraron extintores"
+                            description="Probá modificando los filtros de búsqueda o registrá un nuevo extintor."
+                            icon={Search}
+                            colSpan={(canEditar || canEliminar || profile?.role === 'cliente') ? 8 : 7}
+                          />
                         ) : (
                           sortedExtintores.map((ext) => {
                             const emp = empresas.find(e => e.id === ext.empresa_id);
@@ -1950,6 +1957,7 @@ export default function ExtintoresPage({ params }) {
                       </tbody>
                     </table>
                   </div>
+                  )}
                 </div>
               </div>
             )}

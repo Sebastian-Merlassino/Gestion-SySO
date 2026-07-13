@@ -111,6 +111,23 @@ export async function POST(request) {
     // CASO A: EVENTO DE SUSCRIPCIÓN (PREAPPROVAL)
     // ============================================
     if (isPreApproval) {
+      // 1. Control de Idempotencia para Suscripciones
+      const { data: existingSub, error: subQueryErr } = await adminClient
+        .from('pagos_procesados')
+        .select('id')
+        .eq('payment_id', `sub_${dataId}`)
+        .maybeSingle();
+
+      if (subQueryErr) {
+        console.error('[Webhook MP Error] Fallo al consultar pagos_procesados para sub:', subQueryErr);
+        return NextResponse.json({ error: 'Fallo interno al consultar base de datos.' }, { status: 500 });
+      }
+
+      if (existingSub) {
+        console.log(`[Webhook MP Idempotencia] La suscripción ${dataId} ya fue procesada previamente.`);
+        return NextResponse.json({ success: true, message: 'Suscripción procesada previamente (Idempotente).' }, { status: 200 });
+      }
+
       console.log(`[Webhook MP] Consultando detalles de preapproval ${dataId} en Mercado Pago...`);
       const preApprovalClient = new PreApproval(mpClient);
       

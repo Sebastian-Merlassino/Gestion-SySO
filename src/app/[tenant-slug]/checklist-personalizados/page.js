@@ -1838,19 +1838,21 @@ export default function ChecklistPersonalizadosPage({ params }) {
                 style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}
               >
                 {sortedInspecciones.length === 0 ? (
-                  <div className="flex-grow flex flex-col items-center justify-center p-8 text-center gap-3 h-full">
-                    <AlertTriangle className="h-10 w-10 text-slate-300" />
-                    <span className="text-sm font-bold text-slate-800">No hay inspecciones registradas</span>
-                    <span className="text-xs text-slate-400">Comienza utilizando una de tus plantillas de checklist.</span>
-                    {canCargar && (
-                      <button
+                  <AppEmptyState
+                    title="No hay inspecciones registradas"
+                    description="Comienza utilizando una de tus plantillas de checklist."
+                    actionButton={canCargar && (
+                      <AppButton
                         onClick={handleOpenNewInspeccion}
-                        className="px-4 py-2 mt-2 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0"
+                        variant="primary"
+                        size="sm"
+                        className="shadow-md shadow-[#468DFF]/10 flex items-center gap-1.5"
                       >
-                        + Nueva Inspección
-                      </button>
+                        <PlusCircle className="h-3.5 w-3.5" />
+                        Registrar la primera
+                      </AppButton>
                     )}
-                  </div>
+                  />
                 ) : (
                   <div className="overflow-auto flex-grow scrollbar-thin">
                     <table className="w-full text-left border-collapse min-w-[850px] text-xs">
@@ -1938,19 +1940,21 @@ export default function ChecklistPersonalizadosPage({ params }) {
             {activeTab === 'plantillas' && !isFormOpen && (
               <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col flex-grow min-h-[300px] transition-all">
                 {templates.length === 0 ? (
-                  <div className="flex-grow flex flex-col items-center justify-center p-8 text-center gap-3 h-full">
-                    <AlertTriangle className="h-10 w-10 text-slate-300" />
-                    <span className="text-sm font-bold text-slate-800">No hay plantillas de checklist</span>
-                    <span className="text-xs text-slate-400">Diseña un nuevo checklist personalizado para comenzar.</span>
-                    {canCargar && (
-                      <button
+                  <AppEmptyState
+                    title="No hay plantillas de checklist"
+                    description="Diseña un nuevo checklist personalizado para comenzar."
+                    actionButton={canCargar && (
+                      <AppButton
                         onClick={handleOpenNewTemplate}
-                        className="px-4 py-2 mt-2 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0"
+                        variant="primary"
+                        size="sm"
+                        className="shadow-md shadow-[#468DFF]/10 flex items-center gap-1.5"
                       >
-                        + Nueva Plantilla
-                      </button>
+                        <PlusCircle className="h-3.5 w-3.5" />
+                        Registrar la primera
+                      </AppButton>
                     )}
-                  </div>
+                  />
                 ) : (
                   <div className="overflow-auto flex-grow scrollbar-thin">
                     <table className="w-full text-left border-collapse min-w-[700px] text-xs">

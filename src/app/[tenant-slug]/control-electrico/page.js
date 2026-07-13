@@ -2312,19 +2312,21 @@ export default function ControlElectricoPage({ params }) {
                 >
                   <div className="overflow-auto flex-grow scrollbar-thin">
                     {sortedControles.length === 0 ? (
-                      <div className="h-full flex flex-col items-center justify-center p-8 text-center gap-3">
-                        <AlertTriangle className="h-10 w-10 text-slate-300" />
-                        <p className="text-sm font-bold text-slate-800">No hay controles eléctricos registrados</p>
-                        <p className="text-xs text-slate-400">Registra un nuevo control visual de instalaciones eléctricas para comenzar.</p>
-                        {canCargar && (
-                          <button
+                      <AppEmptyState
+                        title="No hay controles eléctricos registrados"
+                        description="Registra un nuevo control visual de instalaciones eléctricas para comenzar."
+                        actionButton={canCargar && (
+                          <AppButton
                             onClick={handleAddNew}
-                            className="px-4 py-2 mt-2 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0 border border-[#468DFF] hover:border-[#0511F2]"
+                            variant="primary"
+                            size="sm"
+                            className="shadow-md shadow-[#468DFF]/10 flex items-center gap-1.5"
                           >
-                            + Registrar Control
-                          </button>
+                            <PlusCircle className="h-3.5 w-3.5" />
+                            Registrar el primero
+                          </AppButton>
                         )}
-                      </div>
+                      />
                     ) : (
                       <table className="w-full border-collapse text-left text-xs min-w-[850px]">
                         <thead>

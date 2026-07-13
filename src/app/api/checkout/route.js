@@ -147,10 +147,7 @@ export async function POST(request) {
   } catch (err) {
     console.error('[Checkout API Error Crítico]:', err);
     return NextResponse.json({ 
-      error: 'Fallo al procesar el checkout de Mercado Pago. Intente de nuevo.',
-      message: err.message,
-      stack: err.stack,
-      details: err.cause || err.response || err
+      error: 'Fallo al procesar el checkout de Mercado Pago. Intente de nuevo.'
     }, { status: 500 });
   }
 }

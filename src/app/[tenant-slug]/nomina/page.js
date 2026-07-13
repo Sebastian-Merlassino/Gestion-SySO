@@ -14,6 +14,7 @@ import AppButton from '@/components/ui/AppButton';
 import AppInput from '@/components/ui/AppInput';
 import AppSelect from '@/components/ui/AppSelect';
 import AppTextarea from '@/components/ui/AppTextarea';
+import AppEmptyState from '@/components/ui/AppEmptyState';
 import {
   PlusCircle,
   Search,
@@ -1512,21 +1513,22 @@ export default function NominaPage({ params }) {
 
               {/* Listado / Tabla */}
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col transition-all duration-300 ease-in-out" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
-                {filteredPersonal.length === 0 ? (
-                  <div className="flex-grow flex flex-col items-center justify-center text-center px-4 bg-slate-50/10 h-full">
-                    <Users className="h-10 w-10 text-slate-350 mb-2 shrink-0" />
-                    <p className="font-outfit text-sm text-slate-700 font-bold">No hay empleados registrados</p>
-                    <p className="text-[11px] text-slate-400 font-normal mt-1">Registra un nuevo empleado para comenzar.</p>
-                    {canCreate && (
-                      <button
-                        type="button"
+                {personalList.length === 0 ? (
+                  <AppEmptyState
+                    title="No hay empleados registrados"
+                    description="Registra un nuevo empleado para comenzar."
+                    actionButton={canCreate && (
+                      <AppButton
                         onClick={handleOpenCreateForm}
-                        className="mt-3 text-xs text-[#468DFF] hover:underline font-bold"
+                        variant="primary"
+                        size="sm"
+                        className="shadow-md shadow-[#468DFF]/10 flex items-center gap-1.5"
                       >
-                        + Registrar el primero
-                      </button>
+                        <PlusCircle className="h-3.5 w-3.5" />
+                        Registrar el primero
+                      </AppButton>
                     )}
-                  </div>
+                  />
                 ) : (
                   <div className="overflow-auto flex-grow">
                     <table className="w-full text-left border-collapse min-w-[850px]">
@@ -1556,7 +1558,15 @@ export default function NominaPage({ params }) {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-xs font-normal text-slate-700">
-                        {filteredPersonal.map((item) => (
+                        {filteredPersonal.length === 0 ? (
+                          <AppEmptyState
+                            title="No se encontraron empleados"
+                            description="Probá modificando los filtros de búsqueda o registrá un nuevo empleado."
+                            icon={Search}
+                            colSpan={6}
+                          />
+                        ) : (
+                          filteredPersonal.map((item) => (
                           <tr 
                             key={item.id} 
                             onClick={() => { setIsReadOnlyView(true); handleOpenEditForm(item); }}
@@ -1610,7 +1620,7 @@ export default function NominaPage({ params }) {
                               </div>
                             </td>
                           </tr>
-                        ))}
+                        )))}
                       </tbody>
                     </table>
                   </div>

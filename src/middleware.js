@@ -85,6 +85,35 @@ export async function middleware(request) {
     }
   }
 
+  // 1.5 Protección CSRF para APIs mutantes (POST, PUT, DELETE, PATCH) en producción/staging
+  if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method) && pathname.startsWith('/api/') && pathname !== '/api/webhooks/mercadopago' && process.env.NODE_ENV !== 'development') {
+    const origin = request.headers.get('origin');
+    const referer = request.headers.get('referer');
+    const appUrl = process.env.APP_URL;
+
+    let isMatch = false;
+    if (appUrl) {
+      try {
+        const appOrigin = new URL(appUrl).origin;
+        if (origin && new URL(origin).origin === appOrigin) {
+          isMatch = true;
+        } else if (!origin && referer && new URL(referer).origin === appOrigin) {
+          isMatch = true;
+        }
+      } catch (e) {
+        console.error('[CSRF Error] Invalid APP_URL or headers:', e.message);
+      }
+    }
+
+    if (!isMatch && appUrl) {
+      console.warn(`[CSRF Block] Petición bloqueada. Método: ${request.method}, Ruta: ${pathname}, Origin: ${origin}, Referer: ${referer}`);
+      return withRateLimit(NextResponse.json(
+        { error: 'Acceso denegado: Petición de origen cruzado no permitida.' },
+        { status: 403 }
+      ));
+    }
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -150,6 +179,7 @@ export async function middleware(request) {
     pathname === '/register' || 
     pathname === '/reset-password' ||
     pathname === '/api/auth/login-cuit' ||
+    pathname === '/api/webhooks/mercadopago' ||
     pathname.startsWith('/_next/') ||
     pathname.includes('.') || // archivos estáticos en public/
     pathname.startsWith('/brand/');

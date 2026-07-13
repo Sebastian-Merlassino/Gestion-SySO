@@ -2055,9 +2055,31 @@ export default function CapacitacionPage({ params }) {
 
                 {/* Listado / Tabla */}
                 <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
-                  <div className="overflow-auto flex-grow">
-                    <table className="w-full text-left border-collapse min-w-[850px]">
-                      <thead>
+                  {capacitaciones.length === 0 ? (
+                    <AppEmptyState
+                      title="No hay capacitaciones registradas"
+                      description="Registra una nueva capacitación para comenzar."
+                      actionButton={canCargar && (
+                        <AppButton
+                          onClick={() => {
+                            setIsReadOnlyView(false);
+                            setEditingId(null);
+                            handleCloseForm();
+                            setTimeout(() => setIsFormOpen(true), 0);
+                          }}
+                          variant="primary"
+                          size="sm"
+                          className="shadow-md shadow-[#468DFF]/10 flex items-center gap-1.5"
+                        >
+                          <PlusCircle className="h-3.5 w-3.5" />
+                          Registrar la primera
+                        </AppButton>
+                      )}
+                    />
+                  ) : (
+                    <div className="overflow-auto flex-grow">
+                      <table className="w-full text-left border-collapse min-w-[850px]">
+                        <thead>
                         <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider">
                           <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[20%] sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('cliente')}>
                             <div className="flex items-center gap-1">
@@ -2100,27 +2122,12 @@ export default function CapacitacionPage({ params }) {
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-xs font-normal text-slate-700">
                         {sortedCapacitaciones.length === 0 ? (
-                          <tr>
-                            <td colSpan={(canEditar || canEliminar || profile?.role === 'cliente') ? 7 : 6} className="text-center py-20 text-slate-400 font-bold bg-slate-50/10">
-                              <GraduationCap className="h-10 w-10 mx-auto mb-2 text-slate-350 shrink-0" />
-                              <p className="font-outfit text-sm text-slate-700">No hay capacitaciones registradas</p>
-                              <p className="text-[11px] text-slate-400 font-normal mt-1">Registra una nueva capacitación para comenzar.</p>
-                              {canCargar && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setIsReadOnlyView(false);
-                                    setEditingId(null);
-                                    handleCloseForm();
-                                    setTimeout(() => setIsFormOpen(true), 0);
-                                  }}
-                                  className="mt-3 text-xs text-[#468DFF] hover:underline font-bold block mx-auto"
-                                >
-                                  + Registrar la primera
-                                </button>
-                              )}
-                            </td>
-                          </tr>
+                          <AppEmptyState
+                            title="No se encontraron capacitaciones"
+                            description="Probá modificando los filtros de búsqueda o registrá una nueva capacitación."
+                            icon={Search}
+                            colSpan={(canEditar || canEliminar || profile?.role === 'cliente') ? 7 : 6}
+                          />
                         ) : (
                           sortedCapacitaciones.map((cap) => {
                             const emp = empresas.find(e => e.id === cap.empresa_id);
@@ -2224,6 +2231,7 @@ export default function CapacitacionPage({ params }) {
                       </tbody>
                     </table>
                   </div>
+                  )}
                 </div>
 
               </div>
