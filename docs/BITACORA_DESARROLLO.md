@@ -1,5 +1,135 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-12] Mitigación de Mismatch de Hidratación en Matriz de Riesgos
+
+### Resumen de Cambios
+- **Resolución de Error de Hidratación**: Modificado el archivo [matriz-riesgos/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/matriz-riesgos/page.js) para inicializar el estado del perfil `profile` en `null` de forma estática, migrando la lectura de `sessionStorage` al gancho `useEffect` de montaje inicial. Esto remueve la discrepancia entre el HTML estático de servidor y el DOM dinámico de cliente al evaluar la insignia de plan de la cabecera, solucionando el fallo crítico de hidratación.
+
+### Archivos Modificados / Creados
+- `src/app/[tenant-slug]/matriz-riesgos/page.js`
+
+### Validaciones Ejecutadas
+- Verificado en el navegador local que el ingreso a la matriz de riesgos no genera advertencias de desajuste de tags HTML en consola.
+
+---
+
+## [2026-07-12] Mitigación de Mismatch de Hidratación en Acciones Correctivas
+
+### Resumen de Cambios
+- **Resolución de Error de Hidratación**: Modificado [correctivas/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/correctivas/page.js) para inicializar síncronamente el estado `profile` como `null` en `useState(null)`. Se trasladó la lectura de la caché de sesión de usuario en `sessionStorage` al gancho asíncrono `useEffect` de montaje. Esto evita diferencias entre el HTML inicial generado por el servidor y el hidratado en el cliente ante la visualización de la insignia del plan, eliminando las advertencias y errores de hidratación de React/Next.js en consola.
+
+### Archivos Modificados / Creados
+- `src/app/[tenant-slug]/correctivas/page.js`
+
+### Validaciones Ejecutadas
+- Comprobado que la recarga de la página de acciones correctivas no genera logs de mismatch de hidratación en la consola del desarrollador.
+
+---
+
+## [2026-07-12] Corrección de Acceso a Secciones Premium en Sidebar por Plan de Suscripción
+
+### Resumen de Cambios
+- **Carga de Plan Dinámico en Sidebar**: Modificado el componente de navegación global [Sidebar.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/components/Sidebar.js) para que cargue los detalles de la suscripción del tenant (`plan_id`, exenciones y vencimientos) de forma directa desde Supabase usando el `tenantSlug` recibido como prop. Esto soluciona el bloqueo preventivo erróneo que catalogaba a todos los clientes como plan gratis (`free`) debido a que las páginas operativas omitían la relación `tenants` en sus consultas del perfil de usuario (`profiles`).
+
+### Archivos Modificados / Creados
+- `src/components/Sidebar.js`
+
+### Validaciones Ejecutadas
+- Comprobada la resolución del bloqueo del plan en local y el correcto control de accesos.
+
+---
+
+## [2026-07-11] Conexión de MCP Server de Mercado Pago en Entorno de Desarrollo
+
+### Resumen de Cambios
+- **Configuración del IDE**:
+  - Se vinculó el servidor MCP remoto oficial de Mercado Pago (`mercadopago-mcp-server`) en la configuración global `mcp_config.json` del IDE.
+  - Se configuró la cabecera `Authorization` utilizando el token de acceso de desarrollo de Mercado Pago extraído del archivo `.env` local (`MERCADO_PAGO_ACCESS_TOKEN`).
+
+### Archivos Modificados / Creados
+- `C:/Users/sebas/.gemini/antigravity-ide/mcp_config.json` (Fuera del repositorio, config global del IDE).
+
+### Validaciones Ejecutadas
+- Validación del formato JSON de la configuración de MCP tras la inserción.
+
+## [2026-07-11] Reducción de Importe en Modo Sandbox para Evitar Límites de Tarjetas de Prueba
+
+### Resumen de Cambios
+- **Importe de Pruebas Controlado**: Modificado el endpoint de checkout ([route.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/api/checkout/route.js)) para forzar un importe fijo de $150 ARS si la aplicación se ejecuta en desarrollo local (`NODE_ENV !== 'production'`). Esto evita que los cobros en Sandbox de $25.000 o $35.000 sean rechazados por exceder el límite simulado de saldo/fraude de las tarjetas de crédito de prueba.
+
+### Archivos Modificados / Creados
+- `src/app/api/checkout/route.js`
+
+### Validaciones Ejecutadas
+- Verificado el correcto comportamiento de la condicional de entorno de producción.
+
+## [2026-07-11] Solución a Inconsistencia de Email del Comprador en Checkout Sandbox de Mercado Pago
+
+### Resumen de Cambios
+- **Alineación de Email de Pruebas**: Modificadas las variables de configuración en `.env` y el script de prueba `test-mp.js` para registrar el email exacto del comprador de prueba (`test_user_4300899899284964902@testuser.com`) asociado al nickname `TESTUSER4300899899284964902`. Esto resuelve el error `Tu e-mail no coincide con el de la suscripción` que bloqueaba el pago con tarjetas en Sandbox al existir diferencias entre el payer asignado en el backend y el usuario logueado en la pasarela.
+
+### Archivos Modificados / Creados
+- `.env`
+- `test-mp.js`
+
+### Validaciones Ejecutadas
+- Ejecución exitosa de `test-mp.js` con código HTTP 201 y validación de coincidencia de email para el flujo de cobros.
+
+---
+
+## [2026-07-11] Solución a Fallo 500 (Internal Server Error) por Email del Payer en Sandbox de Mercado Pago
+
+### Resumen de Cambios
+- **Reemplazo de Email del Payer**: Actualizada la variable `MERCADO_PAGO_TEST_PAYER_EMAIL` en el archivo de configuración de entorno `.env` y en el script de pruebas `test-mp.js` por `buyer_test@testuser.com`. Esto corrige de raíz el error HTTP 500 (Internal Server Error) provocado por los servidores de Mercado Pago cuando se enviaba el email `test_user_3533829850@testuser.com` que no se correspondía con la estructura del nickname del usuario sandbox.
+
+### Archivos Modificados / Creados
+- `.env`
+- `test-mp.js`
+
+### Validaciones Ejecutadas
+- Ejecutado con éxito el script `test-mp.js` obteniéndose una respuesta HTTP 201 y un link de checkout válido.
+
+---
+
+## [2026-07-11] Solución a Error de Longitud en 'reason' en Checkout de Mercado Pago
+
+### Resumen de Cambios
+- **Truncado de Motivo de Pago**: Modificado el controlador de la API de checkout ([route.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/api/checkout/route.js)) para limitar el campo `reason` a un máximo de 60 caracteres (truncando a 57 y añadiendo `...` si se excede). Esto evita el fallo de API de suscripciones de Mercado Pago `reason has more than 60 characters` cuando la organización del tenant tiene un nombre extenso.
+
+### Archivos Modificados / Creados
+- `src/app/api/checkout/route.js`
+
+### Validaciones Ejecutadas
+- Comprobación del correcto formateo de la cadena descriptiva de pago.
+
+---
+
+## [2026-07-11] Solución a Error de Redirección (Invalid back_url) en Checkout de Mercado Pago
+
+### Resumen de Cambios
+- **Sanitización de URL de Retorno en Checkout**: Modificada la API de checkout ([route.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/api/checkout/route.js)) para forzar el uso del dominio público seguro (`https://gestionsyso.com`) en la variable `backUrl` si la petición proviene de `localhost`, `127.0.0.1` o de cualquier origen no HTTPS. Esto evita que el endpoint de suscripciones de Mercado Pago rechace la creación del checkout con el error `Invalid value for back_url, must be a valid URL` en entornos locales.
+
+### Archivos Modificados / Creados
+- `src/app/api/checkout/route.js`
+
+### Validaciones Ejecutadas
+- Verificado el correcto formateo del código del controlador y pruebas del flujo de pago en local.
+
+---
+
+## [2026-07-11] Resolución de Dependencias Faltantes en el Entorno de Desarrollo (Radix UI)
+
+### Resumen de Cambios
+- **Instalación de Módulos**: Ejecutada la instalación de dependencias en el entorno local (`npm install`) para restaurar el paquete `@radix-ui/react-dialog` requerido por los componentes unificados de diálogos (`AppConfirmDialog`, `AppDestructiveConfirmDialog`, `AppUnsavedChangesDialog`). Esto resuelve de raíz el fallo de compilación ("Build Error") que se presentaba al intentar interactuar con el modal de actualización de planes.
+
+### Archivos Modificados / Creados
+- Ninguno (intervención a nivel de entorno de ejecución en `node_modules`).
+
+### Validaciones Ejecutadas
+- Compilación de producción Next.js (`npm run build`) ejecutada de forma 100% exitosa (`✓ Compiled successfully`).
+
+---
+
 ## [2026-07-10] Instalación de MCP Server de Mercado Pago en Entorno de Desarrollo
 
 ### Resumen de Cambios

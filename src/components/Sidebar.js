@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getEffectivePlan } from '@/lib/utils';
+import { supabase } from '@/lib/supabase';
 import { 
   Building, 
   Users, 
@@ -36,6 +37,7 @@ export default function Sidebar({
 }) {
   const [mounted, setMounted] = useState(isHydratedGlobal);
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null });
+  const [tenantData, setTenantData] = useState(null);
 
   useEffect(() => {
     if (!isHydratedGlobal) {
@@ -43,6 +45,29 @@ export default function Sidebar({
       setMounted(true);
     }
   }, []);
+
+  useEffect(() => {
+    const fetchTenantData = async () => {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      if (!supabaseUrl || supabaseUrl.includes('placeholder') || !tenantSlug) {
+        setTenantData({ plan_id: 'free' });
+        return;
+      }
+      try {
+        const { data, error } = await supabase
+          .from('tenants')
+          .select('plan_id, plan_ends_at, is_exempt, gift_plan_id, gift_ends_at')
+          .eq('slug', tenantSlug)
+          .single();
+        if (!error && data) {
+          setTenantData(data);
+        }
+      } catch (err) {
+        console.error('Error fetching tenant for sidebar:', err);
+      }
+    };
+    fetchTenantData();
+  }, [tenantSlug]);
 
   
   const menuItems = [
@@ -70,7 +95,7 @@ export default function Sidebar({
     if (item.type === 'divider') return;
 
     // Obtener plan efectivo del tenant
-    const tenant = profile?.tenants;
+    const tenant = tenantData || profile?.tenants;
     let effectivePlan = 'free';
     if (tenant) {
       if (tenant.is_exempt) {

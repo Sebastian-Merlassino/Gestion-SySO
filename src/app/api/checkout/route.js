@@ -19,14 +19,17 @@ export async function POST(request) {
     const cookieStore = cookies();
     const serverClient = createServerClient(supabaseUrl, supabaseAnonKey, {
       cookies: {
-        get(name) {
-          return cookieStore.get(name)?.value;
+        getAll() {
+          return cookieStore.getAll();
         },
-        set(name, value, options) {
-          cookieStore.set({ name, value, ...options });
-        },
-        remove(name, options) {
-          cookieStore.set({ name, value: '', ...options });
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {
+            // Se ignora en contextos de solo lectura
+          }
         },
       },
     });
@@ -89,24 +92,38 @@ export async function POST(request) {
     if (hasDiscount) {
       const discountAmount = planConfig.price * (tenant.discount_percentage / 100);
       finalAmount = Math.max(0, Math.round(planConfig.price - discountAmount));
-      console.log(`[Checkout API] Aplicando descuento del ${tenant.discount_percentage}% a Tenant ${tenant.slug}. Tarifa: $${finalAmount}`);
+      console.log(`[Checkout API] Aplicando descuento del ${tenant.discount_percentage}% a Tenant ${tenant.slug}. Tarifa calculada: $${finalAmount}`);
+    }
+
+    // Forzar monto de prueba en entorno local para evitar límites de las tarjetas en Sandbox
+    if (process.env.NODE_ENV !== 'production') {
+      finalAmount = 150;
+      console.log(`[Checkout API] Entorno local detectado. Forzando tarifa de prueba a: $${finalAmount}`);
     }
 
     // 6. Generar link de suscripción (PreApproval) con Mercado Pago
     const preApprovalClient = new PreApproval(mpClient);
     
-    const origin = request.headers.get('origin') || 'https://gestionsyso.com';
+    let origin = request.headers.get('origin') || 'https://gestionsyso.com';
+    // Si estamos en entorno local o la URL no utiliza HTTPS, forzamos el dominio de producción
+    // debido a las restricciones estrictas de redirección HTTPS de Mercado Pago
+    if (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1') || !origin.startsWith('https://')) {
+      origin = 'https://gestionsyso.com';
+    }
     const backUrl = `${origin}/${tenant.slug}/profile`;
 
     console.log(`[Checkout API] Creando Preapproval para Tenant: ${tenantId}, Plan: ${planId}, Monto: $${finalAmount}`);
 
     const payerEmail = process.env.MERCADO_PAGO_TEST_PAYER_EMAIL || user.email;
 
+    const rawReason = `Suscripción Mensual - ${planConfig.name} (${tenant.name})`;
+    const reason = rawReason.length > 60 ? rawReason.substring(0, 57) + '...' : rawReason;
+
     const preApprovalResponse = await preApprovalClient.create({
       body: {
         payer_email: payerEmail,
         back_url: backUrl,
-        reason: `Suscripción Mensual - ${planConfig.name} (${tenant.name})`,
+        reason: reason,
         external_reference: JSON.stringify({ tenant_id: tenantId, plan_id: planId }),
         auto_recurring: {
           frequency: 1,

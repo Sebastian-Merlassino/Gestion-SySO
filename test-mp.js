@@ -17,7 +17,7 @@ async function run() {
     console.log('Llamando a PreApproval.create con el email del Buyer Test User de Sebastian...');
     const response = await preApprovalClient.create({
       body: {
-        payer_email: "test_user_3533829850@testuser.com", // El email oficial del Buyer con ID 3533829850
+        payer_email: "test_user_4300899899284964902@testuser.com", // Email real del test buyer (TESTUSER4300899899284964902)
         back_url: "https://gestionsyso.com/test-slug/profile",
         reason: "Suscripción Mensual - Plan Básico (Test)",
         external_reference: JSON.stringify({ tenant_id: "test-tenant-id", plan_id: "basic_5" }),
