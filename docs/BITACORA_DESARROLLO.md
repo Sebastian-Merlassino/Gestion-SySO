@@ -12,6 +12,7 @@
 - **Unificación de Botones y Modal de Planes**:
   - Reestructurado el layout de planes a la sección **Plan Suscrito** con las mismas descripciones y diseño de costo.
   - Unificados los botones de Guardar, Salir y Agregar Matrícula para usar el mismo hover, padding y efecto de click (`active:scale-[0.98] cursor-pointer`) del panel interno.
+  - **Ventana Emergente (Modal) de Planes**: Rediseñado por completo el modal de selección de plan comercial en onboarding para que use las dimensiones (`max-w-6xl`), estructura de 4 columnas premium, listado completo de características de cada plan con icono `CheckCircle2`, logos y los precios/planes sincronizados actuales de la aplicación (Plan Gratis: $0, Plan Básico: $25.000, Plan Profesional: $35.000 y Plan Libre: $45.000).
 
 ### Decisiones Clave
 - Brindar una experiencia de onboarding consistente con la aplicación privada, disminuyendo la fricción visual y cognitiva del nuevo usuario al ingresar por primera vez.

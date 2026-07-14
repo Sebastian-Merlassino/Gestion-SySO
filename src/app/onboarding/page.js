@@ -1521,113 +1521,158 @@ export default function OnboardingPage() {
       {/* PLAN SELECTION MODAL */}
       {showPlanModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-2xl p-6 shadow-2xl relative animate-scaleUp">
-            {/* Close Button */}
+          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-6xl shadow-2xl relative animate-scaleUp max-h-[90vh] overflow-hidden flex flex-col">
             <button 
               onClick={() => setShowPlanModal(false)}
-              className="absolute top-4 right-4 p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors border border-slate-200"
+              className="absolute top-4 right-4 p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors border border-slate-200 cursor-pointer z-10"
             >
-              <X className="h-4 w-4" />
+              <X className="h-5 w-5" />
             </button>
 
-            <div className="text-center mb-6">
-              <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-[#468DFF] text-[10px] font-semibold uppercase tracking-wider">
-                Suscripciones SaaS
-              </span>
-              <h3 className="font-outfit text-2xl font-extrabold text-slate-900 mt-2">
-                Seleccioná tu Plan Comercial
-              </h3>
-              <p className="text-xs text-slate-600 mt-1 font-medium">
-                Elegí el plan que mejor se adapte a tus necesidades de seguridad e higiene.
-              </p>
-            </div>
-
-            {/* Grid of Plans */}
-            <div className="grid md:grid-cols-4 gap-4">
-              
-              {/* Plan Free */}
-              <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all ${selectedPlan === 'free' ? 'border-[#468DFF] bg-[#468DFF]/5' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900">Plan Gratis</h4>
-                  <p className="text-[9px] text-slate-500 mt-1 font-medium leading-tight">Ideal para probar la herramienta.</p>
-                  <span className="font-outfit text-base font-extrabold text-[#468DFF] mt-2 block">$0 <span className="text-[9px] text-slate-500 font-normal">/ permanente</span></span>
-                  <ul className="text-[8px] text-slate-600 mt-3 space-y-1 border-t border-slate-200 pt-2 font-medium">
-                    <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> 1 Empresa cliente</li>
-                    <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> Sin límite tiempo</li>
-                  </ul>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => { setSelectedPlan('free'); setShowPlanModal(false); }}
-                  className={`w-full py-1 rounded-lg mt-3 text-[10px] font-semibold transition-all ${selectedPlan === 'free' ? 'bg-[#468DFF] text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
-                >
-                  {selectedPlan === 'free' ? 'Seleccionado' : 'Elegir'}
-                </button>
+            {/* Contenedor interno con scroll para que la barra de desplazamiento se vea por dentro */}
+            <div className="overflow-y-auto scrollbar-thin flex-1 pt-6 pb-8 px-6 md:px-8">
+              <div className="text-center mb-5">
+                <img src="/brand/logo-black.png" alt="Gestión SySO" className="h-28 w-28 object-contain mx-auto mb-1.5" />
+                <h3 className="font-outfit text-3xl font-black text-slate-900">
+                  Seleccioná tu Plan Comercial
+                </h3>
+                <p className="text-xs text-slate-600 mt-1 font-medium">
+                  Elegí el plan que mejor se adapte a tus necesidades de seguridad e higiene.
+                </p>
               </div>
 
-              {/* Plan 5 */}
-              <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all ${selectedPlan === 'basic_5' ? 'border-[#468DFF] bg-[#468DFF]/5' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900">Plan 5</h4>
-                  <p className="text-[9px] text-slate-500 mt-1 font-medium leading-tight">Para profesionales de campo.</p>
-                  <span className="font-outfit text-base font-extrabold text-[#468DFF] mt-2 block">$3.500 <span className="text-[9px] text-slate-500 font-normal">/ mes</span></span>
-                  <ul className="text-[8px] text-slate-600 mt-3 space-y-1 border-t border-slate-200 pt-2 font-medium">
-                    <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> 5 Empresas clientes</li>
-                    <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> Todas las funciones</li>
-                  </ul>
+              {/* Grid of Plans */}
+              <div className="grid md:grid-cols-4 gap-6 items-stretch pb-2">
+                
+                {/* Plan Free */}
+                <div className={`rounded-2xl border p-5 flex flex-col justify-between transition-all ${selectedPlan === 'free' ? 'border-[#468DFF] bg-[#468DFF]/5 ring-2 ring-[#468DFF]/20 shadow-md' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
+                  <div>
+                    <h4 className="text-base font-bold text-slate-900">Plan Gratis</h4>
+                    <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">Ideal para probar la herramienta.</p>
+                    <span className="font-outfit text-2xl font-extrabold text-[#468DFF] mt-3 block">$0 <span className="text-xs text-slate-500 font-normal">/ permanente</span></span>
+                    <ul className="text-[11px] text-slate-600 mt-4 space-y-1.5 border-t border-slate-200 pt-4 font-semibold leading-relaxed">
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 1 cliente</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 1 miembro equipo</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Gestión Anual</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Capacitación Anual</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Acciones Correctivas</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Accidentes + Informe IA</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Matriz de Riesgos</li>
+                    </ul>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedPlan('free');
+                      setShowPlanModal(false);
+                    }}
+                    className={`w-full py-2.5 rounded-xl mt-6 text-xs font-bold transition-all ${selectedPlan === 'free' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer'}`}
+                  >
+                    {selectedPlan === 'free' ? 'Seleccionado' : 'Elegir'}
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => { setSelectedPlan('basic_5'); setShowPlanModal(false); }}
-                  className={`w-full py-1 rounded-lg mt-3 text-[10px] font-semibold transition-all ${selectedPlan === 'basic_5' ? 'bg-[#468DFF] text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
-                >
-                  {selectedPlan === 'basic_5' ? 'Seleccionado' : 'Elegir'}
-                </button>
-              </div>
 
-              {/* Plan 25 */}
-              <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all ${selectedPlan === 'standard_25' ? 'border-[#468DFF] bg-[#468DFF]/5' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900">Plan 25</h4>
-                  <p className="text-[9px] text-slate-500 mt-1 font-medium leading-tight">Para consultoras medianas.</p>
-                  <span className="font-outfit text-base font-extrabold text-[#468DFF] mt-2 block">$7.500 <span className="text-[9px] text-slate-500 font-normal">/ mes</span></span>
-                  <ul className="text-[8px] text-slate-600 mt-3 space-y-1 border-t border-slate-200 pt-2 font-medium">
-                    <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> 25 Empresas clientes</li>
-                    <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> Soporte priorizado</li>
-                  </ul>
+                {/* Plan Básico */}
+                <div className={`rounded-2xl border p-5 flex flex-col justify-between transition-all ${selectedPlan === 'basic_5' ? 'border-[#468DFF] bg-[#468DFF]/5 ring-2 ring-[#468DFF]/20 shadow-md' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
+                  <div>
+                    <h4 className="text-base font-bold text-slate-900">Plan Básico</h4>
+                    <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">Para profesionales de campo.</p>
+                    <span className="font-outfit text-2xl font-extrabold text-[#468DFF] mt-3 block">$25.000 <span className="text-xs text-slate-500 font-normal">/ mes</span></span>
+                    <ul className="text-[11px] text-slate-600 mt-4 space-y-1.5 border-t border-slate-200 pt-4 font-semibold leading-relaxed">
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 5 clientes</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 5 miembros equipo</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Gestión Anual</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Capacitación Anual</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Acciones Correctivas</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Accidentes + Informe IA</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Matriz de Riesgos</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Extintores + PDF</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Eléctrico + PDF</li>
+                    </ul>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedPlan('basic_5');
+                      setShowPlanModal(false);
+                    }}
+                    className={`w-full py-2.5 rounded-xl mt-6 text-xs font-bold transition-all ${selectedPlan === 'basic_5' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-[#468DFF] hover:bg-[#0511F2] text-white cursor-pointer'}`}
+                  >
+                    {selectedPlan === 'basic_5' ? 'Seleccionado' : 'Elegir'}
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => { setSelectedPlan('standard_25'); setShowPlanModal(false); }}
-                  className={`w-full py-1 rounded-lg mt-3 text-[10px] font-semibold transition-all ${selectedPlan === 'standard_25' ? 'bg-[#468DFF] text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
-                >
-                  {selectedPlan === 'standard_25' ? 'Seleccionado' : 'Elegir'}
-                </button>
-              </div>
 
-              {/* Plan Libre */}
-              <div className={`rounded-xl border p-3 flex flex-col justify-between transition-all ${selectedPlan === 'libre' ? 'border-[#468DFF] bg-[#468DFF]/5' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900">Plan Libre</h4>
-                  <p className="text-[9px] text-slate-500 mt-1 font-medium leading-tight">Constructoras y corporaciones.</p>
-                  <span className="font-outfit text-base font-extrabold text-[#468DFF] mt-2 block">$12.000 <span className="text-[9px] text-slate-500 font-normal">/ mes</span></span>
-                  <ul className="text-[8px] text-slate-600 mt-3 space-y-1 border-t border-slate-200 pt-2 font-medium">
-                    <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> Empresas ilimitadas</li>
-                    <li className="flex items-center gap-1"><CheckCircle className="h-2.5 w-2.5 text-[#468DFF] shrink-0" /> Branding completo</li>
-                  </ul>
+                {/* Plan Profesional */}
+                <div className={`rounded-2xl border p-5 flex flex-col justify-between transition-all ${selectedPlan === 'standard_25' ? 'border-[#468DFF] bg-[#468DFF]/5 ring-2 ring-[#468DFF]/20 shadow-md' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
+                  <div>
+                    <h4 className="text-base font-bold text-slate-900">Plan Profesional</h4>
+                    <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">Para consultoras medianas.</p>
+                    <span className="font-outfit text-2xl font-extrabold text-[#468DFF] mt-3 block">$35.000 <span className="text-xs text-slate-500 font-normal">/ mes</span></span>
+                    <ul className="text-[11px] text-slate-600 mt-4 space-y-1.5 border-t border-slate-200 pt-4 font-semibold leading-relaxed">
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 15 clientes</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 15 miembros equipo</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Gestión Anual</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Capacitación Anual</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Acciones Correctivas</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Accidentes + Informe IA</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Matriz de Riesgos</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Extintores + PDF</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Eléctrico + PDF</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Constancias de Visita</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Avisos de Riesgo</li>
+                    </ul>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedPlan('standard_25');
+                      setShowPlanModal(false);
+                    }}
+                    className={`w-full py-2.5 rounded-xl mt-6 text-xs font-bold transition-all ${selectedPlan === 'standard_25' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-[#468DFF] hover:bg-[#0511F2] text-white cursor-pointer'}`}
+                  >
+                    {selectedPlan === 'standard_25' ? 'Seleccionado' : 'Elegir'}
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => { setSelectedPlan('libre'); setShowPlanModal(false); }}
-                  className={`w-full py-1 rounded-lg mt-3 text-[10px] font-semibold transition-all ${selectedPlan === 'libre' ? 'bg-[#468DFF] text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
-                >
-                  {selectedPlan === 'libre' ? 'Seleccionado' : 'Elegir'}
-                </button>
-              </div>
+
+                {/* Plan Libre */}
+                <div className={`rounded-2xl border p-5 flex flex-col justify-between transition-all ${selectedPlan === 'libre' ? 'border-[#468DFF] bg-[#468DFF]/5 ring-2 ring-[#468DFF]/20 shadow-md' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
+                  <div>
+                    <h4 className="text-base font-bold text-slate-900">Plan Libre</h4>
+                    <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">Constructoras y corporaciones.</p>
+                    <span className="font-outfit text-2xl font-extrabold text-[#468DFF] mt-3 block">$45.000 <span className="text-xs text-slate-500 font-normal">/ mes</span></span>
+                    <ul className="text-[11px] text-slate-600 mt-4 space-y-1.5 border-t border-slate-200 pt-4 font-semibold leading-relaxed">
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Clientes ilimitados</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Equipo de trabajo ilimitado</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Gestión Anual</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Capacitación Anual</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Acciones Correctivas</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Accidentes + Informe IA</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Matriz de Riesgos</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Extintores + PDF</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Eléctrico + PDF</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Constancias de Visita</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Avisos de Riesgo</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Check list personalizados</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Legajo técnico online</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Portal de clientes</li>
+                    </ul>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedPlan('libre');
+                      setShowPlanModal(false);
+                    }}
+                    className={`w-full py-2.5 rounded-xl mt-6 text-xs font-bold transition-all ${selectedPlan === 'libre' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-[#468DFF] hover:bg-[#0511F2] text-white cursor-pointer'}`}
+                  >
+                    {selectedPlan === 'libre' ? 'Seleccionado' : 'Elegir'}
+                  </button>
+                </div>
 
             </div>
           </div>
         </div>
+      </div>
       )}
 
       {/* Diálogos accesibles Radix */}
