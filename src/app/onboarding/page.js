@@ -202,6 +202,34 @@ export default function OnboardingPage() {
 
     // 1. Verificar sesión inmediata
     const initFetch = async () => {
+      // Si la URL contiene el parámetro 'code', intentamos intercambiarlo en el cliente como fallback
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      if (code) {
+        try {
+          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          if (exchangeError) {
+            console.error('[Onboarding Client Fallback Error]:', exchangeError.message);
+          }
+        } catch (err) {
+          console.error('[Onboarding Client Fallback Exception]:', err);
+        }
+      }
+
+      // Si la URL contiene el parámetro 'token_hash' (flujo verify OTP), también lo procesamos como fallback
+      const tokenHash = urlParams.get('token_hash');
+      const type = urlParams.get('type');
+      if (tokenHash && type) {
+        try {
+          const { error: verifyError } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
+          if (verifyError) {
+            console.error('[Onboarding Client verifyOtp Error]:', verifyError.message);
+          }
+        } catch (err) {
+          console.error('[Onboarding Client verifyOtp Exception]:', err);
+        }
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         checkSession(user);
@@ -214,7 +242,7 @@ export default function OnboardingPage() {
         
         redirectTimeout = setTimeout(async () => {
           const { data: { user: delayedUser } } = await supabase.auth.getUser();
-          if (!delayedUser && !isDev) {
+          if (!delayedUser && !isDevMode) {
             window.location.href = '/login';
           } else if (delayedUser) {
             checkSession(delayedUser);

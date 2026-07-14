@@ -24,9 +24,46 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('placeholder')) {
+    const isDev = !supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('placeholder');
+    if (isDev) {
       setIsDevMode(true);
     }
+
+    const exchangeCode = async () => {
+      if (isDev) return;
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      if (code) {
+        try {
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) {
+            console.error('[Reset Password Client Fallback Error]:', error.message);
+            setError('El enlace de restablecimiento es inválido o ha expirado. Por favor, solicite uno nuevo.');
+            setShowErrorModal(true);
+          }
+        } catch (err) {
+          console.error('[Reset Password Client Fallback Exception]:', err);
+        }
+      }
+
+      // Soporte para verifyOtp con token_hash para flujo de recuperación (recovery)
+      const tokenHash = urlParams.get('token_hash');
+      const type = urlParams.get('type');
+      if (tokenHash && type === 'recovery') {
+        try {
+          const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
+          if (error) {
+            console.error('[Reset Password Client verifyOtp Error]:', error.message);
+            setError('El enlace de restablecimiento es inválido o ha expirado. Por favor, solicite uno nuevo.');
+            setShowErrorModal(true);
+          }
+        } catch (err) {
+          console.error('[Reset Password Client verifyOtp Exception]:', err);
+        }
+      }
+    };
+
+    exchangeCode();
   }, []);
 
   const handleReset = async (e) => {

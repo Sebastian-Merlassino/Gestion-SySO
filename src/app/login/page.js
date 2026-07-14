@@ -198,7 +198,7 @@ export default function LoginPage() {
 
       try {
         const { error: resetErr } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-          redirectTo: `${window.location.origin}/reset-password`,
+          redirectTo: `${window.location.origin}/api/auth/callback?next=/reset-password`,
         });
 
         if (resetErr) throw resetErr;
@@ -242,7 +242,7 @@ export default function LoginPage() {
 
         // 2. Disparar el flujo de reset de contraseña
         const { error: resetErr } = await supabase.auth.resetPasswordForEmail(clientEmail, {
-          redirectTo: `${window.location.origin}/reset-password`,
+          redirectTo: `${window.location.origin}/api/auth/callback?next=/reset-password`,
         });
 
         if (resetErr) throw resetErr;

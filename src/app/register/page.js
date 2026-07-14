@@ -74,7 +74,7 @@ export default function RegisterPage() {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/onboarding`,
+          emailRedirectTo: `${window.location.origin}/api/auth/callback?next=/onboarding`,
           data: {
             full_name: fullName,
             role: 'admin', // El primer usuario registrado es el administrador/dueño del workspace

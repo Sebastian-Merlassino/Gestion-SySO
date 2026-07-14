@@ -1,5 +1,34 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-14] Hotfix: Solución al Flujo de Confirmación de Cuenta y Restablecimiento de Contraseña
+
+### Resumen de Cambios
+- **Endpoint de Callback de Autenticación**: Creación de la ruta de API [route.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/api/auth/callback/route.js) que intercepta el código de autorización (`code`) del flujo PKCE y lo intercambia en el servidor por una sesión de Supabase Auth estableciendo las cookies del navegador necesarias.
+- **Excepción en Middleware**: Modificado [middleware.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/middleware.js) para eximir al callback `/api/auth/callback` del control de sesión obligatoria, evitando bloqueos tempranos (HTTP 401).
+- **Modificación de Redirecciones**:
+  - Actualizado [page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/register/page.js) de Registro para enviar `emailRedirectTo` apuntando al callback con query parameter `next=/onboarding`.
+  - Actualizado [page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/login/page.js) de Recuperación de contraseña para configurar `redirectTo` apuntando al callback con `next=/reset-password` en los flujos de administrador y cliente (CUIT).
+- **Fallbacks en Cliente para Compatibilidad Histórica**:
+  - En [page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/onboarding/page.js), se añadió intercambio local de `code` y verificación de `token_hash` OTP, junto al ajuste del timeout para prevenir redirecciones falsas a `/login` si el usuario se autenticó.
+  - En [page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/reset-password/page.js), se añadió intercambio local de `code` y validación de `token_hash` para el flujo de recuperación de contraseña directa en cliente.
+
+### Decisiones Clave
+- Seguir el estándar SSR recomendado de Supabase e intercambiar tokens PKCE del lado del servidor para garantizar persistencia robusta de cookies.
+- Incorporar fallbacks en el cliente para enlaces antiguos o manuales que apunten directamente a las páginas de onboarding o cambio de contraseña sin pasar por el callback.
+
+### Archivos Modificados / Creados
+- `[NEW] src/app/api/auth/callback/route.js`
+- `[MODIFY] src/middleware.js`
+- `[MODIFY] src/app/register/page.js`
+- `[MODIFY] src/app/login/page.js`
+- `[MODIFY] src/app/onboarding/page.js`
+- `[MODIFY] src/app/reset-password/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción local de Next.js (`npm run build`) exitosa.
+
+---
+
 ## [2026-07-14] Hotfix: Robustez de Protección CSRF en Middleware para login-cuit
 
 ### Resumen de Cambios

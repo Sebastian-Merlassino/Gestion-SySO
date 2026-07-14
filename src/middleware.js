@@ -174,6 +174,7 @@ export async function middleware(request) {
     pathname === '/privacidad' ||
     pathname === '/cookies' ||
     pathname === '/api/auth/login-cuit' ||
+    pathname === '/api/auth/callback' ||
     pathname === '/api/webhooks/mercadopago' ||
     pathname.startsWith('/_next/') ||
     pathname.includes('.') || // archivos estáticos en public/
