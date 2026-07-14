@@ -1,5 +1,30 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-14] Hotfix: Homologación Estética del Perfil en Onboarding con el Perfil Interno de la App
+
+### Resumen de Cambios
+- **Ajuste de Cabecera y Mensaje**: Modificado el texto descriptivo del header en [page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/onboarding/page.js) a: `"Ingresá tus datos para dar de alta tu perfil o consultora en la plataforma"`.
+- **Integración de Subsecciones**: Se unificaron las subsecciones de **Matrículas Profesionales** y **Firma Digital** dentro de la tarjeta de **Información del Usuario** (Sección 1), imitando la misma estructura anidada del perfil interno.
+- **Campos de Fecha con Selector y Máscara**:
+  - Implementada la máscara de fecha `DD/MM/YYYY` (usando `formatAsDateInput`) en el input de nacimiento y vencimiento de matrículas.
+  - Añadido el componente selector interactivo con icono `Calendar` absoluto que levanta el selector de fecha oculto de HTML, formateando la selección automáticamente.
+- **Homologación de Estilos e Inputs**: Rediseñados todos los inputs, etiquetas, cajas (`rounded-2xl p-5 md:p-6 shadow-sm space-y-5`) y selects geográficos con las clases compactas y de marca (`border-slate-200`, `bg-slate-50/50`, `px-3.5 py-2 text-sm`) del perfil.
+- **Unificación de Botones y Modal de Planes**:
+  - Reestructurado el layout de planes a la sección **Plan Suscrito** con las mismas descripciones y diseño de costo.
+  - Unificados los botones de Guardar, Salir y Agregar Matrícula para usar el mismo hover, padding y efecto de click (`active:scale-[0.98] cursor-pointer`) del panel interno.
+
+### Decisiones Clave
+- Brindar una experiencia de onboarding consistente con la aplicación privada, disminuyendo la fricción visual y cognitiva del nuevo usuario al ingresar por primera vez.
+- Conservar el formulario en un contenedor centrado `max-w-4xl` al estar deslogueado del layout de `Sidebar`, asegurando simetría visual.
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/onboarding/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción local de Next.js (`npm run build`) exitosa.
+
+---
+
 ## [2026-07-14] Hotfix: Solución al Flujo de Confirmación de Cuenta y Restablecimiento de Contraseña
 
 ### Resumen de Cambios

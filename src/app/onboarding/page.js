@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import { supabase, fetchAllGeography } from '@/lib/supabase';
+import { formatDate, formatAsDateInput, convertToDbDate, getEffectivePlan, PLAN_FEATURES } from '@/lib/utils';
 import AppCard from '@/components/ui/AppCard';
 import AppInput from '@/components/ui/AppInput';
 import AppSelect from '@/components/ui/AppSelect';
@@ -949,7 +950,7 @@ export default function OnboardingPage() {
       <div className="absolute top-[-10%] left-[-20%] w-[600px] h-[600px] rounded-full bg-[#468DFF]/5 blur-[150px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-20%] w-[600px] h-[600px] rounded-full bg-[#0511F2]/5 blur-[150px] pointer-events-none" />
 
-      <div className="w-full max-w-3xl z-10 py-12 px-4">
+      <div className="w-full max-w-4xl z-10 py-12 px-4">
         
         {/* Header */}
         <div className="text-center mb-8">
@@ -957,17 +958,17 @@ export default function OnboardingPage() {
             Perfil de usuario
           </h1>
           <p className="text-sm text-slate-600 mt-2 font-medium">
-            Ingresá tus datos para dar de alta tu consultorio o consultora en la plataforma
+            Ingresá tus datos para dar de alta tu perfil o consultora en la plataforma
           </p>
         </div>
 
         {/* Form Container */}
-        <form onSubmit={handleSaveData} className="space-y-8">
+        <form onSubmit={handleSaveData} className="space-y-6">
           
           {/* SECCIÓN 1: INFORMACIÓN DEL USUARIO */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm space-y-6">
-            <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
-              <User className="text-[#468DFF] h-5 w-5" />
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 md:p-6 shadow-sm space-y-5">
+            <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 flex items-center gap-2 uppercase tracking-wider">
+              <User className="text-[#468DFF] h-4 w-4" />
               Información del usuario
             </h3>
 
@@ -982,7 +983,8 @@ export default function OnboardingPage() {
                   placeholder="Juan Pérez"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all"
+                  autoComplete="off"
+                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                 />
               </div>
 
@@ -997,10 +999,9 @@ export default function OnboardingPage() {
                   <input
                     type="email"
                     required
-                    placeholder="juan.perez@empresa.com"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-slate-100 border border-slate-200 rounded-xl py-3 pl-10 pr-4 text-slate-500 cursor-not-allowed focus:outline-none"
+                    autoComplete="username"
+                    className="w-full border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-sm bg-slate-100 text-slate-500 outline-none cursor-not-allowed focus:outline-none"
                     disabled
                   />
                 </div>
@@ -1012,39 +1013,33 @@ export default function OnboardingPage() {
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                   CUIT <span className="text-[#468DFF]">*</span>
                 </label>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                    <Hash className="h-4 w-4" />
-                  </span>
-                  <input
-                    type="text"
-                    required
-                    placeholder="20123456789"
-                    value={cuit}
-                    onChange={handleCuitChange}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-slate-800 focus:outline-none transition-all"
-                  />
-                </div>
-                {cuitError && <p className="text-[10px] text-red-500 font-bold mt-1.5">{cuitError}</p>}
+                <input
+                  type="text"
+                  required
+                  placeholder="20123456789"
+                  value={cuit}
+                  onChange={handleCuitChange}
+                  autoComplete="off"
+                  className={`w-full border ${cuitError ? 'border-red-400 focus:border-red-500' : 'border-slate-200 focus:border-[#468DFF]'} rounded-xl px-3.5 py-2 text-sm focus:outline-none bg-slate-50/50 transition-all text-slate-700`}
+                />
+                {cuitError && (
+                  <span className="text-[10px] text-red-600 mt-1 block font-semibold">{cuitError}</span>
+                )}
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                  Teléfono Móvil <span className="text-[#468DFF]">*</span>
+                  Teléfono <span className="text-[#468DFF]">*</span>
                 </label>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                    <Phone className="h-4 w-4" />
-                  </span>
-                  <input
-                    type="tel"
-                    required
-                    placeholder="1123456789"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-slate-800 focus:outline-none transition-all"
-                  />
-                </div>
+                <input
+                  type="text"
+                  required
+                  placeholder="1123456789"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
+                  autoComplete="off"
+                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
+                />
               </div>
 
               <div>
@@ -1052,16 +1047,31 @@ export default function OnboardingPage() {
                   Fecha de Nacimiento <span className="text-[#468DFF]">*</span>
                 </label>
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                    <Calendar className="h-4 w-4" />
-                  </span>
                   <input
-                    type="date"
+                    type="text"
                     required
+                    placeholder="DD/MM/YYYY"
+                    maxLength={10}
                     value={birthDate}
-                    onChange={(e) => setBirthDate(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-slate-800 focus:outline-none transition-all"
+                    onChange={(e) => setBirthDate(formatAsDateInput(e.target.value))}
+                    className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono text-slate-700"
                   />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center" onClick={(e) => e.stopPropagation()}>
+                    <Calendar className="h-4 w-4" />
+                    <input
+                      type="date"
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val) {
+                          const parts = val.split('-');
+                          if (parts.length === 3) {
+                            setBirthDate(`${parts[2]}/${parts[1]}/${parts[0]}`);
+                          }
+                        }
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -1079,11 +1089,13 @@ export default function OnboardingPage() {
                     setPartido('');
                     setLocalidad('');
                   }}
-                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all"
+                  className="w-full max-w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 cursor-pointer"
                 >
                   <option value="" disabled>Selecciona una provincia</option>
                   {PROVINCIAS_ARGENTINAS.map((prov) => (
-                    <option key={prov} value={prov}>{prov}</option>
+                    <option key={prov} value={prov}>
+                      {prov}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -1094,19 +1106,19 @@ export default function OnboardingPage() {
                 </label>
                 <select
                   required
-                  disabled={!provincia}
+                  disabled={!provincia || partidosList.length === 0}
                   value={partido}
                   onChange={(e) => {
                     setPartido(e.target.value);
                     setLocalidad('');
                   }}
-                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all disabled:opacity-50"
+                  className="w-full max-w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 cursor-pointer disabled:opacity-50"
                 >
-                  <option value="" disabled>
-                    {!provincia ? 'Selecciona una provincia primero' : 'Selecciona un partido'}
-                  </option>
-                  {partidosList.map((part) => (
-                    <option key={part} value={part}>{part}</option>
+                  <option value="" disabled>{!provincia ? 'Primero selecciona una provincia' : 'Selecciona un partido'}</option>
+                  {partidosList.map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -1116,200 +1128,225 @@ export default function OnboardingPage() {
                   Localidad (Opcional)
                 </label>
                 <select
-                  disabled={!partido}
+                  disabled={!partido || localidadesList.length === 0}
                   value={localidad}
                   onChange={(e) => setLocalidad(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all disabled:opacity-50"
+                  className="w-full max-w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 cursor-pointer disabled:opacity-50"
                 >
                   <option value="">
-                    {!partido ? 'Selecciona un partido primero' : 'Selecciona una localidad (opcional)'}
+                    {!partido ? 'Primero selecciona un partido' : 'Selecciona una localidad (opcional)'}
                   </option>
                   {localidadesList.map((loc) => (
-                    <option key={loc} value={loc}>{loc}</option>
+                    <option key={loc} value={loc}>
+                      {loc}
+                    </option>
                   ))}
                 </select>
               </div>
             </div>
-          </div>
 
-          {/* SECCIÓN 2: MATRÍCULAS PROFESIONALES (OPCIONAL) */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm space-y-6">
-            <div className="flex justify-between items-center border-b border-slate-200 pb-3">
-              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <Briefcase className="text-[#468DFF] h-5 w-5" />
-                Matrículas profesionales (opcional)
-              </h3>
-              <button
-                type="button"
-                onClick={handleAddMatricula}
-                className="py-1.5 px-3 rounded-lg border border-[#468DFF]/40 hover:bg-[#468DFF]/10 text-[#468DFF] font-semibold text-xs transition-all flex items-center gap-1.5 shadow-sm"
-              >
-                <PlusCircle className="h-3.5 w-3.5" />
-                Agregar Matrícula
-              </button>
-            </div>
+            {/* Matrículas Profesionales */}
+            <div className="pt-4 border-t border-slate-200 space-y-6">
+              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                <Briefcase className="h-4 w-4 text-[#468DFF]" />
+                Matrículas Profesionales
+              </h4>
 
-            {matriculas.length === 0 ? (
-              <p className="text-xs text-slate-400 italic">No has agregado ninguna matrícula aún.</p>
-            ) : (
-              <div className="space-y-8">
-                {matriculas.map((mat, idx) => (
-                  <div key={idx} className="p-6 border border-slate-200/80 rounded-xl bg-slate-50/50 space-y-6 relative hover:border-[#468DFF]/25 transition-all">
-                    <div className="flex justify-between items-center border-b border-slate-200 pb-2">
-                      <span className="text-xs font-bold text-[#468DFF] bg-[#468DFF]/10 px-2 py-0.5 rounded">
-                        Matrícula #{idx + 1}
-                      </span>
+              {matriculas.length === 0 ? (
+                <p className="text-xs text-slate-400 italic">No has agregado ninguna matrícula aún.</p>
+              ) : (
+                <div className="space-y-6">
+                  {matriculas.map((mat, index) => (
+                    <div key={index} className="p-6 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-6 relative hover:border-[#468DFF]/25 transition-all">
                       {matriculas.length > 1 && (
                         <button
                           type="button"
-                          onClick={() => handleRemoveMatricula(idx)}
-                          className="text-xs font-bold text-red-500 hover:text-red-700 flex items-center gap-1"
+                          onClick={() => handleRemoveMatricula(index)}
+                          className="absolute top-4 right-4 text-xs font-bold text-red-600 hover:text-red-800 flex items-center gap-1 bg-red-50 hover:bg-red-100 py-1.5 px-3 rounded-lg border border-red-200 transition-colors"
                         >
-                          <X className="h-3.5 w-3.5" /> Quitar
+                          <X className="h-3 w-3" />
+                          Eliminar Matrícula
                         </button>
                       )}
-                    </div>
 
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                        Colegio o Institución Emisora
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Ej: COPIME, CIPBA, Colegio de Ingenieros"
-                        value={mat.institucion}
-                        onChange={(e) => handleMatriculaChange(idx, 'institucion', e.target.value)}
-                        className="w-full bg-white border border-slate-300 focus:border-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none"
-                      />
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                          Número de Matrícula
+                          Colegio o Institución Emisora
                         </label>
                         <input
                           type="text"
-                          placeholder="Ej: 12345"
-                          value={mat.numero}
-                          onChange={(e) => handleMatriculaChange(idx, 'numero', e.target.value)}
-                          className="w-full bg-white border border-slate-300 focus:border-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none"
+                          placeholder="COPIME, CPSH..."
+                          value={mat.institucion}
+                          onChange={(e) => handleMatriculaChange(index, 'institucion', e.target.value)}
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                         />
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                          Fecha de Vencimiento
-                        </label>
-                        <div className="relative">
-                          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                            <Calendar className="h-4 w-4" />
-                          </span>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                            Número
+                          </label>
                           <input
-                            type="date"
-                            value={mat.vencimiento}
-                            onChange={(e) => handleMatriculaChange(idx, 'vencimiento', e.target.value)}
-                            className="w-full bg-white border border-slate-300 focus:border-[#468DFF] rounded-xl py-3 pl-10 pr-4 text-slate-800 focus:outline-none"
+                            type="text"
+                            placeholder="L000000"
+                            value={mat.numero}
+                            onChange={(e) => handleMatriculaChange(index, 'numero', e.target.value)}
+                            autoComplete="off"
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                           />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                            Vencimiento
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="text"
+                              placeholder="DD/MM/YYYY"
+                              maxLength={10}
+                              value={mat.vencimiento}
+                              onChange={(e) => handleMatriculaChange(index, 'vencimiento', formatAsDateInput(e.target.value))}
+                              className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono text-slate-700"
+                            />
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center" onClick={(e) => e.stopPropagation()}>
+                              <Calendar className="h-4 w-4" />
+                              <input
+                                type="date"
+                                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  if (val) {
+                                    const parts = val.split('-');
+                                    if (parts.length === 3) {
+                                      handleMatriculaChange(index, 'vencimiento', `${parts[2]}/${parts[1]}/${parts[0]}`);
+                                    }
+                                  }
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Uploads de la matrícula actual */}
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <div className="flex flex-col justify-center">
+                          <div className="w-full">
+                            <ImageUploadZone
+                              label={`Foto Frente Matrícula #${index + 1}`}
+                              preview={mat.fotoFrentePreview}
+                              onFileChange={(file) => handleMatriculaFileChange(index, 'fotoFrente', 'fotoFrentePreview', file)}
+                              onClear={() => handleMatriculaFileClear(index, 'Frente')}
+                              disabled={loading}
+                              maxSizeMB={5}
+                              onToast={triggerToast}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col justify-center">
+                          <div className="w-full">
+                            <ImageUploadZone
+                              label={`Foto Dorso Matrícula #${index + 1}`}
+                              preview={mat.fotoDorsoPreview}
+                              onFileChange={(file) => handleMatriculaFileChange(index, 'fotoDorso', 'fotoDorsoPreview', file)}
+                              onClear={() => handleMatriculaFileClear(index, 'Dorso')}
+                              disabled={loading}
+                              maxSizeMB={5}
+                              onToast={triggerToast}
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
+                  ))}
+                </div>
+              )}
 
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div className="flex flex-col justify-center">
-                        <div className="max-w-[280px] w-full mx-auto">
-                          <ImageUploadZone
-                            label="Foto Matrícula (Frente)"
-                            preview={mat.fotoFrentePreview}
-                            onFileChange={(file) => handleMatriculaFileChange(idx, 'fotoFrente', 'fotoFrentePreview', file)}
-                            onClear={() => handleMatriculaFileClear(idx, 'Frente')}
-                            disabled={loading}
-                            maxSizeMB={5}
-                            onToast={triggerToast}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col justify-center">
-                        <div className="max-w-[280px] w-full mx-auto">
-                          <ImageUploadZone
-                            label="Foto Matrícula (Dorso)"
-                            preview={mat.fotoDorsoPreview}
-                            onFileChange={(file) => handleMatriculaFileChange(idx, 'fotoDorso', 'fotoDorsoPreview', file)}
-                            onClear={() => handleMatriculaFileClear(idx, 'Dorso')}
-                            disabled={loading}
-                            maxSizeMB={5}
-                            onToast={triggerToast}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={handleAddMatricula}
+                  className="py-2.5 px-4 rounded-xl border border-[#468DFF]/40 hover:bg-[#468DFF] hover:text-white text-[#468DFF] font-bold text-xs transition-all flex items-center gap-2 active:scale-[0.98] cursor-pointer"
+                >
+                  <PlusCircle className="h-4 w-4" />
+                  Agregar otra matrícula
+                </button>
               </div>
-            )}
+            </div>
+
+            {/* Firma Digital (Separada de las matrículas en su propia subsección) */}
+            <div className="pt-5 border-t border-slate-100 space-y-4">
+              <h4 className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                <FileText className="h-4 w-4 text-[#468DFF]" />
+                Firma Digital
+              </h4>
+              <div className="grid md:grid-cols-3 gap-6">
+                <div className="md:col-span-1 flex flex-col justify-center">
+                  <div className="w-full">
+                    <ImageUploadZone
+                      label="Firma Digital (Imagen)"
+                      preview={fotoFirmaPreview}
+                      onFileChange={(file) => handleImageChange(file, setFotoFirma, setFotoFirmaPreview)}
+                      onClear={() => {
+                        setFotoFirma(null);
+                        setFotoFirmaPreview('');
+                      }}
+                      disabled={loading}
+                      maxSizeMB={5}
+                      onToast={triggerToast}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
 
-            {/* SECCIÓN 3: FIRMA DIGITALIZADA (OPCIONAL) */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm space-y-6">
-              <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
-                <Upload className="text-[#468DFF] h-5 w-5" />
-                Firma digitalizada (opcional)
-              </h3>
-              <p className="text-xs text-slate-500 leading-relaxed font-medium">
-                Subí tu firma digitalizada en formato JPG o PNG. Esta firma se utilizará para firmar automáticamente los reportes y documentos generados en la plataforma.
-              </p>
-              <div className="max-w-[320px] w-full">
-                <ImageUploadZone
-                  label="Firma Digitalizada (para reportes en PDF)"
-                  preview={fotoFirmaPreview}
-                  onFileChange={(file) => handleImageChange(file, setFotoFirma, setFotoFirmaPreview)}
-                  onClear={() => {
-                    setFotoFirma(null);
-                    setFotoFirmaPreview('');
-                  }}
-                  disabled={loading}
-                  maxSizeMB={5}
-                  onToast={triggerToast}
+          {/* SECCIÓN 2: IDENTIDAD DE LA EMPRESA */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 md:p-6 shadow-sm space-y-5">
+            <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 flex items-center gap-2 uppercase tracking-wider">
+              <Building className="text-[#468DFF] h-4 w-4" />
+              Identidad de la empresa
+            </h3>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                  Nombre Comercial de la Consultora
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej: Consultora Integral de SySO"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
+                />
+                <p className="text-[10px] text-slate-400 font-medium mt-1 leading-relaxed">
+                  Generará tu espacio de trabajo en: <strong>app.gestionsyso.com/{companySlug}</strong>
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                  Página Web de la Empresa
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://miweb.com"
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                 />
               </div>
             </div>
 
-          {/* SECCIÓN 4: IDENTIDAD DE MARCA (OPCIONAL) */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
-            <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
-              <Globe className="text-[#468DFF] h-5 w-5" />
-              Identidad de marca de la consultora (opcional)
-            </h3>
-
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-600 block mb-1">Nombre Comercial de la Consultora</label>
-              <input
-                type="text"
-                placeholder="Ej: Consultora Integral de SySO"
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] rounded-xl py-3 px-4 text-slate-800 focus:outline-none transition-all text-xs"
-              />
-              <p className="text-[10px] text-slate-400 font-medium mt-1 leading-relaxed">
-                Generará tu espacio de trabajo en: <strong>app.gestionsyso.com/{companySlug}</strong>
-              </p>
-            </div>
-
-            {/* Redes Sociales y Sitio Web */}
-            <div className="space-y-4 pt-4 border-t border-slate-100">
-              <span className="text-xs font-bold text-slate-800 block">Sitio Web y Redes Sociales</span>
-              <div className="grid md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Sitio Web</label>
-                  <input
-                    type="url"
-                    placeholder="https://consultora.com"
-                    value={website}
-                    onChange={(e) => setWebsite(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none"
-                  />
-                </div>
+            {/* Redes */}
+            <div className="space-y-4">
+              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Redes Sociales de la Empresa</h4>
+              
+              <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">LinkedIn</label>
                   <input
@@ -1317,7 +1354,7 @@ export default function OnboardingPage() {
                     placeholder="https://linkedin.com/in/usuario"
                     value={linkedin}
                     onChange={(e) => setLinkedin(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none"
+                    className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                   />
                 </div>
                 <div>
@@ -1327,9 +1364,12 @@ export default function OnboardingPage() {
                     placeholder="https://instagram.com/usuario"
                     value={instagram}
                     onChange={(e) => setInstagram(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none"
+                    className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                   />
                 </div>
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Facebook</label>
                   <input
@@ -1337,7 +1377,7 @@ export default function OnboardingPage() {
                     placeholder="https://facebook.com/usuario"
                     value={facebook}
                     onChange={(e) => setFacebook(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none"
+                    className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                   />
                 </div>
                 <div>
@@ -1347,7 +1387,7 @@ export default function OnboardingPage() {
                     placeholder="https://tiktok.com/@usuario"
                     value={tiktok}
                     onChange={(e) => setTiktok(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none"
+                    className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                   />
                 </div>
                 <div>
@@ -1357,16 +1397,16 @@ export default function OnboardingPage() {
                     placeholder="https://youtube.com/@canal"
                     value={youtube}
                     onChange={(e) => setYoutube(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 focus:border-[#468DFF] rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none"
+                    className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Carga de Logos */}
+            {/* Logos */}
             <div className="grid md:grid-cols-2 gap-6 pt-4">
               <div className="flex flex-col justify-center">
-                <div className="max-w-[320px] w-full mx-auto">
+                <div className="w-full">
                   <ImageUploadZone
                     label="Logo Principal (Logo 1)"
                     preview={logo1Preview}
@@ -1383,7 +1423,7 @@ export default function OnboardingPage() {
               </div>
 
               <div className="flex flex-col justify-center">
-                <div className="max-w-[320px] w-full mx-auto">
+                <div className="w-full">
                   <ImageUploadZone
                     label="Logo Secundario (Logo 2)"
                     preview={logo2Preview}
@@ -1401,38 +1441,28 @@ export default function OnboardingPage() {
             </div>
           </div>
 
-          {/* SECCIÓN 5: TIPO DE PLAN */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-sm space-y-6">
-            <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
-              <Award className="text-[#468DFF] h-5 w-5" />
-              Tipo de plan
+          {/* SECCIÓN 3: PLAN */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 md:p-6 shadow-sm space-y-5">
+            <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 flex items-center gap-2 uppercase tracking-wider">
+              <Award className="text-[#468DFF] h-4 w-4" />
+              Plan Suscrito
             </h3>
 
-            <div className="relative rounded-2xl border border-blue-500/15 bg-gradient-to-br from-blue-50/50 via-slate-50 to-indigo-50/10 p-6 overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="relative rounded-2xl border border-[#468DFF]/15 bg-gradient-to-br from-blue-50/50 via-slate-50 to-indigo-50/10 p-6 overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-[#468DFF]/5 blur-xl pointer-events-none" />
               
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded-full bg-[#468DFF]/10 border border-[#468DFF]/20 text-[#468DFF] text-[10px] font-semibold uppercase tracking-wider">
-                    Suscripción Activa
-                  </span>
-                  {selectedPlan !== 'free' && (
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-[10px] font-semibold uppercase tracking-wider">
-                      Plan Elegido
-                    </span>
-                  )}
-                </div>
+                <span className="px-2 py-0.5 rounded-full bg-[#468DFF]/10 border border-[#468DFF]/20 text-[#468DFF] text-[10px] font-semibold uppercase tracking-wider">
+                  Plan Activo
+                </span>
                 <h4 className="font-outfit text-xl font-extrabold text-slate-900">
-                  {selectedPlan === 'free' && 'Plan Gratis Permanente'}
-                  {selectedPlan === 'basic_5' && 'Plan 5 Empresas'}
-                  {selectedPlan === 'standard_25' && 'Plan 25 Empresas'}
-                  {selectedPlan === 'libre' && 'Plan Libre (Ilimitado)'}
+                  {PLAN_FEATURES[selectedPlan]?.name || (selectedPlan === 'free' ? 'Plan Gratis Permanente' : selectedPlan)}
                 </h4>
-                <p className="text-xs text-slate-600 max-w-md font-medium leading-relaxed">
-                  {selectedPlan === 'free' && 'Probá la plataforma cargando hasta 1 empresa cliente en tu base de datos, sin límite de tiempo.'}
-                  {selectedPlan === 'basic_5' && 'Gestioná hasta 5 empresas clientes en simultáneo con todas las herramientas de la plataforma.'}
-                  {selectedPlan === 'standard_25' && 'Para consultoras con carteras medianas, hasta 25 empresas clientes activas.'}
-                  {selectedPlan === 'libre' && 'Empresas y clientes ilimitados, con branding y configuraciones de auditoría personalizadas.'}
+                <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                  {selectedPlan === 'free' && 'Límite de hasta 1 empresa cliente en base de datos, sin vencimiento de prueba.'}
+                  {selectedPlan === 'basic_5' && 'Límite de hasta 5 empresas clientes y 5 miembros de equipo.'}
+                  {selectedPlan === 'standard_25' && 'Límite de hasta 25 empresas clientes y 25 miembros de equipo.'}
+                  {selectedPlan === 'libre' && 'Soporte ilimitado de empresas, inspectores y marca personal.'}
                 </p>
               </div>
 
@@ -1440,31 +1470,28 @@ export default function OnboardingPage() {
                 <div className="text-right">
                   <span className="text-[10px] text-slate-500 block">Costo mensual</span>
                   <span className="font-outfit text-2xl font-extrabold text-[#468DFF]">
-                    {selectedPlan === 'free' && '$0'}
-                    {selectedPlan === 'basic_5' && '$3.500'}
-                    {selectedPlan === 'standard_25' && '$7.500'}
-                    {selectedPlan === 'libre' && '$12.000'}
+                    {selectedPlan === 'free' ? '$0' : `$${(PLAN_FEATURES[selectedPlan]?.price || 0).toLocaleString()}`}
                   </span>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowPlanModal(true)}
-                  className="py-2.5 px-4 rounded-xl border border-[#468DFF]/40 hover:bg-[#468DFF]/10 text-[#468DFF] font-semibold text-xs transition-all flex items-center justify-center gap-2 shadow-sm"
+                  className="py-2.5 px-4 rounded-xl border border-[#468DFF]/40 hover:bg-[#468DFF]/5 text-[#468DFF] font-semibold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Sparkles className="h-3.5 w-3.5" />
-                  Contratar / Subir Plan
+                  Cambiar / Subir Plan
                 </button>
               </div>
             </div>
           </div>
 
           {/* Form Actions */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between pt-4 gap-4 border-t border-slate-300 pt-6">
+          <div className="flex justify-between items-center pt-6 border-t border-slate-100">
             <button
               type="button"
               disabled={loading}
               onClick={handleExitWithoutSaving}
-              className="py-3 px-6 rounded-xl bg-white border border-[#468DFF] text-[#468DFF] hover:bg-[#468DFF] hover:text-[#FFFFFF] hover:border-[#FFFFFF] font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50"
+              className="px-5 py-2.5 bg-[#FFFFFF] text-[#468DFF] border border-[#468DFF] rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-[#FFFFFF] hover:border-[#FFFFFF] transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50"
             >
               Salir
             </button>
@@ -1472,7 +1499,7 @@ export default function OnboardingPage() {
             <button
               type="submit"
               disabled={loading}
-              className="py-4 px-10 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white font-bold text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/10 active:scale-[0.98] disabled:opacity-50"
+              className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
             >
               {loading ? (
                 <>
