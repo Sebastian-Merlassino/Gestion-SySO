@@ -48,11 +48,16 @@ function verifySignature(req, body, secret) {
   hmac.update(manifest);
   const generatedSignature = hmac.digest('hex');
 
-  // 5. Comparar firmas de forma segura contra tiempos de respuesta
-  return crypto.timingSafeEqual(
-    Buffer.from(generatedSignature, 'utf-8'),
-    Buffer.from(v1, 'utf-8')
-  );
+  // 5. Comparar firmas de forma segura contra tiempos de respuesta (MED-01)
+  const generatedBuffer = Buffer.from(generatedSignature, 'utf-8');
+  const v1Buffer = Buffer.from(v1 || '', 'utf-8');
+
+  if (generatedBuffer.length !== v1Buffer.length) {
+    console.warn('[Webhook MP] Mismatch de longitud en firmas. Rechazando webhook.');
+    return false;
+  }
+
+  return crypto.timingSafeEqual(generatedBuffer, v1Buffer);
 }
 
 export async function POST(request) {

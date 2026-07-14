@@ -55,8 +55,8 @@ VALUES
   ('documents', 'documents', false)
 ON CONFLICT (id) DO NOTHING;
 
--- Habilitar RLS en storage.objects
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+-- Habilitar RLS en storage.objects (Comentado para evitar error de propiedad de tabla en local)
+-- ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
 
 -- =======================================================
 -- POLÍTICAS DE ACCESO PARA STORAGE (MULTITENANT & USER SAFE)

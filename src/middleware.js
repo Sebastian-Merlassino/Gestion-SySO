@@ -91,6 +91,15 @@ export async function middleware(request) {
     const referer = request.headers.get('referer');
     const appUrl = process.env.APP_URL;
 
+    // En producción/staging, exigir que APP_URL esté configurada (MED-02)
+    if (!appUrl && process.env.NODE_ENV !== 'development') {
+      console.error('[CSRF Error] APP_URL no configurada en variables de entorno.');
+      return withRateLimit(NextResponse.json(
+        { error: 'Error de configuración de seguridad en el servidor.' },
+        { status: 500 }
+      ));
+    }
+
     let isMatch = false;
     if (appUrl) {
       try {

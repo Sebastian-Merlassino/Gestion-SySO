@@ -123,53 +123,52 @@ export async function POST(request) {
       }
     });
 
-    // Check if user already exists in profiles
+    // Check if user already exists in profiles (LOW-01)
     const { data: existingProfile } = await adminClient
       .from('profiles')
       .select('id')
       .eq('email', email)
       .maybeSingle();
 
-    let userId = '';
-
     if (existingProfile) {
-      userId = existingProfile.id;
-    } else {
-      // Create user in auth.users
-      const { data: newUserData, error: createError } = await adminClient.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true, // Auto-confirm email to bypass confirmation email flow
-        user_metadata: {
-          full_name,
-          role: role || 'miembro',
-          cuit,
-          tenant_id: profile.tenant_id
-        }
-      });
-
-      if (createError) {
-        return NextResponse.json({ error: createError.message }, { status: 400 });
-      }
-
-      userId = newUserData.user.id;
+      return NextResponse.json(
+        { error: 'La dirección de correo electrónico ya se encuentra registrada en la plataforma.' },
+        { status: 400 }
+      );
     }
 
-    // Update the profile manually to link to the same tenant & set role ONLY IF it's a new user
-    if (!existingProfile) {
-      const { error: updateProfileError } = await adminClient
-        .from('profiles')
-        .update({ 
-          tenant_id: profile.tenant_id,
-          role: role || 'miembro'
-        })
-        .eq('id', userId);
-
-      if (updateProfileError) {
-        // Cleanup the user if profile linking failed
-        await adminClient.auth.admin.deleteUser(userId);
-        return NextResponse.json({ error: `Error enlazando perfil: ${updateProfileError.message}` }, { status: 400 });
+    // Create user in auth.users
+    const { data: newUserData, error: createError } = await adminClient.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true, // Auto-confirm email to bypass confirmation email flow
+      user_metadata: {
+        full_name,
+        role: role || 'miembro',
+        cuit,
+        tenant_id: profile.tenant_id
       }
+    });
+
+    if (createError) {
+      return NextResponse.json({ error: createError.message }, { status: 400 });
+    }
+
+    const userId = newUserData.user.id;
+
+    // Update the profile manually to link to the same tenant & set role
+    const { error: updateProfileError } = await adminClient
+      .from('profiles')
+      .update({ 
+        tenant_id: profile.tenant_id,
+        role: role || 'miembro'
+      })
+      .eq('id', userId);
+
+    if (updateProfileError) {
+      // Cleanup the user if profile linking failed
+      await adminClient.auth.admin.deleteUser(userId);
+      return NextResponse.json({ error: `Error enlazando perfil: ${updateProfileError.message}` }, { status: 400 });
     }
 
     return NextResponse.json({ success: true, userId });

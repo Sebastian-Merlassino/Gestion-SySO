@@ -119,6 +119,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- 5.1 Tabla: empresas
 DROP POLICY IF EXISTS empresas_tenant_isolation ON public.empresas;
+DROP POLICY IF EXISTS empresas_tenant_select ON public.empresas;
 DROP POLICY IF EXISTS empresas_tenant_insert ON public.empresas;
 DROP POLICY IF EXISTS empresas_tenant_update ON public.empresas;
 DROP POLICY IF EXISTS empresas_tenant_delete ON public.empresas;
@@ -143,6 +144,7 @@ CREATE POLICY empresas_tenant_delete ON public.empresas
 
 -- 5.2 Tabla: establecimientos
 DROP POLICY IF EXISTS establecimientos_tenant_isolation ON public.establecimientos;
+DROP POLICY IF EXISTS establecimientos_tenant_select ON public.establecimientos;
 DROP POLICY IF EXISTS establecimientos_tenant_insert ON public.establecimientos;
 DROP POLICY IF EXISTS establecimientos_tenant_update ON public.establecimientos;
 DROP POLICY IF EXISTS establecimientos_tenant_delete ON public.establecimientos;
@@ -167,6 +169,7 @@ CREATE POLICY establecimientos_tenant_delete ON public.establecimientos
 
 -- 5.3 Tabla: programa_anual
 DROP POLICY IF EXISTS programa_anual_tenant_isolation ON public.programa_anual;
+DROP POLICY IF EXISTS programa_anual_tenant_select ON public.programa_anual;
 DROP POLICY IF EXISTS programa_anual_tenant_insert ON public.programa_anual;
 DROP POLICY IF EXISTS programa_anual_tenant_update ON public.programa_anual;
 DROP POLICY IF EXISTS programa_anual_tenant_delete ON public.programa_anual;
@@ -191,6 +194,7 @@ CREATE POLICY programa_anual_tenant_delete ON public.programa_anual
 
 -- 5.4 Tabla: programa_capacitacion
 DROP POLICY IF EXISTS programa_capacitacion_tenant_isolation ON public.programa_capacitacion;
+DROP POLICY IF EXISTS programa_capacitacion_tenant_select ON public.programa_capacitacion;
 DROP POLICY IF EXISTS programa_capacitacion_tenant_insert ON public.programa_capacitacion;
 DROP POLICY IF EXISTS programa_capacitacion_tenant_update ON public.programa_capacitacion;
 DROP POLICY IF EXISTS programa_capacitacion_tenant_delete ON public.programa_capacitacion;
@@ -215,6 +219,7 @@ CREATE POLICY programa_capacitacion_tenant_delete ON public.programa_capacitacio
 
 -- 5.5 Tabla: acciones_correctivas
 DROP POLICY IF EXISTS acciones_correctivas_tenant_isolation ON public.acciones_correctivas;
+DROP POLICY IF EXISTS acciones_correctivas_tenant_select ON public.acciones_correctivas;
 DROP POLICY IF EXISTS acciones_correctivas_tenant_insert ON public.acciones_correctivas;
 DROP POLICY IF EXISTS acciones_correctivas_tenant_update ON public.acciones_correctivas;
 DROP POLICY IF EXISTS acciones_correctivas_tenant_delete ON public.acciones_correctivas;
@@ -239,6 +244,7 @@ CREATE POLICY acciones_correctivas_tenant_delete ON public.acciones_correctivas
 
 -- 5.6 Tabla: extintores
 DROP POLICY IF EXISTS extintores_tenant_isolation ON public.extintores;
+DROP POLICY IF EXISTS extintores_tenant_select ON public.extintores;
 DROP POLICY IF EXISTS extintores_tenant_insert ON public.extintores;
 DROP POLICY IF EXISTS extintores_tenant_update ON public.extintores;
 DROP POLICY IF EXISTS extintores_tenant_delete ON public.extintores;
@@ -263,6 +269,7 @@ CREATE POLICY extintores_tenant_delete ON public.extintores
 
 -- 5.7 Tabla: visitas
 DROP POLICY IF EXISTS visitas_tenant_isolation ON public.visitas;
+DROP POLICY IF EXISTS visitas_tenant_select ON public.visitas;
 DROP POLICY IF EXISTS visitas_tenant_insert ON public.visitas;
 DROP POLICY IF EXISTS visitas_tenant_update ON public.visitas;
 DROP POLICY IF EXISTS visitas_tenant_delete ON public.visitas;

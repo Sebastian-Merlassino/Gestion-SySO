@@ -55,3 +55,8 @@ temp/
 # Base de datos / Diseño
 Tablas/
 tablas/
+
+# Supabase temporales e internos
+supabase/.branches/
+supabase/.temp/
+

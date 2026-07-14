@@ -30,6 +30,13 @@ async function runTests() {
   try {
     await client.connect();
     console.log('Conectado a la base de datos local para pruebas de seguridad...');
+    // Asegurar privilegios de tabla para que se evalúe RLS en lugar de fallar por falta de GRANTs
+    await client.query(`
+      GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+      GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+      GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+      ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
+    `);
   } catch (e) {
     console.error('Error al conectar con la base de datos local:', e.message);
     console.error('Asegúrate de tener Supabase local corriendo (supabase start).');
@@ -134,6 +141,68 @@ async function runTests() {
   } catch (err) {
     await client.query('ROLLBACK;').catch(() => {});
     console.error('❌ [FAIL] Test 4 falló:', err.message);
+    failed = true;
+  }
+
+  // Test 5: Prevención de IDOR (Cambio de empresa_id en profiles) (MED-03 / CRIT-01)
+  try {
+    console.log('\nTest 5: Verificando bloqueo de cambio de empresa_id propio (IDOR)...');
+    await client.query('BEGIN;');
+    // María Rodríguez
+    await client.query("SET LOCAL request.jwt.claim.sub = 'f3b92f7b-90f1-4db8-b4b3-d6c579198642';");
+    await client.query("SET LOCAL role = 'authenticated';");
+
+    let idorFailed = false;
+    try {
+      await client.query("UPDATE public.profiles SET empresa_id = '00000000-0000-0000-0000-000000000000' WHERE id = 'f3b92f7b-90f1-4db8-b4b3-d6c579198642';");
+    } catch (e) {
+      idorFailed = true;
+      console.log('   (Error esperado capturado):', e.message);
+    }
+    await client.query('ROLLBACK;');
+
+    if (!idorFailed) {
+      throw new Error('El usuario pudo actualizar su propio empresa_id.');
+    }
+    console.log('👉 [OK] Modificación de empresa_id propio bloqueada exitosamente.');
+  } catch (err) {
+    await client.query('ROLLBACK;').catch(() => {});
+    console.error('❌ [FAIL] Test 5 falló:', err.message);
+    failed = true;
+  }
+
+  // Test 6: Bloqueo de eliminación de cuenta con plan comercial activo (MED-03)
+  try {
+    console.log('\nTest 6: Verificando bloqueo de auto-eliminación con plan de pago activo...');
+    await client.query('BEGIN;');
+    
+    // Simular rol service_role para el superusuario para omitir triggers de restricción de perfil
+    await client.query("SET LOCAL request.jwt.claim.role = 'service_role';");
+    
+    // Superusuario: configurar el rol como admin y el plan como activo
+    await client.query("UPDATE public.profiles SET role = 'admin' WHERE id = 'd290f1ee-6c54-4b01-90e6-d701748f0851';");
+    await client.query("UPDATE public.tenants SET plan_id = 'standard_25', plan_ends_at = now() + interval '10 days' WHERE id = '4a946b5d-ea82-411a-8bb7-eb1ffb2f567b';");
+    
+    // Cambiar a contexto de usuario
+    await client.query("SET LOCAL request.jwt.claim.sub = 'd290f1ee-6c54-4b01-90e6-d701748f0851';");
+    await client.query("SET LOCAL role = 'authenticated';");
+
+    let deleteFailed = false;
+    try {
+      await client.query("SELECT public.delete_own_account();");
+    } catch (e) {
+      deleteFailed = true;
+      console.log('   (Error esperado capturado):', e.message);
+    }
+    await client.query('ROLLBACK;');
+
+    if (!deleteFailed) {
+      throw new Error('Se pudo eliminar la cuenta de un tenant con suscripción activa.');
+    }
+    console.log('👉 [OK] Eliminación bloqueada debido a suscripción activa.');
+  } catch (err) {
+    await client.query('ROLLBACK;').catch(() => {});
+    console.error('❌ [FAIL] Test 6 falló:', err.message);
     failed = true;
   }
 

@@ -1,5 +1,56 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-14] Cierre de Remediación Integral de Seguridad y Validación RLS
+
+### Resumen de Cambios
+- **Bloqueo de IDOR en profiles**: Se implementó una política y trigger de bloqueo en base de datos para impedir que los usuarios cambien su `empresa_id` desde el cliente.
+- **Remoción de RPC obsoleta**: Se eliminó la función insegura `get_email_by_cuit` de base de datos.
+- **Sanitización de correos**: Se escaparon variables HTML dinámicas en el envío de mails de Nodemailer para mitigar inyecciones HTML/XSS.
+- **Verificación robusta de firmas**: Se añadieron comprobaciones de longitud en la comparación de firmas criptográficas en webhooks de Mercado Pago para prevenir fallos por excepción de tipos (TypeError).
+- **Protección CSRF Middleware**: Se obligó a que la cabecera `APP_URL` esté configurada en staging/producción para evitar bypasses de CSRF.
+- **Restricción de auto-eliminación de cuentas**: Se bloqueó la auto-eliminación de tenants con planes comerciales activos de Mercado Pago.
+- **Política CSP**: Se configuraron las cabeceras CSP de manera estricta y compatible en `vercel.json`.
+- **Mitigación de enumeración de cuentas**: Se securizó el endpoint de creación de equipos para retornar 400 Bad Request si el correo ya está registrado, previniendo recolección de emails.
+- **Corrección de Migraciones**: Se solucionaron los fallos de dependencia circular local moviendo cronológicamente `granular_permissions.sql` después de la creación de todas sus tablas objetivo (ej: `visitas`, `extintores`, `programa_capacitacion`), y resolviendo duplicados de `DROP POLICY IF EXISTS` en el portal de clientes.
+- **Alineación de Seed**: Se corrigió el seed local `supabase/seed.sql` para que inserte usuarios a la tabla `auth.users` y use roles unificados (`miembro` en lugar de `inspector`/`supervisor`), posibilitando un inicio limpio con `supabase start`.
+
+### Decisiones Clave
+- Reubicación cronológica de archivos de migración conflictivos para solucionar el error de arranque de contenedores locales, evitando stubs de función que puedan quedar latentes en producción.
+- Corrección de bugs de RLS para el role `owner` que quedó obsoleto después de la unificación a `admin` en la base de datos local.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `supabase`
+- `supabase-postgres-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] supabase/migrations/20260609000000_add_user_onboarding_fields.sql`
+- `[MODIFY] supabase/migrations/20260703000000_client_portal_access.sql`
+- `[NEW] supabase/migrations/20260802000000_block_empresa_id_update.sql`
+- `[NEW] supabase/migrations/20260803000000_remove_get_email_by_cuit.sql`
+- `[NEW] supabase/migrations/20260804000000_prevent_active_billing_deletion.sql`
+- `[MODIFY] supabase/seed.sql`
+- `[MODIFY] src/app/api/send-email/route.js`
+- `[MODIFY] src/app/api/webhooks/mercadopago/route.js`
+- `[MODIFY] src/middleware.js`
+- `[MODIFY] vercel.json`
+- `[MODIFY] src/app/api/equipo/route.js`
+- `[MODIFY] scripts/test-security-rls.js`
+- `[RENAME] supabase/migrations/20260622185458_granular_permissions.sql` -> `supabase/migrations/20260630005000_granular_permissions.sql`
+
+### Validaciones Ejecutadas
+- Lanzamiento exitoso del motor Supabase en local con todos los seeds inicializados correctamente (`supabase start`).
+- Ejecución completa y exitosa de las 6 pruebas de seguridad RLS (`npm run test:security`) certificando aislamiento cross-tenant, prevención de escalamiento de privilegios, control de plan, mitigación de IDOR y bloqueo de auto-eliminación con suscripción activa.
+
+### Riesgos Detectados / Remanentes
+- Ninguno crítico remanente a nivel de base de datos o APIs principales de seguridad.
+
+### Próximo Paso Recomendado
+- Continuar con el desarrollo de features de negocio o integraciones de reportería en Staging y Producción, dado que el baseline de seguridad y RLS local se certifica exitoso.
+
+---
+
 ## [2026-07-13] Remediación de Seguridad Integral (SEC-008, SEC-009, SEC-010)
 
 ### Resumen de Cambios

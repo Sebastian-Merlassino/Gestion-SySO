@@ -76,6 +76,24 @@ export async function POST(request) {
     }
     const { emails, filePath, companyName, establishmentName, date, inspectorName, tenantLogoBase64, tenantName, documentType, checklistName } = parseResult.data;
 
+    // Sanitización HTML para evitar inyección en el correo (HIGH-02)
+    const escapeHtml = (str) => {
+      if (!str) return '';
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    };
+
+    const companyNameEscaped = escapeHtml(companyName);
+    const establishmentNameEscaped = escapeHtml(establishmentName);
+    const dateEscaped = escapeHtml(date);
+    const inspectorNameEscaped = escapeHtml(inspectorName);
+    const tenantNameEscaped = escapeHtml(tenantName);
+    const checklistNameEscaped = escapeHtml(checklistName);
+
     // Convert comma-separated string to array if necessary
     const emailList = Array.isArray(emails)
       ? emails
@@ -191,10 +209,10 @@ export async function POST(request) {
       <div style="font-family: 'Segoe UI', Inter, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1e293b; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px;">
         <div style="text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">
           ${logoCid
-            ? `<img src="cid:${logoCid}" alt="${tenantName || 'Logo'}" style="max-height: 72px; max-width: 240px; object-fit: contain; display: block; margin: 0 auto 8px auto;" />`
-            : `<h2 style="margin: 0 0 8px 0; font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.025em;">${tenantName || 'Gestión SySO'}</h2>`
+            ? `<img src="cid:${logoCid}" alt="${tenantNameEscaped || 'Logo'}" style="max-height: 72px; max-width: 240px; object-fit: contain; display: block; margin: 0 auto 8px auto;" />`
+            : `<h2 style="margin: 0 0 8px 0; font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.025em;">${tenantNameEscaped || 'Gestión SySO'}</h2>`
           }
-          <p style="margin: 0; font-size: 13px; font-weight: 600; color: #468DFF; text-transform: uppercase; letter-spacing: 0.05em;">${isAvisoRiesgo ? 'Aviso de Riesgo' : isControlElectrico ? 'Inspección Visual de Instalaciones Eléctricas' : isChecklistPersonalizado ? (checklistName || 'Checklist Personalizado') : 'Constancia de Visita'}</p>
+          <p style="margin: 0; font-size: 13px; font-weight: 600; color: #468DFF; text-transform: uppercase; letter-spacing: 0.05em;">${isAvisoRiesgo ? 'Aviso de Riesgo' : isControlElectrico ? 'Inspección Visual de Instalaciones Eléctricas' : isChecklistPersonalizado ? (checklistNameEscaped || 'Checklist Personalizado') : 'Constancia de Visita'}</p>
         </div>
 
         <div style="background-color: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 24px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);">
@@ -202,25 +220,25 @@ export async function POST(request) {
             Estimado cliente,
           </p>
           <p style="font-size: 15px; line-height: 1.6; color: #334155;">
-            Se adjunta el reporte de <strong>${isAvisoRiesgo ? 'Aviso de Riesgo de Higiene y Seguridad' : isControlElectrico ? 'Inspección Visual de Instalaciones Eléctricas' : isChecklistPersonalizado ? (checklistName || 'Checklist Personalizado') : 'Constancia de Visita de Higiene y Seguridad'}</strong> correspondiente a sus instalaciones.
+            Se adjunta el reporte de <strong>${isAvisoRiesgo ? 'Aviso de Riesgo de Higiene y Seguridad' : isControlElectrico ? 'Inspección Visual de Instalaciones Eléctricas' : isChecklistPersonalizado ? (checklistNameEscaped || 'Checklist Personalizado') : 'Constancia de Visita de Higiene y Seguridad'}</strong> correspondiente a sus instalaciones.
           </p>
 
           <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px;">
             <tr style="border-bottom: 1px solid #f1f5f9;">
               <td style="padding: 10px 0; font-weight: 600; color: #64748b; width: 40%;">Razón Social:</td>
-              <td style="padding: 10px 0; font-weight: 700; color: #0f172a;">${companyName || 'N/A'}</td>
+              <td style="padding: 10px 0; font-weight: 700; color: #0f172a;">${companyNameEscaped || 'N/A'}</td>
             </tr>
             <tr style="border-bottom: 1px solid #f1f5f9;">
               <td style="padding: 10px 0; font-weight: 600; color: #64748b;">Establecimiento:</td>
-              <td style="padding: 10px 0; font-weight: 700; color: #0f172a;">${establishmentName || 'N/A'}</td>
+              <td style="padding: 10px 0; font-weight: 700; color: #0f172a;">${establishmentNameEscaped || 'N/A'}</td>
             </tr>
             <tr style="border-bottom: 1px solid #f1f5f9;">
               <td style="padding: 10px 0; font-weight: 600; color: #64748b;">${isAvisoRiesgo ? 'Fecha de emisión:' : isControlElectrico ? 'Fecha de control:' : isChecklistPersonalizado ? 'Fecha:' : 'Fecha de visita:'}</td>
-              <td style="padding: 10px 0; font-weight: 700; color: #0f172a;">${date || 'N/A'}</td>
+              <td style="padding: 10px 0; font-weight: 700; color: #0f172a;">${dateEscaped || 'N/A'}</td>
             </tr>
             <tr>
               <td style="padding: 10px 0; font-weight: 600; color: #64748b;">Profesional a cargo:</td>
-              <td style="padding: 10px 0; font-weight: 700; color: #0f172a;">${inspectorName || 'N/A'}</td>
+              <td style="padding: 10px 0; font-weight: 700; color: #0f172a;">${inspectorNameEscaped || 'N/A'}</td>
             </tr>
           </table>
         </div>
