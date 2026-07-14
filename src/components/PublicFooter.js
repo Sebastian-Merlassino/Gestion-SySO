@@ -3,7 +3,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Globe, Linkedin, Instagram, Facebook, Twitter, Mail, MessageCircle } from 'lucide-react';
+import { Globe, Linkedin, Instagram, Facebook, Twitter, Mail } from 'lucide-react';
 
 export default function PublicFooter() {
   return (
@@ -64,15 +64,6 @@ export default function PublicFooter() {
             >
               <Mail className="h-4 w-4 text-[#468DFF] shrink-0" />
               <span className="truncate">soporte@gestionsyso.com</span>
-            </a>
-            <a
-              href="https://api.whatsapp.com/send?phone=541159969956"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 text-[#25D366] hover:text-white transition-colors w-full"
-            >
-              <MessageCircle className="h-4 w-4 text-[#25D366] shrink-0" />
-              <span>Soporte por WhatsApp</span>
             </a>
           </div>
         </div>

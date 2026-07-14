@@ -256,15 +256,9 @@ export default function Sidebar({
                 <span>•</span>
                 <Link href="/cookies" target="_blank" className="hover:text-white/60 hover:underline transition-all">Cookies</Link>
               </div>
-              <div className="flex gap-2 items-center text-[9px] mt-0.5">
-                <a href="mailto:soporte@gestionsyso.com" className="text-[#468DFF]/80 hover:text-[#468DFF] hover:underline transition-all">
-                  soporte@gestionsyso.com
-                </a>
-                <span className="text-white/10">|</span>
-                <a href="https://api.whatsapp.com/send?phone=541159969956" target="_blank" rel="noopener noreferrer" className="text-[#25D366]/80 hover:text-[#25D366] hover:underline transition-all">
-                  Soporte WhatsApp
-                </a>
-              </div>
+              <a href="mailto:soporte@gestionsyso.com" className="text-[#468DFF]/80 hover:text-[#468DFF] hover:underline transition-all text-[9px] mt-0.5">
+                soporte@gestionsyso.com
+              </a>
             </div>
           )}
         </div>
