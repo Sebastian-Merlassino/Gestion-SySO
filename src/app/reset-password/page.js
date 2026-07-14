@@ -7,6 +7,7 @@ import { Lock, ShieldAlert, CheckCircle, Loader2, ArrowRight, X, Eye, EyeOff } f
 import AppCard from '@/components/ui/AppCard';
 import AppInput from '@/components/ui/AppInput';
 import AppButton from '@/components/ui/AppButton';
+import PublicFooter from '@/components/PublicFooter';
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -83,15 +84,14 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-syso-bg text-slate-700 flex items-center justify-center relative overflow-hidden font-sans px-4">
+    <div className="min-h-screen bg-syso-bg text-slate-700 flex flex-col justify-between items-center relative overflow-hidden font-sans">
       {/* Background gradients */}
       <div className="absolute top-[-20%] left-[-20%] w-[600px] h-[600px] rounded-full bg-[#468DFF]/5 blur-[180px] pointer-events-none" />
       <div className="absolute bottom-[-20%] right-[-20%] w-[600px] h-[600px] rounded-full bg-[#0511F2]/5 blur-[180px] pointer-events-none" />
 
-      <div className="w-full max-w-md z-10">
-        
+      <div className="w-full max-w-md z-10 flex-1 flex items-center justify-center py-12 px-4">
         {/* Card Form */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-xl">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-xl w-full">
           {/* Logo a nivel de tarjeta */}
           <img
             src="/brand/logo-black.png"
@@ -241,6 +241,7 @@ export default function ResetPasswordPage() {
           </div>
         </div>
       )}
+      <PublicFooter />
     </div>
   );
 }

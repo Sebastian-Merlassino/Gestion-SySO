@@ -7,6 +7,7 @@ import { Mail, Hash, Lock, ShieldAlert, ArrowRight, Loader2, X, CheckCircle, Eye
 import AppCard from '@/components/ui/AppCard';
 import AppInput from '@/components/ui/AppInput';
 import AppButton from '@/components/ui/AppButton';
+import PublicFooter from '@/components/PublicFooter';
 export default function LoginPage() {
   const [activeTab, setActiveTab] = useState('profesional'); // 'profesional' or 'cliente'
   const [email, setEmail] = useState('');
@@ -257,14 +258,14 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-syso-bg text-slate-700 flex items-center justify-center relative overflow-hidden font-sans px-4">
+    <div className="min-h-screen bg-syso-bg text-slate-700 flex flex-col justify-between items-center relative overflow-hidden font-sans">
       {/* Background gradients */}
       <div className="absolute top-[-20%] left-[-20%] w-[600px] h-[600px] rounded-full bg-[#468DFF]/5 blur-[180px] pointer-events-none" />
       <div className="absolute bottom-[-20%] right-[-20%] w-[600px] h-[600px] rounded-full bg-[#0511F2]/5 blur-[180px] pointer-events-none" />
 
-      <div className="w-full max-w-md z-10">
+      <div className="w-full max-w-md z-10 flex-1 flex items-center justify-center py-12 px-4">
         {/* Form Card */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-xl">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-xl w-full">
           <img
             src="/brand/logo-black.png"
             alt="Logo Gestión SySO"
@@ -565,6 +566,7 @@ export default function LoginPage() {
         </div>
       )}
 
+      <PublicFooter />
     </div>
   );
 }

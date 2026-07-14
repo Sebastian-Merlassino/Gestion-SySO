@@ -33,6 +33,7 @@ import confetti from 'canvas-confetti';
 import { useToast } from '@/components/providers/ToastProvider';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
+import PublicFooter from '@/components/PublicFooter';
 
 const PROVINCIAS_ARGENTINAS = [
   'BUENOS AIRES',
@@ -915,12 +916,12 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-syso-bg text-slate-700 flex flex-col items-center justify-center relative overflow-hidden font-sans py-12 px-4">
+    <div className="min-h-screen bg-syso-bg text-slate-700 flex flex-col justify-between items-center relative overflow-hidden font-sans">
       {/* Background gradients */}
       <div className="absolute top-[-10%] left-[-20%] w-[600px] h-[600px] rounded-full bg-[#468DFF]/5 blur-[150px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-20%] w-[600px] h-[600px] rounded-full bg-[#0511F2]/5 blur-[150px] pointer-events-none" />
 
-      <div className="w-full max-w-3xl z-10">
+      <div className="w-full max-w-3xl z-10 py-12 px-4">
         
         {/* Header */}
         <div className="text-center mb-8">
@@ -1592,6 +1593,7 @@ export default function OnboardingPage() {
         onLeave={unsavedChangesConfig.onLeave}
       />
 
+      <PublicFooter />
     </div>
   );
 }

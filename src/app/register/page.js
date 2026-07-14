@@ -7,6 +7,7 @@ import { Mail, Lock, User, ShieldAlert, ArrowRight, Loader2, Award, AlertTriangl
 import AppCard from '@/components/ui/AppCard';
 import AppInput from '@/components/ui/AppInput';
 import AppButton from '@/components/ui/AppButton';
+import PublicFooter from '@/components/PublicFooter';
 export default function RegisterPage() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -107,14 +108,14 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-syso-bg text-slate-700 flex items-center justify-center relative overflow-hidden font-sans px-4">
+    <div className="min-h-screen bg-syso-bg text-slate-700 flex flex-col justify-between items-center relative overflow-hidden font-sans">
       {/* Background gradients */}
       <div className="absolute top-[-20%] left-[-20%] w-[600px] h-[600px] rounded-full bg-[#468DFF]/5 blur-[180px] pointer-events-none" />
       <div className="absolute bottom-[-20%] right-[-20%] w-[600px] h-[600px] rounded-full bg-[#0511F2]/5 blur-[180px] pointer-events-none" />
 
-      <div className="w-full max-w-md z-10 my-8">
+      <div className="w-full max-w-md z-10 flex-1 flex items-center justify-center my-8 px-4">
         {/* Form Card */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-xl">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-8 shadow-xl w-full">
           {!registered && (
             <>
               <img
@@ -331,6 +332,7 @@ export default function RegisterPage() {
         </div>
       )}
 
+      <PublicFooter />
     </div>
   );
 }

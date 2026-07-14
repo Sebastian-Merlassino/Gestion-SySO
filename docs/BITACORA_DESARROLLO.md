@@ -1,5 +1,41 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-14] Integración de Canal de Soporte, Políticas Legales y Cláusula de IA
+
+### Resumen de Cambios
+- **Canal de Soporte unificado**: Se estableció `soporte@gestionsyso.com` como el punto central de contacto técnico y legal.
+- **Rutas Legales Públicas**: Creación de las páginas `/terminos`, `/privacidad` y `/cookies` accesibles sin autenticación previa mediante configuración en el Middleware.
+- **Transparencia en el Uso de IA**: Inclusión en la Política de Privacidad de la declaración de tratamiento de datos del asistente `SySO-AI-Voice-Helper` (procesamiento cifrado y confidencial con Gemini, no entrenamiento de modelos públicos).
+- **Cookies Técnicas Declaradas**: Detalle y justificación de cookies esenciales (Supabase Auth y tokens CSRF) en la Política de Cookies.
+- **Pie de Página Público (`PublicFooter`)**: Creación de un footer responsive y premium para las vistas de Login, Register, Reset Password y Onboarding.
+- **Enlaces en Sidebar Privado**: Incorporación de links rápidos a soporte y políticas legales al final del Sidebar cuando no está colapsado.
+
+### Decisiones Clave
+- Ubicar los enlaces en la parte inferior del Sidebar privado para no saturar el menú lateral principal, y asegurar acceso rápido sin perder visibilidad en ningún momento.
+- Excluir del middleware de bloqueo las rutas de políticas legales para que los potenciales clientes o usuarios deslogueados puedan revisar el acuerdo legal y políticas de privacidad antes de registrarse.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[NEW] src/app/terminos/page.js`
+- `[NEW] src/app/privacidad/page.js`
+- `[NEW] src/app/cookies/page.js`
+- `[NEW] src/components/PublicFooter.js`
+- `[MODIFY] src/middleware.js`
+- `[MODIFY] src/app/login/page.js`
+- `[MODIFY] src/app/register/page.js`
+- `[MODIFY] src/app/reset-password/page.js`
+- `[MODIFY] src/app/onboarding/page.js`
+- `[MODIFY] src/components/Sidebar.js`
+
+### Validaciones Ejecutadas
+- Compilación del proyecto (`npm run build`) para verificar la integridad sintáctica y la correcta generación estática de las nuevas páginas legales en Next.js.
+
+---
+
 ## [2026-07-14] Cierre de Remediación Integral de Seguridad y Validación RLS
 
 ### Resumen de Cambios

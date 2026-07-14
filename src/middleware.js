@@ -187,6 +187,9 @@ export async function middleware(request) {
     pathname === '/login' || 
     pathname === '/register' || 
     pathname === '/reset-password' ||
+    pathname === '/terminos' ||
+    pathname === '/privacidad' ||
+    pathname === '/cookies' ||
     pathname === '/api/auth/login-cuit' ||
     pathname === '/api/webhooks/mercadopago' ||
     pathname.startsWith('/_next/') ||

@@ -232,7 +232,7 @@ export default function Sidebar({
         </div>
 
         {/* Footer Sidebar */}
-        <div className="p-4 border-t border-white/10 shrink-0">
+        <div className="p-4 border-t border-white/10 shrink-0 flex flex-col gap-2">
           <div className={`flex items-center justify-between rounded-xl bg-black/40 p-3 border border-white/5 ${isSidebarCollapsed ? 'flex-col gap-2' : ''}`}>
             {!isSidebarCollapsed && (
               <div className="truncate pr-2">
@@ -244,6 +244,26 @@ export default function Sidebar({
               <LogOut className="h-4 w-4" />
             </button>
           </div>
+          {!isSidebarCollapsed && (
+            <div className="flex flex-col gap-1 items-center justify-center pt-2 px-1 text-[10px] text-white/35 font-medium border-t border-white/5">
+              <div className="flex gap-2">
+                <Link href="/terminos" target="_blank" className="hover:text-white/60 hover:underline transition-all">Términos</Link>
+                <span>•</span>
+                <Link href="/privacidad" target="_blank" className="hover:text-white/60 hover:underline transition-all">Privacidad</Link>
+                <span>•</span>
+                <Link href="/cookies" target="_blank" className="hover:text-white/60 hover:underline transition-all">Cookies</Link>
+              </div>
+              <div className="flex gap-2 items-center text-[9px] mt-0.5">
+                <a href="mailto:soporte@gestionsyso.com" className="text-[#468DFF]/80 hover:text-[#468DFF] hover:underline transition-all">
+                  soporte@gestionsyso.com
+                </a>
+                <span className="text-white/10">|</span>
+                <a href="https://api.whatsapp.com/send?phone=541159969956" target="_blank" rel="noopener noreferrer" className="text-[#25D366]/80 hover:text-[#25D366] hover:underline transition-all">
+                  Soporte WhatsApp
+                </a>
+              </div>
+            </div>
+          )}
         </div>
       </aside>
 
