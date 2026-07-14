@@ -214,7 +214,7 @@ export default function Sidebar({
               <img src="/brand/logo-primary.png" alt="Logo" className="h-9 w-9 object-contain shrink-0" />
               {!isSidebarCollapsed && (
                 <span className="text-base font-extrabold tracking-tight block animate-fade-in">
-                  <span className="text-[#468DFF]" style={{ fontFamily: "'Virgo 01', 'Virgo', sans-serif" }}>GESTIÓN</span>
+                  <span className="text-[#468DFF]" style={{ fontFamily: "'Virgo 01', 'Virgo', sans-serif" }}>GESTION</span>
                   <span className="text-white ml-1" style={{ fontFamily: "'Audiowide', sans-serif" }}>SySO</span>
                 </span>
               )}
@@ -291,7 +291,7 @@ export default function Sidebar({
               <div className="flex items-center gap-3 mb-8 shrink-0">
                 <img src="/brand/logo-primary.png" alt="Logo" className="h-9 w-9 object-contain shrink-0" />
                 <span className="text-base font-extrabold tracking-tight">
-                  <span className="text-[#468DFF]" style={{ fontFamily: "'Virgo 01', 'Virgo', sans-serif" }}>GESTIÓN</span>
+                  <span className="text-[#468DFF]" style={{ fontFamily: "'Virgo 01', 'Virgo', sans-serif" }}>GESTION</span>
                   <span className="text-white ml-1" style={{ fontFamily: "'Audiowide', sans-serif" }}>SySO</span>
                 </span>
               </div>
