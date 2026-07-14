@@ -3,16 +3,21 @@
 ## [2026-07-14] Integración de Canal de Soporte, Políticas Legales y Cláusula de IA
 
 ### Resumen de Cambios
-- **Canal de Soporte unificado**: Se estableció `soporte@gestionsyso.com` como el punto central de contacto técnico y legal.
+- **Canal de Soporte unificado**: Se estableció `soporte@gestionsyso.com` como el punto central de contacto técnico y legal, y se añadió enlace directo por chat a WhatsApp.
 - **Rutas Legales Públicas**: Creación de las páginas `/terminos`, `/privacidad` y `/cookies` accesibles sin autenticación previa mediante configuración en el Middleware.
 - **Transparencia en el Uso de IA**: Inclusión en la Política de Privacidad de la declaración de tratamiento de datos del asistente `SySO-AI-Voice-Helper` (procesamiento cifrado y confidencial con Gemini, no entrenamiento de modelos públicos).
 - **Cookies Técnicas Declaradas**: Detalle y justificación de cookies esenciales (Supabase Auth y tokens CSRF) en la Política de Cookies.
-- **Pie de Página Público (`PublicFooter`)**: Creación de un footer responsive y premium para las vistas de Login, Register, Reset Password y Onboarding.
-- **Enlaces en Sidebar Privado**: Incorporación de links rápidos a soporte y políticas legales al final del Sidebar cuando no está colapsado.
+- **Pie de Página Público (`PublicFooter`)**: Creación de un footer responsive y premium para las vistas de Login, Register, Reset Password y Onboarding con un color de fondo unificado `#2F3033` en una cuadrícula simétrica de 2 filas y 3 columnas del mismo ancho.
+- **Enlaces en Sidebar Privado**: Incorporación de links rápidos a soporte (mail y WhatsApp) y políticas legales al final del Sidebar cuando no está colapsado.
+- **Identidad de Marca y Tipografía del Logotipo**:
+  - Importación en `layout.js` de la Google Font `Audiowide` para la marca de la aplicación.
+  - Estilización del nombre de la marca "Gestión SySO" en el footer y en el Sidebar (desktop y móvil) utilizando spans separados: **"Gestión"** con el color azul corporativo `#468DFF` y tipografía `Virgo 01`, y **"SySO"** en blanco con tipografía `Audiowide`.
+  - Configuración del footer con los enlaces oficiales de las redes sociales del SaaS (LinkedIn, Instagram, Facebook y Twitter/X) con hovers personalizados de marca.
 
 ### Decisiones Clave
 - Ubicar los enlaces en la parte inferior del Sidebar privado para no saturar el menú lateral principal, y asegurar acceso rápido sin perder visibilidad en ningún momento.
 - Excluir del middleware de bloqueo las rutas de políticas legales para que los potenciales clientes o usuarios deslogueados puedan revisar el acuerdo legal y políticas de privacidad antes de registrarse.
+- Unificar el fondo del footer público a un color sólido `#2F3033` y utilizar una línea sutil de división para delimitar las dos filas estructuradas de 3 columnas de igual ancho, optimizando la lectura simétrica.
 
 ### Skills Utilizadas
 - `gestion-syso-bitacora`
@@ -24,6 +29,7 @@
 - `[NEW] src/app/privacidad/page.js`
 - `[NEW] src/app/cookies/page.js`
 - `[NEW] src/components/PublicFooter.js`
+- `[MODIFY] src/app/layout.js`
 - `[MODIFY] src/middleware.js`
 - `[MODIFY] src/app/login/page.js`
 - `[MODIFY] src/app/register/page.js`

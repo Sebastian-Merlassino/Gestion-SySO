@@ -213,7 +213,10 @@ export default function Sidebar({
             <div className="flex items-center gap-3">
               <img src="/brand/logo-primary.png" alt="Logo" className="h-9 w-9 object-contain shrink-0" />
               {!isSidebarCollapsed && (
-                <span className="font-outfit text-base font-extrabold text-white tracking-tight block animate-fade-in">Gestión SySO</span>
+                <span className="text-base font-extrabold tracking-tight block animate-fade-in">
+                  <span className="text-[#468DFF]" style={{ fontFamily: "'Virgo 01', 'Virgo', sans-serif" }}>Gestión</span>
+                  <span className="text-white ml-1" style={{ fontFamily: "'Audiowide', sans-serif" }}>SySO</span>
+                </span>
               )}
             </div>
             <button
@@ -287,7 +290,10 @@ export default function Sidebar({
             <div className="flex flex-col flex-1 min-h-0">
               <div className="flex items-center gap-3 mb-8 shrink-0">
                 <img src="/brand/logo-primary.png" alt="Logo" className="h-9 w-9 object-contain shrink-0" />
-                <span className="font-outfit text-base font-extrabold text-white tracking-tight">Gestión SySO</span>
+                <span className="text-base font-extrabold tracking-tight">
+                  <span className="text-[#468DFF]" style={{ fontFamily: "'Virgo 01', 'Virgo', sans-serif" }}>Gestión</span>
+                  <span className="text-white ml-1" style={{ fontFamily: "'Audiowide', sans-serif" }}>SySO</span>
+                </span>
               </div>
               <nav className="flex-1 overflow-y-auto sidebar-scrollbar space-y-1.5 min-h-0">
                 {menuItems.map(item => renderLink(item, true))}

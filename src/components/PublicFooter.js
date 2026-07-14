@@ -15,7 +15,10 @@ export default function PublicFooter() {
         <div className="flex flex-col items-center text-center gap-3 w-full">
           <div className="flex items-center gap-2">
             <img src="/brand/logo-primary.png" alt="Logo" className="h-6 w-6 object-contain" />
-            <span className="font-outfit font-extrabold text-white text-sm tracking-tight">Gestión SySO</span>
+            <span className="text-sm font-extrabold tracking-tight">
+              <span className="text-[#468DFF]" style={{ fontFamily: "'Virgo 01', 'Virgo', sans-serif" }}>Gestión</span>
+              <span className="text-white ml-1" style={{ fontFamily: "'Audiowide', sans-serif" }}>SySO</span>
+            </span>
           </div>
           <p className="text-slate-400 text-[11px] leading-relaxed max-w-xs">
             Solución SaaS profesional para la administración de seguridad, higiene industrial y salud ocupacional. Diseñada para consultores y organizaciones.
