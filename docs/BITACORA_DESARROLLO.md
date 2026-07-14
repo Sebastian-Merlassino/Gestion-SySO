@@ -1,5 +1,22 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-14] Hotfix: Robustez de Protección CSRF en Middleware para login-cuit
+
+### Resumen de Cambios
+- **Fallback de Origen CSRF**: Modificado [middleware.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/middleware.js) para que admita `request.nextUrl.origin` como origen confiable (fallback) cuando la variable de entorno `APP_URL` no está definida en el panel de Vercel de producción/staging.
+- **Evitación de Excepción Crítica (HTTP 500)**: Reemplazado el error fatal bloqueante por un mensaje de advertencia (`console.warn`) en los logs del servidor, garantizando que el endpoint de autenticación por CUIT (`/api/auth/login-cuit`) y otros endpoints del tipo `POST` de la aplicación no colapsen en su inicio de sesión de cara al cliente.
+
+### Decisiones Clave
+- Evitar interrupción de servicio en el portal de clientes por falta de configuración de la variable `APP_URL`. Mantener la protección CSRF al contrastar contra el host real donde se ejecuta el servidor de producción.
+
+### Archivos Modificados
+- `[MODIFY] src/middleware.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción local Next.js exitosa (`npm run build`).
+
+---
+
 ## [2026-07-14] Integración de Canal de Soporte, Políticas Legales y Cláusula de IA
 
 ### Resumen de Cambios

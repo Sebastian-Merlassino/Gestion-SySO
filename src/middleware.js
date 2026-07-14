@@ -89,15 +89,11 @@ export async function middleware(request) {
   if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method) && pathname.startsWith('/api/') && pathname !== '/api/webhooks/mercadopago' && process.env.NODE_ENV !== 'development') {
     const origin = request.headers.get('origin');
     const referer = request.headers.get('referer');
-    const appUrl = process.env.APP_URL;
+    const appUrl = process.env.APP_URL || request.nextUrl.origin;
 
-    // En producción/staging, exigir que APP_URL esté configurada (MED-02)
-    if (!appUrl && process.env.NODE_ENV !== 'development') {
-      console.error('[CSRF Error] APP_URL no configurada en variables de entorno.');
-      return withRateLimit(NextResponse.json(
-        { error: 'Error de configuración de seguridad en el servidor.' },
-        { status: 500 }
-      ));
+    // En producción/staging, emitir advertencia si APP_URL no está configurada pero usar request.nextUrl.origin
+    if (!process.env.APP_URL && process.env.NODE_ENV !== 'development') {
+      console.warn('[CSRF Warning] APP_URL no configurada en variables de entorno. Usando origen de la solicitud:', request.nextUrl.origin);
     }
 
     let isMatch = false;
