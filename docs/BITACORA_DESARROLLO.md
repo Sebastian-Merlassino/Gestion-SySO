@@ -1,5 +1,73 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-15] Refactor de Dashboard, Empaquetado de Fuentes, Logotipo y Footer Comprimido
+
+### Resumen de Cambios
+- **Refactor con Componentes Unificados**: Se rehizo de cero el formulario de tareas pendientes utilizando los componentes unificados del sistema (`AppInput`, `AppSelect` y `AppButton`) en lugar de etiquetas HTML crudas. Esto garantiza consistencia estética total con el design system e impone una altura estándar unificada de `h-10` (38px de altura de componente) en todas las celdas y filas.
+- **Selector de Fecha Estándar**: Se implementó el day picker estándar de la plataforma (idéntico al de `/visitas` y `/profile`) estructurado con `AppInput` (tipo texto, máscara `DD/MM/AAAA` provista por `formatAsDateInput`) y un icono `Calendar` absoluto de `h-4 w-4` con hover de marca celeste (`hover:text-[#468DFF]`).
+- **Resolución de Desalineamiento Vertical**: La transición a la altura estándar de `38px` elimina las colisiones de tamaño con el selector nativo del navegador de `32px` de alto, posicionando y centrando verticalmente el botón de calendario a la mitad exacta de la caja del input de forma impecable.
+- **Empaquetado de Fuentes en Webpack**: Se modificaron las directivas `@font-face` en `globals.css` reemplazando la ruta absoluta estática del servidor web `/fonts/virgo-01.ttf` por la ruta relativa del archivo en disco (`../../public/fonts/virgo-01.ttf`). Esto permite que el bundler de Next.js (Webpack) procese, empaquete e indexe la tipografía local en tiempo de compilación, eliminando fallos 404 al servirse desde CDNs o subdominios.
+- **Tildado Nativo de GESTIÓN en Logotipo**: Se reemplazó la palabra `GESTION` por `GESTIÓN` (con tilde nativa) en los logotipos de la barra lateral (desktop y móvil) en `Sidebar.js` y del pie de página en `PublicFooter.js`. Tras empaquetar de forma robusta la fuente mediante Webpack, se comprobó que la tipografía `Virgo 01` (Virgo01) renderiza e hidrata correctamente la tilde de la letra `Ó` en todos los navegadores, prescindiendo de trucos de posicionamiento absoluto y asegurando fidelidad tipográfica.
+- **Compresión del Footer**: Se redujo la altura total del pie de página público (`PublicFooter.js`) reduciendo los paddings de la Fila 1 (de `py-10` a `py-6`), los de la Fila 2 (de `py-5` a `py-3.5`), los gaps del grid y flex (`gap-8` a `gap-6` y `gap-4` en la base), y los tamaños de textos informativos a `text-[10px]` / `text-[11px]`. Se mantuvo la columna central renombrada como **Políticas y Privacidad** (sin la sección de planes comerciales).
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/globals.css`
+- `[MODIFY] src/components/Sidebar.js`
+- `[MODIFY] src/components/PublicFooter.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción local de Next.js (`npm run build`) completada con éxito.
+
+---
+
+## [2026-07-15] Ajustes Comerciales: Renombre a "Plan Full", Diálogos de Cancelación Estandarizados y Políticas
+
+### Resumen de Cambios
+- **Renombre Comercial**: Cambiado el nombre de `'Plan Libre'` a `'Plan Full'` en toda la plataforma (vistas del perfil de usuario, onboarding, panel de bienvenida del dashboard, badges de cabeceras, especificaciones de diseño y guías de administración comercial), conservando el ID técnico `'libre'` en la base de datos para no alterar las políticas RLS y triggers existentes.
+- **Diálogo Estandarizado de Cancelación**: Reemplazada la notificación temporal (toast) que se disparaba al seleccionar el Plan Gratis por una ventana emergente estructurada (`AppConfirmDialog`) basada en Radix UI. Informa adecuadamente que para cancelar el servicio se debe operar en Mercado Pago y provee un botón directo con el enlace para facilitar la gestión al usuario.
+- **Políticas Actualizadas**: Añadida de forma explícita la cláusula sobre la baja del plan activo al Plan Gratis en [terminos/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/terminos/page.js), detallando la necesidad de gestionar la cancelación recurrente directamente en la billetera de Mercado Pago y su correspondiente sincronización con nuestro webhook.
+
+### Archivos Modificados
+- `[MODIFY] src/lib/utils.js`
+- `[MODIFY] src/components/ui/AppPageHeader.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/onboarding/page.js`
+- `[MODIFY] src/app/terminos/page.js`
+- `[MODIFY] docs/billing/GUIA_PLANES_DESCUENTOS_Y_REGALOS.md`
+- `[MODIFY] docs/brand/BRAND_GUIDELINES.md`
+- `[MODIFY] docs/design/ui-specs/DESIGN_STANDARD.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción exitosa en entorno local verificando que no existan errores de lint, importaciones incorrectas o fallas de tipografía en el build.
+
+---
+
+## [2026-07-15] Implementación de Mejoras en Flujo de Cambio de Planes (Upgrade/Downgrade) con Mercado Pago
+
+### Resumen de Cambios
+- **Trazabilidad en Base de Datos**: Creación de la migración `20260805000000_add_preapproval_id_to_tenants.sql` que añade la columna `preapproval_id` a la tabla `public.tenants` para registrar la suscripción activa de Mercado Pago.
+- **Cálculo de Prorrateo (Días de Extensión)**: Incorporación en el webhook de `preapproval` (`status === 'authorized'`) de un algoritmo matemático que calcula el valor monetario de los días restantes de la suscripción anterior y lo convierte en días de regalo equivalentes en la fecha de vencimiento (`plan_ends_at`) del nuevo plan.
+- **Cancelación Automática de la Suscripción Anterior**: Modificación del webhook para invocar el método `.update` del SDK de Mercado Pago cancelando la suscripción anterior (`oldPreapprovalId`) cuando el usuario cambia de plan.
+- **Protección contra Cancelaciones Cruzadas**: Validación de seguridad para que el webhook sólo degrade a `'free'` si el ID de la suscripción cancelada coincide exactamente con el `preapproval_id` actualmente activo del tenant.
+- **Acumulación de Vigencia en Pagos**: Actualización en el webhook de pagos individuales para que, al renovarse la suscripción, los 30 días de vigencia se añadan a partir de la fecha de vencimiento actual (si está en el futuro) en lugar de sobrescribirla a 30 días fijos.
+
+### Decisiones Clave
+- Utilizar extensión de tiempo (días compensatorios) como mecanismo de prorrateo para evitar la complejidad y fragilidad de modificar dinámicamente los montos de cobro de las suscripciones en la API de Mercado Pago.
+- Mitigar el riesgo de cobro duplicado dando de baja la suscripción previa de forma automatizada e inmediata tras la autorización de la nueva.
+- Omitir la validación del trigger de modificación del plan (`check_tenant_updates`) al realizar las consultas mediante el cliente administrativo con `service_role`.
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260805000000_add_preapproval_id_to_tenants.sql`
+- `[MODIFY] src/app/api/webhooks/mercadopago/route.js`
+
+### Validaciones Ejecutadas
+- Pruebas matemáticas de prorrateo localmente con un script específico.
+- Pruebas de integración E2E de base de datos simulando el comportamiento completo del webhook (inserción, upgrade, prorrata, ignorar cancelaciones viejas, procesar cancelaciones activas y renovaciones acumulativas).
+
+---
+
 ## [2026-07-14] Hotfix: Homologación Estética del Perfil en Onboarding con el Perfil Interno de la App
 
 ### Resumen de Cambios

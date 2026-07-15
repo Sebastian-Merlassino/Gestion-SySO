@@ -34,8 +34,8 @@ CREATE TRIGGER before_profile_update
 CREATE OR REPLACE FUNCTION public.check_tenant_updates()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Allow updates if executed by the service_role (server-side operations)
-    IF auth.role() = 'service_role' THEN
+    -- Allow updates if executed by postgres (SQL Editor) or service_role (server-side operations)
+    IF current_user = 'postgres' OR auth.role() = 'service_role' THEN
         RETURN NEW;
     END IF;
 

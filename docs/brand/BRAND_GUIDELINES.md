@@ -39,7 +39,7 @@ Para transmitir seguridad industrial y corporativa de una forma sofisticada y pr
 
 ## 4. Tipografías y Encabezados Estandarizados
 - **Tipografía de Marca (Outfit)**: Utilizada estrictamente en el Top Navbar (`h-16`) de todas las páginas, cabeceras de formularios inline y títulos principales de subsección para dotar al SaaS de una imagen moderna y profesional.
-- **Badge del Plan**: Los badges que detallan el plan suscrito (`Plan Libre`, `Plan Standard`, etc.) deben presentarse en la parte superior derecha de cada Navbar, empleando el color azul corporativo `#468DFF` en un estilo suave y distinguido:
+- **Badge del Plan**: Los badges que detallan el plan suscrito (`Plan Full`, `Plan Standard`, etc.) deben presentarse en la parte superior derecha de cada Navbar, empleando el color azul corporativo `#468DFF` en un estilo suave y distinguido:
   - Clase: `bg-[#468DFF]/15 border border-[#468DFF]/25 text-[#468DFF] text-[10px] font-bold uppercase tracking-wider px-2.5 py-1.5 rounded-lg`
 
 ## 5. Estructura de Carga de Documentos (DocumentUploadZone)

@@ -2011,7 +2011,15 @@ const [partidosList, setPartidosList] = useState([]);
                         type="button"
                         disabled={currentActivePlan === 'free'}
                         onClick={() => {
-                          triggerToast('Para cancelar tu suscripción activa debes hacerlo desde tu cuenta de Mercado Pago.', 'info');
+                          showAlert(
+                            'Cancelar Suscripción',
+                            'Para dar de baja tu plan activo y regresar al Plan Gratis, debes cancelar la suscripción desde tu panel de Mercado Pago. Al confirmarse la cancelación, tu organización se actualizará automáticamente a Gratis sin cargos adicionales.',
+                            'info',
+                            () => {
+                              window.open('https://www.mercadopago.com.ar/subscriptions', '_blank');
+                            },
+                            'Ir a Mercado Pago'
+                          );
                           setShowPlanModal(false);
                         }}
                         className={`w-full py-2.5 rounded-xl mt-6 text-xs font-bold transition-all ${currentActivePlan === 'free' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer'}`}
@@ -2078,10 +2086,10 @@ const [partidosList, setPartidosList] = useState([]);
                       </button>
                     </div>
 
-                    {/* Plan Libre */}
+                    {/* Plan Full */}
                     <div className={`rounded-2xl border p-5 flex flex-col justify-between transition-all ${currentActivePlan === 'libre' ? 'border-[#468DFF] bg-[#468DFF]/5 ring-2 ring-[#468DFF]/20 shadow-md' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
                       <div>
-                        <h4 className="text-base font-bold text-slate-900">Plan Libre</h4>
+                        <h4 className="text-base font-bold text-slate-900">Plan Full</h4>
                         <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">Constructoras y corporaciones.</p>
                         <span className="font-outfit text-2xl font-extrabold text-[#468DFF] mt-3 block">$45.000 <span className="text-xs text-slate-500 font-normal">/ mes</span></span>
                         <ul className="text-[11px] text-slate-600 mt-4 space-y-1.5 border-t border-slate-200 pt-4 font-semibold leading-relaxed">

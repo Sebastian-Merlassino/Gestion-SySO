@@ -15,15 +15,22 @@ Para probar las restricciones del Sidebar y las funcionalidades de cada sección
 | **`free`** | Plan Gratis | Dashboard, Clientes, Equipo, Prog. Gestión Anual, Prog. Capacitación, Acciones Correctivas, Accidentes, Matriz de riesgos, Nómina de Personal, Perfil. |
 | **`basic_5`** | Plan Básico | Todo lo de `free` + **Extintores** y **Control Eléctrico**. |
 | **`standard_25`** | Plan Estándar | Todo lo de `basic_5` + **Constancia de Visita** y **Aviso de Riesgo**. |
-| **`libre`** | Plan Libre | **Acceso Total**: Todo lo de `standard_25` + **Checklist Personalizados** y **Legajo Técnico**. |
+| **`libre`** | Plan Full | **Acceso Total**: Todo lo de `standard_25` + **Checklist Personalizados** y **Legajo Técnico**. |
 
-> [!TIP]
-> **Pasos para editar desde la UI de Supabase:**
-> 1. Ve a **Table Editor** > selecciona la tabla **`tenants`**.
-> 2. Localiza la fila de la organización (ej: `slug` = `sebastian-merlassino`).
-> 3. Haz doble clic en el campo `plan_id` y escribe el valor deseado (`free`, `basic_5`, `standard_25` o `libre`).
-> 4. Asegúrate de que `plan_ends_at` sea una fecha futura o esté vacío (`NULL`).
-> 5. Guarda y recarga tu aplicación local (`localhost:3000`).
+> [!IMPORTANT]
+> **Pasos para simular el cambio de plan desde Supabase (Debido al trigger de seguridad):**
+> Dado que la tabla `tenants` cuenta con un trigger de seguridad (`check_tenant_updates`) para evitar modificaciones maliciosas de planes desde el cliente, **no es posible utilizar el Table Editor de doble clic**. Debes usar obligatoriamente el **SQL Editor** de Supabase para ejecutar la consulta con privilegios de administrador (`postgres`):
+> 1. Ve a **SQL Editor** en tu panel de control de Supabase.
+> 2. Crea una nueva pestaña y ejecuta la siguiente consulta reemplazando el valor de `plan_id` (`free`, `basic_5`, `standard_25` o `libre`) y el `slug` según corresponda:
+>    ```sql
+>    UPDATE public.tenants
+>    SET 
+>      plan_id = 'libre', 
+>      plan_ends_at = NULL, -- o una fecha futura como '2026-12-31 23:59:59+00'::timestamptz
+>      preapproval_id = NULL
+>    WHERE slug = 'sebastian-merlassino';
+>    ```
+> 3. Recarga tu aplicación local (`localhost:3000`).
 
 ---
 
@@ -53,7 +60,7 @@ WHERE slug = 'sebastian-merlassino';
 
 ## 3. Regalar Membresías / Promociones Activas (Gift Plans)
 
-Si deseas dar acceso completo a un cliente de forma gratuita por un período de tiempo limitado (por ejemplo, otorgarles 30 días de "Plan Libre" de cortesía), puedes utilizar la característica de **Gift Plans** sin afectar su suscripción base contratada.
+Si deseas dar acceso completo a un cliente de forma gratuita por un período de tiempo limitado (por ejemplo, otorgarles 30 días de "Plan Full" de cortesía), puedes utilizar la característica de **Gift Plans** sin afectar su suscripción base contratada.
 
 ### Campos en la tabla `tenants`
 - **`gift_plan_id`** *(text)*: El plan de regalo que deseas otorgar (`basic_5`, `standard_25`, `libre`).
@@ -61,13 +68,13 @@ Si deseas dar acceso completo a un cliente de forma gratuita por un período de 
 
 ### Lógica de evaluación
 El sistema evalúa el plan efectivo en el siguiente orden de prioridad:
-1. **Exención Global**: Si `is_exempt` es `true` -> Plan Libre permanente.
+1. **Exención Global**: Si `is_exempt` es `true` -> Plan Full permanente.
 2. **Plan de Regalo (Gift)**: Si `gift_plan_id` tiene un plan asignado y la fecha actual es anterior a `gift_ends_at` -> Se usa el plan de regalo.
 3. **Suscripción Activa**: Si `plan_ends_at` es posterior a la fecha actual -> Se usa `plan_id`.
 4. **Plan Gratis**: Si todo lo anterior falla o expira -> Cae por defecto a `free`.
 
-### Sentencia SQL para regalar un Plan Libre por 3 meses
-Para regalar un **Plan Libre** hasta el **15 de octubre de 2026**:
+### Sentencia SQL para regalar un Plan Full por 3 meses
+Para regalar un **Plan Full** hasta el **15 de octubre de 2026**:
 
 ```sql
 UPDATE public.tenants
@@ -87,7 +94,7 @@ WHERE slug = 'sebastian-merlassino';
 Si tienes organizaciones asociadas a administradores del sistema, consultores principales o cuentas de prueba permanentes que no deben pagar nunca, puedes activar la exención.
 
 ### Campo en la tabla `tenants`
-- **`is_exempt`** *(boolean)*: Si es `true`, la organización tendrá el "Plan Libre" activo de manera perpetua e indefinida.
+- **`is_exempt`** *(boolean)*: Si es `true`, la organización tendrá el "Plan Full" activo de manera perpetua e indefinida.
 
 ### Sentencia SQL para exención total
 ```sql

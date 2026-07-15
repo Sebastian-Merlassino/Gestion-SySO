@@ -81,7 +81,7 @@ export const PLAN_FEATURES = {
     features: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'extintores', 'control-electrico', 'visitas', 'avisos', 'empresas', 'equipo']
   },
   libre: {
-    name: 'Plan Libre',
+    name: 'Plan Full',
     price: 45000,
     maxClients: Infinity,
     maxMembers: Infinity,

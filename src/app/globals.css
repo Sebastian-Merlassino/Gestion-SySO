@@ -1,7 +1,7 @@
 /* src/app/globals.css */
 @font-face {
   font-family: 'Virgo 01';
-  src: url('/fonts/virgo-01.ttf') format('truetype');
+  src: url('../../public/fonts/virgo-01.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -9,7 +9,7 @@
 
 @font-face {
   font-family: 'Virgo01';
-  src: url('/fonts/virgo-01.ttf') format('truetype');
+  src: url('../../public/fonts/virgo-01.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;

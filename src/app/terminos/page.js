@@ -81,6 +81,12 @@ export default function TerminosPage() {
                 **Procesamiento de Pagos**: Las suscripciones se pagan mensualmente por adelantado mediante la pasarela segura de **Mercado Pago**. Al suscribirse, usted autoriza el cobro automático mensual recurrente.
               </li>
               <li>
+                **Cambios de Plan (Upgrades y Downgrades)**: Si usted decide cambiar su plan activo por uno superior o inferior, el sistema generará una nueva suscripción en Mercado Pago y cancelará la suscripción anterior de forma automática. Los días restantes ya abonados del plan anterior se calcularán proporcionalmente en base a su valor monetario y se acreditarán automáticamente como días de vigencia adicionales sin costo sobre su nueva suscripción (prorrateo por extensión de vigencia), evitando la pérdida de los días ya pagados.
+              </li>
+              <li>
+                **Cancelación de Suscripción (Baja al Plan Gratis)**: Si usted desea dar de baja su suscripción y retornar al Plan Gratis, deberá realizar la cancelación de la suscripción activa directamente desde su cuenta de Mercado Pago (sección de Suscripciones o Débitos Automáticos). Una vez confirmada la cancelación en Mercado Pago, nuestro sistema recibirá la notificación y actualizará su cuenta al Plan Gratis al finalizar el período ya abonado, sin que se generen cobros adicionales.
+              </li>
+              <li>
                 **Incumplimiento de Pago**: En caso de no poder procesarse el cargo, la cuenta podrá ser degradada automáticamente al plan gratuito ("Plan Free"), restringiendo el acceso a las funciones premium e inhabilitando la carga o visualización de información protegida, hasta que se regularice la situación.
               </li>
             </ul>

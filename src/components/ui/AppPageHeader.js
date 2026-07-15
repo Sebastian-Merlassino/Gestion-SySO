@@ -16,7 +16,7 @@ export default function AppPageHeader({
   const getPlanLabel = (pid) => {
     if (!pid) return 'Plan Pro';
     const cleanId = pid.toLowerCase();
-    if (cleanId === 'libre') return 'Plan Libre';
+    if (cleanId === 'libre') return 'Plan Full';
     if (cleanId.startsWith('standard')) return 'Plan Standard';
     if (cleanId.startsWith('basic')) return 'Plan Basic';
     return `Plan ${pid}`;

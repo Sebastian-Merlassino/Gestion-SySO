@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { Payment, PreApproval } from 'mercadopago';
 import { NextResponse } from 'next/server';
 import { client as mpClient } from '../../../../config/mpConfig';
+import { PLAN_FEATURES } from '../../../../lib/utils';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseSecretKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
@@ -167,6 +168,18 @@ export async function POST(request) {
         return NextResponse.json({ error: 'Tenant ID o Plan ID faltantes en referencia.' }, { status: 400 });
       }
       
+      // Consultar datos actuales del tenant en base de datos para prorrateo y validación de IDs
+      const { data: tenant, error: fetchTenantErr } = await adminClient
+        .from('tenants')
+        .select('plan_id, plan_ends_at, preapproval_id')
+        .eq('id', tenant_id)
+        .single();
+
+      if (fetchTenantErr || !tenant) {
+        console.error('[Webhook MP Error] Tenant no encontrado al procesar suscripción:', fetchTenantErr);
+        return NextResponse.json({ error: 'Tenant no encontrado en el sistema.' }, { status: 404 });
+      }
+
       if (status === 'authorized') {
         console.log(`[Webhook MP] Activando plan ${plan_id} para Tenant ${tenant_id} por suscripción autorizada.`);
         
@@ -185,12 +198,51 @@ export async function POST(request) {
           console.error('[Webhook MP Warning] No se pudo guardar auditoría de activación:', insertErr);
         }
         
-        // Actualizar plan del tenant y setear vencimiento (30 días de gracia)
+        const oldPlanId = tenant.plan_id;
+        const oldPlanEndsAt = tenant.plan_ends_at;
+        const oldPreapprovalId = tenant.preapproval_id;
+        let extraDays = 0;
+
+        // Calcular días compensados (prorrateo) si cambia de un plan de pago a otro
+        if (oldPlanId && oldPlanId !== 'free' && oldPlanEndsAt && new Date(oldPlanEndsAt) > new Date()) {
+          const oldPlanConfig = PLAN_FEATURES[oldPlanId];
+          const newPlanConfig = PLAN_FEATURES[plan_id];
+
+          if (oldPlanConfig && newPlanConfig && oldPlanConfig.price > 0 && newPlanConfig.price > 0) {
+            const remainingMs = new Date(oldPlanEndsAt).getTime() - Date.now();
+            const remainingDays = Math.max(0, remainingMs / (24 * 60 * 60 * 1000));
+            
+            // Extra Days = Remaining Days * (Old Price / New Price)
+            extraDays = Math.round(remainingDays * (oldPlanConfig.price / newPlanConfig.price));
+            console.log(`[Webhook MP] Calculando prorrata. Tenant: ${tenant_id}, Plan Anterior: ${oldPlanId}, Plan Nuevo: ${plan_id}. Días restantes: ${remainingDays.toFixed(2)}, Días de extensión: ${extraDays}`);
+          }
+        }
+
+        // Cancelar suscripción anterior en Mercado Pago si es un ID diferente
+        if (oldPreapprovalId && oldPreapprovalId !== dataId) {
+          try {
+            console.log(`[Webhook MP] Cancelando suscripción anterior ${oldPreapprovalId} en Mercado Pago...`);
+            const preApprovalClientForCancel = new PreApproval(mpClient);
+            await preApprovalClientForCancel.update({
+              id: oldPreapprovalId,
+              body: { status: 'cancelled' }
+            });
+            console.log(`[Webhook MP] Suscripción anterior ${oldPreapprovalId} cancelada exitosamente.`);
+          } catch (mpCancelErr) {
+            console.error(`[Webhook MP Error] Fallo al cancelar suscripción anterior ${oldPreapprovalId}:`, mpCancelErr);
+          }
+        }
+
+        // Calcular la nueva fecha de finalización (30 días de base + los días de extensión)
+        const finalEndsAt = new Date(Date.now() + (30 + extraDays) * 24 * 60 * 60 * 1000).toISOString();
+
+        // Actualizar plan del tenant, preapproval_id y vencimiento recalculado
         const { error: tenantErr } = await adminClient
           .from('tenants')
           .update({
             plan_id: plan_id,
-            plan_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 días
+            preapproval_id: dataId,
+            plan_ends_at: finalEndsAt
           })
           .eq('id', tenant_id);
           
@@ -201,23 +253,32 @@ export async function POST(request) {
         
         return NextResponse.json({ success: true, message: 'Plan activado por suscripción con éxito.' }, { status: 201 });
       } else if (status === 'cancelled' || status === 'paused') {
-        console.log(`[Webhook MP] Cancelando plan para Tenant ${tenant_id} por suscripción en estado "${status}".`);
-        
-        // Volver al plan free si se cancela o pausa la suscripción
-        const { error: tenantErr } = await adminClient
-          .from('tenants')
-          .update({
-            plan_id: 'free',
-            plan_ends_at: null
-          })
-          .eq('id', tenant_id);
+        const currentActivePreapprovalId = tenant.preapproval_id;
+
+        // Sólo degradar si la cancelación o pausa corresponde a la suscripción activa actual
+        if (currentActivePreapprovalId && currentActivePreapprovalId === dataId) {
+          console.log(`[Webhook MP] Cancelando plan activo para Tenant ${tenant_id} por suscripción "${dataId}" en estado "${status}".`);
           
-        if (tenantErr) {
-          console.error('[Webhook MP Error] Error al restablecer plan a free:', tenantErr);
-          return NextResponse.json({ error: 'Error al cancelar plan en base de datos.' }, { status: 500 });
+          // Volver al plan free si se cancela o pausa la suscripción
+          const { error: tenantErr } = await adminClient
+            .from('tenants')
+            .update({
+              plan_id: 'free',
+              plan_ends_at: null,
+              preapproval_id: null
+            })
+            .eq('id', tenant_id);
+            
+          if (tenantErr) {
+            console.error('[Webhook MP Error] Error al restablecer plan a free:', tenantErr);
+            return NextResponse.json({ error: 'Error al cancelar plan en base de datos.' }, { status: 500 });
+          }
+          
+          return NextResponse.json({ success: true, message: 'Plan revertido a gratis por cancelación.' }, { status: 200 });
+        } else {
+          console.log(`[Webhook MP] Ignorando degradación para Tenant ${tenant_id} porque la suscripción "${dataId}" cancelada/pausada no coincide con la activa actual "${currentActivePreapprovalId}".`);
+          return NextResponse.json({ success: true, message: 'Notificación de cancelación ignorada (suscripción inactiva/anterior).' }, { status: 200 });
         }
-        
-        return NextResponse.json({ success: true, message: 'Plan revertido a gratis por cancelación.' }, { status: 200 });
       }
       
       return NextResponse.json({ success: true, message: `Suscripción registrada en estado: ${status}` }, { status: 200 });
@@ -287,12 +348,36 @@ export async function POST(request) {
         return NextResponse.json({ error: 'Error al registrar transacción.' }, { status: 500 });
       }
 
-      // Actualizar el plan del tenant y renovar vencimiento (+30 días)
+      // Consultar la fecha de vencimiento actual del tenant para no pisar días acumulados (prorrateos o pagos previos)
+      const { data: tenantData, error: fetchTenantErr } = await adminClient
+        .from('tenants')
+        .select('plan_ends_at')
+        .eq('id', tenantId)
+        .single();
+
+      if (fetchTenantErr) {
+        console.error('[Webhook MP Warning] No se pudo obtener la información actual del tenant:', fetchTenantErr);
+      }
+
+      let newEndsAt;
+      const currentPlanEndsAt = tenantData?.plan_ends_at;
+
+      if (currentPlanEndsAt && new Date(currentPlanEndsAt) > new Date()) {
+        // Extender 30 días a partir de la fecha de vencimiento actual
+        newEndsAt = new Date(new Date(currentPlanEndsAt).getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+        console.log(`[Webhook MP] Extendiendo vencimiento a partir de la fecha existente. Tenant: ${tenantId}, Nueva fecha: ${newEndsAt}`);
+      } else {
+        // Iniciar ciclo de 30 días a partir de ahora
+        newEndsAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+        console.log(`[Webhook MP] Iniciando nuevo ciclo de 30 días. Tenant: ${tenantId}, Nueva fecha: ${newEndsAt}`);
+      }
+
+      // Actualizar el plan del tenant y renovar vencimiento
       const { error: tenantErr } = await adminClient
         .from('tenants')
         .update({
           plan_id: planId || 'basic_5',
-          plan_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+          plan_ends_at: newEndsAt
         })
         .eq('id', tenantId);
 
