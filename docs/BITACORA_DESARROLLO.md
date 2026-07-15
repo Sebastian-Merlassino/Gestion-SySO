@@ -11,7 +11,7 @@
 - **Compresión del Footer**: Se redujo la altura total del pie de página público (`PublicFooter.js`) reduciendo los paddings de la Fila 1 (de `py-10` a `py-6`), los de la Fila 2 (de `py-5` a `py-3.5`), los gaps del grid y flex (`gap-8` a `gap-6` y `gap-4` en la base), y los tamaños de textos informativos a `text-[10px]` / `text-[11px]`.
 - **Integración de Modal de Planes en Dashboard**: Se vinculó el botón "Cambiar / Subir de Plan" del panel lateral del Dashboard con el Modal de Selección de Planes directamente en lugar de redirigir a `/profile`. Para ello, se importó `AppConfirmDialog`, se definió `getEffectivePlan` y se inyectaron los flujos de checkout (`handleUpgradePlan`) y cancelaciones dentro de `dashboard/page.js`.
 - **Validación y Texto de Planes Activos**: Se corrigió el contenedor del plan en el Dashboard para utilizar `getEffectivePlan(tenant)` al renderizar el plan contratado, garantizando concordancia absoluta. Se actualizó el nombre comercial de `'Plan Profesional'` a `'Plan Estándar'` en la vista de selección de planes (tanto en `/profile` como en `/dashboard`) alineando sus cuotas a un límite unificado de 25 clientes/técnicos.
-- **Logo Destacado y Espacios Removidos en Modales**: Se mantuvieron e incrementaron los tamaños del logo corporativo en las ventanas de planes (`h-28` / `h-36`) para darles la jerarquía y destaque solicitados, pero se eliminó por completo el aire innecesario arriba y abajo de ellos. Se redujo el padding superior del contenedor modal (`pt-1.5` en vez de `pt-4`/`pt-6`), se redujeron los márgenes inferiores del logo a `mb-0.5` (muy pegado al título) y se ajustó el margen inferior de la sección de títulos (`mb-2`) para hacer la visualización sumamente compacta y limpia.
+- **Logo Destacado y Espacios Removidos en Modales**: Se mantuvieron e incrementaron los tamaños del logo corporativo en las ventanas de planes (`h-28` / `h-36`) para darles la jerarquía y destaque solicitados, pero se eliminó por completo el aire innecesario arriba y abajo de ellos. Se redujo el padding superior del contenedor modal (`pt-1.5` en vez de `pt-4`/`pt-6`), se aplicaron márgenes inferiores y superiores negativos adicionales en la imagen del logo (`-mt-2 -mb-5` y `-mt-5 -mb-7` en onboarding) para compensar la transparencia interna del archivo de imagen y acercar el título directamente a la silueta del isotipo de forma óptima.
 
 ### Archivos Modificados
 - `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
@@ -22,9 +22,7 @@
 - `[MODIFY] src/components/PublicFooter.js`
 
 ### Validaciones Ejecutadas
-- Compilación de producción local de Next.js (`npm run build`) completada con éxito. de Next.js (`npm run build`) completada con éxito.
-
----
+- Compilación de producción local de Next.js (`npm run build`) completada con éxito.
 
 ## [2026-07-15] Ajustes Comerciales: Renombre a "Plan Full", Diálogos de Cancelación Estandarizados y Políticas
 

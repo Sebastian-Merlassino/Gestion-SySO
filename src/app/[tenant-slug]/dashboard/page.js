@@ -2663,7 +2663,7 @@ export default function TenantDashboard({ params }) {
             {/* Contenedor interno con scroll */}
             <div className="overflow-y-auto scrollbar-thin flex-1 pt-1.5 pb-6 px-6 md:px-8">
               <div className="text-center mb-2">
-                <img src="/brand/logo-black.png" alt="Gestión SySO" className="h-28 w-28 object-contain mx-auto -mt-1 mb-0.5" />
+                <img src="/brand/logo-black.png" alt="Gestión SySO" className="h-28 w-28 object-contain mx-auto -mt-2 -mb-5" />
                 <h3 className="font-outfit text-3xl font-black text-slate-900">
                   Modificar tu Plan
                 </h3>

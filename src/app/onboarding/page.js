@@ -1532,7 +1532,7 @@ export default function OnboardingPage() {
             {/* Contenedor interno con scroll para que la barra de desplazamiento se vea por dentro */}
             <div className="overflow-y-auto scrollbar-thin flex-1 pt-1.5 pb-6 px-6 md:px-8">
               <div className="text-center mb-2">
-                <img src="/brand/logo-black.png" alt="Gestión SySO" className="h-36 w-36 object-contain mx-auto -mt-4 mb-0.5" />
+                <img src="/brand/logo-black.png" alt="Gestión SySO" className="h-36 w-36 object-contain mx-auto -mt-5 -mb-7" />
                 <h3 className="font-outfit text-3xl font-black text-slate-900">
                   Seleccioná tu Plan Comercial
                 </h3>
