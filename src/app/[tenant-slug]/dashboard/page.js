@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
-import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
+import { formatDate, formatAsDateInput, convertToDbDate, getEffectivePlan } from '@/lib/utils';
 import AITextHelper from '@/components/ui/AITextHelper';
 import { useToast } from '@/components/providers/ToastProvider';
 import AppPageHeader from '@/components/ui/AppPageHeader';
@@ -13,6 +13,7 @@ import AppButton from '@/components/ui/AppButton';
 import AppCard from '@/components/ui/AppCard';
 import AppInput from '@/components/ui/AppInput';
 import AppSelect from '@/components/ui/AppSelect';
+import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import {
   Building,
   Users,
@@ -43,7 +44,8 @@ import {
   Activity,
   Trash2,
   Printer,
-  Check
+  Check,
+  CheckCircle2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { jsPDF } from 'jspdf';
@@ -96,6 +98,62 @@ export default function TenantDashboard({ params }) {
 
   const triggerToast = (message, type = 'success') => {
     globalToast.toast(message, type);
+  };
+
+  // Estados para el Modal de Selección de Plan
+  const [showPlanModal, setShowPlanModal] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [confirmDialogConfig, setConfirmDialogConfig] = useState({
+    title: '',
+    description: '',
+    type: 'info',
+    onConfirm: null,
+    confirmText: 'Confirmar'
+  });
+
+  const showAlert = (title, message, type = 'info', onConfirm = null, confirmText = 'Confirmar') => {
+    setConfirmDialogConfig({
+      title,
+      description: message,
+      type,
+      onConfirm,
+      confirmText
+    });
+    setShowConfirmDialog(true);
+  };
+
+  const handleUpgradePlan = async (planId) => {
+    const currentActive = tenant ? getEffectivePlan(tenant) : 'free';
+    if (planId === currentActive) {
+      triggerToast('Tu organización ya tiene este plan contratado.', 'info');
+      setShowPlanModal(false);
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          planId,
+          tenantId: tenant?.id
+        })
+      });
+      const data = await response.json();
+      if (data.init_point) {
+        window.location.href = data.init_point;
+      } else {
+        triggerToast('Error al iniciar el pago. Intenta nuevamente.', 'error');
+      }
+    } catch (error) {
+      console.error(error);
+      triggerToast('Error de conexión. Intenta nuevamente.', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Estados de filtros para accidentes en el portal de clientes / admin
@@ -1802,11 +1860,13 @@ export default function TenantDashboard({ params }) {
 
 
   const planNames = {
-    free: 'Plan Gratis Permanente',
-    basic_5: 'Plan 5 Empresas',
-    standard_25: 'Plan 25 Empresas',
-    libre: 'Plan Full (Ilimitado)'
+    free: 'Plan Gratis',
+    basic_5: 'Plan Básico',
+    standard_25: 'Plan Estándar',
+    libre: 'Plan Full'
   };
+
+  const activePlan = tenant ? getEffectivePlan(tenant) : 'free';
 
   return (
     <div className="h-screen overflow-hidden bg-syso-bg text-slate-700 flex font-sans">
@@ -2449,23 +2509,23 @@ export default function TenantDashboard({ params }) {
                       <span className="px-2 py-0.5 rounded-full bg-blue-500/15 text-[#468DFF] text-[8px] font-bold uppercase tracking-wider">
                         Suscripción Activa
                       </span>
-                      <h4 className="text-sm font-bold text-slate-800">{planNames[tenant?.plan_id] || 'Plan Gratis'}</h4>
+                      <h4 className="text-sm font-bold text-slate-800">{planNames[activePlan] || 'Plan Gratis'}</h4>
                       <p className="text-[10px] text-slate-600 leading-normal">
-                        {tenant?.plan_id === 'free' && 'El Plan Gratis te permite cargar 1 empresa cliente para evaluar las herramientas del SaaS.'}
-                        {tenant?.plan_id === 'basic_5' && 'Tienes habilitado el soporte de hasta 5 empresas en simultáneo.'}
-                        {tenant?.plan_id === 'standard_25' && 'Tienes habilitado el soporte de hasta 25 empresas en simultáneo.'}
-                        {tenant?.plan_id === 'libre' && 'Tienes empresas y inspectores ilimitados habilitados.'}
+                        {activePlan === 'free' && 'El Plan Gratis te permite cargar 1 empresa cliente para evaluar las herramientas del SaaS.'}
+                        {activePlan === 'basic_5' && 'Tienes habilitado el soporte de hasta 5 empresas en simultáneo.'}
+                        {activePlan === 'standard_25' && 'Tienes habilitado el soporte de hasta 25 empresas en simultáneo.'}
+                        {activePlan === 'libre' && 'Tienes empresas e inspectores ilimitados habilitados.'}
                       </p>
                     </div>
                   </div>
 
-                  <a
-                    href={`/${tenantSlug}/profile`}
-                    className="w-full py-2.5 px-4 rounded-xl border border-[#468DFF]/40 hover:bg-[#468DFF] hover:text-white text-center text-[#468DFF] font-semibold text-xs transition-all flex items-center justify-center gap-2 shrink-0"
+                  <button
+                    onClick={() => setShowPlanModal(true)}
+                    className="w-full py-2.5 px-4 rounded-xl border border-[#468DFF]/40 hover:bg-[#468DFF] hover:text-white text-center text-[#468DFF] font-semibold text-xs transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
                   >
                     <Sparkles className="h-3.5 w-3.5" />
                     Cambiar / Subir de Plan
-                  </a>
+                  </button>
                 </div>
 
               </div>
@@ -2589,7 +2649,173 @@ export default function TenantDashboard({ params }) {
         </div>
       )}
 
-      {/* TOAST DE FEEDBACK removido - consumido globalmente */}
+      {/* ── Modal de Selección de Plan ── */}
+      {showPlanModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-6xl shadow-2xl relative animate-scaleUp max-h-[90vh] overflow-hidden flex flex-col">
+            <button 
+              onClick={() => setShowPlanModal(false)}
+              className="absolute top-4 right-4 p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors border border-slate-200 cursor-pointer z-10"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            {/* Contenedor interno con scroll */}
+            <div className="overflow-y-auto scrollbar-thin flex-1 pt-4 pb-6 px-6 md:px-8">
+              <div className="text-center mb-3.5">
+                <img src="/brand/logo-black.png" alt="Gestión SySO" className="h-14 w-14 object-contain mx-auto mb-2" />
+                <h3 className="font-outfit text-2xl font-black text-slate-900">
+                  Modificar tu Plan
+                </h3>
+              </div>
+
+              {/* Grid of Plans */}
+              <div className="grid md:grid-cols-4 gap-6 items-stretch pb-2">
+                
+                {/* Plan Free */}
+                <div className={`rounded-2xl border p-5 flex flex-col justify-between transition-all ${activePlan === 'free' ? 'border-[#468DFF] bg-[#468DFF]/5 ring-2 ring-[#468DFF]/20 shadow-md' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
+                  <div>
+                    <h4 className="text-base font-bold text-slate-900">Plan Gratis</h4>
+                    <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">Ideal para probar la herramienta.</p>
+                    <span className="font-outfit text-2xl font-extrabold text-[#468DFF] mt-3 block">$0 <span className="text-xs text-slate-500 font-normal">/ permanente</span></span>
+                    <ul className="text-[11px] text-slate-600 mt-4 space-y-1.5 border-t border-slate-200 pt-4 font-semibold leading-relaxed">
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 1 cliente</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 1 miembro equipo</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Gestión Anual</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Capacitación Anual</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Acciones Correctivas</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Accidentes + Informe IA</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Matriz de Riesgos</li>
+                    </ul>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={activePlan === 'free'}
+                    onClick={() => {
+                      showAlert(
+                        'Cancelar Suscripción',
+                        'Para dar de baja tu plan activo y regresar al Plan Gratis, debes cancelar la suscripción desde tu panel de Mercado Pago. Al confirmarse la cancelación, tu organización se actualizará automáticamente a Gratis sin cargos adicionales.',
+                        'info',
+                        () => {
+                          window.open('https://www.mercadopago.com.ar/subscriptions', '_blank');
+                        },
+                        'Ir a Mercado Pago'
+                      );
+                      setShowPlanModal(false);
+                    }}
+                    className={`w-full py-2.5 rounded-xl mt-6 text-xs font-bold transition-all ${activePlan === 'free' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer'}`}
+                  >
+                    {activePlan === 'free' ? 'Activo' : 'Elegir'}
+                  </button>
+                </div>
+
+                {/* Plan Básico */}
+                <div className={`rounded-2xl border p-5 flex flex-col justify-between transition-all ${activePlan === 'basic_5' ? 'border-[#468DFF] bg-[#468DFF]/5 ring-2 ring-[#468DFF]/20 shadow-md' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
+                  <div>
+                    <h4 className="text-base font-bold text-slate-900">Plan Básico</h4>
+                    <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">Para profesionales de campo.</p>
+                    <span className="font-outfit text-2xl font-extrabold text-[#468DFF] mt-3 block">$25.000 <span className="text-xs text-slate-500 font-normal">/ mes</span></span>
+                    <ul className="text-[11px] text-slate-600 mt-4 space-y-1.5 border-t border-slate-200 pt-4 font-semibold leading-relaxed">
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 5 clientes</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 5 miembros equipo</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Gestión Anual</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Capacitación Anual</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Acciones Correctivas</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Accidentes + Informe IA</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Matriz de Riesgos</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Extintores + PDF</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Eléctrico + PDF</li>
+                    </ul>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={activePlan === 'basic_5'}
+                    onClick={() => handleUpgradePlan('basic_5')}
+                    className={`w-full py-2.5 rounded-xl mt-6 text-xs font-bold transition-all ${activePlan === 'basic_5' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-[#468DFF] hover:bg-[#0511F2] text-white cursor-pointer'}`}
+                  >
+                    {activePlan === 'basic_5' ? 'Activo' : 'Contratar'}
+                  </button>
+                </div>
+
+                {/* Plan Estándar */}
+                <div className={`rounded-2xl border p-5 flex flex-col justify-between transition-all ${activePlan === 'standard_25' ? 'border-[#468DFF] bg-[#468DFF]/5 ring-2 ring-[#468DFF]/20 shadow-md' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
+                  <div>
+                    <h4 className="text-base font-bold text-slate-900">Plan Estándar</h4>
+                    <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">Para consultoras medianas.</p>
+                    <span className="font-outfit text-2xl font-extrabold text-[#468DFF] mt-3 block">$35.000 <span className="text-xs text-slate-500 font-normal">/ mes</span></span>
+                    <ul className="text-[11px] text-slate-600 mt-4 space-y-1.5 border-t border-slate-200 pt-4 font-semibold leading-relaxed">
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 25 clientes</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 25 miembros equipo</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Gestión Anual</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Capacitación Anual</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Acciones Correctivas</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Accidentes + Informe IA</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Matriz de Riesgos</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Extintores + PDF</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Eléctrico + PDF</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Constancias de Visita</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Avisos de Riesgo</li>
+                    </ul>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={activePlan === 'standard_25'}
+                    onClick={() => handleUpgradePlan('standard_25')}
+                    className={`w-full py-2.5 rounded-xl mt-6 text-xs font-bold transition-all ${activePlan === 'standard_25' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-[#468DFF] hover:bg-[#0511F2] text-white cursor-pointer'}`}
+                  >
+                    {activePlan === 'standard_25' ? 'Activo' : 'Contratar'}
+                  </button>
+                </div>
+
+                {/* Plan Full */}
+                <div className={`rounded-2xl border p-5 flex flex-col justify-between transition-all ${activePlan === 'libre' ? 'border-[#468DFF] bg-[#468DFF]/5 ring-2 ring-[#468DFF]/20 shadow-md' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
+                  <div>
+                    <h4 className="text-base font-bold text-slate-900">Plan Full</h4>
+                    <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">Constructoras y corporaciones.</p>
+                    <span className="font-outfit text-2xl font-extrabold text-[#468DFF] mt-3 block">$45.000 <span className="text-xs text-slate-500 font-normal">/ mes</span></span>
+                    <ul className="text-[11px] text-slate-600 mt-4 space-y-1.5 border-t border-slate-200 pt-4 font-semibold leading-relaxed">
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Clientes ilimitados</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Equipo de trabajo ilimitado</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Gestión Anual</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Capacitación Anual</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Acciones Correctivas</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Accidentes + Informe IA</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Matriz de Riesgos</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Extintores + PDF</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Eléctrico + PDF</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Constancias de Visita</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Avisos de Riesgo</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Check list personalizados</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Legajo técnico online</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Portal de clientes</li>
+                    </ul>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={activePlan === 'libre'}
+                    onClick={() => handleUpgradePlan('libre')}
+                    className={`w-full py-2.5 rounded-xl mt-6 text-xs font-bold transition-all ${activePlan === 'libre' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-[#468DFF] hover:bg-[#0511F2] text-white cursor-pointer'}`}
+                  >
+                    {activePlan === 'libre' ? 'Activo' : 'Contratar'}
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Diálogos unificados Radix */}
+      <AppConfirmDialog
+        open={showConfirmDialog}
+        onOpenChange={setShowConfirmDialog}
+        title={confirmDialogConfig.title}
+        description={confirmDialogConfig.description}
+        type={confirmDialogConfig.type}
+        onConfirm={confirmDialogConfig.onConfirm}
+        confirmText={confirmDialogConfig.confirmText}
+      />
 
     </div>
   );

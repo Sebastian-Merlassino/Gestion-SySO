@@ -1976,10 +1976,10 @@ const [partidosList, setPartidosList] = useState([]);
             </button>
 
             {/* Contenedor interno con scroll para que la barra de desplazamiento se vea por dentro */}
-            <div className="overflow-y-auto scrollbar-thin flex-1 pt-6 pb-8 px-6 md:px-8">
-              <div className="text-center mb-5">
-                <img src="/brand/logo-black.png" alt="Gestión SySO" className="h-28 w-28 object-contain mx-auto mb-1.5" />
-                <h3 className="font-outfit text-3xl font-black text-slate-900">
+            <div className="overflow-y-auto scrollbar-thin flex-1 pt-4 pb-6 px-6 md:px-8">
+              <div className="text-center mb-3.5">
+                <img src="/brand/logo-black.png" alt="Gestión SySO" className="h-14 w-14 object-contain mx-auto mb-2" />
+                <h3 className="font-outfit text-2xl font-black text-slate-900">
                   Modificar tu Plan
                 </h3>
               </div>
@@ -2059,12 +2059,12 @@ const [partidosList, setPartidosList] = useState([]);
                     {/* Plan 35000 */}
                     <div className={`rounded-2xl border p-5 flex flex-col justify-between transition-all ${currentActivePlan === 'standard_25' ? 'border-[#468DFF] bg-[#468DFF]/5 ring-2 ring-[#468DFF]/20 shadow-md' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
                       <div>
-                        <h4 className="text-base font-bold text-slate-900">Plan Profesional</h4>
+                        <h4 className="text-base font-bold text-slate-900">Plan Estándar</h4>
                         <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">Para consultoras medianas.</p>
                         <span className="font-outfit text-2xl font-extrabold text-[#468DFF] mt-3 block">$35.000 <span className="text-xs text-slate-500 font-normal">/ mes</span></span>
                         <ul className="text-[11px] text-slate-600 mt-4 space-y-1.5 border-t border-slate-200 pt-4 font-semibold leading-relaxed">
-                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 15 clientes</li>
-                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 15 miembros equipo</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 25 clientes</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 25 miembros equipo</li>
                           <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Gestión Anual</li>
                           <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Capacitación Anual</li>
                           <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Acciones Correctivas</li>

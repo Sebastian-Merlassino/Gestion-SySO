@@ -1,6 +1,6 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-07-15] Refactor de Dashboard, Empaquetado de Fuentes, Logotipo y Footer Comprimido
+## [2026-07-15] Refactor de Dashboard, Integración de Modal de Planes y Compresión de Logo en Ventanas Emergentes
 
 ### Resumen de Cambios
 - **Refactor con Componentes Unificados**: Se rehizo de cero el formulario de tareas pendientes utilizando los componentes unificados del sistema (`AppInput`, `AppSelect` y `AppButton`) en lugar de etiquetas HTML crudas. Esto garantiza consistencia estética total con el design system e impone una altura estándar unificada de `h-10` (38px de altura de componente) en todas las celdas y filas.
@@ -8,10 +8,15 @@
 - **Resolución de Desalineamiento Vertical**: La transición a la altura estándar de `38px` elimina las colisiones de tamaño con el selector nativo del navegador de `32px` de alto, posicionando y centrando verticalmente el botón de calendario a la mitad exacta de la caja del input de forma impecable.
 - **Empaquetado de Fuentes en Webpack**: Se modificaron las directivas `@font-face` en `globals.css` reemplazando la ruta absoluta estática del servidor web `/fonts/virgo-01.ttf` por la ruta relativa del archivo en disco (`../../public/fonts/virgo-01.ttf`). Esto permite que el bundler de Next.js (Webpack) procese, empaquete e indexe la tipografía local en tiempo de compilación, eliminando fallos 404 al servirse desde CDNs o subdominios.
 - **Tildado Nativo de GESTIÓN en Logotipo**: Se reemplazó la palabra `GESTION` por `GESTIÓN` (con tilde nativa) en los logotipos de la barra lateral (desktop y móvil) en `Sidebar.js` y del pie de página en `PublicFooter.js`. Tras empaquetar de forma robusta la fuente mediante Webpack, se comprobó que la tipografía `Virgo 01` (Virgo01) renderiza e hidrata correctamente la tilde de la letra `Ó` en todos los navegadores, prescindiendo de trucos de posicionamiento absoluto y asegurando fidelidad tipográfica.
-- **Compresión del Footer**: Se redujo la altura total del pie de página público (`PublicFooter.js`) reduciendo los paddings de la Fila 1 (de `py-10` a `py-6`), los de la Fila 2 (de `py-5` a `py-3.5`), los gaps del grid y flex (`gap-8` a `gap-6` y `gap-4` en la base), y los tamaños de textos informativos a `text-[10px]` / `text-[11px]`. Se mantuvo la columna central renombrada como **Políticas y Privacidad** (sin la sección de planes comerciales).
+- **Compresión del Footer**: Se redujo la altura total del pie de página público (`PublicFooter.js`) reduciendo los paddings de la Fila 1 (de `py-10` a `py-6`), los de la Fila 2 (de `py-5` a `py-3.5`), los gaps del grid y flex (`gap-8` a `gap-6` y `gap-4` en la base), y los tamaños de textos informativos a `text-[10px]` / `text-[11px]`.
+- **Integración de Modal de Planes en Dashboard**: Se vinculó el botón "Cambiar / Subir de Plan" del panel lateral del Dashboard con el Modal de Selección de Planes directamente en lugar de redirigir a `/profile`. Para ello, se importó `AppConfirmDialog`, se definió `getEffectivePlan` y se inyectaron los flujos de checkout (`handleUpgradePlan`) y cancelaciones dentro de `dashboard/page.js`.
+- **Validación y Texto de Planes Activos**: Se corrigió el contenedor del plan en el Dashboard para utilizar `getEffectivePlan(tenant)` al renderizar el plan contratado, garantizando concordancia absoluta. Se actualizó el nombre comercial de `'Plan Profesional'` a `'Plan Estándar'` en la vista de selección de planes (tanto en `/profile` como en `/dashboard`) alineando sus cuotas a un límite unificado de 25 clientes/técnicos.
+- **Compresión del Cabezal de Modales de Planes**: Se removieron las distancias vacías y desproporcionadas en el modal de selección de planes en `/profile/page.js` y `/onboarding/page.js`, reduciendo el tamaño del logo corporativo de `h-28` / `h-36` a una escala premium de `h-14` y achicando los paddings de cabecera (`pt-6` / `pt-3` a `pt-4` y `pb-8` a `pb-6`).
 
 ### Archivos Modificados
 - `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] src/app/onboarding/page.js`
 - `[MODIFY] src/app/globals.css`
 - `[MODIFY] src/components/Sidebar.js`
 - `[MODIFY] src/components/PublicFooter.js`
