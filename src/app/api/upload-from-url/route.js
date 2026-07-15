@@ -124,16 +124,22 @@ export async function POST(request) {
       );
     }
 
-    // Descarga compatible utilizando arrayBuffer()
-    const arrayBuffer = await res.arrayBuffer();
-    if (arrayBuffer.byteLength > 10 * 1024 * 1024) {
-      return NextResponse.json(
-        { error: 'El archivo excede el tamaño máximo permitido de 10 MB.' },
-        { status: 413 }
-      );
+    // Descarga progresiva y compatible por streams para evitar OOM/DoS
+    const chunks = [];
+    let receivedLength = 0;
+
+    for await (const chunk of res.body) {
+      receivedLength += chunk.length;
+      if (receivedLength > 10 * 1024 * 1024) {
+        return NextResponse.json(
+          { error: 'El archivo excede el tamaño máximo permitido de 10 MB.' },
+          { status: 413 }
+        );
+      }
+      chunks.push(chunk);
     }
 
-    const buffer = Buffer.from(arrayBuffer);
+    const buffer = Buffer.concat(chunks);
     console.log(`[API Upload] Download complete. Size: ${buffer.length} bytes`);
 
     // 4. Validación de tipo de archivo mediante magic number (PDF)
