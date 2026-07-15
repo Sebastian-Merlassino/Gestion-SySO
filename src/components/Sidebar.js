@@ -294,7 +294,7 @@ export default function Sidebar({
               </nav>
             </div>
 
-            <div className="pt-4 border-t border-white/10 shrink-0">
+            <div className="pt-4 border-t border-white/10 shrink-0 flex flex-col gap-3">
               <div className="flex items-center justify-between rounded-xl bg-black/40 p-3 border border-white/5">
                 <div className="truncate pr-2">
                   <span className="text-xs font-bold text-white block truncate" suppressHydrationWarning>{mounted && profile?.full_name ? profile.full_name : 'Usuario'}</span>
@@ -303,6 +303,18 @@ export default function Sidebar({
                 <button onClick={handleLogout} className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-600 hover:text-white transition-all cursor-pointer shrink-0">
                   <LogOut className="h-4 w-4" />
                 </button>
+              </div>
+              <div className="flex flex-col gap-1 items-center justify-center pt-2 px-1 text-[10px] text-white/35 font-medium border-t border-white/5">
+                <div className="flex gap-2">
+                  <Link href="/terminos" target="_blank" className="hover:text-white/60 hover:underline transition-all">Términos</Link>
+                  <span>•</span>
+                  <Link href="/privacidad" target="_blank" className="hover:text-white/60 hover:underline transition-all">Privacidad</Link>
+                  <span>•</span>
+                  <Link href="/cookies" target="_blank" className="hover:text-white/60 hover:underline transition-all">Cookies</Link>
+                </div>
+                <a href="mailto:soporte@gestionsyso.com" className="text-[#468DFF]/80 hover:text-[#468DFF] hover:underline transition-all text-[9px] mt-0.5">
+                  soporte@gestionsyso.com
+                </a>
               </div>
             </div>
           </aside>
