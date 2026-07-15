@@ -176,8 +176,9 @@ export async function POST(request) {
 
     if (uploadErr) {
       console.error('[API Upload] Supabase Storage upload failed:', uploadErr);
+      const detailStr = typeof uploadErr === 'object' ? (uploadErr.message || JSON.stringify(uploadErr)) : uploadErr;
       return NextResponse.json(
-        { error: 'Error al subir el archivo a Supabase Storage.', details: uploadErr.message || uploadErr },
+        { error: `Error al subir el archivo a Supabase Storage: ${detailStr}` },
         { status: 500 }
       );
     }
