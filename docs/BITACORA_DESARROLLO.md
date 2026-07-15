@@ -1,6 +1,6 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-07-15] Refactor de Dashboard, Integración de Modal de Planes y Compresión de Logo en Ventanas Emergentes
+## [2026-07-15] Refactor de Dashboard, Integración de Modal de Planes y Ajuste de Cabecera de Logo en Modales
 
 ### Resumen de Cambios
 - **Refactor con Componentes Unificados**: Se rehizo de cero el formulario de tareas pendientes utilizando los componentes unificados del sistema (`AppInput`, `AppSelect` y `AppButton`) en lugar de etiquetas HTML crudas. Esto garantiza consistencia estética total con el design system e impone una altura estándar unificada de `h-10` (38px de altura de componente) en todas las celdas y filas.
@@ -11,7 +11,7 @@
 - **Compresión del Footer**: Se redujo la altura total del pie de página público (`PublicFooter.js`) reduciendo los paddings de la Fila 1 (de `py-10` a `py-6`), los de la Fila 2 (de `py-5` a `py-3.5`), los gaps del grid y flex (`gap-8` a `gap-6` y `gap-4` en la base), y los tamaños de textos informativos a `text-[10px]` / `text-[11px]`.
 - **Integración de Modal de Planes en Dashboard**: Se vinculó el botón "Cambiar / Subir de Plan" del panel lateral del Dashboard con el Modal de Selección de Planes directamente en lugar de redirigir a `/profile`. Para ello, se importó `AppConfirmDialog`, se definió `getEffectivePlan` y se inyectaron los flujos de checkout (`handleUpgradePlan`) y cancelaciones dentro de `dashboard/page.js`.
 - **Validación y Texto de Planes Activos**: Se corrigió el contenedor del plan en el Dashboard para utilizar `getEffectivePlan(tenant)` al renderizar el plan contratado, garantizando concordancia absoluta. Se actualizó el nombre comercial de `'Plan Profesional'` a `'Plan Estándar'` en la vista de selección de planes (tanto en `/profile` como en `/dashboard`) alineando sus cuotas a un límite unificado de 25 clientes/técnicos.
-- **Compresión del Cabezal de Modales de Planes**: Se removieron las distancias vacías y desproporcionadas en el modal de selección de planes en `/profile/page.js` y `/onboarding/page.js`, reduciendo el tamaño del logo corporativo de `h-28` / `h-36` a una escala premium de `h-14` y achicando los paddings de cabecera (`pt-6` / `pt-3` a `pt-4` y `pb-8` a `pb-6`).
+- **Logo Destacado y Espacios Removidos en Modales**: Se mantuvieron e incrementaron los tamaños del logo corporativo en las ventanas de planes (`h-28` / `h-36`) para darles la jerarquía y destaque solicitados, pero se eliminó por completo el aire innecesario arriba y abajo de ellos. Se redujo el padding superior del contenedor modal (`pt-1.5` en vez de `pt-4`/`pt-6`), se redujeron los márgenes inferiores del logo a `mb-0.5` (muy pegado al título) y se ajustó el margen inferior de la sección de títulos (`mb-2`) para hacer la visualización sumamente compacta y limpia.
 
 ### Archivos Modificados
 - `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
@@ -22,7 +22,7 @@
 - `[MODIFY] src/components/PublicFooter.js`
 
 ### Validaciones Ejecutadas
-- Compilación de producción local de Next.js (`npm run build`) completada con éxito.
+- Compilación de producción local de Next.js (`npm run build`) completada con éxito. de Next.js (`npm run build`) completada con éxito.
 
 ---
 

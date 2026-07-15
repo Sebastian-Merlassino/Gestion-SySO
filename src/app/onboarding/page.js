@@ -1530,10 +1530,10 @@ export default function OnboardingPage() {
             </button>
 
             {/* Contenedor interno con scroll para que la barra de desplazamiento se vea por dentro */}
-            <div className="overflow-y-auto scrollbar-thin flex-1 pt-4 pb-6 px-6 md:px-8">
-              <div className="text-center mb-3">
-                <img src="/brand/logo-black.png" alt="Gestión SySO" className="h-14 w-14 object-contain mx-auto mb-2" />
-                <h3 className="font-outfit text-2xl font-black text-slate-900">
+            <div className="overflow-y-auto scrollbar-thin flex-1 pt-1.5 pb-6 px-6 md:px-8">
+              <div className="text-center mb-2">
+                <img src="/brand/logo-black.png" alt="Gestión SySO" className="h-36 w-36 object-contain mx-auto -mt-4 mb-0.5" />
+                <h3 className="font-outfit text-3xl font-black text-slate-900">
                   Seleccioná tu Plan Comercial
                 </h3>
                 <p className="text-xs text-slate-600 mt-1 font-medium">
