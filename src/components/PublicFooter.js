@@ -16,7 +16,7 @@ export default function PublicFooter() {
           <div className="flex items-center gap-2">
             <img src="/brand/logo-primary.png" alt="Logo" className="h-6 w-6 object-contain" />
             <span className="text-sm font-extrabold tracking-tight">
-              <span className="text-[#468DFF]" style={{ fontFamily: "'Virgo 01', 'Virgo', sans-serif" }}>GESTION</span>
+              <span className="text-[#468DFF]" style={{ fontFamily: "'Virgo 01', 'Virgo01', 'Virgo', sans-serif" }}>GESTION</span>
               <span className="text-white ml-1" style={{ fontFamily: "'Audiowide', sans-serif" }}>SySO</span>
             </span>
           </div>
