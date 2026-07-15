@@ -1,6 +1,7 @@
 // src/app/api/upload-from-url/route.js
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
+import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { z } from 'zod';
 
@@ -49,13 +50,15 @@ export async function POST(request) {
       },
     });
 
-    const { data: { user }, error: authError } = await serverClient.auth.getUser();
-    if (authError || !user) {
+    const { data: { session }, error: sessionError } = await serverClient.auth.getSession();
+    if (sessionError || !session || !session.user) {
       return NextResponse.json(
         { error: 'No autorizado. Debe iniciar sesión.' },
         { status: 401 }
       );
     }
+    const user = session.user;
+    const token = session.access_token;
 
     const { data: profile, error: profError } = await serverClient
       .from('profiles')
@@ -154,8 +157,17 @@ export async function POST(request) {
     const fileId = crypto.randomUUID();
     const storagePath = `${user.id}/programa_${fileId}.pdf`;
 
+    // Crear un cliente autenticado explícito con el JWT del usuario para que Storage aplique RLS correctamente
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    });
+
     console.log(`[API Upload] Uploading to Storage documents bucket: ${storagePath}`);
-    const { error: uploadErr } = await serverClient.storage
+    const { error: uploadErr } = await authClient.storage
       .from('documents')
       .upload(storagePath, buffer, {
         contentType: 'application/pdf',
@@ -165,7 +177,7 @@ export async function POST(request) {
     if (uploadErr) {
       console.error('[API Upload] Supabase Storage upload failed:', uploadErr);
       return NextResponse.json(
-        { error: 'Error al subir el archivo a Supabase Storage.' },
+        { error: 'Error al subir el archivo a Supabase Storage.', details: uploadErr.message || uploadErr },
         { status: 500 }
       );
     }
