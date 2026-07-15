@@ -102,7 +102,12 @@ export async function POST(request) {
     }
 
     console.log(`[API Upload] Downloading from: ${downloadUrl}`);
-    const res = await fetch(downloadUrl, { signal: AbortSignal.timeout(30000) });
+    const res = await fetch(downloadUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      },
+      signal: AbortSignal.timeout(30000)
+    });
     if (!res.ok) {
       return NextResponse.json(
         { error: `No se pudo descargar el archivo. Código de estado HTTP: ${res.status}` },
@@ -119,28 +124,16 @@ export async function POST(request) {
       );
     }
 
-    // Descarga por streams para evitar OOM si no hay cabecera de tamaño
-    const reader = res.body.getReader();
-    const chunks = [];
-    let receivedLength = 0;
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      chunks.push(value);
-      receivedLength += value.length;
-
-      if (receivedLength > 10 * 1024 * 1024) {
-        await reader.cancel();
-        return NextResponse.json(
-          { error: 'El archivo excede el tamaño máximo permitido de 10 MB.' },
-          { status: 413 }
-        );
-      }
+    // Descarga compatible utilizando arrayBuffer()
+    const arrayBuffer = await res.arrayBuffer();
+    if (arrayBuffer.byteLength > 10 * 1024 * 1024) {
+      return NextResponse.json(
+        { error: 'El archivo excede el tamaño máximo permitido de 10 MB.' },
+        { status: 413 }
+      );
     }
 
-    const buffer = Buffer.concat(chunks);
+    const buffer = Buffer.from(arrayBuffer);
     console.log(`[API Upload] Download complete. Size: ${buffer.length} bytes`);
 
     // 4. Validación de tipo de archivo mediante magic number (PDF)
@@ -179,7 +172,7 @@ export async function POST(request) {
   } catch (err) {
     console.error('[API Upload] Internal error:', err);
     return NextResponse.json(
-      { error: 'Error interno del servidor. Intente de nuevo.' },
+      { error: 'Error interno del servidor. Intente de nuevo.', details: err.message },
       { status: 500 }
     );
   }

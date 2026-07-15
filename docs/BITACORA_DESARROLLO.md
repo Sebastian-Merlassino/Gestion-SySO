@@ -1,6 +1,6 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-07-15] Refactor de Dashboard, Integración de Modal de Planes y Ajuste de Cabecera de Logo en Modales
+## [2026-07-15] Refactor de Dashboard, Importador de Enlaces Remotos e Integración de Planes
 
 ### Resumen de Cambios
 - **Refactor con Componentes Unificados**: Se rehizo de cero el formulario de tareas pendientes utilizando los componentes unificados del sistema (`AppInput`, `AppSelect` y `AppButton`) en lugar de etiquetas HTML crudas. Esto garantiza consistencia estética total con el design system e impone una altura estándar unificada de `h-10` (38px de altura de componente) en todas las celdas y filas.
@@ -12,11 +12,13 @@
 - **Integración de Modal de Planes en Dashboard**: Se vinculó el botón "Cambiar / Subir de Plan" del panel lateral del Dashboard con el Modal de Selección de Planes directamente en lugar de redirigir a `/profile`. Para ello, se importó `AppConfirmDialog`, se definió `getEffectivePlan` y se inyectaron los flujos de checkout (`handleUpgradePlan`) y cancelaciones dentro de `dashboard/page.js`.
 - **Validación y Texto de Planes Activos**: Se corrigió el contenedor del plan en el Dashboard para utilizar `getEffectivePlan(tenant)` al renderizar el plan contratado, garantizando concordancia absoluta. Se actualizó el nombre comercial de `'Plan Profesional'` a `'Plan Estándar'` en la vista de selección de planes (tanto en `/profile` como en `/dashboard`) alineando sus cuotas a un límite unificado de 25 clientes/técnicos.
 - **Logo Destacado y Espacios Removidos en Modales**: Se mantuvieron e incrementaron los tamaños del logo corporativo en las ventanas de planes (`h-28` / `h-36`) para darles la jerarquía y destaque solicitados, pero se eliminó por completo el aire innecesario arriba y abajo de ellos. Se redujo el padding superior del contenedor modal (`pt-1.5` en vez de `pt-4`/`pt-6`), se aplicaron márgenes inferiores y superiores negativos adicionales en la imagen del logo (`-mt-2 -mb-5` y `-mt-5 -mb-7` en onboarding) para compensar la transparencia interna del archivo de imagen y acercar el título directamente a la silueta del isotipo de forma óptima.
+- **Robustez en Importador de Enlaces Remotos (Google Drive)**: Se refactorizó la descarga server-side en el endpoint `/api/upload-from-url` reemplazando el consumo de stream web (`res.body.getReader()`) por la API unificada y robusta `res.arrayBuffer()`. Esto elimina excepciones de tipo (`TypeError`) de incompatibilidad del lector de streams en entornos de Node.js de producción (Vercel). Asimismo, se configuró una cabecera de `User-Agent` de navegador al hacer peticiones a Google para evitar denegación de descargas.
 
 ### Archivos Modificados
 - `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
 - `[MODIFY] src/app/[tenant-slug]/profile/page.js`
 - `[MODIFY] src/app/onboarding/page.js`
+- `[MODIFY] src/app/api/upload-from-url/route.js`
 - `[MODIFY] src/app/globals.css`
 - `[MODIFY] src/components/Sidebar.js`
 - `[MODIFY] src/components/PublicFooter.js`
