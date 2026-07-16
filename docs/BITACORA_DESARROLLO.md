@@ -1,5 +1,57 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-15] Integración de Envío por WhatsApp en Aviso de Riesgo y Constancia de Visita
+
+### Resumen de Cambios
+- **Modal de Envío Unificado (Tabs)**: Se rediseñó el modal de exportación para incluir dos pestañas interactivas: "Correo Electrónico" (manteniendo el flujo SMTP actual) y "WhatsApp" (para el nuevo flujo de compartición).
+- **Recuperación de Teléfonos de Empresa**: Se actualizaron las consultas de empresas en las secciones de Avisos y Visitas para seleccionar la columna `contactos_telefonos` en base de datos.
+- **Flujo de WhatsApp en la Nube**: Al enviar por WhatsApp, el PDF generado se sube dinámicamente al Supabase Storage en el bucket `documents` y se genera una URL firmada con vencimiento seguro de 7 días.
+- **Redirección WhatsApp API**: Se integra redirección directa a la API de WhatsApp (`https://api.whatsapp.com/send`) con el mensaje y el enlace seguro del PDF. Permite:
+  - Seleccionar un contacto de la empresa con teléfono registrado.
+  - Cargar manualmente un número.
+  - Abrir la aplicación sin destinatario fijo para seleccionar directamente desde los contactos de WhatsApp.
+- **Validación de Compilación**: Compilación del bundle de Next.js (`npm run build`) verificada de forma exitosa.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción local de Next.js (`npm run build`) completada con éxito.
+
+---
+
+## [2026-07-15] Incorporación de Acciones PDF Directas en Formularios
+
+### Resumen de Cambios
+- **Botones de Descarga y Envío de PDF**: Se agregaron botones dedicados para descargar y enviar por correo electrónico las constancias de visita y avisos de riesgo directamente desde sus respectivos formularios de edición y lectura.
+- **Homologación Estética y Funcional**: El diseño de los botones imita el formato compacto implementado en el modal de investigación de accidentes, utilizando la variante secundaria en blanco con borde azul para "Enviar PDF" y la variante primaria en azul para "Descargar PDF".
+- **Visualización Condicional**: Los botones se renderizan únicamente cuando el registro está guardado y posee un identificador válido (`editingId` no nulo).
+- **Refactorización a Componentes Unificados**: Se refactorizó la botonera del pie del formulario de Aviso de Riesgo para migrar de etiquetas HTML `<button>` nativas a componentes unificados `<AppButton>`, asegurando consistencia visual absoluta e impidiendo el desajuste con las directivas de marca.
+- **Estandarización del Botón a "Guardar"**: Se unificó el texto del botón principal de confirmación de los formularios para que siempre diga "Guardar" de forma fija, independientemente de si se opera sobre un alta o una edición.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción local de Next.js (`npm run build`) completada con éxito.
+
+---
+
+## [2026-07-15] Actualización de la Descripción en el Footer Público
+
+### Resumen de Cambios
+- **Descripción Institucional**: Se actualizó el texto descriptivo del footer público (PublicFooter.js) para describir de forma clara y unificada el propósito de la plataforma SaaS Gestión SySO.
+
+### Archivos Modificados
+- `[MODIFY] src/components/PublicFooter.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción local de Next.js (`npm run build`) completada con éxito.
+
+---
+
 ## [2026-07-15] Refactor de Dashboard, Importador de Enlaces Remotos e Integración de Planes
 
 ### Resumen de Cambios
