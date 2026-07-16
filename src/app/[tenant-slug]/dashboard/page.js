@@ -143,14 +143,22 @@ export default function TenantDashboard({ params }) {
         })
       });
       const data = await response.json();
-      if (data.init_point) {
-        window.location.href = data.init_point;
+      if (!response.ok || data.error) {
+        throw new Error(data.message || data.error || 'Error al iniciar el pago.');
+      }
+      
+      const initPoint = data.initPoint || data.init_point;
+      if (initPoint) {
+        triggerToast('Redirigiendo a la pasarela de pagos seguros de Mercado Pago...', 'info');
+        setTimeout(() => {
+          window.location.href = initPoint;
+        }, 1000);
       } else {
-        triggerToast('Error al iniciar el pago. Intenta nuevamente.', 'error');
+        throw new Error('No se recibió la URL de pago de la pasarela.');
       }
     } catch (error) {
       console.error(error);
-      triggerToast('Error de conexión. Intenta nuevamente.', 'error');
+      triggerToast(error.message || 'Error al iniciar el pago. Intenta nuevamente.', 'error');
     } finally {
       setLoading(false);
     }

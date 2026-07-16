@@ -1,5 +1,19 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-15] Corrección en Checkout de Dashboard y Sincronización de Entorno Mercado Pago
+
+### Resumen de Cambios
+- **Solución al Inicio de Pago en Dashboard**: Se corrigió una discrepancia en el manejador `handleUpgradePlan` del Dashboard ([dashboard/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/dashboard/page.js)), que buscaba la propiedad en formato snake_case `data.init_point` en lugar de `data.initPoint` (camelCase) que retorna el backend de `/api/checkout`. Esto provocaba que no se abriera la pasarela de Mercado Pago y se mostrara la alerta genérica de error sin reflejar errores de red o excepciones en la consola del navegador.
+- **Normalización de Respuestas de Error**: Se alinearon los mensajes de error mostrados mediante Toasts en el Dashboard para capturar y mostrar los detalles reales del servidor (`data.message` o `data.error`) en lugar de mostrar siempre un mensaje genérico.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción local de Next.js (`npm run build`) completada con éxito.
+
+---
+
 ## [2026-07-15] Integración de Envío por WhatsApp en Aviso de Riesgo y Constancia de Visita
 
 ### Resumen de Cambios
