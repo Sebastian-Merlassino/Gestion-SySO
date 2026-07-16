@@ -49,6 +49,7 @@ export default function ImageUploadZone({
   onRemovePhoto,      // Multiple images remove handler: (index) => void
 }) {
   const [isDragging, setIsDragging] = useState(false);
+  const [showSourceSelector, setShowSourceSelector] = useState(false);
   const fileRef = useRef(null);
   const cameraRef = useRef(null);
 
@@ -152,15 +153,6 @@ export default function ImageUploadZone({
               </>
             )}
           </div>
-          {/* Fallback inputs for changing file */}
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            disabled={disabled}
-            onChange={handleFileChangeInternal}
-          />
         </div>
       ) : multiple && images.length > 0 ? (
         <div
@@ -203,26 +195,54 @@ export default function ImageUploadZone({
             {/* Tarjeta de añadir foto */}
             {!disabled && (
               <div
-                onClick={() => fileRef.current?.click()}
-                className="relative aspect-square rounded-xl border-2 border-dashed border-slate-200 bg-white hover:border-[#468DFF] hover:bg-blue-50/20 transition-all flex flex-col items-center justify-center gap-1.5 cursor-pointer shadow-sm group"
+                className="relative aspect-square rounded-xl border-2 border-dashed border-slate-200 bg-white hover:border-[#468DFF] hover:bg-blue-50/20 transition-all flex flex-col items-center justify-center gap-1.5 cursor-pointer shadow-sm group overflow-hidden"
               >
-                <div className="p-1.5 rounded-lg bg-slate-50 text-slate-400 group-hover:bg-[#468DFF]/10 group-hover:text-[#468DFF] transition-colors">
-                  <PlusCircle className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] font-bold text-slate-500 group-hover:text-[#468DFF] transition-colors">Añadir foto</span>
+                {!showSourceSelector ? (
+                  <div
+                    className="w-full h-full flex flex-col items-center justify-center gap-1.5"
+                    onClick={() => setShowSourceSelector(true)}
+                  >
+                    <div className="p-1.5 rounded-lg bg-slate-50 text-slate-400 group-hover:bg-[#468DFF]/10 group-hover:text-[#468DFF] transition-colors">
+                      <PlusCircle className="h-5 w-5" />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-500 group-hover:text-[#468DFF] transition-colors">Añadir foto</span>
+                  </div>
+                ) : (
+                  <div className="absolute inset-0 bg-white flex flex-col p-1.5 justify-between">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowSourceSelector(false);
+                        cameraRef.current?.click();
+                      }}
+                      className="flex-grow flex items-center justify-center gap-1 text-[10px] font-bold text-slate-700 bg-slate-50 hover:bg-blue-50 hover:text-[#468DFF] rounded-lg border border-slate-100 transition-colors py-1 cursor-pointer"
+                    >
+                      <Camera className="h-3.5 w-3.5" />
+                      Cámara
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowSourceSelector(false);
+                        fileRef.current?.click();
+                      }}
+                      className="flex-grow flex items-center justify-center gap-1 text-[10px] font-bold text-slate-700 bg-slate-50 hover:bg-blue-50 hover:text-[#468DFF] rounded-lg border border-slate-100 transition-colors py-1 mt-1 cursor-pointer"
+                    >
+                      <Upload className="h-3.5 w-3.5" />
+                      Galería
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowSourceSelector(false)}
+                      className="text-[9px] font-semibold text-slate-400 hover:text-red-500 mt-1 py-0.5 text-center transition-colors cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
-
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            multiple={true}
-            className="hidden"
-            disabled={disabled}
-            onChange={handleFileChangeInternal}
-          />
         </div>
       ) : (
         <div
@@ -234,25 +254,6 @@ export default function ImageUploadZone({
             ${isDragging ? 'border-[#468DFF] bg-blue-50/50' : 'border-slate-200 bg-white hover:border-[#468DFF] hover:bg-blue-50/30'}
             ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
         >
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            multiple={multiple}
-            className="hidden"
-            disabled={disabled}
-            onChange={handleFileChangeInternal}
-          />
-          <input
-            ref={cameraRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="hidden"
-            disabled={disabled}
-            onChange={handleFileChangeInternal}
-          />
-          
           <div className="flex flex-col items-center gap-1">
             <ImageIcon className="h-8 w-8 text-slate-400" />
             <p className="text-xs font-semibold text-slate-600">
@@ -284,6 +285,26 @@ export default function ImageUploadZone({
           <p className="text-[9px] text-slate-400 font-medium">PNG, JPG, JPEG o WEBP de hasta {maxSizeMB} MB por archivo</p>
         </div>
       )}
+
+      {/* Inputs globales y ocultos para archivos y cámara */}
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        multiple={multiple}
+        className="absolute opacity-0 w-0 h-0 pointer-events-none"
+        disabled={disabled}
+        onChange={handleFileChangeInternal}
+      />
+      <input
+        ref={cameraRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="absolute opacity-0 w-0 h-0 pointer-events-none"
+        disabled={disabled}
+        onChange={handleFileChangeInternal}
+      />
     </div>
   );
 }

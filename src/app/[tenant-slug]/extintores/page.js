@@ -1379,11 +1379,13 @@ export default function ExtintoresPage({ params }) {
                               onChange={(e) => {
                                 const val = e.target.value;
                                 if (val) {
-                                  const parts = val.split('-');
-                                  if (parts.length === 3) {
-                                    setVencRecarga(`${parts[2]}/${parts[1]}/${parts[0]}`);
-                                  }
-                                }
+    const parts = val.split('-');
+    if (parts.length === 3) {
+      setVencRecarga(`${parts[2]}/${parts[1]}/${parts[0]}`);
+    }
+  } else {
+    setVencRecarga('');
+  }
                               }}
                             />
                           </div>
@@ -1409,11 +1411,13 @@ export default function ExtintoresPage({ params }) {
                               onChange={(e) => {
                                 const val = e.target.value;
                                 if (val) {
-                                  const parts = val.split('-');
-                                  if (parts.length === 3) {
-                                    setVencPh(`${parts[2]}/${parts[1]}/${parts[0]}`);
-                                  }
-                                }
+    const parts = val.split('-');
+    if (parts.length === 3) {
+      setVencPh(`${parts[2]}/${parts[1]}/${parts[0]}`);
+    }
+  } else {
+    setVencPh('');
+  }
                               }}
                             />
                           </div>
@@ -1530,11 +1534,13 @@ export default function ExtintoresPage({ params }) {
                               onChange={(e) => {
                                 const val = e.target.value;
                                 if (val) {
-                                  const parts = val.split('-');
-                                  if (parts.length === 3) {
-                                    setFechaControl(`${parts[2]}/${parts[1]}/${parts[0]}`);
-                                  }
-                                }
+    const parts = val.split('-');
+    if (parts.length === 3) {
+      setFechaControl(`${parts[2]}/${parts[1]}/${parts[0]}`);
+    }
+  } else {
+    setFechaControl('');
+  }
                               }}
                             />
                           </div>
@@ -1818,7 +1824,7 @@ export default function ExtintoresPage({ params }) {
                             {sortField === 'cliente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                           </th>
                           <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 py-4 px-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('area_sector')}>
-                            Sector
+                            Sector / Referencia
                             {sortField === 'area_sector' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
                           </th>
                           <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 py-4 px-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('n_puesto')}>
@@ -1875,7 +1881,12 @@ export default function ExtintoresPage({ params }) {
                                   </span>
                                 </td>
                                 <td className="py-4 px-4">
-                                  <span className="font-semibold text-slate-800 block truncate max-w-[150px]">{ext.area_sector || 'S/D'}</span>
+                                  <span className="font-semibold text-slate-800 block truncate max-w-[150px]" title={ext.area_sector}>{ext.area_sector || 'S/D'}</span>
+                                  {ext.puesto_operacion_ref && (
+                                    <span className="text-[10px] text-slate-400 block truncate max-w-[150px] mt-0.5" title={ext.puesto_operacion_ref}>
+                                      {ext.puesto_operacion_ref}
+                                    </span>
+                                  )}
                                 </td>
                                 <td className="py-4 px-4">
                                   <span className="font-medium text-slate-700 block">Puesto: {ext.n_puesto || 'S/D'}</span>

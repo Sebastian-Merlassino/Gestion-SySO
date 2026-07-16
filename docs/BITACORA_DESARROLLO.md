@@ -1,5 +1,40 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-16] Corrección de Cámara en Grid de Fotos, Limpieza de Fechas y Columna "Sector / Referencia" en Extintores
+
+### Resumen de Cambios
+- **Corrección de Bloqueo de Cámara y Selector de Origen**:
+  - Se modificó [ImageUploadZone.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/components/ui/ImageUploadZone.js) reemplazando la clase `hidden` de los inputs de archivos por `absolute opacity-0 w-0 h-0 pointer-events-none`. Esto soluciona problemas en ciertos navegadores móviles donde se bloqueaba el disparo de la cámara si el input no estaba visible en el DOM.
+  - Se implementó un estado `showSourceSelector` en la tarjeta de "Añadir foto" del grid de múltiples imágenes. Ahora, al hacer click, se despliega una interfaz compacta que permite elegir entre "Cámara" o "Galería", solventando el problema de que por defecto sólo abría la galería en grids con fotos cargadas.
+- **Soporte para Borrado en Selectores de Fecha Nativa**:
+  - Se implementó un script que inyecta la rama `else` en la lógica de `onChange` de los datepickers nativos invisibles en todos los módulos de la aplicación. Al hacer click en "Borrar" o "Limpiar" en el selector nativo del navegador, la fecha se borra correctamente en el input visible y el estado asociado.
+- **Unificación de Columnas en Tabla de Extintores**:
+  - Se renombró la columna "Sector" a "Sector / Referencia" en [extintores/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/extintores/page.js).
+  - Se modificó la celda correspondiente para renderizar en una segunda línea más pequeña y gris el campo de puesto, operación y referencia (`ext.puesto_operacion_ref`) si está cargado.
+
+### Archivos Modificados
+- `[MODIFY] src/components/ui/ImageUploadZone.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] src/app/[tenant-slug]/nomina/page.js`
+- `[MODIFY] src/app/[tenant-slug]/matriz-riesgos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+- `[MODIFY] src/app/onboarding/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción local de Next.js (`npm run build`) completada con éxito.
+
+---
+
 ## [2026-07-15] Corrección en Checkout de Dashboard y Sincronización de Entorno Mercado Pago
 
 ### Resumen de Cambios

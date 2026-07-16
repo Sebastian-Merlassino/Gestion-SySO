@@ -2658,11 +2658,13 @@ export default function MatrizRiesgosPage({ params }) {
                                     onChange={(e) => {
                                       const val = e.target.value;
                                       if (val) {
-                                        const parts = val.split('-');
-                                        if (parts.length === 3) {
-                                          setSingleFechaPlanificada(`${parts[2]}/${parts[1]}/${parts[0]}`);
-                                        }
-                                      }
+    const parts = val.split('-');
+    if (parts.length === 3) {
+      setSingleFechaPlanificada(`${parts[2]}/${parts[1]}/${parts[0]}`);
+    }
+  } else {
+    setSingleFechaPlanificada('');
+  }
                                     }}
                                   />
                                 </div>
@@ -2688,11 +2690,13 @@ export default function MatrizRiesgosPage({ params }) {
                                     onChange={(e) => {
                                       const val = e.target.value;
                                       if (val) {
-                                        const parts = val.split('-');
-                                        if (parts.length === 3) {
-                                          setSingleFechaRealizacion(`${parts[2]}/${parts[1]}/${parts[0]}`);
-                                        }
-                                      }
+    const parts = val.split('-');
+    if (parts.length === 3) {
+      setSingleFechaRealizacion(`${parts[2]}/${parts[1]}/${parts[0]}`);
+    }
+  } else {
+    setSingleFechaRealizacion('');
+  }
                                     }}
                                   />
                                 </div>

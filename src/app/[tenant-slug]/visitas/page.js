@@ -2708,11 +2708,13 @@ export default function VisitasPage({ params }) {
                               onChange={(e) => {
                                 const val = e.target.value;
                                 if (val) {
-                                  const parts = val.split('-');
-                                  if (parts.length === 3) {
-                                    setFecha(`${parts[2]}/${parts[1]}/${parts[0]}`);
-                                  }
-                                }
+    const parts = val.split('-');
+    if (parts.length === 3) {
+      setFecha(`${parts[2]}/${parts[1]}/${parts[0]}`);
+    }
+  } else {
+    setFecha('');
+  }
                               }}
                             />
                           </div>

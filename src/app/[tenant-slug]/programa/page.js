@@ -1513,11 +1513,13 @@ export default function ProgramaGestion({ params }) {
                               onChange={(e) => {
                                 const val = e.target.value;
                                 if (val) {
-                                  const parts = val.split('-');
-                                  if (parts.length === 3) {
-                                    setFechaPlanificada(`${parts[2]}/${parts[1]}/${parts[0]}`);
-                                  }
-                                }
+    const parts = val.split('-');
+    if (parts.length === 3) {
+      setFechaPlanificada(`${parts[2]}/${parts[1]}/${parts[0]}`);
+    }
+  } else {
+    setFechaPlanificada('');
+  }
                               }}
                             />
                           </div>
@@ -1547,11 +1549,13 @@ export default function ProgramaGestion({ params }) {
                               onChange={(e) => {
                                 const val = e.target.value;
                                 if (val) {
-                                  const parts = val.split('-');
-                                  if (parts.length === 3) {
-                                    handleRealizacionChange(`${parts[2]}/${parts[1]}/${parts[0]}`);
-                                  }
-                                }
+    const parts = val.split('-');
+    if (parts.length === 3) {
+      handleRealizacionChange(`${parts[2]}/${parts[1]}/${parts[0]}`);
+    }
+  } else {
+    handleRealizacionChange('');
+  }
                               }}
                             />
                           </div>
