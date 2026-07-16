@@ -1,5 +1,24 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-16] Carga Masiva de Matriz de Riesgos mediante Subida de Planilla Excel
+
+### Resumen de Cambios
+- **Modo de Carga Masiva**: Se implementó una interfaz de pestañas ("Cargar por Planilla Excel" y "Carga Manual de Matriz") en el formulario de creación de la matriz de riesgos. Se cambió la palabra "oficial" por "modelo" en los textos de la interfaz y se incorporó un pictograma/bloque descriptivo estructurado en tres columnas de guía rápida que explica qué celdas son libres, cuáles corresponden a desplegables bloqueantes y las restricciones críticas del formato.
+- **Descarga de Plantilla Dinámica**: Incorporación de generación y descarga dinámica de una planilla Excel (`xlsx`) precompletada con el nombre de descarga estándar `"planilla-matriz-riesgos-modelo.xlsx"` y validación de datos integrada (listas de selección para Clientes, Establecimientos, Frecuencias, Situación, Probabilidad e Inicial/Residual). Se eliminó cualquier referencia al nombre del usuario ("Sebastian") en el ejemplo descargable utilizando en su lugar el nombre genérico "Gonzalo Merlo".
+- **Matriz de Valoración de Riesgos en Plantilla**: Se incorporó una nueva hoja visible llamada `"Matriz de Valoración"` dentro del archivo Excel descargable. Esta hoja presenta la tabla de doble entrada Probabilidad (3 niveles) vs Gravedad (3 niveles) con colores de riesgo estandarizados basados en la norma **BS 8800** e incluye definiciones detalladas y ejemplos ilustrativos para todos los rangos de Frecuencia de Exposición, Niveles de Probabilidad y Niveles de Gravedad (Severidad) para guiar al usuario.
+- **Procesamiento de Archivos e Índices**: Lectura de planillas mediante array de arrays de SheetJS para evitar colisiones en nombres de cabeceras duplicados (`Probabilidad`, `Gravedad`, `Nivel de Riesgo` puro vs residual).
+- **Control de Errores e IDOR**: Validación detallada de pertenencia de cliente/establecimiento al tenant, formatos de fecha correctos, niveles de probabilidad/gravedad, y visualización de errores detallada por fila en una tabla de previsualización antes de persistir.
+- **Múltiples Fuentes de Subida**: Integración con `DocumentUploadZone` permitiendo importar archivos locales, enlaces de Google Drive, o planillas directamente desde el Legajo Técnico del tenant.
+- **Asistencia de IA en Textareas (SySO-AI-Voice-Helper)**: Integración del componente `<AITextHelper />` en las cajas de texto de observaciones de la Matriz de Riesgos (tanto en la edición individual como en la carga manual por puestos en lote), habilitando dictado por voz por micrófono, refinamiento con Gemini Flash y borrado rápido.
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/matriz-riesgos/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción local de Next.js (`npm run build`) completada con éxito.
+
+---
+
 ## [2026-07-16] Corrección de Cámara en Grid de Fotos, Limpieza de Fechas y Columna "Sector / Referencia" en Extintores
 
 ### Resumen de Cambios

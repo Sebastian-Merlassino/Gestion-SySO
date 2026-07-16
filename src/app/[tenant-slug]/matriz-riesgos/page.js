@@ -8,6 +8,9 @@ import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
+import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
+import AITextHelper from '@/components/ui/AITextHelper';
 import { useToast } from '@/components/providers/ToastProvider';
 import AppPageHeader from '@/components/ui/AppPageHeader';
 import AppButton from '@/components/ui/AppButton';
@@ -42,7 +45,10 @@ import {
   AlertCircle,
   Sliders,
   Printer,
-  FileText
+  FileText,
+  Upload,
+  Download,
+  FolderOpen
 } from 'lucide-react';
 
 const FRECUENCIAS = [
@@ -182,6 +188,13 @@ export default function MatrizRiesgosPage({ params }) {
   // Estados del CRUD / Vista Formulario
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isBulkMode, setIsBulkMode] = useState(false); // true = Alta Masiva, false = Edición individual de fila
+  const [loadType, setLoadType] = useState('excel');
+  const [uploadType, setUploadType] = useState('local'); // 'local', 'drive', 'legajo'
+  const [selectedFileName, setSelectedFileName] = useState('');
+  const [selectedLegajoPath, setSelectedLegajoPath] = useState('');
+  const [loadingLegajoFile, setLoadingLegajoFile] = useState(false);
+  const [previewRows, setPreviewRows] = useState([]);
+  const [legajoFiles, setLegajoFiles] = useState([]);
 
   // Campos de formulario a nivel matriz / cabecera
   const [empresaId, setEmpresaId] = useState('');
@@ -394,6 +407,22 @@ export default function MatrizRiesgosPage({ params }) {
         .order('full_name');
       if (memErr) throw memErr;
       setMiembrosList(mems || []);
+
+      // Fetch Excel/CSV files from Legajo Técnico
+      let legajoQuery = supabase.from('legajo_tecnico').select('id, documento_nombre, documento_url, empresa_id, fecha').eq('tenant_id', ten.id);
+      if (prof.role === 'cliente') {
+        legajoQuery = legajoQuery.eq('empresa_id', prof.empresa_id);
+      }
+      const { data: legajos, error: legErr } = await legajoQuery.order('fecha', { ascending: false });
+      if (!legErr && legajos) {
+        const excelLegajos = legajos.filter(l => {
+          const name = (l.documento_nombre || '').toLowerCase();
+          const url = (l.documento_url || '').toLowerCase();
+          return name.endsWith('.xlsx') || name.endsWith('.xls') || name.endsWith('.csv') ||
+                 url.endsWith('.xlsx') || url.endsWith('.xls') || url.endsWith('.csv');
+        });
+        setLegajoFiles(excelLegajos);
+      }
 
       // Catálogo de peligros
       const { data: catData, error: catErr } = await supabase
@@ -944,12 +973,748 @@ export default function MatrizRiesgosPage({ params }) {
     }));
   };
 
+  const handleOpenCreateForm = () => {
+    handleCloseForm();
+    setIsReadOnlyView(false);
+    setIsBulkMode(true);
+    setLoadType('excel');
+    setIsFormOpen(true);
+  };
+
+  const handleDownloadTemplate = async () => {
+    try {
+      triggerToast('Generando plantilla Excel con datos del sistema...', 'info');
+      const ExcelJS = await import('exceljs');
+      const workbook = new ExcelJS.Workbook();
+      
+      // Hoja 1: Matriz
+      const wsMatriz = workbook.addWorksheet('Matriz');
+      
+      // Hoja 2: ListasDefinidas (lookup tables)
+      const wsListas = workbook.addWorksheet('ListasDefinidas');
+      wsListas.state = 'hidden';
+
+      // 1. Escribir empresas del tenant en la columna A
+      wsListas.getCell('A1').value = 'Razones Sociales';
+      empresas.forEach((emp, i) => {
+        wsListas.getCell(`A${i + 2}`).value = emp.razon_social;
+      });
+
+      // 2. Escribir establecimientos del tenant en la columna B
+      wsListas.getCell('B1').value = 'Establecimientos';
+      allEstablecimientos.forEach((est, i) => {
+        wsListas.getCell(`B${i + 2}`).value = est.denominacion;
+      });
+
+      // 3. Escribir Frecuencias en la columna C
+      wsListas.getCell('C1').value = 'Frecuencias';
+      FRECUENCIAS.forEach((frec, i) => {
+        wsListas.getCell(`C${i + 2}`).value = frec.value;
+      });
+
+      // 4. Escribir Situaciones en la columna D
+      wsListas.getCell('D1').value = 'Situaciones';
+      SITUACIONES.forEach((sit, i) => {
+        wsListas.getCell(`D${i + 2}`).value = sit;
+      });
+
+      // 5. Escribir Probabilidades en la columna E
+      wsListas.getCell('E1').value = 'Probabilidades';
+      NIVELES_PROBABILIDAD.forEach((prob, i) => {
+        wsListas.getCell(`E${i + 2}`).value = prob;
+      });
+
+      // 6. Escribir Gravedades en la columna F
+      wsListas.getCell('F1').value = 'Gravedades';
+      NIVELES_GRAVEDAD.forEach((grav, i) => {
+        wsListas.getCell(`F${i + 2}`).value = grav;
+      });
+
+      // Encabezados
+      const headers = [
+        'Razón Social',
+        'Establecimiento',
+        'Área / Sector',
+        'Puesto / Operación',
+        'Tareas',
+        'Frecuencia',
+        'Situación',
+        'Tipo de peligro',
+        'Peligro',
+        'Riesgo',
+        'Consecuencia',
+        'Probabilidad',
+        'Gravedad',
+        'Nivel de Riesgo',
+        'Medidas de control Administrativas',
+        'Medidas de control de Ingeniería',
+        'EPP\'s',
+        'Medidas de control recomendadas',
+        'Responsable',
+        'Fecha planificada',
+        'Fecha de realización',
+        'Probabilidad',
+        'Gravedad',
+        'Nivel de Riesgo',
+        'Observaciones'
+      ];
+
+      const headerRow = wsMatriz.getRow(1);
+      headerRow.values = headers;
+      headerRow.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+      headerRow.fill = {
+        type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF468DFF' }
+      };
+      headerRow.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+      headerRow.height = 30;
+
+      // Anchos de columna
+      const colWidths = [
+        25, 25, 20, 20, 30, 15, 12, 18, 20, 30,
+        30, 12, 12, 15, 30, 30, 20, 30, 20, 15,
+        15, 12, 12, 15, 30
+      ];
+      colWidths.forEach((w, idx) => {
+        wsMatriz.getColumn(idx + 1).width = w;
+      });
+
+      // Ejemplo
+      const exampleRow = [
+        empresas[0]?.razon_social || 'Ejemplo Cliente S.A.',
+        allEstablecimientos.filter(e => e.empresa_id === empresas[0]?.id)[0]?.denominacion || 'Único',
+        'Producción',
+        'Operario de Torno',
+        'Mecanizado de piezas de metal en torno.',
+        'Continua',
+        'Normal',
+        'Mecánicos',
+        'Aplastamiento',
+        'Aplastamiento entre dos objetos móviles',
+        'Amputaciones; Fracturas; Heridas',
+        'Mediana',
+        'Alta',
+        'Riesgo sustancial',
+        'Procedimiento de trabajo seguro.',
+        'Parada de emergencia.',
+        'Gafas y calzado de seguridad.',
+        'Instalar resguardo óptico.',
+        'Gonzalo Merlo',
+        '20/07/2026',
+        '',
+        'Baja',
+        'Alta',
+        'Riesgo moderado',
+        'Pendiente de compra.'
+      ];
+      wsMatriz.addRow(exampleRow);
+
+      const totalEmp = empresas.length;
+      const totalEst = allEstablecimientos.length;
+      const totalFrec = FRECUENCIAS.length;
+      const totalSit = SITUACIONES.length;
+      const totalPro = NIVELES_PROBABILIDAD.length;
+      const totalGra = NIVELES_GRAVEDAD.length;
+
+      for (let row = 2; row <= 500; row++) {
+        if (totalEmp > 0) {
+          wsMatriz.getCell(`A${row}`).dataValidation = {
+            type: 'list', allowBlank: true, formulae: [`ListasDefinidas!$A$2:$A$${totalEmp + 1}`],
+            showErrorMessage: true, errorTitle: 'Valor inválido', error: 'Seleccione una Razón Social de la lista.'
+          };
+        }
+        if (totalEst > 0) {
+          wsMatriz.getCell(`B${row}`).dataValidation = {
+            type: 'list', allowBlank: true, formulae: [`ListasDefinidas!$B$2:$B$${totalEst + 1}`],
+            showErrorMessage: true, errorTitle: 'Valor inválido', error: 'Seleccione un Establecimiento de la lista.'
+          };
+        }
+        wsMatriz.getCell(`F${row}`).dataValidation = {
+          type: 'list', allowBlank: true, formulae: [`ListasDefinidas!$C$2:$C$${totalFrec + 1}`],
+          showErrorMessage: true, errorTitle: 'Valor inválido', error: 'Seleccione una Frecuencia de la lista.'
+        };
+        wsMatriz.getCell(`G${row}`).dataValidation = {
+          type: 'list', allowBlank: true, formulae: [`ListasDefinidas!$D$2:$D$${totalSit + 1}`],
+          showErrorMessage: true, errorTitle: 'Valor inválido', error: 'Seleccione una Situación de la lista.'
+        };
+        wsMatriz.getCell(`L${row}`).dataValidation = {
+          type: 'list', allowBlank: true, formulae: [`ListasDefinidas!$E$2:$E$${totalPro + 1}`],
+          showErrorMessage: true, errorTitle: 'Valor inválido', error: 'Seleccione una Probabilidad.'
+        };
+        wsMatriz.getCell(`M${row}`).dataValidation = {
+          type: 'list', allowBlank: true, formulae: [`ListasDefinidas!$F$2:$F$${totalGra + 1}`],
+          showErrorMessage: true, errorTitle: 'Valor inválido', error: 'Seleccione una Gravedad.'
+        };
+        wsMatriz.getCell(`V${row}`).dataValidation = {
+          type: 'list', allowBlank: true, formulae: [`ListasDefinidas!$E$2:$E$${totalPro + 1}`],
+          showErrorMessage: true, errorTitle: 'Valor inválido', error: 'Seleccione una Probabilidad.'
+        };
+        wsMatriz.getCell(`W${row}`).dataValidation = {
+          type: 'list', allowBlank: true, formulae: [`ListasDefinidas!$F$2:$F$${totalGra + 1}`],
+          showErrorMessage: true, errorTitle: 'Valor inválido', error: 'Seleccione una Gravedad.'
+        };
+      }
+
+      // Hoja 3: Matriz de Valoración
+      const wsValoracion = workbook.addWorksheet('Matriz de Valoración');
+      
+      // Título principal
+      wsValoracion.mergeCells('A1:E1');
+      const titleCell = wsValoracion.getCell('A1');
+      titleCell.value = 'MATRIZ DE VALORACIÓN DE RIESGOS (Norma BS 8800)';
+      titleCell.font = { name: 'Arial', size: 12, bold: true, color: { argb: 'FFFFFFFF' } };
+      titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF468DFF' } };
+      titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+      wsValoracion.getRow(1).height = 30;
+
+      // Breve explicación
+      wsValoracion.mergeCells('A3:E3');
+      const descCell = wsValoracion.getCell('A3');
+      descCell.value = 'Esta tabla determina el Nivel de Riesgo cruzando la Probabilidad (filas) y la Gravedad (columnas) según la norma BS 8800.';
+      descCell.font = { name: 'Arial', size: 10, italic: true };
+      
+      // Tabla 3x3
+      wsValoracion.getCell('A5').value = 'Probabilidad \\ Gravedad';
+      wsValoracion.getCell('A5').font = { name: 'Arial', size: 10, bold: true };
+      wsValoracion.getCell('A5').alignment = { horizontal: 'center' };
+
+      wsValoracion.getCell('B5').value = 'Baja (Gravedad)';
+      wsValoracion.getCell('C5').value = 'Media (Gravedad)';
+      wsValoracion.getCell('D5').value = 'Alta (Gravedad)';
+      ['B5', 'C5', 'D5'].forEach(ref => {
+        wsValoracion.getCell(ref).font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+        wsValoracion.getCell(ref).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0D0D0D' } };
+        wsValoracion.getCell(ref).alignment = { horizontal: 'center' };
+      });
+
+      // Filas de Probabilidad
+      const rowProbs = ['Baja (Probabilidad)', 'Mediana (Probabilidad)', 'Alta (Probabilidad)'];
+      rowProbs.forEach((p, idx) => {
+        const cell = wsValoracion.getCell(`A${6 + idx}`);
+        cell.value = p;
+        cell.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0D0D0D' } };
+        cell.alignment = { horizontal: 'center' };
+      });
+
+      // Celdas de la matriz
+      const matrixData = [
+        [
+          { text: 'Riesgo trivial', fg: 'FF27AE60', bg: 'FFE8F8F5' },
+          { text: 'Riesgo tolerable', fg: 'FF2ECC71', bg: 'FFEAF2F8' },
+          { text: 'Riesgo moderado', fg: 'FFD68910', bg: 'FFFEEFAD' }
+        ],
+        [
+          { text: 'Riesgo tolerable', fg: 'FF2ECC71', bg: 'FFEAF2F8' },
+          { text: 'Riesgo moderado', fg: 'FFD68910', bg: 'FFFEEFAD' },
+          { text: 'Riesgo sustancial', fg: 'FFE67E22', bg: 'FFF5CBA7' }
+        ],
+        [
+          { text: 'Riesgo moderado', fg: 'FFD68910', bg: 'FFFEEFAD' },
+          { text: 'Riesgo sustancial', fg: 'FFE67E22', bg: 'FFF5CBA7' },
+          { text: 'Riesgo intolerable', fg: 'FFE74C3C', bg: 'FFFADBD8' }
+        ]
+      ];
+
+      matrixData.forEach((rowVal, rIdx) => {
+        rowVal.forEach((cellData, cIdx) => {
+          const colLetter = String.fromCharCode(66 + cIdx); // B, C, D
+          const cell = wsValoracion.getCell(`${colLetter}${6 + rIdx}`);
+          cell.value = cellData.text;
+          cell.font = { name: 'Arial', size: 10, bold: true, color: { argb: cellData.fg } };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: cellData.bg } };
+          cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        });
+      });
+
+      // Bordes
+      for (let r = 5; r <= 8; r++) {
+        for (let c = 1; c <= 4; c++) {
+          const cell = wsValoracion.getCell(r, c);
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'FFD9D9D9' } },
+            left: { style: 'thin', color: { argb: 'FFD9D9D9' } },
+            bottom: { style: 'thin', color: { argb: 'FFD9D9D9' } },
+            right: { style: 'thin', color: { argb: 'FFD9D9D9' } }
+          };
+        }
+      }
+
+      // Frecuencia
+      wsValoracion.mergeCells('A11:E11');
+      const frecHeader = wsValoracion.getCell('A11');
+      frecHeader.value = 'FRECUENCIA DE EXPOSICIÓN';
+      frecHeader.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+      frecHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF468DFF' } };
+      wsValoracion.getRow(11).height = 20;
+
+      wsValoracion.mergeCells('A12:E12');
+      wsValoracion.getCell('A12').value = 'Define qué tan seguido el trabajador está expuesto al peligro identificado en su jornada de trabajo:';
+      wsValoracion.getCell('A12').font = { name: 'Arial', size: 9, italic: true };
+
+      const frecs = [
+        { label: 'Continua', desc: 'Exposición permanente o varias veces durante la jornada.' },
+        { label: 'Frecuente', desc: 'Exposición al menos una vez al día o diariamente.' },
+        { label: 'Ocasional', desc: 'Exposición intermitente (semanal o varias veces al mes).' },
+        { label: 'Esporádica / Poco usual', desc: 'Exposición mensual o anual; tarea muy ocasional.' },
+        { label: 'Rara', desc: 'Exposición eventual o excepcional (ej: mantenimiento anual).' }
+      ];
+
+      frecs.forEach((f, idx) => {
+        const row = 13 + idx;
+        wsValoracion.getCell(`A${row}`).value = f.label;
+        wsValoracion.getCell(`A${row}`).font = { name: 'Arial', size: 9, bold: true };
+        
+        wsValoracion.mergeCells(`B${row}:E${row}`);
+        wsValoracion.getCell(`B${row}`).value = f.desc;
+        wsValoracion.getCell(`B${row}`).font = { name: 'Arial', size: 9 };
+      });
+
+      // Probabilidad
+      wsValoracion.mergeCells('A19:E19');
+      const probHeader = wsValoracion.getCell('A19');
+      probHeader.value = 'NIVELES DE PROBABILIDAD (Norma BS 8800)';
+      probHeader.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+      probHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF468DFF' } };
+      wsValoracion.getRow(19).height = 20;
+
+      wsValoracion.mergeCells('A20:E20');
+      wsValoracion.getCell('A20').value = 'Establece la posibilidad de que ocurra el accidente o el daño si fallan las medidas preventivas:';
+      wsValoracion.getCell('A20').font = { name: 'Arial', size: 9, italic: true };
+
+      const probs = [
+        {
+          label: '1. Baja',
+          desc: 'Rara vez ocurre. Mínima posibilidad de daño. Ocurre sólo bajo condiciones anormales o circunstancias excepcionales.',
+          ex: 'Ejemplos: Resbalón en oficina limpia; explosión de batería con carga segura; caída de herramienta con amarras de seguridad.'
+        },
+        {
+          label: '2. Media',
+          desc: 'Podría ocurrir en algunas circunstancias. Evento no cotidiano, pero con posibilidad real si fallan parcialmente las medidas.',
+          ex: 'Ejemplos: Contacto con solventes sin guantes por descuido; colisión de montacargas señalizado; caída de escalera de baja altura.'
+        },
+        {
+          label: '3. Alta',
+          desc: 'Frecuente o muy probable. El evento es recurrente o las condiciones actuales favorecen sustancialmente su aparición.',
+          ex: 'Ejemplos: Lesiones por mala ergonomía persistente; caída de objetos sin redes en obra; inhalación de polvos sin mascarilla.'
+        }
+      ];
+
+      probs.forEach((p, idx) => {
+        const row = 21 + idx;
+        wsValoracion.getCell(`A${row}`).value = p.label;
+        wsValoracion.getCell(`A${row}`).font = { name: 'Arial', size: 9, bold: true };
+        
+        wsValoracion.mergeCells(`B${row}:C${row}`);
+        wsValoracion.getCell(`B${row}`).value = p.desc;
+        wsValoracion.getCell(`B${row}`).font = { name: 'Arial', size: 9 };
+        wsValoracion.getCell(`B${row}`).alignment = { wrapText: true, vertical: 'top' };
+
+        wsValoracion.mergeCells(`D${row}:E${row}`);
+        wsValoracion.getCell(`D${row}`).value = p.ex;
+        wsValoracion.getCell(`D${row}`).font = { name: 'Arial', size: 9, italic: true, color: { argb: 'FF555555' } };
+        wsValoracion.getCell(`D${row}`).alignment = { wrapText: true, vertical: 'top' };
+        
+        wsValoracion.getRow(row).height = 45;
+      });
+
+      // Gravedad
+      wsValoracion.mergeCells('A25:E25');
+      const gravHeader = wsValoracion.getCell('A25');
+      gravHeader.value = 'NIVELES DE GRAVEDAD (Severidad)';
+      gravHeader.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+      gravHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF468DFF' } };
+      wsValoracion.getRow(25).height = 20;
+
+      wsValoracion.mergeCells('A26:E26');
+      wsValoracion.getCell('A26').value = 'Evalúa las consecuencias físicas y de salud si el accidente ocurriera:';
+      wsValoracion.getCell('A26').font = { name: 'Arial', size: 9, italic: true };
+
+      const gravs = [
+        {
+          label: '1. Leve',
+          desc: 'Sin incapacidad o incapacidad menor. Lesiones superficiales que no requieren hospitalización ni interrumpen la tarea.',
+          ex: 'Ejemplos: Corte superficial resuelto con botiquín; golpe menor con moretón temporal sin fisuras; irritación ocular leve.'
+        },
+        {
+          label: '2. Moderada',
+          desc: 'Incapacidad temporal tratable. Lesiones que requieren atención médica profesional y conllevan días de baja con recuperación.',
+          ex: 'Ejemplos: Esguince con fisioterapia; quemadura de segundo grado con metal caliente; fractura tras caída < 1 metro.'
+        },
+        {
+          label: '3. Grave',
+          desc: 'Incapacidad permanente o fatalidad. Consecuencias severas permanentes, amputaciones o de riesgo de muerte.',
+          ex: 'Ejemplos: Amputación por atrapamiento sin resguardo; electrocución por media/alta tensión; caída > 2 metros sin arnés.'
+        }
+      ];
+
+      gravs.forEach((g, idx) => {
+        const row = 27 + idx;
+        wsValoracion.getCell(`A${row}`).value = g.label;
+        wsValoracion.getCell(`A${row}`).font = { name: 'Arial', size: 9, bold: true };
+        
+        wsValoracion.mergeCells(`B${row}:C${row}`);
+        wsValoracion.getCell(`B${row}`).value = g.desc;
+        wsValoracion.getCell(`B${row}`).font = { name: 'Arial', size: 9 };
+        wsValoracion.getCell(`B${row}`).alignment = { wrapText: true, vertical: 'top' };
+
+        wsValoracion.mergeCells(`D${row}:E${row}`);
+        wsValoracion.getCell(`D${row}`).value = g.ex;
+        wsValoracion.getCell(`D${row}`).font = { name: 'Arial', size: 9, italic: true, color: { argb: 'FF555555' } };
+        wsValoracion.getCell(`D${row}`).alignment = { wrapText: true, vertical: 'top' };
+
+        wsValoracion.getRow(row).height = 45;
+      });
+
+      wsValoracion.getColumn(1).width = 25;
+      wsValoracion.getColumn(2).width = 25;
+      wsValoracion.getColumn(3).width = 25;
+      wsValoracion.getColumn(4).width = 25;
+      wsValoracion.getColumn(5).width = 25;
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'planilla-matriz-riesgos-modelo.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      triggerToast('Plantilla Excel descargada.');
+    } catch (err) {
+      console.error(err);
+      triggerToast('Error al descargar la plantilla.', 'error');
+    }
+  };
+
+  const handleLocalFileChange = (file) => {
+    if (!file) return;
+    setSelectedFileName(file.name);
+    parseExcelFile(file);
+  };
+
+  const parseExcelFile = (file) => {
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const data = evt.target.result;
+        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        processExcelRows(rows);
+      } catch (err) {
+        console.error(err);
+        triggerToast('Error al leer el archivo Excel.', 'error');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  const processExcelRows = (rows) => {
+    if (!rows || rows.length <= 1) {
+      triggerToast('La planilla Excel no contiene filas de datos.', 'error');
+      return;
+    }
+
+    const dataRows = rows.slice(1);
+    const parsed = dataRows.map((row, idx) => {
+      if (!row || row.length === 0 || row.every(val => val === undefined || val === null || String(val).trim() === '')) {
+        return null;
+      }
+
+      const getVal = (colIndex) => {
+        const val = row[colIndex];
+        if (val === undefined || val === null) return '';
+        return String(val).trim();
+      };
+
+      const razonSocialVal = getVal(0);
+      const establecimientoVal = getVal(1);
+      const sectorVal = getVal(2);
+      const puestoVal = getVal(3);
+      const tareasVal = getVal(4);
+      const frecuenciaVal = getVal(5);
+      const situacionVal = getVal(6);
+      const tipoPeligroVal = getVal(7);
+      const peligroVal = getVal(8);
+      const riesgoVal = getVal(9);
+      const consecuenciaVal = getVal(10);
+      const probabilidadVal = getVal(11);
+      const gravedadVal = getVal(12);
+      const medidasAdmVal = getVal(14);
+      const medidasIngVal = getVal(15);
+      const medidasEppVal = getVal(16);
+      const medidasRecomendadasVal = getVal(17);
+      const responsableVal = getVal(18);
+      const fechaPlanificadaVal = row[19];
+      const fechaRealizacionVal = row[20];
+      const postProbabilidadVal = getVal(21);
+      const postGravedadVal = getVal(22);
+      const observacionesVal = getVal(24);
+
+      const errors = [];
+      let matchedEmpresaId = null;
+      let matchedEstablecimientoId = null;
+
+      // 1. Razón Social
+      if (!razonSocialVal) {
+        errors.push('Razón Social es requerida.');
+      } else {
+        const matchingEmpresa = empresas.find(e => 
+          e.razon_social.toLowerCase().trim() === razonSocialVal.toLowerCase()
+        );
+        if (matchingEmpresa) {
+          matchedEmpresaId = matchingEmpresa.id;
+        } else {
+          errors.push(`Razón Social "${razonSocialVal}" no está registrada.`);
+        }
+      }
+
+      // 2. Establecimiento
+      if (!establecimientoVal) {
+        errors.push('Establecimiento es requerido.');
+      } else if (matchedEmpresaId) {
+        const matchingEst = allEstablecimientos.find(e => 
+          e.empresa_id === matchedEmpresaId &&
+          e.denominacion.toLowerCase().trim() === establecimientoVal.toLowerCase()
+        );
+        if (matchingEst) {
+          matchedEstablecimientoId = matchingEst.id;
+        } else {
+          errors.push(`Establecimiento "${establecimientoVal}" no pertenece al cliente.`);
+        }
+      } else {
+        errors.push('Establecimiento no pudo validarse.');
+      }
+
+      if (!sectorVal) errors.push('Área / Sector es requerido.');
+      if (!puestoVal) errors.push('Puesto / Operación es requerido.');
+      if (!tareasVal) errors.push('Tareas es requerido.');
+      
+      // Frecuencia
+      if (!frecuenciaVal) {
+        errors.push('Frecuencia es requerida.');
+      } else {
+        const validFrec = FRECUENCIAS.find(f => f.value.toLowerCase() === frecuenciaVal.toLowerCase());
+        if (!validFrec) {
+          errors.push(`Frecuencia "${frecuenciaVal}" no válida.`);
+        }
+      }
+
+      // Situación
+      if (!situacionVal) {
+        errors.push('Situación es requerida.');
+      } else {
+        const validSit = SITUACIONES.find(s => s.toLowerCase() === situacionVal.toLowerCase());
+        if (!validSit) {
+          errors.push(`Situación "${situacionVal}" no válida.`);
+        }
+      }
+
+      if (!peligroVal) errors.push('Peligro es requerido.');
+      if (!riesgoVal) errors.push('Riesgo es requerido.');
+      if (!consecuenciaVal) errors.push('Consecuencia es requerida.');
+
+      // Probabilidad y Gravedad
+      if (!probabilidadVal) {
+        errors.push('Probabilidad Inicial es requerida.');
+      } else {
+        const validProb = NIVELES_PROBABILIDAD.find(p => p.toLowerCase() === probabilidadVal.toLowerCase());
+        if (!validProb) errors.push(`Probabilidad "${probabilidadVal}" no válida.`);
+      }
+
+      if (!gravedadVal) {
+        errors.push('Gravedad Inicial es requerida.');
+      } else {
+        const validGrav = NIVELES_GRAVEDAD.find(g => g.toLowerCase() === gravedadVal.toLowerCase());
+        if (!validGrav) errors.push(`Gravedad "${gravedadVal}" no válida.`);
+      }
+
+      // Post Probabilidad y Gravedad
+      if (postProbabilidadVal || postGravedadVal) {
+        if (!postProbabilidadVal) {
+          errors.push('Falta Probabilidad Residual.');
+        } else {
+          const validProb = NIVELES_PROBABILIDAD.find(p => p.toLowerCase() === postProbabilidadVal.toLowerCase());
+          if (!validProb) errors.push(`Probabilidad Residual "${postProbabilidadVal}" no válida.`);
+        }
+
+        if (!postGravedadVal) {
+          errors.push('Falta Gravedad Residual.');
+        } else {
+          const validGrav = NIVELES_GRAVEDAD.find(g => g.toLowerCase() === postGravedadVal.toLowerCase());
+          if (!validGrav) errors.push(`Gravedad Residual "${postGravedadVal}" no válida.`);
+        }
+      }
+
+      // Fechas
+      const parseDateVal = (val) => {
+        if (!val) return null;
+        if (val instanceof Date) return val;
+        const dStr = String(val).trim();
+        if (!dStr) return null;
+        const parts = dStr.split('/');
+        if (parts.length === 3) {
+          const day = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10) - 1;
+          const year = parseInt(parts[2], 10);
+          const d = new Date(year, month, day);
+          if (d.getDate() === day && d.getMonth() === month && d.getFullYear() === year) {
+            return d;
+          }
+        }
+        const d = new Date(dStr);
+        if (!isNaN(d.getTime())) return d;
+        return 'INVALID';
+      };
+
+      let parsedFechaPlanificada = null;
+      if (fechaPlanificadaVal) {
+        const parsed = parseDateVal(fechaPlanificadaVal);
+        if (parsed === 'INVALID') {
+          errors.push(`Fecha Planificada "${fechaPlanificadaVal}" no válida.`);
+        } else {
+          parsedFechaPlanificada = parsed;
+        }
+      }
+
+      let parsedFechaRealizacion = null;
+      if (fechaRealizacionVal) {
+        const parsed = parseDateVal(fechaRealizacionVal);
+        if (parsed === 'INVALID') {
+          errors.push(`Fecha de Realización "${fechaRealizacionVal}" no válida.`);
+        } else {
+          parsedFechaRealizacion = parsed;
+        }
+      }
+
+      const normalizeNivel = (val, list) => {
+        if (!val) return '';
+        const match = list.find(x => x.toLowerCase() === val.toLowerCase());
+        return match || val;
+      };
+
+      const finalProbabilidad = normalizeNivel(probabilidadVal, NIVELES_PROBABILIDAD);
+      const finalGravedad = normalizeNivel(gravedadVal, NIVELES_GRAVEDAD);
+      const finalPostProbabilidad = normalizeNivel(postProbabilidadVal, NIVELES_PROBABILIDAD);
+      const finalPostGravedad = normalizeNivel(postGravedadVal, NIVELES_GRAVEDAD);
+
+      return {
+        rowNum: idx + 2,
+        empresa_id: matchedEmpresaId,
+        establecimiento_id: matchedEstablecimientoId,
+        razon_social_display: razonSocialVal,
+        establecimiento_display: establecimientoVal,
+        sector: sectorVal,
+        puesto: puestoVal,
+        tareas: tareasVal,
+        frecuencia: normalizeNivel(frecuenciaVal, FRECUENCIAS.map(f => f.value)),
+        situacion: normalizeNivel(situacionVal, SITUACIONES),
+        tipo_peligro: tipoPeligroVal || 'N/A',
+        peligro: peligroVal,
+        riesgo: riesgoVal,
+        consecuencia: consecuenciaVal,
+        probabilidad: finalProbabilidad,
+        gravedad: finalGravedad,
+        medidas_control_adm: medidasAdmVal || null,
+        medidas_control_ing: medidasIngVal || null,
+        medidas_control_epp: medidasEppVal || null,
+        medidas_control_recomendadas: medidasRecomendadasVal || null,
+        responsable: responsableVal || null,
+        fecha_planificada: parsedFechaPlanificada ? parsedFechaPlanificada.toISOString().split('T')[0] : null,
+        fecha_planificada_display: parsedFechaPlanificada ? `${String(parsedFechaPlanificada.getDate()).padStart(2, '0')}/${String(parsedFechaPlanificada.getMonth() + 1).padStart(2, '0')}/${parsedFechaPlanificada.getFullYear()}` : '',
+        fecha_realizacion: parsedFechaRealizacion ? parsedFechaRealizacion.toISOString().split('T')[0] : null,
+        fecha_realizacion_display: parsedFechaRealizacion ? `${String(parsedFechaRealizacion.getDate()).padStart(2, '0')}/${String(parsedFechaRealizacion.getMonth() + 1).padStart(2, '0')}/${parsedFechaRealizacion.getFullYear()}` : '',
+        post_probabilidad: finalPostProbabilidad || null,
+        post_gravedad: finalPostGravedad || null,
+        observaciones: observacionesVal || null,
+        errors
+      };
+    }).filter(row => row !== null);
+
+    setPreviewRows(parsed);
+  };
+
+  const handleDriveImport = async (link) => {
+    if (!link) {
+      triggerToast('Ingresa un enlace de Google Drive.', 'error');
+      return;
+    }
+    try {
+      const res = await fetch('/api/download-excel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: link, tenantId: tenant.id })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al descargar de Drive.');
+
+      const binaryString = window.atob(data.fileBase64);
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+
+      const workbook = XLSX.read(bytes.buffer, { type: 'array', cellDates: true });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+      processExcelRows(rows);
+      setSelectedFileName('Plantilla de Drive importada');
+      triggerToast('Planilla de Drive descargada y analizada.', 'success');
+    } catch (err) {
+      console.error(err);
+      triggerToast('Error al importar desde Google Drive.', 'error');
+    }
+  };
+
+  const handleLegajoSelect = async (path) => {
+    setSelectedLegajoPath(path);
+    if (!path) return;
+    setLoadingLegajoFile(true);
+    try {
+      const { data, error } = await supabase.storage
+        .from('documents')
+        .createSignedUrl(path, 3600);
+      if (error) throw error;
+
+      const response = await fetch(data.signedUrl);
+      const arrayBuffer = await response.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+      processExcelRows(rows);
+      triggerToast('Planilla del Legajo Técnico analizada.');
+    } catch (err) {
+      console.error(err);
+      triggerToast('Error al descargar archivo del Legajo Técnico.', 'error');
+    } finally {
+      setLoadingLegajoFile(false);
+    }
+  };
+
   // Guardado de la Matriz (Inserción en lote o actualización)
   const handleSaveMatriz = async (e) => {
     e.preventDefault();
-    if (!empresaId || !establecimientoId) {
-      triggerToast('La Razón Social y el Establecimiento son obligatorios.', 'error');
-      return;
+    
+    if (isBulkMode && loadType === 'excel') {
+      if (previewRows.length === 0) {
+        triggerToast('No has cargado ninguna planilla Excel.', 'error');
+        return;
+      }
+      const errRows = previewRows.filter(r => r.errors.length > 0);
+      if (errRows.length > 0) {
+        triggerToast(`Corrige los errores de la planilla (Fila ${errRows[0].rowNum}).`, 'error');
+        return;
+      }
+    } else {
+      if (!empresaId || !establecimientoId) {
+        triggerToast('La Razón Social y el Establecimiento son obligatorios.', 'error');
+        return;
+      }
     }
 
     setSaveLoading(true);
@@ -958,80 +1723,120 @@ export default function MatrizRiesgosPage({ params }) {
       const recordsToInsert = [];
 
       if (isBulkMode) {
-        // Validaciones Carga Masiva
-        if (bulkSectores.length === 0) {
-          throw new Error('Debe agregar al menos un sector de trabajo.');
-        }
-
-        for (const sec of bulkSectores) {
-          const sectorName = sec.sector.trim();
-          if (!sectorName) {
-            throw new Error('Todos los sectores deben poseer una denominación.');
+        if (loadType === 'manual') {
+          // Validaciones Carga Masiva
+          if (bulkSectores.length === 0) {
+            throw new Error('Debe agregar al menos un sector de trabajo.');
           }
 
-          if (sec.puestos.length === 0) {
-            throw new Error(`El sector "${sectorName}" debe poseer al menos un puesto de trabajo.`);
+          for (const sec of bulkSectores) {
+            const sectorName = sec.sector.trim();
+            if (!sectorName) {
+              throw new Error('Todos los sectores deben poseer una denominación.');
+            }
+
+            if (sec.puestos.length === 0) {
+              throw new Error(`El sector "${sectorName}" debe poseer al menos un puesto de trabajo.`);
+            }
+
+            for (const pst of sec.puestos) {
+              const puestoName = pst.puesto.trim();
+              if (!puestoName) {
+                throw new Error(`Todos los puestos en el sector "${sectorName}" deben poseer una denominación.`);
+              }
+              if (!pst.tareas.trim()) {
+                throw new Error(`Ingrese las tareas del puesto "${puestoName}" en "${sectorName}".`);
+              }
+              if (!pst.frecuencia) {
+                throw new Error(`Falta seleccionar la frecuencia en el puesto "${puestoName}".`);
+              }
+              if (!pst.peligro) {
+                throw new Error(`Falta el peligro en el puesto "${puestoName}".`);
+              }
+              if (!pst.riesgo) {
+                throw new Error(`Falta el riesgo en el puesto "${puestoName}".`);
+              }
+              if (!pst.consecuencia.trim()) {
+                throw new Error(`Falta la consecuencia en el puesto "${puestoName}".`);
+              }
+              if (!pst.probabilidad || !pst.gravedad) {
+                throw new Error(`Falta la evaluación inicial de riesgo en el puesto "${puestoName}".`);
+              }
+
+              const initialRisk = getRiskLevel(pst.probabilidad, pst.gravedad)?.text || 'Riesgo trivial';
+              const residualRisk = pst.post_probabilidad && pst.post_gravedad 
+                ? getRiskLevel(pst.post_probabilidad, pst.post_gravedad)?.text 
+                : null;
+
+              recordsToInsert.push({
+                tenant_id: tenant.id,
+                empresa_id: empresaId,
+                establecimiento_id: establecimientoId,
+                sector: sectorName,
+                puesto: puestoName,
+                tareas: pst.tareas.trim(),
+                frecuencia: pst.frecuencia,
+                situacion: pst.situacion,
+                tipo_peligro: pst.tipo_peligro || 'N/A',
+                peligro: pst.peligro.trim(),
+                riesgo: pst.riesgo.trim(),
+                consecuencia: pst.consecuencia.trim(),
+                probabilidad: pst.probabilidad,
+                gravedad: pst.gravedad,
+                nivel_riesgo: initialRisk,
+                medidas_control_adm: pst.medidas_control_adm || null,
+                medidas_control_ing: pst.medidas_control_ing || null,
+                medidas_control_epp: pst.medidas_control_epp || null,
+                medidas_control_recomendadas: pst.medidas_control_recomendadas || null,
+                responsable: pst.responsable || null,
+                fecha_planificada: convertToDbDate(pst.fecha_planificada) || null,
+                fecha_realizacion: convertToDbDate(pst.fecha_realizacion) || null,
+                post_probabilidad: pst.post_probabilidad || null,
+                post_gravedad: pst.post_gravedad || null,
+                post_nivel_riesgo: residualRisk,
+                observaciones: pst.observaciones || null,
+                updated_at: new Date().toISOString()
+              });
+            }
           }
-
-          for (const pst of sec.puestos) {
-            const puestoName = pst.puesto.trim();
-            if (!puestoName) {
-              throw new Error(`Todos los puestos en el sector "${sectorName}" deben poseer una denominación.`);
-            }
-            if (!pst.tareas.trim()) {
-              throw new Error(`Ingrese las tareas del puesto "${puestoName}" en "${sectorName}".`);
-            }
-            if (!pst.frecuencia) {
-              throw new Error(`Falta seleccionar la frecuencia en el puesto "${puestoName}".`);
-            }
-            if (!pst.peligro) {
-              throw new Error(`Falta el peligro en el puesto "${puestoName}".`);
-            }
-            if (!pst.riesgo) {
-              throw new Error(`Falta el riesgo en el puesto "${puestoName}".`);
-            }
-            if (!pst.consecuencia.trim()) {
-              throw new Error(`Falta la consecuencia en el puesto "${puestoName}".`);
-            }
-            if (!pst.probabilidad || !pst.gravedad) {
-              throw new Error(`Falta la evaluación inicial de riesgo en el puesto "${puestoName}".`);
-            }
-
-            const initialRisk = getRiskLevel(pst.probabilidad, pst.gravedad)?.text || 'Riesgo trivial';
-            const residualRisk = pst.post_probabilidad && pst.post_gravedad 
-              ? getRiskLevel(pst.post_probabilidad, pst.post_gravedad)?.text 
+        } else {
+          // Carga por Planilla Excel
+          previewRows.forEach(row => {
+            const initialRisk = getRiskLevel(row.probabilidad, row.gravedad)?.text || 'Riesgo trivial';
+            const residualRisk = row.post_probabilidad && row.post_gravedad 
+              ? getRiskLevel(row.post_probabilidad, row.post_gravedad)?.text 
               : null;
 
             recordsToInsert.push({
               tenant_id: tenant.id,
-              empresa_id: empresaId,
-              establecimiento_id: establecimientoId,
-              sector: sectorName,
-              puesto: puestoName,
-              tareas: pst.tareas.trim(),
-              frecuencia: pst.frecuencia,
-              situacion: pst.situacion,
-              tipo_peligro: pst.tipo_peligro || 'N/A',
-              peligro: pst.peligro.trim(),
-              riesgo: pst.riesgo.trim(),
-              consecuencia: pst.consecuencia.trim(),
-              probabilidad: pst.probabilidad,
-              gravedad: pst.gravedad,
+              empresa_id: row.empresa_id,
+              establecimiento_id: row.establecimiento_id,
+              sector: row.sector.trim(),
+              puesto: row.puesto.trim(),
+              tareas: row.tareas.trim(),
+              frecuencia: row.frecuencia,
+              situacion: row.situacion,
+              tipo_peligro: row.tipo_peligro || 'N/A',
+              peligro: row.peligro.trim(),
+              riesgo: row.riesgo.trim(),
+              consecuencia: row.consecuencia.trim(),
+              probabilidad: row.probabilidad,
+              gravedad: row.gravedad,
               nivel_riesgo: initialRisk,
-              medidas_control_adm: pst.medidas_control_adm || null,
-              medidas_control_ing: pst.medidas_control_ing || null,
-              medidas_control_epp: pst.medidas_control_epp || null,
-              medidas_control_recomendadas: pst.medidas_control_recomendadas || null,
-              responsable: pst.responsable || null,
-              fecha_planificada: convertToDbDate(pst.fecha_planificada) || null,
-              fecha_realizacion: convertToDbDate(pst.fecha_realizacion) || null,
-              post_probabilidad: pst.post_probabilidad || null,
-              post_gravedad: pst.post_gravedad || null,
+              medidas_control_adm: row.medidas_control_adm,
+              medidas_control_ing: row.medidas_control_ing,
+              medidas_control_epp: row.medidas_control_epp,
+              medidas_control_recomendadas: row.medidas_control_recomendadas,
+              responsable: row.responsable,
+              fecha_planificada: row.fecha_planificada || null,
+              fecha_realizacion: row.fecha_realizacion || null,
+              post_probabilidad: row.post_probabilidad,
+              post_gravedad: row.post_gravedad,
               post_nivel_riesgo: residualRisk,
-              observaciones: pst.observaciones || null,
+              observaciones: row.observaciones,
               updated_at: new Date().toISOString()
             });
-          }
+          });
         }
       } else {
         // Validación Edición Individual
@@ -1316,6 +2121,11 @@ export default function MatrizRiesgosPage({ params }) {
     setSinglePostProbabilidad('');
     setSinglePostGravedad('');
     setSingleObservaciones('');
+    setLoadType('excel');
+    setUploadType('local');
+    setPreviewRows([]);
+    setSelectedFileName('');
+    setSelectedLegajoPath('');
   };
 
   // Ordenar columnas
@@ -1440,58 +2250,277 @@ export default function MatrizRiesgosPage({ params }) {
                 <form onSubmit={handleSaveMatriz} className="p-6 space-y-6 overflow-y-auto flex-1 scrollbar-thin">
                   <fieldset disabled={!canEdit} className="space-y-6">
 
-                    {/* Sección 1: Cliente y Establecimiento */}
-                    <div className="space-y-4">
-                      <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
-                        <Building className="h-4 w-4 text-[#468DFF]" />
-                        1. Ubicación
-                      </h3>
-                      
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div className="flex flex-col gap-1.5">
-                          <label className="text-xs font-bold text-slate-600">Cliente / Razón Social *</label>
-                          <select
-                            required
-                            disabled={editingId !== null}
-                            value={empresaId}
-                            onChange={(e) => { 
-                              setEmpresaId(e.target.value); 
-                              setEstablecimientoId(''); 
-                              setBulkSectores([]);
-                            }}
-                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer disabled:bg-slate-100 disabled:text-slate-400"
-                          >
-                            <option value="">Selecciona un cliente</option>
-                            {empresas.map(emp => (
-                              <option key={emp.id} value={emp.id}>{emp.razon_social}</option>
-                            ))}
-                          </select>
-                        </div>
+                    {isBulkMode && !editingId && (
+                      <div className="flex gap-2 border-b border-slate-200 pb-1">
+                        <button
+                          type="button"
+                          onClick={() => setLoadType('excel')}
+                          className={`pb-2 px-3 text-xs font-bold border-b-2 transition-all cursor-pointer ${
+                            loadType === 'excel'
+                              ? 'border-[#468DFF] text-[#468DFF]'
+                              : 'border-transparent text-slate-400 hover:text-slate-600'
+                          }`}
+                        >
+                          Cargar por Planilla Excel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setLoadType('manual')}
+                          className={`pb-2 px-3 text-xs font-bold border-b-2 transition-all cursor-pointer ${
+                            loadType === 'manual'
+                              ? 'border-[#468DFF] text-[#468DFF]'
+                              : 'border-transparent text-slate-400 hover:text-slate-600'
+                          }`}
+                        >
+                          Carga Manual de Matriz
+                        </button>
+                      </div>
+                    )}
 
-                        <div className="flex flex-col gap-1.5">
-                          <label className="text-xs font-bold text-slate-600">Establecimiento *</label>
-                          <select
-                            required
-                            disabled={!empresaId || editingId !== null}
-                            value={establecimientoId}
-                            onChange={(e) => {
-                              setEstablecimientoId(e.target.value);
-                              setBulkSectores([]);
-                            }}
-                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer disabled:bg-slate-100 disabled:text-slate-400"
-                          >
-                            <option value="">{!empresaId ? 'Selecciona un cliente primero' : 'Selecciona un establecimiento'}</option>
-                            {filteredEstablecimientos.map(est => (
-                              <option key={est.id} value={est.id}>{est.denominacion}</option>
-                            ))}
-                          </select>
+                    {(!isBulkMode || loadType === 'manual') && (
+                      /* Sección 1: Cliente y Establecimiento */
+                      <div className="space-y-4">
+                        <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
+                          <Building className="h-4 w-4 text-[#468DFF]" />
+                          1. Ubicación
+                        </h3>
+                        
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-xs font-bold text-slate-600">Cliente / Razón Social *</label>
+                            <select
+                              required
+                              disabled={editingId !== null}
+                              value={empresaId}
+                              onChange={(e) => { 
+                                setEmpresaId(e.target.value); 
+                                setEstablecimientoId(''); 
+                                setBulkSectores([]);
+                              }}
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer disabled:bg-slate-100 disabled:text-slate-400"
+                            >
+                              <option value="">Selecciona un cliente</option>
+                              {empresas.map(emp => (
+                                <option key={emp.id} value={emp.id}>{emp.razon_social}</option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-xs font-bold text-slate-600">Establecimiento *</label>
+                            <select
+                              required
+                              disabled={!empresaId || editingId !== null}
+                              value={establecimientoId}
+                              onChange={(e) => {
+                                setEstablecimientoId(e.target.value);
+                                setBulkSectores([]);
+                              }}
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer disabled:bg-slate-100 disabled:text-slate-400"
+                            >
+                              <option value="">{!empresaId ? 'Selecciona un cliente primero' : 'Selecciona un establecimiento'}</option>
+                              {filteredEstablecimientos.map(est => (
+                                <option key={est.id} value={est.id}>{est.denominacion}</option>
+                              ))}
+                            </select>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    )}
 
                     {isBulkMode ? (
-                      // CARGA BULK / MASIVA (SECTORES -> PUESTOS)
-                      <div className="space-y-6">
+                      loadType === 'excel' ? (
+                        /* B: EXCEL LOAD PIPELINE */
+                        <div className="space-y-4">
+                          {/* Descarga plantilla */}
+                          <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 space-y-4 shadow-2xs">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                              <div className="space-y-0.5">
+                                <h4 className="text-xs font-bold text-slate-700">Descarga la plantilla de Excel modelo</h4>
+                                <p className="text-[10px] text-slate-400 font-semibold">Completa los riesgos e impórtalos de forma masiva en el sistema.</p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={handleDownloadTemplate}
+                                className="flex items-center gap-1.5 bg-white border border-slate-200 hover:border-[#468DFF] hover:text-[#468DFF] px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer text-slate-600 shrink-0 shadow-sm"
+                              >
+                                <Download className="h-4 w-4" />
+                                <span>Descargar Plantilla</span>
+                              </button>
+                            </div>
+
+                            <div className="border-t border-slate-200 pt-3">
+                              <h5 className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                <ClipboardList className="h-3.5 w-3.5 text-[#468DFF]" />
+                                Instrucciones de llenado
+                              </h5>
+                              <div className="grid md:grid-cols-3 gap-3 text-[10px] text-slate-500 font-semibold leading-relaxed">
+                                <div className="space-y-1 bg-white p-2.5 rounded-lg border border-slate-100 shadow-2xs">
+                                  <span className="text-[#468DFF] font-bold block">✓ Campos con Menú Desplegable</span>
+                                  <span><b>Razón Social</b>, <b>Establecimiento</b>, <b>Frecuencia</b>, <b>Situación</b>, <b>Probabilidad</b> y <b>Gravedad</b> deben seleccionarse obligatoriamente desde las listas de las celdas. <i className="text-slate-400 block mt-1 font-medium">Nota: Si el cliente o establecimiento no figura, regístralo primero en la plataforma para que aparezca en las opciones del Excel.</i></span>
+                                </div>
+                                <div className="space-y-1 bg-white p-2.5 rounded-lg border border-slate-100 shadow-2xs">
+                                  <span className="text-emerald-600 font-bold block">✎ Campos de Texto Libre</span>
+                                  <span><b>Área/Sector</b>, <b>Puesto</b>, <b>Tareas</b>, <b>Peligro</b>, <b>Riesgo</b>, <b>Consecuencia</b>, <b>Medidas de control</b>, <b>Responsable</b>, <b>Fechas</b> y <b>Observaciones</b> son de texto libre. Completa detalladamente cada columna.</span>
+                                </div>
+                                <div className="space-y-1 bg-rose-50 p-2.5 rounded-lg border border-rose-100">
+                                  <span className="text-rose-600 font-bold block flex items-center gap-1">⚠️ Restricciones Críticas</span>
+                                  <span><b>No modifiques los nombres ni el orden de las columnas (Fila 1)</b>. No elimines ninguna hoja del archivo. Cualquier alteración de la estructura impedirá la importación de los datos.</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* DocumentUploadZone */}
+                          <DocumentUploadZone
+                            label="Planilla de Matriz de Riesgos"
+                            file={null}
+                            fileName={selectedFileName}
+                            onFileChange={handleLocalFileChange}
+                            onDriveImport={handleDriveImport}
+                            disabled={isFormDisabled}
+                            accept=".xlsx,.xls"
+                            onToast={triggerToast}
+                            uploadType={uploadType}
+                            setUploadType={(newType) => {
+                              setUploadType(newType);
+                              setPreviewRows([]);
+                              setSelectedFileName('');
+                              setSelectedLegajoPath('');
+                            }}
+                            showTabs={true}
+                            tabs={[
+                              { id: 'local', name: 'Archivo Local' },
+                              { id: 'drive', name: 'Enlace Drive' },
+                              { id: 'legajo', name: 'Desde Legajo Técnico' }
+                            ]}
+                          >
+                            {uploadType === 'legajo' && (
+                              <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-600 block mb-1">Elegir planilla desde el Legajo Técnico</label>
+                                {legajoFiles.length === 0 ? (
+                                  <div className="border border-slate-200 rounded-2xl p-6 text-center text-xs font-bold text-slate-400 bg-slate-50/30 flex flex-col items-center justify-center gap-2">
+                                    <FolderOpen className="h-8 w-8 text-slate-300" />
+                                    <span>No hay planillas Excel en el Legajo Técnico de este tenant.</span>
+                                  </div>
+                                ) : (
+                                  <div className="space-y-2">
+                                    <select
+                                      value={selectedLegajoPath}
+                                      onChange={(e) => handleLegajoSelect(e.target.value)}
+                                      className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer font-semibold"
+                                    >
+                                      <option value="">-- Elige un archivo --</option>
+                                      {legajoFiles.map(file => (
+                                        <option key={file.id} value={file.documento_url}>
+                                          {file.documento_nombre} (Fecha: {formatDate(file.fecha)})
+                                        </option>
+                                      ))}
+                                    </select>
+                                    {loadingLegajoFile && (
+                                      <div className="flex items-center gap-2 text-[10px] font-bold text-[#468DFF] animate-pulse pl-1">
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                        <span>Descargando y procesando archivo...</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </DocumentUploadZone>
+
+                          {/* Preview Rows Table */}
+                          {previewRows.length > 0 && (
+                            <div className="space-y-3 pt-2">
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-xs font-bold text-slate-700 font-outfit">Vista previa de riesgos ({previewRows.length} filas)</h4>
+                                {previewRows.filter(r => r.errors.length > 0).length > 0 && (
+                                  <span className="text-[10px] font-bold text-red-500 bg-red-50 px-2.5 py-0.5 rounded-full border border-red-200">
+                                    {previewRows.filter(r => r.errors.length > 0).length} errores detectados
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="border border-slate-200 rounded-xl overflow-hidden max-h-[35vh] overflow-y-auto">
+                                <table className="w-full text-left border-collapse text-[11px] min-w-[1200px]">
+                                  <thead>
+                                    <tr className="bg-slate-50 border-b border-slate-200 font-bold text-slate-400 uppercase select-none">
+                                      <th className="px-4 py-2 text-center w-12">Fila</th>
+                                      <th className="px-4 py-2">Razón Social</th>
+                                      <th className="px-4 py-2">Establecimiento</th>
+                                      <th className="px-4 py-2">Sector</th>
+                                      <th className="px-4 py-2">Puesto</th>
+                                      <th className="px-4 py-2">Peligro / Riesgo</th>
+                                      <th className="px-4 py-2 text-center">Riesgo Inicial</th>
+                                      <th className="px-4 py-2 text-center">Riesgo Residual</th>
+                                      <th className="px-4 py-2 text-right">Estado</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-slate-100 font-semibold text-slate-600">
+                                    {previewRows.map((row, idx) => {
+                                      const initLevel = getRiskLevel(row.probabilidad, row.gravedad);
+                                      const resLevel = row.post_probabilidad && row.post_gravedad ? getRiskLevel(row.post_probabilidad, row.post_gravedad) : null;
+
+                                      return (
+                                        <tr key={idx} className={`hover:bg-slate-50/50 transition-colors ${row.errors.length > 0 ? 'bg-red-50/20' : ''}`}>
+                                          <td className="px-4 py-2 text-center text-slate-400 font-bold">#{row.rowNum}</td>
+                                          <td className="px-4 py-2">
+                                            <span className={row.empresa_id ? 'text-slate-700' : 'text-red-500 font-bold'}>{row.razon_social_display || '(Vacío)'}</span>
+                                          </td>
+                                          <td className="px-4 py-2 font-mono">
+                                            <span className={row.establecimiento_id ? 'text-slate-700' : 'text-red-500 font-bold'}>{row.establecimiento_display || '(Vacío)'}</span>
+                                          </td>
+                                          <td className="px-4 py-2">{row.sector || '(Vacío)'}</td>
+                                          <td className="px-4 py-2">{row.puesto || '(Vacío)'}</td>
+                                          <td className="px-4 py-2 text-slate-400 truncate max-w-[200px]" title={`Peligro: ${row.peligro}\nRiesgo: ${row.riesgo}`}>
+                                            P: {row.peligro || '(Vacío)'} <br/> R: {row.riesgo || '(Vacío)'}
+                                          </td>
+                                          <td className="px-4 py-2 text-center">
+                                            {initLevel ? (
+                                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${initLevel.bgClass}`}>
+                                                {initLevel.text}
+                                              </span>
+                                            ) : (
+                                              <span className="text-red-500 font-bold">(Incompleto)</span>
+                                            )}
+                                          </td>
+                                          <td className="px-4 py-2 text-center">
+                                            {resLevel ? (
+                                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${resLevel.bgClass}`}>
+                                                {resLevel.text}
+                                              </span>
+                                            ) : (
+                                              <span className="text-slate-400 font-normal">-</span>
+                                            )}
+                                          </td>
+                                          <td className="px-4 py-2 text-right">
+                                            {row.errors.length === 0 ? (
+                                              <span className="text-green-600 flex items-center justify-end gap-1 font-bold">
+                                                <Check className="h-3.5 w-3.5" /> Ok
+                                              </span>
+                                            ) : (
+                                              <span className="text-red-500 flex items-center justify-end gap-1 font-bold hover:underline cursor-help group relative">
+                                                <AlertTriangle className="h-3.5 w-3.5" /> Errores
+                                                <div className="absolute right-0 bottom-6 bg-red-600 text-white rounded-lg p-2 shadow-xl text-[10px] w-64 max-w-xs text-left hidden group-hover:block z-50 leading-relaxed font-semibold">
+                                                  <ul className="list-disc list-inside">
+                                                    {row.errors.map((e, eIdx) => <li key={eIdx}>{e}</li>)}
+                                                  </ul>
+                                                </div>
+                                              </span>
+                                            )}
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        /* C: MANUAL BULK SECTOR INPUT */
+                        <div className="space-y-6">
                         <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                           <h3 className="font-outfit text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
                             <PlusCircle className="h-4 w-4 text-[#468DFF]" />
@@ -2162,8 +3191,16 @@ export default function MatrizRiesgosPage({ params }) {
                                             )}
 
                                             {/* Observaciones (Bulk) */}
-                                            <div className="flex flex-col gap-1">
-                                              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Observaciones del Puesto</label>
+                                            <div className="flex flex-col gap-1.5">
+                                              <div className="flex items-center justify-between gap-2 min-h-[24px]">
+                                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Observaciones del Puesto</label>
+                                                <AITextHelper
+                                                  value={pst.observaciones || ''}
+                                                  onChange={(val) => handleUpdateBulkPuesto(sec.id, pst.id, 'observaciones', val)}
+                                                  context="Observaciones y notas sobre los desvíos y riesgos de este puesto de trabajo"
+                                                  disabled={!canEdit}
+                                                />
+                                              </div>
                                               <textarea
                                                 rows={2}
                                                 placeholder="Detalles u observaciones de este puesto..."
@@ -2183,6 +3220,7 @@ export default function MatrizRiesgosPage({ params }) {
                           </div>
                         ))}
                       </div>
+                      )
                     ) : (
                       // EDICIÓN INDIVIDUAL DE FILA
                       <div className="space-y-6">
@@ -2760,7 +3798,15 @@ export default function MatrizRiesgosPage({ params }) {
 
                     {/* Observaciones (Posición final y tamaño completo en el formulario) */}
                     <div className="flex flex-col gap-1.5 col-span-full border-t border-slate-100 pt-4">
-                      <label className="text-xs font-bold text-slate-700 block mb-1">Observaciones</label>
+                      <div className="flex items-center justify-between gap-2 min-h-[28px]">
+                        <label className="text-xs font-bold text-slate-700">Observaciones</label>
+                        <AITextHelper
+                          value={singleObservaciones}
+                          onChange={setSingleObservaciones}
+                          context="Observaciones y detalles técnicos de la evaluación del peligro, riesgo y sus correspondientes medidas preventivas"
+                          disabled={!canEdit}
+                        />
+                      </div>
                       <textarea
                         rows={4}
                         placeholder="Detalles u observaciones de la evaluación..."
@@ -2806,7 +3852,7 @@ export default function MatrizRiesgosPage({ params }) {
                           {canEdit && (
                             <button
                               type="submit"
-                              disabled={saveLoading}
+                              disabled={saveLoading || (isBulkMode && loadType === 'excel' && (previewRows.length === 0 || previewRows.some(r => r.errors.length > 0)))}
                               className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
                             >
                               {saveLoading ? (
@@ -2913,7 +3959,7 @@ export default function MatrizRiesgosPage({ params }) {
 
                       {canCargar && (
                         <button
-                          onClick={() => { setIsBulkMode(true); setIsReadOnlyView(false); setIsFormOpen(true); }}
+                          onClick={handleOpenCreateForm}
                           className="px-3 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0"
                         >
                           <PlusCircle className="h-3.5 w-3.5" />
@@ -2989,7 +4035,7 @@ export default function MatrizRiesgosPage({ params }) {
                       </div>
                       {canCargar && (
                         <button
-                          onClick={() => { setIsBulkMode(true); setIsReadOnlyView(false); setIsFormOpen(true); }}
+                          onClick={handleOpenCreateForm}
                           className="px-4 py-2 mt-2 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0"
                         >
                           <PlusCircle className="h-3.5 w-3.5" />
