@@ -1030,6 +1030,58 @@ export default function MatrizRiesgosPage({ params }) {
         wsListas.getCell(`F${i + 2}`).value = grav;
       });
 
+      const activeCatalog = catalog.length > 0 ? catalog : MOCK_CATALOG;
+      
+      const uniqueTiposPeligro = Array.from(new Set(activeCatalog.map(c => c.tipo_peligro).filter(Boolean)));
+      const uniquePeligros = Array.from(new Set(activeCatalog.map(c => c.peligro).filter(Boolean)));
+      const uniqueRiesgos = Array.from(new Set(activeCatalog.map(c => c.riesgo).filter(Boolean)));
+      const uniqueConsecuencias = Array.from(new Set(activeCatalog.map(c => c.consecuencias || c.consecuencia).filter(Boolean)));
+      const uniqueMedidasAdm = Array.from(new Set(activeCatalog.map(c => c.medidas_control_administrativas || c.medidas_adm).filter(Boolean)));
+      const uniqueMedidasIng = Array.from(new Set(activeCatalog.map(c => c.medidas_control_ingenieria || c.medidas_ing).filter(Boolean)));
+      const uniqueEpps = Array.from(new Set(activeCatalog.map(c => c.epps || c.epp).filter(Boolean)));
+
+      // 7. Escribir Tipos de Peligro en la columna G
+      wsListas.getCell('G1').value = 'Tipos de Peligro';
+      uniqueTiposPeligro.forEach((val, i) => {
+        wsListas.getCell(`G${i + 2}`).value = val;
+      });
+
+      // 8. Escribir Peligros en la columna H
+      wsListas.getCell('H1').value = 'Peligros';
+      uniquePeligros.forEach((val, i) => {
+        wsListas.getCell(`H${i + 2}`).value = val;
+      });
+
+      // 9. Escribir Riesgos en la columna I
+      wsListas.getCell('I1').value = 'Riesgos';
+      uniqueRiesgos.forEach((val, i) => {
+        wsListas.getCell(`I${i + 2}`).value = val;
+      });
+
+      // 10. Escribir Consecuencias en la columna J
+      wsListas.getCell('J1').value = 'Consecuencias';
+      uniqueConsecuencias.forEach((val, i) => {
+        wsListas.getCell(`J${i + 2}`).value = val;
+      });
+
+      // 11. Escribir Medidas Adm en la columna K
+      wsListas.getCell('K1').value = 'Medidas Adm';
+      uniqueMedidasAdm.forEach((val, i) => {
+        wsListas.getCell(`K${i + 2}`).value = val;
+      });
+
+      // 12. Escribir Medidas Ing en la columna L
+      wsListas.getCell('L1').value = 'Medidas Ing';
+      uniqueMedidasIng.forEach((val, i) => {
+        wsListas.getCell(`L${i + 2}`).value = val;
+      });
+
+      // 13. Escribir EPPs en la columna M
+      wsListas.getCell('M1').value = 'EPPs';
+      uniqueEpps.forEach((val, i) => {
+        wsListas.getCell(`M${i + 2}`).value = val;
+      });
+
       // Encabezados
       const headers = [
         'Razón Social',
@@ -1115,6 +1167,14 @@ export default function MatrizRiesgosPage({ params }) {
       const totalPro = NIVELES_PROBABILIDAD.length;
       const totalGra = NIVELES_GRAVEDAD.length;
 
+      const totalTipos = uniqueTiposPeligro.length;
+      const totalPel = uniquePeligros.length;
+      const totalRsg = uniqueRiesgos.length;
+      const totalCons = uniqueConsecuencias.length;
+      const totalMedAdm = uniqueMedidasAdm.length;
+      const totalMedIng = uniqueMedidasIng.length;
+      const totalEpps = uniqueEpps.length;
+
       for (let row = 2; row <= 500; row++) {
         if (totalEmp > 0) {
           wsMatriz.getCell(`A${row}`).dataValidation = {
@@ -1152,6 +1212,56 @@ export default function MatrizRiesgosPage({ params }) {
           type: 'list', allowBlank: true, formulae: [`ListasDefinidas!$F$2:$F$${totalGra + 1}`],
           showErrorMessage: true, errorTitle: 'Valor inválido', error: 'Seleccione una Gravedad.'
         };
+
+        // H: Tipo de peligro
+        if (totalTipos > 0) {
+          wsMatriz.getCell(`H${row}`).dataValidation = {
+            type: 'list', allowBlank: true, formulae: [`ListasDefinidas!$G$2:$G$${totalTipos + 1}`],
+            showErrorMessage: false
+          };
+        }
+        // I: Peligro
+        if (totalPel > 0) {
+          wsMatriz.getCell(`I${row}`).dataValidation = {
+            type: 'list', allowBlank: true, formulae: [`ListasDefinidas!$H$2:$H$${totalPel + 1}`],
+            showErrorMessage: false
+          };
+        }
+        // J: Riesgo
+        if (totalRsg > 0) {
+          wsMatriz.getCell(`J${row}`).dataValidation = {
+            type: 'list', allowBlank: true, formulae: [`ListasDefinidas!$I$2:$I$${totalRsg + 1}`],
+            showErrorMessage: false
+          };
+        }
+        // K: Consecuencia
+        if (totalCons > 0) {
+          wsMatriz.getCell(`K${row}`).dataValidation = {
+            type: 'list', allowBlank: true, formulae: [`ListasDefinidas!$J$2:$J$${totalCons + 1}`],
+            showErrorMessage: false
+          };
+        }
+        // O: Medidas de control Administrativas
+        if (totalMedAdm > 0) {
+          wsMatriz.getCell(`O${row}`).dataValidation = {
+            type: 'list', allowBlank: true, formulae: [`ListasDefinidas!$K$2:$K$${totalMedAdm + 1}`],
+            showErrorMessage: false
+          };
+        }
+        // P: Medidas de control de Ingeniería
+        if (totalMedIng > 0) {
+          wsMatriz.getCell(`P${row}`).dataValidation = {
+            type: 'list', allowBlank: true, formulae: [`ListasDefinidas!$L$2:$L$${totalMedIng + 1}`],
+            showErrorMessage: false
+          };
+        }
+        // Q: EPP's
+        if (totalEpps > 0) {
+          wsMatriz.getCell(`Q${row}`).dataValidation = {
+            type: 'list', allowBlank: true, formulae: [`ListasDefinidas!$M$2:$M$${totalEpps + 1}`],
+            showErrorMessage: false
+          };
+        }
       }
 
       // Hoja 3: Matriz de Valoración

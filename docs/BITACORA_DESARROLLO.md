@@ -1,5 +1,18 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-17] Listas Desplegables de Peligros, Riesgos y Medidas en Matriz de Riesgos
+
+### Resumen de Cambios
+- **Desplegables Flexibles**: Incorporación de listas de selección (dropdowns) en el archivo Excel descargable para las columnas: *Tipo de peligro*, *Peligro*, *Riesgo*, *Consecuencia*, *Medidas de control Administrativas*, *Medidas de control de Ingeniería* y *EPP's*.
+- **Extracción de Catálogo**: Los datos se extraen de forma dinámica del catálogo de peligros de la base de datos de Supabase (o `MOCK_CATALOG` como respaldo) y se escriben en la hoja oculta `ListasDefinidas` de la plantilla.
+- **Compatibilidad con Escritura Libre**: Se configuraron las validaciones de datos en Excel con la opción `showErrorMessage: false`, lo cual permite desplegar las listas de autocompletado en el archivo modelo pero faculta al usuario a escribir libremente cualquier valor manual sin que la celda bloquee la entrada.
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/matriz-riesgos/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción local de Next.js (`npm run build`) completada con éxito.
+
 ## [2026-07-17] Incorporación de Dimensiones de Sectores e Integración de Asistente de Voz por IA en Empresas
 
 ### Resumen de Cambios
