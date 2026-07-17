@@ -1,5 +1,36 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-17] Compatibilidad en Transcripción de Audio y Formatos del Micrófono (IA)
+
+### Resumen de Cambios
+- **Limpieza de MIME Type en API**: Modificación del backend en [route.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/api/ai/transcribe-audio/route.js) para extraer el tipo de medio base (removiendo parámetros de códec como `;codecs=opus` mediante `.split(';')[0].trim()`) antes de realizar la validación. Esto corrige los fallos HTTP 400 y el error `"Formato de audio no soportado por el motor de IA"` que bloqueaba el dictado por voz en todo el sitio cuando el navegador enviaba la especificación del codec.
+- **Soporte para iOS / Safari**: Incorporación de los formatos `audio/mp4` y `audio/x-m4a` al listado de tipos de audio admitidos, posibilitando el dictado de observaciones desde dispositivos móviles Apple y PWA en iOS.
+- **Llamada Limpia a Gemini**: Actualización del payload enviado al SDK de Gemini para transferir el `baseMimeType` limpio en la estructura `inlineData`.
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/api/ai/transcribe-audio/route.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción local Next.js (`npm run build`) completada con éxito.
+
+---
+
+## [2026-07-17] Corrección de Error de Casting en Funciones de RLS en Producción (Miembros de Equipo)
+
+### Resumen de Cambios
+- **Redefinición de Funciones de Permisos**: Aplicación de la migración `20260718000000_fix_permisos_casting` en el entorno remoto de Supabase.
+- **Resolución de Error de Casting JSONB**: Se actualizaron las funciones `public.user_has_action_permission` y `public.user_has_edit_permission` para emplear la extracción de texto `->>` y el casteo de texto seguro `::text::boolean` al procesar campos JSONB. Esto resuelve la excepción de base de datos `cannot cast jsonb object to type boolean` y el error `400 (Bad Request)` devuelto por PostgREST en las consultas de miembros de equipo en `empresas`, `establecimientos`, `programa_anual` y `acciones_correctivas`.
+- **Depuración de Políticas de Visitas**: Eliminación de las políticas obsoletas y huérfanas `visitas_tenant_write` y `visitas_tenant_isolation` en la tabla `public.visitas`.
+
+### Archivos Modificados / Creados
+- *(Aplicación remota de la migración local `supabase/migrations/20260718000000_fix_permisos_casting.sql`)*
+
+### Validaciones Ejecutadas
+- Verificación del código fuente de las funciones actualizadas en la base de datos remota usando `pg_get_functiondef`.
+- Pruebas de consultas exitosas sobre las tablas RLS de producción (`empresas`, `establecimientos`, `programa_anual`, `acciones_correctivas`) simulando el rol `authenticated` con el UUID de sesión de un miembro de equipo.
+
+---
+
 ## [2026-07-17] Listas Desplegables de Peligros, Riesgos y Medidas en Matriz de Riesgos
 
 ### Resumen de Cambios

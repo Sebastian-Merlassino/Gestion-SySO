@@ -36,9 +36,21 @@ export async function POST(req) {
       return NextResponse.json({ error: 'El archivo de audio es demasiado grande (máximo 10MB).' }, { status: 400 });
     }
 
-    const allowedMimeTypes = ['audio/webm', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/m4a', 'audio/mpeg', 'audio/aac'];
+    const baseMimeType = mimeType ? mimeType.split(';')[0].trim() : '';
+    const allowedMimeTypes = [
+      'audio/webm',
+      'audio/mp3',
+      'audio/wav',
+      'audio/ogg',
+      'audio/m4a',
+      'audio/x-m4a',
+      'audio/mp4',
+      'audio/mpeg',
+      'audio/aac',
+      'audio/flac'
+    ];
     if (mimeType) {
-      if (typeof mimeType !== 'string' || mimeType.length > 100 || !allowedMimeTypes.includes(mimeType)) {
+      if (typeof mimeType !== 'string' || mimeType.length > 100 || !allowedMimeTypes.includes(baseMimeType)) {
         return NextResponse.json({ error: 'Formato de audio no soportado por el motor de IA.' }, { status: 400 });
       }
     }
@@ -59,7 +71,7 @@ export async function POST(req) {
             parts: [
               {
                 inlineData: {
-                  mimeType: mimeType || 'audio/webm',
+                  mimeType: baseMimeType || 'audio/webm',
                   data: audioBase64,
                 },
               },
