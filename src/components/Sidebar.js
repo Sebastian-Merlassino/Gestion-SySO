@@ -20,8 +20,10 @@ import {
   X,
   ShieldAlert,
   Zap,
-  Lock
+  Lock,
+  Share2
 } from 'lucide-react';
+import { useToast } from '@/components/providers/ToastProvider';
 
 let isHydratedGlobal = false;
 let cachedTenantGlobal = null;
@@ -37,9 +39,34 @@ export default function Sidebar({
   handleLogout,
   onNavigate
 }) {
+  const globalToast = useToast();
   const [mounted, setMounted] = useState(isHydratedGlobal);
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null });
   const [tenantData, setTenantData] = useState(cachedTenantGlobal);
+
+  const handleShareApp = async () => {
+    const shareData = {
+      title: 'Gestión SySO',
+      text: 'Plataforma profesional para la gestión de seguridad, salud ocupacional e higiene industrial.',
+      url: typeof window !== 'undefined' ? window.location.origin : 'https://gestionsyso.com'
+    };
+
+    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        console.log('Error sharing:', err);
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareData.url);
+        globalToast.toast('Enlace copiado al portapapeles exitosamente.', 'success');
+      } catch (err) {
+        console.error('Error copying text:', err);
+        globalToast.toast('No se pudo copiar el enlace automáticamente.', 'error');
+      }
+    }
+  };
 
   useEffect(() => {
     if (!isHydratedGlobal) {
@@ -247,6 +274,24 @@ export default function Sidebar({
               <LogOut className="h-4 w-4" />
             </button>
           </div>
+          {/* Botón Compartir App */}
+          {!isSidebarCollapsed ? (
+            <button
+              onClick={handleShareApp}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold border border-[#468DFF]/30 text-[#468DFF] bg-[#468DFF]/5 hover:bg-[#468DFF] hover:text-white hover:border-[#468DFF] transition-all active:scale-[0.98] cursor-pointer shrink-0"
+            >
+              <Share2 className="h-3.5 w-3.5" />
+              Compartir App
+            </button>
+          ) : (
+            <button
+              onClick={handleShareApp}
+              title="Compartir App"
+              className="mx-auto p-2 rounded-lg bg-[#468DFF]/10 text-[#468DFF] hover:bg-[#468DFF] hover:text-white transition-all cursor-pointer shrink-0"
+            >
+              <Share2 className="h-4 w-4" />
+            </button>
+          )}
           {!isSidebarCollapsed && (
             <div className="flex flex-col gap-1 items-center justify-center pt-2 px-1 text-[10px] text-white/35 font-medium border-t border-white/5">
               <div className="flex gap-2">
@@ -304,6 +349,14 @@ export default function Sidebar({
                   <LogOut className="h-4 w-4" />
                 </button>
               </div>
+              {/* Botón Compartir App */}
+              <button
+                onClick={handleShareApp}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold border border-[#468DFF]/30 text-[#468DFF] bg-[#468DFF]/5 hover:bg-[#468DFF] hover:text-white hover:border-[#468DFF] transition-all active:scale-[0.98] cursor-pointer shrink-0"
+              >
+                <Share2 className="h-3.5 w-3.5" />
+                Compartir App
+              </button>
               <div className="flex flex-col gap-1 items-center justify-center pt-2 px-1 text-[10px] text-white/35 font-medium border-t border-white/5">
                 <div className="flex gap-2">
                   <Link href="/terminos" target="_blank" className="hover:text-white/60 hover:underline transition-all">Términos</Link>

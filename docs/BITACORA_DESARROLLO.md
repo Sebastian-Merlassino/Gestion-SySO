@@ -1,5 +1,24 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-17] Incorporación de Botón para Compartir la Aplicación en la Barra Lateral
+
+### Resumen de Cambios
+- **Botón de Compartición en Sidebar**: Se implementó una opción para compartir la aplicación directamente en la barra lateral privada (componente `Sidebar.js`), posicionado inmediatamente debajo del bloque que muestra el nombre y rol del usuario.
+- **Detección Dinámica de Funcionalidad**: Se integra el API nativo `navigator.share` para dispositivos móviles y navegadores compatibles, permitiendo levantar el diálogo nativo de compartición del sistema operativo.
+- **Notificación y Copiado al Portapapeles (Fallback)**: Si el navegador no soporta compartir de forma nativa, la acción copia automáticamente la URL del sitio web (`window.location.origin`) al portapapeles y notifica al usuario con un Toast de tipo `success` (*"Enlace copiado al portapapeles exitosamente."*) utilizando el sistema centralizado de notificaciones `ToastProvider`.
+- **Adaptabilidad Estética y Colapso**:
+  - En la versión de escritorio expandida, se renderiza con el texto "Compartir App" y el ícono `Share2`.
+  - En la versión de escritorio colapsada, se adapta reduciéndose a un ícono centralizado con tooltip.
+  - En la versión móvil, se visualiza como un botón a ancho completo debajo de la tarjeta de usuario en el drawer lateral.
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/components/Sidebar.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción local de Next.js (`npm run build`) completada con éxito.
+
+---
+
 ## [2026-07-17] Depuración y Listas Desplegables de Nivel de Riesgo en Excel (Matriz)
 
 ### Resumen de Cambios
