@@ -4,7 +4,7 @@
 
 ### Resumen de Cambios
 - **Desplegables Flexibles**: Incorporación de listas de selección (dropdowns) en el archivo Excel descargable para las columnas: *Tipo de peligro*, *Peligro*, *Riesgo*, *Consecuencia*, *Medidas de control Administrativas*, *Medidas de control de Ingeniería* y *EPP's*.
-- **Extracción de Catálogo**: Los datos se extraen de forma dinámica del catálogo de peligros de la base de datos de Supabase (o `MOCK_CATALOG` como respaldo) y se escriben en la hoja oculta `ListasDefinidas` de la plantilla.
+- **Extracción y Ordenación de Catálogo**: Los datos se extraen de forma dinámica del catálogo de peligros de la base de datos de Supabase (o `MOCK_CATALOG` como respaldo), se ordenan alfabéticamente mediante `localeCompare` y se escriben en la hoja oculta `ListasDefinidas` de la plantilla para una navegación organizada del usuario.
 - **Compatibilidad con Escritura Libre**: Se configuraron las validaciones de datos en Excel con la opción `showErrorMessage: false`, lo cual permite desplegar las listas de autocompletado en el archivo modelo pero faculta al usuario a escribir libremente cualquier valor manual sin que la celda bloquee la entrada.
 
 ### Archivos Modificados / Creados

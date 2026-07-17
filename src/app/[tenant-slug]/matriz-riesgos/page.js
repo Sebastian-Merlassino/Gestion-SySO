@@ -1032,13 +1032,13 @@ export default function MatrizRiesgosPage({ params }) {
 
       const activeCatalog = catalog.length > 0 ? catalog : MOCK_CATALOG;
       
-      const uniqueTiposPeligro = Array.from(new Set(activeCatalog.map(c => c.tipo_peligro).filter(Boolean)));
-      const uniquePeligros = Array.from(new Set(activeCatalog.map(c => c.peligro).filter(Boolean)));
-      const uniqueRiesgos = Array.from(new Set(activeCatalog.map(c => c.riesgo).filter(Boolean)));
-      const uniqueConsecuencias = Array.from(new Set(activeCatalog.map(c => c.consecuencias || c.consecuencia).filter(Boolean)));
-      const uniqueMedidasAdm = Array.from(new Set(activeCatalog.map(c => c.medidas_control_administrativas || c.medidas_adm).filter(Boolean)));
-      const uniqueMedidasIng = Array.from(new Set(activeCatalog.map(c => c.medidas_control_ingenieria || c.medidas_ing).filter(Boolean)));
-      const uniqueEpps = Array.from(new Set(activeCatalog.map(c => c.epps || c.epp).filter(Boolean)));
+      const uniqueTiposPeligro = Array.from(new Set(activeCatalog.map(c => c.tipo_peligro).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+      const uniquePeligros = Array.from(new Set(activeCatalog.map(c => c.peligro).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+      const uniqueRiesgos = Array.from(new Set(activeCatalog.map(c => c.riesgo).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+      const uniqueConsecuencias = Array.from(new Set(activeCatalog.map(c => c.consecuencias || c.consecuencia).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+      const uniqueMedidasAdm = Array.from(new Set(activeCatalog.map(c => c.medidas_control_administrativas || c.medidas_adm).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+      const uniqueMedidasIng = Array.from(new Set(activeCatalog.map(c => c.medidas_control_ingenieria || c.medidas_ing).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+      const uniqueEpps = Array.from(new Set(activeCatalog.map(c => c.epps || c.epp).filter(Boolean))).sort((a, b) => a.localeCompare(b));
 
       // 7. Escribir Tipos de Peligro en la columna G
       wsListas.getCell('G1').value = 'Tipos de Peligro';
