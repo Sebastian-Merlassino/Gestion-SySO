@@ -14,6 +14,7 @@ import AppSelect from '@/components/ui/AppSelect';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
+import AITextHelper from '@/components/ui/AITextHelper';
 import { 
   Building, 
   Users, 
@@ -580,6 +581,9 @@ export default function EmpresasClientes({ params }) {
               id: 'sec-1',
               denominacion: 'Producción',
               descripcion: 'Área principal de fabricación y ensamble de piezas.',
+              largo: '15.5',
+              ancho: '10.0',
+              altura: '3.2',
               isCollapsed: true,
               puestos: [
                 { id: 'pst-1', denominacion: 'Operario de Torno', descripcion: 'Mecanizado de piezas según plano.', isCollapsed: true },
@@ -590,6 +594,9 @@ export default function EmpresasClientes({ params }) {
               id: 'sec-2',
               denominacion: 'Mantenimiento',
               descripcion: 'Taller de reparación mecánica y eléctrica.',
+              largo: '8.0',
+              ancho: '6.0',
+              altura: '2.8',
               isCollapsed: true,
               puestos: [
                 { id: 'pst-3', denominacion: 'Soldador', descripcion: 'Soldadura de estructuras y reparaciones.', isCollapsed: true }
@@ -952,6 +959,9 @@ export default function EmpresasClientes({ params }) {
       id: 'sec-' + Date.now() + Math.random().toString(36).substr(2, 5),
       denominacion: '',
       descripcion: '',
+      largo: '',
+      ancho: '',
+      altura: '',
       isCollapsed: false,
       puestos: []
     });
@@ -2475,6 +2485,56 @@ export default function EmpresasClientes({ params }) {
                                             </div>
                                           </div>
 
+                                          {/* Dimensiones para Protocolo de Iluminación */}
+                                          <div className="space-y-2 pt-2 border-t border-slate-100/60">
+                                            <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-700">
+                                              <Info className="h-3 w-3 text-[#468DFF]" />
+                                              <span>Dimensiones del Sector (Anexo - Resolución 84/12 (Protocolo de Iluminación))</span>
+                                            </div>
+                                            
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                              <div className="space-y-1">
+                                                <label className="text-[9px] font-bold text-slate-500 block">Largo (en metros)</label>
+                                                <input
+                                                  type="number"
+                                                  step="any"
+                                                  min="0"
+                                                  placeholder="Ej: 12.50"
+                                                  value={sec.largo || ''}
+                                                  onChange={(e) => handleUpdateSector(idx, secIdx, 'largo', e.target.value)}
+                                                  className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/30 transition-all text-slate-700"
+                                                />
+                                              </div>
+                                              <div className="space-y-1">
+                                                <label className="text-[9px] font-bold text-slate-500 block">Ancho (en metros)</label>
+                                                <input
+                                                  type="number"
+                                                  step="any"
+                                                  min="0"
+                                                  placeholder="Ej: 8.30"
+                                                  value={sec.ancho || ''}
+                                                  onChange={(e) => handleUpdateSector(idx, secIdx, 'ancho', e.target.value)}
+                                                  className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/30 transition-all text-slate-700"
+                                                />
+                                              </div>
+                                              <div className="space-y-1">
+                                                <label className="text-[9px] font-bold text-slate-500 block">Altura (en metros)</label>
+                                                <input
+                                                  type="number"
+                                                  step="any"
+                                                  min="0"
+                                                  placeholder="Ej: 2.80"
+                                                  value={sec.altura || ''}
+                                                  onChange={(e) => handleUpdateSector(idx, secIdx, 'altura', e.target.value)}
+                                                  className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/30 transition-all text-slate-700"
+                                                />
+                                                <span className="text-[8px] text-slate-400 leading-tight block mt-0.5">
+                                                  Altura del plano de trabajo a la luminaria.
+                                                </span>
+                                              </div>
+                                            </div>
+                                          </div>
+
                                           {/* PUESTOS DE TRABAJO */}
                                           <div className="pt-3 border-t border-slate-100 space-y-3">
                                             <div className="flex justify-between items-center">
@@ -2664,8 +2724,20 @@ export default function EmpresasClientes({ params }) {
                             </div>
 
                             {/* Observaciones específicas del establecimiento */}
-                            <div className="space-y-2 pt-4 border-t border-slate-100">
-                              <label className="text-xs font-bold text-slate-600 block">Observaciones del Establecimiento</label>
+                            <div className="space-y-1 pt-4 border-t border-slate-100">
+                              <div className="flex items-center justify-between gap-2 min-h-[28px] mb-1">
+                                <label className="text-xs font-bold text-slate-600 block">Observaciones del Establecimiento</label>
+                                <AITextHelper
+                                  value={est.observaciones || ''}
+                                  onChange={(val) => {
+                                    const copy = [...establecimientos];
+                                    copy[idx].observaciones = val;
+                                    setEstablecimientos(copy);
+                                  }}
+                                  context="Observaciones específicas del establecimiento relativas a higiene y seguridad laboral"
+                                  disabled={!canEdit}
+                                />
+                              </div>
                               <textarea
                                 rows="3"
                                 placeholder="Escribe observaciones específicas sobre este establecimiento (ej. detalles de acceso, horarios especiales, particularidades de riesgos, etc.)"
@@ -2691,7 +2763,15 @@ export default function EmpresasClientes({ params }) {
                     <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4 mt-6">
                       <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Observaciones Generales</h4>
                       <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-600 block">Notas / Observaciones sobre la empresa</label>
+                        <div className="flex items-center justify-between gap-2 min-h-[28px] mb-1">
+                          <label className="text-xs font-bold text-slate-600 block">Notas / Observaciones sobre la empresa</label>
+                          <AITextHelper
+                            value={observaciones}
+                            onChange={setObservaciones}
+                            context="Notas y observaciones generales de higiene y seguridad de la empresa cliente"
+                            disabled={!canEdit}
+                          />
+                        </div>
                         <textarea
                           rows="4"
                           value={observaciones}
@@ -2852,7 +2932,15 @@ export default function EmpresasClientes({ params }) {
                     <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4 mt-6">
                       <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Observaciones Generales</h4>
                       <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-600 block">Notas / Observaciones sobre la empresa</label>
+                        <div className="flex items-center justify-between gap-2 min-h-[28px] mb-1">
+                          <label className="text-xs font-bold text-slate-600 block">Notas / Observaciones sobre la empresa</label>
+                          <AITextHelper
+                            value={observaciones}
+                            onChange={setObservaciones}
+                            context="Notas y observaciones generales de higiene y seguridad de la empresa cliente"
+                            disabled={!canEdit}
+                          />
+                        </div>
                         <textarea
                           rows="4"
                           value={observaciones}

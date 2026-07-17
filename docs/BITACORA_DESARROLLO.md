@@ -1,5 +1,21 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-17] Incorporación de Dimensiones de Sectores e Integración de Asistente de Voz por IA en Empresas
+
+### Resumen de Cambios
+- **Dimensiones de Sectores**: Se agregaron los campos `Largo (en metros)`, `Ancho (en metros)` y `Altura (en metros)` (altura del plano de trabajo a la luminaria) dentro de la configuración de cada Sector en el formulario de edición de Clientes / Empresas en la pestaña de Establecimientos.
+- **Leyendas y Explicaciones de Interfaz**: Se incorporó una leyenda explicando la utilidad de los datos para el "Anexo - Resolución 84/12 (Protocolo de Iluminación)" y un texto descriptivo aclaratorio bajo el campo de Altura.
+- **Asistencia de IA en Textareas (SySO-AI-Voice-Helper)**: Integración del componente `<AITextHelper />` al lado de las etiquetas de *"Notas / Observaciones sobre la empresa"* (sección de Observaciones Generales) tanto en la pestaña de *Establecimientos* como en la de *Plataformas & Credenciales*. Asimismo, se integró el asistente en el campo *"Observaciones del Establecimiento"* dentro del editor de establecimientos en el formulario de clientes, posibilitando el dictado por voz por micrófono, limpieza dinámica y refinamiento de texto mediante Gemini Flash.
+- **Valores por Defecto e Iniciales**: Se actualizó la inicialización del objeto Sector para contemplar `largo`, `ancho` y `altura` vacíos. Se sincronizó la base de datos simulada y de prueba (Mock Data) con valores iniciales.
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción local de Next.js (`npm run build`) completada con éxito.
+
+---
+
 ## [2026-07-16] Carga Masiva de Matriz de Riesgos mediante Subida de Planilla Excel
 
 ### Resumen de Cambios
