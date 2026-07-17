@@ -1,5 +1,17 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-17] Depuración y Listas Desplegables de Nivel de Riesgo en Excel (Matriz)
+
+### Resumen de Cambios
+- **Desplegables Deduplicados**: Se refactorizaron los listados de lookup de Razón Social y Establecimiento de la plantilla Excel para filtrar duplicados mediante `Set` y ordenarlos alfabéticamente antes de escribirlos en la hoja `ListasDefinidas`.
+- **Desplegables de Nivel de Riesgo**: Se añadió la columna `Niveles de Riesgo` (con los 5 niveles estándar: Trivial, Tolerable, Moderado, Sustancial, Intolerable) a la hoja de lookup y se vincularon las validaciones de tipo dropdown en la hoja principal del Excel para las columnas de **Nivel de Riesgo Inicial** (columna N) y **Nivel de Riesgo Residual** (columna X) con la opción `showErrorMessage: false`.
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/matriz-riesgos/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción local de Next.js (`npm run build`) completada con éxito.
+
 ## [2026-07-17] Compatibilidad en Transcripción de Audio y Formatos del Micrófono (IA)
 
 ### Resumen de Cambios

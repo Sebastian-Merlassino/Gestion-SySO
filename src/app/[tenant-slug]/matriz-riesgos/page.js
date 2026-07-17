@@ -996,14 +996,16 @@ export default function MatrizRiesgosPage({ params }) {
 
       // 1. Escribir empresas del tenant en la columna A
       wsListas.getCell('A1').value = 'Razones Sociales';
-      empresas.forEach((emp, i) => {
-        wsListas.getCell(`A${i + 2}`).value = emp.razon_social;
+      const uniqueRazones = Array.from(new Set(empresas.map(e => e.razon_social).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+      uniqueRazones.forEach((rz, i) => {
+        wsListas.getCell(`A${i + 2}`).value = rz;
       });
 
       // 2. Escribir establecimientos del tenant en la columna B
       wsListas.getCell('B1').value = 'Establecimientos';
-      allEstablecimientos.forEach((est, i) => {
-        wsListas.getCell(`B${i + 2}`).value = est.denominacion;
+      const uniqueEstablecimientos = Array.from(new Set(allEstablecimientos.map(e => e.denominacion).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+      uniqueEstablecimientos.forEach((est, i) => {
+        wsListas.getCell(`B${i + 2}`).value = est;
       });
 
       // 3. Escribir Frecuencias en la columna C
@@ -1080,6 +1082,19 @@ export default function MatrizRiesgosPage({ params }) {
       wsListas.getCell('M1').value = 'EPPs';
       uniqueEpps.forEach((val, i) => {
         wsListas.getCell(`M${i + 2}`).value = val;
+      });
+
+      // 14. Escribir Niveles de Riesgo en la columna N
+      const NIVELES_RIESGO = [
+        'Riesgo trivial',
+        'Riesgo tolerable',
+        'Riesgo moderado',
+        'Riesgo sustancial',
+        'Riesgo intolerable'
+      ];
+      wsListas.getCell('N1').value = 'Niveles de Riesgo';
+      NIVELES_RIESGO.forEach((val, i) => {
+        wsListas.getCell(`N${i + 2}`).value = val;
       });
 
       // Encabezados
@@ -1160,8 +1175,8 @@ export default function MatrizRiesgosPage({ params }) {
       ];
       wsMatriz.addRow(exampleRow);
 
-      const totalEmp = empresas.length;
-      const totalEst = allEstablecimientos.length;
+      const totalEmp = uniqueRazones.length;
+      const totalEst = uniqueEstablecimientos.length;
       const totalFrec = FRECUENCIAS.length;
       const totalSit = SITUACIONES.length;
       const totalPro = NIVELES_PROBABILIDAD.length;
@@ -1262,6 +1277,18 @@ export default function MatrizRiesgosPage({ params }) {
             showErrorMessage: false
           };
         }
+
+        // N: Nivel de Riesgo Inicial
+        wsMatriz.getCell(`N${row}`).dataValidation = {
+          type: 'list', allowBlank: true, formulae: ['ListasDefinidas!$N$2:$N$6'],
+          showErrorMessage: false
+        };
+
+        // X: Nivel de Riesgo Residual
+        wsMatriz.getCell(`X${row}`).dataValidation = {
+          type: 'list', allowBlank: true, formulae: ['ListasDefinidas!$N$2:$N$6'],
+          showErrorMessage: false
+        };
       }
 
       // Hoja 3: Matriz de Valoración
