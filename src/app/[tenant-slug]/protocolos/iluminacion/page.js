@@ -33,7 +33,8 @@ import {
   ChevronDown,
   Info,
   Calendar,
-  AlertCircle
+  AlertCircle,
+  Sun
 } from 'lucide-react';
 
 export default function ProtocolosIluminacionPage({ params }) {
