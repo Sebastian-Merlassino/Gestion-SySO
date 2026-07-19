@@ -1042,8 +1042,8 @@ export default function ProtocoloForm({
                   disabled={!canEdit}
                   value={empresaId}
                   onChange={(e) => handleEmpresaChange(e.target.value)}
+                  placeholder="Selecciona una Razón Social..."
                 >
-                  <option value="">Selecciona una Razón Social...</option>
                   {empresas.map(e => (
                     <option key={e.id} value={e.id}>{e.razon_social}</option>
                   ))}
@@ -1065,8 +1065,8 @@ export default function ProtocoloForm({
                   disabled={!empresaId || !canEdit}
                   value={establecimientoId}
                   onChange={(e) => handleEstablecimientoChange(e.target.value)}
+                  placeholder="Selecciona un establecimiento..."
                 >
-                  <option value="">Selecciona un establecimiento...</option>
                   {allEstablecimientos
                     .filter(e => e.empresa_id === empresaId)
                     .map(e => (
@@ -1081,7 +1081,7 @@ export default function ProtocoloForm({
               <AppInput disabled value={direccionText} />
             </div>
 
-            <div className="grid grid-cols-3 gap-2 col-span-full">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 col-span-full">
               <div className="flex flex-col gap-1">
                 <AppLabel>Provincia</AppLabel>
                 <AppInput disabled value={provinciaText} />
@@ -1090,15 +1090,17 @@ export default function ProtocoloForm({
                 <AppLabel>Localidad</AppLabel>
                 <AppInput disabled value={localidadText} />
               </div>
-              <div className="flex flex-col gap-1">
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 col-span-full">
+              <div className="flex flex-col gap-1 md:col-span-1">
                 <AppLabel>C.P.</AppLabel>
                 <AppInput disabled value={cpText} />
               </div>
-            </div>
-
-            <div className="flex flex-col gap-1 col-span-full">
-              <AppLabel>Horarios / Turnos Habituales de Trabajo</AppLabel>
-              <AppInput disabled value={horariosTurnosText} />
+              <div className="flex flex-col gap-1 md:col-span-3">
+                <AppLabel>Horarios / Turnos Habituales de Trabajo</AppLabel>
+                <AppInput disabled value={horariosTurnosText} />
+              </div>
             </div>
           </div>
         </AppCard>
