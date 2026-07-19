@@ -1,5 +1,33 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-19] Rediseño Visual del Módulo de Protocolo de Iluminación (SySO Compact Layout)
+
+### Resumen de Cambios
+- **Alineación con el Estándar SySO Compact Layout**:
+  - Ajuste de fondos a `bg-syso-bg` y tipografía corporativa a `font-sans` e Inter/Outfit.
+  - Sincronización e integración de las propiedades y estados del componente de menú lateral (`Sidebar.js`) en todas las vistas de iluminación para evitar cambios de layout inesperados y fallos en navegación responsiva.
+  - Maquetado de cabeceras sticky de páginas de iluminación a `h-16` integradas con menú hamburguesa y badge de planes dinámicos.
+  - Reducción del margen interno de las tarjetas y ancho útil restringido a un contenedor responsivo centrado `max-w-[95%]`.
+  - Altura de tablas calculada dinámicamente según la visibilidad de los filtros avanzados (`calc(100vh - 310px)` / `calc(100vh - 240px)`) para garantizar comportamiento "fit-to-viewport".
+  - Sincronización visual de los botones de acción rápida de tablas y formularios a los colores y hover premium estándar del sistema (Ver, Editar, Eliminar, Duplicar, Enviar por correo).
+- **Consistencia en Panel de Filtros y Búsqueda**:
+  - Reubicación del buscador y filtros de selección a una fila compacta unificada de controles de tabla para optimizar espacio en pantalla.
+  - Limpieza de selectores, alineamiento a la derecha en desktop y colapso responsivo en móvil.
+- **Rediseño del Formulario de Carga**:
+  - Adaptación de `ProtocoloForm.js` a contenedor principal de tarjeta unificada con scroll interna y pie de página de control unificado.
+  - Incorporación del botón "Salir" (estilo secundario) y "Guardar" (estilo primario con sombras de color) junto al selector del estado de documento.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/nuevo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/[id]/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/[id]/editar/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+
+### Validaciones Ejecutadas
+- Compilación del bundle Next.js de producción (`npm run build`) verificada de forma exitosa.
+- Envío e integración remota a repositorio git completada.
+
 ## [2026-07-19] Implementación de la Sección Protocolo de Iluminación (Res. SRT 84/12)
 
 ### Resumen de Cambios
