@@ -46,6 +46,16 @@ export default function ProtocolosIluminacionPage({ params }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isDevMode, setIsDevMode] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    window.location.href = '/login';
+  };
+
+  const handleSidebarNavigation = () => {
+    setIsMobileMenuOpen(false);
+  };
 
   // Lookups and main list
   const [empresas, setEmpresas] = useState([]);
@@ -495,151 +505,224 @@ export default function ProtocolosIluminacionPage({ params }) {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-[#0D0D0D]/5">
-        <Sidebar collapsed={isSidebarCollapsed} onToggle={toggleSidebar} />
-        <main className="flex-1 flex items-center justify-center p-8">
-          <Loader2 className="h-8 w-8 text-[#468DFF] animate-spin" />
-          <span className="ml-3 text-slate-500 font-semibold text-sm">Cargando mediciones de iluminación...</span>
+      <div className="h-screen overflow-hidden bg-syso-bg text-slate-700 flex font-sans">
+        <Sidebar
+          tenantSlug={tenantSlug}
+          profile={profile}
+          currentSection="protocolo-iluminacion"
+          isSidebarCollapsed={isSidebarCollapsed}
+          toggleSidebar={toggleSidebar}
+          isMobileMenuOpen={isMobileMenuOpen}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+          handleLogout={handleLogout}
+          onNavigate={handleSidebarNavigation}
+        />
+        <main className="flex-grow flex flex-col min-w-0 overflow-y-auto">
+          <AppPageHeader
+            title="Protocolo de Iluminación"
+            icon={Sun}
+            tenantName={tenant?.name || 'Cargando...'}
+            planId={tenant?.plan_id}
+            showPlanBadge={profile && profile.role !== 'cliente'}
+            setIsMobileMenuOpen={setIsMobileMenuOpen}
+          />
+          <div className="flex-grow flex items-center justify-center p-8">
+            <div className="text-center space-y-4">
+              <Loader2 className="h-10 w-10 animate-spin text-[#468DFF] mx-auto" />
+              <p className="text-xs text-slate-500 font-medium">Cargando registros del protocolo...</p>
+            </div>
+          </div>
         </main>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-[#0D0D0D]/5 text-slate-800">
-      <Sidebar collapsed={isSidebarCollapsed} onToggle={toggleSidebar} />
+    <div className="h-screen overflow-hidden bg-syso-bg text-slate-700 flex font-sans">
+      <Sidebar
+        tenantSlug={tenantSlug}
+        profile={profile}
+        currentSection="protocolo-iluminacion"
+        isSidebarCollapsed={isSidebarCollapsed}
+        toggleSidebar={toggleSidebar}
+        isMobileMenuOpen={isMobileMenuOpen}
+        setIsMobileMenuOpen={setIsMobileMenuOpen}
+        handleLogout={handleLogout}
+        onNavigate={handleSidebarNavigation}
+      />
 
-      <main className="flex-1 p-6 md:p-8 space-y-6 overflow-x-hidden">
+      <main className="flex-grow flex flex-col min-w-0 overflow-y-auto">
         <AppPageHeader
           title="Protocolo de Iluminación"
-          description="Gestione los protocolos e informes de medición de iluminancia laboral SRT 84/12."
-          breadcrumbs={[
-            { label: 'Inicio', href: `/${tenantSlug}` },
-            { label: 'Protocolo de Iluminación', active: true }
-          ]}
+          icon={Sun}
+          tenantName={tenant?.name || 'Cargando...'}
+          planId={tenant?.plan_id}
+          showPlanBadge={profile && profile.role !== 'cliente'}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
         />
 
-        {/* CONTENEDOR 1: BUSCADOR Y BOTÓN ACCIÓN */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm space-y-3 shrink-0">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <div className="relative flex-1 max-w-md">
-              <span className="absolute left-3.5 top-3 h-4 w-4 text-slate-400 pointer-events-none">
-                <Search className="h-4 w-4" />
-              </span>
-              <input
-                type="text"
-                placeholder="Buscar por cliente, establecimiento, luxómetro..."
-                value={filterText}
-                onChange={(e) => setFilterText(e.target.value)}
-                className="w-full pl-9 pr-3.5 py-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400"
-              />
-            </div>
+        <div className="max-w-[95%] mx-auto w-full py-8 px-4 md:px-0 flex-grow flex flex-col min-h-0">
+          <div className="space-y-6 flex-grow flex flex-col min-h-0">
 
-            <div className="flex items-center gap-2.5">
-              <button
-                type="button"
-                onClick={() => setShowFilters(!showFilters)}
-                className="py-2 px-3.5 rounded-xl border border-slate-200 bg-white text-slate-600 font-bold text-xs flex items-center gap-1.5 hover:bg-slate-50 cursor-pointer transition-all"
-              >
-                <Sliders className="h-4 w-4" />
-                Filtros
-                {showFilters ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-              </button>
+            {/* CONTENEDOR 1: BUSCADOR Y BOTÓN ACCIÓN (SySO Compact Layout) */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm space-y-3 shrink-0">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
+                {/* Espaciador para empujar el buscador a la derecha en desktop */}
+                <div className="hidden md:block flex-1"></div>
 
-              {canCargar && (
-                <Link href={`/${tenantSlug}/protocolos/iluminacion/nuevo`} className="inline-flex">
-                  <AppButton className="text-xs py-2 px-4 shadow-lg shadow-[#468DFF]/15">
-                    <PlusCircle className="h-4 w-4 mr-1.5" />
-                    Nuevo Protocolo
-                  </AppButton>
-                </Link>
+                {/* Buscador */}
+                <div className="flex flex-col md:flex-row md:items-center gap-2 w-full md:w-auto">
+                  <div className="relative w-full md:w-64">
+                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 pointer-events-none" />
+                    <input
+                      type="text"
+                      placeholder="Buscar por cliente, establecimiento, luxómetro..."
+                      value={filterText}
+                      onChange={(e) => setFilterText(e.target.value)}
+                      className="w-full pl-9 pr-3.5 py-1.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Filtros avanzados colapsables */}
+              <div className="pt-1.5 border-t border-slate-100 space-y-2">
+                <div className="flex items-center justify-between min-h-[28px]">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowFilters(!showFilters)}
+                      className="font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px] hover:text-slate-600 transition-colors cursor-pointer"
+                    >
+                      <Sliders className="h-3 w-3" />
+                      Filtros de Búsqueda
+                      {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                    </button>
+
+                    {(filterText || filterEmpresa || filterEstablecimiento || filterResultado || filterEstado || filterFechaDesde || filterFechaHasta) && (
+                      <button
+                        onClick={() => {
+                          setFilterText('');
+                          setFilterEmpresa('');
+                          setFilterEstablecimiento('');
+                          setFilterResultado('');
+                          setFilterEstado('');
+                          setFilterFechaDesde('');
+                          setFilterFechaHasta('');
+                        }}
+                        className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[10px] font-semibold cursor-pointer transition-all border border-slate-200"
+                      >
+                        Limpiar filtros
+                      </button>
+                    )}
+                  </div>
+
+                  {canCargar && (
+                    <Link href={`/${tenantSlug}/protocolos/iluminacion/nuevo`} className="inline-flex">
+                      <button
+                        type="button"
+                        className="px-3 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0 border border-[#468DFF] hover:border-[#0511F2]"
+                      >
+                        <PlusCircle className="h-3.5 w-3.5" />
+                        Nuevo Protocolo
+                      </button>
+                    </Link>
+                  )}
+                </div>
+              </div>
+
+              {/* FILTROS AVANZADOS COLLAPSIBLE */}
+              {showFilters && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-3 border-t border-slate-100 animate-fade-in">
+                  <div className="space-y-1 col-span-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Filtrar por Cliente</label>
+                    <select
+                      value={filterEmpresa}
+                      onChange={(e) => {
+                        setFilterEmpresa(e.target.value);
+                        setFilterEstablecimiento('');
+                      }}
+                      className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] font-semibold text-slate-600 bg-white focus:outline-none focus:ring-1 focus:ring-[#468DFF] cursor-pointer"
+                    >
+                      <option value="">Todos los clientes</option>
+                      {empresas.map(emp => (
+                        <option key={emp.id} value={emp.id}>{emp.razon_social}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1 col-span-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Establecimiento</label>
+                    <select
+                      disabled={!filterEmpresa}
+                      value={filterEstablecimiento}
+                      onChange={(e) => setFilterEstablecimiento(e.target.value)}
+                      className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] font-semibold text-slate-600 bg-white focus:outline-none focus:ring-1 focus:ring-[#468DFF] cursor-pointer disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed"
+                    >
+                      <option value="">{!filterEmpresa ? 'Seleccione cliente...' : 'Todos los establecimientos'}</option>
+                      {allEstablecimientos.filter(est => est.empresa_id === filterEmpresa).map(est => (
+                        <option key={est.id} value={est.id}>{est.denominacion}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1 col-span-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Resultado General</label>
+                    <select
+                      value={filterResultado}
+                      onChange={(e) => setFilterResultado(e.target.value)}
+                      className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] font-semibold text-slate-600 bg-white focus:outline-none focus:ring-1 focus:ring-[#468DFF] cursor-pointer"
+                    >
+                      <option value="">Todos</option>
+                      <option value="Cumple">Cumple</option>
+                      <option value="No cumple">No cumple</option>
+                      <option value="Parcial">Parcial</option>
+                      <option value="Sin evaluar">Sin evaluar</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1 col-span-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Estado</label>
+                    <select
+                      value={filterEstado}
+                      onChange={(e) => setFilterEstado(e.target.value)}
+                      className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] font-semibold text-slate-600 bg-white focus:outline-none focus:ring-1 focus:ring-[#468DFF] cursor-pointer"
+                    >
+                      <option value="">Todos</option>
+                      <option value="borrador">Borrador</option>
+                      <option value="completado">Completado</option>
+                      <option value="anulado">Anulado</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1 col-span-1 sm:col-span-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Fecha de Medición (Desde)</label>
+                    <input
+                      type="date"
+                      value={filterFechaDesde}
+                      onChange={(e) => setFilterFechaDesde(e.target.value)}
+                      className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] font-semibold text-slate-600 bg-white focus:outline-none focus:ring-1 focus:ring-[#468DFF] cursor-pointer"
+                    />
+                  </div>
+
+                  <div className="space-y-1 col-span-1 sm:col-span-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Fecha de Medición (Hasta)</label>
+                    <input
+                      type="date"
+                      value={filterFechaHasta}
+                      onChange={(e) => setFilterFechaHasta(e.target.value)}
+                      className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] font-semibold text-slate-600 bg-white focus:outline-none focus:ring-1 focus:ring-[#468DFF] cursor-pointer"
+                    />
+                  </div>
+                </div>
               )}
             </div>
-          </div>
 
-          {/* FILTROS AVANZADOS COLLAPSIBLE */}
-          {showFilters && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-3 border-t border-slate-100 animate-fade-in">
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Cliente</label>
-                <AppSelect
-                  value={filterEmpresa}
-                  onChange={(e) => {
-                    setFilterEmpresa(e.target.value);
-                    setFilterEstablecimiento('');
-                  }}
-                >
-                  <option value="">Todos los clientes</option>
-                  {empresas.map(emp => (
-                    <option key={emp.id} value={emp.id}>{emp.razon_social}</option>
-                  ))}
-                </AppSelect>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Establecimiento</label>
-                <AppSelect
-                  disabled={!filterEmpresa}
-                  value={filterEstablecimiento}
-                  onChange={(e) => setFilterEstablecimiento(e.target.value)}
-                >
-                  <option value="">{!filterEmpresa ? 'Seleccione cliente...' : 'Todos los establecimientos'}</option>
-                  {allEstablecimientos.filter(est => est.empresa_id === filterEmpresa).map(est => (
-                    <option key={est.id} value={est.id}>{est.denominacion}</option>
-                  ))}
-                </AppSelect>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Resultado General</label>
-                <AppSelect
-                  value={filterResultado}
-                  onChange={(e) => setFilterResultado(e.target.value)}
-                >
-                  <option value="">Todos</option>
-                  <option value="Cumple">Cumple</option>
-                  <option value="No cumple">No cumple</option>
-                  <option value="Parcial">Parcial</option>
-                  <option value="Sin evaluar">Sin evaluar</option>
-                </AppSelect>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Estado</label>
-                <AppSelect
-                  value={filterEstado}
-                  onChange={(e) => setFilterEstado(e.target.value)}
-                >
-                  <option value="">Todos</option>
-                  <option value="borrador">Borrador</option>
-                  <option value="completado">Completado</option>
-                  <option value="anulado">Anulado</option>
-                </AppSelect>
-              </div>
-
-              <div className="flex flex-col gap-1 sm:col-span-2">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Fecha de Medición (Desde)</label>
-                <AppInput
-                  type="date"
-                  value={filterFechaDesde}
-                  onChange={(e) => setFilterFechaDesde(e.target.value)}
-                />
-              </div>
-
-              <div className="flex flex-col gap-1 sm:col-span-2">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Fecha de Medición (Hasta)</label>
-                <AppInput
-                  type="date"
-                  value={filterFechaHasta}
-                  onChange={(e) => setFilterFechaHasta(e.target.value)}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* LISTADO DE PROTOCOLOS */}
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col min-h-[300px]">
+            {/* LISTADO DE PROTOCOLOS (SySO Compact Layout) */}
+            <div 
+              className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col flex-1 min-h-0 transition-all duration-300 ease-in-out"
+              style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}
+            >
           {sortedProtocolos.length === 0 ? (
             <div className="flex-grow flex flex-col items-center justify-center p-12 text-center gap-3 h-full">
               <AlertCircle className="h-10 w-10 text-slate-350" />
@@ -656,25 +739,22 @@ export default function ProtocolosIluminacionPage({ params }) {
               )}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider sticky top-0">
-                  <tr>
-                    <th className="px-6 py-4 cursor-pointer hover:text-slate-700" onClick={() => toggleSort('razon_social_text')}>
-                      Cliente / Establecimiento
-                      {sortField === 'razon_social_text' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+            <div className="overflow-auto flex-grow scrollbar-thin">
+              <table className="w-full border-collapse text-left text-xs min-w-[850px]">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wider sticky top-0 z-10">
+                    <th onClick={() => toggleSort('razon_social_text')} className="px-6 py-4 cursor-pointer select-none hover:text-slate-700 w-[35%]">
+                      Cliente / Establecimiento {sortField === 'razon_social_text' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
                     </th>
-                    <th className="px-6 py-4 cursor-pointer hover:text-slate-700" onClick={() => toggleSort('instrumento_marca_modelo_serie')}>
-                      Luxómetro
-                      {sortField === 'instrumento_marca_modelo_serie' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                    <th onClick={() => toggleSort('instrumento_marca_modelo_serie')} className="px-6 py-4 cursor-pointer select-none hover:text-slate-700 w-[25%]">
+                      Luxómetro {sortField === 'instrumento_marca_modelo_serie' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
                     </th>
-                    <th className="px-6 py-4 cursor-pointer hover:text-slate-700" onClick={() => toggleSort('fecha_medicion')}>
-                      Fecha Medición
-                      {sortField === 'fecha_medicion' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                    <th onClick={() => toggleSort('fecha_medicion')} className="px-6 py-4 cursor-pointer select-none hover:text-slate-700 w-[15%]">
+                      Fecha Medición {sortField === 'fecha_medicion' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
                     </th>
-                    <th className="px-6 py-4 text-center">Resultado</th>
-                    <th className="px-6 py-4 text-center">Estado</th>
-                    <th className="px-6 py-4 text-center">Acciones</th>
+                    <th className="px-6 py-4 text-center w-[10%]">Resultado</th>
+                    <th className="px-6 py-4 text-center w-[10%]">Estado</th>
+                    <th className="px-6 py-4 text-center w-[5%]">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700 font-normal">
@@ -689,7 +769,7 @@ export default function ProtocolosIluminacionPage({ params }) {
                     if (row.estado === 'anulado') stateBadge = 'bg-red-50 text-red-500 border-red-150';
 
                     return (
-                      <tr key={row.id} className="hover:bg-slate-50/50 transition-colors">
+                      <tr key={row.id} className="hover:bg-slate-50/50 cursor-pointer transition-colors">
                         <td className="px-6 py-4">
                           <span className="font-bold text-slate-800 block text-xs leading-none mb-1.5">{row.razon_social_text}</span>
                           <span className="text-[10px] text-slate-400 font-medium flex items-center gap-1">
@@ -714,16 +794,16 @@ export default function ProtocolosIluminacionPage({ params }) {
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="flex items-center justify-center gap-1.5">
+                          <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                             <Link href={`/${tenantSlug}/protocolos/iluminacion/${row.id}`} title="Ver Detalles">
-                              <button className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center">
+                              <button className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer inline-flex items-center justify-center">
                                 <Eye className="h-4.5 w-4.5" />
                               </button>
                             </Link>
 
                             {canEditar && row.estado !== 'anulado' && (
                               <Link href={`/${tenantSlug}/protocolos/iluminacion/${row.id}/editar`} title="Editar">
-                                <button className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-500 transition-all cursor-pointer inline-flex items-center">
+                                <button className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer inline-flex items-center justify-center">
                                   <Edit className="h-4.5 w-4.5" />
                                 </button>
                               </Link>
@@ -733,7 +813,7 @@ export default function ProtocolosIluminacionPage({ params }) {
                               type="button"
                               onClick={() => handleExportPdf(row, false)}
                               title="Descargar PDF"
-                              className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-all cursor-pointer inline-flex items-center"
+                              className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer inline-flex items-center justify-center"
                             >
                               <FileText className="h-4.5 w-4.5" />
                             </button>
@@ -742,7 +822,7 @@ export default function ProtocolosIluminacionPage({ params }) {
                               type="button"
                               onClick={() => handleExportPdf(row, true)}
                               title="Imprimir"
-                              className="p-1.5 rounded-lg bg-slate-50 text-slate-600 hover:bg-slate-100 transition-all cursor-pointer inline-flex items-center"
+                              className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer inline-flex items-center justify-center"
                             >
                               <Printer className="h-4.5 w-4.5" />
                             </button>
@@ -752,7 +832,7 @@ export default function ProtocolosIluminacionPage({ params }) {
                                 type="button"
                                 onClick={() => openEmailModal(row)}
                                 title="Enviar por Correo"
-                                className="p-1.5 rounded-lg bg-[#468DFF]/10 text-[#468DFF] hover:bg-[#468DFF]/20 transition-all cursor-pointer inline-flex items-center"
+                                className="p-1.5 rounded-lg bg-blue-50 hover:bg-[#468DFF]/25 text-[#468DFF] transition-all cursor-pointer inline-flex items-center justify-center"
                               >
                                 <Mail className="h-4.5 w-4.5" />
                               </button>
@@ -763,7 +843,7 @@ export default function ProtocolosIluminacionPage({ params }) {
                                 type="button"
                                 onClick={() => handleDuplicate(row)}
                                 title="Duplicar borrador"
-                                className="p-1.5 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-all cursor-pointer inline-flex items-center"
+                                className="p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition-all cursor-pointer inline-flex items-center justify-center"
                               >
                                 <Copy className="h-4.5 w-4.5" />
                               </button>
@@ -774,7 +854,7 @@ export default function ProtocolosIluminacionPage({ params }) {
                                 type="button"
                                 onClick={() => setDeleteConfirm({ show: true, id: row.id })}
                                 title="Eliminar registro"
-                                className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 transition-all cursor-pointer inline-flex items-center"
+                                className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center"
                               >
                                 <Trash2 className="h-4.5 w-4.5" />
                               </button>
@@ -788,6 +868,8 @@ export default function ProtocolosIluminacionPage({ params }) {
               </table>
             </div>
           )}
+        </div>
+        </div>
         </div>
       </main>
 

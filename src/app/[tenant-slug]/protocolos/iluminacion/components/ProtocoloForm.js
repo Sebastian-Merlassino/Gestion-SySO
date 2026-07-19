@@ -29,7 +29,9 @@ import {
   Calendar,
   Zap,
   CheckCircle2,
-  Trash
+  Trash,
+  ArrowLeft,
+  X
 } from 'lucide-react';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 
@@ -1005,7 +1007,23 @@ export default function ProtocoloForm({
 
   return (
     <>
-      <form onSubmit={handleSubmit} className="space-y-6 max-w-5xl mx-auto p-1 animate-fade-in select-none">
+      <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in w-full">
+      {/* Cabecera del Formulario */}
+      <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-150 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-3">
+          <button type="button" onClick={onClose} className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 cursor-pointer">
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <span className="font-outfit text-base font-bold text-slate-900">
+            {mode === 'create' ? 'Nuevo Protocolo de Iluminación' : mode === 'edit' ? 'Editar Protocolo de Iluminación' : 'Detalle de Protocolo de Iluminación'}
+          </span>
+        </div>
+        <button type="button" onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200 cursor-pointer">
+          <X className="h-5 w-5" />
+        </button>
+      </div>
+
+      <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-6 overflow-y-auto flex-1 scrollbar-thin select-none">
         
         {/* CARD ESTABLECIMIENTO */}
         <AppCard className="p-5 md:p-6 space-y-4">
@@ -1716,33 +1734,34 @@ export default function ProtocoloForm({
           </div>
         </AppCard>
 
-        {/* BOTTOM ACTIONS BLOCK */}
-        <div className="flex justify-between items-center bg-white border border-slate-200 p-4 rounded-2xl shadow-sm">
-          <AppButton
+        {/* Pie de Página del Formulario */}
+        <div className="flex justify-between items-center pt-6 border-t border-slate-100 shrink-0">
+          <button
             type="button"
-            variant="secondary"
             onClick={onClose}
+            className="px-5 py-2.5 bg-[#FFFFFF] text-[#468DFF] border border-[#468DFF] rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-[#FFFFFF] hover:border-[#FFFFFF] transition-all active:scale-[0.98] cursor-pointer"
           >
-            Volver al listado
-          </AppButton>
+            Salir
+          </button>
 
           <div className="flex items-center gap-3">
             {canEdit && (
               <>
-                <AppSelect
+                <select
                   disabled={saveLoading}
                   value={estado}
                   onChange={(e) => setEstado(e.target.value)}
-                  className="w-40 text-xs py-1.5"
+                  className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs cursor-pointer h-[38px]"
                 >
                   <option value="borrador">Borrador</option>
                   <option value="completado">Completado</option>
                   <option value="anulado">Anulado</option>
-                </AppSelect>
+                </select>
 
-                <AppButton
+                <button
                   type="submit"
                   disabled={saveLoading}
+                  className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
                 >
                   {saveLoading ? (
                     <>
@@ -1750,15 +1769,16 @@ export default function ProtocoloForm({
                       Guardando...
                     </>
                   ) : (
-                    'Guardar Protocolo'
+                    'Guardar'
                   )}
-                </AppButton>
+                </button>
               </>
             )}
           </div>
         </div>
 
       </form>
+    </div>
 
       {/* SYNC PROFILE RADIX DIALOG */}
       <Dialog.Root open={isSyncOpen} onOpenChange={setIsSyncOpen}>

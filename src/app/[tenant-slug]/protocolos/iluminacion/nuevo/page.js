@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/providers/ToastProvider';
 import AppPageHeader from '@/components/ui/AppPageHeader';
 import ProtocoloForm from '../components/ProtocoloForm';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Sun } from 'lucide-react';
 
 export default function NuevoProtocoloPage({ params }) {
   const tenantSlug = params['tenant-slug'];
@@ -19,6 +19,16 @@ export default function NuevoProtocoloPage({ params }) {
   const [tenant, setTenant] = useState(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
+  };
+
+  const handleSidebarNavigation = () => {
+    setIsMobileMenuOpen(false);
+  };
 
   useEffect(() => {
     const collapsed = localStorage.getItem('sidebar-collapsed');
@@ -73,39 +83,72 @@ export default function NuevoProtocoloPage({ params }) {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-[#0D0D0D]/5">
-        <Sidebar collapsed={isSidebarCollapsed} onToggle={toggleSidebar} />
-        <main className="flex-1 flex items-center justify-center p-8">
-          <Loader2 className="h-8 w-8 text-[#468DFF] animate-spin" />
-          <span className="ml-3 text-slate-500 font-semibold text-sm">Cargando...</span>
+      <div className="h-screen overflow-hidden bg-syso-bg text-slate-700 flex font-sans">
+        <Sidebar
+          tenantSlug={tenantSlug}
+          profile={profile}
+          currentSection="protocolo-iluminacion"
+          isSidebarCollapsed={isSidebarCollapsed}
+          toggleSidebar={toggleSidebar}
+          isMobileMenuOpen={isMobileMenuOpen}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+          handleLogout={handleLogout}
+          onNavigate={handleSidebarNavigation}
+        />
+        <main className="flex-grow flex flex-col min-w-0 overflow-y-auto">
+          <AppPageHeader
+            title="Nuevo Protocolo de Iluminación"
+            icon={Sun}
+            tenantName={tenant?.name || 'Cargando...'}
+            planId={tenant?.plan_id}
+            showPlanBadge={profile && profile.role !== 'cliente'}
+            setIsMobileMenuOpen={setIsMobileMenuOpen}
+          />
+          <div className="flex-grow flex items-center justify-center p-8">
+            <div className="text-center space-y-4">
+              <Loader2 className="h-10 w-10 animate-spin text-[#468DFF] mx-auto" />
+              <p className="text-xs text-slate-500 font-medium">Cargando...</p>
+            </div>
+          </div>
         </main>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-[#0D0D0D]/5 text-slate-800">
-      <Sidebar collapsed={isSidebarCollapsed} onToggle={toggleSidebar} />
+    <div className="h-screen overflow-hidden bg-syso-bg text-slate-700 flex font-sans">
+      <Sidebar
+        tenantSlug={tenantSlug}
+        profile={profile}
+        currentSection="protocolo-iluminacion"
+        isSidebarCollapsed={isSidebarCollapsed}
+        toggleSidebar={toggleSidebar}
+        isMobileMenuOpen={isMobileMenuOpen}
+        setIsMobileMenuOpen={setIsMobileMenuOpen}
+        handleLogout={handleLogout}
+        onNavigate={handleSidebarNavigation}
+      />
 
-      <main className="flex-1 p-6 md:p-8 space-y-6 overflow-x-hidden">
+      <main className="flex-grow flex flex-col min-w-0 overflow-y-auto">
         <AppPageHeader
           title="Nuevo Protocolo de Iluminación"
-          description="Cargue los datos del establecimiento, puntos de muestreo y mediciones lux."
-          breadcrumbs={[
-            { label: 'Inicio', href: `/${tenantSlug}` },
-            { label: 'Protocolo de Iluminación', href: `/${tenantSlug}/protocolos/iluminacion` },
-            { label: 'Nuevo', active: true }
-          ]}
+          icon={Sun}
+          tenantName={tenant?.name || 'Cargando...'}
+          planId={tenant?.plan_id}
+          showPlanBadge={profile && profile.role !== 'cliente'}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
         />
 
-        <ProtocoloForm
-          tenantSlug={tenantSlug}
-          profile={profile}
-          tenant={tenant}
-          mode="create"
-          onClose={() => router.push(`/${tenantSlug}/protocolos/iluminacion`)}
-          onSaveSuccess={() => router.push(`/${tenantSlug}/protocolos/iluminacion`)}
-        />
+        <div className="max-w-[95%] mx-auto w-full py-8 px-4 md:px-0 flex-grow flex flex-col min-h-0">
+          <ProtocoloForm
+            tenantSlug={tenantSlug}
+            profile={profile}
+            tenant={tenant}
+            mode="create"
+            onClose={() => router.push(`/${tenantSlug}/protocolos/iluminacion`)}
+            onSaveSuccess={() => router.push(`/${tenantSlug}/protocolos/iluminacion`)}
+          />
+        </div>
       </main>
     </div>
   );
