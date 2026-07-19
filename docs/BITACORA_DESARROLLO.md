@@ -1,5 +1,38 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-19] Detección y Sincronización Automática de Perfiles desde la Matriz de Riesgos
+
+### Resumen de Cambios
+- **Verificación y Sincronización de Perfiles**: Implementación de un escáner lógico unificado que evalúa cada registro antes de persistirlo en la base de datos (tanto por carga masiva Excel, carga en lote manual o adición/edición manual individual). Si detecta que el Sector, Puesto o Tareas no existen en el perfil de establecimientos del cliente, interrumpe el flujo y ofrece al usuario la posibilidad de sincronizarlos de forma automática.
+- **Diálogo de Confirmación Unificado (Radix UI)**: Se integró una ventana emergente basada en `@radix-ui/react-dialog` adaptada con tres botones de acción: "Volver" (aborta y regresa al formulario), "Sólo matriz" (continúa el guardado de la matriz sin alterar el perfil del cliente) y "Guardar en perfil" (actualiza el perfil del establecimiento cliente e inserta los datos de la matriz).
+- **Evitación de Sobrescritura**: La descripción de tareas de puestos preexistentes en el perfil no se sobrescribe a menos que se encuentre inicialmente vacía o nula, resguardando la integridad de los datos previamente configurados.
+- **Sincronización de Estado Local**: La confirmación del guardado de perfiles actualiza de forma reactiva el estado global de `allEstablecimientos` en la página para mantener consistencia visual.
+- **Botones de Aclaración "?" Activos en Vista de Sólo Lectura / Cliente**: Se quitó el atributo nativo `disabled={!canEdit}` del `<fieldset>` general del formulario para que los botones de aclaración "?" permanezcan visibles y activos. Los campos de entrada (inputs, selects, textareas) se deshabilitaron visualmente mediante Tailwind (`pointer-events-none bg-slate-100/60 text-slate-400`). Para evitar el foco del teclado (mediante la tecla Tab), se añadió un manejador reactivo en un `useEffect` que intercepta la entrada de foco (`focusin`) y difumina (`blur`) de inmediato los elementos correspondientes.
+
+### Decisiones Clave
+- Realizar la validación directamente sobre el listado final de registros consolidados (`recordsToInsert`) en la función `handleSaveMatriz`. Esto evita la duplicación de código de control y asegura que la detección funcione idénticamente para todas las vías de entrada.
+- Crear un helper `executePersistMatrix` que centralice la escritura de la matriz en base de datos para simplificar los flujos asíncronos y evitar copias redundantes.
+- Utilizar interceptación de foco y difuminado dinámico (`focusin` / `blur`) en la vista de lectura de la matriz. Esto previene que usuarios maliciosos o con teclado editen campos "deshabilitados" visualmente, sin requerir la mutación de docenas de etiquetas HTML de formulario en la JSX.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/matriz-riesgos/page.js`
+
+### Validaciones Ejecutadas
+- Compilación y construcción local completa (`npm run build`) verificada con éxito tras instalar dependencias locales faltantes (`npm install`).
+
+### Riesgos Detectados / Remanentes
+- Ninguno detectado. La validación es robusta y se realiza en memoria antes de impactar el backend.
+
+### Próximo Paso Recomendado
+- Monitorear el correcto guardado de JSONB sectores tras despliegue a producción y seguir con otras tareas funcionales de reportes.
+
+---
+
 ## [2026-07-17] Incorporación de Botón para Compartir la Aplicación en la Barra Lateral
 
 ### Resumen de Cambios

@@ -18,6 +18,7 @@ import AppInput from '@/components/ui/AppInput';
 import AppSelect from '@/components/ui/AppSelect';
 import AppCard from '@/components/ui/AppCard';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
+import * as Dialog from '@radix-ui/react-dialog';
 import { 
   PlusCircle, 
   Search, 
@@ -204,6 +205,11 @@ export default function MatrizRiesgosPage({ params }) {
   // [ { id, sector, isManual, puestos: [ { id, puesto, isManual, tareas, frecuencia, situacion, peligro, peligroIsManual, riesgo, riesgoIsManual, consecuencia, probabilidad, gravedad, medidas_control_adm, medidas_control_ing, medidas_control_epp, medidas_control_recomendadas, responsable, responsableIsManual, fecha_planificada, fecha_realizacion, post_probabilidad, post_gravedad, observaciones } ] } ]
   const [bulkSectores, setBulkSectores] = useState([]);
 
+  // Estados para guardado automático de perfiles
+  const [showProfileConfirmOpen, setShowProfileConfirmOpen] = useState(false);
+  const [pendingSaveData, setPendingSaveData] = useState([]);
+  const [pendingEstUpdates, setPendingEstUpdates] = useState([]);
+
   // Campos para Edición Individual
   const [singleSector, setSingleSector] = useState('');
   const [singleSectorIsManual, setSingleSectorIsManual] = useState(false);
@@ -279,6 +285,26 @@ export default function MatrizRiesgosPage({ params }) {
       setFilterEmpresa(profile.empresa_id);
     }
   }, [profile]);
+
+  // Bloquear foco en inputs cuando es vista de sólo lectura (canEdit === false)
+  useEffect(() => {
+    if (!canEdit) {
+      const handleFocus = (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') {
+          e.target.blur();
+        }
+      };
+      const container = document.getElementById('matriz-form-container');
+      if (container) {
+        container.addEventListener('focusin', handleFocus);
+      }
+      return () => {
+        if (container) {
+          container.removeEventListener('focusin', handleFocus);
+        }
+      };
+    }
+  }, [canEdit, editingId, isBulkMode, loadType]);
 
   const triggerToast = (message, type = 'success') => {
     globalToast.toast(message, type);
@@ -1833,6 +1859,97 @@ export default function MatrizRiesgosPage({ params }) {
     }
   };
 
+  const executePersistMatrix = async (records) => {
+    try {
+      if (isDevMode) {
+        if (isBulkMode) {
+          const newMocks = records.map((rec, i) => ({
+            ...rec,
+            id: `mock-mat-${Date.now()}-${i}`
+          }));
+          setMatrizRiesgos([...newMocks, ...matrizRiesgos]);
+          triggerToast('Matriz registrada con éxito (Simulación).');
+        } else {
+          const updated = {
+            ...records[0],
+            id: editingId
+          };
+          setMatrizRiesgos(matrizRiesgos.map(x => x.id === editingId ? updated : x));
+          triggerToast('Evaluación actualizada con éxito (Simulación).');
+        }
+      } else {
+        if (isBulkMode) {
+          const formatted = records.map(rec => ({
+            ...rec,
+            created_at: new Date().toISOString()
+          }));
+          const { error } = await supabase
+            .from('matriz_riesgos')
+            .insert(formatted);
+          if (error) throw error;
+          triggerToast('Matriz de riesgos guardada exitosamente.');
+        } else {
+          const { error } = await supabase
+            .from('matriz_riesgos')
+            .update(records[0])
+            .eq('id', editingId);
+          if (error) throw error;
+          triggerToast('Evaluación de riesgo guardada exitosamente.');
+        }
+        await loadRealData();
+      }
+      handleCloseForm();
+    } catch (err) {
+      console.error('Error al guardar matriz:', err);
+      // Sanitizar el error de Supabase para cumplir con HC-02
+      triggerToast('Error al guardar la información. Por favor, reintente en unos minutos.', 'error');
+    }
+  };
+
+  const handleConfirmSaveProfile = async () => {
+    setSaveLoading(true);
+    try {
+      // 1. Guardar perfiles de establecimientos
+      for (const update of pendingEstUpdates) {
+        if (!isDevMode) {
+          const { error } = await supabase
+            .from('establecimientos')
+            .update({ sectores: update.sectores })
+            .eq('id', update.id);
+          if (error) throw error;
+        }
+        
+        // Actualizar el estado local allEstablecimientos para mantenerlo en sincronía
+        setAllEstablecimientos(prev => 
+          prev.map(e => e.id === update.id ? { ...e, sectores: update.sectores } : e)
+        );
+      }
+      
+      // 2. Persistir matriz
+      await executePersistMatrix(pendingSaveData);
+    } catch (err) {
+      console.error('Error al guardar perfiles:', err);
+      // Sanitizar el error de Supabase para cumplir con HC-02
+      triggerToast('Error al actualizar el perfil del cliente. Por favor, reintente.', 'error');
+    } finally {
+      // Limpiar estados pendientes
+      setPendingSaveData([]);
+      setPendingEstUpdates([]);
+      setSaveLoading(false);
+    }
+  };
+
+  const handleCancelSaveProfile = async () => {
+    setSaveLoading(true);
+    try {
+      await executePersistMatrix(pendingSaveData);
+    } finally {
+      setPendingSaveData([]);
+      setPendingEstUpdates([]);
+      setSaveLoading(false);
+    }
+  };
+
   // Guardado de la Matriz (Inserción en lote o actualización)
   const handleSaveMatriz = async (e) => {
     e.preventDefault();
@@ -2037,45 +2154,85 @@ export default function MatrizRiesgosPage({ params }) {
         });
       }
 
-      if (isDevMode) {
-        if (isBulkMode) {
-          const newMocks = recordsToInsert.map((rec, i) => ({
-            ...rec,
-            id: `mock-mat-${Date.now()}-${i}`
-          }));
-          setMatrizRiesgos([...newMocks, ...matrizRiesgos]);
-          triggerToast('Matriz registrada con éxito (Simulación).');
-        } else {
-          const updated = {
-            ...recordsToInsert[0],
-            id: editingId
+      // Escaneo de nuevos sectores/puestos/tareas para perfil del cliente
+      const updatesMap = {};
+      let hasDiscrepancies = false;
+
+      for (const rec of recordsToInsert) {
+        const estId = rec.establecimiento_id;
+        if (!estId) continue;
+
+        const est = allEstablecimientos.find(e => e.id === estId);
+        if (!est) continue;
+
+        if (!updatesMap[estId]) {
+          updatesMap[estId] = JSON.parse(JSON.stringify(est.sectores || []));
+        }
+
+        const currentSectores = updatesMap[estId];
+        const targetSectorName = (rec.sector || '').trim();
+        const targetPuestoName = (rec.puesto || '').trim();
+        const targetTareas = (rec.tareas || '').trim();
+
+        if (!targetSectorName) continue;
+
+        let sectorObj = currentSectores.find(s => 
+          (s.denominacion || '').trim().toLowerCase() === targetSectorName.toLowerCase()
+        );
+
+        if (!sectorObj) {
+          hasDiscrepancies = true;
+          sectorObj = {
+            id: 'sec-' + Date.now() + Math.random().toString(36).substr(2, 5),
+            denominacion: targetSectorName,
+            descripcion: '',
+            largo: '',
+            ancho: '',
+            altura: '',
+            isCollapsed: true,
+            puestos: []
           };
-          setMatrizRiesgos(matrizRiesgos.map(x => x.id === editingId ? updated : x));
-          triggerToast('Evaluación actualizada con éxito (Simulación).');
+          currentSectores.push(sectorObj);
         }
-      } else {
-        if (isBulkMode) {
-          const formatted = recordsToInsert.map(rec => ({
-            ...rec,
-            created_at: new Date().toISOString()
-          }));
-          const { error } = await supabase
-            .from('matriz_riesgos')
-            .insert(formatted);
-          if (error) throw error;
-          triggerToast('Matriz de riesgos guardada exitosamente.');
-        } else {
-          const { error } = await supabase
-            .from('matriz_riesgos')
-            .update(recordsToInsert[0])
-            .eq('id', editingId);
-          if (error) throw error;
-          triggerToast('Evaluación de riesgo guardada exitosamente.');
+
+        if (targetPuestoName) {
+          let puestoObj = (sectorObj.puestos || []).find(p => 
+            (p.denominacion || '').trim().toLowerCase() === targetPuestoName.toLowerCase()
+          );
+
+          if (!puestoObj) {
+            hasDiscrepancies = true;
+            puestoObj = {
+              id: 'pst-' + Date.now() + Math.random().toString(36).substr(2, 5),
+              denominacion: targetPuestoName,
+              descripcion: targetTareas,
+              isCollapsed: true
+            };
+            if (!sectorObj.puestos) sectorObj.puestos = [];
+            sectorObj.puestos.push(puestoObj);
+          } else {
+            const currentDesc = (puestoObj.descripcion || '').trim();
+            if (!currentDesc && targetTareas) {
+              hasDiscrepancies = true;
+              puestoObj.descripcion = targetTareas;
+            }
+          }
         }
-        await loadRealData();
       }
 
-      handleCloseForm();
+      if (hasDiscrepancies) {
+        setPendingSaveData(recordsToInsert);
+        const formattedUpdates = Object.keys(updatesMap).map(estId => ({
+          id: estId,
+          sectores: updatesMap[estId]
+        }));
+        setPendingEstUpdates(formattedUpdates);
+        setShowProfileConfirmOpen(true);
+        setSaveLoading(false);
+        return;
+      }
+
+      await executePersistMatrix(recordsToInsert);
     } catch (err) {
       console.error('Error al guardar:', err);
       triggerToast(err.message || 'Error al guardar la información.', 'error');
@@ -2385,7 +2542,7 @@ export default function MatrizRiesgosPage({ params }) {
                 </div>
 
                 <form onSubmit={handleSaveMatriz} className="p-6 space-y-6 overflow-y-auto flex-1 scrollbar-thin">
-                  <fieldset disabled={!canEdit} className="space-y-6">
+                  <fieldset id="matriz-form-container" className={`space-y-6 ${!canEdit ? '[&_input]:pointer-events-none [&_select]:pointer-events-none [&_textarea]:pointer-events-none [&_input]:bg-slate-100/60 [&_select]:bg-slate-100/60 [&_textarea]:bg-slate-100/60 [&_input]:text-slate-400 [&_select]:text-slate-400 [&_textarea]:text-slate-400' : ''}`}>
 
                     {isBulkMode && !editingId && (
                       <div className="flex gap-2 border-b border-slate-200 pb-1">
@@ -4580,6 +4737,81 @@ export default function MatrizRiesgosPage({ params }) {
           </div>
         </div>
       )}
+
+      {/* Diálogo de Confirmación de Guardado en Perfil del Cliente */}
+      <Dialog.Root open={showProfileConfirmOpen} onOpenChange={setShowProfileConfirmOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm animate-fade-in" />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <Dialog.Content className="relative w-full max-w-md p-6 bg-white border border-slate-200 rounded-2xl shadow-2xl animate-scale-up focus:outline-none space-y-4 text-center">
+              
+              <Dialog.Close asChild>
+                <button 
+                  className="absolute top-4 right-4 p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#468DFF]"
+                  aria-label="Cerrar"
+                  onClick={() => {
+                    setPendingSaveData([]);
+                    setPendingEstUpdates([]);
+                  }}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </Dialog.Close>
+
+              <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center border bg-blue-50 text-[#468DFF] border-blue-100">
+                <HelpCircle className="h-6 w-6 shrink-0" />
+              </div>
+
+              <div className="space-y-2">
+                <Dialog.Title className="font-outfit text-base font-extrabold text-slate-800">
+                  Nuevos Sectores o Puestos Detectados
+                </Dialog.Title>
+                <Dialog.Description className="text-xs text-slate-500 leading-relaxed">
+                  Se detectaron áreas/sectores, puestos de trabajo o descripciones de tareas que no están registrados en el perfil del cliente. ¿Deseas agregarlos automáticamente a su perfil antes de guardar la matriz?
+                </Dialog.Description>
+              </div>
+
+              <div className="flex flex-col gap-2 pt-2 sm:flex-row">
+                <Dialog.Close asChild>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPendingSaveData([]);
+                      setPendingEstUpdates([]);
+                    }}
+                    className="flex-1 py-2.5 px-3 border border-slate-350 text-slate-600 hover:bg-slate-50 rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer focus:outline-none focus:ring-2 focus:ring-slate-400"
+                  >
+                    Volver
+                  </button>
+                </Dialog.Close>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowProfileConfirmOpen(false);
+                    handleCancelSaveProfile();
+                  }}
+                  className="flex-1 py-2.5 px-3 border border-[#468DFF] text-[#468DFF] hover:bg-[#468DFF]/5 rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#468DFF]"
+                >
+                  Sólo matriz
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowProfileConfirmOpen(false);
+                    handleConfirmSaveProfile();
+                  }}
+                  className="flex-1 py-2.5 px-3 bg-[#468DFF] hover:bg-[#0511F2] text-white shadow-lg shadow-blue-500/10 rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#468DFF]"
+                >
+                  Guardar en perfil
+                </button>
+              </div>
+              
+            </Dialog.Content>
+          </div>
+        </Dialog.Portal>
+      </Dialog.Root>
 
       {/* TOAST ALERT FEEDBACK removidos - consumidos globalmente */}
 
