@@ -21,7 +21,8 @@ import {
   ShieldAlert,
   Zap,
   Lock,
-  Share2
+  Share2,
+  Sun
 } from 'lucide-react';
 import { useToast } from '@/components/providers/ToastProvider';
 
@@ -130,6 +131,7 @@ export default function Sidebar({
     { id: 'matriz-riesgos', label: 'Matriz de riesgos', path: `/${tenantSlug}/matriz-riesgos`, icon: AlertTriangle },
     { id: 'extintores', label: 'Extintores', path: `/${tenantSlug}/extintores`, icon: Flame },
     { id: 'control-electrico', label: 'Control Eléctrico', path: `/${tenantSlug}/control-electrico`, icon: Zap },
+    { id: 'protocolo-iluminacion', label: 'Protocolo de Iluminación', path: `/${tenantSlug}/protocolos/iluminacion`, icon: Sun },
     { id: 'visitas', label: 'Constancia de Visita', path: `/${tenantSlug}/visitas`, icon: ClipboardCheck },
     { id: 'avisos', label: 'Aviso de Riesgo', path: `/${tenantSlug}/avisos`, icon: AlertTriangle },
     { id: 'checklist-personalizados', label: 'Checklist Personalizados', path: `/${tenantSlug}/checklist-personalizados`, icon: ClipboardCheck },
@@ -155,10 +157,10 @@ export default function Sidebar({
   }
 
   const planFeatures = {
-    free: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'empresas', 'equipo'],
-    basic_5: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'empresas', 'equipo'],
-    standard_25: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'visitas', 'avisos', 'empresas', 'equipo'],
-    libre: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'visitas', 'avisos', 'checklist-personalizados', 'legajo', 'portal-clientes', 'empresas', 'equipo']
+    free: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'empresas', 'equipo', 'protocolo-iluminacion'],
+    basic_5: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'protocolo-iluminacion', 'empresas', 'equipo'],
+    standard_25: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'protocolo-iluminacion', 'visitas', 'avisos', 'empresas', 'equipo'],
+    libre: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'protocolo-iluminacion', 'visitas', 'avisos', 'checklist-personalizados', 'legajo', 'portal-clientes', 'empresas', 'equipo']
   };
 
   const allowedFeatures = planFeatures[effectivePlan] || planFeatures.free;

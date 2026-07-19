@@ -157,6 +157,7 @@ export async function POST(request) {
     const isAvisoRiesgo = documentType === 'aviso_riesgo';
     const isControlElectrico = documentType === 'control_electrico';
     const isChecklistPersonalizado = documentType === 'checklist_personalizado';
+    const isProtocoloIluminacion = documentType === 'protocolo_iluminacion';
     
     const mailSubject = isAvisoRiesgo
       ? `Aviso de Riesgo de Higiene y Seguridad - ${companyName || 'Cliente'}`
@@ -164,6 +165,8 @@ export async function POST(request) {
       ? `Inspección Visual de Instalaciones Eléctricas - ${companyName || 'Cliente'}`
       : isChecklistPersonalizado
       ? `${checklistName || 'Checklist'} - ${companyName || 'Cliente'}`
+      : isProtocoloIluminacion
+      ? `Protocolo para Medición de Iluminación - ${companyName || 'Cliente'}`
       : `Constancia de Visita de Higiene y Seguridad - ${companyName || 'Cliente'}`;
 
     console.log(`[API Send-Email] Tenant: ${profile.tenant_id} | Sender: ${user.email} | To: ${emailList.join(', ')} | Subject: ${mailSubject} | Size: ${pdfBuffer.length} bytes`);
@@ -178,6 +181,8 @@ export async function POST(request) {
         ? `Inspección_Visual_Instalaciones_Eléctricas_${(companyName || 'Cliente').replace(/\s+/g, '_')}_${date || 'control'}.pdf`
         : isChecklistPersonalizado
         ? `Checklist_${(checklistName || 'Personalizado').replace(/\s+/g, '_')}_${(companyName || 'Cliente').replace(/\s+/g, '_')}_${date || 'checklist'}.pdf`
+        : isProtocoloIluminacion
+        ? `Protocolo_Iluminacion_${(companyName || 'Cliente').replace(/\s+/g, '_')}_${date || 'iluminacion'}.pdf`
         : `Constancia_Visita_${(companyName || 'Cliente').replace(/\s+/g, '_')}_${date || 'visita'}.pdf`,
       content: pdfBuffer,
       contentType: 'application/pdf'
@@ -212,7 +217,9 @@ export async function POST(request) {
             ? `<img src="cid:${logoCid}" alt="${tenantNameEscaped || 'Logo'}" style="max-height: 72px; max-width: 240px; object-fit: contain; display: block; margin: 0 auto 8px auto;" />`
             : `<h2 style="margin: 0 0 8px 0; font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.025em;">${tenantNameEscaped || 'Gestión SySO'}</h2>`
           }
-          <p style="margin: 0; font-size: 13px; font-weight: 600; color: #468DFF; text-transform: uppercase; letter-spacing: 0.05em;">${isAvisoRiesgo ? 'Aviso de Riesgo' : isControlElectrico ? 'Inspección Visual de Instalaciones Eléctricas' : isChecklistPersonalizado ? (checklistNameEscaped || 'Checklist Personalizado') : 'Constancia de Visita'}</p>
+          <p style="margin: 0; font-size: 13px; font-weight: 600; color: #468DFF; text-transform: uppercase; letter-spacing: 0.05em;">
+            ${isAvisoRiesgo ? 'Aviso de Riesgo' : isControlElectrico ? 'Inspección Visual de Instalaciones Eléctricas' : isChecklistPersonalizado ? (checklistNameEscaped || 'Checklist Personalizado') : isProtocoloIluminacion ? 'Protocolo de Medición de Iluminación' : 'Constancia de Visita'}
+          </p>
         </div>
 
         <div style="background-color: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 24px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);">
@@ -220,7 +227,7 @@ export async function POST(request) {
             Estimado cliente,
           </p>
           <p style="font-size: 15px; line-height: 1.6; color: #334155;">
-            Se adjunta el reporte de <strong>${isAvisoRiesgo ? 'Aviso de Riesgo de Higiene y Seguridad' : isControlElectrico ? 'Inspección Visual de Instalaciones Eléctricas' : isChecklistPersonalizado ? (checklistNameEscaped || 'Checklist Personalizado') : 'Constancia de Visita de Higiene y Seguridad'}</strong> correspondiente a sus instalaciones.
+            Se adjunta el reporte de <strong>${isAvisoRiesgo ? 'Aviso de Riesgo de Higiene y Seguridad' : isControlElectrico ? 'Inspección Visual de Instalaciones Eléctricas' : isChecklistPersonalizado ? (checklistNameEscaped || 'Checklist Personalizado') : isProtocoloIluminacion ? 'Protocolo para Medición de Iluminación en el Ambiente Laboral' : 'Constancia de Visita de Higiene y Seguridad'}</strong> correspondiente a sus instalaciones.
           </p>
 
           <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px;">
@@ -233,7 +240,7 @@ export async function POST(request) {
               <td style="padding: 10px 0; font-weight: 700; color: #0f172a;">${establishmentNameEscaped || 'N/A'}</td>
             </tr>
             <tr style="border-bottom: 1px solid #f1f5f9;">
-              <td style="padding: 10px 0; font-weight: 600; color: #64748b;">${isAvisoRiesgo ? 'Fecha de emisión:' : isControlElectrico ? 'Fecha de control:' : isChecklistPersonalizado ? 'Fecha:' : 'Fecha de visita:'}</td>
+              <td style="padding: 10px 0; font-weight: 600; color: #64748b;">${isAvisoRiesgo ? 'Fecha de emisión:' : isControlElectrico ? 'Fecha de control:' : isChecklistPersonalizado ? 'Fecha:' : isProtocoloIluminacion ? 'Fecha de medición:' : 'Fecha de visita:'}</td>
               <td style="padding: 10px 0; font-weight: 700; color: #0f172a;">${dateEscaped || 'N/A'}</td>
             </tr>
             <tr>

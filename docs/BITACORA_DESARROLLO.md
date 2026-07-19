@@ -1,5 +1,64 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-19] Implementación de la Sección Protocolo de Iluminación (Res. SRT 84/12)
+
+### Resumen de Cambios
+- **Modelo de Base de Datos y Storage**:
+  - Creación de las tablas `protocolos_iluminacion`, `protocolos_iluminacion_puntos` (con cascade delete para evitar registros huérfanos), `protocolos_iluminacion_mediciones` y `protocolos_iluminacion_adjuntos`.
+  - Configuración de políticas de aislamiento de tenant mediante Row Level Security (RLS) seguras y restrictivas.
+  - Creación del bucket de storage privado `protocolos-iluminacion` para adjuntos y reportes.
+- **Navegación e Integración de Planes**:
+  - Incorporación del menú lateral en `Sidebar.js` con el ícono `Sun` de Lucide.
+  - Habilitación de la feature para todos los planes (incluyendo el plan Free/Gratuito), resolviendo una restricción de acceso en el plan Full/Libre en el middleware permitiendo la ruta segmentada `'protocolos'`.
+  - Actualización de los modales de selección de plan en las vistas de Perfil (`profile/page.js`), Onboarding (`onboarding/page.js`) y Dashboard (`dashboard/page.js`) para listar "Protocolo de Iluminación" debajo de "Acciones Correctivas".
+- **Componente Reutilizable del Formulario (`ProtocoloForm.js`)**:
+  - Autocompletado reactivo de datos de Razón Social y Establecimientos (incluyendo CUIT, dirección, CP y horarios de turnos).
+  - Integración del asistente de dictado por voz y pulido de IA (`<AITextHelper />` mediante Gemini Flash) para textareas técnicas.
+  - Acordeón interactivo para añadir, colapsar, duplicar y eliminar puntos de muestreo en lote.
+  - Cálculos y validaciones técnicas en tiempo real: Índice de local (I), Índice corregido (x), Cantidad mínima de puntos requerida, Promedio lux y Uniformidad (E_min >= E_med / 2) con control condicional y comparación legal automática (Tabla 2).
+- **Asistente de Sincronización de Perfiles (Wizard)**:
+  - Creación de un asistente interactivo Radix UI que detecta si los sectores, dimensiones modificadas o puestos cargados manualmente no existen en el perfil del cliente y permite actualizarlos en la tabla de establecimientos antes de guardar el protocolo.
+- **Visualizador de PDF y Envío por Correo**:
+  - Utilidad centralizada `pdfGenerator.js` usando `jsPDF` y `jspdf-autotable` para reportes de medición SRT 84/12.
+  - Adaptación de la API `/api/send-email` para despachar el informe en formato PDF adjunto con personalización de asunto y plantilla HTML.
+- **Páginas de Rutas**:
+  - Listado de protocolos (`page.js`) con filtros de búsqueda avanzada, ordenamiento y acciones rápidas (Duplicado, Eliminar, Enviar, Descargar, Imprimir).
+  - Rutas envolventes para creación, edición, lectura y previsualización de impresión PDF.
+
+### Decisiones Clave
+- Centralizar la generación de PDF en un archivo utility (`pdfGenerator.js`) para evitar duplicación entre la visualización interactiva y el despacho del correo.
+- Usar un asistente secuencial de confirmación de perfiles (guardado local e impacto final en BD) para garantizar multi-tenancy e integridad.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `gestion-syso-brand-guidelines`
+- `gestion-syso-ai-voice-helper`
+- `supabase`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260806000000_create_protocolo_iluminacion.sql`
+- `[MODIFY] src/components/Sidebar.js`
+- `[MODIFY] src/app/api/send-email/route.js`
+- `[NEW] src/app/[tenant-slug]/protocolos/iluminacion/utils/pdfGenerator.js`
+- `[NEW] src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+- `[NEW] src/app/[tenant-slug]/protocolos/iluminacion/page.js`
+- `[NEW] src/app/[tenant-slug]/protocolos/iluminacion/nuevo/page.js`
+- `[NEW] src/app/[tenant-slug]/protocolos/iluminacion/[id]/page.js`
+- `[NEW] src/app/[tenant-slug]/protocolos/iluminacion/[id]/editar/page.js`
+- `[NEW] src/app/[tenant-slug]/protocolos/iluminacion/[id]/pdf/page.js`
+
+### Validaciones Ejecutadas
+- Compilación completa de producción de Next.js (`npm run build`) verificada exitosamente.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. Las políticas RLS y triggers de integridad previenen fugas de datos.
+
+### Próximo Paso Recomendado
+- Validar las vistas con datos reales de clientes en testing y realizar pruebas de impresión física de los PDF exportados.
+
+---
+
 ## [2026-07-19] Corrección Ortográfica en Descripción de Footer Público
 
 ### Resumen de Cambios
