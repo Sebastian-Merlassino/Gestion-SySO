@@ -725,20 +725,21 @@ export default function ProtocolosIluminacionPage({ params }) {
               style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}
             >
           {sortedProtocolos.length === 0 ? (
-            <div className="flex-grow flex flex-col items-center justify-center p-12 text-center gap-3 h-full">
-              <AlertCircle className="h-10 w-10 text-slate-350" />
-              <div className="space-y-1.5">
-                <p className="text-sm font-bold text-slate-800">No se encontraron protocolos de iluminación</p>
-                <p className="text-xs text-slate-400 font-medium">Registra un nuevo informe o ajusta los filtros de búsqueda.</p>
-              </div>
-              {canCargar && (
-                <Link href={`/${tenantSlug}/protocolos/iluminacion/nuevo`} className="mt-2">
-                  <AppButton className="text-xs">
+            <AppEmptyState
+              title="No se encontraron protocolos de iluminación"
+              description="Registra un nuevo informe o ajusta los filtros de búsqueda."
+              actionButton={canCargar && (
+                <Link href={`/${tenantSlug}/protocolos/iluminacion/nuevo`} className="mt-2 inline-flex">
+                  <AppButton
+                    variant="primary"
+                    size="sm"
+                    className="shadow-md shadow-[#468DFF]/10 flex items-center gap-1.5"
+                  >
                     Crear primer protocolo
                   </AppButton>
                 </Link>
               )}
-            </div>
+            />
           ) : (
             <div className="overflow-auto flex-grow scrollbar-thin">
               <table className="w-full border-collapse text-left text-xs min-w-[850px]">
