@@ -1,5 +1,31 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-19] Corrección Ortográfica en Descripción de Footer Público
+
+### Resumen de Cambios
+- **Ajuste de Texto**: Se incorporó la conjunción "y" en la descripción de especialidades ("Seguridad, Higiene y Salud Ocupacional") en el componente `PublicFooter.js`.
+
+### Decisiones Clave
+- Ninguna. Es un ajuste estático menor del texto de la plataforma.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/components/PublicFooter.js`
+
+### Validaciones Ejecutadas
+- Compilación del proyecto (`npm run build`) verificada con éxito.
+
+### Riesgos Detectados / Remanentes
+- Ninguno.
+
+### Próximo Paso Recomendado
+- Continuar con las tareas funcionales planificadas.
+
+---
+
 ## [2026-07-19] Detección y Sincronización Automática de Perfiles desde la Matriz de Riesgos
 
 ### Resumen de Cambios
