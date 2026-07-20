@@ -9,6 +9,7 @@
 - **Mejora de Visualización UX**:
   - Incorporación del pictograma de Imagen (`Image` de Lucide) en las filas de la tabla de datos cuando se detecte la presencia de una o varias imágenes de evidencia en `fotos_paths`.
   - Configuración del botón para que, al dar clic, abra el formulario en modo de solo lectura, permitiendo visualizar la galería fotográfica de manera fluida.
+  - Reestructuración de la vista de listas vacías en el Legajo Técnico para no renderizar los encabezados de tabla (`<thead>`) cuando no hay resultados (o se filtraron todos), alineándolo con el estándar de la aplicación al usar el componente `AppEmptyState` centrado y con su botón de acción correspondiente.
 
 ### Archivos Modificados
 - `[MODIFY] src/app/[tenant-slug]/legajo/page.js`

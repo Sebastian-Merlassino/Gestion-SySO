@@ -1776,21 +1776,43 @@ export default function LegajoPage({ params }) {
 
                     {/* Tabla de Documentos */}
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col transition-all duration-300 ease-in-out" style={{ height: showFilters ? 'calc(100vh - 370px)' : 'calc(100vh - 300px)' }}>
-                      {documents.length === 0 ? (
+                      {sortedDocuments.length === 0 ? (
                         <AppEmptyState
-                          title="No hay documentos registrados"
-                          description="Registra un nuevo documento para comenzar."
-                          actionButton={canCargar && (
-                            <AppButton
-                              onClick={handleAddNew}
-                              variant="primary"
-                              size="sm"
-                              className="shadow-md shadow-[#468DFF]/10 flex items-center gap-1.5"
-                            >
-                              <PlusCircle className="h-3.5 w-3.5" />
-                              Registrar el primero
-                            </AppButton>
-                          )}
+                          title={documents.length === 0 ? "No hay documentos registrados" : "No se encontraron documentos"}
+                          description={documents.length === 0 ? "Registra un nuevo documento para comenzar." : "Probá modificando los filtros de búsqueda o registrá un nuevo documento."}
+                          actionButton={
+                            documents.length === 0 ? (
+                              canCargar && (
+                                <AppButton
+                                  onClick={handleAddNew}
+                                  variant="primary"
+                                  size="sm"
+                                  className="shadow-md shadow-[#468DFF]/10 flex items-center gap-1.5"
+                                >
+                                  <PlusCircle className="h-3.5 w-3.5" />
+                                  Registrar el primero
+                                </AppButton>
+                              )
+                            ) : (
+                              (filterText || filterEmpresa || filterEstablecimiento || filterFecha || filterAnio || filterMes) && (
+                                <AppButton
+                                  onClick={() => {
+                                    setFilterText('');
+                                    setFilterEmpresa('');
+                                    setFilterEstablecimiento('');
+                                    setFilterFecha('');
+                                    setFilterAnio('');
+                                    setFilterMes('');
+                                  }}
+                                  variant="secondary"
+                                  size="sm"
+                                  className="border border-slate-200 text-slate-600 font-semibold bg-white"
+                                >
+                                  Limpiar Filtros
+                                </AppButton>
+                              )
+                            )
+                          }
                         />
                       ) : (
                         <div className="overflow-auto flex-grow">
@@ -1825,94 +1847,85 @@ export default function LegajoPage({ params }) {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 text-xs font-normal text-slate-700">
-                              {sortedDocuments.length === 0 ? (
-                                <AppEmptyState
-                                  title="No se encontraron documentos"
-                                  description="Probá modificando los filtros de búsqueda o registrá un nuevo documento."
-                                  icon={Search}
-                                  colSpan={5}
-                                />
-                              ) : (
-                              sortedDocuments.map((doc) => {
-                                const emp = empresas.find(e => e.id === doc.empresa_id);
-                                const est = allEstablecimientos.find(es => es.id === doc.establecimiento_id);
-                                return (
-                                  <tr
-                                    key={doc.id}
-                                    className="hover:bg-slate-100 cursor-pointer transition-colors"
-                                    onClick={() => handleEditClick(doc, true)}
-                                  >
-                                    <td className="px-6 py-4 font-semibold text-slate-900">
-                                      {emp ? emp.razon_social : 'Desconocido'}
-                                    </td>
-                                    <td className="px-6 py-4 font-medium text-slate-600">
-                                      {est ? est.denominacion : 'N/A'}
-                                    </td>
-                                    <td className="px-6 py-4 font-semibold text-slate-600 text-xs">
-                                      {doc.documento_nombre}
-                                    </td>
-                                    <td className="px-6 py-4 font-mono text-xs text-slate-500 font-semibold">
-                                      {formatDate(doc.fecha)}
-                                    </td>
-                                    <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
-                                      <div className="flex items-center justify-end gap-2">
-                                        {doc.documento_url && (
-                                          <>
+                            {sortedDocuments.map((doc) => {
+                              const emp = empresas.find(e => e.id === doc.empresa_id);
+                              const est = allEstablecimientos.find(es => es.id === doc.establecimiento_id);
+                              return (
+                                <tr
+                                  key={doc.id}
+                                  className="hover:bg-slate-100 cursor-pointer transition-colors"
+                                  onClick={() => handleEditClick(doc, true)}
+                                >
+                                  <td className="px-6 py-4 font-semibold text-slate-900">
+                                    {emp ? emp.razon_social : 'Desconocido'}
+                                  </td>
+                                  <td className="px-6 py-4 font-medium text-slate-600">
+                                    {est ? est.denominacion : 'N/A'}
+                                  </td>
+                                  <td className="px-6 py-4 font-semibold text-slate-600 text-xs">
+                                    {doc.documento_nombre}
+                                  </td>
+                                  <td className="px-6 py-4 font-mono text-xs text-slate-500 font-semibold">
+                                    {formatDate(doc.fecha)}
+                                  </td>
+                                  <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                                    <div className="flex items-center justify-end gap-2">
+                                      {doc.documento_url && (
+                                        <>
+                                          <button
+                                            onClick={() => handleViewPdf(doc.documento_url)}
+                                            className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                            title="Visualizar PDF"
+                                          >
+                                            <FileText className="h-4.5 w-4.5" />
+                                          </button>
+                                          {!doc.documento_url.startsWith('http') && (
                                             <button
-                                              onClick={() => handleViewPdf(doc.documento_url)}
+                                              onClick={() => handleDownloadPdf(doc.documento_url, `${doc.documento_nombre}.pdf`)}
                                               className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                              title="Visualizar PDF"
+                                              title="Descargar PDF"
                                             >
-                                              <FileText className="h-4.5 w-4.5" />
+                                              <Download className="h-4.5 w-4.5" />
                                             </button>
-                                            {!doc.documento_url.startsWith('http') && (
-                                              <button
-                                                onClick={() => handleDownloadPdf(doc.documento_url, `${doc.documento_nombre}.pdf`)}
-                                                className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                                title="Descargar PDF"
-                                              >
-                                                <Download className="h-4.5 w-4.5" />
-                                              </button>
-                                            )}
-                                          </>
-                                        )}
-                                        {doc.fotos_paths && doc.fotos_paths.length > 0 && (
-                                          <button
-                                            onClick={() => handleEditClick(doc, true)}
-                                            className="p-1.5 rounded-lg bg-[#EFF6FF] text-[#468DFF] hover:bg-[#DBEAFE] hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                            title={`Visualizar Evidencia (${doc.fotos_paths.length} ${doc.fotos_paths.length === 1 ? 'imagen' : 'imágenes'})`}
-                                          >
-                                            <Image className="h-4.5 w-4.5" />
-                                          </button>
-                                        )}
-                                        {canEditar && (
-                                          <button
-                                            onClick={() => handleEditClick(doc, false)}
-                                            className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                            title="Editar detalles"
-                                          >
-                                            <Edit className="h-4.5 w-4.5" />
-                                          </button>
-                                        )}
-                                        {canEliminar && (
-                                          <button
-                                            onClick={() => handleDelete(doc.id)}
-                                            className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                            title="Eliminar"
-                                          >
-                                            <Trash2 className="h-4.5 w-4.5" />
-                                          </button>
-                                        )}
-                                      </div>
-                                    </td>
-                                  </tr>
-                                );
-                              })
-                            )}
+                                          )}
+                                        </>
+                                      )}
+                                      {doc.fotos_paths && doc.fotos_paths.length > 0 && (
+                                        <button
+                                          onClick={() => handleEditClick(doc, true)}
+                                          className="p-1.5 rounded-lg bg-[#EFF6FF] text-[#468DFF] hover:bg-[#DBEAFE] hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                          title={`Visualizar Evidencia (${doc.fotos_paths.length} ${doc.fotos_paths.length === 1 ? 'imagen' : 'imágenes'})`}
+                                        >
+                                          <Image className="h-4.5 w-4.5" />
+                                        </button>
+                                      )}
+                                      {canEditar && (
+                                        <button
+                                          onClick={() => handleEditClick(doc, false)}
+                                          className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                          title="Editar detalles"
+                                        >
+                                          <Edit className="h-4.5 w-4.5" />
+                                        </button>
+                                      )}
+                                      {canEliminar && (
+                                        <button
+                                          onClick={() => handleDelete(doc.id)}
+                                          className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                          title="Eliminar"
+                                        >
+                                          <Trash2 className="h-4.5 w-4.5" />
+                                        </button>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
                           </tbody>
-                          </table>
-                        </div>
-                      )}
+                        </table>
+                      </div>
+                    )}
                     </div>
 
 
