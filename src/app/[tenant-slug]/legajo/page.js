@@ -892,8 +892,8 @@ export default function LegajoPage({ params }) {
       return;
     }
 
-    if (!documentoUrl && !documentoFile) {
-      triggerToast('Debes adjuntar un archivo PDF o ingresar un enlace de Google Drive.', 'error');
+    if (!documentoUrl && !documentoFile && fotosFiles.length === 0) {
+      triggerToast('Debes adjuntar un archivo PDF, ingresar un enlace de Google Drive o cargar imágenes de evidencia.', 'error');
       return;
     }
 

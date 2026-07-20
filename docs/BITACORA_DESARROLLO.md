@@ -33,9 +33,13 @@
   - Integración del listado de fotos en el control de cambios sin guardar (dirty checks) mediante `originalDataRef` y `checkHasUnsavedChanges`.
   - Soporte completo para subida de múltiples archivos a Supabase Storage (`documents` bucket) y retrocompatibilidad con el simulador de desarrollo (`isDevMode`).
 - **Corrección en Capacitación**: Importación del hook `useRef` faltante en `src/app/[tenant-slug]/capacitacion/page.js` para resolver el error de tiempo de ejecución `Uncaught ReferenceError: useRef is not defined` en el navegador.
+- **Corrección de Validación en Legajo (Guardado sin PDF/Drive)**:
+  - Creación de la migración `20260809000000_drop_not_null_documento_url_in_legajo.sql` para remover la restricción `NOT NULL` de la columna `documento_url` en la tabla `legajo_tecnico`.
+  - Actualización de la validación del lado del cliente en `src/app/[tenant-slug]/legajo/page.js` para permitir el guardado de registros que contengan únicamente imágenes de evidencia sin obligar a adjuntar un PDF o link de Drive.
 
 ### Archivos Modificados / Creados
 - `[NEW] supabase/migrations/20260807000000_add_imagen_url_to_legajo_tecnico.sql`
+- `[NEW] supabase/migrations/20260809000000_drop_not_null_documento_url_in_legajo.sql`
 - `[MODIFY] docs/adr/ADR-0004-modulo-legajo-tecnico.md`
 - `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
 - `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
