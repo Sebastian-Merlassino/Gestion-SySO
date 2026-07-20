@@ -163,7 +163,7 @@ export default function AppFormNavigator({
 
   return (
     <>
-      {/* Botón flotante Anterior (Izquierda) - Oculto en móvil, visible en md+ */}
+      {/* Botón flotante Anterior (Izquierda) - Visible en md+ */}
       {hasPrev && (
         <button
           type="button"
@@ -176,7 +176,19 @@ export default function AppFormNavigator({
         </button>
       )}
 
-      {/* Botón flotante Siguiente (Derecha) - Oculto en móvil, visible en md+ */}
+      {/* Botón Móvil Anterior (Izquierda) - Solo flecha minimalista para móvil */}
+      {hasPrev && (
+        <button
+          type="button"
+          onClick={() => handleNavigationAttempt(prevItem)}
+          className="fixed left-2 top-1/2 -translate-y-1/2 z-40 flex md:hidden items-center justify-center p-2 text-[#468DFF] active:scale-90 transition-all cursor-pointer opacity-75 active:opacity-100"
+          title="Anterior registro"
+        >
+          <ChevronLeft className="h-8 w-8" />
+        </button>
+      )}
+
+      {/* Botón flotante Siguiente (Derecha) - Visible en md+ */}
       {hasNext && (
         <button
           type="button"
@@ -185,6 +197,18 @@ export default function AppFormNavigator({
           title="Siguiente registro (Flecha Derecha)"
         >
           <ChevronRight className="h-6 w-6 transition-transform duration-300 group-hover:translate-x-0.5" />
+        </button>
+      )}
+
+      {/* Botón Móvil Siguiente (Derecha) - Solo flecha minimalista para móvil */}
+      {hasNext && (
+        <button
+          type="button"
+          onClick={() => handleNavigationAttempt(nextItem)}
+          className="fixed right-2 top-1/2 -translate-y-1/2 z-40 flex md:hidden items-center justify-center p-2 text-[#468DFF] active:scale-90 transition-all cursor-pointer opacity-75 active:opacity-100"
+          title="Siguiente registro"
+        >
+          <ChevronRight className="h-8 w-8" />
         </button>
       )}
 
