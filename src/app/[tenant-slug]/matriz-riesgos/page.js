@@ -2986,7 +2986,7 @@ export default function MatrizRiesgosPage({ params }) {
 
                                       {sec.isManual && (
                                         <div className="flex flex-col gap-1">
-                                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Especifique el Sector *</label>
+                                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Ingresar sector *</label>
                                           <input
                                             type="text"
                                             required
@@ -3118,7 +3118,7 @@ export default function MatrizRiesgosPage({ params }) {
 
                                                   {pst.isManual && (
                                                     <div className="flex flex-col gap-1">
-                                                      <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Especifique el Puesto *</label>
+                                                      <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Ingresar puesto *</label>
                                                       <input
                                                         type="text"
                                                         required
