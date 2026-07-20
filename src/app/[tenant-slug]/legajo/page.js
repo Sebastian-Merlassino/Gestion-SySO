@@ -15,6 +15,7 @@ import AppSelect from '@/components/ui/AppSelect';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
+import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import { 
   Folder, 
   FolderOpen, 
@@ -328,6 +329,48 @@ export default function LegajoPage({ params }) {
   const [documentoFile, setDocumentoFile] = useState(null);
   const [documentoUrl, setDocumentoUrl] = useState('');
   const [selectedFileName, setSelectedFileName] = useState('');
+
+  const originalDataRef = useRef('');
+
+  // Sincronizar datos originales para control de cambios sin guardar
+  useEffect(() => {
+    if (isFormOpen && !saving) {
+      originalDataRef.current = JSON.stringify({
+        empresaId,
+        establecimientoId,
+        registroId,
+        documentoNombre,
+        documentoCustom,
+        fecha,
+        documentoUrl
+      });
+    }
+  }, [
+    isFormOpen,
+    saving,
+    editingId,
+    empresaId,
+    establecimientoId,
+    registroId,
+    documentoNombre,
+    documentoCustom,
+    fecha,
+    documentoUrl
+  ]);
+
+  const checkHasUnsavedChanges = () => {
+    if (isReadOnlyView || !isFormOpen) return false;
+    const currentData = JSON.stringify({
+      empresaId,
+      establecimientoId,
+      registroId,
+      documentoNombre,
+      documentoCustom,
+      fecha,
+      documentoUrl
+    });
+    return originalDataRef.current !== currentData;
+  };
 
   // Filtros de listado
   const [filterText, setFilterText] = useState('');
@@ -1639,7 +1682,7 @@ export default function LegajoPage({ params }) {
                                 return (
                                   <tr
                                     key={doc.id}
-                                    className="hover:bg-slate-50/50 cursor-pointer transition-colors"
+                                    className="hover:bg-slate-100 cursor-pointer transition-colors"
                                     onClick={() => handleEditClick(doc, true)}
                                   >
                                     <td className="px-6 py-4 font-semibold text-slate-900">
@@ -1812,6 +1855,14 @@ export default function LegajoPage({ params }) {
           </div>
         </div>
       )}
+
+      <AppFormNavigator
+        activeList={sortedDocuments}
+        currentId={editingId}
+        onNavigate={(newDoc) => handleEditClick(newDoc, isReadOnlyView)}
+        hasUnsavedChanges={checkHasUnsavedChanges()}
+        isFormOpen={isFormOpen}
+      />
 
     </div>
   );

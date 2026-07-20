@@ -1,7 +1,7 @@
 // src/app/[tenant-slug]/matriz-riesgos/page.js
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
@@ -19,6 +19,7 @@ import AppSelect from '@/components/ui/AppSelect';
 import AppCard from '@/components/ui/AppCard';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import * as Dialog from '@radix-ui/react-dialog';
+import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import { 
   PlusCircle, 
   Search, 
@@ -251,6 +252,97 @@ export default function MatrizRiesgosPage({ params }) {
   const globalToast = useToast();
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
   const [saveLoading, setSaveLoading] = useState(false);
+
+  const originalDataRef = useRef('');
+
+  // Sincronizar datos originales para control de cambios sin guardar
+  useEffect(() => {
+    if (isFormOpen && !isBulkMode && !saveLoading) {
+      originalDataRef.current = JSON.stringify({
+        empresaId,
+        establecimientoId,
+        singleSector,
+        singlePuesto,
+        singleTareas,
+        singleFrecuencia,
+        singleSituacion,
+        singleTipoPeligro,
+        singlePeligro,
+        singleRiesgo,
+        singleConsecuencia,
+        singleProbabilidad,
+        singleGravedad,
+        singleMedidasAdm,
+        singleMedidasIng,
+        singleMedidasEpp,
+        singleMedidasRecomendadas,
+        singleResponsable,
+        singleFechaPlanificada,
+        singleFechaRealizacion,
+        singlePostProbabilidad,
+        singlePostGravedad,
+        singleObservaciones
+      });
+    }
+  }, [
+    isFormOpen,
+    isBulkMode,
+    saveLoading,
+    editingId,
+    empresaId,
+    establecimientoId,
+    singleSector,
+    singlePuesto,
+    singleTareas,
+    singleFrecuencia,
+    singleSituacion,
+    singleTipoPeligro,
+    singlePeligro,
+    singleRiesgo,
+    singleConsecuencia,
+    singleProbabilidad,
+    singleGravedad,
+    singleMedidasAdm,
+    singleMedidasIng,
+    singleMedidasEpp,
+    singleMedidasRecomendadas,
+    singleResponsable,
+    singleFechaPlanificada,
+    singleFechaRealizacion,
+    singlePostProbabilidad,
+    singlePostGravedad,
+    singleObservaciones
+  ]);
+
+  const checkHasUnsavedChanges = () => {
+    if (isReadOnlyView || !isFormOpen || isBulkMode) return false;
+    const currentData = JSON.stringify({
+      empresaId,
+      establecimientoId,
+      singleSector,
+      singlePuesto,
+      singleTareas,
+      singleFrecuencia,
+      singleSituacion,
+      singleTipoPeligro,
+      singlePeligro,
+      singleRiesgo,
+      singleConsecuencia,
+      singleProbabilidad,
+      singleGravedad,
+      singleMedidasAdm,
+      singleMedidasIng,
+      singleMedidasEpp,
+      singleMedidasRecomendadas,
+      singleResponsable,
+      singleFechaPlanificada,
+      singleFechaRealizacion,
+      singlePostProbabilidad,
+      singlePostGravedad,
+      singleObservaciones
+    });
+    return originalDataRef.current !== currentData;
+  };
 
   // Modal informativo para Frecuencia / Probabilidad / Gravedad
   const [helpModal, setHelpModal] = useState({ show: false, type: '' });
@@ -2810,7 +2902,7 @@ export default function MatrizRiesgosPage({ params }) {
                                       const resLevel = row.post_probabilidad && row.post_gravedad ? getRiskLevel(row.post_probabilidad, row.post_gravedad) : null;
 
                                       return (
-                                        <tr key={idx} className={`hover:bg-slate-50/50 transition-colors ${row.errors.length > 0 ? 'bg-red-50/20' : ''}`}>
+                                        <tr key={idx} className={`hover:bg-slate-100 transition-colors ${row.errors.length > 0 ? 'bg-red-50/20' : ''}`}>
                                           <td className="px-4 py-2 text-center text-slate-400 font-bold">#{row.rowNum}</td>
                                           <td className="px-4 py-2">
                                             <span className={row.empresa_id ? 'text-slate-700' : 'text-red-500 font-bold'}>{row.razon_social_display || '(Vacío)'}</span>
@@ -4472,7 +4564,7 @@ export default function MatrizRiesgosPage({ params }) {
                               <tr 
                                 key={row.id} 
                                 onClick={() => { setIsReadOnlyView(true); handleEditClick(row); }}
-                                className="hover:bg-slate-50/50 cursor-pointer transition-colors"
+                                className="hover:bg-slate-100 cursor-pointer transition-colors"
                               >
                                 {/* 1. Cliente / Establecimiento */}
                                 <td className="px-6 py-4">
@@ -4885,6 +4977,13 @@ export default function MatrizRiesgosPage({ params }) {
       </Dialog.Root>
 
       {/* TOAST ALERT FEEDBACK removidos - consumidos globalmente */}
+      <AppFormNavigator
+        activeList={filteredMatriz}
+        currentId={editingId}
+        onNavigate={(newRow) => handleEditClick(newRow)}
+        hasUnsavedChanges={checkHasUnsavedChanges()}
+        isFormOpen={isFormOpen && !isBulkMode}
+      />
 
     </div>
   );

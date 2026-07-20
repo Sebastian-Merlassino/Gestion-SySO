@@ -17,6 +17,7 @@ import AppSelect from '@/components/ui/AppSelect';
 import AppTextarea from '@/components/ui/AppTextarea';
 import AppEmptyState from '@/components/ui/AppEmptyState';
 import AppCard from '@/components/ui/AppCard';
+import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import { 
   PlusCircle, 
   AlertCircle,
@@ -259,6 +260,108 @@ export default function VisitasPage({ params }) {
   const globalToast = useToast();
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
   const [saveLoading, setSaveLoading] = useState(false);
+
+  const originalDataRef = useRef('');
+
+  // Sincronizar datos originales para control de cambios sin guardar
+  useEffect(() => {
+    if (isFormOpen && !saveLoading) {
+      originalDataRef.current = JSON.stringify({
+        empresaId,
+        establecimientoId,
+        fecha,
+        profesionalTipo,
+        profesionalId,
+        profesionalNombre,
+        responsablePresente,
+        ocurrieronIncidentes,
+        analisisCorrespondiente,
+        causaRaiz,
+        accionCorrectiva,
+        relevamientoHigieneSeguridad,
+        relevamientoPracticasSeguras,
+        relevamientoEpp,
+        realizaronMediciones,
+        selectedMediciones,
+        verificoAccionesCorrectivas,
+        dictaronCapacitaciones,
+        selectedTemas,
+        realizaronSimulacros,
+        selectedSimulacros,
+        emiteAvisoRiesgo,
+        selectedDocumentacion,
+        observacionesRecomendaciones,
+        observaciones,
+        firmaTipo,
+        signaturePath
+      });
+    }
+  }, [
+    isFormOpen,
+    saveLoading,
+    editingId,
+    empresaId,
+    establecimientoId,
+    fecha,
+    profesionalTipo,
+    profesionalId,
+    profesionalNombre,
+    responsablePresente,
+    ocurrieronIncidentes,
+    analisisCorrespondiente,
+    causaRaiz,
+    accionCorrectiva,
+    relevamientoHigieneSeguridad,
+    relevamientoPracticasSeguras,
+    relevamientoEpp,
+    realizaronMediciones,
+    selectedMediciones,
+    verificoAccionesCorrectivas,
+    dictaronCapacitaciones,
+    selectedTemas,
+    realizaronSimulacros,
+    selectedSimulacros,
+    emiteAvisoRiesgo,
+    selectedDocumentacion,
+    observacionesRecomendaciones,
+    observaciones,
+    firmaTipo,
+    signaturePath
+  ]);
+
+  const checkHasUnsavedChanges = () => {
+    if (isReadOnlyView || !isFormOpen) return false;
+    const currentData = JSON.stringify({
+      empresaId,
+      establecimientoId,
+      fecha,
+      profesionalTipo,
+      profesionalId,
+      profesionalNombre,
+      responsablePresente,
+      ocurrieronIncidentes,
+      analisisCorrespondiente,
+      causaRaiz,
+      accionCorrectiva,
+      relevamientoHigieneSeguridad,
+      relevamientoPracticasSeguras,
+      relevamientoEpp,
+      realizaronMediciones,
+      selectedMediciones,
+      verificoAccionesCorrectivas,
+      dictaronCapacitaciones,
+      selectedTemas,
+      realizaronSimulacros,
+      selectedSimulacros,
+      emiteAvisoRiesgo,
+      selectedDocumentacion,
+      observacionesRecomendaciones,
+      observaciones,
+      firmaTipo,
+      signaturePath
+    });
+    return originalDataRef.current !== currentData;
+  };
   // Permisos granulares de edición
   const getSectionPermissions = (userProfile, sectionName) => {
     if (!userProfile) return { cargar: true, editar: true, eliminar: true };
@@ -2521,7 +2624,7 @@ export default function VisitasPage({ params }) {
                             const emp = empresas.find(e => e.id === v.empresa_id);
                             const est = allEstablecimientos.find(e => e.id === v.establecimiento_id);
                             return (
-                              <tr key={v.id} className="hover:bg-slate-50/50 cursor-pointer" onClick={() => { setIsReadOnlyView(true); handleEditClick(v); }}>
+                              <tr key={v.id} className="hover:bg-slate-100 cursor-pointer transition-colors" onClick={() => { setIsReadOnlyView(true); handleEditClick(v); }}>
                                 <td className="px-6 py-4 font-semibold text-slate-900">{emp ? emp.razon_social : 'N/A'}</td>
                                 <td className="px-6 py-4 font-medium text-slate-600">{est ? est.denominacion : 'N/A'}</td>
                                 <td className="px-6 py-4 font-semibold text-slate-600">{formatDate(v.fecha)}</td>
@@ -3789,6 +3892,13 @@ export default function VisitasPage({ params }) {
       />
 
       {/* TOAST DE FEEDBACK removido - consumidos globalmente */}
+      <AppFormNavigator
+        activeList={visitas}
+        currentId={editingId}
+        onNavigate={(newVis) => handleEditClick(newVis)}
+        hasUnsavedChanges={checkHasUnsavedChanges()}
+        isFormOpen={isFormOpen}
+      />
 
     </div>
   );

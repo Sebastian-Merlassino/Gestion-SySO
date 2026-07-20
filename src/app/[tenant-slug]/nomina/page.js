@@ -15,6 +15,7 @@ import AppInput from '@/components/ui/AppInput';
 import AppSelect from '@/components/ui/AppSelect';
 import AppTextarea from '@/components/ui/AppTextarea';
 import AppEmptyState from '@/components/ui/AppEmptyState';
+import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import {
   PlusCircle,
   Search,
@@ -74,6 +75,9 @@ export default function NominaPage({ params }) {
   };
 
   // Main list filters
+
+
+
   const [searchQuery, setSearchQuery] = useState('');
   const [filterEmpresa, setFilterEmpresa] = useState('');
   const [filterEstablecimiento, setFilterEstablecimiento] = useState('');
@@ -108,6 +112,39 @@ export default function NominaPage({ params }) {
   const [selectedLegajoPath, setSelectedLegajoPath] = useState('');
   const [loadingLegajoFile, setLoadingLegajoFile] = useState(false);
   const [previewRows, setPreviewRows] = useState([]);
+
+  const originalDataRef = useRef('');
+
+  // Sincronizar datos originales para control de cambios sin guardar
+  useEffect(() => {
+    if (isFormOpen && !saving) {
+      originalDataRef.current = JSON.stringify({
+        empresaId,
+        establecimientoId,
+        fechaCarga,
+        manualRows
+      });
+    }
+  }, [
+    isFormOpen,
+    saving,
+    editingId,
+    empresaId,
+    establecimientoId,
+    fechaCarga,
+    manualRows
+  ]);
+
+  const checkHasUnsavedChanges = () => {
+    if (isReadOnlyView || !isFormOpen) return false;
+    const currentData = JSON.stringify({
+      empresaId,
+      establecimientoId,
+      fechaCarga,
+      manualRows
+    });
+    return originalDataRef.current !== currentData;
+  };
 
   useEffect(() => {
     if (tenantSlug) {
@@ -1298,7 +1335,7 @@ export default function NominaPage({ params }) {
                             </thead>
                             <tbody className="divide-y divide-slate-100 font-semibold text-slate-600">
                               {previewRows.map((row, idx) => (
-                                <tr key={idx} className={`hover:bg-slate-50/50 transition-colors ${row.errors.length > 0 ? 'bg-red-50/20' : ''}`}>
+                                <tr key={idx} className={`hover:bg-slate-100 transition-colors ${row.errors.length > 0 ? 'bg-red-50/20' : ''}`}>
                                   <td className="px-4 py-2 text-center text-slate-400 font-bold">#{row.rowNum}</td>
                                   <td className="px-4 py-2">
                                     <span className={row.nombre_apellido ? 'text-slate-700' : 'text-red-500 font-bold'}>{row.nombre_apellido || '(Vacio)'}</span>
@@ -1572,7 +1609,7 @@ export default function NominaPage({ params }) {
                           <tr 
                             key={item.id} 
                             onClick={() => { setIsReadOnlyView(true); handleOpenEditForm(item); }}
-                            className="hover:bg-slate-50/50 transition-colors cursor-pointer"
+                            className="hover:bg-slate-100 transition-colors cursor-pointer"
                           >
                             <td className="px-6 py-4 font-semibold text-slate-900">
                               <span className="block">{item.empresa?.razon_social || '-'}</span>
@@ -1669,6 +1706,13 @@ export default function NominaPage({ params }) {
       )}
 
       {/* Notificación Toast flotante removido - consumido globalmente */}
+      <AppFormNavigator
+        activeList={filteredPersonal}
+        currentId={editingId}
+        onNavigate={(newPers) => handleOpenEditForm(newPers)}
+        hasUnsavedChanges={checkHasUnsavedChanges()}
+        isFormOpen={isFormOpen && loadType === 'manual'}
+      />
 
     </div>
   );

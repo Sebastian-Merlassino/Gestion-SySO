@@ -18,6 +18,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import AITextHelper from '@/components/ui/AITextHelper';
+import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import { 
   PlusCircle, 
   Search, 
@@ -178,6 +179,60 @@ export default function ControlElectricoPage({ params }) {
   const globalToast = useToast();
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
   const [saveLoading, setSaveLoading] = useState(false);
+
+  const originalDataRef = useRef('');
+
+  // Sincronizar datos originales para control de cambios sin guardar
+  useEffect(() => {
+    if (isFormOpen && !saveLoading) {
+      originalDataRef.current = JSON.stringify({
+        empresaId,
+        establecimientoId,
+        fecha,
+        formItems,
+        observaciones,
+        responsableAclaracion,
+        firmaTipo,
+        profesionalTipo,
+        profesionalId,
+        profesionalNombre,
+        signaturePath
+      });
+    }
+  }, [
+    isFormOpen,
+    saveLoading,
+    editingId,
+    empresaId,
+    establecimientoId,
+    fecha,
+    formItems,
+    observaciones,
+    responsableAclaracion,
+    firmaTipo,
+    profesionalTipo,
+    profesionalId,
+    profesionalNombre,
+    signaturePath
+  ]);
+
+  const checkHasUnsavedChanges = () => {
+    if (isReadOnlyView || !isFormOpen) return false;
+    const currentData = JSON.stringify({
+      empresaId,
+      establecimientoId,
+      fecha,
+      formItems,
+      observaciones,
+      responsableAclaracion,
+      firmaTipo,
+      profesionalTipo,
+      profesionalId,
+      profesionalNombre,
+      signaturePath
+    });
+    return originalDataRef.current !== currentData;
+  };
 
   // Estados de Envío por Correo (Fase 3)
   const [isMailModalOpen, setIsMailModalOpen] = useState(false);
@@ -2361,7 +2416,7 @@ export default function ControlElectricoPage({ params }) {
                             const pendingItems = totalItems - okItems - noOkItems - naItems;
 
                             return (
-                              <tr key={c.id} className="hover:bg-slate-50/50 transition-colors">
+                              <tr key={c.id} className="hover:bg-slate-100 transition-colors">
                                 <td 
                                   onClick={() => {
                                     setIsReadOnlyView(true);
@@ -2627,6 +2682,14 @@ export default function ControlElectricoPage({ params }) {
           </div>
         </div>
       )}
+      
+      <AppFormNavigator
+        activeList={sortedControles}
+        currentId={editingId}
+        onNavigate={(newCtrl) => handleEditClick(newCtrl)}
+        hasUnsavedChanges={checkHasUnsavedChanges()}
+        isFormOpen={isFormOpen}
+      />
 
     </div>
   );

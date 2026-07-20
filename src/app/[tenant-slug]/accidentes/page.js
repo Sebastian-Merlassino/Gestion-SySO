@@ -4062,7 +4062,7 @@ export default function AccidentesPage({ params }) {
                             return (
                               <tr
                                 key={acc.id}
-                                className="hover:bg-slate-50/50 transition-colors cursor-pointer"
+                                className="hover:bg-slate-100 transition-colors cursor-pointer"
                                 onClick={() => handleEditClick(acc, true)}
                               >
                                 <td className="px-6 py-4 font-semibold text-slate-900">

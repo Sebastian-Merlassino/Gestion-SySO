@@ -16,6 +16,7 @@ import AppSelect from '@/components/ui/AppSelect';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
+import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import {
@@ -163,6 +164,63 @@ export default function ProgramaGestion({ params }) {
   const [legajoDocuments, setLegajoDocuments] = useState([]);
   const [selectedLegajoDocUrl, setSelectedLegajoDocUrl] = useState('');
   const [loadingLegajoDocs, setLoadingLegajoDocs] = useState(false);
+
+  const originalDataRef = useRef('');
+
+  // Sincronizar datos originales para control de cambios sin guardar
+  useEffect(() => {
+    if (showForm && !saving) {
+      originalDataRef.current = JSON.stringify({
+        empresaId,
+        establecimientoId,
+        catalogoId,
+        descripcion,
+        marcoLegal,
+        responsableId,
+        responsableCustom,
+        progreso,
+        fechaPlanificada,
+        fechaRealizacion,
+        documentoUrl,
+        observaciones
+      });
+    }
+  }, [
+    showForm,
+    saving,
+    editingId,
+    empresaId,
+    establecimientoId,
+    catalogoId,
+    descripcion,
+    marcoLegal,
+    responsableId,
+    responsableCustom,
+    progreso,
+    fechaPlanificada,
+    fechaRealizacion,
+    documentoUrl,
+    observaciones
+  ]);
+
+  const checkHasUnsavedChanges = () => {
+    if (isReadOnlyView || !showForm) return false;
+    const currentData = JSON.stringify({
+      empresaId,
+      establecimientoId,
+      catalogoId,
+      descripcion,
+      marcoLegal,
+      responsableId,
+      responsableCustom,
+      progreso,
+      fechaPlanificada,
+      fechaRealizacion,
+      documentoUrl,
+      observaciones
+    });
+    return originalDataRef.current !== currentData;
+  };
 
   useEffect(() => {
     if (!documentoFile && !documentoUrl) {
@@ -2021,7 +2079,7 @@ export default function ProgramaGestion({ params }) {
                                 <tr
                                   key={act.id}
                                   onClick={() => { setIsReadOnlyView(true); handleEdit(act); }}
-                                  className="hover:bg-slate-50/50 cursor-pointer transition-colors"
+                                  className="hover:bg-slate-100 cursor-pointer transition-colors"
                                 >
                                   <td className="px-6 py-4">
                                     <span className="font-semibold text-slate-900 block truncate max-w-[160px]">
@@ -2187,6 +2245,13 @@ export default function ProgramaGestion({ params }) {
         )}
 
         {/* TOAST NOTIFICACIÓN removido - consumido globalmente */}
+        <AppFormNavigator
+          activeList={sortedActividades}
+          currentId={editingId}
+          onNavigate={(newAct) => handleEdit(newAct)}
+          hasUnsavedChanges={checkHasUnsavedChanges()}
+          isFormOpen={showForm}
+        />
 
       </main>
     </div>

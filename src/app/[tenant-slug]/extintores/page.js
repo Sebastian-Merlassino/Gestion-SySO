@@ -1871,7 +1871,7 @@ export default function ExtintoresPage({ params }) {
                                   setIsReadOnlyView(true);
                                   handleEditClick(ext);
                                 }}
-                                className="hover:bg-slate-50/50 cursor-pointer"
+                                className="hover:bg-slate-100 cursor-pointer transition-colors"
                               >
                                 <td className="py-4 px-6">
                                   <span className="font-semibold text-slate-900 block">{emp?.razon_social || 'Desconocido'}</span>

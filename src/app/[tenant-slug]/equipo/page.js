@@ -1,7 +1,7 @@
 // src/app/[tenant-slug]/equipo/page.js
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
@@ -15,6 +15,7 @@ import AppSelect from '@/components/ui/AppSelect';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
+import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import { 
   Users, 
   Building,
@@ -213,6 +214,68 @@ export default function EquipoPage({ params }) {
 
   // Initial values for dirty checking
   const [initialValues, setInitialValues] = useState(null);
+
+  const originalDataRef = useRef('');
+
+  // Sincronizar datos originales para control de cambios sin guardar
+  useEffect(() => {
+    if (view === 'form' && !loading) {
+      originalDataRef.current = JSON.stringify({
+        fullName,
+        email,
+        cuit,
+        phone,
+        birthDate,
+        provincia,
+        partido,
+        localidad,
+        tieneAcceso,
+        permisos,
+        matriculas: (matriculas || []).map(m => ({
+          institucion: m.institucion,
+          numero: m.numero,
+          vencimiento: m.vencimiento
+        }))
+      });
+    }
+  }, [
+    view,
+    loading,
+    editingId,
+    fullName,
+    email,
+    cuit,
+    phone,
+    birthDate,
+    provincia,
+    partido,
+    localidad,
+    tieneAcceso,
+    permisos,
+    matriculas
+  ]);
+
+  const checkHasUnsavedChanges = () => {
+    if (isReadOnlyView || view !== 'form') return false;
+    const currentData = JSON.stringify({
+      fullName,
+      email,
+      cuit,
+      phone,
+      birthDate,
+      provincia,
+      partido,
+      localidad,
+      tieneAcceso,
+      permisos,
+      matriculas: (matriculas || []).map(m => ({
+        institucion: m.institucion,
+        numero: m.numero,
+        vencimiento: m.vencimiento
+      }))
+    });
+    return originalDataRef.current !== currentData;
+  };
 
   // Filtros de búsqueda
   const [filterText, setFilterText] = useState('');
@@ -1294,7 +1357,7 @@ export default function EquipoPage({ params }) {
                           />
                         ) : (
                           filteredMiembros.map((m) => (
-                            <tr key={m.id} className="hover:bg-slate-50/50 cursor-pointer transition-colors" onClick={() => { setIsReadOnlyView(true); handleEdit(m.id); }}>
+                            <tr key={m.id} className="hover:bg-slate-100 cursor-pointer transition-colors" onClick={() => { setIsReadOnlyView(true); handleEdit(m.id); }}>
                               <td className="px-6 py-4">
                                 <div className="flex items-center gap-3">
                                   <div className="h-8 w-8 rounded-full bg-[#468DFF]/10 flex items-center justify-center text-[#468DFF] font-bold text-xs shrink-0">
@@ -2001,6 +2064,14 @@ export default function EquipoPage({ params }) {
         </div>
       )}
       
+      <AppFormNavigator
+        activeList={filteredMiembros}
+        currentId={editingId}
+        onNavigate={(newMember) => handleEdit(newMember.id)}
+        hasUnsavedChanges={checkHasUnsavedChanges()}
+        isFormOpen={view === 'form'}
+      />
+
     </div>
   );
 }

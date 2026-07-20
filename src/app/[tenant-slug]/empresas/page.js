@@ -1,7 +1,7 @@
 // src/app/[tenant-slug]/empresas/page.js
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import { supabase, fetchAllGeography } from '@/lib/supabase';
@@ -15,6 +15,7 @@ import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
 import AITextHelper from '@/components/ui/AITextHelper';
+import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import { 
   Building, 
   Users, 
@@ -31,6 +32,7 @@ import {
   Briefcase, 
   Phone, 
   Mail, 
+  MessageCircle,
   MapPin, 
   Plus, 
   Minus,
@@ -135,6 +137,111 @@ export default function EmpresasClientes({ params }) {
   const [tenant, setTenant] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [isReadOnlyView, setIsReadOnlyView] = useState(false);
+
+  const originalDataRef = useRef('');
+
+  // Sincronizar datos originales para control de cambios sin guardar
+  useEffect(() => {
+    if (view === 'form' && !loading) {
+      originalDataRef.current = JSON.stringify({
+        razonSocial,
+        nombreComercial,
+        cuit,
+        selectedCiiu,
+        telefonos,
+        correos,
+        facturacion,
+        artWeb,
+        artUsuario,
+        artClave,
+        mibaUsuario,
+        mibaClave,
+        ambienteUsuario,
+        ambienteClave,
+        observaciones,
+        clientEmail,
+        clientName,
+        establecimientos: (establecimientos || []).map(est => ({
+          denominacion: est.denominacion,
+          direccion: est.direccion,
+          provincia: est.provincia,
+          partido: est.partido,
+          localidad_barrio: est.localidad_barrio,
+          cp: est.cp,
+          superficie_total: est.superficie_total,
+          superficie_cubierta: est.superficie_cubierta,
+          superficie_piso: est.superficie_piso,
+          cantidad_plantas: est.cantidad_plantas,
+          horario_funcionamiento: est.horario_funcionamiento,
+          trabajadores_administrativos: est.trabajadores_administrativos,
+          trabajadores_productivos: est.trabajadores_productivos,
+          trabajadores_equivalentes: est.trabajadores_equivalentes,
+          capitulos_decreto: est.capitulos_decreto,
+          horas_profesional: est.horas_profesional,
+          maquinas_fijas: est.maquinas_fijas,
+          maquinas_moviles: est.maquinas_moviles,
+          herramientas_electricas: est.herramientas_electricas,
+          aparatos_presion: est.aparatos_presion,
+          equipos_termicos: est.equipos_termicos,
+          equipos_elevacion: est.equipos_elevacion,
+          equipos_izaje: est.equipos_izaje,
+          sectores: est.sectores,
+          observaciones: est.observaciones
+        }))
+      });
+    }
+  }, [view, loading, editingId, razonSocial, nombreComercial, cuit, selectedCiiu, telefonos, correos, facturacion, artWeb, artUsuario, artClave, mibaUsuario, mibaClave, ambienteUsuario, ambienteClave, observaciones, clientEmail, clientName, establecimientos]);
+
+  const checkHasUnsavedChanges = () => {
+    if (isReadOnlyView || view !== 'form') return false;
+    const currentData = JSON.stringify({
+      razonSocial,
+      nombreComercial,
+      cuit,
+      selectedCiiu,
+      telefonos,
+      correos,
+      facturacion,
+      artWeb,
+      artUsuario,
+      artClave,
+      mibaUsuario,
+      mibaClave,
+      ambienteUsuario,
+      ambienteClave,
+      observaciones,
+      clientEmail,
+      clientName,
+      establecimientos: (establecimientos || []).map(est => ({
+        denominacion: est.denominacion,
+        direccion: est.direccion,
+        provincia: est.provincia,
+        partido: est.partido,
+        localidad_barrio: est.localidad_barrio,
+        cp: est.cp,
+        superficie_total: est.superficie_total,
+        superficie_cubierta: est.superficie_cubierta,
+        superficie_piso: est.superficie_piso,
+        cantidad_plantas: est.cantidad_plantas,
+        horario_funcionamiento: est.horario_funcionamiento,
+        trabajadores_administrativos: est.trabajadores_administrativos,
+        trabajadores_productivos: est.trabajadores_productivos,
+        trabajadores_equivalentes: est.trabajadores_equivalentes,
+        capitulos_decreto: est.capitulos_decreto,
+        horas_profesional: est.horas_profesional,
+        maquinas_fijas: est.maquinas_fijas,
+        maquinas_moviles: est.maquinas_moviles,
+        herramientas_electricas: est.herramientas_electricas,
+        aparatos_presion: est.aparatos_presion,
+        equipos_termicos: est.equipos_termicos,
+        equipos_elevacion: est.equipos_elevacion,
+        equipos_izaje: est.equipos_izaje,
+        sectores: est.sectores,
+        observaciones: est.observaciones
+      }))
+    });
+    return originalDataRef.current !== currentData;
+  };
 
   // Permisos granulares de edición
   const getSectionPermissions = (userProfile, sectionName) => {
@@ -1620,7 +1727,7 @@ export default function EmpresasClientes({ params }) {
                               <tr 
                                 key={emp.id} 
                                 onClick={() => { setIsReadOnlyView(true); handleEdit(emp.id); }}
-                                className="hover:bg-slate-50/50 cursor-pointer transition-colors"
+                                className="hover:bg-slate-100 cursor-pointer transition-colors"
                               >
                                 <td className="px-6 py-4">
                                   <span className="font-semibold text-slate-900 block truncate max-w-[240px]" title={emp.razon_social}>
@@ -1751,12 +1858,12 @@ export default function EmpresasClientes({ params }) {
               </div>
 
               {/* CONTENIDOS DE LAS PESTAÑAS */}
-              <fieldset disabled={!canEdit} className="space-y-6">
+              <fieldset className="space-y-6">
 
                 {/* TAB 1: DATOS GENERALES Y CONTACTOS */}
                 {activeTab === 'general' && (
                   <div className="space-y-6">
-                    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+                    <fieldset disabled={!canEdit} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4 block w-full">
                       <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Identidad de la empresa</h4>
                       
                       <div className="grid md:grid-cols-2 gap-4">
@@ -1822,10 +1929,10 @@ export default function EmpresasClientes({ params }) {
                                     setSearchTermCiiu('');
                                     setCiiuResults([]);
                                   }}
-                                  className="w-full text-left px-4 py-3 text-xs hover:bg-[#468DFF]/5 text-slate-700 flex items-start gap-2 transition-colors cursor-pointer"
+                                  className="w-full text-left px-4 py-3 text-xs hover:bg-[#468DFF]/5 text-slate-700 flex items-start gap-2 transition-colors cursor-pointer min-w-0"
                                 >
                                   <span className="font-bold text-[#468DFF] shrink-0 font-mono">{result.codigo}</span>
-                                  <span className="truncate">{result.descripcion}</span>
+                                  <span className="break-words flex-1">{result.descripcion}</span>
                                 </button>
                               ))}
                             </div>
@@ -1837,12 +1944,12 @@ export default function EmpresasClientes({ params }) {
                             {selectedCiiu.length === 0 ? (
                               <p className="text-[10px] text-slate-400 italic">No has seleccionado ninguna actividad.</p>
                             ) : (
-                              <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
+                              <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1 w-full min-w-0">
                                 {selectedCiiu.map((act) => (
-                                  <div key={act.codigo} className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs">
-                                    <div className="flex gap-2 items-start min-w-0 pr-2">
+                                  <div key={act.codigo} className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs w-full min-w-0">
+                                    <div className="flex gap-2 items-start min-w-0 pr-2 flex-1">
                                       <span className="font-bold text-[#468DFF] font-mono shrink-0">{act.codigo}</span>
-                                      <span className="truncate text-slate-700 font-semibold">{act.descripcion}</span>
+                                      <span className="break-words text-slate-700 font-semibold flex-1">{act.descripcion}</span>
                                     </div>
                                     <button
                                       type="button"
@@ -1859,7 +1966,7 @@ export default function EmpresasClientes({ params }) {
                         </div>
 
                       </div>
-                    </div>
+                    </fieldset>
 
                     {/* CONTACTOS (TELEFONOS, CORREOS, FACTURACION) */}
                     <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
@@ -1872,13 +1979,15 @@ export default function EmpresasClientes({ params }) {
                       <div className="space-y-3 pt-3 border-t border-slate-100">
                         <div className="flex justify-between items-center">
                           <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 text-[#468DFF]" /> Teléfonos de Contacto</span>
-                          <button
-                            type="button"
-                            onClick={() => setTelefonos([...telefonos, { nombre: '', cargo: '', valor: '' }])}
-                            className="text-[10px] text-[#468DFF] hover:text-[#0511F2] font-bold flex items-center gap-1"
-                          >
-                            <Plus className="h-3 w-3" /> Agregar Teléfono
-                          </button>
+                          {canEdit && (
+                            <button
+                              type="button"
+                              onClick={() => setTelefonos([...telefonos, { nombre: '', cargo: '', valor: '' }])}
+                              className="text-[10px] text-[#468DFF] hover:text-[#0511F2] font-bold flex items-center gap-1"
+                            >
+                              <Plus className="h-3 w-3" /> Agregar Teléfono
+                            </button>
+                          )}
                         </div>
                         {telefonos.map((tel, idx) => (
                           <div key={idx} className="grid grid-cols-1 md:grid-cols-3 gap-2 items-center bg-slate-50/50 p-3 rounded-2xl border border-slate-200 shadow-sm">
@@ -1886,43 +1995,68 @@ export default function EmpresasClientes({ params }) {
                               type="text"
                               placeholder="Nombre y Apellido"
                               value={tel.nombre}
+                              disabled={!canEdit}
                               onChange={(e) => {
                                 const copy = [...telefonos];
                                 copy[idx].nombre = e.target.value;
                                 setTelefonos(copy);
                               }}
-                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white transition-all text-slate-700"
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] focus:ring-2 focus:ring-[#468DFF]/20 bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400 disabled:opacity-50 disabled:bg-slate-100 disabled:pointer-events-none"
                             />
                             <input
                               type="text"
                               placeholder="Cargo / Puesto"
                               value={tel.cargo}
+                              disabled={!canEdit}
                               onChange={(e) => {
                                 const copy = [...telefonos];
                                 copy[idx].cargo = e.target.value;
                                 setTelefonos(copy);
                               }}
-                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white transition-all text-slate-700"
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] focus:ring-2 focus:ring-[#468DFF]/20 bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400 disabled:opacity-50 disabled:bg-slate-100 disabled:pointer-events-none"
                             />
                             <div className="flex gap-2 items-center">
                               <input
                                 type="text"
                                 placeholder="Teléfono"
                                 value={tel.valor}
+                                disabled={!canEdit}
                                 onChange={(e) => {
                                   const copy = [...telefonos];
                                   copy[idx].valor = e.target.value;
                                   setTelefonos(copy);
                                 }}
-                                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white transition-all text-slate-700 flex-1"
+                                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] focus:ring-2 focus:ring-[#468DFF]/20 bg-slate-50/50 transition-all text-slate-700 flex-1 placeholder-slate-400 disabled:opacity-50 disabled:bg-slate-100 disabled:pointer-events-none"
                               />
-                              <button
-                                type="button"
-                                onClick={() => setTelefonos(telefonos.filter((_, i) => i !== idx))}
-                                className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                              >
-                                <Minus className="h-3 w-3" />
-                              </button>
+                              {tel.valor && (
+                                <>
+                                  <a
+                                    href={`tel:${tel.valor.replace(/\s+/g, '')}`}
+                                    className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-200 text-[#468DFF] hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm shrink-0"
+                                    title="Llamar"
+                                  >
+                                    <Phone className="h-3.5 w-3.5" />
+                                  </a>
+                                  <a
+                                    href={`https://api.whatsapp.com/send?phone=${tel.valor.replace(/[^0-9]/g, '')}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-600 hover:text-emerald-700 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm shrink-0"
+                                    title="Enviar WhatsApp"
+                                  >
+                                    <MessageCircle className="h-3.5 w-3.5" />
+                                  </a>
+                                </>
+                              )}
+                              {canEdit && (
+                                <button
+                                  type="button"
+                                  onClick={() => setTelefonos(telefonos.filter((_, i) => i !== idx))}
+                                  className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm shrink-0"
+                                >
+                                  <Minus className="h-3 w-3" />
+                                </button>
+                              )}
                             </div>
                           </div>
                         ))}
@@ -1932,13 +2066,15 @@ export default function EmpresasClientes({ params }) {
                       <div className="space-y-3 pt-3 border-t border-slate-100">
                         <div className="flex justify-between items-center">
                           <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5"><Mail className="h-3.5 w-3.5 text-[#468DFF]" /> Correos Electrónicos</span>
-                          <button
-                            type="button"
-                            onClick={() => setCorreos([...correos, { nombre: '', cargo: '', valor: '' }])}
-                            className="text-[10px] text-[#468DFF] hover:text-[#0511F2] font-bold flex items-center gap-1"
-                          >
-                            <Plus className="h-3 w-3" /> Agregar Correo
-                          </button>
+                          {canEdit && (
+                            <button
+                              type="button"
+                              onClick={() => setCorreos([...correos, { nombre: '', cargo: '', valor: '' }])}
+                              className="text-[10px] text-[#468DFF] hover:text-[#0511F2] font-bold flex items-center gap-1"
+                            >
+                              <Plus className="h-3 w-3" /> Agregar Correo
+                            </button>
+                          )}
                         </div>
                         {correos.map((cor, idx) => (
                           <div key={idx} className="grid grid-cols-1 md:grid-cols-3 gap-2 items-center bg-slate-50/50 p-3 rounded-2xl border border-slate-200 shadow-sm">
@@ -1946,43 +2082,57 @@ export default function EmpresasClientes({ params }) {
                               type="text"
                               placeholder="Nombre y Apellido"
                               value={cor.nombre}
+                              disabled={!canEdit}
                               onChange={(e) => {
                                 const copy = [...correos];
                                 copy[idx].nombre = e.target.value;
                                 setCorreos(copy);
                               }}
-                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white transition-all text-slate-700"
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] focus:ring-2 focus:ring-[#468DFF]/20 bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400 disabled:opacity-50 disabled:bg-slate-100 disabled:pointer-events-none"
                             />
                             <input
                               type="text"
                               placeholder="Cargo / Puesto"
                               value={cor.cargo}
+                              disabled={!canEdit}
                               onChange={(e) => {
                                 const copy = [...correos];
                                 copy[idx].cargo = e.target.value;
                                 setCorreos(copy);
                               }}
-                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white transition-all text-slate-700"
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] focus:ring-2 focus:ring-[#468DFF]/20 bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400 disabled:opacity-50 disabled:bg-slate-100 disabled:pointer-events-none"
                             />
                             <div className="flex gap-2 items-center">
                               <input
                                 type="email"
                                 placeholder="Correo"
                                 value={cor.valor}
+                                disabled={!canEdit}
                                 onChange={(e) => {
                                   const copy = [...correos];
                                   copy[idx].valor = e.target.value;
                                   setCorreos(copy);
                                 }}
-                                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white transition-all text-slate-700 flex-1"
+                                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] focus:ring-2 focus:ring-[#468DFF]/20 bg-slate-50/50 transition-all text-slate-700 flex-1 placeholder-slate-400 disabled:opacity-50 disabled:bg-slate-100 disabled:pointer-events-none"
                               />
-                              <button
-                                type="button"
-                                onClick={() => setCorreos(correos.filter((_, i) => i !== idx))}
-                                className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                              >
-                                <Minus className="h-3 w-3" />
-                              </button>
+                              {cor.valor && (
+                                <a
+                                  href={`mailto:${cor.valor}`}
+                                  className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-200 text-[#468DFF] hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm shrink-0"
+                                  title="Enviar correo"
+                                >
+                                  <Mail className="h-3.5 w-3.5" />
+                                </a>
+                              )}
+                              {canEdit && (
+                                <button
+                                  type="button"
+                                  onClick={() => setCorreos(correos.filter((_, i) => i !== idx))}
+                                  className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm shrink-0"
+                                >
+                                  <Minus className="h-3 w-3" />
+                                </button>
+                              )}
                             </div>
                           </div>
                         ))}
@@ -1992,13 +2142,15 @@ export default function EmpresasClientes({ params }) {
                       <div className="space-y-3 pt-3 border-t border-slate-100">
                         <div className="flex justify-between items-center">
                           <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5"><FileText className="h-3.5 w-3.5 text-[#468DFF]" /> Correos de Facturación</span>
-                          <button
-                            type="button"
-                            onClick={() => setFacturacion([...facturacion, { nombre: '', cargo: '', valor: '' }])}
-                            className="text-[10px] text-[#468DFF] hover:text-[#0511F2] font-bold flex items-center gap-1"
-                          >
-                            <Plus className="h-3 w-3" /> Agregar correo
-                          </button>
+                          {canEdit && (
+                            <button
+                              type="button"
+                              onClick={() => setFacturacion([...facturacion, { nombre: '', cargo: '', valor: '' }])}
+                              className="text-[10px] text-[#468DFF] hover:text-[#0511F2] font-bold flex items-center gap-1"
+                            >
+                              <Plus className="h-3 w-3" /> Agregar correo
+                            </button>
+                          )}
                         </div>
                         {facturacion.map((fac, idx) => (
                           <div key={idx} className="grid grid-cols-1 md:grid-cols-3 gap-2 items-center bg-slate-50/50 p-3 rounded-2xl border border-slate-200 shadow-sm">
@@ -2006,43 +2158,57 @@ export default function EmpresasClientes({ params }) {
                               type="text"
                               placeholder="Nombre y Apellido"
                               value={fac.nombre}
+                              disabled={!canEdit}
                               onChange={(e) => {
                                 const copy = [...facturacion];
                                 copy[idx].nombre = e.target.value;
                                 setFacturacion(copy);
                               }}
-                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white transition-all text-slate-700"
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] focus:ring-2 focus:ring-[#468DFF]/20 bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400 disabled:opacity-50 disabled:bg-slate-100 disabled:pointer-events-none"
                             />
                             <input
                               type="text"
                               placeholder="Cargo / Puesto"
                               value={fac.cargo}
+                              disabled={!canEdit}
                               onChange={(e) => {
                                 const copy = [...facturacion];
                                 copy[idx].cargo = e.target.value;
                                 setFacturacion(copy);
                               }}
-                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white transition-all text-slate-700"
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] focus:ring-2 focus:ring-[#468DFF]/20 bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400 disabled:opacity-50 disabled:bg-slate-100 disabled:pointer-events-none"
                             />
                             <div className="flex gap-2 items-center">
                               <input
                                 type="email"
                                 placeholder="Correo de Facturación"
                                 value={fac.valor}
+                                disabled={!canEdit}
                                 onChange={(e) => {
                                   const copy = [...facturacion];
                                   copy[idx].valor = e.target.value;
                                   setFacturacion(copy);
                                 }}
-                                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white transition-all text-slate-700 flex-1"
+                                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] focus:ring-2 focus:ring-[#468DFF]/20 bg-slate-50/50 transition-all text-slate-700 flex-1 placeholder-slate-400 disabled:opacity-50 disabled:bg-slate-100 disabled:pointer-events-none"
                               />
-                              <button
-                                type="button"
-                                onClick={() => setFacturacion(facturacion.filter((_, i) => i !== idx))}
-                                className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                              >
-                                <Minus className="h-3 w-3" />
-                              </button>
+                              {fac.valor && (
+                                <a
+                                  href={`mailto:${fac.valor}`}
+                                  className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-200 text-[#468DFF] hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm shrink-0"
+                                  title="Enviar correo"
+                                >
+                                  <Mail className="h-3.5 w-3.5" />
+                                </a>
+                              )}
+                              {canEdit && (
+                                <button
+                                  type="button"
+                                  onClick={() => setFacturacion(facturacion.filter((_, i) => i !== idx))}
+                                  className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm shrink-0"
+                                >
+                                  <Minus className="h-3 w-3" />
+                                </button>
+                              )}
                             </div>
                           </div>
                         ))}
@@ -2055,7 +2221,7 @@ export default function EmpresasClientes({ params }) {
 
                 {/* TAB 3: ESTABLECIMIENTOS */}
                 {activeTab === 'establecimientos' && (
-                  <div className="space-y-6">
+                  <fieldset disabled={!canEdit} className="space-y-6 block w-full border-none p-0">
                     <div className="flex justify-between items-center bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
                       <div>
                         <h4 className="text-sm font-bold text-slate-900">Listado de Establecimientos</h4>
@@ -2782,12 +2948,12 @@ export default function EmpresasClientes({ params }) {
                       </div>
                     </div>
 
-                  </div>
+                  </fieldset>
                 )}
 
                 {/* TAB 4: PLATAFORMAS & CREDENCIALES */}
                 {activeTab === 'credenciales' && (
-                  <div className="space-y-6">
+                  <fieldset disabled={!canEdit} className="space-y-6 block w-full border-none p-0">
                     <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
                       <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2">Aseguradora de Riesgos del Trabajo (ART)</h4>
                       
@@ -2951,12 +3117,12 @@ export default function EmpresasClientes({ params }) {
                       </div>
                     </div>
 
-                  </div>
+                  </fieldset>
                 )}
 
                 {/* TAB 5: PORTAL DE CLIENTE */}
                 {activeTab === 'portal' && (
-                  <div className="space-y-6">
+                  <fieldset disabled={!canEdit} className="space-y-6 block w-full border-none p-0">
                     <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
                       <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                         <div className="flex items-center gap-3">
@@ -3102,7 +3268,7 @@ export default function EmpresasClientes({ params }) {
                         </div>
                       )}
                     </div>
-                  </div>
+                  </fieldset>
                 )}
 
                 {/* Standalone Tab 5 Observaciones removed (integrated inside each section) */}
@@ -3206,6 +3372,13 @@ export default function EmpresasClientes({ params }) {
       )}
 
       {/* Notificación Toast flotante en esquina removido - consumido globalmente */}
+      <AppFormNavigator
+        activeList={sortedEmpresas}
+        currentId={editingId}
+        onNavigate={(newEmp) => handleEdit(newEmp.id)}
+        hasUnsavedChanges={checkHasUnsavedChanges()}
+        isFormOpen={view === 'form'}
+      />
 
     </div>
   );

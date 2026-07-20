@@ -117,7 +117,7 @@ Todos los campos de formulario deberán ajustarse a los siguientes tokens:
 Las planillas y grillas de datos densos seguirán el siguiente esquema visual:
 *   **Cabeceras (`thead`)**: Fondo gris plano `bg-slate-50/80`, borde inferior `border-b border-slate-200`, texto `text-xs font-bold text-slate-400 uppercase tracking-wider`.
 *   **Celdas (`tbody td`)**: Altura de fila cómoda `py-4 px-6`, texto principal `text-xs text-slate-700`.
-*   **Fila Hover**: Hover suave reactivo `hover:bg-slate-50/50 transition-colors`.
+*   **Fila Hover**: Hover gris suave unificado reactivo `hover:bg-slate-100 transition-colors`.
 *   **Scroll Responsive**: Siempre encapsuladas en un contenedor `w-full overflow-x-auto border border-slate-200 rounded-2xl bg-white shadow-sm`.
 *   **Indicadores de Ordenación**: Si la columna es ordenable, mostrar el icono dinámico `ChevronUp` o `ChevronDown` de Lucide React al lado del texto.
 

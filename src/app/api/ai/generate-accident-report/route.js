@@ -4,6 +4,8 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { callGemini } from '../../../../lib/gemini';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req) {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

@@ -15,6 +15,7 @@ import AppTextarea from '@/components/ui/AppTextarea';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
+import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import { 
   PlusCircle, 
   AlertCircle,
@@ -168,6 +169,57 @@ export default function AvisosRiesgoPage({ params }) {
   // Firma a mano (Canvas)
   const canvasRef = useRef(null);
   const [hasSignedMano, setHasSignedMano] = useState(false);
+
+  const originalDataRef = useRef('');
+
+  // Sincronizar datos originales para control de cambios sin guardar
+  useEffect(() => {
+    if (view === 'form' && !saving) {
+      originalDataRef.current = JSON.stringify({
+        empresaId,
+        establecimientoId,
+        fecha,
+        avisoNumero,
+        profesionalTipo,
+        profesionalNombre,
+        profesionalId,
+        firmaTipo,
+        signaturePath,
+        observaciones
+      });
+    }
+  }, [
+    view,
+    saving,
+    editingId,
+    empresaId,
+    establecimientoId,
+    fecha,
+    avisoNumero,
+    profesionalTipo,
+    profesionalNombre,
+    profesionalId,
+    firmaTipo,
+    signaturePath,
+    observaciones
+  ]);
+
+  const checkHasUnsavedChanges = () => {
+    if (isReadOnlyView || view !== 'form') return false;
+    const currentData = JSON.stringify({
+      empresaId,
+      establecimientoId,
+      fecha,
+      avisoNumero,
+      profesionalTipo,
+      profesionalNombre,
+      profesionalId,
+      firmaTipo,
+      signaturePath,
+      observaciones
+    });
+    return originalDataRef.current !== currentData;
+  };
 
   // Modales y Toasts
   const globalToast = useToast();
@@ -2167,7 +2219,7 @@ export default function AvisosRiesgoPage({ params }) {
                               {loadedFindings.map((f, idx) => {
                                 const level = RISK_LEVELS[f.nivel_riesgo?.toLowerCase().replace('riesgo ', '')] || { label: f.nivel_riesgo, color: '#64748B', text: '#FFFFFF' };
                                 return (
-                                  <tr key={idx} className="hover:bg-slate-50/50">
+                                  <tr key={idx} className="hover:bg-slate-100">
                                     <td className="px-3 py-2 truncate max-w-[100px]">{f.area_sector}</td>
                                     <td className="px-3 py-2 truncate max-w-[100px]">{f.puesto_operacion}</td>
                                     <td className="px-3 py-2 truncate max-w-[150px]">{f.descripcion_hallazgo}</td>
@@ -2578,7 +2630,7 @@ export default function AvisosRiesgoPage({ params }) {
                             const emp = empresas.find(e => e.id === av.empresa_id);
                             const est = allEstablecimientos.find(e => e.id === av.establecimiento_id);
                             return (
-                              <tr key={av.id} onClick={() => { setIsReadOnlyView(true); handleEdit(av); }} className="hover:bg-slate-50/50 cursor-pointer">
+                              <tr key={av.id} onClick={() => { setIsReadOnlyView(true); handleEdit(av); }} className="hover:bg-slate-100 cursor-pointer">
                                 <td className="px-6 py-4 font-semibold text-slate-900">{av.aviso_numero}</td>
                                 <td className="px-6 py-4 font-semibold text-slate-900">{emp ? emp.razon_social : 'N/A'}</td>
                                 <td className="px-6 py-4 font-medium text-slate-600">{est ? est.denominacion : 'N/A'}</td>
@@ -2876,6 +2928,13 @@ export default function AvisosRiesgoPage({ params }) {
         )}
 
         {/* Toast Notificación removido - consumido globalmente */}
+        <AppFormNavigator
+          activeList={filteredAvisos}
+          currentId={editingId}
+          onNavigate={(newAviso) => handleEdit(newAviso)}
+          hasUnsavedChanges={checkHasUnsavedChanges()}
+          isFormOpen={view === 'form'}
+        />
 
       </main>
     </div>

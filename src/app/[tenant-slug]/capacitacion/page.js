@@ -19,6 +19,7 @@ import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
 import AITextHelper from '@/components/ui/AITextHelper';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import { 
   PlusCircle, 
   Search, 
@@ -161,6 +162,69 @@ export default function CapacitacionPage({ params }) {
   const globalToast = useToast();
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
   const [saveLoading, setSaveLoading] = useState(false);
+
+  const originalDataRef = useRef('');
+
+  // Sincronizar datos originales para control de cambios sin guardar
+  useEffect(() => {
+    if (isFormOpen && !saveLoading) {
+      originalDataRef.current = JSON.stringify({
+        empresaId,
+        establecimientoId,
+        puesto,
+        tema,
+        temaId,
+        temaCustom,
+        contenido,
+        capacitador,
+        capacitadorId,
+        capacitadorCustom,
+        progreso,
+        fechaInicioPlanificada,
+        fechaFinPlanificada,
+        observaciones
+      });
+    }
+  }, [
+    isFormOpen,
+    saveLoading,
+    editingId,
+    empresaId,
+    establecimientoId,
+    puesto,
+    tema,
+    temaId,
+    temaCustom,
+    contenido,
+    capacitador,
+    capacitadorId,
+    capacitadorCustom,
+    progreso,
+    fechaInicioPlanificada,
+    fechaFinPlanificada,
+    observaciones
+  ]);
+
+  const checkHasUnsavedChanges = () => {
+    if (isReadOnlyView || !isFormOpen) return false;
+    const currentData = JSON.stringify({
+      empresaId,
+      establecimientoId,
+      puesto,
+      tema,
+      temaId,
+      temaCustom,
+      contenido,
+      capacitador,
+      capacitadorId,
+      capacitadorCustom,
+      progreso,
+      fechaInicioPlanificada,
+      fechaFinPlanificada,
+      observaciones
+    });
+    return originalDataRef.current !== currentData;
+  };
 
   useEffect(() => {
     const collapsed = localStorage.getItem('sidebar-collapsed');
@@ -2142,7 +2206,7 @@ export default function CapacitacionPage({ params }) {
                               <tr 
                                 key={cap.id} 
                                 onClick={() => { setIsReadOnlyView(true); handleEditClick(cap); }}
-                                className="hover:bg-slate-50/50 cursor-pointer"
+                                className="hover:bg-slate-100 cursor-pointer transition-colors"
                               >
                                 <td className="px-6 py-4">
                                   <span className="font-semibold text-slate-900 block">{emp?.razon_social || 'Desconocido'}</span>
@@ -2374,6 +2438,13 @@ export default function CapacitacionPage({ params }) {
       )}
 
       {/* Notificación Toast flotante removido - consumido globalmente */}
+      <AppFormNavigator
+        activeList={sortedCapacitaciones}
+        currentId={editingId}
+        onNavigate={(newCap) => handleEditClick(newCap)}
+        hasUnsavedChanges={checkHasUnsavedChanges()}
+        isFormOpen={isFormOpen}
+      />
 
     </div>
   );

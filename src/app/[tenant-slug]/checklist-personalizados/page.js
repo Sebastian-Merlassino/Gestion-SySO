@@ -127,6 +127,60 @@ export default function ChecklistPersonalizadosPage({ params }) {
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
   const [saveLoading, setSaveLoading] = useState(false);
 
+  const originalDataRef = useRef('');
+
+  // Sincronizar datos originales para control de cambios sin guardar
+  useEffect(() => {
+    if (isInspeccionFormOpen && !saveLoading) {
+      originalDataRef.current = JSON.stringify({
+        selectedTemplateId,
+        inspeccionEmpresaId,
+        inspeccionEstablecimientoId,
+        inspeccionFecha,
+        inspeccionRespuestas,
+        responsableAclaracion,
+        inspeccionObservaciones,
+        firmaTipo,
+        profesionalTipo,
+        profesionalId,
+        profesionalNombre
+      });
+    }
+  }, [
+    isInspeccionFormOpen,
+    saveLoading,
+    editingInspeccionId,
+    selectedTemplateId,
+    inspeccionEmpresaId,
+    inspeccionEstablecimientoId,
+    inspeccionFecha,
+    inspeccionRespuestas,
+    responsableAclaracion,
+    inspeccionObservaciones,
+    firmaTipo,
+    profesionalTipo,
+    profesionalId,
+    profesionalNombre
+  ]);
+
+  const checkHasUnsavedChanges = () => {
+    if (isInspeccionReadOnly || !isInspeccionFormOpen) return false;
+    const currentData = JSON.stringify({
+      selectedTemplateId,
+      inspeccionEmpresaId,
+      inspeccionEstablecimientoId,
+      inspeccionFecha,
+      inspeccionRespuestas,
+      responsableAclaracion,
+      inspeccionObservaciones,
+      firmaTipo,
+      profesionalTipo,
+      profesionalId,
+      profesionalNombre
+    });
+    return originalDataRef.current !== currentData;
+  };
+
   // Correo
   const [isMailModalOpen, setIsMailModalOpen] = useState(false);
   const [mailTargetInspeccion, setMailTargetInspeccion] = useState(null);
@@ -1870,7 +1924,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
                           const tmpl = templates.find(t => t.id === insp.template_id);
                           const emp = empresas.find(e => e.id === insp.empresa_id);
                           return (
-                            <tr key={insp.id} className="hover:bg-slate-50/50 transition-colors cursor-pointer border-b border-slate-100">
+                            <tr key={insp.id} className="hover:bg-slate-100 transition-colors cursor-pointer border-b border-slate-100">
                               <td className="px-6 py-4 font-bold text-slate-800" onClick={() => handleOpenEditInspeccion(insp, true)}>
                                 {tmpl?.nombre || 'Plantilla Eliminada'}
                               </td>
@@ -1971,7 +2025,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
                         {templates
                           .filter(t => t.nombre.toLowerCase().includes(filterText.toLowerCase()))
                           .map((tmpl) => (
-                          <tr key={tmpl.id} className="hover:bg-slate-50/50 transition-colors cursor-pointer border-b border-slate-100">
+                          <tr key={tmpl.id} className="hover:bg-slate-100 transition-colors cursor-pointer border-b border-slate-100">
                             <td className="px-6 py-4 font-bold text-slate-800" onClick={() => canEditar && handleOpenEditTemplate(tmpl)}>
                               {tmpl.nombre}
                             </td>
@@ -2963,6 +3017,13 @@ export default function ChecklistPersonalizadosPage({ params }) {
           </div>
         </div>
       )}
+      <AppFormNavigator
+        activeList={inspecciones}
+        currentId={editingInspeccionId}
+        onNavigate={(newInsp) => handleOpenEditInspeccion(newInsp, isInspeccionReadOnly)}
+        hasUnsavedChanges={checkHasUnsavedChanges()}
+        isFormOpen={isInspeccionFormOpen}
+      />
     </div>
   );
 }

@@ -109,7 +109,7 @@ Las tablas deben estar envueltas en un contenedor con clase `bg-white border bor
   - Fila: `<tr className="bg-slate-50 border-b border-slate-150 text-xs font-bold text-slate-400 uppercase tracking-wider">`
   - Celdas: `<th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors">` (con flechas de ordenamiento opcionales).
 - **Cuerpo (`<tbody>`)**:
-  - Fila: `<tr className="hover:bg-slate-50/50 cursor-pointer divide-y divide-slate-100">`
+  - Fila: `<tr className="hover:bg-slate-100 cursor-pointer divide-y divide-slate-100 transition-colors">`
   - Celdas (`<td>`): `px-6 py-4 text-xs font-normal text-slate-700`
   - Texto Principal de Celda (Ej. Cliente, Descripción): `font-semibold text-slate-900`
   - Texto Secundario de Celda / Detalle: `text-slate-600 font-medium`
@@ -212,7 +212,7 @@ La tabla de visualización debe ocupar una porción de pantalla fija y predecibl
     - Progreso / Estado: `w-[8%]`
     - Acciones: `w-[5%]`
 - **Celdas de Cuerpo (`<tbody>`)**:
-  - Fila interactiva: `hover:bg-slate-50/50 cursor-pointer` con `divide-y divide-slate-100`
+  - Fila interactiva: `hover:bg-slate-100 cursor-pointer transition-colors` con `divide-y divide-slate-100`
   - Paddings y fuentes generales: `px-6 py-4 text-xs font-normal text-slate-700`
   - Textos principales (Cliente, Tema): `font-semibold text-slate-900`
   - Sub-etiquetas secundarias (Establecimiento, Contenido): `text-[10px] text-slate-400 block mt-0.5 font-normal`

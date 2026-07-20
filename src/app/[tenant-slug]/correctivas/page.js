@@ -1,7 +1,7 @@
 // src/app/[tenant-slug]/correctivas/page.js
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
@@ -19,6 +19,7 @@ import AppEmptyState from '@/components/ui/AppEmptyState';
 import AITextHelper from '@/components/ui/AITextHelper';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import { 
   PlusCircle, 
   AlertCircle,
@@ -276,6 +277,84 @@ export default function AccionesCorrectivasPage({ params }) {
   const globalToast = useToast();
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
   const [saveLoading, setSaveLoading] = useState(false);
+
+  const originalDataRef = useRef('');
+
+  // Sincronizar datos originales para control de cambios sin guardar
+  useEffect(() => {
+    if (isFormOpen && !saveLoading) {
+      originalDataRef.current = JSON.stringify({
+        empresaId,
+        establecimientoId,
+        fuente,
+        fuenteOtra,
+        fecha,
+        areaSector,
+        puestoOperacion,
+        tipoHallazgo,
+        tipoHallazgoOtro,
+        descripcionHallazgo,
+        nivelRiesgo,
+        recomendacion,
+        accionPreventiva,
+        causaRaiz,
+        accionCorrectiva,
+        responsable,
+        fechaPlanificada,
+        fechaImplementacion,
+        observaciones
+      });
+    }
+  }, [
+    isFormOpen,
+    saveLoading,
+    editingId,
+    empresaId,
+    establecimientoId,
+    fuente,
+    fuenteOtra,
+    fecha,
+    areaSector,
+    puestoOperacion,
+    tipoHallazgo,
+    tipoHallazgoOtro,
+    descripcionHallazgo,
+    nivelRiesgo,
+    recomendacion,
+    accionPreventiva,
+    causaRaiz,
+    accionCorrectiva,
+    responsable,
+    fechaPlanificada,
+    fechaImplementacion,
+    observaciones
+  ]);
+
+  const checkHasUnsavedChanges = () => {
+    if (isReadOnlyView || !isFormOpen) return false;
+    const currentData = JSON.stringify({
+      empresaId,
+      establecimientoId,
+      fuente,
+      fuenteOtra,
+      fecha,
+      areaSector,
+      puestoOperacion,
+      tipoHallazgo,
+      tipoHallazgoOtro,
+      descripcionHallazgo,
+      nivelRiesgo,
+      recomendacion,
+      accionPreventiva,
+      causaRaiz,
+      accionCorrectiva,
+      responsable,
+      fechaPlanificada,
+      fechaImplementacion,
+      observaciones
+    });
+    return originalDataRef.current !== currentData;
+  };
 
   // Cargar datos
   useEffect(() => {
@@ -2129,7 +2208,7 @@ export default function AccionesCorrectivasPage({ params }) {
                               <tr 
                                 key={acc.id} 
                                 onClick={() => { setIsReadOnlyView(true); handleEditClick(acc); }}
-                                className="hover:bg-slate-50/50 transition-colors cursor-pointer"
+                                className="hover:bg-slate-100 transition-colors cursor-pointer"
                               >
                                 <td className="px-6 py-4 font-semibold text-slate-900">
                                   <span className="block">{emp?.razon_social || 'Desconocido'}</span>
@@ -2331,6 +2410,13 @@ export default function AccionesCorrectivasPage({ params }) {
       )}
 
       {/* Notificación Toast flotante removido - consumido globalmente */}
+      <AppFormNavigator
+        activeList={filteredAcciones}
+        currentId={editingId}
+        onNavigate={(newAcc) => handleEditClick(newAcc)}
+        hasUnsavedChanges={checkHasUnsavedChanges()}
+        isFormOpen={isFormOpen}
+      />
 
     </div>
   );

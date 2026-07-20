@@ -1,5 +1,125 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-20] Posicionamiento Dinámico y Adaptabilidad del Navegador de Formularios (AppFormNavigator)
+
+### Resumen de Cambios
+- **Cálculo Dinámico de Ancho de Sidebar**: Se dotó a `AppFormNavigator.js` de un hook `useEffect` con `MutationObserver` y listener de redimensionado (`resize`). Esto detecta en tiempo real si el menú lateral (`Sidebar`) está visible, oculto, colapsado (`w-20`) o expandido (`w-64`) en el DOM de la computadora.
+- **Prevención de Superposición en Pantallas de Escritorio**: Se modificó el posicionamiento `fixed` del botón de desplazamiento hacia la izquierda (**Anterior**) para usar el estilo reactivo `style={{ left: `${sidebarWidth + 24}px` }}`. Esto previene que el botón se superponga sobre la barra lateral izquierda y asegura que flote elegantemente al lado del formulario.
+- **Justificación de Comportamiento en Dispositivos Móviles**: Se documentó y validó que en dispositivos móviles los botones laterales flotantes se mantengan ocultos para evitar interrumpir la visualización y scroll vertical de los formularios, siendo reemplazados por el soporte de navegación táctil **swipe** horizontal integrado en el componente.
+
+### Archivos Modificados
+- `[MODIFY] src/components/ui/AppFormNavigator.js`
+
+---
+
+## [2026-07-20] Unificación de Estilo Hover en Tablas del Estandar SySO Compact Layout
+
+### Resumen de Cambios
+- **Homologación de Estilo de Fila Interactiva**: Se actualizó globalmente la clase hover de las filas de tablas (`tr`) a **`hover:bg-slate-100 transition-colors`** en todos los 15 módulos del sistema (reemplazando el gris translúcido inconsistente `hover:bg-slate-50/50` y garantizando transiciones CSS fluidas).
+- **Actualización de Documentación de Diseño**: Se modificaron las especificaciones en `docs/design/UI_STYLE_STANDARD_PROPOSAL.md` y `docs/design/ui-specs/DESIGN_STANDARD.md` para asentar formalmente `hover:bg-slate-100 transition-colors` como el color unificado e intensidad del hover gris reactivo en "SySO Compact Layout".
+
+### Archivos Modificados
+- `[MODIFY] docs/design/UI_STYLE_STANDARD_PROPOSAL.md`
+- `[MODIFY] docs/design/ui-specs/DESIGN_STANDARD.md`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+
+---
+
+## [2026-07-20] Corrección de Inicialización Temporal (TDZ), Redefiniciones y Estabilización de Compilación en Navegador
+
+### Resumen de Cambios
+- **Resolución de Error de Redefinición en Checklist Personalizados**: Se corrigió el fallo de redefinición (`checkHasUnsavedChanges` and `originalDataRef` redefined) en `checklist-personalizados/page.js` provocado por una duplicación de bloques de hooks.
+- **Corrección de Referencia de Estado en Avisos de Riesgo**: Se ajustó la referencia incorrecta `saveLoading` a `saving` en los hooks de control de cambios de `avisos/page.js`.
+- **Integración de AppFormNavigator en Control Eléctrico y Checklist Personalizados**: Se colocó el componente `<AppFormNavigator />` con sus propiedades correctas de lista activa y callbacks al final del renderizado principal en `control-electrico/page.js` y `checklist-personalizados/page.js`.
+- **Verificación de Compilación Exitosa**: Se corrió el build de producción de Next.js (`npm run build`) validando que la aplicación compila exitosamente a nivel estático (`✓ Compiled successfully`, `✓ Generating static pages (21/21)`) sin errores sintácticos residuales.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+
+---
+
+## [2026-07-20] Navegación Horizontal Continua entre Registros e Integración de Cambios sin Guardar (Dirty Checks)
+
+### Resumen de Cambios
+- **Creación de Componente Unificado de Navegación (`AppFormNavigator`)**: Se diseñó e implementó un componente centralizado que añade navegación lateral horizontal mediante botones flotantes circulares estilizados con desenfoque de fondo (`backdrop-blur bg-white/70 hover:bg-[#468DFF] hover:text-white`) y flechas de navegación a los costados de la pantalla en escritorio.
+- **Interacción Multidispositivo (Swipe y Atajos)**: Se dotó al componente de soporte de atajos de teclado (`ArrowLeft` / `ArrowRight`) con detección inteligente para omitirse al estar escribiendo en inputs o textareas. Adicionalmente se implementó soporte de gestos táctiles `swipe` horizontales en móviles.
+- **Control de Cambios sin Guardar (Dirty Checking)**: Se implementó un flujo consistente basado en `originalDataRef` (`useRef`) y hooks `useEffect` reactivos en cada módulo. Al abrir la ficha en modo edición, se serializa el conjunto total de estados en un JSON string. Al intentar navegar horizontalmente, se compara con el estado actual; si difieren, se interrumpe y se muestra el diálogo de advertencia unificado `AppUnsavedChangesDialog`.
+- **Corrección de Inicialización Temporal (TDZ) en Acciones Correctivas y Programa de Gestión**: Se resolvieron los ReferenceError (`Cannot access 'saveLoading/showForm' before initialization`) reubicando las declaraciones de `originalDataRef` e implementaciones de control de cambios por debajo de los estados dependientes (`saveLoading` en Acciones Correctivas, y `showForm` / `saving` en Programa de Gestión).
+- **Integración y Dirty Check en Nómina**: Se implementó de manera correcta la lógica de `checkHasUnsavedChanges` y el hook de `originalDataRef` en el módulo de Nómina, eliminando posibles fallos dinámicos en runtime por la ausencia de estas funciones requeridas por `<AppFormNavigator />`.
+- **Integración Completa en 13 Módulos**: Se acopló el componente y la lógica de dirty check en: Clientes (Empresas), Visitas, Programa de Seguridad, Nómina, Matriz de Riesgos, Legajo Técnico, Extintores, Equipo, Acciones Correctivas, Control Eléctrico, Checklist Personalizados, Capacitación, Avisos de Riesgo e Investigación de Accidentes.
+- **Resolución de Conflictos de Estado en Nómina**: Se corrigieron redefiniciones de variables de estado (`editingId`, `empresaId`, `establecimientoId`, `fechaCarga`, `loadType`, `manualRows`, `searchQuery`, `filterEmpresa`, `filterEstablecimiento`, `filterAnio`, `showFilters`, `showExportMobile`, `sortField`, `sortOrder`) en `nomina/page.js` que impedían compilar la aplicación.
+
+### Archivos Modificados / Creados
+- `[NEW] src/components/ui/AppFormNavigator.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/nomina/page.js`
+- `[MODIFY] src/app/[tenant-slug]/matriz-riesgos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+
+### Validaciones Ejecutadas
+- Compilación del bundle Next.js de producción (`npm run build`) verificada de forma 100% exitosa sin fallos de compilación estática o sintáctica.
+
+---
+
+## [2026-07-20] Corrección de Layout, Ajuste Mobile First e Integración de Accesos Rápidos de Contacto
+
+### Resumen de Cambios
+- **Ajuste Mobile First y Flujo Vertical (Wrap)**: Se eliminó la clase `truncate` de las descripciones CIIU en el dropdown de sugerencias y en el listado de actividades de la empresa seleccionadas. Se implementó la clase `break-words flex-1` junto a `min-w-0 pr-2 flex-1` en los contenedores flex. Esto asegura que la descripción fluya y se expanda verticalmente hacia abajo en lugar de truncarse de forma lateral, previniendo desbordamientos horizontales en dispositivos móviles y respetando el estándar de diseño responsivo de la aplicación.
+- **Atajos de Acción en Contactos Activos en Modo Lectura**: Se incorporaron botones de atajo en los campos de "Contactos y Administración" dentro del editor de clientes:
+  - En Teléfonos de Contacto: Icono para realizar llamadas directas (protocolo `tel:`) y otro para enviar WhatsApp (`https://api.whatsapp.com/send`), mostrándose dinámicamente si el número no está vacío.
+  - En Correos Electrónicos y Correos de Facturación: Icono para abrir el gestor de correos (`mailto:`), visible dinámicamente si el campo contiene datos.
+- **Homologación de Componentes e Inputs al Estándar de Cargas**: Se reestructuraron las clases de los inputs y los pictogramas en el subformulario de contactos para asegurar simetría total con el resto de la aplicación:
+  - Se modificaron las clases de todos los inputs (Nombre, Cargo, Valor) en Teléfonos, Correos y Facturación para replicar exactamente a `<AppInput />`: fondo unificado `bg-slate-50/50`, placeholder `placeholder-slate-400`, focus ring reactivo `focus:ring-2 focus:ring-[#468DFF]/20` y opacidad reducida al inhabilitarse.
+  - Se unificó el tamaño de los iconos de contacto (`Phone`, `MessageCircle`, `Mail`) a un tamaño simétrico de **`h-3.5 w-3.5`** para secciones de carga, lo que evita que se perciban sobredimensionados respecto al botón `Minus` (`h-3 w-3`) y al input de texto.
+  - Se corrigió el botón de correo de facturación para que use el contorno y el hover (`border border-blue-200 text-[#468DFF] hover:text-[#0511F2]`) de forma 100% equivalente a la sección de correos electrónicos.
+- **Optimización de Contraste en Hover de Tablas**: Se actualizó globalmente la clase de enfoque de filas `hover:bg-slate-50/50` a **`hover:bg-slate-100`** en las tablas de datos de todas las secciones del sistema (15 páginas). Esto reemplaza el gris sumamente translúcido anterior por un tono gris perfectamente perceptible (#f1f5f9) para guiar correctamente la navegación táctil y del cursor del usuario sobre los renglones de datos.
+- **Refactorización de Bloqueo de Formulario (Modo Lectura)**: Se removió la inhabilitación del `<fieldset>` superior del formulario (que causaba que navegadores inhabilitaran todas las interacciones táctiles y clicks sobre elementos hijos, bloqueando los atajos de contacto). En su lugar, se aplicó la inhabilitación mediante `<fieldset disabled={!canEdit}>` de forma granular en Identidad de la Empresa, Establecimientos, Credenciales y Portal. Para el bloque de Contactos, se mantuvieron deshabilitados los inputs de datos individualmente (`disabled={!canEdit}`) y se ocultaron condicionalmente los botones "Agregar" y "Quitar" (`{canEdit && ...}`), logrando una UI limpia en modo lectura donde los botones de llamadas, WhatsApp y mail permanecen 100% cliqueables.
+- **Forzado de Rutas Dinámicas en APIs de IA**: Para asegurar la compilación del build de Next.js (`npm run build`) sin fallos de compilación estática (generados por el uso dinámico de cookies en headers), se añadió `export const dynamic = 'force-dynamic'` en todos los route handlers de inteligencia artificial.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/nomina/page.js`
+- `[MODIFY] src/app/[tenant-slug]/matriz-riesgos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+- `[MODIFY] src/app/api/ai/refine-text/route.js`
+- `[MODIFY] src/app/api/ai/transcribe-audio/route.js`
+- `[MODIFY] src/app/api/ai/generate-accident-report/route.js`
+
+### Validaciones Ejecutadas
+- Compilación del bundle Next.js de producción (`npm run build`) verificada de forma exitosa.
+
+---
+
 ## [2026-07-19] Rediseño Visual del Módulo de Protocolo de Iluminación (SySO Compact Layout)
 
 ### Resumen de Cambios

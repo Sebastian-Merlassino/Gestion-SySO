@@ -1994,7 +1994,7 @@ export default function TenantDashboard({ params }) {
                                   const est = establecimientos.find(e => e.id === act.establecimiento_id);
                                   const statusInfo = getItemStatusAndColor(act);
                                   return (
-                                    <tr key={act.id} className="hover:bg-slate-50/50 transition-colors">
+                                    <tr key={act.id} className="hover:bg-slate-100 transition-colors">
                                       <td className="px-4 py-3 font-extrabold text-slate-800 truncate max-w-[120px]" title={emp?.razon_social}>
                                         {emp?.razon_social || 'Cliente desconocido'}
                                       </td>
