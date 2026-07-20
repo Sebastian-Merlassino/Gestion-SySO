@@ -3075,17 +3075,18 @@ export default function MatrizRiesgosPage({ params }) {
                                             <button
                                               type="button"
                                               onClick={() => handleDuplicateBulkPuesto(sec.id, pst)}
-                                              className="text-[9px] text-slate-650 hover:text-slate-800 bg-white hover:bg-slate-50 font-bold px-2 py-0.5 rounded-md border border-slate-250 transition-all cursor-pointer flex items-center gap-0.5 shadow-sm"
+                                              className="p-1 text-slate-650 hover:bg-slate-100 rounded transition-colors border border-slate-200 flex items-center justify-center cursor-pointer"
                                               title="Duplicar puesto"
                                             >
-                                              <Copy className="h-2.5 w-2.5" /> Duplicar
+                                              <Copy className="h-3.5 w-3.5" />
                                             </button>
                                             <button
                                               type="button"
                                               onClick={() => handleRemoveBulkPuesto(sec.id, pst.id)}
-                                              className="text-[9px] text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 font-bold px-2 py-0.5 rounded-md border border-red-200 transition-all cursor-pointer flex items-center gap-0.5 shadow-sm"
+                                              className="p-1 text-red-500 hover:bg-red-50 rounded transition-colors border border-red-200 flex items-center justify-center cursor-pointer"
+                                              title="Eliminar puesto"
                                             >
-                                              <Trash2 className="h-2.5 w-2.5" /> Quitar
+                                              <Trash2 className="h-3.5 w-3.5" />
                                             </button>
                                           </div>
                                         </div>
