@@ -43,6 +43,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowLeft,
+  Download,
   Sliders,
   Flame,
   ClipboardCheck,
@@ -1013,6 +1014,58 @@ export default function CapacitacionPage({ params }) {
     } catch (err) {
       console.error('Error al subir foto de capacitación:', err);
       throw new Error('Error al guardar la foto en el servidor.');
+    }
+  };
+
+  const handleViewPdf = async (url) => {
+    if (!url || url === 'N/A') return;
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      window.open(url, '_blank');
+    } else {
+      if (isDevMode) {
+        triggerToast('Vista previa no disponible en modo desarrollo local.', 'info');
+      } else {
+        try {
+          const { data, error } = await supabase.storage
+            .from('documents')
+            .createSignedUrl(url, 3600);
+          if (error) throw error;
+          window.open(data.signedUrl, '_blank');
+        } catch (e) {
+          console.error(e);
+          triggerToast('Error al abrir el PDF.', 'error');
+        }
+      }
+    }
+  };
+
+  const handleDownloadPdf = async (url, filename) => {
+    if (!url || url === 'N/A') return;
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      window.open(url, '_blank');
+    } else {
+      if (isDevMode) {
+        triggerToast('Descarga no disponible en modo desarrollo local.', 'info');
+      } else {
+        try {
+          const { data, error } = await supabase.storage
+            .from('documents')
+            .download(url);
+          if (error) throw error;
+          
+          const blobUrl = URL.createObjectURL(data);
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.download = filename || 'documento.pdf';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(blobUrl);
+        } catch (e) {
+          console.error(e);
+          triggerToast('Error al descargar el archivo.', 'error');
+        }
+      }
     }
   };
 
@@ -2201,6 +2254,20 @@ export default function CapacitacionPage({ params }) {
                             const emp = empresas.find(e => e.id === cap.empresa_id);
                             const est = allEstablecimientos.find(t => t.id === cap.establecimiento_id);
                             const status = getProgressStatus(cap.progreso);
+                             
+                            const pdfAttachments = [];
+                            const imageAttachments = [];
+                            if (cap.fotos_urls && cap.fotos_urls.length > 0) {
+                              cap.fotos_urls.forEach((fpath, idx) => {
+                                const previewUrl = cap.fotos_preview_urls?.[idx] || '';
+                                const isPdf = fpath.toLowerCase().endsWith('.pdf') || fpath.includes('pdf') || fpath.includes('drive.google.com');
+                                if (isPdf) {
+                                  pdfAttachments.push({ path: fpath, url: previewUrl || fpath });
+                                } else {
+                                  imageAttachments.push({ path: fpath, url: previewUrl });
+                                }
+                              });
+                            }
 
                             return (
                               <tr 
@@ -2254,11 +2321,31 @@ export default function CapacitacionPage({ params }) {
                                 {(canEditar || canEliminar || profile?.role === 'cliente') && (
                                   <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                                     <div className="flex items-center justify-end gap-2">
-                                      {cap.fotos_urls && cap.fotos_urls.length > 0 && (
+                                      {pdfAttachments.length > 0 && (
+                                        <>
+                                          <button
+                                            onClick={() => handleViewPdf(pdfAttachments[0].url)}
+                                            className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                            title="Visualizar PDF"
+                                          >
+                                            <FileText className="h-4.5 w-4.5" />
+                                          </button>
+                                          {!pdfAttachments[0].path.startsWith('http') && (
+                                            <button
+                                              onClick={() => handleDownloadPdf(pdfAttachments[0].path, `${cap.tema}.pdf`)}
+                                              className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                              title="Descargar PDF"
+                                            >
+                                              <Download className="h-4.5 w-4.5" />
+                                            </button>
+                                          )}
+                                        </>
+                                      )}
+                                      {imageAttachments.length > 0 && (
                                         <button
                                           onClick={() => handleViewFotosClick(cap)}
-                                          title="Ver Registros de Capacitación (Fotos)"
-                                          className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-colors inline-flex items-center justify-center shadow-sm"
+                                          title={`Visualizar Evidencia (${imageAttachments.length} ${imageAttachments.length === 1 ? 'imagen' : 'imágenes'})`}
+                                          className="p-1.5 rounded-lg bg-[#EFF6FF] text-[#468DFF] hover:bg-[#DBEAFE] hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                                         >
                                           <ImageIcon className="h-4.5 w-4.5" />
                                         </button>
