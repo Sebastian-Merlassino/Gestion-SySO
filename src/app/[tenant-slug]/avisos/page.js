@@ -171,31 +171,25 @@ export default function AvisosRiesgoPage({ params }) {
   const [hasSignedMano, setHasSignedMano] = useState(false);
 
   const originalDataRef = useRef('');
-  const lastEditingIdRef = useRef(null);
-  const lastSavingRef = useRef(false);
 
-  if (view !== 'form') {
-    lastEditingIdRef.current = null;
-    lastSavingRef.current = false;
-    originalDataRef.current = '';
-  } else if (editingId !== lastEditingIdRef.current || (lastSavingRef.current && !saving)) {
-    lastEditingIdRef.current = editingId;
-    lastSavingRef.current = saving;
-    originalDataRef.current = JSON.stringify({
-      empresaId,
-      establecimientoId,
-      fecha,
-      avisoNumero,
-      profesionalTipo,
-      profesionalNombre,
-      profesionalId,
-      firmaTipo,
-      signaturePath,
-      observaciones
-    });
-  } else {
-    lastSavingRef.current = saving;
-  }
+  // Sincronizar datos originales para control de cambios sin guardar
+  useEffect(() => {
+    if (view === 'form' && !saving) {
+      originalDataRef.current = JSON.stringify({
+        empresaId,
+        establecimientoId,
+        fecha,
+        avisoNumero,
+        profesionalTipo,
+        profesionalNombre,
+        profesionalId,
+        firmaTipo,
+        signaturePath,
+        observaciones
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, saving, editingId]);
 
   const checkHasUnsavedChanges = () => {
     if (isReadOnlyView || view !== 'form') return false;

@@ -22,7 +22,11 @@ export default function AppUnsavedChangesDialog({
         
         {/* Modal content container */}
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <Dialog.Content className="relative w-full max-w-sm p-6 bg-white border border-slate-200 rounded-2xl shadow-2xl animate-scale-up focus:outline-none space-y-4 text-center">
+          <Dialog.Content 
+            onPointerDownOutside={(e) => e.preventDefault()}
+            onInteractOutside={(e) => e.preventDefault()}
+            className="relative w-full max-w-sm p-6 bg-white border border-slate-200 rounded-2xl shadow-2xl animate-scale-up focus:outline-none space-y-4 text-center"
+          >
             
             {/* Close button at top right */}
             <Dialog.Close asChild>

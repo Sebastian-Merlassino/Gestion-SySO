@@ -128,32 +128,26 @@ export default function ChecklistPersonalizadosPage({ params }) {
   const [saveLoading, setSaveLoading] = useState(false);
 
   const originalDataRef = useRef('');
-  const lastEditingIdRef = useRef(null);
-  const lastSavingRef = useRef(false);
 
-  if (!isInspeccionFormOpen) {
-    lastEditingIdRef.current = null;
-    lastSavingRef.current = false;
-    originalDataRef.current = '';
-  } else if (editingInspeccionId !== lastEditingIdRef.current || (lastSavingRef.current && !saveLoading)) {
-    lastEditingIdRef.current = editingInspeccionId;
-    lastSavingRef.current = saveLoading;
-    originalDataRef.current = JSON.stringify({
-      selectedTemplateId,
-      inspeccionEmpresaId,
-      inspeccionEstablecimientoId,
-      inspeccionFecha,
-      inspeccionRespuestas,
-      responsableAclaracion,
-      inspeccionObservaciones,
-      firmaTipo,
-      profesionalTipo,
-      profesionalId,
-      profesionalNombre
-    });
-  } else {
-    lastSavingRef.current = saveLoading;
-  }
+  // Sincronizar datos originales para control de cambios sin guardar
+  useEffect(() => {
+    if (isInspeccionFormOpen && !saveLoading) {
+      originalDataRef.current = JSON.stringify({
+        selectedTemplateId,
+        inspeccionEmpresaId,
+        inspeccionEstablecimientoId,
+        inspeccionFecha,
+        inspeccionRespuestas,
+        responsableAclaracion,
+        inspeccionObservaciones,
+        firmaTipo,
+        profesionalTipo,
+        profesionalId,
+        profesionalNombre
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isInspeccionFormOpen, saveLoading, editingInspeccionId]);
 
   const checkHasUnsavedChanges = () => {
     if (isInspeccionReadOnly || !isInspeccionFormOpen) return false;

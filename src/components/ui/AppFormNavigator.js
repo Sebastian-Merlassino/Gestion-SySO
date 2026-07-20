@@ -63,8 +63,11 @@ export default function AppFormNavigator({
   const nextItem = hasNext ? activeList[currentIndex + 1] : null;
 
   // 2. Manejo de navegación con verificación de cambios sin guardar
-  const handleNavigationAttempt = (targetItem) => {
+  const handleNavigationAttempt = (targetItem, e) => {
     if (!targetItem || !onNavigate) return;
+    if (e && typeof e.stopPropagation === 'function') {
+      e.stopPropagation();
+    }
 
     if (hasUnsavedChanges) {
       setPendingItem(targetItem);
@@ -167,7 +170,7 @@ export default function AppFormNavigator({
       {hasPrev && (
         <button
           type="button"
-          onClick={() => handleNavigationAttempt(prevItem)}
+          onClick={(e) => handleNavigationAttempt(prevItem, e)}
           style={{ left: `${sidebarWidth + 24}px` }}
           className="fixed top-1/2 -translate-y-1/2 z-40 hidden md:flex items-center justify-center w-12 h-12 rounded-full border border-slate-200/50 bg-white/70 text-slate-700 hover:bg-[#468DFF] hover:text-white backdrop-blur-md shadow-lg transition-all duration-300 active:scale-95 group cursor-pointer"
           title="Anterior registro (Flecha Izquierda)"
@@ -180,7 +183,7 @@ export default function AppFormNavigator({
       {hasPrev && (
         <button
           type="button"
-          onClick={() => handleNavigationAttempt(prevItem)}
+          onClick={(e) => handleNavigationAttempt(prevItem, e)}
           className="fixed left-2 top-1/2 -translate-y-1/2 z-40 flex md:hidden items-center justify-center p-2 text-[#468DFF] active:scale-90 transition-all cursor-pointer opacity-75 active:opacity-100"
           title="Anterior registro"
         >
@@ -192,7 +195,7 @@ export default function AppFormNavigator({
       {hasNext && (
         <button
           type="button"
-          onClick={() => handleNavigationAttempt(nextItem)}
+          onClick={(e) => handleNavigationAttempt(nextItem, e)}
           className="fixed right-4 md:right-8 top-1/2 -translate-y-1/2 z-40 hidden md:flex items-center justify-center w-12 h-12 rounded-full border border-slate-200/50 bg-white/70 text-slate-700 hover:bg-[#468DFF] hover:text-white backdrop-blur-md shadow-lg transition-all duration-300 active:scale-95 group cursor-pointer"
           title="Siguiente registro (Flecha Derecha)"
         >
@@ -204,7 +207,7 @@ export default function AppFormNavigator({
       {hasNext && (
         <button
           type="button"
-          onClick={() => handleNavigationAttempt(nextItem)}
+          onClick={(e) => handleNavigationAttempt(nextItem, e)}
           className="fixed right-2 top-1/2 -translate-y-1/2 z-40 flex md:hidden items-center justify-center p-2 text-[#468DFF] active:scale-90 transition-all cursor-pointer opacity-75 active:opacity-100"
           title="Siguiente registro"
         >

@@ -216,36 +216,30 @@ export default function EquipoPage({ params }) {
   const [initialValues, setInitialValues] = useState(null);
 
   const originalDataRef = useRef('');
-  const lastEditingIdRef = useRef(null);
-  const lastSavingRef = useRef(false);
 
-  if (view !== 'form') {
-    lastEditingIdRef.current = null;
-    lastSavingRef.current = false;
-    originalDataRef.current = '';
-  } else if (editingId !== lastEditingIdRef.current || (lastSavingRef.current && !loading)) {
-    lastEditingIdRef.current = editingId;
-    lastSavingRef.current = loading;
-    originalDataRef.current = JSON.stringify({
-      fullName,
-      email,
-      cuit,
-      phone,
-      birthDate,
-      provincia,
-      partido,
-      localidad,
-      tieneAcceso,
-      permisos,
-      matriculas: (matriculas || []).map(m => ({
-        institucion: m.institucion,
-        numero: m.numero,
-        vencimiento: m.vencimiento
-      }))
-    });
-  } else {
-    lastSavingRef.current = loading;
-  }
+  // Sincronizar datos originales para control de cambios sin guardar
+  useEffect(() => {
+    if (view === 'form' && !loading) {
+      originalDataRef.current = JSON.stringify({
+        fullName,
+        email,
+        cuit,
+        phone,
+        birthDate,
+        provincia,
+        partido,
+        localidad,
+        tieneAcceso,
+        permisos,
+        matriculas: (matriculas || []).map(m => ({
+          institucion: m.institucion,
+          numero: m.numero,
+          vencimiento: m.vencimiento
+        }))
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, loading, editingId]);
 
   const checkHasUnsavedChanges = () => {
     if (isReadOnlyView || view !== 'form') return false;

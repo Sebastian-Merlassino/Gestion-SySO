@@ -279,40 +279,34 @@ export default function AccionesCorrectivasPage({ params }) {
   const [saveLoading, setSaveLoading] = useState(false);
 
   const originalDataRef = useRef('');
-  const lastEditingIdRef = useRef(null);
-  const lastSavingRef = useRef(false);
 
-  if (!isFormOpen) {
-    lastEditingIdRef.current = null;
-    lastSavingRef.current = false;
-    originalDataRef.current = '';
-  } else if (editingId !== lastEditingIdRef.current || (lastSavingRef.current && !saveLoading)) {
-    lastEditingIdRef.current = editingId;
-    lastSavingRef.current = saveLoading;
-    originalDataRef.current = JSON.stringify({
-      empresaId,
-      establecimientoId,
-      fuente,
-      fuenteOtra,
-      fecha,
-      areaSector,
-      puestoOperacion,
-      tipoHallazgo,
-      tipoHallazgoOtro,
-      descripcionHallazgo,
-      nivelRiesgo,
-      recomendacion,
-      accionPreventiva,
-      causaRaiz,
-      accionCorrectiva,
-      responsable,
-      fechaPlanificada,
-      fechaImplementacion,
-      observaciones
-    });
-  } else {
-    lastSavingRef.current = saveLoading;
-  }
+  // Sincronizar datos originales para control de cambios sin guardar
+  useEffect(() => {
+    if (isFormOpen && !saveLoading) {
+      originalDataRef.current = JSON.stringify({
+        empresaId,
+        establecimientoId,
+        fuente,
+        fuenteOtra,
+        fecha,
+        areaSector,
+        puestoOperacion,
+        tipoHallazgo,
+        tipoHallazgoOtro,
+        descripcionHallazgo,
+        nivelRiesgo,
+        recomendacion,
+        accionPreventiva,
+        causaRaiz,
+        accionCorrectiva,
+        responsable,
+        fechaPlanificada,
+        fechaImplementacion,
+        observaciones
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFormOpen, saveLoading, editingId]);
 
   const checkHasUnsavedChanges = () => {
     if (isReadOnlyView || !isFormOpen) return false;

@@ -197,34 +197,28 @@ export default function ProgramaGestion({ params }) {
   const [loadingLegajoDocs, setLoadingLegajoDocs] = useState(false);
 
   const originalDataRef = useRef('');
-  const lastEditingIdRef = useRef(null);
-  const lastSavingRef = useRef(false);
 
-  if (!showForm) {
-    lastEditingIdRef.current = null;
-    lastSavingRef.current = false;
-    originalDataRef.current = '';
-  } else if (editingId !== lastEditingIdRef.current || (lastSavingRef.current && !saving)) {
-    lastEditingIdRef.current = editingId;
-    lastSavingRef.current = saving;
-    originalDataRef.current = JSON.stringify({
-      empresaId,
-      establecimientoId,
-      catalogoId,
-      descripcion,
-      marcoLegal,
-      responsableId,
-      responsableCustom,
-      progreso,
-      fechaPlanificada,
-      fechaRealizacion,
-      documentoUrl,
-      observaciones,
-      fotosFiles: fotosFiles.map(f => f.path || f.preview)
-    });
-  } else {
-    lastSavingRef.current = saving;
-  }
+  // Sincronizar datos originales para control de cambios sin guardar
+  useEffect(() => {
+    if (showForm && !saving) {
+      originalDataRef.current = JSON.stringify({
+        empresaId,
+        establecimientoId,
+        catalogoId,
+        descripcion,
+        marcoLegal,
+        responsableId,
+        responsableCustom,
+        progreso,
+        fechaPlanificada,
+        fechaRealizacion,
+        documentoUrl,
+        observaciones,
+        fotosFiles: fotosFiles.map(f => f.path || f.preview)
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showForm, saving, editingId]);
 
   const checkHasUnsavedChanges = () => {
     if (isReadOnlyView || !showForm) return false;
