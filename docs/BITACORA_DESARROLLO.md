@@ -1,17 +1,27 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-07-20] Posicionamiento Dinámico y Adaptabilidad del Navegador de Formularios (AppFormNavigator)
+## [2026-07-20] Restauración de Módulo y Estabilización de Protocolo de Iluminación
 
 ### Resumen de Cambios
-- **Cálculo Dinámico de Ancho de Sidebar**: Se dotó a `AppFormNavigator.js` de un hook `useEffect` con `MutationObserver` y listener de redimensionado (`resize`). Esto detecta en tiempo real si el menú lateral (`Sidebar`) está visible, oculto, colapsado (`w-20`) o expandido (`w-64`) en el DOM de la computadora.
+- **Restauración de Archivos del Módulo**: Se recuperaron y restauraron los 8 archivos eliminados accidentalmente de la sección **Protocolo de Iluminación** (`src/app/[tenant-slug]/protocolos/iluminacion/...` y su migración de base de datos) importándolos de vuelta desde el commit de control `6d1ce73`. Esto resuelve el error 404 al intentar cargar el módulo.
+- **Homogeneización del Estilo Hover en Tabla**: Se actualizó la fila de la tabla del listado principal de protocolos (`tr`) en `protocolos/iluminacion/page.js` para consumir la clase unificada **`hover:bg-slate-100 transition-colors`**, quedando perfectamente alineado al estándar de diseño del sistema.
+- **Detección Dinámica de Ancho de Sidebar**: Se dotó a `AppFormNavigator.js` de un hook `useEffect` con `MutationObserver` y listener de redimensionado (`resize`). Esto detecta en tiempo real si el menú lateral (`Sidebar`) está visible, oculto, colapsado (`w-20`) o expandido (`w-64`) en el DOM de la computadora.
 - **Prevención de Superposición en Pantallas de Escritorio**: Se modificó el posicionamiento `fixed` del botón de desplazamiento hacia la izquierda (**Anterior**) para usar el estilo reactivo `style={{ left: `${sidebarWidth + 24}px` }}`. Esto previene que el botón se superponga sobre la barra lateral izquierda y asegura que flote elegantemente al lado del formulario.
 - **Ajuste de z-index de Menú Lateral en Móviles**: Se incrementó el z-index del contenedor del Drawer móvil a **`z-50`** en `Sidebar.js`. Esto evita que las flechas flotantes de móviles (que tienen `z-40`) se dibujen y superpongan por encima del overlay del menú lateral cuando éste se encuentra abierto.
 - **Botones de Desplazamiento Minimalistas en Móviles**: Se agregaron botones de navegación específicos para móviles (`flex md:hidden`) consistentes únicamente en pictogramas de flechas de Lucide React sin contornos, bordes ni fondos sólidos (`text-[#468DFF] opacity-75 active:opacity-100`). Esto ayuda al usuario móvil a entender inmediatamente que existe navegación horizontal disponible sin obstruir el scroll vertical.
 - **Soporte Táctil Integrado**: Se mantiene el soporte táctil complementario de gestos **swipe** horizontal en móvil.
 
 ### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/page.js`
 - `[MODIFY] src/components/ui/AppFormNavigator.js`
 - `[MODIFY] src/components/Sidebar.js`
+- `[RESTORE] src/app/[tenant-slug]/protocolos/iluminacion/[id]/editar/page.js`
+- `[RESTORE] src/app/[tenant-slug]/protocolos/iluminacion/[id]/page.js`
+- `[RESTORE] src/app/[tenant-slug]/protocolos/iluminacion/[id]/pdf/page.js`
+- `[RESTORE] src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+- `[RESTORE] src/app/[tenant-slug]/protocolos/iluminacion/nuevo/page.js`
+- `[RESTORE] src/app/[tenant-slug]/protocolos/iluminacion/utils/pdfGenerator.js`
+- `[RESTORE] supabase/migrations/20260806000000_create_protocolo_iluminacion.sql`
 
 ---
 
