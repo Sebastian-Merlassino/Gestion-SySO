@@ -1112,8 +1112,8 @@ export default function ProtocoloForm({
             <h2 className="font-outfit text-base font-extrabold text-slate-800">Datos de la Medición</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex flex-col gap-1 md:col-span-2">
               <AppLabel>Marca, modelo y N° de serie del instrumento</AppLabel>
               <AppInput
                 disabled={!canEdit}
@@ -1123,7 +1123,7 @@ export default function ProtocoloForm({
               />
             </div>
 
-            <div className="flex flex-col gap-1 relative">
+            <div className="flex flex-col gap-1 relative md:col-span-1">
               <AppLabel>Fecha de Calibración del Instrumental</AppLabel>
               <div className="relative">
                 <AppInput
@@ -1132,7 +1132,29 @@ export default function ProtocoloForm({
                   value={fechaCalibracion}
                   onChange={(e) => setFechaCalibracion(formatAsDateInput(e.target.value))}
                 />
-                <Calendar className="absolute right-3.5 top-3 h-4 w-4 text-slate-400 pointer-events-none" />
+                {canEdit && (
+                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
+                    <Calendar className="h-4 w-4" />
+                    <input
+                      type="date"
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val) {
+                          const parts = val.split('-');
+                          if (parts.length === 3) {
+                            setFechaCalibracion(`${parts[2]}/${parts[1]}/${parts[0]}`);
+                          }
+                        } else {
+                          setFechaCalibracion('');
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+                {!canEdit && (
+                  <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                )}
               </div>
             </div>
 
@@ -1164,7 +1186,29 @@ export default function ProtocoloForm({
                     value={fechaMedicion}
                     onChange={(e) => setFechaMedicion(formatAsDateInput(e.target.value))}
                   />
-                  <Calendar className="absolute right-3.5 top-3 h-4 w-4 text-slate-400 pointer-events-none" />
+                  {canEdit && (
+                    <div className="absolute right-3.5 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
+                      <Calendar className="h-4 w-4" />
+                      <input
+                        type="date"
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val) {
+                            const parts = val.split('-');
+                            if (parts.length === 3) {
+                              setFechaMedicion(`${parts[2]}/${parts[1]}/${parts[0]}`);
+                            }
+                          } else {
+                            setFechaMedicion('');
+                          }
+                        }}
+                      />
+                    </div>
+                  )}
+                  {!canEdit && (
+                    <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                  )}
                 </div>
               </div>
               <div className="flex flex-col gap-1">
