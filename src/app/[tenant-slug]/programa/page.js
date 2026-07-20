@@ -57,7 +57,8 @@ import {
   ChevronUp,
   Eye,
   Folder,
-  Upload
+  Upload,
+  Image
 } from 'lucide-react';
 
 const getPathsFromImagenUrl = (imagenUrl) => {
@@ -2297,28 +2298,40 @@ export default function ProgramaGestion({ params }) {
                                   </td>
 
                                   <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
-                                    {act.documento_url ? (
-                                      <div className="flex items-center justify-center gap-1.5">
-                                        <button
-                                          onClick={(e) => { e.stopPropagation(); handleViewPdf(act.documento_url); }}
-                                          className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                          title="Visualizar PDF"
-                                        >
-                                          <FileText className="h-4.5 w-4.5" />
-                                        </button>
-                                        {!act.documento_url.startsWith('http') && (
+                                    <div className="flex items-center justify-center gap-1.5">
+                                      {act.documento_url ? (
+                                        <>
                                           <button
-                                            onClick={(e) => { e.stopPropagation(); handleDownloadPdf(act.documento_url, `${act.descripcion}.pdf`); }}
+                                            onClick={(e) => { e.stopPropagation(); handleViewPdf(act.documento_url); }}
                                             className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                            title="Descargar PDF"
+                                            title="Visualizar PDF"
                                           >
-                                            <Download className="h-4.5 w-4.5" />
+                                            <FileText className="h-4.5 w-4.5" />
                                           </button>
-                                        )}
-                                      </div>
-                                    ) : (
-                                      <span className="text-[10px] text-slate-400 font-semibold italic">Vacío</span>
-                                    )}
+                                          {!act.documento_url.startsWith('http') && (
+                                            <button
+                                              onClick={(e) => { e.stopPropagation(); handleDownloadPdf(act.documento_url, `${act.descripcion}.pdf`); }}
+                                              className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                              title="Descargar PDF"
+                                            >
+                                              <Download className="h-4.5 w-4.5" />
+                                            </button>
+                                          )}
+                                        </>
+                                      ) : null}
+                                      {act.fotos_paths && act.fotos_paths.length > 0 ? (
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); setIsReadOnlyView(true); handleEdit(act); }}
+                                          className="p-1.5 rounded-lg bg-[#EFF6FF] text-[#468DFF] hover:bg-[#DBEAFE] hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                          title={`Visualizar Evidencia (${act.fotos_paths.length} ${act.fotos_paths.length === 1 ? 'imagen' : 'imágenes'})`}
+                                        >
+                                          <Image className="h-4.5 w-4.5" />
+                                        </button>
+                                      ) : null}
+                                      {!act.documento_url && (!act.fotos_paths || act.fotos_paths.length === 0) && (
+                                        <span className="text-[10px] text-slate-400 font-semibold italic">Vacío</span>
+                                      )}
+                                    </div>
                                   </td>
 
 

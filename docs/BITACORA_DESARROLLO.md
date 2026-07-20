@@ -1,5 +1,24 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-20] Corrección de Acciones de Visualización y Pictograma de Evidencias en Tabla
+
+### Resumen de Cambios
+- **Robustez del Frontend**:
+  - Se previno el error de ejecución de JS en tiempo de ejecución al llamar a `.startsWith` sobre `documento_url` cuando éste sea nulo en los listados del Legajo Técnico y Programa Anual.
+  - Se condicionó la visualización de los botones de PDF ("Visualizar PDF" y "Descargar PDF") para mostrarse únicamente si existe un documento cargado (`documento_url`).
+- **Mejora de Visualización UX**:
+  - Incorporación del pictograma de Imagen (`Image` de Lucide) en las filas de la tabla de datos cuando se detecte la presencia de una o varias imágenes de evidencia en `fotos_paths`.
+  - Configuración del botón para que, al dar clic, abra el formulario en modo de solo lectura, permitiendo visualizar la galería fotográfica de manera fluida.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+
+### Validaciones Ejecutadas
+- Compilación del bundle Next.js de producción verificada con éxito.
+
+---
+
 ## [2026-07-20] Integración de Módulo de Evidencias Fotográficas en el Programa de Gestión Anual
 
 ### Resumen de Cambios

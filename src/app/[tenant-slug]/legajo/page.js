@@ -67,9 +67,9 @@ import {
   Users, 
   Bug, 
   FileCheck,
-  Mail,
   Archive,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Image
 } from 'lucide-react';
 
 // Estructura jerárquica de carpetas y subcarpetas
@@ -1856,20 +1856,33 @@ export default function LegajoPage({ params }) {
                                     </td>
                                     <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                                       <div className="flex items-center justify-end gap-2">
-                                        <button
-                                          onClick={() => handleViewPdf(doc.documento_url)}
-                                          className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                          title="Visualizar PDF"
-                                        >
-                                          <FileText className="h-4.5 w-4.5" />
-                                        </button>
-                                        {!doc.documento_url.startsWith('http') && (
+                                        {doc.documento_url && (
+                                          <>
+                                            <button
+                                              onClick={() => handleViewPdf(doc.documento_url)}
+                                              className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                              title="Visualizar PDF"
+                                            >
+                                              <FileText className="h-4.5 w-4.5" />
+                                            </button>
+                                            {!doc.documento_url.startsWith('http') && (
+                                              <button
+                                                onClick={() => handleDownloadPdf(doc.documento_url, `${doc.documento_nombre}.pdf`)}
+                                                className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                                title="Descargar PDF"
+                                              >
+                                                <Download className="h-4.5 w-4.5" />
+                                              </button>
+                                            )}
+                                          </>
+                                        )}
+                                        {doc.fotos_paths && doc.fotos_paths.length > 0 && (
                                           <button
-                                            onClick={() => handleDownloadPdf(doc.documento_url, `${doc.documento_nombre}.pdf`)}
-                                            className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                            title="Descargar PDF"
+                                            onClick={() => handleEditClick(doc, true)}
+                                            className="p-1.5 rounded-lg bg-[#EFF6FF] text-[#468DFF] hover:bg-[#DBEAFE] hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                            title={`Visualizar Evidencia (${doc.fotos_paths.length} ${doc.fotos_paths.length === 1 ? 'imagen' : 'imágenes'})`}
                                           >
-                                            <Download className="h-4.5 w-4.5" />
+                                            <Image className="h-4.5 w-4.5" />
                                           </button>
                                         )}
                                         {canEditar && (
