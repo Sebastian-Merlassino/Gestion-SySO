@@ -1345,20 +1345,20 @@ export default function ProtocoloForm({
 
         {/* CARD PUNTOS DE MUESTREO */}
         <AppCard className="p-5 md:p-6 space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-2">
-            <div className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-[#468DFF]" />
-              <h2 className="font-outfit text-base font-extrabold text-slate-800">Puntos de Muestreo ({puntos.length})</h2>
-            </div>
+          <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+            <h3 className="font-outfit text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+              <FileText className="h-4 w-4 text-[#468DFF]" />
+              Puntos de Muestreo ({puntos.length})
+            </h3>
             {canEdit && (
-              <AppButton
+              <button
                 type="button"
                 onClick={handleAddPunto}
-                className="text-xs py-1.5 px-3"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold transition-all cursor-pointer"
               >
-                <Plus className="h-4 w-4 mr-1" />
+                <Plus className="h-3.5 w-3.5" />
                 Agregar punto de muestreo
-              </AppButton>
+              </button>
             )}
           </div>
 
@@ -1373,57 +1373,69 @@ export default function ProtocoloForm({
               if (cal.resultado_punto === 'Parcial') badgeColor = 'bg-[#FF9900]/15 text-[#FF9900] border-[#FF9900]/30';
 
               return (
-                <div key={p.id} className="border border-slate-200 rounded-2xl overflow-hidden transition-all bg-slate-50/20">
+                <div key={p.id} className="border border-slate-200 rounded-xl bg-slate-50/40 p-4 space-y-4 transition-all">
                   
-                  {/* ACCORDION HEADER */}
-                  <div 
-                    onClick={() => handleToggleCollapsePunto(p.id)}
-                    className="p-3.5 bg-slate-100/60 hover:bg-slate-100/80 cursor-pointer flex items-center justify-between flex-wrap gap-2 border-b border-slate-200"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="font-extrabold text-sm text-slate-800 font-outfit">Punto de Muestreo #{p.punto_muestreo}</span>
-                      <span className="text-xs text-slate-500 font-medium">
-                        {p.sector_text ? `${p.sector_text}` : 'Sin sector'} {p.puesto_text ? ` - Puesto: ${p.puesto_text}` : ''}
+                  {/* Cabecera del Punto */}
+                  <div className="flex justify-between items-center border-b border-slate-200/80 pb-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold text-slate-700 bg-slate-200/80 px-2 py-0.5 rounded-lg border border-slate-300/40 uppercase">
+                        Punto #{p.punto_muestreo}
+                      </span>
+                      {p.sector_text && (
+                        <span className="text-xs font-bold text-slate-800 max-w-[200px] truncate">
+                          - {p.sector_text} {p.puesto_text ? `(${p.puesto_text})` : ''}
+                        </span>
+                      )}
+                      <span className={`ml-2 px-2.5 py-1 rounded-full text-[10px] font-extrabold border uppercase ${badgeColor}`}>
+                        {cal.resultado_punto}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold border uppercase ${badgeColor}`}>
-                        {cal.resultado_punto}
+                    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                      <span
+                        role="button"
+                        onClick={() => handleToggleCollapsePunto(p.id)}
+                        className="text-[9px] text-slate-600 hover:text-slate-800 bg-white hover:bg-slate-100 font-bold px-2 py-0.5 rounded-md border border-slate-200 transition-all cursor-pointer flex items-center gap-0.5 shadow-sm"
+                        title={p.isCollapsed ? "Expandir punto" : "Contraer punto"}
+                      >
+                        {p.isCollapsed ? (
+                          <>
+                            <ChevronDown className="h-2.5 w-2.5" />
+                            Ver más
+                          </>
+                        ) : (
+                          <>
+                            <ChevronUp className="h-2.5 w-2.5" />
+                            Ver menos
+                          </>
+                        )}
                       </span>
                       {canEdit && (
-                        <div className="flex items-center gap-1">
+                        <>
                           <button
                             type="button"
                             onClick={() => handleDuplicatePunto(p)}
+                            className="p-1 text-slate-650 hover:bg-slate-100 rounded transition-colors border border-slate-200 flex items-center justify-center cursor-pointer"
                             title="Duplicar punto"
-                            className="p-1 rounded-lg hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition-colors"
                           >
                             <Copy className="h-3.5 w-3.5" />
                           </button>
                           <button
                             type="button"
                             onClick={() => handleRemovePunto(p.id)}
+                            className="p-1 text-red-500 hover:bg-red-50 rounded transition-colors border border-red-200 flex items-center justify-center cursor-pointer"
                             title="Eliminar punto"
-                            className="p-1 rounded-lg hover:bg-red-100 text-red-500 hover:text-red-700 transition-colors"
                           >
-                            <Trash className="h-3.5 w-3.5" />
+                            <Trash2 className="h-3.5 w-3.5" />
                           </button>
-                        </div>
+                        </>
                       )}
-                      <button 
-                        type="button" 
-                        onClick={() => handleToggleCollapsePunto(p.id)}
-                        className="text-slate-400 hover:text-slate-700 transition-colors"
-                      >
-                        {p.isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-                      </button>
                     </div>
                   </div>
 
-                  {/* ACCORDION CONTENT */}
+                  {/* Contenido del Punto */}
                   {!p.isCollapsed && (
-                    <div className="p-4 bg-white grid grid-cols-1 md:grid-cols-2 gap-4 animate-scale-up">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1 animate-scale-up">
                       
                       {/* Left: Geometría e Info */}
                       <div className="space-y-4">
