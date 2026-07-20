@@ -254,38 +254,44 @@ export default function MatrizRiesgosPage({ params }) {
   const [saveLoading, setSaveLoading] = useState(false);
 
   const originalDataRef = useRef('');
+  const lastEditingIdRef = useRef(null);
+  const lastSavingRef = useRef(false);
 
-  // Sincronizar datos originales para control de cambios sin guardar
-  useEffect(() => {
-    if (isFormOpen && !isBulkMode && !saveLoading) {
-      originalDataRef.current = JSON.stringify({
-        empresaId,
-        establecimientoId,
-        singleSector,
-        singlePuesto,
-        singleTareas,
-        singleFrecuencia,
-        singleSituacion,
-        singleTipoPeligro,
-        singlePeligro,
-        singleRiesgo,
-        singleConsecuencia,
-        singleProbabilidad,
-        singleGravedad,
-        singleMedidasAdm,
-        singleMedidasIng,
-        singleMedidasEpp,
-        singleMedidasRecomendadas,
-        singleResponsable,
-        singleFechaPlanificada,
-        singleFechaRealizacion,
-        singlePostProbabilidad,
-        singlePostGravedad,
-        singleObservaciones
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isFormOpen, isBulkMode, saveLoading, editingId]);
+  if (!isFormOpen || isBulkMode) {
+    lastEditingIdRef.current = null;
+    lastSavingRef.current = false;
+    originalDataRef.current = '';
+  } else if (editingId !== lastEditingIdRef.current || (lastSavingRef.current && !saveLoading)) {
+    lastEditingIdRef.current = editingId;
+    lastSavingRef.current = saveLoading;
+    originalDataRef.current = JSON.stringify({
+      empresaId,
+      establecimientoId,
+      singleSector,
+      singlePuesto,
+      singleTareas,
+      singleFrecuencia,
+      singleSituacion,
+      singleTipoPeligro,
+      singlePeligro,
+      singleRiesgo,
+      singleConsecuencia,
+      singleProbabilidad,
+      singleGravedad,
+      singleMedidasAdm,
+      singleMedidasIng,
+      singleMedidasEpp,
+      singleMedidasRecomendadas,
+      singleResponsable,
+      singleFechaPlanificada,
+      singleFechaRealizacion,
+      singlePostProbabilidad,
+      singlePostGravedad,
+      singleObservaciones
+    });
+  } else {
+    lastSavingRef.current = saveLoading;
+  }
 
   const checkHasUnsavedChanges = () => {
     if (isReadOnlyView || !isFormOpen || isBulkMode) return false;

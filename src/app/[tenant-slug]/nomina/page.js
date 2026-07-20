@@ -114,19 +114,25 @@ export default function NominaPage({ params }) {
   const [previewRows, setPreviewRows] = useState([]);
 
   const originalDataRef = useRef('');
+  const lastEditingIdRef = useRef(null);
+  const lastSavingRef = useRef(false);
 
-  // Sincronizar datos originales para control de cambios sin guardar
-  useEffect(() => {
-    if (isFormOpen && !saving) {
-      originalDataRef.current = JSON.stringify({
-        empresaId,
-        establecimientoId,
-        fechaCarga,
-        manualRows
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isFormOpen, saving, editingId]);
+  if (!isFormOpen) {
+    lastEditingIdRef.current = null;
+    lastSavingRef.current = false;
+    originalDataRef.current = '';
+  } else if (editingId !== lastEditingIdRef.current || (lastSavingRef.current && !saving)) {
+    lastEditingIdRef.current = editingId;
+    lastSavingRef.current = saving;
+    originalDataRef.current = JSON.stringify({
+      empresaId,
+      establecimientoId,
+      fechaCarga,
+      manualRows
+    });
+  } else {
+    lastSavingRef.current = saving;
+  }
 
   const checkHasUnsavedChanges = () => {
     if (isReadOnlyView || !isFormOpen) return false;

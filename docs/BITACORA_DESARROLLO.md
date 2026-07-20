@@ -1,5 +1,32 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-20] Sincronización Síncrona de originalDataRef para Advertencia de Cambios sin Guardar
+
+### Resumen de Cambios
+- **Corrección de Arquitectura de Dirty Checking**:
+  - Se eliminó el hook `useEffect` asíncrono que sincronizaba `originalDataRef` en los 12 módulos de la aplicación, el cual introducía un desfase de renderizado (render lag). Esto hacía que al navegar a un nuevo registro, el check de cambios sin guardar evaluara los datos del registro anterior y arrojara falsos positivos (mostrando la advertencia al presionar el navegador lateral en formularios limpios) o falsos negativos (permitiendo navegar directamente en la primera interacción y perdiendo cambios).
+  - Se restauró la sincronización síncrona en tiempo de renderizado utilizando referencias auxiliares (`lastEditingIdRef` y `lastSavingRef`). Esto garantiza que los datos de comparación base siempre estén actualizados en el render actual y elimina por completo cualquier tipo de desfase o falso comportamiento.
+  - La sincronización y verificación síncrona se implementó exitosamente en los 12 módulos principales: Legajo Técnico, Capacitación, Programa Anual, Nómina, Matriz de Riesgos, Visitas de Inspección, Equipos de Protección (EPP), Gestión de Empresas, Acciones Correctivas, Control Eléctrico, Checklist Personalizados y Avisos de Riesgo.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/nomina/page.js`
+- `[MODIFY] src/app/[tenant-slug]/matriz-riesgos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+
+### Validaciones Ejecutadas
+- Compilación del bundle Next.js de producción verificada con éxito (`npm.cmd run build`).
+
+---
+
 ## [2026-07-20] Corrección de Acciones de Visualización y Pictograma de Evidencias en Tabla
 
 ### Resumen de Cambios
