@@ -305,30 +305,8 @@ export default function AccionesCorrectivasPage({ params }) {
         observaciones
       });
     }
-  }, [
-    isFormOpen,
-    saveLoading,
-    editingId,
-    empresaId,
-    establecimientoId,
-    fuente,
-    fuenteOtra,
-    fecha,
-    areaSector,
-    puestoOperacion,
-    tipoHallazgo,
-    tipoHallazgoOtro,
-    descripcionHallazgo,
-    nivelRiesgo,
-    recomendacion,
-    accionPreventiva,
-    causaRaiz,
-    accionCorrectiva,
-    responsable,
-    fechaPlanificada,
-    fechaImplementacion,
-    observaciones
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFormOpen, saveLoading, editingId]);
 
   const checkHasUnsavedChanges = () => {
     if (isReadOnlyView || !isFormOpen) return false;

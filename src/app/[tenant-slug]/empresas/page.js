@@ -190,7 +190,8 @@ export default function EmpresasClientes({ params }) {
         }))
       });
     }
-  }, [view, loading, editingId, razonSocial, nombreComercial, cuit, selectedCiiu, telefonos, correos, facturacion, artWeb, artUsuario, artClave, mibaUsuario, mibaClave, ambienteUsuario, ambienteClave, observaciones, clientEmail, clientName, establecimientos]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, loading, editingId]);
 
   const checkHasUnsavedChanges = () => {
     if (isReadOnlyView || view !== 'form') return false;

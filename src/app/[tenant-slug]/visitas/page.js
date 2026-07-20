@@ -296,38 +296,8 @@ export default function VisitasPage({ params }) {
         signaturePath
       });
     }
-  }, [
-    isFormOpen,
-    saveLoading,
-    editingId,
-    empresaId,
-    establecimientoId,
-    fecha,
-    profesionalTipo,
-    profesionalId,
-    profesionalNombre,
-    responsablePresente,
-    ocurrieronIncidentes,
-    analisisCorrespondiente,
-    causaRaiz,
-    accionCorrectiva,
-    relevamientoHigieneSeguridad,
-    relevamientoPracticasSeguras,
-    relevamientoEpp,
-    realizaronMediciones,
-    selectedMediciones,
-    verificoAccionesCorrectivas,
-    dictaronCapacitaciones,
-    selectedTemas,
-    realizaronSimulacros,
-    selectedSimulacros,
-    emiteAvisoRiesgo,
-    selectedDocumentacion,
-    observacionesRecomendaciones,
-    observaciones,
-    firmaTipo,
-    signaturePath
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFormOpen, saveLoading, editingId]);
 
   const checkHasUnsavedChanges = () => {
     if (isReadOnlyView || !isFormOpen) return false;

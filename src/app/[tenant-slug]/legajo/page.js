@@ -378,19 +378,8 @@ export default function LegajoPage({ params }) {
         fotosFiles: fotosFiles.map(f => f.path || f.preview)
       });
     }
-  }, [
-    isFormOpen,
-    saving,
-    editingId,
-    empresaId,
-    establecimientoId,
-    registroId,
-    documentoNombre,
-    documentoCustom,
-    fecha,
-    documentoUrl,
-    fotosFiles
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFormOpen, saving, editingId]);
 
   const checkHasUnsavedChanges = () => {
     if (isReadOnlyView || !isFormOpen) return false;

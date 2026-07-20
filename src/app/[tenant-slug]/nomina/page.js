@@ -125,15 +125,8 @@ export default function NominaPage({ params }) {
         manualRows
       });
     }
-  }, [
-    isFormOpen,
-    saving,
-    editingId,
-    empresaId,
-    establecimientoId,
-    fechaCarga,
-    manualRows
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFormOpen, saving, editingId]);
 
   const checkHasUnsavedChanges = () => {
     if (isReadOnlyView || !isFormOpen) return false;

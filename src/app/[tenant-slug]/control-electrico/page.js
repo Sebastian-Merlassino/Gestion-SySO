@@ -199,22 +199,8 @@ export default function ControlElectricoPage({ params }) {
         signaturePath
       });
     }
-  }, [
-    isFormOpen,
-    saveLoading,
-    editingId,
-    empresaId,
-    establecimientoId,
-    fecha,
-    formItems,
-    observaciones,
-    responsableAclaracion,
-    firmaTipo,
-    profesionalTipo,
-    profesionalId,
-    profesionalNombre,
-    signaturePath
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFormOpen, saveLoading, editingId]);
 
   const checkHasUnsavedChanges = () => {
     if (isReadOnlyView || !isFormOpen) return false;

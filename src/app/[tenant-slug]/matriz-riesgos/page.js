@@ -284,35 +284,8 @@ export default function MatrizRiesgosPage({ params }) {
         singleObservaciones
       });
     }
-  }, [
-    isFormOpen,
-    isBulkMode,
-    saveLoading,
-    editingId,
-    empresaId,
-    establecimientoId,
-    singleSector,
-    singlePuesto,
-    singleTareas,
-    singleFrecuencia,
-    singleSituacion,
-    singleTipoPeligro,
-    singlePeligro,
-    singleRiesgo,
-    singleConsecuencia,
-    singleProbabilidad,
-    singleGravedad,
-    singleMedidasAdm,
-    singleMedidasIng,
-    singleMedidasEpp,
-    singleMedidasRecomendadas,
-    singleResponsable,
-    singleFechaPlanificada,
-    singleFechaRealizacion,
-    singlePostProbabilidad,
-    singlePostGravedad,
-    singleObservaciones
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFormOpen, isBulkMode, saveLoading, editingId]);
 
   const checkHasUnsavedChanges = () => {
     if (isReadOnlyView || !isFormOpen || isBulkMode) return false;

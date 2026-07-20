@@ -146,22 +146,8 @@ export default function ChecklistPersonalizadosPage({ params }) {
         profesionalNombre
       });
     }
-  }, [
-    isInspeccionFormOpen,
-    saveLoading,
-    editingInspeccionId,
-    selectedTemplateId,
-    inspeccionEmpresaId,
-    inspeccionEstablecimientoId,
-    inspeccionFecha,
-    inspeccionRespuestas,
-    responsableAclaracion,
-    inspeccionObservaciones,
-    firmaTipo,
-    profesionalTipo,
-    profesionalId,
-    profesionalNombre
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isInspeccionFormOpen, saveLoading, editingInspeccionId]);
 
   const checkHasUnsavedChanges = () => {
     if (isInspeccionReadOnly || !isInspeccionFormOpen) return false;

@@ -12,11 +12,21 @@
   - Reestructuración de la vista de listas vacías en el Legajo Técnico para no renderizar los encabezados de tabla (`<thead>`) cuando no hay resultados (o se filtraron todos), alineándolo con el estándar de la aplicación al usar el componente `AppEmptyState` centrado y con su botón de acción correspondiente. Corregido el indicador de estado vacío para evaluar `activeFolderDocs` (documentos cargados en la carpeta/subcarpeta activa) en lugar del listado global `documents` de toda la aplicación, garantizando que los botones "Limpiar Filtros" y "Registrar el primero" aparezcan siempre de forma correcta.
   - Implementación en el **Programa de Capacitación Anual** para separar y visualizar/descargar los archivos adjuntos directamente desde las acciones de la tabla. Si hay un PDF o enlace a Drive, se muestran los botones "Visualizar PDF" y "Descargar PDF". Si se cargaron imágenes de registro de capacitación, se muestra el pictograma de Imagen para verlas directamente en el modal de previsualización.
   - Filtrado en los selectores de documentos vinculados al Legajo Técnico (en los módulos de Capacitación y Actividad Anual) para excluir registros que no tengan un archivo PDF (`documento_url`), garantizando que solo documentos válidos puedan seleccionarse como respaldos.
+  - Corrección en la lógica de detección de **Cambios sin guardar**: Se solucionó un problema por el cual el diálogo de confirmación no aparecía en el primer intento de navegación lateral (flechas de `AppFormNavigator`). El error se debía a que los `useEffect` que inicializaban `originalDataRef` en 12 módulos diferentes incluían los campos de formulario en su lista de dependencias, haciendo que la referencia se sincronizara continuamente ante cualquier escritura y neutralizara el dirty check. Se reestructuraron las dependencias para incluir únicamente el estado del formulario (`isFormOpen` / `showForm`), la carga de guardado (`saving` / `saveLoading`) y el ID del registro activo (`editingId`).
 
 ### Archivos Modificados
-- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
 - `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/nomina/page.js`
+- `[MODIFY] src/app/[tenant-slug]/matriz-riesgos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
 - `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
 
 ### Validaciones Ejecutadas
 - Compilación del bundle Next.js de producción verificada con éxito.

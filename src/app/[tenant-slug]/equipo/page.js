@@ -238,22 +238,8 @@ export default function EquipoPage({ params }) {
         }))
       });
     }
-  }, [
-    view,
-    loading,
-    editingId,
-    fullName,
-    email,
-    cuit,
-    phone,
-    birthDate,
-    provincia,
-    partido,
-    localidad,
-    tieneAcceso,
-    permisos,
-    matriculas
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, loading, editingId]);
 
   const checkHasUnsavedChanges = () => {
     if (isReadOnlyView || view !== 'form') return false;

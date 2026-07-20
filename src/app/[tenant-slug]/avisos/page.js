@@ -188,21 +188,8 @@ export default function AvisosRiesgoPage({ params }) {
         observaciones
       });
     }
-  }, [
-    view,
-    saving,
-    editingId,
-    empresaId,
-    establecimientoId,
-    fecha,
-    avisoNumero,
-    profesionalTipo,
-    profesionalNombre,
-    profesionalId,
-    firmaTipo,
-    signaturePath,
-    observaciones
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, saving, editingId]);
 
   const checkHasUnsavedChanges = () => {
     if (isReadOnlyView || view !== 'form') return false;

@@ -217,24 +217,8 @@ export default function ProgramaGestion({ params }) {
         fotosFiles: fotosFiles.map(f => f.path || f.preview)
       });
     }
-  }, [
-    showForm,
-    saving,
-    editingId,
-    empresaId,
-    establecimientoId,
-    catalogoId,
-    descripcion,
-    marcoLegal,
-    responsableId,
-    responsableCustom,
-    progreso,
-    fechaPlanificada,
-    fechaRealizacion,
-    documentoUrl,
-    observaciones,
-    fotosFiles
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showForm, saving, editingId]);
 
   const checkHasUnsavedChanges = () => {
     if (isReadOnlyView || !showForm) return false;
