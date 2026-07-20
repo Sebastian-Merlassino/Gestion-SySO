@@ -878,6 +878,7 @@ export default function ProgramaGestion({ params }) {
         ];
         // Filtrar por empresa y (opcionalmente) por establecimiento
         const filtered = mockDocs.filter(d => 
+          d.documento_url &&
           d.empresa_id === empId && 
           (!estId || d.establecimiento_id === estId || d.establecimiento_id === null)
         );
@@ -894,7 +895,8 @@ export default function ProgramaGestion({ params }) {
 
         // Filtrar en memoria para incluir los del establecimiento o los globales (null)
         const filtered = (data || []).filter(d => 
-          !estId || d.establecimiento_id === estId || d.establecimiento_id === null
+          d.documento_url &&
+          (!estId || d.establecimiento_id === estId || d.establecimiento_id === null)
         );
 
         setLegajoDocuments(filtered);

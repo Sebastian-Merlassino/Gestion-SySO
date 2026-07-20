@@ -792,6 +792,7 @@ export default function CapacitacionPage({ params }) {
           }
         ];
         const filtered = mockDocs.filter(d => 
+          d.documento_url &&
           d.empresa_id === empId && 
           (!estId || d.establecimiento_id === estId || d.establecimiento_id === null)
         );
@@ -805,7 +806,8 @@ export default function CapacitacionPage({ params }) {
         
         if (error) throw error;
         const filtered = (data || []).filter(d => 
-          !estId || d.establecimiento_id === estId || d.establecimiento_id === null
+          d.documento_url &&
+          (!estId || d.establecimiento_id === estId || d.establecimiento_id === null)
         );
         setLegajoDocuments(filtered);
       }
