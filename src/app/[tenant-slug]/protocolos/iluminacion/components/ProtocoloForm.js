@@ -822,13 +822,34 @@ export default function ProtocoloForm({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user && !isDevMode) throw new Error('No autorizado');
 
-      // 1. Si se actualizaron sectores en el perfil del establecimiento, guardarlos en BD
-      if (!isDevMode && sectorsToSave && sectorsToSave.length > 0) {
-        const { error: estUpdErr } = await supabase
-          .from('establecimientos')
-          .update({ sectores: sectorsToSave })
-          .eq('id', establecimientoId);
-        if (estUpdErr) throw estUpdErr;
+      // 1. Si se actualizaron sectores, localidad, cp o horarios en el perfil del establecimiento, guardarlos en BD
+      if (!isDevMode && establecimientoId) {
+        const selectedEst = allEstablecimientos.find(e => e.id === establecimientoId);
+        const updateData = {};
+        
+        if (sectorsToSave && sectorsToSave.length > 0) {
+          updateData.sectores = sectorsToSave;
+        }
+        
+        if (selectedEst) {
+          if (!selectedEst.localidad_barrio && localidadText) {
+            updateData.localidad_barrio = localidadText;
+          }
+          if (!selectedEst.cp && cpText) {
+            updateData.cp = cpText;
+          }
+          if (!selectedEst.horario_funcionamiento && horariosTurnosText) {
+            updateData.horario_funcionamiento = horariosTurnosText;
+          }
+        }
+        
+        if (Object.keys(updateData).length > 0) {
+          const { error: estUpdErr } = await supabase
+            .from('establecimientos')
+            .update(updateData)
+            .eq('id', establecimientoId);
+          if (estUpdErr) throw estUpdErr;
+        }
       }
 
       const tempId = editingId || crypto.randomUUID();
@@ -996,6 +1017,11 @@ export default function ProtocoloForm({
     }
   };
 
+  const selectedEst = allEstablecimientos.find(e => e.id === establecimientoId);
+  const estHasLocalidad = selectedEst && !!selectedEst.localidad_barrio;
+  const estHasCp = selectedEst && !!selectedEst.cp;
+  const estHasHorarios = selectedEst && !!selectedEst.horario_funcionamiento;
+
   if (loading) {
     return (
       <div className="flex-grow flex items-center justify-center p-8">
@@ -1088,18 +1114,33 @@ export default function ProtocoloForm({
               </div>
               <div className="flex flex-col gap-1">
                 <AppLabel>Localidad</AppLabel>
-                <AppInput disabled value={localidadText} />
+                <AppInput 
+                  disabled={isReadOnly || (!!establecimientoId && estHasLocalidad)} 
+                  value={localidadText} 
+                  onChange={(e) => setLocalidadText(e.target.value)}
+                  placeholder="Localidad del establecimiento"
+                />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 col-span-full">
               <div className="flex flex-col gap-1 md:col-span-1">
                 <AppLabel>C.P.</AppLabel>
-                <AppInput disabled value={cpText} />
+                <AppInput 
+                  disabled={isReadOnly || (!!establecimientoId && estHasCp)} 
+                  value={cpText} 
+                  onChange={(e) => setCpText(e.target.value)}
+                  placeholder="C.P."
+                />
               </div>
               <div className="flex flex-col gap-1 md:col-span-3">
                 <AppLabel>Horarios / Turnos Habituales de Trabajo</AppLabel>
-                <AppInput disabled value={horariosTurnosText} />
+                <AppInput 
+                  disabled={isReadOnly || (!!establecimientoId && estHasHorarios)} 
+                  value={horariosTurnosText} 
+                  onChange={(e) => setHorariosTurnosText(e.target.value)}
+                  placeholder="Horarios y turnos de trabajo"
+                />
               </div>
             </div>
           </div>
