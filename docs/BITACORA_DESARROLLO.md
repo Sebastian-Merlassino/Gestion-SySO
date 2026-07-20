@@ -5,11 +5,13 @@
 ### Resumen de Cambios
 - **Cálculo Dinámico de Ancho de Sidebar**: Se dotó a `AppFormNavigator.js` de un hook `useEffect` con `MutationObserver` y listener de redimensionado (`resize`). Esto detecta en tiempo real si el menú lateral (`Sidebar`) está visible, oculto, colapsado (`w-20`) o expandido (`w-64`) en el DOM de la computadora.
 - **Prevención de Superposición en Pantallas de Escritorio**: Se modificó el posicionamiento `fixed` del botón de desplazamiento hacia la izquierda (**Anterior**) para usar el estilo reactivo `style={{ left: `${sidebarWidth + 24}px` }}`. Esto previene que el botón se superponga sobre la barra lateral izquierda y asegura que flote elegantemente al lado del formulario.
+- **Ajuste de z-index de Menú Lateral en Móviles**: Se incrementó el z-index del contenedor del Drawer móvil a **`z-50`** en `Sidebar.js`. Esto evita que las flechas flotantes de móviles (que tienen `z-40`) se dibujen y superpongan por encima del overlay del menú lateral cuando éste se encuentra abierto.
 - **Botones de Desplazamiento Minimalistas en Móviles**: Se agregaron botones de navegación específicos para móviles (`flex md:hidden`) consistentes únicamente en pictogramas de flechas de Lucide React sin contornos, bordes ni fondos sólidos (`text-[#468DFF] opacity-75 active:opacity-100`). Esto ayuda al usuario móvil a entender inmediatamente que existe navegación horizontal disponible sin obstruir el scroll vertical.
 - **Soporte Táctil Integrado**: Se mantiene el soporte táctil complementario de gestos **swipe** horizontal en móvil.
 
 ### Archivos Modificados
 - `[MODIFY] src/components/ui/AppFormNavigator.js`
+- `[MODIFY] src/components/Sidebar.js`
 
 ---
 

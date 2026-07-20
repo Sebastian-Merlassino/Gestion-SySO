@@ -313,7 +313,7 @@ export default function Sidebar({
 
       {/* MOBILE HEADER & DRAWER */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-40 flex md:hidden">
+        <div className="fixed inset-0 z-50 flex md:hidden">
           <div
             onClick={() => setIsMobileMenuOpen(false)}
             className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300"
