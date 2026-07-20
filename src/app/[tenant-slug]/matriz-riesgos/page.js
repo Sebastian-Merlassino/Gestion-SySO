@@ -49,7 +49,8 @@ import {
   FileText,
   Upload,
   Download,
-  FolderOpen
+  FolderOpen,
+  Copy
 } from 'lucide-react';
 
 const FRECUENCIAS = [
@@ -868,6 +869,31 @@ export default function MatrizRiesgosPage({ params }) {
     setBulkSectores(bulkSectores.filter(s => s.id !== secId));
   };
 
+  const handleDuplicateBulkSector = (sec) => {
+    const newSecId = 'bulk-sec-' + Date.now() + Math.random().toString(36).substr(2, 5);
+    const duplicatedPuestos = sec.puestos.map(p => ({
+      ...p,
+      id: 'bulk-pst-' + Date.now() + Math.random().toString(36).substr(2, 5) + Math.random().toString(36).substr(2, 5)
+    }));
+    
+    const newSec = {
+      ...sec,
+      id: newSecId,
+      puestos: duplicatedPuestos,
+      isCollapsed: false
+    };
+    
+    const idx = bulkSectores.findIndex(s => s.id === sec.id);
+    if (idx !== -1) {
+      const copy = [...bulkSectores];
+      copy.splice(idx + 1, 0, newSec);
+      setBulkSectores(copy);
+    } else {
+      setBulkSectores([newSec, ...bulkSectores]);
+    }
+    triggerToast('Sector duplicado con éxito.', 'success');
+  };
+
   // Agregar puesto de trabajo dentro de un sector bulk
   const handleAddBulkPuesto = (secId) => {
     const updated = bulkSectores.map(sec => {
@@ -908,6 +934,34 @@ export default function MatrizRiesgosPage({ params }) {
       return sec;
     });
     setBulkSectores(updated);
+  };
+
+  const handleDuplicateBulkPuesto = (secId, pst) => {
+    const newPstId = 'bulk-pst-' + Date.now() + Math.random().toString(36).substr(2, 5);
+    const newPst = {
+      ...pst,
+      id: newPstId,
+      isCollapsed: false
+    };
+    
+    const updated = bulkSectores.map(sec => {
+      if (sec.id === secId) {
+        const idx = sec.puestos.findIndex(p => p.id === pst.id);
+        const copy = [...sec.puestos];
+        if (idx !== -1) {
+          copy.splice(idx + 1, 0, newPst);
+        } else {
+          copy.unshift(newPst);
+        }
+        return {
+          ...sec,
+          puestos: copy
+        };
+      }
+      return sec;
+    });
+    setBulkSectores(updated);
+    triggerToast('Puesto duplicado con éxito.', 'success');
   };
 
   const handleRemoveBulkPuesto = (secId, pstId) => {
@@ -2887,6 +2941,14 @@ export default function MatrizRiesgosPage({ params }) {
                                 </span>
                                 <button
                                   type="button"
+                                  onClick={() => handleDuplicateBulkSector(sec)}
+                                  className="p-1 text-slate-650 hover:bg-slate-100 rounded transition-colors border border-slate-200 flex items-center justify-center cursor-pointer"
+                                  title="Duplicar Sector"
+                                >
+                                  <Copy className="h-3.5 w-3.5" />
+                                </button>
+                                <button
+                                  type="button"
                                   onClick={() => handleRemoveBulkSector(sec.id)}
                                   className="p-1 text-red-500 hover:bg-red-50 rounded transition-colors border border-red-200 flex items-center justify-center cursor-pointer"
                                   title="Eliminar Sector"
@@ -3010,6 +3072,14 @@ export default function MatrizRiesgosPage({ params }) {
                                                 </>
                                               )}
                                             </span>
+                                            <button
+                                              type="button"
+                                              onClick={() => handleDuplicateBulkPuesto(sec.id, pst)}
+                                              className="text-[9px] text-slate-650 hover:text-slate-800 bg-white hover:bg-slate-50 font-bold px-2 py-0.5 rounded-md border border-slate-250 transition-all cursor-pointer flex items-center gap-0.5 shadow-sm"
+                                              title="Duplicar puesto"
+                                            >
+                                              <Copy className="h-2.5 w-2.5" /> Duplicar
+                                            </button>
                                             <button
                                               type="button"
                                               onClick={() => handleRemoveBulkPuesto(sec.id, pst.id)}
