@@ -197,37 +197,9 @@ export default function ProgramaGestion({ params }) {
   const [loadingLegajoDocs, setLoadingLegajoDocs] = useState(false);
 
   const originalDataRef = useRef('');
-  const lastEditingIdRef = useRef(null);
-  const lastSavingRef = useRef(false);
-
-  if (!showForm) {
-    lastEditingIdRef.current = null;
-    lastSavingRef.current = false;
-    originalDataRef.current = '';
-  } else if (editingId !== lastEditingIdRef.current || (lastSavingRef.current && !saving)) {
-    lastEditingIdRef.current = editingId;
-    lastSavingRef.current = saving;
-    originalDataRef.current = JSON.stringify({
-      empresaId,
-      establecimientoId,
-      catalogoId,
-      descripcion,
-      marcoLegal,
-      responsableId,
-      responsableCustom,
-      progreso,
-      fechaPlanificada,
-      fechaRealizacion,
-      documentoUrl,
-      observaciones,
-      fotosFiles: fotosFiles.map(f => f.path || f.preview)
-    });
-  } else {
-    lastSavingRef.current = saving;
-  }
 
   const checkHasUnsavedChanges = () => {
-    if (isReadOnlyView || !showForm) return false;
+    if (isReadOnlyView || !showForm || !originalDataRef.current) return false;
     const currentData = JSON.stringify({
       empresaId,
       establecimientoId,
@@ -1078,13 +1050,20 @@ export default function ProgramaGestion({ params }) {
     setEstablecimientoId(item.establecimiento_id || '');
     // Si el catalogo_id ya no está en el catálogo (o no existía), tratar como entrada manual
     const inCatalog = catalogo.some(c => c.id === item.catalogo_id);
-    setCatalogoId(inCatalog ? (item.catalogo_id || '') : '__custom__');
+    const finalCatalogId = inCatalog ? (item.catalogo_id || '') : '__custom__';
+    setCatalogoId(finalCatalogId);
     setDescripcion(item.descripcion || '');
     setMarcoLegal(item.marco_legal || '');
+    let finalRespId = '';
+    let finalRespCustom = '';
     if (item.responsable_id) {
+      finalRespId = item.responsable_id;
+      finalRespCustom = '';
       setResponsableId(item.responsable_id);
       setResponsableCustom('');
     } else if (item.responsable) {
+      finalRespId = '__custom__';
+      finalRespCustom = item.responsable;
       setResponsableId('__custom__');
       setResponsableCustom(item.responsable);
     } else {
@@ -1097,7 +1076,7 @@ export default function ProgramaGestion({ params }) {
     setDocumentoUrl(item.documento_url || '');
     setSelectedFileName(item.documento_url ? 'Archivo de respaldo existente' : '');
     setDocumentoFile(null);
-    
+
     // Cargar fotos guardadas
     const loadedFotos = (item.fotos_paths || []).map((ppath, idx) => ({
       file: null,
@@ -1108,6 +1087,23 @@ export default function ProgramaGestion({ params }) {
 
     setObservaciones(item.observaciones || '');
     setFormErrors({});
+
+    originalDataRef.current = JSON.stringify({
+      empresaId: item.empresa_id || '',
+      establecimientoId: item.establecimiento_id || '',
+      catalogoId: finalCatalogId,
+      descripcion: item.descripcion || '',
+      marcoLegal: item.marco_legal || '',
+      responsableId: finalRespId,
+      responsableCustom: finalRespCustom,
+      progreso: item.progreso || 0,
+      fechaPlanificada: formatDate(item.fecha_planificada) || '',
+      fechaRealizacion: formatDate(item.fecha_realizacion) || '',
+      documentoUrl: item.documento_url || '',
+      observaciones: item.observaciones || '',
+      fotosFiles: loadedFotos.map(f => f.path || f.preview)
+    });
+
     setShowForm(true);
   };
 
@@ -1123,13 +1119,31 @@ export default function ProgramaGestion({ params }) {
     setResponsableId('');
     setResponsableCustom('');
     setProgreso(0);
-    setFechaPlanificada(formatDate(preselectedDate || new Date().toISOString().split('T')[0]));
+    const finalDate = formatDate(preselectedDate || new Date().toISOString().split('T')[0]);
+    setFechaPlanificada(finalDate);
     setFechaRealizacion('');
     setDocumentoUrl('');
     setDocumentoFile(null);
     setFotosFiles([]);
     setObservaciones('');
     setFormErrors({});
+
+    originalDataRef.current = JSON.stringify({
+      empresaId: '',
+      establecimientoId: '',
+      catalogoId: '',
+      descripcion: '',
+      marcoLegal: '',
+      responsableId: '',
+      responsableCustom: '',
+      progreso: 0,
+      fechaPlanificada: finalDate,
+      fechaRealizacion: '',
+      documentoUrl: '',
+      observaciones: '',
+      fotosFiles: []
+    });
+
     setShowForm(true);
   };
 
@@ -1333,6 +1347,7 @@ export default function ProgramaGestion({ params }) {
     setLegajoDocuments([]);
     setSelectedLegajoDocUrl('');
     setLoadingLegajoDocs(false);
+    originalDataRef.current = '';
   };
 
   const handleExitForm = () => {
@@ -2411,7 +2426,7 @@ export default function ProgramaGestion({ params }) {
           activeList={sortedActividades}
           currentId={editingId}
           onNavigate={(newAct) => handleEdit(newAct)}
-          hasUnsavedChanges={checkHasUnsavedChanges()}
+          hasUnsavedChanges={!isReadOnlyView}
           isFormOpen={showForm}
         />
 

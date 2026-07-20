@@ -642,6 +642,27 @@ export default function EmpresasClientes({ params }) {
     setClientPassword('');
     setClientName('');
 
+    originalDataRef.current = JSON.stringify({
+      razonSocial: '',
+      nombreComercial: '',
+      cuit: '',
+      selectedCiiu: [],
+      telefonos: [{ nombre: '', cargo: '', valor: '' }],
+      correos: [{ nombre: '', cargo: '', valor: '' }],
+      facturacion: [{ nombre: '', cargo: '', valor: '' }],
+      artWeb: '',
+      artUsuario: '',
+      artClave: '',
+      mibaUsuario: '',
+      mibaClave: '',
+      ambienteUsuario: '',
+      ambienteClave: '',
+      observaciones: '',
+      clientEmail: '',
+      clientName: '',
+      establecimientos: []
+    });
+
     setActiveTab('general');
     setView('form');
   };
@@ -739,6 +760,82 @@ export default function EmpresasClientes({ params }) {
       setClientEmail('cliente@acme.com');
       setClientName('Juan Pérez Acme');
       setClientPassword('');
+
+      originalDataRef.current = JSON.stringify({
+        razonSocial: 'Acme Argentina S.A.',
+        nombreComercial: 'Acme Solutions',
+        cuit: '30712345678',
+        selectedCiiu: [
+          { codigo: '11111', descripcion: 'Cultivo de arroz' },
+          { codigo: '492290', descripcion: 'Servicio de transporte automotor de cargas n.c.p.' }
+        ],
+        telefonos: [{ nombre: 'Juan Pérez', cargo: 'Gerente', valor: '1123456789' }],
+        correos: [{ nombre: 'Soporte Acme', cargo: 'Soporte', valor: 'info@acme.com' }],
+        facturacion: [{ nombre: 'Admin Acme', cargo: 'Administración', valor: 'factura@acme.com' }],
+        artWeb: 'https://art.example.com',
+        artUsuario: 'acme_art',
+        artClave: 'clave_art',
+        mibaUsuario: 'acme_miba',
+        mibaClave: 'clave_miba',
+        ambienteUsuario: 'acme_ambiente',
+        ambienteClave: 'clave_ambiente',
+        observaciones: 'Establecimiento crítico de alta exigencia.',
+        clientEmail: 'cliente@acme.com',
+        clientName: 'Juan Pérez Acme',
+        establecimientos: [
+          {
+            denominacion: 'Planta Industrial Pilar',
+            direccion: 'Calle Falsa 123',
+            provincia: 'BUENOS AIRES',
+            partido: 'PILAR',
+            localidad_barrio: 'PILAR',
+            cp: '1629',
+            superficie_total: '5000',
+            superficie_cubierta: '3500',
+            superficie_piso: '3500',
+            cantidad_plantas: '2',
+            horario_funcionamiento: '08:00 a 17:00',
+            trabajadores_administrativos: 10,
+            trabajadores_productivos: 40,
+            trabajadores_equivalentes: 45,
+            capitulos_decreto: { cap_5: true, cap_6: true, cap_11: true, cap_12: true, cap_14: true, cap_18: true, cap_19: true, cap_20: true, cap_21: true },
+            horas_profesional: 8,
+            maquinas_fijas: ['Guillotinas', 'Tornos'],
+            maquinas_moviles: ['Palas cargadoras'],
+            herramientas_electricas: ['Amoladoras', 'Taladros manuales'],
+            aparatos_presion: ['Compresores / aire comprimido'],
+            equipos_termicos: ['Termotanques'],
+            equipos_elevacion: ['Montacargas'],
+            equipos_izaje: ['Autoelevadores'],
+            sectores: [
+              {
+                id: 'sec-1',
+                denominacion: 'Producción',
+                descripcion: 'Área principal de fabricación y ensamble de piezas.',
+                largo: '15.5',
+                ancho: '10.0',
+                altura: '3.2',
+                puestos: [
+                  { id: 'pst-1', denominacion: 'Operario de Torno', descripcion: 'Mecanizado de piezas según plano.' },
+                  { id: 'pst-2', denominacion: 'Supervisor de Turno', descripcion: 'Control de calidad y flujo de producción.' }
+                ]
+              },
+              {
+                id: 'sec-2',
+                denominacion: 'Mantenimiento',
+                descripcion: 'Taller de reparación mecánica and eléctrica.',
+                largo: '8.0',
+                ancho: '6.0',
+                altura: '2.8',
+                puestos: [
+                  { id: 'pst-3', denominacion: 'Soldador', descripcion: 'Soldadura de estructuras y reparaciones.' }
+                ]
+              }
+            ],
+            observaciones: 'El establecimiento requiere inspección semestral de los sistemas de izaje.'
+          }
+        ]
+      });
 
       setView('form');
       setLoading(false);
@@ -872,6 +969,56 @@ export default function EmpresasClientes({ params }) {
         }
       }
       setClientPassword('');
+
+      const finalClientEmail = (clientProf && !clientProfErr) ? (clientProf.email || '') : ((emp.contactos_correos && emp.contactos_correos.length > 0) ? emp.contactos_correos[0].valor : '');
+      const finalClientName = (clientProf && !clientProfErr) ? (clientProf.full_name || emp.razon_social) : emp.razon_social;
+
+      originalDataRef.current = JSON.stringify({
+        razonSocial: emp.razon_social || '',
+        nombreComercial: emp.nombre_comercial || '',
+        cuit: emp.cuit || '',
+        selectedCiiu: mappedCiius,
+        telefonos: emp.contactos_telefonos || [],
+        correos: emp.contactos_correos || [],
+        facturacion: emp.contactos_facturacion || [],
+        artWeb: emp.art_web || '',
+        artUsuario: emp.art_usuario || '',
+        artClave: emp.art_clave || '',
+        mibaUsuario: emp.miba_usuario || '',
+        mibaClave: emp.miba_clave || '',
+        ambienteUsuario: emp.ambiente_usuario || '',
+        ambienteClave: emp.ambiente_clave || '',
+        observaciones: emp.observaciones || '',
+        clientEmail: finalClientEmail,
+        clientName: finalClientName,
+        establecimientos: mappedEsts.map(est => ({
+          denominacion: est.denominacion,
+          direccion: est.direccion,
+          provincia: est.provincia,
+          partido: est.partido,
+          localidad_barrio: est.localidad_barrio,
+          cp: est.cp,
+          superficie_total: est.superficie_total,
+          superficie_cubierta: est.superficie_cubierta,
+          superficie_piso: est.superficie_piso,
+          cantidad_plantas: est.cantidad_plantas,
+          horario_funcionamiento: est.horario_funcionamiento,
+          trabajadores_administrativos: est.trabajadores_administrativos,
+          trabajadores_productivos: est.trabajadores_productivos,
+          trabajadores_equivalentes: est.trabajadores_equivalentes,
+          capitulos_decreto: est.capitulos_decreto,
+          horas_profesional: est.horas_profesional,
+          maquinas_fijas: est.maquinas_fijas,
+          maquinas_moviles: est.maquinas_moviles,
+          herramientas_electricas: est.herramientas_electricas,
+          aparatos_presion: est.aparatos_presion,
+          equipos_termicos: est.equipos_termicos,
+          equipos_elevacion: est.equipos_elevacion,
+          equipos_izaje: est.equipos_izaje,
+          sectores: est.sectores,
+          observaciones: est.observaciones
+        }))
+      });
 
       setView('form');
       setLoading(false);
@@ -3383,7 +3530,7 @@ export default function EmpresasClientes({ params }) {
         activeList={sortedEmpresas}
         currentId={editingId}
         onNavigate={(newEmp) => handleEdit(newEmp.id)}
-        hasUnsavedChanges={checkHasUnsavedChanges()}
+        hasUnsavedChanges={!isReadOnlyView}
         isFormOpen={view === 'form'}
       />
 

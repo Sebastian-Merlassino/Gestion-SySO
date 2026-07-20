@@ -216,39 +216,15 @@ export default function EquipoPage({ params }) {
   const [initialValues, setInitialValues] = useState(null);
 
   const originalDataRef = useRef('');
-  const lastEditingIdRef = useRef(null);
-  const lastSavingRef = useRef(false);
 
-  if (view !== 'form') {
-    lastEditingIdRef.current = null;
-    lastSavingRef.current = false;
-    originalDataRef.current = '';
-  } else if (editingId !== lastEditingIdRef.current || (lastSavingRef.current && !loading)) {
-    lastEditingIdRef.current = editingId;
-    lastSavingRef.current = loading;
-    originalDataRef.current = JSON.stringify({
-      fullName,
-      email,
-      cuit,
-      phone,
-      birthDate,
-      provincia,
-      partido,
-      localidad,
-      tieneAcceso,
-      permisos,
-      matriculas: (matriculas || []).map(m => ({
-        institucion: m.institucion,
-        numero: m.numero,
-        vencimiento: m.vencimiento
-      }))
-    });
-  } else {
-    lastSavingRef.current = loading;
-  }
+  useEffect(() => {
+    if (view !== 'form') {
+      originalDataRef.current = '';
+    }
+  }, [view]);
 
   const checkHasUnsavedChanges = () => {
-    if (isReadOnlyView || view !== 'form') return false;
+    if (isReadOnlyView || view !== 'form' || !originalDataRef.current) return false;
     const currentData = JSON.stringify({
       fullName,
       email,
@@ -736,6 +712,34 @@ export default function EquipoPage({ params }) {
       },
       matriculas: [{ institucion: '', numero: '', vencimiento: '', fotoFrentePreview: '', fotoDorsoPreview: '', fotoFrentePath: '', fotoDorsoPath: '' }]
     });
+
+    originalDataRef.current = JSON.stringify({
+      fullName: '',
+      email: '',
+      cuit: '',
+      phone: '',
+      birthDate: '',
+      provincia: '',
+      partido: '',
+      localidad: '',
+      tieneAcceso: false,
+      permisos: {
+        empresas: { cargar: true, editar: true, eliminar: true },
+        equipo: { cargar: true, editar: true, eliminar: true },
+        programa: { cargar: true, editar: true, eliminar: true },
+        capacitacion: { cargar: true, editar: true, eliminar: true },
+        correctivas: { cargar: true, editar: true, eliminar: true },
+        extintores: { cargar: true, editar: true, eliminar: true },
+        control_electrico: { cargar: true, editar: true, eliminar: true },
+        visitas: { cargar: true, editar: true, eliminar: true },
+        avisos: { cargar: true, editar: true, eliminar: true },
+        legajo: { cargar: true, editar: true, eliminar: true },
+        nomina: { cargar: true, editar: true, eliminar: true },
+        checklist_personalizados: { cargar: true, editar: true, eliminar: true }
+      },
+      matriculas: [{ institucion: '', numero: '', vencimiento: '' }]
+    });
+
     setView('form');
   };
 
@@ -772,6 +776,25 @@ export default function EquipoPage({ params }) {
           fotoDorsoPreview: 'https://placeholder-storage.com/documents/dorso.png'
         }
       ]);
+      originalDataRef.current = JSON.stringify({
+        fullName: match.full_name || '',
+        email: match.email || '',
+        cuit: match.cuit || '',
+        phone: match.phone || '',
+        birthDate: '1985-05-15',
+        provincia: match.provincia || '',
+        partido: match.partido || '',
+        localidad: match.localidad || '',
+        tieneAcceso: match.tiene_acceso || false,
+        permisos: normalizePermisos(match.permisos),
+        matriculas: [
+          {
+            institucion: 'COPIME',
+            numero: 'L123456',
+            vencimiento: '2028-12-31'
+          }
+        ]
+      });
       setView('form');
       setLoading(false);
       return;
@@ -875,6 +898,24 @@ export default function EquipoPage({ params }) {
           vencimiento: m.vencimiento,
           fotoFrentePreview: m.fotoFrentePreview,
           fotoDorsoPreview: m.fotoDorsoPreview
+        }))
+      });
+
+      originalDataRef.current = JSON.stringify({
+        fullName: member.full_name || '',
+        email: member.email || '',
+        cuit: member.cuit || '',
+        phone: member.phone || '',
+        birthDate: member.birth_date || '',
+        provincia: member.provincia || '',
+        partido: member.partido || '',
+        localidad: member.localidad || '',
+        tieneAcceso: member.tiene_acceso || false,
+        permisos: normalizePermisos(member.permisos),
+        matriculas: loadedMatriculas.map(m => ({
+          institucion: m.institucion,
+          numero: m.numero,
+          vencimiento: m.vencimiento
         }))
       });
 
@@ -2060,7 +2101,7 @@ export default function EquipoPage({ params }) {
         activeList={filteredMiembros}
         currentId={editingId}
         onNavigate={(newMember) => handleEdit(newMember.id)}
-        hasUnsavedChanges={checkHasUnsavedChanges()}
+        hasUnsavedChanges={!isReadOnlyView}
         isFormOpen={view === 'form'}
       />
 

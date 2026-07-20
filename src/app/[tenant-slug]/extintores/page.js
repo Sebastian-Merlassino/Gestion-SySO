@@ -16,6 +16,7 @@ import AppSelect from '@/components/ui/AppSelect';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
+import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import autoTable from 'jspdf-autotable';
 import { 
   PlusCircle, 
@@ -2010,6 +2011,13 @@ export default function ExtintoresPage({ params }) {
       )}
 
       {/* Toast notifications removidos - consumidos globalmente */}
+      <AppFormNavigator
+        activeList={sortedExtintores}
+        currentId={editingId}
+        onNavigate={(newExt) => handleEditClick(newExt)}
+        hasUnsavedChanges={!isReadOnlyView}
+        isFormOpen={isFormOpen}
+      />
 
     </div>
   );

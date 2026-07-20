@@ -17,55 +17,55 @@ import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
-import { 
-  Folder, 
-  FolderOpen, 
+import {
+  Folder,
+  FolderOpen,
   HelpCircle,
-  FileText, 
-  Search, 
-  PlusCircle, 
-  X, 
-  Check, 
+  FileText,
+  Search,
+  PlusCircle,
+  X,
+  Check,
   AlertTriangle,
-  Loader2, 
-  Trash2, 
-  Edit, 
-  Briefcase, 
-  Settings, 
-  LogOut, 
-  Menu, 
-  ChevronRight, 
-  ArrowLeft, 
-  Sliders, 
-  Calendar, 
-  Building, 
-  Upload, 
-  ExternalLink, 
-  Eye, 
-  Download, 
-  ChevronDown, 
-  ChevronUp, 
-  Trash, 
-  Plus, 
+  Loader2,
+  Trash2,
+  Edit,
+  Briefcase,
+  Settings,
+  LogOut,
+  Menu,
+  ChevronRight,
+  ArrowLeft,
+  Sliders,
+  Calendar,
+  Building,
+  Upload,
+  ExternalLink,
+  Eye,
+  Download,
+  ChevronDown,
+  ChevronUp,
+  Trash,
+  Plus,
   ChevronLeft,
-  Shield, 
-  Activity, 
-  GraduationCap, 
-  ShieldAlert, 
-  Flame, 
-  BookOpen, 
-  ClipboardList, 
-  Accessibility, 
-  HeartHandshake, 
-  Scale, 
-  FolderLock, 
-  FileSpreadsheet, 
-  Wrench, 
-  Gauge, 
-  Zap, 
-  Contact, 
-  Users, 
-  Bug, 
+  Shield,
+  Activity,
+  GraduationCap,
+  ShieldAlert,
+  Flame,
+  BookOpen,
+  ClipboardList,
+  Accessibility,
+  HeartHandshake,
+  Scale,
+  FolderLock,
+  FileSpreadsheet,
+  Wrench,
+  Gauge,
+  Zap,
+  Contact,
+  Users,
+  Bug,
   FileCheck,
   Archive,
   SlidersHorizontal,
@@ -337,7 +337,7 @@ export default function LegajoPage({ params }) {
   // Navegación del Explorador
   const [currentFolder, setCurrentFolder] = useState(null); // Objeto de LEGAJO_FOLDERS
   const [currentSubfolder, setCurrentSubfolder] = useState(null); // Objeto subfolder
-  
+
   // Datos principales
   const [documents, setDocuments] = useState([]);
   const [registrosList, setRegistrosList] = useState([]);
@@ -355,7 +355,7 @@ export default function LegajoPage({ params }) {
   const [documentoNombre, setDocumentoNombre] = useState('');
   const [documentoCustom, setDocumentoCustom] = useState('');
   const [fecha, setFecha] = useState('');
-  
+
   // Subida de archivos
   const [documentoFile, setDocumentoFile] = useState(null);
   const [documentoUrl, setDocumentoUrl] = useState('');
@@ -363,32 +363,9 @@ export default function LegajoPage({ params }) {
   const [fotosFiles, setFotosFiles] = useState([]); // array de { file: File | null, preview: string, path: string }
 
   const originalDataRef = useRef('');
-  const lastEditingIdRef = useRef(null);
-  const lastSavingRef = useRef(false);
-
-  if (!isFormOpen) {
-    lastEditingIdRef.current = null;
-    lastSavingRef.current = false;
-    originalDataRef.current = '';
-  } else if (editingId !== lastEditingIdRef.current || (lastSavingRef.current && !saving)) {
-    lastEditingIdRef.current = editingId;
-    lastSavingRef.current = saving;
-    originalDataRef.current = JSON.stringify({
-      empresaId,
-      establecimientoId,
-      registroId,
-      documentoNombre,
-      documentoCustom,
-      fecha,
-      documentoUrl,
-      fotosFiles: fotosFiles.map(f => f.path || f.preview)
-    });
-  } else {
-    lastSavingRef.current = saving;
-  }
 
   const checkHasUnsavedChanges = () => {
-    if (isReadOnlyView || !isFormOpen) return false;
+    if (isReadOnlyView || !isFormOpen || !originalDataRef.current) return false;
     const currentData = JSON.stringify({
       empresaId,
       establecimientoId,
@@ -718,7 +695,7 @@ export default function LegajoPage({ params }) {
   // Inicializar nuevo registro
   const handleAddNew = () => {
     if (!currentFolder) return;
-    
+
     setIsReadOnlyView(false);
     setEditingId(null);
     setEmpresaId(profile?.role === 'cliente' ? profile.empresa_id : '');
@@ -734,7 +711,7 @@ export default function LegajoPage({ params }) {
     const subName = currentSubfolder?.name || null;
     const catName = currentFolder.name;
     const matchedFolder = LEGAJO_FOLDERS.find(f => f.name === catName);
-    
+
     let defaultDocName = '';
     if (subName) {
       const matchedSub = matchedFolder?.subfolders?.find(s => s.name === subName);
@@ -748,10 +725,18 @@ export default function LegajoPage({ params }) {
     }
 
     const regMatch = registrosList.find(r => r.nombre.toLowerCase() === defaultDocName.toLowerCase());
+    let finalRegId = '';
+    let finalDocName = '';
+    let finalDocCustom = '';
     if (regMatch) {
+      finalRegId = regMatch.id;
+      finalDocName = regMatch.nombre;
       setRegistroId(regMatch.id);
       setDocumentoNombre(regMatch.nombre);
     } else if (defaultDocName) {
+      finalRegId = '__custom__';
+      finalDocName = '__custom__';
+      finalDocCustom = defaultDocName;
       setRegistroId('__custom__');
       setDocumentoNombre('__custom__');
       setDocumentoCustom(defaultDocName);
@@ -759,6 +744,18 @@ export default function LegajoPage({ params }) {
       setRegistroId('');
       setDocumentoNombre('');
     }
+
+    const initialFecha = formatDate(new Date().toISOString().split('T')[0]);
+    originalDataRef.current = JSON.stringify({
+      empresaId: profile?.role === 'cliente' ? profile.empresa_id : '',
+      establecimientoId: '',
+      registroId: finalRegId,
+      documentoNombre: finalDocName,
+      documentoCustom: finalDocCustom,
+      fecha: initialFecha,
+      documentoUrl: '',
+      fotosFiles: []
+    });
 
     setIsFormOpen(true);
   };
@@ -794,6 +791,7 @@ export default function LegajoPage({ params }) {
     setDocumentoUrl('');
     setSelectedFileName('');
     setFotosFiles([]);
+    originalDataRef.current = '';
   };
 
   const handleEditClick = async (doc, forceReadOnly = false) => {
@@ -802,13 +800,21 @@ export default function LegajoPage({ params }) {
     setEmpresaId(doc.empresa_id);
     setEstablecimientoId(doc.establecimiento_id || '');
     setFecha(formatDate(doc.fecha) || '');
-    
+
     const regMatch = registrosList.find(r => r.nombre === doc.documento_nombre);
+    let finalRegId = '';
+    let finalDocName = '';
+    let finalDocCustom = '';
     if (regMatch) {
+      finalRegId = regMatch.id;
+      finalDocName = regMatch.nombre;
       setRegistroId(regMatch.id);
       setDocumentoNombre(regMatch.nombre);
       setDocumentoCustom('');
     } else {
+      finalRegId = '__custom__';
+      finalDocName = '__custom__';
+      finalDocCustom = doc.documento_nombre;
       setRegistroId('__custom__');
       setDocumentoNombre('__custom__');
       setDocumentoCustom(doc.documento_nombre);
@@ -817,7 +823,7 @@ export default function LegajoPage({ params }) {
     setDocumentoUrl(doc.documento_url);
     setDocumentoFile(null);
     setSelectedFileName(doc.documento_url ? (doc.documento_url.startsWith('http') ? 'Enlace de Google Drive' : 'Archivo PDF existente') : '');
-    
+
     // Cargar fotos guardadas
     const loadedFotos = (doc.fotos_paths || []).map((ppath, idx) => ({
       file: null,
@@ -825,6 +831,17 @@ export default function LegajoPage({ params }) {
       path: ppath
     })).filter(f => f.preview !== '');
     setFotosFiles(loadedFotos);
+
+    originalDataRef.current = JSON.stringify({
+      empresaId: doc.empresa_id,
+      establecimientoId: doc.establecimiento_id || '',
+      registroId: finalRegId,
+      documentoNombre: finalDocName,
+      documentoCustom: finalDocCustom,
+      fecha: formatDate(doc.fecha) || '',
+      documentoUrl: doc.documento_url || '',
+      fotosFiles: loadedFotos.map(f => f.path || f.preview)
+    });
 
     setIsFormOpen(true);
   };
@@ -873,7 +890,7 @@ export default function LegajoPage({ params }) {
       triggerToast('La fecha es obligatoria.', 'error');
       return;
     }
-    
+
     let finalDocName = '';
     if (registroId === '__custom__') {
       finalDocName = documentoCustom.trim();
@@ -956,8 +973,8 @@ export default function LegajoPage({ params }) {
 
       if (editingId) {
         if (isDevMode) {
-          setDocuments(prev => prev.map(d => d.id === editingId ? { 
-            ...d, 
+          setDocuments(prev => prev.map(d => d.id === editingId ? {
+            ...d,
             ...dataPayload,
             fotos_paths: finalImagenPaths,
             fotos_urls: mockResolvedUrls
@@ -1034,7 +1051,7 @@ export default function LegajoPage({ params }) {
             .from('documents')
             .download(url);
           if (error) throw error;
-          
+
           const blobUrl = URL.createObjectURL(data);
           const link = document.createElement('a');
           link.href = blobUrl;
@@ -1094,10 +1111,10 @@ export default function LegajoPage({ params }) {
   // Filtrado de documentos en la carpeta/subcarpeta activa
   const filteredDocuments = documents.filter((doc) => {
     if (!currentFolder) return false;
-    
+
     // Validar categoría
     if (doc.categoria !== currentFolder.name) return false;
-    
+
     // Validar subcategoría si tiene
     if (currentFolder.subfolders) {
       if (!currentSubfolder || doc.subcategoria !== currentSubfolder.name) return false;
@@ -1117,7 +1134,7 @@ export default function LegajoPage({ params }) {
       const txt = filterText.toLowerCase();
       const emp = empresas.find(e => e.id === doc.empresa_id);
       const est = allEstablecimientos.find(es => es.id === doc.establecimiento_id);
-      
+
       const matchText = (
         doc.documento_nombre.toLowerCase().includes(txt) ||
         (emp && emp.razon_social.toLowerCase().includes(txt)) ||
@@ -1175,7 +1192,7 @@ export default function LegajoPage({ params }) {
 
   return (
     <div className="h-screen overflow-hidden bg-syso-bg text-slate-700 flex font-sans">
-      
+
       {/* Sidebar (Desktop & Mobile) */}
       <Sidebar
         tenantSlug={tenantSlug}
@@ -1191,7 +1208,7 @@ export default function LegajoPage({ params }) {
 
       {/* CONTAINER PRINCIPAL */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        
+
         {/* Cabecera */}
         <AppPageHeader
           title="Legajo Técnico"
@@ -1211,7 +1228,7 @@ export default function LegajoPage({ params }) {
           </div>
         ) : (
           <div className="max-w-[95%] mx-auto w-full py-8 px-4 md:px-0 flex-1 flex flex-col min-h-0">
-            
+
             {isFormOpen ? (
               // FORMULARIO DE CARGA/EDICIÓN INLINE
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
@@ -1235,7 +1252,7 @@ export default function LegajoPage({ params }) {
 
                 <form onSubmit={handleSave} className="p-6 space-y-6 overflow-y-auto flex-1 scrollbar-thin">
                   <fieldset disabled={!canEdit} className="space-y-6">
-                    
+
                     {/* Ubicación de Carpeta Destino */}
                     <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center gap-2 text-xs font-bold text-slate-600">
                       <Folder className="h-4 w-4 text-[#468DFF]" />
@@ -1351,13 +1368,13 @@ export default function LegajoPage({ params }) {
                             onChange={(e) => {
                               const val = e.target.value;
                               if (val) {
-    const parts = val.split('-');
-    if (parts.length === 3) {
-      setFecha(`${parts[2]}/${parts[1]}/${parts[0]}`);
-    }
-  } else {
-    setFecha('');
-  }
+                                const parts = val.split('-');
+                                if (parts.length === 3) {
+                                  setFecha(`${parts[2]}/${parts[1]}/${parts[0]}`);
+                                }
+                              } else {
+                                setFecha('');
+                              }
                             }}
                           />
                         </div>
@@ -1474,9 +1491,9 @@ export default function LegajoPage({ params }) {
                 </form>
               </div>
             ) : (
-               // VISTA DEL EXPLORADOR
+              // VISTA DEL EXPLORADOR
               <div className="space-y-4 flex-1 flex flex-col min-h-0">
-                
+
                 {/* Navegación Breadcrumbs (Migas de Pan) */}
                 <div className="bg-white rounded-xl border border-slate-200 p-3.5 shadow-sm flex items-center gap-2 text-xs font-semibold text-slate-500 select-none">
                   <button
@@ -1613,7 +1630,7 @@ export default function LegajoPage({ params }) {
                     <div className="bg-white rounded-2xl border border-slate-200 p-3 shadow-sm space-y-3 shrink-0">
 
                       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
-                        
+
                         {/* Botón Atrás e información de la carpeta activa (arriba a la izquierda) */}
                         <div className="flex items-center gap-2 min-w-0 flex-1">
                           <button
@@ -1693,27 +1710,27 @@ export default function LegajoPage({ params }) {
 
                         {showFilters && (
                           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 pt-1 animate-fade-in">
-                            
-                             {/* Selector Cliente */}
-                             {profile?.role !== 'cliente' && (
-                               <div className="space-y-1">
-                                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Cliente</label>
-                                 <select
-                                   value={filterEmpresa}
-                                   onChange={(e) => {
-                                     setFilterEmpresa(e.target.value);
-                                     setFilterEstablecimiento('');
-                                   }}
-                                   disabled={profile?.role === 'cliente'}
-                                   className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer disabled:opacity-85"
-                                 >
-                                   <option value="">Todos los Clientes</option>
-                                   {empresas.map(e => (
-                                     <option key={e.id} value={e.id}>{e.razon_social}</option>
-                                   ))}
-                                 </select>
-                               </div>
-                             )}
+
+                            {/* Selector Cliente */}
+                            {profile?.role !== 'cliente' && (
+                              <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Cliente</label>
+                                <select
+                                  value={filterEmpresa}
+                                  onChange={(e) => {
+                                    setFilterEmpresa(e.target.value);
+                                    setFilterEstablecimiento('');
+                                  }}
+                                  disabled={profile?.role === 'cliente'}
+                                  className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer disabled:opacity-85"
+                                >
+                                  <option value="">Todos los Clientes</option>
+                                  {empresas.map(e => (
+                                    <option key={e.id} value={e.id}>{e.razon_social}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
 
                             {/* Selector Establecimiento */}
                             <div className="space-y-1">
@@ -1836,114 +1853,114 @@ export default function LegajoPage({ params }) {
                         <div className="overflow-auto flex-grow">
                           <table className="w-full text-left border-collapse min-w-[800px]">
                             <thead>
-                            <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider select-none">
-                              <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200 transition-colors" onClick={() => handleSort('cliente')}>
-                                <div className="flex items-center gap-1">
-                                  Razón Social
-                                  {sortField === 'cliente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
-                                </div>
-                              </th>
-                              <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200 transition-colors" onClick={() => handleSort('establecimiento')}>
-                                <div className="flex items-center gap-1">
-                                  Establecimiento
-                                  {sortField === 'establecimiento' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
-                                </div>
-                              </th>
-                              <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200 transition-colors" onClick={() => handleSort('documento_nombre')}>
-                                <div className="flex items-center gap-1">
-                                  Documento / Tipo
-                                  {sortField === 'documento_nombre' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
-                                </div>
-                              </th>
-                              <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200 transition-colors" onClick={() => handleSort('fecha')}>
-                                <div className="flex items-center gap-1">
-                                  Fecha
-                                  {sortField === 'fecha' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
-                                </div>
-                              </th>
-                              <th className="px-6 py-4 text-right sticky top-0 z-10 bg-slate-50 border-b border-slate-200">Acciones</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100 text-xs font-normal text-slate-700">
-                            {sortedDocuments.map((doc) => {
-                              const emp = empresas.find(e => e.id === doc.empresa_id);
-                              const est = allEstablecimientos.find(es => es.id === doc.establecimiento_id);
-                              return (
-                                <tr
-                                  key={doc.id}
-                                  className="hover:bg-slate-100 cursor-pointer transition-colors"
-                                  onClick={() => handleEditClick(doc, true)}
-                                >
-                                  <td className="px-6 py-4 font-semibold text-slate-900">
-                                    {emp ? emp.razon_social : 'Desconocido'}
-                                  </td>
-                                  <td className="px-6 py-4 font-medium text-slate-600">
-                                    {est ? est.denominacion : 'N/A'}
-                                  </td>
-                                  <td className="px-6 py-4 font-semibold text-slate-600 text-xs">
-                                    {doc.documento_nombre}
-                                  </td>
-                                  <td className="px-6 py-4 font-mono text-xs text-slate-500 font-semibold">
-                                    {formatDate(doc.fecha)}
-                                  </td>
-                                  <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
-                                    <div className="flex items-center justify-end gap-2">
-                                      {doc.documento_url && (
-                                        <>
-                                          <button
-                                            onClick={() => handleViewPdf(doc.documento_url)}
-                                            className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                            title="Visualizar PDF"
-                                          >
-                                            <FileText className="h-4.5 w-4.5" />
-                                          </button>
-                                          {!doc.documento_url.startsWith('http') && (
+                              <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider select-none">
+                                <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200 transition-colors" onClick={() => handleSort('cliente')}>
+                                  <div className="flex items-center gap-1">
+                                    Razón Social
+                                    {sortField === 'cliente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                                  </div>
+                                </th>
+                                <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200 transition-colors" onClick={() => handleSort('establecimiento')}>
+                                  <div className="flex items-center gap-1">
+                                    Establecimiento
+                                    {sortField === 'establecimiento' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                                  </div>
+                                </th>
+                                <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200 transition-colors" onClick={() => handleSort('documento_nombre')}>
+                                  <div className="flex items-center gap-1">
+                                    Documento / Tipo
+                                    {sortField === 'documento_nombre' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                                  </div>
+                                </th>
+                                <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200 transition-colors" onClick={() => handleSort('fecha')}>
+                                  <div className="flex items-center gap-1">
+                                    Fecha
+                                    {sortField === 'fecha' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                                  </div>
+                                </th>
+                                <th className="px-6 py-4 text-right sticky top-0 z-10 bg-slate-50 border-b border-slate-200">Acciones</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 text-xs font-normal text-slate-700">
+                              {sortedDocuments.map((doc) => {
+                                const emp = empresas.find(e => e.id === doc.empresa_id);
+                                const est = allEstablecimientos.find(es => es.id === doc.establecimiento_id);
+                                return (
+                                  <tr
+                                    key={doc.id}
+                                    className="hover:bg-slate-100 cursor-pointer transition-colors"
+                                    onClick={() => handleEditClick(doc, true)}
+                                  >
+                                    <td className="px-6 py-4 font-semibold text-slate-900">
+                                      {emp ? emp.razon_social : 'Desconocido'}
+                                    </td>
+                                    <td className="px-6 py-4 font-medium text-slate-600">
+                                      {est ? est.denominacion : 'N/A'}
+                                    </td>
+                                    <td className="px-6 py-4 font-semibold text-slate-600 text-xs">
+                                      {doc.documento_nombre}
+                                    </td>
+                                    <td className="px-6 py-4 font-mono text-xs text-slate-500 font-semibold">
+                                      {formatDate(doc.fecha)}
+                                    </td>
+                                    <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                                      <div className="flex items-center justify-end gap-2">
+                                        {doc.documento_url && (
+                                          <>
                                             <button
-                                              onClick={() => handleDownloadPdf(doc.documento_url, `${doc.documento_nombre}.pdf`)}
+                                              onClick={() => handleViewPdf(doc.documento_url)}
                                               className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                              title="Descargar PDF"
+                                              title="Visualizar PDF"
                                             >
-                                              <Download className="h-4.5 w-4.5" />
+                                              <FileText className="h-4.5 w-4.5" />
                                             </button>
-                                          )}
-                                        </>
-                                      )}
-                                      {doc.fotos_paths && doc.fotos_paths.length > 0 && (
-                                        <button
-                                          onClick={() => handleEditClick(doc, true)}
-                                          className="p-1.5 rounded-lg bg-[#EFF6FF] text-[#468DFF] hover:bg-[#DBEAFE] hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                          title={`Visualizar Evidencia (${doc.fotos_paths.length} ${doc.fotos_paths.length === 1 ? 'imagen' : 'imágenes'})`}
-                                        >
-                                          <Image className="h-4.5 w-4.5" />
-                                        </button>
-                                      )}
-                                      {canEditar && (
-                                        <button
-                                          onClick={() => handleEditClick(doc, false)}
-                                          className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                          title="Editar detalles"
-                                        >
-                                          <Edit className="h-4.5 w-4.5" />
-                                        </button>
-                                      )}
-                                      {canEliminar && (
-                                        <button
-                                          onClick={() => handleDelete(doc.id)}
-                                          className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                          title="Eliminar"
-                                        >
-                                          <Trash2 className="h-4.5 w-4.5" />
-                                        </button>
-                                      )}
-                                    </div>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
+                                            {!doc.documento_url.startsWith('http') && (
+                                              <button
+                                                onClick={() => handleDownloadPdf(doc.documento_url, `${doc.documento_nombre}.pdf`)}
+                                                className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                                title="Descargar PDF"
+                                              >
+                                                <Download className="h-4.5 w-4.5" />
+                                              </button>
+                                            )}
+                                          </>
+                                        )}
+                                        {doc.fotos_paths && doc.fotos_paths.length > 0 && (
+                                          <button
+                                            onClick={() => handleEditClick(doc, true)}
+                                            className="p-1.5 rounded-lg bg-[#EFF6FF] text-[#468DFF] hover:bg-[#DBEAFE] hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                            title={`Visualizar Evidencia (${doc.fotos_paths.length} ${doc.fotos_paths.length === 1 ? 'imagen' : 'imágenes'})`}
+                                          >
+                                            <Image className="h-4.5 w-4.5" />
+                                          </button>
+                                        )}
+                                        {canEditar && (
+                                          <button
+                                            onClick={() => handleEditClick(doc, false)}
+                                            className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                            title="Editar detalles"
+                                          >
+                                            <Edit className="h-4.5 w-4.5" />
+                                          </button>
+                                        )}
+                                        {canEliminar && (
+                                          <button
+                                            onClick={() => handleDelete(doc.id)}
+                                            className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                            title="Eliminar"
+                                          >
+                                            <Trash2 className="h-4.5 w-4.5" />
+                                          </button>
+                                        )}
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
                     </div>
 
 
@@ -2061,7 +2078,7 @@ export default function LegajoPage({ params }) {
         activeList={sortedDocuments}
         currentId={editingId}
         onNavigate={(newDoc) => handleEditClick(newDoc, isReadOnlyView)}
-        hasUnsavedChanges={checkHasUnsavedChanges()}
+        hasUnsavedChanges={!isReadOnlyView}
         isFormOpen={isFormOpen}
       />
 

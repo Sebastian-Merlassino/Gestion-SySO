@@ -128,35 +128,15 @@ export default function ChecklistPersonalizadosPage({ params }) {
   const [saveLoading, setSaveLoading] = useState(false);
 
   const originalDataRef = useRef('');
-  const lastEditingIdRef = useRef(null);
-  const lastSavingRef = useRef(false);
 
-  if (!isInspeccionFormOpen) {
-    lastEditingIdRef.current = null;
-    lastSavingRef.current = false;
-    originalDataRef.current = '';
-  } else if (editingInspeccionId !== lastEditingIdRef.current || (lastSavingRef.current && !saveLoading)) {
-    lastEditingIdRef.current = editingInspeccionId;
-    lastSavingRef.current = saveLoading;
-    originalDataRef.current = JSON.stringify({
-      selectedTemplateId,
-      inspeccionEmpresaId,
-      inspeccionEstablecimientoId,
-      inspeccionFecha,
-      inspeccionRespuestas,
-      responsableAclaracion,
-      inspeccionObservaciones,
-      firmaTipo,
-      profesionalTipo,
-      profesionalId,
-      profesionalNombre
-    });
-  } else {
-    lastSavingRef.current = saveLoading;
-  }
+  useEffect(() => {
+    if (!isInspeccionFormOpen) {
+      originalDataRef.current = '';
+    }
+  }, [isInspeccionFormOpen]);
 
   const checkHasUnsavedChanges = () => {
-    if (isInspeccionReadOnly || !isInspeccionFormOpen) return false;
+    if (isInspeccionReadOnly || !isInspeccionFormOpen || !originalDataRef.current) return false;
     const currentData = JSON.stringify({
       selectedTemplateId,
       inspeccionEmpresaId,
@@ -684,6 +664,54 @@ export default function ChecklistPersonalizadosPage({ params }) {
     setHasSignedProf(false);
     setIsInspeccionReadOnly(false);
 
+    const initialResp = templates[0].items.map(item => ({
+      pregunta_id: item.id,
+      pregunta: item.pregunta,
+      respuesta: item.tipo_respuesta === 'check list' ? 'No' : '',
+      detalle_otro: ''
+    }));
+
+    let finalProfTipo = 'miembro';
+    let finalProfId = '';
+    let finalProfNombre = '';
+    let finalSignaturePath = '';
+    let finalFirmaTipo = 'perfil';
+
+    if (currentMember) {
+      finalProfTipo = 'miembro';
+      finalProfId = currentMember.id;
+      finalProfNombre = currentMember.full_name;
+      finalSignaturePath = currentMember.signature_url || '';
+      finalFirmaTipo = currentMember.signature_url ? 'perfil' : 'mano';
+      setProfesionalTipo('miembro');
+      setProfesionalId(currentMember.id);
+      setProfesionalNombre(currentMember.full_name);
+      setSignaturePath(currentMember.signature_url || '');
+      setFirmaTipo(currentMember.signature_url ? 'perfil' : 'mano');
+    } else {
+      setProfesionalTipo('miembro');
+      setProfesionalId('');
+      setProfesionalNombre(profile?.role !== 'cliente' ? (profile?.full_name || '') : '');
+      setSignaturePath('');
+      setFirmaTipo('perfil');
+    }
+
+    const todayStr = `${day}/${month}/${year}`;
+
+    originalDataRef.current = JSON.stringify({
+      selectedTemplateId: templates[0].id,
+      inspeccionEmpresaId: '',
+      inspeccionEstablecimientoId: '',
+      inspeccionFecha: todayStr,
+      inspeccionRespuestas: initialResp,
+      responsableAclaracion: '',
+      inspeccionObservaciones: '',
+      firmaTipo: finalFirmaTipo,
+      profesionalTipo: finalProfTipo,
+      profesionalId: finalProfId,
+      profesionalNombre: finalProfNombre
+    });
+
     initRespuestas(templates[0]);
     setIsInspeccionFormOpen(true);
   };
@@ -773,6 +801,20 @@ export default function ChecklistPersonalizadosPage({ params }) {
         setSignaturePath(memb.signature_url);
       }
     }
+
+    originalDataRef.current = JSON.stringify({
+      selectedTemplateId: insp.template_id,
+      inspeccionEmpresaId: insp.empresa_id || '',
+      inspeccionEstablecimientoId: insp.establecimiento_id || '',
+      inspeccionFecha: formatDate(insp.fecha) || '',
+      inspeccionRespuestas: mappedRespuestas,
+      responsableAclaracion: insp.responsable_establecimiento_aclaracion || '',
+      inspeccionObservaciones: insp.observaciones || '',
+      firmaTipo: insp.firma_tipo || 'perfil',
+      profesionalTipo: insp.responsable_higiene_seguridad_id ? 'miembro' : 'manual',
+      profesionalId: insp.responsable_higiene_seguridad_id || '',
+      profesionalNombre: insp.responsable_higiene_seguridad_nombre || ''
+    });
 
     setIsInspeccionFormOpen(true);
   };
@@ -3013,7 +3055,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
         activeList={inspecciones}
         currentId={editingInspeccionId}
         onNavigate={(newInsp) => handleOpenEditInspeccion(newInsp, isInspeccionReadOnly)}
-        hasUnsavedChanges={checkHasUnsavedChanges()}
+        hasUnsavedChanges={!isInspeccionReadOnly}
         isFormOpen={isInspeccionFormOpen}
       />
     </div>

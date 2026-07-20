@@ -2925,7 +2925,7 @@ export default function AvisosRiesgoPage({ params }) {
           activeList={filteredAvisos}
           currentId={editingId}
           onNavigate={(newAviso) => handleEdit(newAviso)}
-          hasUnsavedChanges={checkHasUnsavedChanges()}
+          hasUnsavedChanges={!isReadOnlyView}
           isFormOpen={view === 'form'}
         />
 

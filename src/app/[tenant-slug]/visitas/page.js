@@ -262,51 +262,9 @@ export default function VisitasPage({ params }) {
   const [saveLoading, setSaveLoading] = useState(false);
 
   const originalDataRef = useRef('');
-  const lastEditingIdRef = useRef(null);
-  const lastSavingRef = useRef(false);
-
-  if (!isFormOpen) {
-    lastEditingIdRef.current = null;
-    lastSavingRef.current = false;
-    originalDataRef.current = '';
-  } else if (editingId !== lastEditingIdRef.current || (lastSavingRef.current && !saveLoading)) {
-    lastEditingIdRef.current = editingId;
-    lastSavingRef.current = saveLoading;
-    originalDataRef.current = JSON.stringify({
-      empresaId,
-      establecimientoId,
-      fecha,
-      profesionalTipo,
-      profesionalId,
-      profesionalNombre,
-      responsablePresente,
-      ocurrieronIncidentes,
-      analisisCorrespondiente,
-      causaRaiz,
-      accionCorrectiva,
-      relevamientoHigieneSeguridad,
-      relevamientoPracticasSeguras,
-      relevamientoEpp,
-      realizaronMediciones,
-      selectedMediciones,
-      verificoAccionesCorrectivas,
-      dictaronCapacitaciones,
-      selectedTemas,
-      realizaronSimulacros,
-      selectedSimulacros,
-      emiteAvisoRiesgo,
-      selectedDocumentacion,
-      observacionesRecomendaciones,
-      observaciones,
-      firmaTipo,
-      signaturePath
-    });
-  } else {
-    lastSavingRef.current = saveLoading;
-  }
 
   const checkHasUnsavedChanges = () => {
-    if (isReadOnlyView || !isFormOpen) return false;
+    if (isReadOnlyView || !isFormOpen || !originalDataRef.current) return false;
     const currentData = JSON.stringify({
       empresaId,
       establecimientoId,
@@ -859,6 +817,7 @@ export default function VisitasPage({ params }) {
     setHasSignedProf(false);
     setFirmaRespSavedUrl('');
     setFirmaProfSavedUrl('');
+    originalDataRef.current = '';
   };
   const handleAddNew = () => {
     setIsReadOnlyView(false);
@@ -897,9 +856,19 @@ export default function VisitasPage({ params }) {
     setFirmaRespSavedUrl('');
     setFirmaProfSavedUrl('');
     
-    // Auto-select logged-in user if they exist in miembros list
+    let finalProfTipo = 'miembro';
+    let finalProfId = '';
+    let finalProfNombre = '';
+    let finalSignaturePath = '';
+    let finalFirmaTipo = 'perfil';
+
     const currentMember = miembrosList.find(m => m.profile_id === profile?.id);
     if (currentMember) {
+      finalProfTipo = 'miembro';
+      finalProfId = currentMember.id;
+      finalProfNombre = currentMember.full_name;
+      finalSignaturePath = currentMember.signature_url || '';
+      finalFirmaTipo = currentMember.signature_url ? 'perfil' : 'mano';
       setProfesionalTipo('miembro');
       setProfesionalId(currentMember.id);
       setProfesionalNombre(currentMember.full_name);
@@ -912,6 +881,37 @@ export default function VisitasPage({ params }) {
       setSignaturePath('');
       setFirmaTipo('perfil');
     }
+
+    originalDataRef.current = JSON.stringify({
+      empresaId: '',
+      establecimientoId: '',
+      fecha: formatDate(new Date().toISOString().split('T')[0]),
+      profesionalTipo: finalProfTipo,
+      profesionalId: finalProfId,
+      profesionalNombre: finalProfNombre,
+      responsablePresente: '',
+      ocurrieronIncidentes: false,
+      analisisCorrespondiente: 'N/A',
+      causaRaiz: '',
+      accionCorrectiva: '',
+      relevamientoHigieneSeguridad: 'N/A',
+      relevamientoPracticasSeguras: 'N/A',
+      relevamientoEpp: 'N/A',
+      realizaronMediciones: 'N/A',
+      selectedMediciones: [],
+      verificoAccionesCorrectivas: 'N/A',
+      dictaronCapacitaciones: false,
+      selectedTemas: [],
+      realizaronSimulacros: false,
+      selectedSimulacros: [],
+      emiteAvisoRiesgo: false,
+      selectedDocumentacion: [],
+      observacionesRecomendaciones: '',
+      observaciones: '',
+      firmaTipo: finalFirmaTipo,
+      signaturePath: finalSignaturePath
+    });
+
     setIsFormOpen(true);
   };
 
@@ -1330,6 +1330,45 @@ export default function VisitasPage({ params }) {
 
       loadDataAndResolve();
     }
+
+    let latestProfileSigEdit = '';
+    if (v.profesional_tipo === 'miembro' && v.profesional_id) {
+      const m = miembrosList.find(mem => mem.id === v.profesional_id);
+      if (m) {
+        latestProfileSigEdit = m.signature_url || '';
+      }
+    }
+    const finalSignaturePath = latestProfileSigEdit || (v.firma_tipo === 'perfil' ? (v.firma_profesional || '') : '');
+
+    originalDataRef.current = JSON.stringify({
+      empresaId: v.empresa_id || '',
+      establecimientoId: v.establecimiento_id || '',
+      fecha: formatDate(v.fecha) || '',
+      profesionalTipo: v.profesional_tipo || 'miembro',
+      profesionalId: v.profesional_tipo === 'miembro' ? (v.profesional_id || '') : '__custom__',
+      profesionalNombre: v.profesional_tipo === 'miembro' ? '' : (v.profesional_nombre || ''),
+      responsablePresente: v.responsable_presente || '',
+      ocurrieronIncidentes: v.ocurrieron_incidentes || false,
+      analisisCorrespondiente: v.analisis_correspondiente || 'N/A',
+      causaRaiz: v.causa_raiz || '',
+      accionCorrectiva: v.accion_correctiva || '',
+      relevamientoHigieneSeguridad: v.relevamiento_higiene_seguridad || 'N/A',
+      relevamientoPracticasSeguras: v.relevamiento_practicas_seguras || 'N/A',
+      relevamientoEpp: v.relevamiento_epp || 'N/A',
+      realizaronMediciones: v.realizaron_mediciones || 'N/A',
+      selectedMediciones: v.mediciones_realizadas || [],
+      verificoAccionesCorrectivas: v.verifico_acciones_correctivas || 'N/A',
+      dictaronCapacitaciones: v.dictaron_capacitaciones || false,
+      selectedTemas: v.capacitaciones_temas || [],
+      realizaronSimulacros: v.realizaron_simulacros || false,
+      selectedSimulacros: v.simulacros_tipo || [],
+      emiteAvisoRiesgo: v.emite_aviso_riesgo || false,
+      selectedDocumentacion: v.documentacion_incorporada || [],
+      observacionesRecomendaciones: v.observaciones_recomendaciones || '',
+      observaciones: v.observaciones || '',
+      firmaTipo: v.firma_tipo || 'mano',
+      signaturePath: finalSignaturePath
+    });
 
     setIsFormOpen(true);
   };
@@ -3872,7 +3911,7 @@ export default function VisitasPage({ params }) {
         activeList={visitas}
         currentId={editingId}
         onNavigate={(newVis) => handleEditClick(newVis)}
-        hasUnsavedChanges={checkHasUnsavedChanges()}
+        hasUnsavedChanges={!isReadOnlyView}
         isFormOpen={isFormOpen}
       />
 

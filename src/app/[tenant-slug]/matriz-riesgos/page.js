@@ -254,47 +254,9 @@ export default function MatrizRiesgosPage({ params }) {
   const [saveLoading, setSaveLoading] = useState(false);
 
   const originalDataRef = useRef('');
-  const lastEditingIdRef = useRef(null);
-  const lastSavingRef = useRef(false);
-
-  if (!isFormOpen || isBulkMode) {
-    lastEditingIdRef.current = null;
-    lastSavingRef.current = false;
-    originalDataRef.current = '';
-  } else if (editingId !== lastEditingIdRef.current || (lastSavingRef.current && !saveLoading)) {
-    lastEditingIdRef.current = editingId;
-    lastSavingRef.current = saveLoading;
-    originalDataRef.current = JSON.stringify({
-      empresaId,
-      establecimientoId,
-      singleSector,
-      singlePuesto,
-      singleTareas,
-      singleFrecuencia,
-      singleSituacion,
-      singleTipoPeligro,
-      singlePeligro,
-      singleRiesgo,
-      singleConsecuencia,
-      singleProbabilidad,
-      singleGravedad,
-      singleMedidasAdm,
-      singleMedidasIng,
-      singleMedidasEpp,
-      singleMedidasRecomendadas,
-      singleResponsable,
-      singleFechaPlanificada,
-      singleFechaRealizacion,
-      singlePostProbabilidad,
-      singlePostGravedad,
-      singleObservaciones
-    });
-  } else {
-    lastSavingRef.current = saveLoading;
-  }
 
   const checkHasUnsavedChanges = () => {
-    if (isReadOnlyView || !isFormOpen || isBulkMode) return false;
+    if (isReadOnlyView || !isFormOpen || isBulkMode || !originalDataRef.current) return false;
     const currentData = JSON.stringify({
       empresaId,
       establecimientoId,
@@ -2420,6 +2382,32 @@ export default function MatrizRiesgosPage({ params }) {
     setSinglePostGravedad(row.post_gravedad || '');
     setSingleObservaciones(row.observaciones || '');
 
+    originalDataRef.current = JSON.stringify({
+      empresaId: row.empresa_id || '',
+      establecimientoId: row.establecimiento_id || '',
+      singleSector: row.sector || '',
+      singlePuesto: row.puesto || '',
+      singleTareas: row.tareas || '',
+      singleFrecuencia: row.frecuencia || '',
+      singleSituacion: row.situacion || 'Normal',
+      singleTipoPeligro: row.tipo_peligro || '',
+      singlePeligro: row.peligro || '',
+      singleRiesgo: row.riesgo || '',
+      singleConsecuencia: row.consecuencia || '',
+      singleProbabilidad: row.probabilidad || '',
+      singleGravedad: row.gravedad || '',
+      singleMedidasAdm: row.medidas_control_adm || '',
+      singleMedidasIng: row.medidas_control_ing || '',
+      singleMedidasEpp: row.medidas_control_epp || '',
+      singleMedidasRecomendadas: row.medidas_control_recomendadas || '',
+      singleResponsable: row.responsable || '',
+      singleFechaPlanificada: formatDate(row.fecha_planificada) || '',
+      singleFechaRealizacion: formatDate(row.fecha_realizacion) || '',
+      singlePostProbabilidad: row.post_probabilidad || '',
+      singlePostGravedad: row.post_gravedad || '',
+      singleObservaciones: row.observaciones || ''
+    });
+
     setIsFormOpen(true);
   };
 
@@ -2545,6 +2533,7 @@ export default function MatrizRiesgosPage({ params }) {
     setPreviewRows([]);
     setSelectedFileName('');
     setSelectedLegajoPath('');
+    originalDataRef.current = '';
   };
 
   // Ordenar columnas
@@ -4960,7 +4949,7 @@ export default function MatrizRiesgosPage({ params }) {
         activeList={filteredMatriz}
         currentId={editingId}
         onNavigate={(newRow) => handleEditClick(newRow)}
-        hasUnsavedChanges={checkHasUnsavedChanges()}
+        hasUnsavedChanges={!isReadOnlyView}
         isFormOpen={isFormOpen && !isBulkMode}
       />
 

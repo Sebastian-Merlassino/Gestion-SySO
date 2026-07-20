@@ -279,43 +279,9 @@ export default function AccionesCorrectivasPage({ params }) {
   const [saveLoading, setSaveLoading] = useState(false);
 
   const originalDataRef = useRef('');
-  const lastEditingIdRef = useRef(null);
-  const lastSavingRef = useRef(false);
-
-  if (!isFormOpen) {
-    lastEditingIdRef.current = null;
-    lastSavingRef.current = false;
-    originalDataRef.current = '';
-  } else if (editingId !== lastEditingIdRef.current || (lastSavingRef.current && !saveLoading)) {
-    lastEditingIdRef.current = editingId;
-    lastSavingRef.current = saveLoading;
-    originalDataRef.current = JSON.stringify({
-      empresaId,
-      establecimientoId,
-      fuente,
-      fuenteOtra,
-      fecha,
-      areaSector,
-      puestoOperacion,
-      tipoHallazgo,
-      tipoHallazgoOtro,
-      descripcionHallazgo,
-      nivelRiesgo,
-      recomendacion,
-      accionPreventiva,
-      causaRaiz,
-      accionCorrectiva,
-      responsable,
-      fechaPlanificada,
-      fechaImplementacion,
-      observaciones
-    });
-  } else {
-    lastSavingRef.current = saveLoading;
-  }
 
   const checkHasUnsavedChanges = () => {
-    if (isReadOnlyView || !isFormOpen) return false;
+    if (isReadOnlyView || !isFormOpen || !originalDataRef.current) return false;
     const currentData = JSON.stringify({
       empresaId,
       establecimientoId,
@@ -1095,18 +1061,58 @@ export default function AccionesCorrectivasPage({ params }) {
     }
   };
 
+  // Inicializar nuevo registro
+  const handleAddNew = () => {
+    setIsReadOnlyView(false);
+    setEditingId(null);
+    handleCloseForm();
+
+    const todayStr = formatDate(new Date().toISOString().split('T')[0]);
+    setFecha(todayStr);
+
+    originalDataRef.current = JSON.stringify({
+      empresaId: '',
+      establecimientoId: '',
+      fuente: '',
+      fuenteOtra: '',
+      fecha: todayStr,
+      areaSector: '',
+      puestoOperacion: '',
+      tipoHallazgo: '',
+      tipoHallazgoOtro: '',
+      descripcionHallazgo: '',
+      nivelRiesgo: 'N/A',
+      recomendacion: '',
+      accionPreventiva: '',
+      causaRaiz: '',
+      accionCorrectiva: '',
+      responsable: '',
+      fechaPlanificada: '',
+      fechaImplementacion: '',
+      observaciones: ''
+    });
+
+    setIsFormOpen(true);
+  };
+
   // Preparar edición
   const handleEditClick = (acc) => {
     setEditingId(acc.id);
 
     setEmpresaId(acc.empresa_id);
     setEstablecimientoId(acc.establecimiento_id);
-    
+
     // Si la fuente original no está en la lista de opciones, se asume "Otra"
+    let finalFuente = '';
+    let finalFuenteOtra = '';
     if (FUENTE_OPTIONS.includes(acc.fuente)) {
+      finalFuente = acc.fuente;
+      finalFuenteOtra = '';
       setFuente(acc.fuente);
       setFuenteOtra('');
     } else {
+      finalFuente = 'Otra';
+      finalFuenteOtra = acc.fuente;
       setFuente('Otra');
       setFuenteOtra(acc.fuente);
     }
@@ -1116,10 +1122,16 @@ export default function AccionesCorrectivasPage({ params }) {
     setPuestoOperacion(acc.puesto_operacion || '');
 
     // Si el tipo de hallazgo no está en la lista de opciones, se asume "Otro"
+    let finalTipo = '';
+    let finalTipoOtro = '';
     if (TIPO_HALLAZGO_OPTIONS.includes(acc.tipo_hallazgo)) {
+      finalTipo = acc.tipo_hallazgo;
+      finalTipoOtro = '';
       setTipoHallazgo(acc.tipo_hallazgo);
       setTipoHallazgoOtro('');
     } else {
+      finalTipo = 'Otro';
+      finalTipoOtro = acc.tipo_hallazgo;
       setTipoHallazgo('Otro');
       setTipoHallazgoOtro(acc.tipo_hallazgo);
     }
@@ -1143,6 +1155,28 @@ export default function AccionesCorrectivasPage({ params }) {
     setFechaPlanificada(formatDate(acc.fecha_planificada) || '');
     setFechaImplementacion(formatDate(acc.fecha_implementacion) || '');
     setObservaciones(acc.observaciones || '');
+
+    originalDataRef.current = JSON.stringify({
+      empresaId: acc.empresa_id || '',
+      establecimientoId: acc.establecimiento_id || '',
+      fuente: finalFuente,
+      fuenteOtra: finalFuenteOtra,
+      fecha: formatDate(acc.fecha) || '',
+      areaSector: acc.area_sector || '',
+      puestoOperacion: acc.puesto_operacion || '',
+      tipoHallazgo: finalTipo,
+      tipoHallazgoOtro: finalTipoOtro,
+      descripcionHallazgo: acc.descripcion_hallazgo || '',
+      nivelRiesgo: acc.nivel_riesgo || 'N/A',
+      recomendacion: acc.recomendacion || '',
+      accionPreventiva: acc.accion_preventiva || '',
+      causaRaiz: acc.causa_raiz || '',
+      accionCorrectiva: acc.accion_correctiva || '',
+      responsable: acc.responsable || '',
+      fechaPlanificada: formatDate(acc.fecha_planificada) || '',
+      fechaImplementacion: formatDate(acc.fecha_implementacion) || '',
+      observaciones: acc.observaciones || ''
+    });
 
     setIsFormOpen(true);
   };
@@ -1255,6 +1289,7 @@ export default function AccionesCorrectivasPage({ params }) {
     setFechaPlanificada('');
     setFechaImplementacion('');
     setObservaciones('');
+    originalDataRef.current = '';
   };
 
   const handleSort = (field) => {
@@ -2000,7 +2035,7 @@ export default function AccionesCorrectivasPage({ params }) {
 
                       {canCargar && (
                         <button
-                          onClick={() => { setIsReadOnlyView(false); setIsFormOpen(true); }}
+                          onClick={handleAddNew}
                           className="px-3 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0"
                         >
                           <PlusCircle className="h-3.5 w-3.5" />
@@ -2105,12 +2140,7 @@ export default function AccionesCorrectivasPage({ params }) {
                       </div>
                       {canCargar && (
                         <button
-                          onClick={() => {
-                            setIsReadOnlyView(false);
-                            setEditingId(null);
-                            handleCloseForm();
-                            setTimeout(() => setIsFormOpen(true), 0);
-                          }}
+                          onClick={handleAddNew}
                           className="px-4 py-2 mt-2 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0"
                         >
                           <PlusCircle className="h-3.5 w-3.5" />
@@ -2398,7 +2428,7 @@ export default function AccionesCorrectivasPage({ params }) {
         activeList={filteredAcciones}
         currentId={editingId}
         onNavigate={(newAcc) => handleEditClick(newAcc)}
-        hasUnsavedChanges={checkHasUnsavedChanges()}
+        hasUnsavedChanges={!isReadOnlyView}
         isFormOpen={isFormOpen}
       />
 

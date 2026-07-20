@@ -165,44 +165,14 @@ export default function CapacitacionPage({ params }) {
   const [saveLoading, setSaveLoading] = useState(false);
 
   const originalDataRef = useRef('');
-  const lastEditingIdRef = useRef(null);
-  const lastSavingRef = useRef(false);
-
-  if (!isFormOpen) {
-    lastEditingIdRef.current = null;
-    lastSavingRef.current = false;
-    originalDataRef.current = '';
-  } else if (editingId !== lastEditingIdRef.current || (lastSavingRef.current && !saveLoading)) {
-    lastEditingIdRef.current = editingId;
-    lastSavingRef.current = saveLoading;
-    originalDataRef.current = JSON.stringify({
-      empresaId,
-      establecimientoId,
-      puesto,
-      tema,
-      temaId,
-      temaCustom,
-      contenido,
-      capacitador,
-      capacitadorId,
-      capacitadorCustom,
-      progreso,
-      fechaInicioPlanificada,
-      fechaFinPlanificada,
-      observaciones
-    });
-  } else {
-    lastSavingRef.current = saveLoading;
-  }
 
   const checkHasUnsavedChanges = () => {
-    if (isReadOnlyView || !isFormOpen) return false;
+    if (isReadOnlyView || !isFormOpen || !originalDataRef.current) return false;
     const currentData = JSON.stringify({
       empresaId,
       establecimientoId,
       puesto,
-      tema,
-      temaId,
+      selectedTemas: selectedTemas.map(t => t.id),
       temaCustom,
       contenido,
       capacitador,
@@ -983,6 +953,7 @@ export default function CapacitacionPage({ params }) {
     setLegajoDocuments([]);
     setSelectedLegajoDocUrl('');
     setLoadingLegajoDocs(false);
+    originalDataRef.current = '';
   };
 
   const uploadFotoToStorage = async (file, index) => {
@@ -1182,6 +1153,31 @@ export default function CapacitacionPage({ params }) {
     }
   };
 
+  // Inicializar nuevo registro
+  const handleAddNew = () => {
+    setIsReadOnlyView(false);
+    setEditingId(null);
+    handleCloseForm();
+
+    originalDataRef.current = JSON.stringify({
+      empresaId: '',
+      establecimientoId: '',
+      puesto: '',
+      selectedTemas: [],
+      temaCustom: '',
+      contenido: '',
+      capacitador: '',
+      capacitadorId: null,
+      capacitadorCustom: '',
+      progreso: 0,
+      fechaInicioPlanificada: '',
+      fechaFinPlanificada: '',
+      observaciones: ''
+    });
+
+    setIsFormOpen(true);
+  };
+
   // Preparar edición
   const handleEditClick = async (cap) => {
     setEditingId(cap.id);
@@ -1195,8 +1191,8 @@ export default function CapacitacionPage({ params }) {
     setObservaciones(cap.observaciones || '');
 
     // Vincular Temas (opción múltiple)
+    let selected = [];
     if (cap.tema_ids && cap.tema_ids.length > 0) {
-      const selected = [];
       cap.tema_ids.forEach(tid => {
         const topic = temasList.find(t => t.id === tid);
         if (topic) selected.push(topic);
@@ -1221,29 +1217,38 @@ export default function CapacitacionPage({ params }) {
     } else if (cap.tema_id) {
       const topic = temasList.find(t => t.id === cap.tema_id);
       if (topic) {
-        setSelectedTemas([topic]);
+        selected = [topic];
+        setSelectedTemas(selected);
       } else {
         setSelectedTemas([]);
       }
     } else {
       setTemaCustom(cap.tema || '');
-      setSelectedTemas([{ id: '__custom__', tema: 'Otro tema (Especificar...)' }]);
+      selected = [{ id: '__custom__', tema: 'Otro tema (Especificar...)' }];
+      setSelectedTemas(selected);
     }
 
     // Vincular Capacitador
+    let finalCapacitador = '';
+    let finalCapacitadorId = null;
+    let finalCapacitadorCustom = '';
     if (cap.capacitador_id) {
+      finalCapacitador = cap.capacitador_id;
+      finalCapacitadorId = cap.capacitador_id;
       setCapacitador(cap.capacitador_id);
       setCapacitadorId(cap.capacitador_id);
       setCapacitadorCustom('');
     } else {
+      finalCapacitador = '__custom__';
+      finalCapacitadorCustom = cap.capacitador || '';
       setCapacitador('__custom__');
       setCapacitadorId(null);
       setCapacitadorCustom(cap.capacitador || '');
     }
 
     // Vincular Fotos y PDFs
+    let loadedFotos = [];
     if (cap.fotos_urls && cap.fotos_urls.length > 0) {
-      const loadedFotos = [];
       const loadedPdfs = [];
       cap.fotos_urls.forEach((fpath, idx) => {
         const previewUrl = cap.fotos_preview_urls?.[idx] || '';
@@ -1265,6 +1270,22 @@ export default function CapacitacionPage({ params }) {
       setFotosFiles([]);
       setPdfFiles([]);
     }
+
+    originalDataRef.current = JSON.stringify({
+      empresaId: cap.empresa_id || '',
+      establecimientoId: cap.establecimiento_id || '',
+      puesto: cap.puesto || '',
+      selectedTemas: selected.map(t => t.id),
+      temaCustom: cap.tema_ids && cap.tema_ids.includes('__custom__') ? (cap.tema || '') : (cap.tema_id ? '' : (cap.tema || '')),
+      contenido: cap.contenido || '',
+      capacitador: finalCapacitador,
+      capacitadorId: finalCapacitadorId,
+      capacitadorCustom: finalCapacitadorCustom,
+      progreso: cap.progreso || 0,
+      fechaInicioPlanificada: formatDate(cap.fecha_inicio_planificada) || '',
+      fechaFinPlanificada: formatDate(cap.fecha_fin_planificada) || '',
+      observaciones: cap.observaciones || ''
+    });
 
     setIsFormOpen(true);
   };
@@ -2094,7 +2115,7 @@ export default function CapacitacionPage({ params }) {
 
                       {canCargar && (
                         <button
-                          onClick={() => { setIsReadOnlyView(false); setIsFormOpen(true); }}
+                          onClick={handleAddNew}
                           className="px-3 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0"
                         >
                           <PlusCircle className="h-3.5 w-3.5" />
@@ -2173,12 +2194,7 @@ export default function CapacitacionPage({ params }) {
                       description="Registra una nueva capacitación para comenzar."
                       actionButton={canCargar && (
                         <AppButton
-                          onClick={() => {
-                            setIsReadOnlyView(false);
-                            setEditingId(null);
-                            handleCloseForm();
-                            setTimeout(() => setIsFormOpen(true), 0);
-                          }}
+                          onClick={handleAddNew}
                           variant="primary"
                           size="sm"
                           className="shadow-md shadow-[#468DFF]/10 flex items-center gap-1.5"
@@ -2520,7 +2536,7 @@ export default function CapacitacionPage({ params }) {
         activeList={sortedCapacitaciones}
         currentId={editingId}
         onNavigate={(newCap) => handleEditClick(newCap)}
-        hasUnsavedChanges={checkHasUnsavedChanges()}
+        hasUnsavedChanges={!isReadOnlyView}
         isFormOpen={isFormOpen}
       />
 

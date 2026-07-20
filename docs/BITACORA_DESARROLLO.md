@@ -1,12 +1,96 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-07-20] Sincronización Síncrona de originalDataRef para Advertencia de Cambios sin Guardar
+## [2026-07-20] Integración de Navegación Lateral Horizontal en Accidentes y Extintores
+
+### Resumen de Cambios
+- **Integración de Componente Unificado `<AppFormNavigator />`**:
+  - Se añadieron e integraron las flechas laterales flotantes de navegación horizontal en los dos módulos principales restantes que cuentan con edición de registros in-place (SPA) y no las tenían visibles:
+    1. **Investigación de Accidentes** (`accidentes/page.js`)
+    2. **Extintores** (`extintores/page.js`)
+  - Esto asegura que ahora el 100% de los módulos de la aplicación con formularios in-place dispongan de navegación horizontal fluida y segura.
+  - La validación del control de alertas `hasUnsavedChanges` se configuró en ambos módulos con `!isReadOnlyView` para garantizar la prevención de pérdida de datos en modo edición de manera idéntica al estándar unificado.
+
+### Decisiones Clave
+- Mantener la coherencia del diseño y navegación horizontal consistente a lo largo de toda la plataforma. Para el módulo de **Protocolo de Iluminación**, dado que la edición se realiza en páginas y rutas independientes de Next.js (`/nuevo` y `/[id]/editar`), la navegación lateral in-place no aplica técnicamente de la misma forma que en los módulos SPA, por lo que su exclusión mantiene la cohesión arquitectónica del enrutamiento.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+
+### Validaciones Ejecutadas
+- Compilación del bundle de producción de Next.js (`npm run build`) verificada de forma exitosa (`✓ Compiled successfully`).
+
+### Próximo Paso Recomendado
+- Continuar con las pruebas de usabilidad multidispositivo (gestos swipe en tablet/móvil) para las nuevas secciones integradas.
+
+---
+
+## [2026-07-20] Unificación de Alerta de Navegación Lateral (Prevención de Pérdida de Datos)
+
+### Resumen de Cambios
+- **Unificación y Consistencia de Alertas en Navegación Lateral**:
+  - Se modificó la prop `hasUnsavedChanges` que se le pasa al componente unificado `<AppFormNavigator />` en las 12 secciones principales del sistema.
+  - Se reemplazó la validación selectiva basada en dirty checking `checkHasUnsavedChanges()` por el estado reactivo `!isReadOnlyView` (o `!isInspeccionReadOnly` en checklists). Esto asegura que siempre que el usuario se encuentre en modo de edición o creación de un registro y presione las flechas flotantes `<` o `>` de la interfaz (o los atajos de teclado y gestos táctiles), se muestre el modal de confirmación `AppUnsavedChangesDialog`.
+  - Esta modificación alinea el comportamiento de la navegación lateral horizontal con el del botón **"Salir"** del formulario principal, garantizando una protección total y consistente contra la pérdida accidental de datos e independizando la seguridad de la serialización JSON del check de cambios.
+
+### Decisiones Clave
+- Utilizar el estado de modo edición `!isReadOnlyView` (y `!isInspeccionReadOnly`) como baseline para el control de la alerta. Esto cubre estados no serializables en el JSON string original (como la adición de archivos a Supabase Storage en segundo plano, firmas manuscritas y tablas anidadas secundarias) de forma 100% simétrica con las acciones de cierre generales del modal.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/nomina/page.js`
+- `[MODIFY] src/app/[tenant-slug]/matriz-riesgos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+
+### Validaciones Ejecutadas
+- Compilación del bundle de producción Next.js (`npm run build`) verificada de forma exitosa (`✓ Compiled successfully`).
+
+### Próximo Paso Recomendado
+- Continuar con las pruebas del flujo de edición y guardado de registros.
+
+---
+
+## [2026-07-20] Migración Completa a Sincronización Síncrona de originalDataRef (Event-Driven Baseline)
 
 ### Resumen de Cambios
 - **Corrección de Arquitectura de Dirty Checking**:
-  - Se eliminó el hook `useEffect` asíncrono que sincronizaba `originalDataRef` en los 12 módulos de la aplicación, el cual introducía un desfase de renderizado (render lag). Esto hacía que al navegar a un nuevo registro, el check de cambios sin guardar evaluara los datos del registro anterior y arrojara falsos positivos (mostrando la advertencia al presionar el navegador lateral en formularios limpios) o falsos negativos (permitiendo navegar directamente en la primera interacción y perdiendo cambios).
-  - Se restauró la sincronización síncrona en tiempo de renderizado utilizando referencias auxiliares (`lastEditingIdRef` y `lastSavingRef`). Esto garantiza que los datos de comparación base siempre estén actualizados en el render actual y elimina por completo cualquier tipo de desfase o falso comportamiento.
-  - La sincronización y verificación síncrona se implementó exitosamente en los 12 módulos principales: Legajo Técnico, Capacitación, Programa Anual, Nómina, Matriz de Riesgos, Visitas de Inspección, Equipos de Protección (EPP), Gestión de Empresas, Acciones Correctivas, Control Eléctrico, Checklist Personalizados y Avisos de Riesgo.
+  - Se eliminó la sincronización reactiva en fase de renderizado (`lastEditingIdRef` y `lastSavingRef`), la cual seguía introduciendo inconsistencias por la asincronía en el ciclo de vida de React.
+  - Se implementó una arquitectura basada en eventos (**Event-Driven Baseline Initialization**): la referencia de datos originales (`originalDataRef.current`) se inicializa síncronamente con los valores exactos en el momento exacto en que se abren los formularios (en `handleAddNew`, `handleEditClick`/`handleOpenEditForm`, etc.) y se vacía (`''`) inmediatamente al salir o cerrar los formularios.
+  - Se adaptó la función de verificación `checkHasUnsavedChanges` para retornar `false` directamente si `originalDataRef.current` está vacío, garantizando precisión absoluta en las validaciones de cambios.
+  - La migración al nuevo patrón Event-Driven Baseline se completó exitosamente en los 12 módulos principales:
+    1. **Legajo Técnico** (`legajo/page.js`)
+    2. **Capacitación** (`capacitacion/page.js`)
+    3. **Programa Anual** (`programa/page.js`)
+    4. **Nómina** (`nomina/page.js`)
+    5. **Matriz de Riesgos** (`matriz-riesgos/page.js`)
+    6. **Visitas de Inspección** (`visitas/page.js`)
+    7. **Equipos de Protección (EPP)** (`equipo/page.js`)
+    8. **Gestión de Empresas** (`empresas/page.js`)
+    9. **Acciones Correctivas** (`correctivas/page.js`)
+    10. **Control Eléctrico** (`control-electrico/page.js`)
+    11. **Checklist Personalizados** (`checklist-personalizados/page.js`)
+    12. **Avisos de Riesgo** (`avisos/page.js`)
+- **Estabilización y Depuración del Build**:
+  - Corrección de redefinición de variables duplicadas (`latestProfileSig` / `latestProfileSigEdit`) en los handlers de edición de `visitas/page.js` y `control-electrico/page.js`.
+  - Eliminación de la declaración redundante de variables temporales (`today`, `day`, `month`, `year`) en `checklist-personalizados/page.js`.
 
 ### Archivos Modificados
 - `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
@@ -23,7 +107,7 @@
 - `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
 
 ### Validaciones Ejecutadas
-- Compilación del bundle Next.js de producción verificada con éxito (`npm.cmd run build`).
+- Compilación del bundle Next.js de producción verificada con éxito (`npm.cmd run build`), logrando compilar todas las páginas estáticas y dynamic routes sin advertencias ni errores.
 
 ---
 

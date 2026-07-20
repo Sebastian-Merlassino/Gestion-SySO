@@ -17,6 +17,7 @@ import AppTextarea from '@/components/ui/AppTextarea';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
+import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import {
   ShieldAlert,
@@ -4719,6 +4720,13 @@ export default function AccidentesPage({ params }) {
           </div>
         </div>
       )}
+      <AppFormNavigator
+        activeList={filteredAccidentes}
+        currentId={editingId}
+        onNavigate={(newAcc) => handleEditClick(newAcc, isReadOnlyView)}
+        hasUnsavedChanges={!isReadOnlyView}
+        isFormOpen={isFormOpen}
+      />
     </div>
   );
 }

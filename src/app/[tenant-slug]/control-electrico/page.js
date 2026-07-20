@@ -687,6 +687,7 @@ export default function ControlElectricoPage({ params }) {
       }
     });
     setFotosFiles([]);
+    originalDataRef.current = '';
   };
 
   const handleAddNew = () => {
@@ -704,8 +705,19 @@ export default function ControlElectricoPage({ params }) {
     setHasSignedProf(false);
     setFotosFiles([]);
 
+    let finalProfTipo = 'miembro';
+    let finalProfId = '';
+    let finalProfNombre = '';
+    let finalSignaturePath = '';
+    let finalFirmaTipo = 'perfil';
+
     const currentMember = miembrosList.find(m => m.profile_id === profile?.id);
     if (currentMember) {
+      finalProfTipo = 'miembro';
+      finalProfId = currentMember.id;
+      finalProfNombre = currentMember.full_name;
+      finalSignaturePath = currentMember.signature_url || '';
+      finalFirmaTipo = currentMember.signature_url ? 'perfil' : 'mano';
       setProfesionalTipo('miembro');
       setProfesionalId(currentMember.id);
       setProfesionalNombre(currentMember.full_name);
@@ -718,6 +730,24 @@ export default function ControlElectricoPage({ params }) {
       setSignaturePath('');
       setFirmaTipo('perfil');
     }
+
+    const defaultItems = INITIAL_ITEMS.map(it => ({ ...it, estado: '', observaciones: '' }));
+    const defaultFecha = formatDate(new Date().toISOString().split('T')[0]);
+
+    originalDataRef.current = JSON.stringify({
+      empresaId: '',
+      establecimientoId: '',
+      fecha: defaultFecha,
+      formItems: defaultItems,
+      observaciones: '',
+      responsableAclaracion: '',
+      firmaTipo: finalFirmaTipo,
+      profesionalTipo: finalProfTipo,
+      profesionalId: finalProfId,
+      profesionalNombre: finalProfNombre,
+      signaturePath: finalSignaturePath
+    });
+
     setIsFormOpen(true);
   };
 
@@ -1031,6 +1061,30 @@ export default function ControlElectricoPage({ params }) {
       };
       loadSignatures();
     }
+
+    let latestProfileSigEdit = '';
+    if (c.profesional_tipo === 'miembro' && c.profesional_id) {
+      const m = miembrosList.find(mem => mem.id === c.profesional_id);
+      if (m) {
+        latestProfileSigEdit = m.signature_url || '';
+      }
+    }
+    const finalSignaturePath = latestProfileSigEdit || (c.firma_tipo === 'perfil' ? (c.firma_profesional || '') : '');
+    const resolvedItems = c.registros_items || INITIAL_ITEMS.map(it => ({ ...it, estado: '', observaciones: '' }));
+
+    originalDataRef.current = JSON.stringify({
+      empresaId: c.empresa_id || '',
+      establecimientoId: c.establecimiento_id || '',
+      fecha: formatDate(c.fecha) || '',
+      formItems: resolvedItems,
+      observaciones: c.observaciones || '',
+      responsableAclaracion: c.responsable_aclaracion || '',
+      firmaTipo: c.firma_tipo || 'perfil',
+      profesionalTipo: c.profesional_tipo || 'miembro',
+      profesionalId: c.profesional_tipo === 'miembro' ? (c.profesional_id || '') : '__custom__',
+      profesionalNombre: c.profesional_tipo === 'miembro' ? '' : (c.profesional_nombre || ''),
+      signaturePath: finalSignaturePath
+    });
 
     setIsFormOpen(true);
   };
@@ -2679,7 +2733,7 @@ export default function ControlElectricoPage({ params }) {
         activeList={sortedControles}
         currentId={editingId}
         onNavigate={(newCtrl) => handleEditClick(newCtrl)}
-        hasUnsavedChanges={checkHasUnsavedChanges()}
+        hasUnsavedChanges={!isReadOnlyView}
         isFormOpen={isFormOpen}
       />
 

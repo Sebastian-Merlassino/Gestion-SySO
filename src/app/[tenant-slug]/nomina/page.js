@@ -1709,7 +1709,7 @@ export default function NominaPage({ params }) {
         activeList={filteredPersonal}
         currentId={editingId}
         onNavigate={(newPers) => handleOpenEditForm(newPers)}
-        hasUnsavedChanges={checkHasUnsavedChanges()}
+        hasUnsavedChanges={!isReadOnlyView}
         isFormOpen={isFormOpen && loadType === 'manual'}
       />
 
