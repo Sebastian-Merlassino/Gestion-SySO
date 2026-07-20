@@ -1085,6 +1085,17 @@ export default function LegajoPage({ params }) {
     }
   };
 
+  // Documentos en la carpeta/subcarpeta activa sin filtros adicionales aplicados
+  const activeFolderDocs = documents.filter((doc) => {
+    if (!currentFolder) return false;
+    if (doc.categoria !== currentFolder.name) return false;
+    if (currentFolder.subfolders) {
+      if (!currentSubfolder || doc.subcategoria !== currentSubfolder.name) return false;
+    }
+    if (profile?.role === 'cliente' && doc.empresa_id !== profile.empresa_id) return false;
+    return true;
+  });
+
   // Filtrado de documentos en la carpeta/subcarpeta activa
   const filteredDocuments = documents.filter((doc) => {
     if (!currentFolder) return false;
@@ -1778,10 +1789,10 @@ export default function LegajoPage({ params }) {
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col transition-all duration-300 ease-in-out" style={{ height: showFilters ? 'calc(100vh - 370px)' : 'calc(100vh - 300px)' }}>
                       {sortedDocuments.length === 0 ? (
                         <AppEmptyState
-                          title={documents.length === 0 ? "No hay documentos registrados" : "No se encontraron documentos"}
-                          description={documents.length === 0 ? "Registra un nuevo documento para comenzar." : "Probá modificando los filtros de búsqueda o registrá un nuevo documento."}
+                          title={activeFolderDocs.length === 0 ? "No hay documentos registrados" : "No se encontraron documentos"}
+                          description={activeFolderDocs.length === 0 ? "Registra un nuevo documento para comenzar." : "Probá modificando los filtros de búsqueda o registrá un nuevo documento."}
                           actionButton={
-                            documents.length === 0 ? (
+                            activeFolderDocs.length === 0 ? (
                               canCargar && (
                                 <AppButton
                                   onClick={handleAddNew}
@@ -1794,7 +1805,7 @@ export default function LegajoPage({ params }) {
                                 </AppButton>
                               )
                             ) : (
-                              (filterText || filterEmpresa || filterEstablecimiento || filterFecha || filterAnio || filterMes) && (
+                              (filterText || filterEmpresa || filterEstablecimiento || filterFecha || filterAnio || filterMes) ? (
                                 <AppButton
                                   onClick={() => {
                                     setFilterText('');
@@ -1810,6 +1821,18 @@ export default function LegajoPage({ params }) {
                                 >
                                   Limpiar Filtros
                                 </AppButton>
+                              ) : (
+                                canCargar && (
+                                  <AppButton
+                                    onClick={handleAddNew}
+                                    variant="primary"
+                                    size="sm"
+                                    className="shadow-md shadow-[#468DFF]/10 flex items-center gap-1.5"
+                                  >
+                                    <PlusCircle className="h-3.5 w-3.5" />
+                                    Cargar Registro
+                                  </AppButton>
+                                )
                               )
                             )
                           }
