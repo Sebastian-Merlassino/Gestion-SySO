@@ -1060,11 +1060,12 @@ export default function ProtocoloForm({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex flex-col gap-1">
-              <AppLabel>Razón Social</AppLabel>
+              <AppLabel htmlFor="empresaId">Razón Social</AppLabel>
               {isReadOnly ? (
-                <AppInput disabled value={razonSocialText} />
+                <AppInput id="empresaId" disabled value={razonSocialText} />
               ) : (
                 <AppSelect
+                  id="empresaId"
                   disabled={!canEdit}
                   value={empresaId}
                   onChange={(e) => handleEmpresaChange(e.target.value)}
@@ -1078,16 +1079,17 @@ export default function ProtocoloForm({
             </div>
 
             <div className="flex flex-col gap-1">
-              <AppLabel>C.U.I.T.</AppLabel>
-              <AppInput disabled value={cuitText} />
+              <AppLabel htmlFor="cuitText">C.U.I.T.</AppLabel>
+              <AppInput id="cuitText" disabled value={cuitText} />
             </div>
 
             <div className="flex flex-col gap-1">
-              <AppLabel>Establecimiento</AppLabel>
+              <AppLabel htmlFor="establecimientoId">Establecimiento</AppLabel>
               {isReadOnly ? (
-                <AppInput disabled value={establecimientoText} />
+                <AppInput id="establecimientoId" disabled value={establecimientoText} />
               ) : (
                 <AppSelect
+                  id="establecimientoId"
                   disabled={!empresaId || !canEdit}
                   value={establecimientoId}
                   onChange={(e) => handleEstablecimientoChange(e.target.value)}
@@ -1103,18 +1105,19 @@ export default function ProtocoloForm({
             </div>
 
             <div className="flex flex-col gap-1">
-              <AppLabel>Dirección</AppLabel>
-              <AppInput disabled value={direccionText} />
+              <AppLabel htmlFor="direccionText">Dirección</AppLabel>
+              <AppInput id="direccionText" disabled value={direccionText} />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 col-span-full">
               <div className="flex flex-col gap-1">
-                <AppLabel>Provincia</AppLabel>
-                <AppInput disabled value={provinciaText} />
+                <AppLabel htmlFor="provinciaText">Provincia</AppLabel>
+                <AppInput id="provinciaText" disabled value={provinciaText} />
               </div>
               <div className="flex flex-col gap-1">
-                <AppLabel>Localidad</AppLabel>
+                <AppLabel htmlFor="localidadText">Localidad</AppLabel>
                 <AppInput 
+                  id="localidadText"
                   disabled={isReadOnly || (!!establecimientoId && estHasLocalidad)} 
                   value={localidadText} 
                   onChange={(e) => setLocalidadText(e.target.value)}
@@ -1125,8 +1128,9 @@ export default function ProtocoloForm({
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 col-span-full">
               <div className="flex flex-col gap-1 md:col-span-1">
-                <AppLabel>C.P.</AppLabel>
+                <AppLabel htmlFor="cpText">C.P.</AppLabel>
                 <AppInput 
+                  id="cpText"
                   disabled={isReadOnly || (!!establecimientoId && estHasCp)} 
                   value={cpText} 
                   onChange={(e) => setCpText(e.target.value)}
@@ -1134,8 +1138,9 @@ export default function ProtocoloForm({
                 />
               </div>
               <div className="flex flex-col gap-1 md:col-span-3">
-                <AppLabel>Horarios / Turnos Habituales de Trabajo</AppLabel>
+                <AppLabel htmlFor="horariosTurnosText">Horarios / Turnos Habituales de Trabajo</AppLabel>
                 <AppInput 
+                  id="horariosTurnosText"
                   disabled={isReadOnly || (!!establecimientoId && estHasHorarios)} 
                   value={horariosTurnosText} 
                   onChange={(e) => setHorariosTurnosText(e.target.value)}
@@ -1155,8 +1160,9 @@ export default function ProtocoloForm({
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="flex flex-col gap-1 md:col-span-2">
-              <AppLabel>Marca, modelo y N° de serie del instrumento</AppLabel>
+              <AppLabel htmlFor="instrumento">Marca, modelo y N° de serie del instrumento</AppLabel>
               <AppInput
+                id="instrumento"
                 disabled={!canEdit}
                 value={instrumento}
                 onChange={(e) => setInstrumento(e.target.value)}
@@ -1165,9 +1171,10 @@ export default function ProtocoloForm({
             </div>
 
             <div className="flex flex-col gap-1 relative md:col-span-1">
-              <AppLabel>Fecha de Calibración del Instrumental</AppLabel>
+              <AppLabel htmlFor="fechaCalibracion">Fecha de Calibración del Instrumental</AppLabel>
               <div className="relative">
                 <AppInput
+                  id="fechaCalibracion"
                   disabled={!canEdit}
                   placeholder="DD/MM/AAAA"
                   value={fechaCalibracion}
@@ -1201,7 +1208,7 @@ export default function ProtocoloForm({
 
             <div className="flex flex-col gap-1 col-span-full">
               <div className="flex items-center justify-between">
-                <AppLabel>Metodología Utilizada en la Medición</AppLabel>
+                <AppLabel htmlFor="metodologia">Metodología Utilizada en la Medición</AppLabel>
                 <AITextHelper
                   disabled={!canEdit}
                   value={metodologia}
@@ -1210,6 +1217,7 @@ export default function ProtocoloForm({
                 />
               </div>
               <AppTextarea
+                id="metodologia"
                 disabled={!canEdit}
                 rows={3}
                 value={metodologia}
@@ -1219,9 +1227,10 @@ export default function ProtocoloForm({
 
             <div className="grid grid-cols-3 gap-2 col-span-full">
               <div className="flex flex-col gap-1">
-                <AppLabel>Fecha Medición</AppLabel>
+                <AppLabel htmlFor="fechaMedicion">Fecha Medición</AppLabel>
                 <div className="relative">
                   <AppInput
+                    id="fechaMedicion"
                     disabled={!canEdit}
                     placeholder="DD/MM/AAAA"
                     value={fechaMedicion}
@@ -1253,8 +1262,9 @@ export default function ProtocoloForm({
                 </div>
               </div>
               <div className="flex flex-col gap-1">
-                <AppLabel>Hora de Inicio</AppLabel>
+                <AppLabel htmlFor="horaInicio">Hora de Inicio</AppLabel>
                 <AppInput
+                  id="horaInicio"
                   type="time"
                   disabled={!canEdit}
                   value={horaInicio}
@@ -1262,8 +1272,9 @@ export default function ProtocoloForm({
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <AppLabel>Hora de Fin</AppLabel>
+                <AppLabel htmlFor="horaFinalizacion">Hora de Fin</AppLabel>
                 <AppInput
+                  id="horaFinalizacion"
                   type="time"
                   disabled={!canEdit}
                   value={horaFinalizacion}
@@ -1274,7 +1285,7 @@ export default function ProtocoloForm({
 
             <div className="flex flex-col gap-1 col-span-full">
               <div className="flex items-center justify-between">
-                <AppLabel>Condiciones Atmosféricas</AppLabel>
+                <AppLabel htmlFor="condicionesAtmosfericas">Condiciones Atmosféricas</AppLabel>
                 <AITextHelper
                   disabled={!canEdit}
                   value={condicionesAtmosfericas}
@@ -1283,6 +1294,7 @@ export default function ProtocoloForm({
                 />
               </div>
               <AppTextarea
+                id="condicionesAtmosfericas"
                 disabled={!canEdit}
                 rows={2}
                 value={condicionesAtmosfericas}
@@ -1292,7 +1304,7 @@ export default function ProtocoloForm({
 
             <div className="flex flex-col gap-1 col-span-full">
               <div className="flex items-center justify-between">
-                <AppLabel>Documentación que se Adjuntará</AppLabel>
+                <AppLabel htmlFor="documentacionAdjunta">Documentación que se Adjuntará</AppLabel>
                 <AITextHelper
                   disabled={!canEdit}
                   value={documentacionAdjunta}
@@ -1301,6 +1313,7 @@ export default function ProtocoloForm({
                 />
               </div>
               <AppTextarea
+                id="documentacionAdjunta"
                 disabled={!canEdit}
                 rows={2}
                 value={documentacionAdjunta}
@@ -1310,7 +1323,7 @@ export default function ProtocoloForm({
 
             <div className="flex flex-col gap-1 col-span-full">
               <div className="flex items-center justify-between">
-                <AppLabel>Observaciones Generales de la Medición</AppLabel>
+                <AppLabel htmlFor="observacionesGenerales">Observaciones Generales de la Medición</AppLabel>
                 <AITextHelper
                   disabled={!canEdit}
                   value={observacionesGenerales}
@@ -1319,6 +1332,7 @@ export default function ProtocoloForm({
                 />
               </div>
               <AppTextarea
+                id="observacionesGenerales"
                 disabled={!canEdit}
                 rows={2}
                 value={observacionesGenerales}
@@ -1415,11 +1429,12 @@ export default function ProtocoloForm({
                       <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-2">
                           <div className="flex flex-col gap-1">
-                            <AppLabel>Sector</AppLabel>
+                            <AppLabel htmlFor={`sector-sel-${p.id}`}>Sector</AppLabel>
                             {isReadOnly ? (
-                              <AppInput disabled value={p.sector_text} />
+                              <AppInput id={`sector-sel-${p.id}`} disabled value={p.sector_text} />
                             ) : (
                               <AppSelect
+                                id={`sector-sel-${p.id}`}
                                 disabled={!establecimientoId}
                                 value={p.sector_id || (p.sector_text ? '__custom__' : '')}
                                 onChange={(e) => {
@@ -1449,11 +1464,12 @@ export default function ProtocoloForm({
                           </div>
 
                           <div className="flex flex-col gap-1">
-                            <AppLabel>Puesto / Sección</AppLabel>
+                            <AppLabel htmlFor={`puesto-sel-${p.id}`}>Puesto / Sección</AppLabel>
                             {isReadOnly ? (
-                              <AppInput disabled value={p.puesto_text} />
+                              <AppInput id={`puesto-sel-${p.id}`} disabled value={p.puesto_text} />
                             ) : (
                               <AppSelect
+                                id={`puesto-sel-${p.id}`}
                                 disabled={!p.sector_id}
                                 value={p.puesto_id || (p.puesto_text ? '__custom__' : '')}
                                 onChange={(e) => {
@@ -1485,8 +1501,9 @@ export default function ProtocoloForm({
 
                         <div className="grid grid-cols-3 gap-2">
                           <div className="flex flex-col gap-1">
-                            <AppLabel>Largo (m)</AppLabel>
+                            <AppLabel htmlFor={`largo-${p.id}`}>Largo (m)</AppLabel>
                             <AppInput
+                              id={`largo-${p.id}`}
                               disabled={!canEdit}
                               type="number"
                               step="0.01"
@@ -1495,8 +1512,9 @@ export default function ProtocoloForm({
                             />
                           </div>
                           <div className="flex flex-col gap-1">
-                            <AppLabel>Ancho (m)</AppLabel>
+                            <AppLabel htmlFor={`ancho-${p.id}`}>Ancho (m)</AppLabel>
                             <AppInput
+                              id={`ancho-${p.id}`}
                               disabled={!canEdit}
                               type="number"
                               step="0.01"
@@ -1505,8 +1523,9 @@ export default function ProtocoloForm({
                             />
                           </div>
                           <div className="flex flex-col gap-1">
-                            <AppLabel>Altura montaje (m)</AppLabel>
+                            <AppLabel htmlFor={`altura-${p.id}`}>Altura montaje (m)</AppLabel>
                             <AppInput
+                              id={`altura-${p.id}`}
                               disabled={!canEdit}
                               type="number"
                               step="0.01"
@@ -1518,11 +1537,12 @@ export default function ProtocoloForm({
 
                         <div className="grid grid-cols-3 gap-2">
                           <div className="flex flex-col gap-1">
-                            <AppLabel>Iluminación</AppLabel>
+                            <AppLabel htmlFor={`tipo-ilu-${p.id}`}>Iluminación</AppLabel>
                             {isReadOnly ? (
-                              <AppInput disabled value={p.tipo_iluminacion} />
+                              <AppInput id={`tipo-ilu-${p.id}`} disabled value={p.tipo_iluminacion} />
                             ) : (
                               <AppSelect
+                                id={`tipo-ilu-${p.id}`}
                                 disabled={!canEdit}
                                 value={p.tipo_iluminacion}
                                 onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, tipo_iluminacion: e.target.value } : x))}
@@ -1534,11 +1554,12 @@ export default function ProtocoloForm({
                             )}
                           </div>
                           <div className="flex flex-col gap-1">
-                            <AppLabel>Fuente Lumínica</AppLabel>
+                            <AppLabel htmlFor={`fuente-${p.id}`}>Fuente Lumínica</AppLabel>
                             {isReadOnly ? (
-                              <AppInput disabled value={p.tipo_fuente_luminica} />
+                              <AppInput id={`fuente-${p.id}`} disabled value={p.tipo_fuente_luminica} />
                             ) : (
                               <AppSelect
+                                id={`fuente-${p.id}`}
                                 disabled={!canEdit}
                                 value={p.tipo_fuente_luminica}
                                 onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, tipo_fuente_luminica: e.target.value } : x))}
@@ -1551,11 +1572,12 @@ export default function ProtocoloForm({
                             )}
                           </div>
                           <div className="flex flex-col gap-1">
-                            <AppLabel>Distribución</AppLabel>
+                            <AppLabel htmlFor={`distribucion-${p.id}`}>Distribución</AppLabel>
                             {isReadOnly ? (
-                              <AppInput disabled value={p.iluminacion} />
+                              <AppInput id={`distribucion-${p.id}`} disabled value={p.iluminacion} />
                             ) : (
                               <AppSelect
+                                id={`distribucion-${p.id}`}
                                 disabled={!canEdit}
                                 value={p.iluminacion}
                                 onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, iluminacion: e.target.value } : x))}
@@ -1575,7 +1597,7 @@ export default function ProtocoloForm({
                         {/* Mediciones Lux Grid */}
                         <div className="space-y-1.5">
                           <div className="flex items-center justify-between">
-                            <AppLabel>Mediciones de Lux Obtenidas</AppLabel>
+                            <AppLabel htmlFor={`medicion-${p.id}-0`}>Mediciones de Lux Obtenidas</AppLabel>
                             {canEdit && (
                               <button
                                 type="button"
@@ -1590,6 +1612,7 @@ export default function ProtocoloForm({
                             {p.mediciones.map((m, mIdx) => (
                               <div key={m.id} className="relative flex items-center">
                                 <AppInput
+                                  id={`medicion-${p.id}-${mIdx}`}
                                   disabled={!canEdit}
                                   type="text"
                                   className="pr-6 text-center text-xs h-8"
@@ -1614,11 +1637,12 @@ export default function ProtocoloForm({
                         {/* Criterio Legal */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <div className="flex flex-col gap-1">
-                            <AppLabel>Actividad / Sector SRT (Catálogo)</AppLabel>
+                            <AppLabel htmlFor={`actividad-${p.id}`}>Actividad / Sector SRT (Catálogo)</AppLabel>
                             {isReadOnly ? (
-                              <AppInput disabled value={p.selectedActividadIndex !== '' ? ACTIVIDADES_ILUMINACION[p.selectedActividadIndex]?.tarea : ''} />
+                              <AppInput id={`actividad-${p.id}`} disabled value={p.selectedActividadIndex !== '' ? ACTIVIDADES_ILUMINACION[p.selectedActividadIndex]?.tarea : ''} />
                             ) : (
                               <AppSelect
+                                id={`actividad-${p.id}`}
                                 value={p.selectedActividadIndex}
                                 onChange={(e) => handleActividadSelect(p.id, e.target.value)}
                               >
@@ -1632,8 +1656,9 @@ export default function ProtocoloForm({
                             )}
                           </div>
                           <div className="flex flex-col gap-1">
-                            <AppLabel>Requerido legal (lux)</AppLabel>
+                            <AppLabel htmlFor={`requerido-${p.id}`}>Requerido legal (lux)</AppLabel>
                             <AppInput
+                              id={`requerido-${p.id}`}
                               type="number"
                               disabled={!canEdit}
                               placeholder="Ej: 500"
@@ -1714,7 +1739,7 @@ export default function ProtocoloForm({
           <div className="space-y-4">
             <div className="flex flex-col gap-1">
               <div className="flex items-center justify-between">
-                <AppLabel>Conclusiones</AppLabel>
+                <AppLabel htmlFor="conclusiones">Conclusiones</AppLabel>
                 <AITextHelper
                   disabled={!canEdit}
                   value={conclusiones}
@@ -1723,6 +1748,7 @@ export default function ProtocoloForm({
                 />
               </div>
               <AppTextarea
+                id="conclusiones"
                 disabled={!canEdit}
                 rows={3}
                 value={conclusiones}
@@ -1733,15 +1759,16 @@ export default function ProtocoloForm({
 
             <div className="flex flex-col gap-1">
               <div className="flex items-center justify-between">
-                <AppLabel>Recomendaciones preventivas recomendadas</AppLabel>
+                <AppLabel htmlFor="recomendaciones">Recomendaciones preventivas recomendadas</AppLabel>
                 <AITextHelper
                   disabled={!canEdit}
                   value={recomendaciones}
-                  onChange={setRecomendaciones}
+                  onChange={setRecommendations => setRecomendaciones(setRecommendations)}
                   context="Recomendaciones preventivas recomendadas para adecuar los niveles de iluminación a la legislación vigente y mejorar la ergonomía visual"
                 />
               </div>
               <AppTextarea
+                id="recomendaciones"
                 disabled={!canEdit}
                 rows={3}
                 value={recomendaciones}
@@ -1834,16 +1861,17 @@ export default function ProtocoloForm({
           <div className="flex items-center gap-3">
             {canEdit && (
               <>
-                <select
+                <AppSelect
                   disabled={saveLoading}
                   value={estado}
                   onChange={(e) => setEstado(e.target.value)}
-                  className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs cursor-pointer h-[38px]"
+                  className="w-32 text-xs py-1.5 h-[38px]"
+                  placeholder={null}
                 >
                   <option value="borrador">Borrador</option>
                   <option value="completado">Completado</option>
                   <option value="anulado">Anulado</option>
-                </select>
+                </AppSelect>
 
                 <button
                   type="submit"
