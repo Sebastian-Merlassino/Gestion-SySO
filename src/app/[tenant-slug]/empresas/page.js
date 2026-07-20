@@ -139,59 +139,65 @@ export default function EmpresasClientes({ params }) {
   const [isReadOnlyView, setIsReadOnlyView] = useState(false);
 
   const originalDataRef = useRef('');
+  const lastEditingIdRef = useRef(null);
+  const lastSavingRef = useRef(false);
 
-  // Sincronizar datos originales para control de cambios sin guardar
-  useEffect(() => {
-    if (view === 'form' && !loading) {
-      originalDataRef.current = JSON.stringify({
-        razonSocial,
-        nombreComercial,
-        cuit,
-        selectedCiiu,
-        telefonos,
-        correos,
-        facturacion,
-        artWeb,
-        artUsuario,
-        artClave,
-        mibaUsuario,
-        mibaClave,
-        ambienteUsuario,
-        ambienteClave,
-        observaciones,
-        clientEmail,
-        clientName,
-        establecimientos: (establecimientos || []).map(est => ({
-          denominacion: est.denominacion,
-          direccion: est.direccion,
-          provincia: est.provincia,
-          partido: est.partido,
-          localidad_barrio: est.localidad_barrio,
-          cp: est.cp,
-          superficie_total: est.superficie_total,
-          superficie_cubierta: est.superficie_cubierta,
-          superficie_piso: est.superficie_piso,
-          cantidad_plantas: est.cantidad_plantas,
-          horario_funcionamiento: est.horario_funcionamiento,
-          trabajadores_administrativos: est.trabajadores_administrativos,
-          trabajadores_productivos: est.trabajadores_productivos,
-          trabajadores_equivalentes: est.trabajadores_equivalentes,
-          capitulos_decreto: est.capitulos_decreto,
-          horas_profesional: est.horas_profesional,
-          maquinas_fijas: est.maquinas_fijas,
-          maquinas_moviles: est.maquinas_moviles,
-          herramientas_electricas: est.herramientas_electricas,
-          aparatos_presion: est.aparatos_presion,
-          equipos_termicos: est.equipos_termicos,
-          equipos_elevacion: est.equipos_elevacion,
-          equipos_izaje: est.equipos_izaje,
-          sectores: est.sectores,
-          observaciones: est.observaciones
-        }))
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, loading, editingId]);
+  if (view !== 'form') {
+    lastEditingIdRef.current = null;
+    lastSavingRef.current = false;
+    originalDataRef.current = '';
+  } else if (editingId !== lastEditingIdRef.current || (lastSavingRef.current && !loading)) {
+    lastEditingIdRef.current = editingId;
+    lastSavingRef.current = loading;
+    originalDataRef.current = JSON.stringify({
+      razonSocial,
+      nombreComercial,
+      cuit,
+      selectedCiiu,
+      telefonos,
+      correos,
+      facturacion,
+      artWeb,
+      artUsuario,
+      artClave,
+      mibaUsuario,
+      mibaClave,
+      ambienteUsuario,
+      ambienteClave,
+      observaciones,
+      clientEmail,
+      clientName,
+      establecimientos: (establecimientos || []).map(est => ({
+        denominacion: est.denominacion,
+        direccion: est.direccion,
+        provincia: est.provincia,
+        partido: est.partido,
+        localidad_barrio: est.localidad_barrio,
+        cp: est.cp,
+        superficie_total: est.superficie_total,
+        superficie_cubierta: est.superficie_cubierta,
+        superficie_piso: est.superficie_piso,
+        cantidad_plantas: est.cantidad_plantas,
+        horario_funcionamiento: est.horario_funcionamiento,
+        trabajadores_administrativos: est.trabajadores_administrativos,
+        trabajadores_productivos: est.trabajadores_productivos,
+        trabajadores_equivalentes: est.trabajadores_equivalentes,
+        capitulos_decreto: est.capitulos_decreto,
+        horas_profesional: est.horas_profesional,
+        maquinas_fijas: est.maquinas_fijas,
+        maquinas_moviles: est.maquinas_moviles,
+        herramientas_electricas: est.herramientas_electricas,
+        aparatos_presion: est.aparatos_presion,
+        equipos_termicos: est.equipos_termicos,
+        equipos_elevacion: est.equipos_elevacion,
+        equipos_izaje: est.equipos_izaje,
+        sectores: est.sectores,
+        observaciones: est.observaciones
+      }))
+    });
+  } else {
+    lastSavingRef.current = loading;
+  }
 
   const checkHasUnsavedChanges = () => {
     if (isReadOnlyView || view !== 'form') return false;

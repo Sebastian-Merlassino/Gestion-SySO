@@ -363,23 +363,29 @@ export default function LegajoPage({ params }) {
   const [fotosFiles, setFotosFiles] = useState([]); // array de { file: File | null, preview: string, path: string }
 
   const originalDataRef = useRef('');
+  const lastEditingIdRef = useRef(null);
+  const lastSavingRef = useRef(false);
 
-  // Sincronizar datos originales para control de cambios sin guardar
-  useEffect(() => {
-    if (isFormOpen && !saving) {
-      originalDataRef.current = JSON.stringify({
-        empresaId,
-        establecimientoId,
-        registroId,
-        documentoNombre,
-        documentoCustom,
-        fecha,
-        documentoUrl,
-        fotosFiles: fotosFiles.map(f => f.path || f.preview)
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isFormOpen, saving, editingId]);
+  if (!isFormOpen) {
+    lastEditingIdRef.current = null;
+    lastSavingRef.current = false;
+    originalDataRef.current = '';
+  } else if (editingId !== lastEditingIdRef.current || (lastSavingRef.current && !saving)) {
+    lastEditingIdRef.current = editingId;
+    lastSavingRef.current = saving;
+    originalDataRef.current = JSON.stringify({
+      empresaId,
+      establecimientoId,
+      registroId,
+      documentoNombre,
+      documentoCustom,
+      fecha,
+      documentoUrl,
+      fotosFiles: fotosFiles.map(f => f.path || f.preview)
+    });
+  } else {
+    lastSavingRef.current = saving;
+  }
 
   const checkHasUnsavedChanges = () => {
     if (isReadOnlyView || !isFormOpen) return false;

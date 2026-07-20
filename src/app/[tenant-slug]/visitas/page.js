@@ -262,42 +262,48 @@ export default function VisitasPage({ params }) {
   const [saveLoading, setSaveLoading] = useState(false);
 
   const originalDataRef = useRef('');
+  const lastEditingIdRef = useRef(null);
+  const lastSavingRef = useRef(false);
 
-  // Sincronizar datos originales para control de cambios sin guardar
-  useEffect(() => {
-    if (isFormOpen && !saveLoading) {
-      originalDataRef.current = JSON.stringify({
-        empresaId,
-        establecimientoId,
-        fecha,
-        profesionalTipo,
-        profesionalId,
-        profesionalNombre,
-        responsablePresente,
-        ocurrieronIncidentes,
-        analisisCorrespondiente,
-        causaRaiz,
-        accionCorrectiva,
-        relevamientoHigieneSeguridad,
-        relevamientoPracticasSeguras,
-        relevamientoEpp,
-        realizaronMediciones,
-        selectedMediciones,
-        verificoAccionesCorrectivas,
-        dictaronCapacitaciones,
-        selectedTemas,
-        realizaronSimulacros,
-        selectedSimulacros,
-        emiteAvisoRiesgo,
-        selectedDocumentacion,
-        observacionesRecomendaciones,
-        observaciones,
-        firmaTipo,
-        signaturePath
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isFormOpen, saveLoading, editingId]);
+  if (!isFormOpen) {
+    lastEditingIdRef.current = null;
+    lastSavingRef.current = false;
+    originalDataRef.current = '';
+  } else if (editingId !== lastEditingIdRef.current || (lastSavingRef.current && !saveLoading)) {
+    lastEditingIdRef.current = editingId;
+    lastSavingRef.current = saveLoading;
+    originalDataRef.current = JSON.stringify({
+      empresaId,
+      establecimientoId,
+      fecha,
+      profesionalTipo,
+      profesionalId,
+      profesionalNombre,
+      responsablePresente,
+      ocurrieronIncidentes,
+      analisisCorrespondiente,
+      causaRaiz,
+      accionCorrectiva,
+      relevamientoHigieneSeguridad,
+      relevamientoPracticasSeguras,
+      relevamientoEpp,
+      realizaronMediciones,
+      selectedMediciones,
+      verificoAccionesCorrectivas,
+      dictaronCapacitaciones,
+      selectedTemas,
+      realizaronSimulacros,
+      selectedSimulacros,
+      emiteAvisoRiesgo,
+      selectedDocumentacion,
+      observacionesRecomendaciones,
+      observaciones,
+      firmaTipo,
+      signaturePath
+    });
+  } else {
+    lastSavingRef.current = saveLoading;
+  }
 
   const checkHasUnsavedChanges = () => {
     if (isReadOnlyView || !isFormOpen) return false;
