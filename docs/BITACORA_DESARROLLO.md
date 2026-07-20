@@ -1,5 +1,50 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-20] Integración de Módulo de Evidencias Fotográficas en el Programa de Gestión Anual
+
+### Resumen de Cambios
+- **Modelo de Datos**: Creación de la migración `20260808000000_add_imagen_url_to_programa_anual.sql` para añadir la columna `imagen_url` (texto para listado JSON) a la tabla `public.programa_anual`.
+- **Integración de Componentes de Frontend**:
+  - Incorporación del componente `<ImageUploadZone />` con `multiple={true}` en el formulario de Nueva Actividad.
+  - Distribución responsiva al colocar el PDF (`DocumentUploadZone`) y las fotos (`ImageUploadZone`) lado a lado en la misma fila en computadoras (`grid grid-cols-1 md:grid-cols-2 gap-4`).
+  - Implementación de la función helper `getPathsFromImagenUrl` para deserialización tolerante y retrocompatible de las fotos del programa anual.
+  - Implementación de la función helper `resolveAndSignProgs` para firmar en lote todas las imágenes de las actividades cargadas del programa anual.
+  - Integración de `fotosFiles` en la lógica de control de cambios sin guardar (`originalDataRef` y `checkHasUnsavedChanges`).
+  - Modificación de `handleSave` para almacenar el listado JSON en la base de datos y simular uploads en el modo de desarrollo (`isDevMode`).
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260808000000_add_imagen_url_to_programa_anual.sql`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+
+### Validaciones Ejecutadas
+- Compilación del bundle Next.js de producción verificada con éxito.
+
+---
+
+## [2026-07-20] Integración de Galería de Evidencias Fotográficas Múltiples en el Legajo Técnico
+
+### Resumen de Cambios
+- **Modelo de Datos en Base de Datos**: Creación de la migración `20260807000000_add_imagen_url_to_legajo_tecnico.sql` para añadir la columna `imagen_url` (texto serializado en JSON) a la tabla `public.legajo_tecnico`.
+- **Actualización de Registro Arquitectónico**: Modificación de `docs/adr/ADR-0004-modulo-legajo-tecnico.md` documentando la adición de soporte para evidencias fotográficas de campo mediante el estándar unificado `SySO-Multiple-Evidence-Photo-Grid`.
+- **Integración de Componentes de Frontend**:
+  - Incorporación del componente `<ImageUploadZone />` con `multiple={true}` en el formulario de Legajo Técnico.
+  - Implementación de lógica tolerante y retrocompatible `getPathsFromImagenUrl` para deserializar el JSON del listado de fotos o envolver rutas antiguas de tipo simple.
+  - Configuración de firmado de URLs de imágenes en lote mediante `createSignedUrls` durante la fase de carga de documentos (`loadRealData`) para optimizar llamadas de red.
+  - Integración del listado de fotos en el control de cambios sin guardar (dirty checks) mediante `originalDataRef` y `checkHasUnsavedChanges`.
+  - Soporte completo para subida de múltiples archivos a Supabase Storage (`documents` bucket) y retrocompatibilidad con el simulador de desarrollo (`isDevMode`).
+- **Corrección en Capacitación**: Importación del hook `useRef` faltante en `src/app/[tenant-slug]/capacitacion/page.js` para resolver el error de tiempo de ejecución `Uncaught ReferenceError: useRef is not defined` en el navegador.
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260807000000_add_imagen_url_to_legajo_tecnico.sql`
+- `[MODIFY] docs/adr/ADR-0004-modulo-legajo-tecnico.md`
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+
+### Validaciones Ejecutadas
+- Compilación del bundle Next.js de producción verificada con éxito.
+
+---
+
 ## [2026-07-20] Restauración de Módulo y Estabilización de Protocolo de Iluminación
 
 ### Resumen de Cambios

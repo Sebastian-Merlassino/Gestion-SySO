@@ -7,6 +7,7 @@ import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
+import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import AITextHelper from '@/components/ui/AITextHelper';
 import { useToast } from '@/components/providers/ToastProvider';
 import AppPageHeader from '@/components/ui/AppPageHeader';
@@ -59,7 +60,35 @@ import {
   Upload
 } from 'lucide-react';
 
+const getPathsFromImagenUrl = (imagenUrl) => {
+  if (!imagenUrl || imagenUrl === 'N/A') return [];
 
+  const isInvalidAppSheetUrl = (url) => {
+    if (typeof url === 'string' && url.includes('gettablefileurl')) {
+      try {
+        const urlObj = new URL(url);
+        const fileName = urlObj.searchParams.get('fileName');
+        return !fileName || fileName.trim() === '';
+      } catch (e) {
+        return url.endsWith('fileName=') || url.includes('fileName=&');
+      }
+    }
+    return false;
+  };
+
+  if (imagenUrl.startsWith('[') && imagenUrl.endsWith(']')) {
+    try {
+      const parsed = JSON.parse(imagenUrl);
+      if (Array.isArray(parsed)) {
+        return parsed.filter(url => url && url !== 'N/A' && !isInvalidAppSheetUrl(url));
+      }
+      return isInvalidAppSheetUrl(imagenUrl) ? [] : [imagenUrl];
+    } catch (e) {
+      return isInvalidAppSheetUrl(imagenUrl) ? [] : [imagenUrl];
+    }
+  }
+  return isInvalidAppSheetUrl(imagenUrl) ? [] : [imagenUrl];
+};
 
 export default function ProgramaGestion({ params }) {
   const tenantSlug = params['tenant-slug'];
@@ -157,6 +186,7 @@ export default function ProgramaGestion({ params }) {
   const [fechaRealizacion, setFechaRealizacion] = useState('');
   const [documentoFile, setDocumentoFile] = useState(null);
   const [documentoUrl, setDocumentoUrl] = useState('');
+  const [fotosFiles, setFotosFiles] = useState([]); // array de { file: File | null, preview: string, path: string }
   const [observaciones, setObservaciones] = useState('');
   const [formErrors, setFormErrors] = useState({});
   const [uploadType, setUploadType] = useState('local'); // 'local', 'drive' or 'legajo'
@@ -182,7 +212,8 @@ export default function ProgramaGestion({ params }) {
         fechaPlanificada,
         fechaRealizacion,
         documentoUrl,
-        observaciones
+        observaciones,
+        fotosFiles: fotosFiles.map(f => f.path || f.preview)
       });
     }
   }, [
@@ -200,7 +231,8 @@ export default function ProgramaGestion({ params }) {
     fechaPlanificada,
     fechaRealizacion,
     documentoUrl,
-    observaciones
+    observaciones,
+    fotosFiles
   ]);
 
   const checkHasUnsavedChanges = () => {
@@ -217,7 +249,8 @@ export default function ProgramaGestion({ params }) {
       fechaPlanificada,
       fechaRealizacion,
       documentoUrl,
-      observaciones
+      observaciones,
+      fotosFiles: fotosFiles.map(f => f.path || f.preview)
     });
     return originalDataRef.current !== currentData;
   };
@@ -281,6 +314,52 @@ export default function ProgramaGestion({ params }) {
 
   const triggerToast = (message, type = 'success') => {
     globalToast.toast(message, type);
+  };
+
+  const resolveAndSignProgs = async (progsList) => {
+    const pathsToSign = [];
+    (progsList || []).forEach(d => {
+      const paths = getPathsFromImagenUrl(d.imagen_url);
+      paths.forEach(ppath => {
+        if (ppath && ppath !== 'N/A' && !ppath.startsWith('http://') && !ppath.startsWith('https://')) {
+          pathsToSign.push(ppath);
+        }
+      });
+    });
+
+    let signedUrlsMap = {};
+    if (pathsToSign.length > 0) {
+      try {
+        const { data: signedData, error: signErr } = await supabase.storage
+          .from('documents')
+          .createSignedUrls(pathsToSign, 3600);
+        if (!signErr && signedData) {
+          signedData.forEach(item => {
+            if (item.signedUrl) {
+              signedUrlsMap[item.path] = item.signedUrl;
+            }
+          });
+        }
+      } catch (e) {
+        console.error('Error al firmar URLs de programa en lote:', e);
+      }
+    }
+
+    return (progsList || []).map(d => {
+      const paths = getPathsFromImagenUrl(d.imagen_url);
+      const resolvedUrls = paths.map(ppath => {
+        if (ppath.startsWith('http://') || ppath.startsWith('https://')) {
+          return ppath;
+        }
+        return signedUrlsMap[ppath] || '';
+      }).filter(url => url !== '');
+
+      return {
+        ...d,
+        fotos_urls: resolvedUrls,
+        fotos_paths: paths
+      };
+    });
   };
 
   const loadRealData = async () => {
@@ -431,7 +510,8 @@ export default function ProgramaGestion({ params }) {
       }
       const { data: progs, error: progErr } = await progQuery;
       if (progErr) throw progErr;
-      setActividades(progs || []);
+      const signedProgs = await resolveAndSignProgs(progs || []);
+      setActividades(signedProgs);
 
       setLoading(false);
     } catch (err) {
@@ -1024,6 +1104,15 @@ export default function ProgramaGestion({ params }) {
     setDocumentoUrl(item.documento_url || '');
     setSelectedFileName(item.documento_url ? 'Archivo de respaldo existente' : '');
     setDocumentoFile(null);
+    
+    // Cargar fotos guardadas
+    const loadedFotos = (item.fotos_paths || []).map((ppath, idx) => ({
+      file: null,
+      preview: item.fotos_urls?.[idx] || '',
+      path: ppath
+    })).filter(f => f.preview !== '');
+    setFotosFiles(loadedFotos);
+
     setObservaciones(item.observaciones || '');
     setFormErrors({});
     setShowForm(true);
@@ -1045,6 +1134,7 @@ export default function ProgramaGestion({ params }) {
     setFechaRealizacion('');
     setDocumentoUrl('');
     setDocumentoFile(null);
+    setFotosFiles([]);
     setObservaciones('');
     setFormErrors({});
     setShowForm(true);
@@ -1068,6 +1158,30 @@ export default function ProgramaGestion({ params }) {
 
     setSaving(true);
     try {
+      // Subir fotos
+      const finalImagenPaths = [];
+      for (let i = 0; i < fotosFiles.length; i++) {
+        const foto = fotosFiles[i];
+        if (foto.file) {
+          if (isDevMode) {
+            finalImagenPaths.push(foto.preview || 'mock-image-path');
+          } else {
+            const fileExt = foto.file.name.split('.').pop();
+            const filePath = `${profile.id}/programa_img_${Date.now()}_${i}.${fileExt}`;
+            const { error: uploadErr } = await supabase.storage
+              .from('documents')
+              .upload(filePath, foto.file, {
+                upsert: true
+              });
+            if (uploadErr) throw uploadErr;
+            finalImagenPaths.push(filePath);
+          }
+        } else if (foto.path) {
+          finalImagenPaths.push(foto.path);
+        }
+      }
+      const finalImagenUrlVal = finalImagenPaths.length > 0 ? JSON.stringify(finalImagenPaths) : null;
+
       let finalDocUrl = documentoUrl;
 
       // 1. Si hay un nuevo archivo cargado, subirlo
@@ -1110,14 +1224,22 @@ export default function ProgramaGestion({ params }) {
         fecha_planificada: convertToDbDate(fechaPlanificada) || null,
         fecha_realizacion: convertToDbDate(fechaRealizacion) || null,
         documento_url: finalDocUrl || null,
+        imagen_url: finalImagenUrlVal,
         observaciones: observaciones || null,
         updated_at: new Date().toISOString()
       };
 
+      const mockResolvedUrls = finalImagenPaths;
+
       if (editingId) {
         // ACTUALIZAR
         if (isDevMode) {
-          setActividades(prev => prev.map(a => a.id === editingId ? { ...a, ...dataPayload } : a));
+          setActividades(prev => prev.map(a => a.id === editingId ? { 
+            ...a, 
+            ...dataPayload,
+            fotos_paths: finalImagenPaths,
+            fotos_urls: mockResolvedUrls
+          } : a));
         } else {
           const { error } = await supabase
             .from('programa_anual')
@@ -1132,7 +1254,9 @@ export default function ProgramaGestion({ params }) {
           const newItem = {
             id: 'mock-new-' + Date.now(),
             created_at: new Date().toISOString(),
-            ...dataPayload
+            ...dataPayload,
+            fotos_paths: finalImagenPaths,
+            fotos_urls: mockResolvedUrls
           };
           setActividades(prev => [...prev, newItem]);
         } else {
@@ -1150,7 +1274,8 @@ export default function ProgramaGestion({ params }) {
           .from('programa_anual')
           .select('*')
           .eq('tenant_id', tenant.id);
-        setActividades(progs || []);
+        const signedProgs = await resolveAndSignProgs(progs || []);
+        setActividades(signedProgs);
       }
 
       handleCloseForm();
@@ -1209,6 +1334,7 @@ export default function ProgramaGestion({ params }) {
     setFechaRealizacion('');
     setDocumentoUrl('');
     setDocumentoFile(null);
+    setFotosFiles([]);
     setObservaciones('');
     setFormErrors({});
     setLegajoDocuments([]);
@@ -1657,70 +1783,101 @@ export default function ProgramaGestion({ params }) {
                     </div>
                   </fieldset>
 
-                  {/* 8. Carga de Documento */}
-                  <div>
-                    <DocumentUploadZone
-                      label="Documento de Respaldo / Evidencia (PDF)"
-                      file={documentoFile}
-                      fileName={selectedFileName}
-                      url={documentoUrl}
-                      onDelete={() => {
-                        setDocumentoUrl('');
-                        setDocumentoFile(null);
-                        setSelectedFileName('');
-                      }}
-                      onFileChange={handleFileChange}
-                      onDriveImportSuccess={(filePath) => {
-                        setDocumentoUrl(filePath);
-                        setSelectedFileName('Archivo de Drive importado');
-                      }}
-                      onViewPdf={handleViewPdf}
-                      disabled={!canEdit}
-                      tenantId={tenant?.id}
-                      onToast={triggerToast}
-                      uploadType={uploadType}
-                      setUploadType={handleSwitchUploadType}
-                      showTabs={true}
-                      tabs={[
-                        { id: 'local', name: 'Archivo Local' },
-                        { id: 'drive', name: 'Enlace Drive' },
-                        { id: 'legajo', name: 'Legajo Técnico' }
-                      ]}
-                    >
-                      {uploadType === 'legajo' && (
-                        <div className="space-y-2">
-                          {!empresaId ? (
-                            <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-xl p-3 font-semibold">
-                              ⚠️ Debes seleccionar un Cliente / Razón Social para listar los documentos del legajo técnico.
-                            </p>
-                          ) : loadingLegajoDocs ? (
-                            <div className="flex items-center gap-2 text-xs text-slate-500 py-2">
-                              <Loader2 className="h-4 w-4 animate-spin text-[#468DFF] shrink-0" />
-                              Cargando documentos del legajo técnico...
-                            </div>
-                          ) : legajoDocuments.length === 0 ? (
-                            <p className="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-xl p-3 italic">
-                              No se encontraron documentos en el legajo técnico para este cliente.
-                            </p>
-                          ) : (
-                            <div>
-                              <select
-                                value={selectedLegajoDocUrl}
-                                onChange={(e) => setSelectedLegajoDocUrl(e.target.value)}
-                                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer font-semibold"
-                              >
-                                <option value="">-- Selecciona un documento del legajo --</option>
-                                {legajoDocuments.map(doc => (
-                                  <option key={doc.id} value={doc.documento_url}>
-                                    {doc.documento_nombre} ({formatDate(doc.fecha)})
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </DocumentUploadZone>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* 8. Carga de Documento */}
+                    <div>
+                      <DocumentUploadZone
+                        label="Documento de Respaldo / Evidencia (PDF)"
+                        file={documentoFile}
+                        fileName={selectedFileName}
+                        url={documentoUrl}
+                        onDelete={() => {
+                          setDocumentoUrl('');
+                          setDocumentoFile(null);
+                          setSelectedFileName('');
+                        }}
+                        onFileChange={handleFileChange}
+                        onDriveImportSuccess={(filePath) => {
+                          setDocumentoUrl(filePath);
+                          setSelectedFileName('Archivo de Drive importado');
+                        }}
+                        onViewPdf={handleViewPdf}
+                        disabled={!canEdit}
+                        tenantId={tenant?.id}
+                        onToast={triggerToast}
+                        uploadType={uploadType}
+                        setUploadType={handleSwitchUploadType}
+                        showTabs={true}
+                        tabs={[
+                          { id: 'local', name: 'Archivo Local' },
+                          { id: 'drive', name: 'Enlace Drive' },
+                          { id: 'legajo', name: 'Legajo Técnico' }
+                        ]}
+                      >
+                        {uploadType === 'legajo' && (
+                          <div className="space-y-2">
+                            {!empresaId ? (
+                              <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-xl p-3 font-semibold">
+                                ⚠️ Debes seleccionar un Cliente / Razón Social para listar los documentos del legajo técnico.
+                              </p>
+                            ) : loadingLegajoDocs ? (
+                              <div className="flex items-center gap-2 text-xs text-slate-500 py-2">
+                                <Loader2 className="h-4 w-4 animate-spin text-[#468DFF] shrink-0" />
+                                Cargando documentos del legajo técnico...
+                              </div>
+                            ) : legajoDocuments.length === 0 ? (
+                              <p className="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-xl p-3 italic">
+                                No se encontraron documentos en el legajo técnico para este cliente.
+                              </p>
+                            ) : (
+                              <div>
+                                <select
+                                  value={selectedLegajoDocUrl}
+                                  onChange={(e) => setSelectedLegajoDocUrl(e.target.value)}
+                                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer font-semibold"
+                                >
+                                  <option value="">-- Selecciona un documento del legajo --</option>
+                                  {legajoDocuments.map(doc => (
+                                    <option key={doc.id} value={doc.documento_url}>
+                                      {doc.documento_nombre} ({formatDate(doc.fecha)})
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </DocumentUploadZone>
+                    </div>
+
+                    {/* Imágenes / Evidencia Fotográfica */}
+                    <div>
+                      <ImageUploadZone
+                        label="Imágenes / Evidencia Fotográfica"
+                        multiple={true}
+                        images={fotosFiles}
+                        onAddPhotos={(validFiles) => {
+                          const newPhotos = validFiles.map(file => ({
+                            file,
+                            preview: URL.createObjectURL(file),
+                            path: ''
+                          }));
+                          setFotosFiles(prev => [...prev, ...newPhotos]);
+                        }}
+                        onRemovePhoto={(index) => {
+                          setFotosFiles(prev => {
+                            const target = prev[index];
+                            if (target && target.preview && target.preview.startsWith('blob:')) {
+                              URL.revokeObjectURL(target.preview);
+                            }
+                            return prev.filter((_, idx) => idx !== index);
+                          });
+                        }}
+                        disabled={!canEdit}
+                        maxSizeMB={5}
+                        onToast={triggerToast}
+                      />
+                    </div>
                   </div>
 
                   <fieldset disabled={!canEdit} className="space-y-6">
