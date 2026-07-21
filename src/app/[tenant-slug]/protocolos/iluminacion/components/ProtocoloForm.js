@@ -3006,7 +3006,7 @@ function MeasurementPointsEditorModal({ isOpen, onClose, imageUrl, initialPoints
                   variant="outline"
                   onClick={onClose}
                   disabled={loading}
-                  className="text-xs py-1.5 h-[34px]"
+                  className="text-xs py-1.5 h-[34px] hover:bg-slate-100 hover:text-slate-900"
                 >
                   Cancelar
                 </AppButton>
