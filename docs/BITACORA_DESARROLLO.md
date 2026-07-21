@@ -6,10 +6,12 @@
 - **Alineación de Cajas de Firma**:
   - En la sección de firmas de **Checklist Personalizados** (`checklist-personalizados/page.js`), se eliminó el espaciador `<div className="hidden md:block h-[51px] shrink-0" />` en la columna del Responsable del Establecimiento.
   - Se cambió el tamaño responsivo de relación de aspecto (`aspect-[2/1]`) de la caja de firma a mano del Responsable por una altura fija de `h-[220px]`, coincidiendo exactamente con la altura del nuevo contenedor interactivo con solapas superiores (`SySO-Signature-Tabbed-Container`) del Profesional.
-  - Esto garantiza que ambas firmas comiencen y terminen en el mismo plano vertical, alineando perfectamente las etiquetas y campos de entrada inferiores ("Aclaración / Nombre del Responsable" y "Profesional Interviniente") en la visualización en cuadrícula de escritorio.
+  - Se eliminaron las restricciones de relación de aspecto (`aspect-[2/1]`) y altura mínima (`min-h-[140px]`) de los cuadros de firma internos del Profesional, reemplazándolos con `flex-1 w-full`. Esto evita que el ancho de columna estire la caja del profesional por encima de los 220px del contenedor padre.
+  - Se restauró el borde `border-2 border-dashed` en la caja del Responsable.
+  - Esto garantiza que ambas firmas y sus inputs inferiores ("Aclaración / Nombre del Responsable" y "Profesional Interviniente") queden alineados milimétricamente en la visualización en cuadrícula.
 
 ### Decisiones Clave
-- Asegurar simetría visual y consistencia de diseño en cuadrículas de dos columnas (grid layouts) cuando un componente dinámico como `SySO-Signature-Tabbed-Container` convive con firmas de trazado único.
+- Utilizar `flex-1` en sub-elementos para permitir que los cuadros de firma se ajusten dinámicamente al tamaño del contenedor padre de altura fija (`h-[220px]`), evitando desalineaciones por cálculo de relación de aspecto en resoluciones anchas.
 
 ### Skills Utilizadas
 - `gestion-syso-bitacora`
