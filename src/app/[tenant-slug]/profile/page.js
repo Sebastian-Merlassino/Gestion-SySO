@@ -116,6 +116,7 @@ export default function ProfilePage({ params }) {
   const [profileData, setProfileData] = useState(null);
   const [tenantData, setTenantData] = useState(null);
   const [initialValues, setInitialValues] = useState(null);
+  const [associatedMiembroId, setAssociatedMiembroId] = useState(null);
 
   // Toasts y Diálogos accesibles Radix
   const globalToast = useToast();
@@ -367,10 +368,18 @@ const [partidosList, setPartidosList] = useState([]);
             }
           ];
         } else {
+          const { data: memb } = await supabase
+            .from('miembros_equipo')
+            .select('id')
+            .eq('profile_id', user.id)
+            .maybeSingle();
+          const memberIdVal = memb?.id || null;
+          setAssociatedMiembroId(memberIdVal);
+
           const { data: matriculasData, error: mErr } = await supabase
             .from('matriculas')
             .select('*')
-            .eq('profile_id', user.id)
+            .or(`profile_id.eq.${user.id}${memberIdVal ? `,miembro_id.eq.${memberIdVal}` : ''}`)
             .order('created_at');
           
           if (mErr) throw mErr;
@@ -865,10 +874,29 @@ const [partidosList, setPartidosList] = useState([]);
       }
 
       // 4. Actualizar listado de Matrículas
-      const { error: deleteErr } = await supabase
-        .from('matriculas')
-        .delete()
-        .eq('profile_id', userId);
+      let finalMiembroId = associatedMiembroId;
+      if (!finalMiembroId) {
+        try {
+          const { data: memb } = await supabase
+            .from('miembros_equipo')
+            .select('id')
+            .eq('profile_id', userId)
+            .maybeSingle();
+          if (memb) {
+            finalMiembroId = memb.id;
+          }
+        } catch (err) {
+          console.error('Error fetching associated miembro_id on save:', err);
+        }
+      }
+
+      const deleteQuery = supabase.from('matriculas').delete();
+      if (finalMiembroId) {
+        deleteQuery.or(`profile_id.eq.${userId},miembro_id.eq.${finalMiembroId}`);
+      } else {
+        deleteQuery.eq('profile_id', userId);
+      }
+      const { error: deleteErr } = await deleteQuery;
 
       if (deleteErr) throw deleteErr;
 
@@ -876,6 +904,7 @@ const [partidosList, setPartidosList] = useState([]);
         .filter(m => m.numero.trim() !== '' || m.institucion.trim() !== '')
         .map(m => ({
           profile_id: userId,
+          miembro_id: finalMiembroId || null,
           institucion: m.institucion,
           numero: m.numero,
           vencimiento: convertToDbDate(m.vencimiento) || null,

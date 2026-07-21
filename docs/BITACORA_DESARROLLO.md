@@ -1,5 +1,56 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-21] Saneamiento Visual del Selector y Campo de Matrícula Profesional en Protocolo de Iluminación
+
+### Resumen de Cambios
+- **Limpieza del Dropdown de Selección**: Se simplificaron las opciones de la lista desplegable del **Profesional Interviniente** para que muestren únicamente el `Nombre y Apellido` del profesional, eliminando la visualización directa de matrículas o correos dentro de las opciones de la lista desplegable.
+- **Remoción de Chips de Matrículas**: Se quitaron los botones/chips (`Cargadas en perfil:`) que se renderizaban debajo del input de **Matrícula Profesional**, dejando el campo de texto limpio para su edición manual o pre-carga directa del perfil del profesional interviniente.
+
+### Decisiones Clave
+- Evitar ruidos visuales e información redundante en el formulario, manteniendo la consistencia de carga de datos sin botones auxiliares innecesarios.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+
+### Validaciones Ejecutadas
+- Verificación del bundle de Next.js (`npm run build`).
+
+---
+
+## [2026-07-21] Sincronización Bidireccional de Matrículas y Firmas del Administrador de la Cuenta
+
+### Resumen de Cambios
+- **Sincronización Bidireccional de Matrículas**:
+  - En la página de **Equipo de Trabajo** (`src/app/[tenant-slug]/equipo/page.js`), se modificó la carga de matrículas para que traiga tanto las matrículas asociadas al `miembro_id` como al `profile_id` del usuario (en caso de estar enlazado).
+  - Al guardar en la página de **Equipo de Trabajo**, se eliminan las matrículas filtrando por ambos IDs (evitando duplicados) y se insertan con ambos IDs explícitamente configurados.
+  - En la página de **Editar Perfil** (`src/app/[tenant-slug]/profile/page.js`), se obtiene el `miembro_id` correspondiente del usuario y se cargan las matrículas por `profile_id` o `miembro_id`. Al guardar, se limpian y guardan las matrículas asociándolas a ambos IDs.
+- **Sincronización de Firma Digital**:
+  - En la página de **Equipo de Trabajo**, al editar un miembro enlazado a un perfil de usuario, se consulta la firma digital directamente desde la tabla `profiles` como fallback en caso de estar vacía en el registro del miembro.
+- **Saneamiento de Base de Datos**:
+  - Se ejecutó una consulta SQL para actualizar y sincronizar todas las matrículas existentes en la base de datos que tenían `miembro_id = null` por haberse registrado previamente, previniendo incoherencias de carga.
+
+### Decisiones Clave
+- Asegurar la consistencia y la persistencia redundante de las matrículas y la firma del administrador, que es el dueño de la cuenta, permitiendo que sus cambios en su perfil se reflejen automáticamente en el listado de equipo y en la selección del profesional técnico en los reportes (iluminación, control eléctrico, visitas, etc.).
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `supabase`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de validación exitosa de Next.js (`npm run build`).
+
+---
+
 ## [2026-07-21] Módulo e Integración del Contenedor "Firma del Profesional de Higiene y Seguridad" en Protocolo de Iluminación
 
 ### Resumen de Cambios

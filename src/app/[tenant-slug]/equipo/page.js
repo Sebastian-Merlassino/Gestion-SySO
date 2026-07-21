@@ -836,15 +836,26 @@ export default function EquipoPage({ params }) {
       setShowPassword(false);
       setShowConfirmPassword(false);
 
-      const resolvedSignature = member.signature_url ? await getSignedUrl('signatures', member.signature_url) : '';
+      let finalSignaturePath = member.signature_url;
+      if (member.profile_id) {
+        const { data: prof } = await supabase
+          .from('profiles')
+          .select('signature_url')
+          .eq('id', member.profile_id)
+          .single();
+        if (prof?.signature_url) {
+          finalSignaturePath = prof.signature_url;
+        }
+      }
+      const resolvedSignature = finalSignaturePath ? await getSignedUrl('signatures', finalSignaturePath) : '';
       setFotoFirmaPreview(resolvedSignature);
-      setSignatureUrl(member.signature_url || '');
+      setSignatureUrl(finalSignaturePath || '');
 
       // Load Matriculas
       const { data: matriculasData, error: mErr } = await supabase
         .from('matriculas')
         .select('*')
-        .eq('miembro_id', memberId)
+        .or(`miembro_id.eq.${memberId}${member.profile_id ? `,profile_id.eq.${member.profile_id}` : ''}`)
         .order('created_at');
       
       if (mErr) throw mErr;
@@ -1170,10 +1181,13 @@ export default function EquipoPage({ params }) {
       );
 
       // Delete old licenses and insert fresh ones
-      const { error: mDeleteErr } = await supabase
-        .from('matriculas')
-        .delete()
-        .eq('miembro_id', memberId);
+      const deleteQuery = supabase.from('matriculas').delete();
+      if (linkedProfileId) {
+        deleteQuery.or(`miembro_id.eq.${memberId},profile_id.eq.${linkedProfileId}`);
+      } else {
+        deleteQuery.eq('miembro_id', memberId);
+      }
+      const { error: mDeleteErr } = await deleteQuery;
 
       if (mDeleteErr) throw mDeleteErr;
 

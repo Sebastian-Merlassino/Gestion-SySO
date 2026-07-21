@@ -2398,7 +2398,7 @@ export default function ProtocoloForm({
                   <option value="">Seleccionar Profesional...</option>
                   {miembrosList.map((m) => (
                     <option key={m.id} value={m.id}>
-                      {m.nombre} {m.matricula ? `(${m.matricula})` : ''}
+                      {m.nombre}
                     </option>
                   ))}
                   <option value="__custom__">Otro (cargar manualmente)...</option>
@@ -2430,30 +2430,6 @@ export default function ProtocoloForm({
                   onChange={(e) => setProfesionalMatricula(e.target.value)}
                   placeholder="Ej. MP 12345"
                 />
-
-                {profesionalId !== '__custom__' && (() => {
-                  const selectedMem = miembrosList.find(m => m.id === profesionalId);
-                  if (selectedMem?.listaMatriculas?.length > 1) {
-                    return (
-                      <div className="flex items-center gap-1.5 flex-wrap mt-2">
-                        <span className="text-[10px] text-slate-400 font-semibold">Cargadas en perfil:</span>
-                        {selectedMem.listaMatriculas.map((mat, idx) => (
-                          <button
-                            key={idx}
-                            type="button"
-                            disabled={!canEdit}
-                            onClick={() => setProfesionalMatricula(mat)}
-                            className="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-700 hover:bg-[#468DFF] hover:text-white rounded-md transition-colors cursor-pointer border-none"
-                            title="Haz clic para seleccionar esta matrícula"
-                          >
-                            {mat}
-                          </button>
-                        ))}
-                      </div>
-                    );
-                  }
-                  return null;
-                })()}
               </div>
             </div>
 
