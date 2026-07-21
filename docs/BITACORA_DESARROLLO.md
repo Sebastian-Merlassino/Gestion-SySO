@@ -1,5 +1,28 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-21] Alineación de Firmas y Datos del Responsable y Profesional en Checklist Personalizados
+
+### Resumen de Cambios
+- **Alineación de Cajas de Firma**:
+  - En la sección de firmas de **Checklist Personalizados** (`checklist-personalizados/page.js`), se eliminó el espaciador `<div className="hidden md:block h-[51px] shrink-0" />` en la columna del Responsable del Establecimiento.
+  - Se cambió el tamaño responsivo de relación de aspecto (`aspect-[2/1]`) de la caja de firma a mano del Responsable por una altura fija de `h-[220px]`, coincidiendo exactamente con la altura del nuevo contenedor interactivo con solapas superiores (`SySO-Signature-Tabbed-Container`) del Profesional.
+  - Esto garantiza que ambas firmas comiencen y terminen en el mismo plano vertical, alineando perfectamente las etiquetas y campos de entrada inferiores ("Aclaración / Nombre del Responsable" y "Profesional Interviniente") en la visualización en cuadrícula de escritorio.
+
+### Decisiones Clave
+- Asegurar simetría visual y consistencia de diseño en cuadrículas de dos columnas (grid layouts) cuando un componente dinámico como `SySO-Signature-Tabbed-Container` convive con firmas de trazado único.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+
+### Validaciones Ejecutadas
+- Verificación del bundle de Next.js (`npm run build`).
+
+---
+
 ## [2026-07-21] Prevención de Violación de CSP al Cargar Imágenes Base64 en Reportes PDF
 
 ### Resumen de Cambios

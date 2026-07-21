@@ -2736,8 +2736,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
                                     </button>
                                   )}
                                 </div>
-                                <div className="hidden md:block h-[51px] shrink-0" />
-                                <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl aspect-[2/1] relative overflow-hidden flex items-center justify-center">
+                                <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl h-[220px] relative overflow-hidden flex items-center justify-center shadow-sm">
                                   {firmaRespSavedUrl && !hasSignedResp ? (
                                     <img src={firmaRespSavedUrl.startsWith('mock') ? '/brand/logo-primary.png' : firmaRespSavedUrl} alt="Firma Responsable" className="w-full h-full object-contain p-2" />
                                   ) : (
