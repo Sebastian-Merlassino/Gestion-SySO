@@ -2388,10 +2388,21 @@ export default function ProtocoloForm({
                         setProfesionalNombre(selectedMem.nombre || '');
                         setProfesionalMatricula(selectedMem.matricula || '');
                         setSignaturePath(selectedMem.signature_url || '');
+                        setFirmaProfSavedUrl('');
+                        setFirmaPerfilPreviewUrl('');
                         if (selectedMem.signature_url) {
                           setFirmaTipo('perfil');
+                        } else {
+                          setFirmaTipo('mano');
                         }
                       }
+                    } else {
+                      setProfesionalNombre('');
+                      setProfesionalMatricula('');
+                      setSignaturePath('');
+                      setFirmaProfSavedUrl('');
+                      setFirmaPerfilPreviewUrl('');
+                      setFirmaTipo('mano');
                     }
                   }}
                 >

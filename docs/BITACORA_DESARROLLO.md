@@ -5,6 +5,7 @@
 ### Resumen de Cambios
 - **Limpieza del Dropdown de Selección**: Se simplificaron las opciones de la lista desplegable del **Profesional Interviniente** para que muestren únicamente el `Nombre y Apellido` del profesional, eliminando la visualización directa de matrículas o correos dentro de las opciones de la lista desplegable.
 - **Remoción de Chips de Matrículas**: Se quitaron los botones/chips (`Cargadas en perfil:`) que se renderizaban debajo del input de **Matrícula Profesional**, dejando el campo de texto limpio para su edición manual o pre-carga directa del perfil del profesional interviniente.
+- **Actualización de Firma Dinámica**: Se corrigió el evento `onChange` del selector de profesional para limpiar las variables de firma cargada (`firmaProfSavedUrl`) y firma de perfil previsualizada (`firmaPerfilPreviewUrl`) previas. Esto garantiza que al cambiar de profesional interviniente, la firma digital visualizada se actualice forzosamente con el perfil del nuevo técnico seleccionado (o pase a firma a mano en caso de no poseer firma de perfil).
 
 ### Decisiones Clave
 - Evitar ruidos visuales e información redundante en el formulario, manteniendo la consistencia de carga de datos sin botones auxiliares innecesarios.
