@@ -674,7 +674,9 @@ export default function ProtocoloForm({
         tipo: ad.tipo || 'Otro',
         name: ad.nombre_archivo || 'Archivo',
         path: ad.storage_path,
-        preview: ad.storage_path.startsWith('http') ? ad.storage_path : (signedUrlsMap[ad.storage_path] || '')
+        preview: ad.storage_path.startsWith('http') ? ad.storage_path : (signedUrlsMap[ad.storage_path] || ''),
+        originalPath: ad.original_path || ad.storage_path,
+        markers: Array.isArray(ad.markers) ? ad.markers : []
       })));
 
       setLoading(false);
@@ -946,7 +948,9 @@ export default function ProtocoloForm({
         tipo: type,
         name: file.name,
         path: filename,
-        preview: sData?.signedUrl || ''
+        preview: sData?.signedUrl || '',
+        originalPath: filename,
+        markers: []
       };
 
       setAdjuntos(prev => [...prev, newAdjunto]);
@@ -964,7 +968,9 @@ export default function ProtocoloForm({
       tipo: type,
       name: `Drive - ${type}`,
       path: urlStr,
-      preview: urlStr
+      preview: urlStr,
+      originalPath: urlStr,
+      markers: []
     };
     setAdjuntos(prev => [...prev, newAdj]);
     globalToast.toast('Enlace de Google Drive registrado con éxito.', 'success');
@@ -974,32 +980,57 @@ export default function ProtocoloForm({
     setAdjuntos(prev => prev.filter(ad => ad.id !== id));
   };
 
-  const handleSaveEditedPhoto = async (dataUrl) => {
+  const handleSaveEditedPhoto = (newPoints, bakedDataUrl) => {
     try {
       const planoFotosAdjuntos = adjuntos.filter(a => a.tipo === 'Evidencia Fotográfica Plano' || a.tipo === 'Foto Plano');
       const targetPhoto = planoFotosAdjuntos[editPhotoIndex];
       if (!targetPhoto) return;
 
-      // Convertir data URL a Blob en memoria sin usar fetch para evitar violaciones de CSP
-      const arr = dataUrl.split(',');
-      const mime = arr[0].match(/:(.*?);/)[1];
-      const bstr = atob(arr[1]);
-      let n = bstr.length;
-      const u8arr = new Uint8Array(n);
-      while (n--) {
-        u8arr[n] = bstr.charCodeAt(n);
-      }
-      const blob = new Blob([u8arr], { type: mime });
-      const file = new File([blob], `puntos_medicion_${Date.now()}.jpg`, { type: 'image/jpeg' });
+      setAdjuntos(prev => {
+        const updated = prev.map(ad => {
+          if (ad.id === targetPhoto.id) {
+            return {
+              ...ad,
+              preview: bakedDataUrl,
+              markers: newPoints
+            };
+          }
+          return ad;
+        });
 
-      // Eliminar el adjunto anterior
-      setAdjuntos(prev => prev.filter(ad => ad.id !== targetPhoto.id));
+        // Recalcular correlatividad global
+        let allMarkers = [];
+        updated.forEach(ad => {
+          if (ad.tipo === 'Evidencia Fotográfica Plano' || ad.tipo === 'Foto Plano') {
+            allMarkers.push(...(ad.markers || []));
+          }
+        });
 
-      // Subir el nuevo adjunto modificado
-      await handleUploadFile(file, 'Evidencia Fotográfica Plano');
+        // Ordenar por timestamp
+        allMarkers.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+
+        // Re-asignar números
+        allMarkers.forEach((m, idx) => {
+          m.number = idx + 1;
+        });
+
+        // Mapear los números corregidos de vuelta
+        return updated.map(ad => {
+          if (ad.tipo === 'Evidencia Fotográfica Plano' || ad.tipo === 'Foto Plano') {
+            const mappedMarkers = (ad.markers || []).map(m => {
+              const matched = allMarkers.find(am => am.createdAt === m.createdAt);
+              return matched ? { ...m, number: matched.number } : m;
+            });
+            return { ...ad, markers: mappedMarkers };
+          }
+          return ad;
+        });
+      });
+
+      globalToast.toast('Marcadores guardados en la sesión. Se subirán al confirmar el protocolo.', 'success');
     } catch (err) {
       console.error('Error al guardar la foto editada:', err);
-      globalToast.toast('Error al guardar los marcadores en la imagen.', 'error');
+      globalToast.toast('Error al guardar los marcadores.', 'error');
     }
   };
 
@@ -1369,6 +1400,51 @@ export default function ProtocoloForm({
       }
 
       // 4. Guardar Adjuntos
+      setSaveLoading(true);
+
+      const updatedAdjuntos = [...adjuntos];
+      for (let i = 0; i < updatedAdjuntos.length; i++) {
+        const ad = updatedAdjuntos[i];
+        if ((ad.tipo === 'Evidencia Fotográfica Plano' || ad.tipo === 'Foto Plano') && ad.markers && ad.markers.length > 0) {
+          let resolvedUrl = ad.originalPath || ad.path;
+          if (!resolvedUrl.startsWith('http') && !resolvedUrl.startsWith('data:')) {
+            const { data } = await supabase.storage
+              .from('protocolos-iluminacion')
+              .createSignedUrl(resolvedUrl, 3600);
+            if (data?.signedUrl) {
+              resolvedUrl = data.signedUrl;
+            }
+          }
+
+          const bakedDataUrl = await bakeImageWithMarkers(resolvedUrl, ad.markers);
+          if (bakedDataUrl) {
+            const cleanName = ad.name || `foto_${Date.now()}.jpg`;
+            const blob = dataURLtoBlob(bakedDataUrl);
+            const file = new File([blob], `baked_${Date.now()}_${cleanName.replace(/\s+/g, '_')}`, { type: 'image/jpeg' });
+            
+            const uuid = editingId || tempId;
+            const filename = `${user.id}/${uuid}/adjuntos/${Date.now()}_baked_${cleanName.replace(/\s+/g, '_')}`;
+            const { error: uploadErr } = await supabase.storage
+              .from('protocolos-iluminacion')
+              .upload(filename, file, { cacheControl: '3600', upsert: true });
+              
+            if (!uploadErr) {
+              const { data: sData } = await supabase.storage
+                .from('protocolos-iluminacion')
+                .createSignedUrl(filename, 3600);
+
+              updatedAdjuntos[i] = {
+                ...ad,
+                path: filename,
+                preview: sData?.signedUrl || ad.preview
+              };
+            } else {
+              console.error('Error uploading baked image:', uploadErr);
+            }
+          }
+        }
+      }
+
       if (editingId) {
         const { error: delAdjErr } = await supabase
           .from('protocolos_iluminacion_adjuntos')
@@ -1377,13 +1453,15 @@ export default function ProtocoloForm({
         if (delAdjErr) throw delAdjErr;
       }
 
-      if (adjuntos.length > 0) {
-        const adjPayload = adjuntos.map(ad => ({
+      if (updatedAdjuntos.length > 0) {
+        const adjPayload = updatedAdjuntos.map(ad => ({
           protocolo_id: tempId,
           tipo: ad.tipo,
           nombre_archivo: ad.name,
           storage_path: ad.path,
           public_url: ad.preview,
+          original_path: ad.originalPath || ad.path,
+          markers: ad.markers || [],
           created_by: user.id
         }));
 
@@ -2382,11 +2460,20 @@ export default function ProtocoloForm({
                           handleDeleteAdjunto(targetPhoto.id);
                         }
                       }}
-                      onEditPhoto={(index) => {
+                      onEditPhoto={async (index) => {
                         const targetPhoto = planoFotosAdjuntos[index];
                         if (targetPhoto) {
                           setEditPhotoIndex(index);
-                          setEditorImageUrl(targetPhoto.preview || targetPhoto.path);
+                          let url = targetPhoto.originalPath || targetPhoto.path;
+                          if (!url.startsWith('http') && !url.startsWith('data:')) {
+                            const { data, error } = await supabase.storage
+                              .from('protocolos-iluminacion')
+                              .createSignedUrl(url, 3600);
+                            if (!error && data?.signedUrl) {
+                              url = data.signedUrl;
+                            }
+                          }
+                          setEditorImageUrl(url);
                           setIsEditorOpen(true);
                         }
                       }}
@@ -2709,6 +2796,23 @@ export default function ProtocoloForm({
         isOpen={isEditorOpen}
         onClose={() => setIsEditorOpen(false)}
         imageUrl={editorImageUrl}
+        initialPoints={(() => {
+          const planoFotosAdjuntos = adjuntos.filter(a => a.tipo === 'Evidencia Fotográfica Plano' || a.tipo === 'Foto Plano');
+          return planoFotosAdjuntos[editPhotoIndex]?.markers || [];
+        })()}
+        otherImagesMarkers={(() => {
+          let list = [];
+          adjuntos.forEach((ad, idx) => {
+            if (ad.tipo === 'Evidencia Fotográfica Plano' || ad.tipo === 'Foto Plano') {
+              const planoFotosAdjuntos = adjuntos.filter(a => a.tipo === 'Evidencia Fotográfica Plano' || a.tipo === 'Foto Plano');
+              const targetPhoto = planoFotosAdjuntos[editPhotoIndex];
+              if (targetPhoto && ad.id !== targetPhoto.id) {
+                list.push(...(ad.markers || []));
+              }
+            }
+          });
+          return list;
+        })()}
         onSave={handleSaveEditedPhoto}
       />
     </>
@@ -2718,16 +2822,16 @@ export default function ProtocoloForm({
 // ==========================================
 // COMPONENTE: MODAL EDITOR DE PUNTOS DE MEDICIÓN
 // ==========================================
-function MeasurementPointsEditorModal({ isOpen, onClose, imageUrl, onSave }) {
+function MeasurementPointsEditorModal({ isOpen, onClose, imageUrl, initialPoints = [], otherImagesMarkers = [], onSave }) {
   const [points, setPoints] = useState([]);
   const [loading, setLoading] = useState(false);
   const containerRef = useRef(null);
 
   useEffect(() => {
     if (isOpen) {
-      setPoints([]);
+      setPoints(initialPoints || []);
     }
-  }, [isOpen]);
+  }, [isOpen, initialPoints]);
 
   const handleImageClick = (e) => {
     if (!containerRef.current) return;
@@ -2735,8 +2839,8 @@ function MeasurementPointsEditorModal({ isOpen, onClose, imageUrl, onSave }) {
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
 
-    // Add point
-    setPoints(prev => [...prev, { x, y, number: prev.length + 1 }]);
+    // Add point with a timestamp
+    setPoints(prev => [...prev, { x, y, createdAt: Date.now() }]);
   };
 
   const handleUndo = () => {
@@ -2746,6 +2850,21 @@ function MeasurementPointsEditorModal({ isOpen, onClose, imageUrl, onSave }) {
   const handleClear = () => {
     setPoints([]);
   };
+
+  // Combine and calculate numbers dynamically
+  const getNumberedPoints = () => {
+    const combined = [
+      ...otherImagesMarkers.map(m => ({ ...m, source: 'other' })),
+      ...points.map(m => ({ ...m, source: 'current' }))
+    ];
+    combined.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+    combined.forEach((m, index) => {
+      m.number = index + 1;
+    });
+    return combined.filter(m => m.source === 'current');
+  };
+
+  const currentNumberedPoints = getNumberedPoints();
 
   const handleSave = () => {
     if (!imageUrl) return;
@@ -2765,7 +2884,7 @@ function MeasurementPointsEditorModal({ isOpen, onClose, imageUrl, onSave }) {
         const minDim = Math.min(img.naturalWidth, img.naturalHeight);
         const radius = Math.max(16, minDim * 0.02); // 2% of min dimension, min 16px
         
-        points.forEach((p) => {
+        currentNumberedPoints.forEach((p) => {
           const pxX = (p.x / 100) * img.naturalWidth;
           const pxY = (p.y / 100) * img.naturalHeight;
 
@@ -2789,7 +2908,7 @@ function MeasurementPointsEditorModal({ isOpen, onClose, imageUrl, onSave }) {
         });
 
         const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-        onSave(dataUrl);
+        onSave(currentNumberedPoints, dataUrl);
         onClose();
       } catch (err) {
         console.error('Error drawing markers on canvas:', err);
@@ -2843,9 +2962,9 @@ function MeasurementPointsEditorModal({ isOpen, onClose, imageUrl, onSave }) {
                     className="max-w-full max-h-[50vh] object-contain pointer-events-none block"
                   />
                   {/* Puntos de medición */}
-                  {points.map((p) => (
+                  {currentNumberedPoints.map((p) => (
                     <div
-                      key={p.number}
+                      key={p.createdAt}
                       style={{
                         position: 'absolute',
                         left: `${p.x}%`,
@@ -2907,3 +3026,65 @@ function MeasurementPointsEditorModal({ isOpen, onClose, imageUrl, onSave }) {
     </Dialog.Root>
   );
 }
+
+// Helpers de procesamiento de imágenes asíncronos y evasión de CSP
+const dataURLtoBlob = (dataUrl) => {
+  const arr = dataUrl.split(',');
+  const mime = arr[0].match(/:(.*?);/)[1];
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new Blob([u8arr], { type: mime });
+};
+
+const bakeImageWithMarkers = (imageUrl, markers) => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = imageUrl;
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+
+        const minDim = Math.min(img.naturalWidth, img.naturalHeight);
+        const radius = Math.max(16, minDim * 0.02);
+        
+        markers.forEach((p) => {
+          const pxX = (p.x / 100) * img.naturalWidth;
+          const pxY = (p.y / 100) * img.naturalHeight;
+
+          ctx.beginPath();
+          ctx.arc(pxX, pxY, radius, 0, 2 * Math.PI);
+          ctx.fillStyle = '#468DFF';
+          ctx.fill();
+          
+          ctx.lineWidth = Math.max(2, radius * 0.15);
+          ctx.strokeStyle = '#FFFFFF';
+          ctx.stroke();
+
+          ctx.fillStyle = '#FFFFFF';
+          const fontSize = Math.round(radius * 1.1);
+          ctx.font = `bold ${fontSize}px sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(p.number.toString(), pxX, pxY);
+        });
+
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      } catch (err) {
+        console.error('Error in bakeImageWithMarkers:', err);
+        resolve(null);
+      }
+    };
+    img.onerror = () => {
+      resolve(null);
+    };
+  });
+};

@@ -7,8 +7,9 @@
   - En `ImageUploadZone.js` se agregó el prop opcional `onEditPhoto` que renderiza un botón con icono de lápiz sobre el overlay hover de la miniatura de cada foto para habilitar edición.
 - **Modulo de Edición en Protocolo**:
   - En `ProtocoloForm.js` se implementó el componente modal `MeasurementPointsEditorModal` basado en Radix Dialog que permite hacer clic para ubicar marcadores numerados secuencialmente.
-  - Al hacer clic en "Guardar", los marcadores se dibujan en alta resolución en un `<canvas>` HTML a las dimensiones naturales de la foto.
-  - La imagen combinada resultante es subida a Supabase Storage en el bucket `protocolos-iluminacion` y reemplaza el adjunto original en el estado.
+  - Se modificó la persistencia de marcadores: en lugar de hornearlos inmediatamente de forma destructiva, se guardan como metadatos JSON (`markers`) y se preserva el archivo original limpio (`original_path` / `originalPath`). Esto permite **volver a editar los marcadores más adelante**.
+  - **Correlatividad Global**: Cuando se edita una imagen, se combinan sus marcadores con los de las otras fotos de evidencia y se ordenan por su marca de tiempo de creación (`createdAt`), calculando números correlativos únicos y globales (ej. 1-5 en img 1, 6-10 en img 2, 11-12 al volver a img 1).
+  - Al presionar "Guardar" en el formulario principal, se hornean en segundo plano todas las imágenes modificadas con sus marcadores definitivos y se suben a Supabase Storage, manteniendo compatibilidad con la exportación PDF.
   - Se actualizaron las funciones de adjuntos a formato funcional (`prev => ...`) previniendo race conditions o stale closures.
   - **Corrección de Referencia**: Se restauró la variable de estado `estSectoresLocal` que fue eliminada por error durante la inserción de las nuevas variables de edición, resolviendo el `ReferenceError` de runtime.
   - **Evasión de CSP (Base64 a Blob)**: Se reemplazó el uso de `fetch(dataUrl)` por una decodificación Base64 en memoria manual (usando `atob` y arreglos tipados) en `handleSaveEditedPhoto`, evitando cualquier llamada de red y solucionando la violación de CSP al guardar la imagen.
