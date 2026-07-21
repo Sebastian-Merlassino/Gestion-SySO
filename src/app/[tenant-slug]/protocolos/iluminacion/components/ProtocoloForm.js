@@ -1,7 +1,7 @@
 // src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/providers/ToastProvider';
@@ -34,7 +34,8 @@ import {
   ArrowLeft,
   X,
   ShieldCheck,
-  MapPin
+  MapPin,
+  PenTool
 } from 'lucide-react';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import { TABLA_2_ILUMINACION } from '../utils/tablasAnexoIV';
@@ -115,6 +116,18 @@ export default function ProtocoloForm({
   // Attachments state (local files / Google Drive)
   const [adjuntos, setAdjuntos] = useState([]);
   
+  // Professional & Signature State
+  const [miembrosList, setMiembrosList] = useState([]);
+  const [profesionalId, setProfesionalId] = useState('');
+  const [profesionalNombre, setProfesionalNombre] = useState('');
+  const [profesionalMatricula, setProfesionalMatricula] = useState('');
+  const [firmaTipo, setFirmaTipo] = useState('perfil'); // 'perfil' | 'mano'
+  const [signaturePath, setSignaturePath] = useState('');
+  const [firmaPerfilPreviewUrl, setFirmaPerfilPreviewUrl] = useState('');
+  const [firmaProfSavedUrl, setFirmaProfSavedUrl] = useState('');
+  const [hasSignedProf, setHasSignedProf] = useState(false);
+  const firmaProfCanvasRef = useRef(null);
+
   // Profile Syncing Dialog State
   const [syncQueue, setSyncQueue] = useState([]);
   const [syncIndex, setSyncIndex] = useState(0);
@@ -123,6 +136,150 @@ export default function ProtocoloForm({
 
   const canEdit = mode !== 'view' && estado !== 'anulado';
   const isReadOnly = mode === 'view';
+
+  // Resolve profile signature preview signed URL
+  useEffect(() => {
+    const resolveProfileSignaturePreview = async () => {
+      if (!signaturePath || signaturePath === 'N/A' || firmaTipo !== 'perfil') {
+        if (firmaProfSavedUrl && firmaTipo === 'perfil') {
+          setFirmaPerfilPreviewUrl(firmaProfSavedUrl);
+        }
+        return;
+      }
+      try {
+        if (signaturePath.startsWith('data:')) {
+          setFirmaPerfilPreviewUrl(signaturePath);
+        } else if (isDevMode || signaturePath.startsWith('mock')) {
+          setFirmaPerfilPreviewUrl('/brand/logo-primary.png');
+        } else {
+          let relativePath = signaturePath;
+          let isExternal = false;
+          
+          if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
+            try {
+              const urlObj = new URL(relativePath);
+              const pathParts = urlObj.pathname.split('/');
+              const bucketIndex = pathParts.findIndex(part => part === 'signatures' || part === 'documents' || part === 'avatars');
+              if (bucketIndex !== -1 && bucketIndex < pathParts.length - 1) {
+                relativePath = pathParts.slice(bucketIndex + 1).join('/');
+              } else {
+                isExternal = true;
+              }
+            } catch (urlErr) {
+              isExternal = true;
+            }
+          }
+
+          if (isExternal) {
+            setFirmaPerfilPreviewUrl(signaturePath);
+          } else {
+            const { data: sData, error: sErr } = await supabase.storage
+              .from('signatures')
+              .createSignedUrl(relativePath, 3600);
+            if (!sErr && sData?.signedUrl) {
+              setFirmaPerfilPreviewUrl(sData.signedUrl);
+            } else {
+              setFirmaPerfilPreviewUrl(signaturePath);
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Error cargando previsualización de firma de perfil:', e);
+        if (signaturePath) {
+          setFirmaPerfilPreviewUrl(signaturePath);
+        }
+      }
+    };
+    resolveProfileSignaturePreview();
+  }, [signaturePath, firmaTipo, firmaProfSavedUrl, isDevMode]);
+
+  // Canvas drawing setup for hand signature
+  const setupCanvas = useCallback((canvas, setHasSigned) => {
+    if (!canvas || !canEdit) return;
+    const ctx = canvas.getContext('2d');
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    let drawing = false;
+    let lastX = 0;
+    let lastY = 0;
+
+    const getPos = (clientX, clientY) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = ((clientX - rect.left) / rect.width) * canvas.width;
+      const y = ((clientY - rect.top) / rect.height) * canvas.height;
+      return { x, y };
+    };
+
+    const startDrawing = (e) => {
+      drawing = true;
+      const client = e.touches ? e.touches[0] : e;
+      const pos = getPos(client.clientX, client.clientY);
+      lastX = pos.x;
+      lastY = pos.y;
+      setHasSigned(true);
+    };
+
+    const draw = (e) => {
+      if (!drawing) return;
+      if (e.cancelable) e.preventDefault();
+      const client = e.touches ? e.touches[0] : e;
+      const pos = getPos(client.clientX, client.clientY);
+
+      ctx.beginPath();
+      ctx.moveTo(lastX, lastY);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+
+      lastX = pos.x;
+      lastY = pos.y;
+    };
+
+    const stopDrawing = () => {
+      drawing = false;
+    };
+
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseleave', stopDrawing);
+    canvas.addEventListener('touchstart', startDrawing, { passive: false });
+    canvas.addEventListener('touchmove', draw, { passive: false });
+    canvas.addEventListener('touchend', stopDrawing);
+
+    canvas._cleanup = () => {
+      canvas.removeEventListener('mousedown', startDrawing);
+      canvas.removeEventListener('mousemove', draw);
+      canvas.removeEventListener('mouseup', stopDrawing);
+      canvas.removeEventListener('mouseleave', stopDrawing);
+      canvas.removeEventListener('touchstart', startDrawing);
+      canvas.removeEventListener('touchmove', draw);
+      canvas.removeEventListener('touchend', stopDrawing);
+    };
+  }, [canEdit]);
+
+  const firmaProfRefCallback = useCallback((node) => {
+    if (node) {
+      firmaProfCanvasRef.current = node;
+      setupCanvas(node, setHasSignedProf);
+    } else {
+      if (firmaProfCanvasRef.current && firmaProfCanvasRef.current._cleanup) {
+        firmaProfCanvasRef.current._cleanup();
+      }
+      firmaProfCanvasRef.current = null;
+    }
+  }, [setupCanvas]);
+
+  const handleClearCanvas = () => {
+    if (firmaProfCanvasRef.current) {
+      const ctx = firmaProfCanvasRef.current.getContext('2d');
+      ctx.clearRect(0, 0, firmaProfCanvasRef.current.width, firmaProfCanvasRef.current.height);
+    }
+    setHasSignedProf(false);
+    setFirmaProfSavedUrl('');
+  };
 
   // Calculations helper for points
   const getPuntoCalculos = useCallback((p) => {
@@ -248,6 +405,143 @@ export default function ProtocoloForm({
         setEmpresas(emps);
         setAllEstablecimientos(ests);
 
+        // Fetch team members / profiles of the organization
+        let mems = [];
+        if (!session) {
+          mems = [
+            { id: 'mock-m-1', nombre: 'Ing. Carlos Gómez', matricula: 'MP 12345 / Res. SRT 84/12', signature_url: '/brand/logo-primary.png' },
+            { id: 'mock-m-2', nombre: 'Lic. María Fernández', matricula: 'MN 6789', signature_url: '' }
+          ];
+        } else {
+          // 1. Query miembros_equipo table
+          const { data: eqMems } = await supabase
+            .from('miembros_equipo')
+            .select('id, full_name, signature_url, profile_id')
+            .eq('tenant_id', tenant.id)
+            .order('full_name');
+
+          // 2. Query profiles table
+          const { data: profsData } = await supabase
+            .from('profiles')
+            .select('id, full_name, nombre_apellido, signature_url, matricula, matricula_profesional')
+            .eq('tenant_id', tenant.id)
+            .order('full_name');
+
+          // 3. Query matriculas table for all profiles
+          let dbMatriculas = [];
+          try {
+            const { data: mData } = await supabase
+              .from('matriculas')
+              .select('profile_id, institucion, numero');
+            dbMatriculas = mData || [];
+          } catch (mErr) {
+            console.log('No tabla matriculas o error al consultar:', mErr);
+          }
+
+          const getMatriculasForProfile = (profId, singleMat, singleMatProf) => {
+            const matList = [];
+            dbMatriculas
+              .filter(m => m.profile_id === profId && m.numero)
+              .forEach(m => {
+                const formatted = m.institucion ? `${m.institucion} ${m.numero}` : m.numero;
+                matList.push(formatted);
+              });
+            if (singleMat) matList.push(singleMat);
+            if (singleMatProf) matList.push(singleMatProf);
+            return Array.from(new Set(matList.filter(Boolean)));
+          };
+
+          const map = new Map();
+
+          if (eqMems && eqMems.length > 0) {
+            eqMems.forEach(m => {
+              const uMatList = getMatriculasForProfile(m.profile_id || m.id, null, null);
+              map.set(m.id, {
+                id: m.id,
+                nombre: m.full_name || 'Sin nombre',
+                matricula: uMatList.join(' / '),
+                listaMatriculas: uMatList,
+                signature_url: m.signature_url || '',
+                profile_id: m.profile_id
+              });
+            });
+          }
+
+          if (profsData && profsData.length > 0) {
+            profsData.forEach(p => {
+              const name = p.full_name || p.nombre_apellido || 'Sin nombre';
+              const sig = p.signature_url || '';
+              const uMatList = getMatriculasForProfile(p.id, p.matricula, p.matricula_profesional);
+              const formattedMat = uMatList.join(' / ');
+
+              let existingKey = null;
+              for (const [k, v] of map.entries()) {
+                if (k === p.id || v.profile_id === p.id) {
+                  existingKey = k;
+                  break;
+                }
+              }
+
+              if (existingKey) {
+                const existing = map.get(existingKey);
+                const mergedMatList = Array.from(new Set([...(existing.listaMatriculas || []), ...uMatList]));
+                map.set(existingKey, {
+                  ...existing,
+                  nombre: existing.nombre !== 'Sin nombre' ? existing.nombre : name,
+                  matricula: mergedMatList.join(' / '),
+                  listaMatriculas: mergedMatList,
+                  signature_url: existing.signature_url || sig
+                });
+              } else {
+                map.set(p.id, {
+                  id: p.id,
+                  nombre: name,
+                  matricula: formattedMat,
+                  listaMatriculas: uMatList,
+                  signature_url: sig,
+                  profile_id: p.id
+                });
+              }
+            });
+          }
+
+          mems = Array.from(map.values());
+        }
+        setMiembrosList(mems);
+
+        // Auto-select logged-in professional details
+        if (session?.user) {
+          const userMem = mems.find(m => m.id === session.user.id || m.profile_id === session.user.id);
+          
+          let userNombre = userMem?.nombre || '';
+          let userMatricula = userMem?.matricula || '';
+          let userSig = userMem?.signature_url || '';
+
+          if (!userNombre) {
+            const { data: currentProf } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single();
+            if (currentProf) {
+              userNombre = currentProf.full_name || currentProf.nombre_apellido || '';
+              userSig = currentProf.signature_url || '';
+              const uMatList = getMatriculasForProfile(session.user.id, currentProf.matricula, currentProf.matricula_profesional);
+              userMatricula = uMatList.join(' / ');
+            }
+          }
+
+          if (!editingId) {
+            setProfesionalId(userMem ? userMem.id : session.user.id);
+            setProfesionalNombre(userNombre);
+            setProfesionalMatricula(userMatricula);
+            setSignaturePath(userSig);
+            if (userSig) {
+              setFirmaTipo('perfil');
+            }
+          }
+        }
+
         // Load existing record if editing
         if (editingId) {
           await loadExistingRecord(session);
@@ -304,6 +598,12 @@ export default function ProtocoloForm({
       setConclusiones(proto.conclusiones || '');
       setRecomendaciones(proto.recomendaciones || '');
       setEstado(proto.estado || 'borrador');
+      setProfesionalNombre(proto.profesional_nombre || '');
+      setProfesionalMatricula(proto.profesional_matricula || '');
+      setFirmaTipo(proto.firma_tipo || 'perfil');
+      if (proto.firma_profesional) {
+        setFirmaProfSavedUrl(proto.firma_profesional);
+      }
 
       // Cargar sectores del establecimiento seleccionado
       if (proto.establecimiento_id) {
@@ -898,6 +1198,13 @@ export default function ProtocoloForm({
       const tempId = editingId || crypto.randomUUID();
       const resultadoGeneralVal = getResultadoGeneral();
 
+      let finalFirmaProf = firmaProfSavedUrl;
+      if (firmaTipo === 'perfil') {
+        finalFirmaProf = firmaPerfilPreviewUrl || signaturePath || '';
+      } else if (firmaTipo === 'mano' && firmaProfCanvasRef.current && hasSignedProf) {
+        finalFirmaProf = firmaProfCanvasRef.current.toDataURL('image/png');
+      }
+
       const payloadProto = {
         id: tempId,
         tenant_id: tenant.id,
@@ -925,6 +1232,10 @@ export default function ProtocoloForm({
         conclusiones: conclusiones || null,
         recomendaciones: recomendaciones || null,
         resultado_general: resultadoGeneralVal,
+        profesional_nombre: profesionalNombre || null,
+        profesional_matricula: profesionalMatricula || null,
+        firma_tipo: firmaTipo,
+        firma_profesional: finalFirmaProf || null,
         estado: estado,
         updated_at: new Date().toISOString()
       };
@@ -1930,22 +2241,22 @@ export default function ProtocoloForm({
           const planoFotosAdjuntos = adjuntos.filter(a => a.tipo === 'Evidencia Fotográfica Plano' || a.tipo === 'Foto Plano');
 
           return (
-            <AppCard className="p-5 md:p-6 space-y-6">
-              <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+            <AppCard className="p-5 md:p-6 space-y-5">
+              <div className="flex items-center gap-2.5 border-b border-slate-150 pb-3">
                 <FileText className="h-5 w-5 text-[#468DFF]" />
                 <h2 className="font-outfit text-base font-extrabold text-slate-800">Documentación Adjunta</h2>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-5">
                 {/* SECCIÓN 1: CERTIFICADO DE CALIBRACIÓN */}
-                <div className="bg-slate-50/70 p-4.5 rounded-2xl border border-slate-200 space-y-3">
-                  <div className="flex items-center gap-2 border-b border-slate-200/60 pb-2">
-                    <ShieldCheck className="h-4.5 w-4.5 text-[#468DFF]" />
+                <div className="bg-slate-50/80 p-4 md:p-5 rounded-2xl border border-slate-200 space-y-3.5">
+                  <div className="flex items-start gap-2.5 border-b border-slate-200/80 pb-2.5">
+                    <ShieldCheck className="h-5 w-5 text-[#468DFF] shrink-0 mt-0.5" />
                     <div>
-                      <h3 className="font-outfit text-xs font-bold text-slate-800 uppercase tracking-wider">
+                      <h3 className="font-outfit text-xs font-bold text-slate-800 uppercase tracking-wider leading-snug">
                         Certificado de Calibración del Instrumental
                       </h3>
-                      <p className="text-[11px] text-slate-500 mt-0.5">
+                      <p className="text-[11px] text-slate-500 font-medium leading-tight mt-0.5">
                         Carga del certificado oficial de calibración del luxómetro / fotómetro utilizado.
                       </p>
                     </div>
@@ -1977,21 +2288,21 @@ export default function ProtocoloForm({
                 </div>
 
                 {/* SECCIÓN 2: PLANO O CROQUIS DEL ESTABLECIMIENTO */}
-                <div className="bg-slate-50/70 p-4.5 rounded-2xl border border-slate-200 space-y-4">
-                  <div className="flex items-center gap-2 border-b border-slate-200/60 pb-2">
-                    <MapPin className="h-4.5 w-4.5 text-[#468DFF]" />
+                <div className="bg-slate-50/80 p-4 md:p-5 rounded-2xl border border-slate-200 space-y-4">
+                  <div className="flex items-start gap-2.5 border-b border-slate-200/80 pb-2.5">
+                    <MapPin className="h-5 w-5 text-[#468DFF] shrink-0 mt-0.5" />
                     <div>
-                      <h3 className="font-outfit text-xs font-bold text-slate-800 uppercase tracking-wider">
+                      <h3 className="font-outfit text-xs font-bold text-slate-800 uppercase tracking-wider leading-snug">
                         Plano o Croquis del Establecimiento
                       </h3>
-                      <p className="text-[11px] text-slate-500 mt-0.5">
+                      <p className="text-[11px] text-slate-500 font-medium leading-tight mt-0.5">
                         Carga del plano digitalizado del establecimiento y evidencias fotográficas de los puntos de medición.
                       </p>
                     </div>
                   </div>
 
                   {/* Bloque 1: SySO-Document-Compact-Layout (PDF/Documento) */}
-                  <div className="space-y-2">
+                  <div>
                     <DocumentUploadZone
                       label="Plano o Croquis Digitalizado (PDF / Documento)"
                       fileName={planoDocAdjunto?.name}
@@ -2017,7 +2328,7 @@ export default function ProtocoloForm({
                   </div>
 
                   {/* Bloque 2: SySO-Multiple-Evidence-Photo-Grid (Imágenes / Evidencias) */}
-                  <div className="pt-3 border-t border-slate-200/80">
+                  <div className="pt-4 border-t border-slate-200/80">
                     <ImageUploadZone
                       label="Evidencias Fotográficas / Imágenes del Plano o Puntos de Medición"
                       disabled={!canEdit}
@@ -2046,6 +2357,204 @@ export default function ProtocoloForm({
             </AppCard>
           );
         })()}
+
+        {/* CARD FIRMA DEL PROFESIONAL */}
+        <AppCard className="p-5 md:p-6 space-y-5">
+          <div className="flex items-center gap-2.5 border-b border-slate-150 pb-3">
+            <PenTool className="h-5 w-5 text-[#468DFF]" />
+            <h2 className="font-outfit text-base font-extrabold text-slate-800">
+              Firma del Profesional de Higiene y Seguridad
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Datos del Profesional */}
+            <div className="space-y-4">
+              <div>
+                <AppLabel htmlFor="profesional-select">
+                  Profesional Interviniente *
+                </AppLabel>
+                <AppSelect
+                  id="profesional-select"
+                  disabled={!canEdit}
+                  placeholder={null}
+                  value={profesionalId || '__custom__'}
+                  onChange={(e) => {
+                    const selectedVal = e.target.value;
+                    setProfesionalId(selectedVal);
+                    if (selectedVal !== '__custom__') {
+                      const selectedMem = miembrosList.find(m => m.id === selectedVal);
+                      if (selectedMem) {
+                        setProfesionalNombre(selectedMem.nombre || '');
+                        setProfesionalMatricula(selectedMem.matricula || '');
+                        setSignaturePath(selectedMem.signature_url || '');
+                        if (selectedMem.signature_url) {
+                          setFirmaTipo('perfil');
+                        }
+                      }
+                    }
+                  }}
+                >
+                  <option value="">Seleccionar Profesional...</option>
+                  {miembrosList.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.nombre} {m.matricula ? `(${m.matricula})` : ''}
+                    </option>
+                  ))}
+                  <option value="__custom__">Otro (cargar manualmente)...</option>
+                </AppSelect>
+
+                {profesionalId === '__custom__' && (
+                  <div className="mt-2.5">
+                    <AppInput
+                      id="profesional-nombre-custom"
+                      type="text"
+                      disabled={!canEdit}
+                      value={profesionalNombre}
+                      onChange={(e) => setProfesionalNombre(e.target.value)}
+                      placeholder="Nombre y Apellido del Profesional"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <AppLabel htmlFor="profesional-matricula">
+                  Matrícula Profesional
+                </AppLabel>
+                <AppInput
+                  id="profesional-matricula"
+                  type="text"
+                  disabled={!canEdit}
+                  value={profesionalMatricula}
+                  onChange={(e) => setProfesionalMatricula(e.target.value)}
+                  placeholder="Ej. MP 12345"
+                />
+
+                {profesionalId !== '__custom__' && (() => {
+                  const selectedMem = miembrosList.find(m => m.id === profesionalId);
+                  if (selectedMem?.listaMatriculas?.length > 1) {
+                    return (
+                      <div className="flex items-center gap-1.5 flex-wrap mt-2">
+                        <span className="text-[10px] text-slate-400 font-semibold">Cargadas en perfil:</span>
+                        {selectedMem.listaMatriculas.map((mat, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            disabled={!canEdit}
+                            onClick={() => setProfesionalMatricula(mat)}
+                            className="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-700 hover:bg-[#468DFF] hover:text-white rounded-md transition-colors cursor-pointer border-none"
+                            title="Haz clic para seleccionar esta matrícula"
+                          >
+                            {mat}
+                          </button>
+                        ))}
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
+            </div>
+
+            {/* Configuración de Firma */}
+            <div className="space-y-2 flex flex-col">
+              <div className="flex flex-row justify-between items-end gap-2 min-h-[18px]">
+                <AppLabel>Firma del Profesional</AppLabel>
+                {firmaTipo === 'mano' && canEdit && (hasSignedProf || firmaProfSavedUrl) && (
+                  <button
+                    type="button"
+                    onClick={handleClearCanvas}
+                    className="text-[10px] font-bold text-red-500 hover:text-red-700 cursor-pointer shrink-0 border-none bg-transparent"
+                  >
+                    Limpiar Firma
+                  </button>
+                )}
+              </div>
+
+              {/* Selector de Origen de Firma */}
+              <div className="space-y-1.5 flex flex-col justify-end">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                  Origen de Firma del Profesional
+                </span>
+                <div className="flex border border-slate-200 bg-white text-[11px] font-semibold shrink-0 rounded-lg overflow-hidden border">
+                  <button
+                    type="button"
+                    disabled={!canEdit}
+                    onClick={() => {
+                      setFirmaTipo('perfil');
+                      setFirmaProfSavedUrl('');
+                      setHasSignedProf(false);
+                    }}
+                    className={`flex-1 py-1.5 transition-colors cursor-pointer ${
+                      firmaTipo === 'perfil'
+                        ? 'bg-[#468DFF] text-white'
+                        : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    Firma de Perfil
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!canEdit}
+                    onClick={() => {
+                      setFirmaTipo('mano');
+                      setFirmaProfSavedUrl('');
+                      setHasSignedProf(false);
+                    }}
+                    className={`flex-1 py-1.5 transition-colors cursor-pointer ${
+                      firmaTipo === 'mano'
+                        ? 'bg-[#468DFF] text-white'
+                        : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    Firmar a mano
+                  </button>
+                </div>
+              </div>
+
+              {/* Visualización de Firma */}
+              {firmaTipo === 'perfil' ? (
+                <div className="border-2 border-dashed border-slate-200 bg-slate-50 rounded-xl aspect-[2/1] relative overflow-hidden flex items-center justify-center p-3 text-center min-h-[140px]">
+                  {signaturePath || firmaPerfilPreviewUrl ? (
+                    <div className="flex flex-col items-center justify-center h-full w-full">
+                      {firmaPerfilPreviewUrl ? (
+                        <div className="bg-white border border-slate-200 rounded-lg p-2 max-w-[200px] h-[80px] flex items-center justify-center overflow-hidden shadow-sm">
+                          <img 
+                            src={firmaPerfilPreviewUrl} 
+                            alt="Vista previa de firma de perfil" 
+                            className="max-w-full max-h-full object-contain"
+                          />
+                        </div>
+                      ) : (
+                        <Loader2 className="h-5 w-5 animate-spin text-[#468DFF]" />
+                      )}
+                      <p className="text-[10px] text-green-600 font-bold mt-2">✓ Firma del perfil cargada correctamente.</p>
+                    </div>
+                  ) : (
+                    <p className="text-[10px] text-amber-600 font-bold p-4">⚠ El profesional seleccionado no tiene una firma digital registrada en su perfil.</p>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl aspect-[2/1] relative overflow-hidden flex items-center justify-center min-h-[140px]">
+                  {firmaProfSavedUrl && !hasSignedProf ? (
+                    <img src={firmaProfSavedUrl} alt="Firma Profesional" className="w-full h-full object-contain p-2" />
+                  ) : (
+                    <canvas
+                      ref={firmaProfRefCallback}
+                      width={400}
+                      height={200}
+                      className={`w-full h-full bg-white block ${canEdit ? 'cursor-crosshair' : 'cursor-default'}`}
+                    />
+                  )}
+                  {!hasSignedProf && !firmaProfSavedUrl && canEdit && (
+                    <span className="absolute pointer-events-none text-[10px] text-slate-400 font-bold uppercase tracking-wider">Dibuje la firma aquí</span>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </AppCard>
 
         {/* Pie de Página del Formulario */}
         <div className="flex justify-between items-center pt-6 border-t border-slate-100 shrink-0">

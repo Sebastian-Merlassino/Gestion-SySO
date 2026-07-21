@@ -1,5 +1,39 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-21] Módulo e Integración del Contenedor "Firma del Profesional de Higiene y Seguridad" en Protocolo de Iluminación
+
+### Resumen de Cambios
+- **Nuevo Contenedor `Card` en `ProtocoloForm.js`**:
+  - Se agregó la tarjeta **`Firma del Profesional de Higiene y Seguridad`** justo debajo del contenedor "Documentación Adjunta", replicando el estándar oficial presente en Avisos de Riesgo, Constancias de Visita y Control Eléctrico.
+- **Campos e Integración de Firma**:
+  - **Carga Garantizada de Miembros del Equipo**: Se configuró la consulta doble a las tablas `miembros_equipo` y `profiles` de Supabase para obtener la nómina completa de profesionales del equipo de la organización con sus firmas digitales.
+  - **Soporte para Múltiples Matrículas**: Se integró la consulta a la tabla `matriculas` en Supabase para reunir todas las matrículas (nacionales, provinciales o institucionales) registradas por el profesional en su perfil.
+  - **Renombrado de Etiqueta y Selección Asistida**: La etiqueta se cambió a **`Matrícula Profesional`** (eliminando la referencia a número de registro). Si un profesional posee más de una matrícula registrada, se pre-cargan unificadas y se despliegan botones tipo chip para seleccionar o alternar fácilmente entre cualquiera de sus matrículas con un solo clic.
+  - **Selector Único de Profesional (`AppSelect`)**: Unificación del campo con un solo label **`Profesional Interviniente *`** al igual que en Avisos de Riesgo. Al seleccionar un miembro registrado, auto-completa el nombre, matrícula y firma de perfil. Al seleccionar `"Otro (cargar manualmente)..."`, se habilita dinámicamente el campo de texto para ingresar el nombre completo.
+  - **Auto-selección por Defecto**: Al abrir el formulario de nuevo protocolo, se pre-selecciona automáticamente al profesional logueado en la sesión.
+  - **Carga de Firma de Perfil Robustecida**: Implementación del resolutor `resolveProfileSignaturePreview` que procesa firmas externas, rutas en buckets de Supabase Storage (`signatures`/`avatars`) y firmas en Base64 o URLs guardadas de protocolos anteriores.
+  - **Selector de Origen de Firma**: Botones intercambiables para optar por **Firma de Perfil** (firma digital registrada en la cuenta) o **Firmar a mano** (canvas interactivo para dibujo directo por mouse o pantalla táctil con botón de limpieza).
+- **Esquema de Base de Datos y Persistencia**:
+  - Se agregaron las columnas `profesional_nombre`, `profesional_matricula`, `firma_tipo` y `firma_profesional` a la tabla `protocolos_iluminacion` y en su migración de Supabase.
+
+### Decisiones Clave
+- Mantener simetría completa con los módulos de Avisos de Riesgo y Visitas para que la firma del profesional técnico responsable sea consistente en todas las herramientas del SaaS.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+- `supabase`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+- `[MODIFY] supabase/migrations/20260806000000_create_protocolo_iluminacion.sql`
+
+### Validaciones Ejecutadas
+- Verificación del bundle de Next.js (`npm run build`).
+
+---
+
 ## [2026-07-21] Rediseño del Contenedor "Documentación Adjunta" con Estándares `SySO-Document-Compact-Layout` y `SySO-Multiple-Evidence-Photo-Grid`
 
 ### Resumen de Cambios
@@ -11,6 +45,7 @@
   - Se integró la sub-sección para el plano o croquis del establecimiento combinando dos bloques estándar:
     1. **`SySO-Document-Compact-Layout`**: `<DocumentUploadZone />` para la carga del documento digitalizado del plano/croquis (PDF / Documento) con importación desde Drive y vista previa compacta.
     2. **`SySO-Multiple-Evidence-Photo-Grid`**: `<ImageUploadZone multiple={true} />` para la carga y gestión de evidencias fotográficas múltiples del plano, croquis o puntos de medición con miniaturas previsualizables en carrusel/lightbox y tarjeta de adición rápida.
+- **Ajuste Fino de Paddings y Márgenes**: Se homogeneizaron los espaciados internos (`p-4 md:p-5`), márgenes entre secciones (`space-y-5`) y divisores superiores para mantener una simetría visual pulida y eliminar ruidos visuales.
 
 ### Decisiones Clave
 - Combinar ambos estándares reconocidos en el proyecto dentro de la misma tarjeta para ofrecer una carga estructurada de certificados oficiales y evidencias gráficas en el Protocolo de Iluminación.

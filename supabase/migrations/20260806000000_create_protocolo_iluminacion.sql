@@ -33,6 +33,11 @@ CREATE TABLE IF NOT EXISTS public.protocolos_iluminacion (
   conclusiones TEXT NULL,
   recomendaciones TEXT NULL,
 
+  firma_profesional TEXT NULL,
+  profesional_nombre TEXT NULL,
+  profesional_matricula TEXT NULL,
+  firma_tipo TEXT NULL DEFAULT 'perfil',
+
   resultado_general TEXT NULL,
   pdf_url TEXT NULL,
   estado TEXT NOT NULL DEFAULT 'borrador',
