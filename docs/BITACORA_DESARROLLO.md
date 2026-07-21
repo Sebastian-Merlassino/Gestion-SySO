@@ -1,5 +1,31 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-20] Eliminación de Valor Duplicado en Nivel de Riesgo (Correctivas)
+
+### Resumen de Cambios
+- **Corrección de Interfaz en Formulario de Acciones Correctivas**:
+  - Se eliminó el badge dinámico `<span>` que renderizaba el valor seleccionado junto al título "Nivel de Riesgo" en el formulario de creación/edición de hallazgos.
+  - Esto evita la duplicación visual de la información, ya que el componente `<select>` inmediatamente inferior ya cuenta con colores condicionales y resalta visualmente el nivel seleccionado de manera clara y robusta.
+  - Se mantuvo intacto el ícono interactivo de ayuda que despliega el método de evaluación BS 8800.
+
+### Decisiones Clave
+- Mantener la limpieza visual y evitar ruido de datos en formularios complejos reduciendo indicadores redundantes cuando el propio campo interactivo ya los incluye por diseño.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+
+### Validaciones Ejecutadas
+- Compilación del bundle de producción de Next.js (`npm run build`) verificada de forma exitosa (`✓ Compiled successfully`).
+
+### Próximo Paso Recomendado
+- Monitorear la respuesta de los usuarios ante la simplificación estética en formularios similares.
+
+---
+
 ## [2026-07-20] Integración de Navegación Lateral Horizontal en Accidentes y Extintores
 
 ### Resumen de Cambios

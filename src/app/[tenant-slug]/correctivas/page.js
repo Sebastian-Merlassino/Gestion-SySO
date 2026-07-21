@@ -1551,18 +1551,6 @@ export default function AccionesCorrectivasPage({ params }) {
                           <label className="text-xs font-bold text-slate-600">
                             Nivel de Riesgo <span className="text-[#468DFF]">*</span>
                           </label>
-                          {nivelRiesgo && nivelRiesgo !== 'N/A' && (
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                              nivelRiesgo === 'Riesgo trivial' ? 'bg-[#00B050] text-white' :
-                              nivelRiesgo === 'Riesgo tolerable' ? 'bg-[#00FF00] text-slate-900' :
-                              nivelRiesgo === 'Riesgo moderado' ? 'bg-[#FFFF00] text-slate-900' :
-                              nivelRiesgo === 'Riesgo sustancial' ? 'bg-[#FF9900] text-white' :
-                              nivelRiesgo === 'Riesgo intolerable' ? 'bg-[#FF0000] text-white' :
-                              'bg-slate-100 text-slate-700'
-                            }`}>
-                              {nivelRiesgo}
-                            </span>
-                          )}
                           <button
                             type="button"
                             onClick={() => setShowRiskMatrix(true)}
