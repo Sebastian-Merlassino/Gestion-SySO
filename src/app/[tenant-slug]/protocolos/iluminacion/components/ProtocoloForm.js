@@ -135,6 +135,7 @@ export default function ProtocoloForm({
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editorImageUrl, setEditorImageUrl] = useState('');
   const [editPhotoIndex, setEditPhotoIndex] = useState(null);
+  const [estSectoresLocal, setEstSectoresLocal] = useState([]);
 
   const canEdit = mode !== 'view' && estado !== 'anulado';
   const isReadOnly = mode === 'view';

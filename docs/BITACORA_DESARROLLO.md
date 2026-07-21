@@ -10,6 +10,7 @@
   - Al hacer clic en "Guardar", los marcadores se dibujan en alta resolución en un `<canvas>` HTML a las dimensiones naturales de la foto.
   - La imagen combinada resultante es subida a Supabase Storage en el bucket `protocolos-iluminacion` y reemplaza el adjunto original en el estado.
   - Se actualizaron las funciones de adjuntos a formato funcional (`prev => ...`) previniendo race conditions o stale closures.
+  - **Corrección de Referencia**: Se restauró la variable de estado `estSectoresLocal` que fue eliminada por error durante la inserción de las nuevas variables de edición, resolviendo el `ReferenceError` de runtime.
 
 ### Decisiones Clave
 - **Baking de marcadores**: Dibujar los números directamente en el archivo de imagen original mediante canvas evita modificar la base de datos o el motor de exportación de PDF, garantizando compatibilidad inmediata.
