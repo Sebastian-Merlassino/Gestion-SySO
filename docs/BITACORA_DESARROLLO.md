@@ -1,5 +1,49 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-21] Prevención de Violación de CSP al Cargar Imágenes Base64 en Reportes PDF
+
+### Resumen de Cambios
+- **Cortocircuito de Data URL Base64**: Se modificaron las implementaciones locales del helper `getBase64ImageFromUrl` a lo largo de toda la plataforma para que retornen la URL de inmediato si esta ya es un string Base64 (`data:` URL). Esto soluciona la violación de la directiva de seguridad Content Security Policy (`connect-src`) del navegador, que bloqueaba los llamados `fetch(...)` realizados de manera redundante sobre strings en formato Base64.
+- **Módulos Protegidos**:
+  - Checklist Personalizados (`checklist-personalizados/page.js`)
+  - Constancia de Visitas (`visitas/page.js`)
+  - Programa Anual (`programa/page.js`)
+  - Protocolo de Iluminación (`pdfGenerator.js`)
+  - Matriz de Riesgos (`matriz-riesgos/page.js`)
+  - Control de Extintores (`extintores/page.js`)
+  - Dashboard Principal (`dashboard/page.js`)
+  - Acciones Correctivas (`correctivas/page.js`)
+  - Control Eléctrico (`control-electrico/page.js`)
+  - Registro de Capacitaciones (`capacitacion/page.js`)
+  - Aviso de Riesgo (`avisos/page.js`)
+  - Registro de Accidentes (`accidentes/page.js`)
+
+### Decisiones Clave
+- Evitar operaciones de red y de fetch redundantes sobre recursos locales o strings ya serializados.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/utils/pdfGenerator.js`
+- `[MODIFY] src/app/[tenant-slug]/matriz-riesgos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+
+### Validaciones Ejecutadas
+- Verificación del bundle de Next.js (`npm run build`).
+
+---
+
 ## [2026-07-21] Corrección de Importación de AppFormNavigator en Checklist Personalizados
 
 ### Resumen de Cambios

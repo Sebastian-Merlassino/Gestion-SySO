@@ -1104,6 +1104,8 @@ export default function ChecklistPersonalizadosPage({ params }) {
   // LOGICA: EXPORTACIÓN A PDF (JSPDF)
   // ==========================================
   const getBase64ImageFromUrl = async (url) => {
+    if (!url) return '';
+    if (url.startsWith('data:')) return url;
     try {
       const res = await fetch(url);
       const blob = await res.blob();

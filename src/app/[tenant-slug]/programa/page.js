@@ -571,6 +571,7 @@ export default function ProgramaGestion({ params }) {
 
   const getBase64ImageFromUrl = async (imageUrl) => {
     if (!imageUrl) return '';
+    if (imageUrl.startsWith('data:')) return imageUrl;
     try {
       const res = await fetch(imageUrl);
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);

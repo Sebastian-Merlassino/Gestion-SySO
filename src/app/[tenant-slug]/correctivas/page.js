@@ -590,6 +590,7 @@ export default function AccionesCorrectivasPage({ params }) {
 
   const getBase64ImageFromUrl = async (imageUrl) => {
     if (!imageUrl) return '';
+    if (typeof imageUrl === 'string' && imageUrl.startsWith('data:')) return imageUrl;
     if (typeof imageUrl === 'string' && imageUrl.includes('gettablefileurl')) {
       try {
         const urlObj = new URL(imageUrl);

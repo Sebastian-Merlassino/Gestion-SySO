@@ -1473,6 +1473,8 @@ export default function VisitasPage({ params }) {
 
   // Helper para convertir imagen URL a base64
   const getBase64ImageFromUrl = async (imageUrl) => {
+    if (!imageUrl) return '';
+    if (imageUrl.startsWith('data:')) return imageUrl;
     try {
       const res = await fetch(imageUrl);
       const blob = await res.blob();
