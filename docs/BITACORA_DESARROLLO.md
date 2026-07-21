@@ -1,13 +1,18 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-07-21] Integración del Estándar de Diseño `SySO-Signature-Tabbed-Container` en Protocolo de Iluminación
+## [2026-07-21] Integración Integral del Estándar de Diseño `SySO-Signature-Tabbed-Container`
 
 ### Resumen de Cambios
 - **Rediseño del Selector y Lienzo de Firma**:
-  - Se implementó el estándar de diseño **`SySO-Signature-Tabbed-Container`** para la carga de firmas del profesional técnico interviniente.
+  - Se implementó el estándar de diseño **`SySO-Signature-Tabbed-Container`** para la carga de firmas del profesional técnico interviniente en todos los módulos clave.
   - El selector de solapas/tabs (`Firma de Perfil` y `Firmar a mano`) se integró de forma armonizada en el borde superior del contenedor en sí, imitando el diseño de carga de archivos de la plataforma.
   - El interior del contenedor cuenta con un recuadro de línea discontinua (dashed box) sobre fondo gris claro (`bg-slate-50/50`) que aloja la previsualización de la firma digital del perfil o el lienzo interactivo del canvas.
   - Se reubicó el botón de limpieza (`Limpiar Firma`) de forma flotante en el extremo superior derecho del lienzo de firma a mano para optimizar el espacio.
+  - Aplicado de manera unificada en:
+    - **Protocolo de Iluminación** (`ProtocoloForm.js`)
+    - **Aviso de Riesgo** (`src/app/[tenant-slug]/avisos/page.js`)
+    - **Constancia de Visita** (`src/app/[tenant-slug]/visitas/page.js`)
+    - **Checklist Personalizados** (`src/app/[tenant-slug]/checklist-personalizados/page.js`)
 
 ### Decisiones Clave
 - Consolidar un patrón unificado para selectores y áreas de dibujo/firma integrados con solapas, facilitando la replicación de este diseño en futuros componentes.
@@ -19,6 +24,9 @@
 
 ### Archivos Modificados
 - `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
 
 ### Validaciones Ejecutadas
 - Verificación del bundle de Next.js (`npm run build`).

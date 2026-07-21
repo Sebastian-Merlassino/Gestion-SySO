@@ -2266,88 +2266,94 @@ export default function AvisosRiesgoPage({ params }) {
                         </div>
                       </div>
 
-                      {/* Configuración de Firma */}
-                      <div className="space-y-2 flex flex-col">
-                        <div className="flex flex-row justify-between items-end gap-2 min-h-[18px]">
-                          <label className="text-xs font-bold text-slate-600 pr-2">Firma del Profesional de Higiene y Seguridad</label>
-                          {firmaTipo === 'mano' && !isFormDisabled && (hasSignedMano || firmaManoSavedUrl) && (
+                      {/* Configuración de Firma: SySO-Signature-Tabbed-Container */}
+                      <div className="flex flex-col gap-1.5 justify-end">
+                        <label className="text-xs font-bold text-slate-650 pr-2">Firma del Profesional Técnico</label>
+                        
+                        <div className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm flex flex-col min-h-[220px]">
+                          {/* Solapas superiores integradas */}
+                          <div className="flex border-b border-slate-200 bg-white">
                             <button
                               type="button"
-                              onClick={handleClearCanvas}
-                              className="text-[10px] font-bold text-red-500 hover:text-red-700 cursor-pointer shrink-0"
-                            >
-                              Limpiar Firma
-                            </button>
-                          )}
-                        </div>
-
-                        {/* Selector de Tipo de Firma del Profesional */}
-                        <div className="space-y-1.5 h-[51px] flex flex-col justify-end">
-                          <label className="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Origen de Firma del Profesional</label>
-                          <div className="flex border border-slate-200 bg-white text-[11px] font-semibold shrink-0 rounded-lg overflow-hidden border">
-                            <button
-                              type="button"
-                              onClick={() => setFirmaTipo('perfil')}
-                              className={`flex-1 py-1 transition-colors cursor-pointer ${
+                              disabled={isFormDisabled}
+                              onClick={() => {
+                                setFirmaTipo('perfil');
+                              }}
+                              className={`flex-1 py-2.5 text-xs font-bold transition-all cursor-pointer border-none ${
                                 firmaTipo === 'perfil'
-                                  ? 'bg-[#468DFF] text-white'
-                                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                                  ? 'bg-[#468DFF] text-white font-extrabold shadow-inner'
+                                  : 'bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700'
                               }`}
                             >
                               Firma de Perfil
                             </button>
                             <button
                               type="button"
-                              onClick={() => setFirmaTipo('mano')}
-                              className={`flex-1 py-1 transition-colors cursor-pointer ${
+                              disabled={isFormDisabled}
+                              onClick={() => {
+                                setFirmaTipo('mano');
+                              }}
+                              className={`flex-1 py-2.5 text-xs font-bold transition-all cursor-pointer border-none ${
                                 firmaTipo === 'mano'
-                                  ? 'bg-[#468DFF] text-white'
-                                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                                  ? 'bg-[#468DFF] text-white font-extrabold shadow-inner'
+                                  : 'bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700'
                               }`}
                             >
                               Firmar a mano
                             </button>
                           </div>
-                        </div>
 
-                        {firmaTipo === 'perfil' ? (
-                          <div className="border-2 border-dashed border-slate-200 bg-slate-50 rounded-xl aspect-[2/1] relative overflow-hidden flex items-center justify-center p-3 text-center">
-                            {signaturePath ? (
-                              <div className="flex flex-col items-center justify-center h-full w-full">
-                                {firmaPerfilPreviewUrl ? (
-                                  <div className="bg-white border border-slate-200 rounded-lg p-2 max-w-[200px] h-[80px] flex items-center justify-center overflow-hidden shadow-sm">
-                                    <img 
-                                      src={firmaPerfilPreviewUrl} 
-                                      alt="Vista previa de firma de perfil" 
-                                      className="max-w-full max-h-full object-contain"
-                                    />
+                          {/* Cuerpo del contenedor */}
+                          <div className="p-4 bg-slate-50/50 flex-1 flex flex-col justify-center relative">
+                            {firmaTipo === 'perfil' ? (
+                              <div className="border-2 border-dashed border-slate-200 bg-white rounded-xl aspect-[2/1] relative overflow-hidden flex items-center justify-center p-3 text-center min-h-[140px] shadow-sm">
+                                {signaturePath || firmaPerfilPreviewUrl ? (
+                                  <div className="flex flex-col items-center justify-center h-full w-full">
+                                    {firmaPerfilPreviewUrl ? (
+                                      <div className="bg-white border border-slate-100 rounded-lg p-2 max-w-[200px] h-[80px] flex items-center justify-center overflow-hidden">
+                                        <img 
+                                          src={firmaPerfilPreviewUrl} 
+                                          alt="Vista previa de firma de perfil" 
+                                          className="max-w-full max-h-full object-contain"
+                                        />
+                                      </div>
+                                    ) : (
+                                      <Loader2 className="h-5 w-5 animate-spin text-[#468DFF]" />
+                                    )}
+                                    <p className="text-[10px] text-green-600 font-bold mt-2">✓ Firma del perfil cargada correctamente.</p>
                                   </div>
                                 ) : (
-                                  <Loader2 className="h-5 w-5 animate-spin text-[#468DFF]" />
+                                  <p className="text-[10px] text-amber-600 font-bold p-4">⚠ El profesional seleccionado no tiene una firma digital configurada.</p>
                                 )}
-                                <p className="text-[10px] text-green-600 font-bold mt-2">✓ Firma del perfil cargada correctamente.</p>
                               </div>
                             ) : (
-                              <p className="text-[10px] text-amber-600 font-bold p-4">⚠ El profesional seleccionado no tiene una firma digital configurada.</p>
+                              <div className="bg-white border-2 border-dashed border-slate-200 rounded-xl aspect-[2/1] relative overflow-hidden flex items-center justify-center min-h-[140px] shadow-sm">
+                                {firmaManoSavedUrl && !hasSignedMano ? (
+                                  <img src={firmaManoSavedUrl} alt="Firma Profesional" className="w-full h-full object-contain p-2" />
+                                ) : (
+                                  <canvas
+                                    ref={canvasRef}
+                                    width={400}
+                                    height={200}
+                                    className={`w-full h-full bg-white block ${!isFormDisabled ? 'cursor-crosshair' : 'cursor-default'}`}
+                                  />
+                                )}
+                                {!hasSignedMano && !firmaManoSavedUrl && !isFormDisabled && (
+                                  <span className="absolute pointer-events-none text-[10px] text-slate-400 font-bold uppercase tracking-wider">Dibuje la firma aquí</span>
+                                )}
+                                {!isFormDisabled && (hasSignedMano || firmaManoSavedUrl) && (
+                                  <button
+                                    type="button"
+                                    onClick={handleClearCanvas}
+                                    className="absolute top-2.5 right-2.5 text-[10px] font-bold px-2 py-1 bg-red-50 text-red-500 hover:bg-red-100 rounded-md transition-colors cursor-pointer border border-red-200/50"
+                                  >
+                                    Limpiar Firma
+                                  </button>
+                                )}
+                              </div>
                             )}
                           </div>
-                        ) : (
-                          <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl aspect-[2/1] relative overflow-hidden flex items-center justify-center">
-                            {firmaManoSavedUrl && !hasSignedMano ? (
-                              <img src={firmaManoSavedUrl} alt="Firma Profesional" className="w-full h-full object-contain p-2" />
-                            ) : (
-                              <canvas
-                                ref={canvasRef}
-                                width={400}
-                                height={200}
-                                className={`w-full h-full bg-white block ${!isFormDisabled ? 'cursor-crosshair' : 'cursor-default'}`}
-                              />
-                            )}
-                            {!hasSignedMano && !firmaManoSavedUrl && (
-                              <span className="absolute pointer-events-none text-[10px] text-slate-400 font-bold uppercase tracking-wider">Dibuje la firma aquí</span>
-                            )}
-                          </div>
-                        )}
+                        </div>
                       </div>
                     </div>
 
