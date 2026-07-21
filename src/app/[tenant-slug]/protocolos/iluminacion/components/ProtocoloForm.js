@@ -980,8 +980,16 @@ export default function ProtocoloForm({
       const targetPhoto = planoFotosAdjuntos[editPhotoIndex];
       if (!targetPhoto) return;
 
-      const res = await fetch(dataUrl);
-      const blob = await res.blob();
+      // Convertir data URL a Blob en memoria sin usar fetch para evitar violaciones de CSP
+      const arr = dataUrl.split(',');
+      const mime = arr[0].match(/:(.*?);/)[1];
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      const blob = new Blob([u8arr], { type: mime });
       const file = new File([blob], `puntos_medicion_${Date.now()}.jpg`, { type: 'image/jpeg' });
 
       // Eliminar el adjunto anterior
@@ -2764,7 +2772,7 @@ function MeasurementPointsEditorModal({ isOpen, onClose, imageUrl, onSave }) {
           // Draw outer stroke circle
           ctx.beginPath();
           ctx.arc(pxX, pxY, radius, 0, 2 * Math.PI);
-          ctx.fillStyle = '#EF4444'; // Red-500
+          ctx.fillStyle = '#468DFF'; // Principal brand blue
           ctx.fill();
           
           ctx.lineWidth = Math.max(2, radius * 0.15);
@@ -2844,7 +2852,7 @@ function MeasurementPointsEditorModal({ isOpen, onClose, imageUrl, onSave }) {
                         top: `${p.y}%`,
                         transform: 'translate(-50%, -50%)',
                       }}
-                      className="w-7 h-7 bg-red-500 rounded-full border-2 border-white text-white font-extrabold text-xs flex items-center justify-center shadow-md select-none pointer-events-none"
+                      className="w-7 h-7 bg-[#468DFF] rounded-full border-2 border-white text-white font-extrabold text-xs flex items-center justify-center shadow-md select-none pointer-events-none"
                     >
                       {p.number}
                     </div>
