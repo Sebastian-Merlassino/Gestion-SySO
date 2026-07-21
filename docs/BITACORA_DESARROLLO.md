@@ -1,5 +1,32 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-21] Edición de Evidencias Fotográficas con Marcadores en Protocolo de Iluminación
+
+### Resumen de Cambios
+- **Modificación en Componente Común**:
+  - En `ImageUploadZone.js` se agregó el prop opcional `onEditPhoto` que renderiza un botón con icono de lápiz sobre el overlay hover de la miniatura de cada foto para habilitar edición.
+- **Modulo de Edición en Protocolo**:
+  - En `ProtocoloForm.js` se implementó el componente modal `MeasurementPointsEditorModal` basado en Radix Dialog que permite hacer clic para ubicar marcadores numerados secuencialmente.
+  - Al hacer clic en "Guardar", los marcadores se dibujan en alta resolución en un `<canvas>` HTML a las dimensiones naturales de la foto.
+  - La imagen combinada resultante es subida a Supabase Storage en el bucket `protocolos-iluminacion` y reemplaza el adjunto original en el estado.
+  - Se actualizaron las funciones de adjuntos a formato funcional (`prev => ...`) previniendo race conditions o stale closures.
+
+### Decisiones Clave
+- **Baking de marcadores**: Dibujar los números directamente en el archivo de imagen original mediante canvas evita modificar la base de datos o el motor de exportación de PDF, garantizando compatibilidad inmediata.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/components/ui/ImageUploadZone.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+
+### Validaciones Ejecutadas
+- Verificación del bundle de Next.js (`npm run build`).
+
+---
+
 ## [2026-07-21] Alineación de Firmas y Datos del Responsable y Profesional en Checklist Personalizados
 
 ### Resumen de Cambios
