@@ -14,6 +14,7 @@
   - **Corrección de Referencia**: Se restauró la variable de estado `estSectoresLocal` que fue eliminada por error durante la inserción de las nuevas variables de edición, resolviendo el `ReferenceError` de runtime.
   - **Evasión de CSP (Base64 a Blob)**: Se reemplazó el uso de `fetch(dataUrl)` por una decodificación Base64 en memoria manual (usando `atob` y arreglos tipados) en `handleSaveEditedPhoto`, evitando cualquier llamada de red y solucionando la violación de CSP al guardar la imagen.
   - **Color de Marcadores**: Se cambió el color de los marcadores numerados de rojo a azul `#468DFF` (color principal de la marca) tanto en el dibujo en canvas como en los círculos absolutos del modal.
+  - **Unificación de Botones**: Se reemplazaron los botones HTML crudos y el botón de Limpiar con el componente `AppButton` unificado del sistema, aplicando variantes y estados hover coherentes (rojo suave para "Limpiar todo", gris interactivo para "Cancelar" y azul para "Guardar marcadores"), de acuerdo con el estándar de la plataforma.
 
 ### Decisiones Clave
 - **Baking de marcadores**: Dibujar los números directamente en el archivo de imagen original mediante canvas evita modificar la base de datos o el motor de exportación de PDF, garantizando compatibilidad inmediata.

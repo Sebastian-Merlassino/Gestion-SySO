@@ -2992,32 +2992,32 @@ function MeasurementPointsEditorModal({ isOpen, onClose, imageUrl, initialPoints
                   Deshacer último
                 </AppButton>
                 <AppButton
-                  variant="secondary"
+                  variant="outline"
                   disabled={points.length === 0 || loading}
                   onClick={handleClear}
-                  className="text-xs py-1.5 h-[34px] text-red-500 border-red-200 hover:bg-red-50"
+                  className="text-xs py-1.5 h-[34px] text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
                 >
                   Limpiar todo
                 </AppButton>
               </div>
 
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
+                <AppButton
+                  variant="outline"
                   onClick={onClose}
                   disabled={loading}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer border border-slate-200"
+                  className="text-xs py-1.5 h-[34px]"
                 >
                   Cancelar
-                </button>
-                <button
-                  type="button"
+                </AppButton>
+                <AppButton
+                  variant="primary"
                   onClick={handleSave}
                   disabled={loading || points.length === 0}
-                  className="px-4 py-2 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-xs font-bold transition-all cursor-pointer border-none shadow-md shadow-[#468DFF]/15 disabled:opacity-50"
+                  className="text-xs py-1.5 h-[34px]"
                 >
                   Guardar marcadores
-                </button>
+                </AppButton>
               </div>
             </div>
           </Dialog.Content>
