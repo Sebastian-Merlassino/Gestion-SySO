@@ -1,5 +1,25 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-21] Corrección de Consulta de Perfiles en Protocolo de Iluminación
+
+### Resumen de Cambios
+- **Corrección de Columnas Inexistentes en Query**: Se eliminaron las referencias a `nombre_apellido`, `matricula`, y `matricula_profesional` de la consulta `.select()` de la tabla `profiles` en `ProtocoloForm.js`. Esto soluciona el error `400 Bad Request` retornado por Supabase, ya que dichas columnas no existen en la tabla `profiles` (estos datos se obtienen correctamente de la tabla `matriculas`).
+
+### Decisiones Clave
+- Evitar solicitar columnas inexistentes en las consultas explícitas de Supabase para prevenir errores 400.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `supabase`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+
+### Validaciones Ejecutadas
+- Verificación del bundle de Next.js (`npm run build`).
+
+---
+
 ## [2026-07-21] Integración Integral del Estándar de Diseño `SySO-Signature-Tabbed-Container`
 
 ### Resumen de Cambios

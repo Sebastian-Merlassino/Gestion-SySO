@@ -423,7 +423,7 @@ export default function ProtocoloForm({
           // 2. Query profiles table
           const { data: profsData } = await supabase
             .from('profiles')
-            .select('id, full_name, nombre_apellido, signature_url, matricula, matricula_profesional')
+            .select('id, full_name, signature_url')
             .eq('tenant_id', tenant.id)
             .order('full_name');
 
@@ -520,13 +520,13 @@ export default function ProtocoloForm({
           if (!userNombre) {
             const { data: currentProf } = await supabase
               .from('profiles')
-              .select('*')
+              .select('id, full_name, signature_url')
               .eq('id', session.user.id)
               .single();
             if (currentProf) {
-              userNombre = currentProf.full_name || currentProf.nombre_apellido || '';
+              userNombre = currentProf.full_name || '';
               userSig = currentProf.signature_url || '';
-              const uMatList = getMatriculasForProfile(session.user.id, currentProf.matricula, currentProf.matricula_profesional);
+              const uMatList = getMatriculasForProfile(session.user.id, null, null);
               userMatricula = uMatList.join(' / ');
             }
           }
