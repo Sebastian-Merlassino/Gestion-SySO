@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Camera, Upload, Trash2, Image as ImageIcon, Loader2, Eye, PlusCircle } from 'lucide-react';
+import { Camera, Upload, Trash2, Image as ImageIcon, Loader2, Eye, PlusCircle, Edit } from 'lucide-react';
 import { useToast } from '../providers/ToastProvider';
 
 /**
@@ -47,6 +47,7 @@ export default function ImageUploadZone({
   images = [],        // Multiple images list: array of { preview, file } or strings
   onAddPhotos,        // Multiple images add handler: (filesArray) => void
   onRemovePhoto,      // Multiple images remove handler: (index) => void
+  onEditPhoto,        // Edit photo handler
 }) {
   const [isDragging, setIsDragging] = useState(false);
   const [showSourceSelector, setShowSourceSelector] = useState(false);
@@ -178,6 +179,16 @@ export default function ImageUploadZone({
                   >
                     <Eye className="h-4 w-4" />
                   </a>
+                  {onEditPhoto && (
+                    <button
+                      type="button"
+                      onClick={() => onEditPhoto(idx)}
+                      title="Editar puntos de medición"
+                      className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors cursor-pointer shadow-sm"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </button>
+                  )}
                   {!disabled && onRemovePhoto && (
                     <button
                       type="button"

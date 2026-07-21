@@ -132,7 +132,9 @@ export default function ProtocoloForm({
   const [syncQueue, setSyncQueue] = useState([]);
   const [syncIndex, setSyncIndex] = useState(0);
   const [isSyncOpen, setIsSyncOpen] = useState(false);
-  const [estSectoresLocal, setEstSectoresLocal] = useState([]); // local sectors copy to update on finish
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [editorImageUrl, setEditorImageUrl] = useState('');
+  const [editPhotoIndex, setEditPhotoIndex] = useState(null);
 
   const canEdit = mode !== 'view' && estado !== 'anulado';
   const isReadOnly = mode === 'view';
@@ -946,7 +948,7 @@ export default function ProtocoloForm({
         preview: sData?.signedUrl || ''
       };
 
-      setAdjuntos([...adjuntos, newAdjunto]);
+      setAdjuntos(prev => [...prev, newAdjunto]);
       globalToast.toast(`Archivo "${file.name}" cargado con éxito.`, 'success');
     } catch (err) {
       console.error(err);
@@ -963,12 +965,33 @@ export default function ProtocoloForm({
       path: urlStr,
       preview: urlStr
     };
-    setAdjuntos([...adjuntos, newAdj]);
+    setAdjuntos(prev => [...prev, newAdj]);
     globalToast.toast('Enlace de Google Drive registrado con éxito.', 'success');
   };
 
   const handleDeleteAdjunto = (id) => {
-    setAdjuntos(adjuntos.filter(ad => ad.id !== id));
+    setAdjuntos(prev => prev.filter(ad => ad.id !== id));
+  };
+
+  const handleSaveEditedPhoto = async (dataUrl) => {
+    try {
+      const planoFotosAdjuntos = adjuntos.filter(a => a.tipo === 'Evidencia Fotográfica Plano' || a.tipo === 'Foto Plano');
+      const targetPhoto = planoFotosAdjuntos[editPhotoIndex];
+      if (!targetPhoto) return;
+
+      const res = await fetch(dataUrl);
+      const blob = await res.blob();
+      const file = new File([blob], `puntos_medicion_${Date.now()}.jpg`, { type: 'image/jpeg' });
+
+      // Eliminar el adjunto anterior
+      setAdjuntos(prev => prev.filter(ad => ad.id !== targetPhoto.id));
+
+      // Subir el nuevo adjunto modificado
+      await handleUploadFile(file, 'Evidencia Fotográfica Plano');
+    } catch (err) {
+      console.error('Error al guardar la foto editada:', err);
+      globalToast.toast('Error al guardar los marcadores en la imagen.', 'error');
+    }
   };
 
   // SUBMIT FLOW - PROFILE SYNC WIZARD
@@ -2350,6 +2373,14 @@ export default function ProtocoloForm({
                           handleDeleteAdjunto(targetPhoto.id);
                         }
                       }}
+                      onEditPhoto={(index) => {
+                        const targetPhoto = planoFotosAdjuntos[index];
+                        if (targetPhoto) {
+                          setEditPhotoIndex(index);
+                          setEditorImageUrl(targetPhoto.preview || targetPhoto.path);
+                          setIsEditorOpen(true);
+                        }
+                      }}
                     />
                   </div>
                 </div>
@@ -2663,6 +2694,207 @@ export default function ProtocoloForm({
         isOpen={isMetodoCuadriculaOpen}
         onClose={() => setIsMetodoCuadriculaOpen(false)}
       />
+
+      {/* MODAL EDITOR DE PUNTOS DE MEDICION EN FOTOS */}
+      <MeasurementPointsEditorModal
+        isOpen={isEditorOpen}
+        onClose={() => setIsEditorOpen(false)}
+        imageUrl={editorImageUrl}
+        onSave={handleSaveEditedPhoto}
+      />
     </>
+  );
+}
+
+// ==========================================
+// COMPONENTE: MODAL EDITOR DE PUNTOS DE MEDICIÓN
+// ==========================================
+function MeasurementPointsEditorModal({ isOpen, onClose, imageUrl, onSave }) {
+  const [points, setPoints] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setPoints([]);
+    }
+  }, [isOpen]);
+
+  const handleImageClick = (e) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+    // Add point
+    setPoints(prev => [...prev, { x, y, number: prev.length + 1 }]);
+  };
+
+  const handleUndo = () => {
+    setPoints(prev => prev.slice(0, -1));
+  };
+
+  const handleClear = () => {
+    setPoints([]);
+  };
+
+  const handleSave = () => {
+    if (!imageUrl) return;
+    setLoading(true);
+    const img = new Image();
+    img.crossOrigin = 'anonymous'; // critical for Supabase signed urls to avoid canvas tainting
+    img.src = imageUrl;
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+
+        // Draw points
+        const minDim = Math.min(img.naturalWidth, img.naturalHeight);
+        const radius = Math.max(16, minDim * 0.02); // 2% of min dimension, min 16px
+        
+        points.forEach((p) => {
+          const pxX = (p.x / 100) * img.naturalWidth;
+          const pxY = (p.y / 100) * img.naturalHeight;
+
+          // Draw outer stroke circle
+          ctx.beginPath();
+          ctx.arc(pxX, pxY, radius, 0, 2 * Math.PI);
+          ctx.fillStyle = '#EF4444'; // Red-500
+          ctx.fill();
+          
+          ctx.lineWidth = Math.max(2, radius * 0.15);
+          ctx.strokeStyle = '#FFFFFF';
+          ctx.stroke();
+
+          // Draw number text
+          ctx.fillStyle = '#FFFFFF';
+          const fontSize = Math.round(radius * 1.1);
+          ctx.font = `bold ${fontSize}px sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(p.number.toString(), pxX, pxY);
+        });
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        onSave(dataUrl);
+        onClose();
+      } catch (err) {
+        console.error('Error drawing markers on canvas:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    img.onerror = () => {
+      console.error('Failed to load image for canvas editor');
+      setLoading(false);
+    };
+  };
+
+  return (
+    <Dialog.Root open={isOpen} onOpenChange={(val) => !val && onClose()}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm animate-fade-in" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <Dialog.Content className="relative w-full max-w-4xl p-6 bg-white border border-slate-200 rounded-2xl shadow-2xl animate-scale-up focus:outline-none flex flex-col max-h-[90vh]">
+            <div className="flex justify-between items-center border-b border-slate-150 pb-3 mb-4 shrink-0">
+              <Dialog.Title className="font-outfit text-base font-extrabold text-slate-800">
+                Identificar Puntos de Medición en Evidencia
+              </Dialog.Title>
+              <Dialog.Close asChild>
+                <button className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors border-none bg-transparent cursor-pointer">
+                  <X className="h-5 w-5" />
+                </button>
+              </Dialog.Close>
+            </div>
+
+            <Dialog.Description className="text-xs text-slate-500 leading-tight mb-3 shrink-0">
+              Hacé clic en cualquier parte de la imagen para posicionar un punto de medición numerado secuencialmente.
+            </Dialog.Description>
+
+            {/* Area de edición de la imagen */}
+            <div className="flex-grow overflow-auto bg-slate-100/60 rounded-xl p-4 flex items-center justify-center min-h-[300px] relative select-none">
+              {loading ? (
+                <div className="flex flex-col items-center gap-2">
+                  <Loader2 className="h-8 w-8 animate-spin text-[#468DFF]" />
+                  <span className="text-xs font-bold text-slate-600">Guardando cambios...</span>
+                </div>
+              ) : (
+                <div 
+                  ref={containerRef}
+                  onClick={handleImageClick}
+                  className="relative cursor-crosshair max-w-full max-h-[50vh] overflow-hidden rounded-lg shadow-sm"
+                >
+                  <img 
+                    src={imageUrl} 
+                    alt="Evidencia a editar" 
+                    className="max-w-full max-h-[50vh] object-contain pointer-events-none block"
+                  />
+                  {/* Puntos de medición */}
+                  {points.map((p) => (
+                    <div
+                      key={p.number}
+                      style={{
+                        position: 'absolute',
+                        left: `${p.x}%`,
+                        top: `${p.y}%`,
+                        transform: 'translate(-50%, -50%)',
+                      }}
+                      className="w-7 h-7 bg-red-500 rounded-full border-2 border-white text-white font-extrabold text-xs flex items-center justify-center shadow-md select-none pointer-events-none"
+                    >
+                      {p.number}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Acciones de edición */}
+            <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 mt-4 pt-3 border-t border-slate-150 shrink-0">
+              <div className="flex items-center gap-2">
+                <AppButton
+                  variant="secondary"
+                  disabled={points.length === 0 || loading}
+                  onClick={handleUndo}
+                  className="text-xs py-1.5 h-[34px] flex items-center gap-1.5"
+                >
+                  Deshacer último
+                </AppButton>
+                <AppButton
+                  variant="secondary"
+                  disabled={points.length === 0 || loading}
+                  onClick={handleClear}
+                  className="text-xs py-1.5 h-[34px] text-red-500 border-red-200 hover:bg-red-50"
+                >
+                  Limpiar todo
+                </AppButton>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  disabled={loading}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer border border-slate-200"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={loading || points.length === 0}
+                  className="px-4 py-2 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-xs font-bold transition-all cursor-pointer border-none shadow-md shadow-[#468DFF]/15 disabled:opacity-50"
+                >
+                  Guardar marcadores
+                </button>
+              </div>
+            </div>
+          </Dialog.Content>
+        </div>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }
