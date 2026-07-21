@@ -1,5 +1,25 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-21] Corrección de Importación de AppFormNavigator en Checklist Personalizados
+
+### Resumen de Cambios
+- **Importación de AppFormNavigator**: Se agregó el import faltante de `AppFormNavigator` en `src/app/[tenant-slug]/checklist-personalizados/page.js` para solucionar el error `ReferenceError: AppFormNavigator is not defined` que ocurría al renderizar la página de Checklists Personalizados.
+
+### Decisiones Clave
+- Asegurar la correcta importación de componentes unificados para la navegación interna de formularios en todos los módulos.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+
+### Validaciones Ejecutadas
+- Verificación del bundle de Next.js (`npm run build`).
+
+---
+
 ## [2026-07-21] Corrección de Consulta de Perfiles en Protocolo de Iluminación
 
 ### Resumen de Cambios
