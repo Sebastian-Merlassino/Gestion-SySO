@@ -1,5 +1,233 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-21] Rediseño del Contenedor "Documentación Adjunta" con Estándares `SySO-Document-Compact-Layout` y `SySO-Multiple-Evidence-Photo-Grid`
+
+### Resumen de Cambios
+- **Renombrado y Reestructuración de la Card**:
+  - Se cambió el título de la tarjeta de `"Anexos y Documentación Adjunta"` a únicamente **`"Documentación Adjunta"`**.
+- **Sección 1: Certificado de Calibración**:
+  - Se creó la sub-sección para la carga del **Certificado de Calibración del Instrumental** utilizando el estándar **`SySO-Document-Compact-Layout`** a través del componente `<DocumentUploadZone />`. Permite carga local, importación desde Google Drive, acciones compactas de vista previa, descarga y eliminación.
+- **Sección 2: Plano o Croquis del Establecimiento**:
+  - Se integró la sub-sección para el plano o croquis del establecimiento combinando dos bloques estándar:
+    1. **`SySO-Document-Compact-Layout`**: `<DocumentUploadZone />` para la carga del documento digitalizado del plano/croquis (PDF / Documento) con importación desde Drive y vista previa compacta.
+    2. **`SySO-Multiple-Evidence-Photo-Grid`**: `<ImageUploadZone multiple={true} />` para la carga y gestión de evidencias fotográficas múltiples del plano, croquis o puntos de medición con miniaturas previsualizables en carrusel/lightbox y tarjeta de adición rápida.
+
+### Decisiones Clave
+- Combinar ambos estándares reconocidos en el proyecto dentro de la misma tarjeta para ofrecer una carga estructurada de certificados oficiales y evidencias gráficas en el Protocolo de Iluminación.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+
+### Validaciones Ejecutadas
+- Verificación del bundle de Next.js (`npm run build`).
+
+---
+
+## [2026-07-21] Estandarización Visual de Modales Explicativos e Informativos (`AppInfoModal.js`)
+
+### Resumen de Cambios
+- **Nuevo Componente Global de UI Reutilizable**:
+  - `src/components/ui/AppInfoModal.js`: Se elevó el diseño del modal con encabezado institucional oscuro (`bg-slate-900` / `#0F172A`), contenedor de ícono con brillo azulado (`bg-[#468DFF]/20`), título principal en `Outfit font-extrabold`, subtítulo, cuerpo flexible con scrollbar personalizada y botón primario `"Cerrar"`.
+- **Refactorización de Modales Explicativos**:
+  - Se refactorizaron `MetodoCuadriculaModal.js` y `Tabla1Modal.js` para consumir el componente unificado `AppInfoModal`.
+- **Nuevo Estándar de Diseño Documentado**:
+  - Se redactó `docs/design/EXPLANATORY_MODALS_STANDARD.md` estableciendo las pautas de diseño y uso obligatorio de `AppInfoModal` para todas las ventanas aclaratorias e informativas del sistema.
+
+### Decisiones Clave
+- Unificar la experiencia visual de ventanas aclaratorias en un único estándar reusable para evitar duplicación de JSX y garantizar consistencia de marca en todas las secciones de Gestión SySO.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+- `shadcn`
+
+### Archivos Modificados
+- `[NEW] src/components/ui/AppInfoModal.js`
+- `[NEW] docs/design/EXPLANATORY_MODALS_STANDARD.md`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/components/MetodoCuadriculaModal.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/components/Tabla1Modal.js`
+
+### Validaciones Ejecutadas
+- Verificación del bundle de Next.js (`npm run build`).
+
+---
+
+## [2026-07-21] Integración del Explicativo del Método de la Cuadrícula y Criterio de Uniformidad (Res. SRT 84/12 & Dec. 351/79)
+
+### Resumen de Cambios
+- **Nuevo Módulo Creado**:
+  - `MetodoCuadriculaModal.js`: Componente modal interactivo con explicación técnica completa del **Método de la Cuadrícula para Medición de Iluminación** según la Res. SRT 84/12 y Decreto 351/79. Incluye marco normativo, fórmula de Índice de Local ($I$), cálculo del número mínimo de puntos ($N = (x+2)^2$), tabla explicativa y criterio de uniformidad. El botón de cierre fue simplificado a la etiqueta `"Cerrar"`.
+- **Integración en `ProtocoloForm.js`**:
+  - **Botón Informativo en Encabezado**: Se agregó un botón con ícono `HelpCircle` junto a `"Nuevo Protocolo de Iluminación"` que permite abrir el diálogo explicativo `MetodoCuadriculaModal`.
+  - **Aclaración y Restauración del Checkbox de Uniformidad**: Se restauró la etiqueta exacta `"Aplica verificación de uniformidad (E_mín ≥ E_media / 2)"`, añadiendo un botón con ícono `HelpCircle` y nota al pie aclarando que este criterio aplica cuando la iluminación es general o se evalúa por el método de cuadrícula.
+
+### Decisiones Clave
+- Ofrecer explicativos visuales y normativos directos dentro del flujo de carga para guiar al profesional técnico en el cumplimiento de la Res. SRT 84/12 y Decreto 351/79.
+- Garantizar que todos los botones e íconos aclaratorios (`HelpCircle`, `"?"`, `"Ver Tabla 1"`, `"Método de Cuadrícula"`) permanezcan siempre interactivos y accesibles para clientes y auditores tanto en modo edición como en modo lectura de protocolo (`mode === 'view'`).
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[NEW] src/app/[tenant-slug]/protocolos/iluminacion/components/MetodoCuadriculaModal.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+
+### Validaciones Ejecutadas
+- Verificación del bundle de Next.js (`npm run build`).
+
+---
+
+## [2026-07-21] Ajuste de Textos, Placeholders y Layout por Filas en Punto de Medición
+
+### Resumen de Cambios
+- **Ajustes en `ProtocoloForm.js` (Punto de Medición)**:
+  - **Limpieza de Placeholders duplicados**: Se deshabilitó el placeholder por defecto del componente `AppSelect` (`placeholder={null}`) en los selectores de `Sector`, `Puesto`, `Tipo de iluminación`, `Tipo de fuente`, `Distribución` y `Tabla 2`, evitando la duplicación de opciones vacías ("Selecciona una opción" + "Selecciona sector").
+  - **Actualización de Selector Tabla 2**: Se cambió la primera opción por defecto a `"Seleccione Tipo de edificio, local y tarea visual..."`.
+  - **Renombrado de Etiqueta del Valor Requerido**: Se renombró el `AppLabel` del valor de lux requerido a `"Valor mínimo de servicio de iluminación (lux)"`.
+  - **Reorganización en Filas Distintas**:
+    - **Fila de Geometría**: `Largo (m)`, `Ancho (m)` y `Altura (m)` en una sola fila (se eliminó la palabra "montaje").
+    - **Fila de Iluminación y Uniformidad (Debajo)**: `Tipo de iluminación`, `Tipo de fuente`, `Iluminación (Distribución)` y el checkbox `"Corresponde verificar la uniformidad"`.
+
+### Decisiones Clave
+- Separar claramente la geometría (Largo, Ancho, Altura) de las características de la fuente e iluminación en filas independientes para mejorar la jerarquía visual y reducir saturación horizontal.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+
+### Validaciones Ejecutadas
+- Verificación del bundle de Next.js (`npm run build`).
+
+---
+
+## [2026-07-21] Corrección de TDZ en Módulo de Empresas (`ReferenceError: Cannot access 'razonSocial' before initialization`)
+
+### Resumen de Cambios
+- **Reordenamiento de Inicialización en `src/app/[tenant-slug]/empresas/page.js`**:
+  - Se corrigió un error de orden de ejecución en el cuerpo del componente React `EmpresasClientes`, donde las referencias `originalDataRef`, `lastEditingIdRef` y la función `checkHasUnsavedChanges` intentaban acceder a las variables de estado del formulario (`razonSocial`, `cuit`, `establecimientos`, etc.) antes de que las mismas fueran declaradas mediante los hooks `useState`.
+  - En JavaScript / React, intentar acceder a variables `const` antes de su línea de instanciación activa la Zona Muerta Temporal (TDZ) y detiene el renderizado con `ReferenceError: Cannot access 'razonSocial' before initialization`.
+  - Se reubicaron las referencias `useRef` y la lógica de serialización de estado `originalDataRef` inmediatamente después de la declaración de todos los estados `useState` del componente.
+
+### Decisiones Clave
+- Garantizar que todos los hooks de estado del formulario principal estén completamente instanciados antes de evaluar cambios sin guardar o sincronizar estados de edición.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+
+### Validaciones Ejecutadas
+- Verificación del bundle de Next.js (`npm run build`).
+
+---
+
+## [2026-07-21] Corrección de Alcance de Variable en Carga de Perfil de Cliente (`ReferenceError: clientProf is not defined`)
+
+### Resumen de Cambios
+- **Fix en Módulo de Empresas (`src/app/[tenant-slug]/empresas/page.js`)**:
+  - Se corrigió un error de scope en la función `handleEdit` donde `clientProf` y `clientProfErr` estaban declarados con `const` de forma interna dentro del bloque `else`.
+  - Al intentar acceder a `clientProf` fuera del bloque condicional para calcular `finalClientEmail` y `finalClientName`, se lanzaba una excepción `ReferenceError: clientProf is not defined` impidiendo el ingreso/edición de datos de una empresa cliente.
+  - Se redefinieron las variables `clientProf` y `clientProfErr` utilizando `let` con alcance a nivel de función antes de las ramas `if (isDevMode) ... else ...`.
+
+### Decisiones Clave
+- Mantener las variables dentro del alcance de `handleEdit` para garantizar la correcta instanciación del objeto `originalDataRef.current` y permitir el flujo de edición del portal de cliente.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+
+### Validaciones Ejecutadas
+- Verificación del bundle de Next.js (`npm run build`).
+
+---
+
+## [2026-07-21] Reestructuración de Punto de Medición e Integración del Anexo IV (Dec. 351/79)
+
+### Resumen de Cambios
+- **Rediseño Completo del Contenedor "Punto de Medición" (`ProtocoloForm.js`)**:
+  - Se eliminó la distribución previa de 2 columnas verticales en el punto de muestreo y se unificó a un layout continuo de 1 sola columna dividido en 5 filas estructuradas:
+    1. **Fila 1 (Ubicación)**: Sector y Puesto/Sección (selectores vinculados + carga manual).
+    2. **Fila 2 (Geometría e Iluminación)**: Largo (m), Ancho (m), Altura de montaje (m), Tipo de iluminación, Fuente lumínica, Distribución y Checkbox de Verificación de Uniformidad (`E_mín ≥ E_media / 2`).
+    3. **Fila 3 (Criterio Legal Anexo IV Dec. 351/79 - Norma IRAM-AADL J 20-06)**:
+       - Título con botón e ícono aclaratorio (`HelpCircle`) que abre la ventana emergente `Tabla1Modal`.
+       - Selector desplegable con todas las categorías y tareas normadas de la **TABLA 2 - Intensidad mínima de iluminación**.
+       - Campo de entrada numérico editable en lux para selección de la lista o carga manual.
+       - Alineación y centrado vertical unificado (`min-h-[2.5rem] flex items-center mb-1`) para los labels del selector Tabla 2 y del campo de carga manual.
+    4. **Fila 4 (Mediciones de Lux Obtenidas con Generación Automática)**:
+       - Cálculo automático del **Número Mínimo de Puntos de Medición** ($N = (x+2)^2$) en función de la geometría ingresada.
+       - Generación y ajuste dinámico automático de los campos e indicadores de medición (`Val #1`, `Val #2`, ..., `Val #N`).
+       - Se simplificó la leyenda de requerimiento normativo eliminando la palabra "mediciones automáticas".
+    5. **Fila 5 (Indicadores Técnicos Calculados)**:
+       - Se eliminó el campo y etiqueta de observaciones del punto por redundancia a solicitud del usuario, manteniendo la tarjeta de resultados e indicadores calculados (Índice de local, iluminancia media, iluminancia mínima, uniformidad y resultado Cumple/No cumple).
+- **Nuevos Módulos Creados**:
+  - `tablasAnexoIV.js`: Catálogo normativo de la Tabla 1 y Tabla 2 del Anexo IV (Decreto 351/79).
+  - `Tabla1Modal.js`: Diálogo modal emergente interactivo con buscador en tiempo real para consultar la Tabla 1.
+
+### Decisiones Clave
+- Organizar el flujo del punto de forma secuencial (Ubicación -> Dimensiones -> Criterio Legal -> Mediciones -> Resultados) para mejorar la usabilidad técnica y automatizar la generación de campos según la norma IRAM-AADL J 20-06.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+- `shadcn`
+
+### Archivos Modificados
+- `[NEW] src/app/[tenant-slug]/protocolos/iluminacion/utils/tablasAnexoIV.js`
+- `[NEW] src/app/[tenant-slug]/protocolos/iluminacion/components/Tabla1Modal.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+
+### Validaciones Ejecutadas
+- Verificación del bundle de Next.js (`npm run build`).
+
+---
+
+## [2026-07-21] Alineación de Labels en Datos de la Medición (Protocolo de Iluminación)
+
+### Resumen de Cambios
+- **Alineación Visual en Formulario de Protocolo de Iluminación**:
+  - En el formulario de creación/edición de Protocolo de Iluminación (`ProtocoloForm.js`), dentro de la sección **Datos de la Medición**, se ajustó el layout de los labels:
+    - `"Marca, modelo y N° de serie del instrumento"`
+    - `"Fecha de Calibración del Instrumental"`
+  - Se añadieron las clases unificadas `min-h-[2.5rem] flex items-center mb-1` a ambos componentes `<AppLabel />`.
+  - Esto garantiza que ambos labels permanezcan perfectamente centrados verticalmente a la misma altura en la fila y que los inputs de texto y fecha inferiores comiencen exactamente en el mismo nivel horizontal, previniendo desalineaciones visuales ante saltos de línea de texto en diferentes tamaños de pantalla.
+
+### Decisiones Clave
+- Utilizar un contenedor de altura mínima unificada (`min-h-[2.5rem]`) y centrado vertical flex (`items-center`) en lugar de alturas fijas para tolerar wrapping responsivo de etiquetas largas sin romper el flujo vertical de los inputs.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+
+### Validaciones Ejecutadas
+- Verificación del bundle de Next.js (`npm run build`).
+
+### Próximo Paso Recomendado
+- Continuar con las revisiones estéticas y de usabilidad de los formularios de protocolos técnicos.
+
+---
+
 ## [2026-07-20] Eliminación de Valor Duplicado en Nivel de Riesgo (Correctivas)
 
 ### Resumen de Cambios

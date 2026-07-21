@@ -12,6 +12,7 @@ import AppCard from '@/components/ui/AppCard';
 import AppTextarea from '@/components/ui/AppTextarea';
 import AppLabel from '@/components/ui/AppLabel';
 import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
+import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import AITextHelper from '@/components/ui/AITextHelper';
 import { 
   Building, 
@@ -31,9 +32,14 @@ import {
   CheckCircle2,
   Trash,
   ArrowLeft,
-  X
+  X,
+  ShieldCheck,
+  MapPin
 } from 'lucide-react';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
+import { TABLA_2_ILUMINACION } from '../utils/tablasAnexoIV';
+import Tabla1Modal from './Tabla1Modal';
+import MetodoCuadriculaModal from './MetodoCuadriculaModal';
 
 // Catálogo normativo según Anexo IV Dec. 351/79 y SRT
 export const ACTIVIDADES_ILUMINACION = [
@@ -65,6 +71,11 @@ export default function ProtocoloForm({
   const [loading, setLoading] = useState(true);
   const [saveLoading, setSaveLoading] = useState(false);
   const [isDevMode, setIsDevMode] = useState(false);
+  
+  // Tabla 1 & Método Cuadrícula Modal State
+  const [isTabla1Open, setIsTabla1Open] = useState(false);
+  const [targetPuntoIdForTabla1, setTargetPuntoIdForTabla1] = useState(null);
+  const [isMetodoCuadriculaOpen, setIsMetodoCuadriculaOpen] = useState(false);
   
   // Lookups data
   const [empresas, setEmpresas] = useState([]);
@@ -528,6 +539,38 @@ export default function ProtocoloForm({
         };
       }
       return p;
+    }));
+  };
+
+  // Handle geometry change (auto recalculates minimum measurement points)
+  const handlePuntoGeometriaChange = (puntoId, field, val) => {
+    setPuntos(puntos.map(p => {
+      if (p.id !== puntoId) return p;
+      const updatedPunto = { ...p, [field]: val };
+
+      const largo = parseFloat(field === 'largo_m' ? val : updatedPunto.largo_m);
+      const ancho = parseFloat(field === 'ancho_m' ? val : updatedPunto.ancho_m);
+      const altura = parseFloat(field === 'altura_m' ? val : updatedPunto.altura_m);
+
+      if (largo > 0 && ancho > 0 && altura > 0) {
+        const indice_local = (largo * ancho) / (altura * (largo + ancho));
+        const indice_local_corregido = indice_local >= 3 ? 4 : Math.ceil(indice_local);
+        const numero_minimo_puntos_medicion = Math.pow(indice_local_corregido + 2, 2);
+
+        let currentMediciones = [...updatedPunto.mediciones];
+        if (currentMediciones.length < numero_minimo_puntos_medicion) {
+          const needed = numero_minimo_puntos_medicion - currentMediciones.length;
+          for (let i = 0; i < needed; i++) {
+            currentMediciones.push({
+              id: 'm-' + Date.now() + '-' + i + '-' + Math.random().toString(36).substr(2, 4),
+              valor_lux: ''
+            });
+          }
+          updatedPunto.mediciones = currentMediciones;
+        }
+      }
+
+      return updatedPunto;
     }));
   };
 
@@ -1043,6 +1086,16 @@ export default function ProtocoloForm({
           <span className="font-outfit text-base font-bold text-slate-900">
             {mode === 'create' ? 'Nuevo Protocolo de Iluminación' : mode === 'edit' ? 'Editar Protocolo de Iluminación' : 'Detalle de Protocolo de Iluminación'}
           </span>
+          <button
+            type="button"
+            onClick={() => setIsMetodoCuadriculaOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-[#468DFF] hover:bg-[#468DFF] hover:text-white border border-blue-200 rounded-lg text-xs font-bold transition-all active:scale-95 cursor-pointer ml-1.5"
+            title="Ver explicativo del Método de la Cuadrícula (Res. SRT 84/12 & Dec. 351/79)"
+          >
+            <HelpCircle className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Método de Cuadrícula (Res. 84/12)</span>
+            <span className="sm:hidden text-[10px]">Método Cuadrícula</span>
+          </button>
         </div>
         <button type="button" onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200 cursor-pointer">
           <X className="h-5 w-5" />
@@ -1160,7 +1213,9 @@ export default function ProtocoloForm({
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="flex flex-col gap-1 md:col-span-2">
-              <AppLabel htmlFor="instrumento">Marca, modelo y N° de serie del instrumento</AppLabel>
+              <AppLabel htmlFor="instrumento" className="min-h-[2.5rem] flex items-center mb-1">
+                Marca, modelo y N° de serie del instrumento
+              </AppLabel>
               <AppInput
                 id="instrumento"
                 disabled={!canEdit}
@@ -1171,7 +1226,9 @@ export default function ProtocoloForm({
             </div>
 
             <div className="flex flex-col gap-1 relative md:col-span-1">
-              <AppLabel htmlFor="fechaCalibracion">Fecha de Calibración del Instrumental</AppLabel>
+              <AppLabel htmlFor="fechaCalibracion" className="min-h-[2.5rem] flex items-center mb-1">
+                Fecha de Calibración del Instrumental
+              </AppLabel>
               <div className="relative">
                 <AppInput
                   id="fechaCalibracion"
@@ -1435,200 +1492,327 @@ export default function ProtocoloForm({
 
                   {/* Contenido del Punto */}
                   {!p.isCollapsed && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1 animate-scale-up">
+                    <div className="space-y-4 pt-1 animate-scale-up">
                       
-                      {/* Left: Geometría e Info */}
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="flex flex-col gap-1">
-                            <AppLabel htmlFor={`sector-sel-${p.id}`}>Sector</AppLabel>
-                            {isReadOnly ? (
-                              <AppInput id={`sector-sel-${p.id}`} disabled value={p.sector_text} />
-                            ) : (
-                              <AppSelect
-                                id={`sector-sel-${p.id}`}
-                                disabled={!establecimientoId}
-                                value={p.sector_id || (p.sector_text ? '__custom__' : '')}
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  if (val === '__custom__') {
-                                    handlePuntoSectorChange(p.id, '__custom__');
-                                  } else {
-                                    handlePuntoSectorChange(p.id, val);
-                                  }
-                                }}
-                              >
-                                <option value="">Selecciona sector...</option>
-                                {estSectoresLocal.map(s => (
-                                  <option key={s.id} value={s.id}>{s.denominacion}</option>
-                                ))}
-                                <option value="__custom__">+ Ingresar sector manual...</option>
-                              </AppSelect>
-                            )}
-                            {!p.sector_id && canEdit && (
-                              <AppInput
-                                placeholder="Escribir sector manual..."
-                                className="mt-1"
-                                value={p.sector_text}
-                                onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, sector_text: e.target.value } : x))}
-                              />
-                            )}
-                          </div>
-
-                          <div className="flex flex-col gap-1">
-                            <AppLabel htmlFor={`puesto-sel-${p.id}`}>Puesto / Sección</AppLabel>
-                            {isReadOnly ? (
-                              <AppInput id={`puesto-sel-${p.id}`} disabled value={p.puesto_text} />
-                            ) : (
-                              <AppSelect
-                                id={`puesto-sel-${p.id}`}
-                                disabled={!p.sector_id}
-                                value={p.puesto_id || (p.puesto_text ? '__custom__' : '')}
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  if (val === '__custom__') {
-                                    handlePuntoPuestoChange(p.id, '__custom__');
-                                  } else {
-                                    handlePuntoPuestoChange(p.id, val);
-                                  }
-                                }}
-                              >
-                                <option value="">Selecciona puesto...</option>
-                                {p.sector_id && estSectoresLocal.find(s => s.id === p.sector_id)?.puestos?.map(pst => (
-                                  <option key={pst.id} value={pst.id}>{pst.denominacion}</option>
-                                ))}
-                                <option value="__custom__">+ Ingresar puesto manual...</option>
-                              </AppSelect>
-                            )}
-                            {(!p.puesto_id) && canEdit && (
-                              <AppInput
-                                placeholder="Escribir puesto manual..."
-                                className="mt-1"
-                                value={p.puesto_text}
-                                onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, puesto_text: e.target.value } : x))}
-                              />
-                            )}
-                          </div>
+                      {/* Fila 1: Sector y Puesto */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-1">
+                          <AppLabel htmlFor={`sector-sel-${p.id}`}>Sector</AppLabel>
+                          {isReadOnly ? (
+                            <AppInput id={`sector-sel-${p.id}`} disabled value={p.sector_text} />
+                          ) : (
+                            <AppSelect
+                              id={`sector-sel-${p.id}`}
+                              placeholder={null}
+                              disabled={!establecimientoId}
+                              value={p.sector_id || (p.sector_text ? '__custom__' : '')}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === '__custom__') {
+                                  handlePuntoSectorChange(p.id, '__custom__');
+                                } else {
+                                  handlePuntoSectorChange(p.id, val);
+                                }
+                              }}
+                            >
+                              <option value="">Selecciona sector...</option>
+                              {estSectoresLocal.map(s => (
+                                <option key={s.id} value={s.id}>{s.denominacion}</option>
+                              ))}
+                              <option value="__custom__">+ Ingresar sector manual...</option>
+                            </AppSelect>
+                          )}
+                          {!p.sector_id && canEdit && (
+                            <AppInput
+                              placeholder="Escribir sector manual..."
+                              className="mt-1"
+                              value={p.sector_text}
+                              onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, sector_text: e.target.value } : x))}
+                            />
+                          )}
                         </div>
 
-                        <div className="grid grid-cols-3 gap-2">
-                          <div className="flex flex-col gap-1">
-                            <AppLabel htmlFor={`largo-${p.id}`}>Largo (m)</AppLabel>
+                        <div className="flex flex-col gap-1">
+                          <AppLabel htmlFor={`puesto-sel-${p.id}`}>Puesto / Sección</AppLabel>
+                          {isReadOnly ? (
+                            <AppInput id={`puesto-sel-${p.id}`} disabled value={p.puesto_text} />
+                          ) : (
+                            <AppSelect
+                              id={`puesto-sel-${p.id}`}
+                              placeholder={null}
+                              disabled={!p.sector_id}
+                              value={p.puesto_id || (p.puesto_text ? '__custom__' : '')}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === '__custom__') {
+                                  handlePuntoPuestoChange(p.id, '__custom__');
+                                } else {
+                                  handlePuntoPuestoChange(p.id, val);
+                                }
+                              }}
+                            >
+                              <option value="">Selecciona puesto...</option>
+                              {p.sector_id && estSectoresLocal.find(s => s.id === p.sector_id)?.puestos?.map(pst => (
+                                <option key={pst.id} value={pst.id}>{pst.denominacion}</option>
+                              ))}
+                              <option value="__custom__">+ Ingresar puesto manual...</option>
+                            </AppSelect>
+                          )}
+                          {(!p.puesto_id) && canEdit && (
                             <AppInput
-                              id={`largo-${p.id}`}
-                              disabled={!canEdit}
-                              type="number"
-                              step="0.01"
-                              value={p.largo_m}
-                              onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, largo_m: e.target.value } : x))}
+                              placeholder="Escribir puesto manual..."
+                              className="mt-1"
+                              value={p.puesto_text}
+                              onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, puesto_text: e.target.value } : x))}
                             />
-                          </div>
-                          <div className="flex flex-col gap-1">
-                            <AppLabel htmlFor={`ancho-${p.id}`}>Ancho (m)</AppLabel>
-                            <AppInput
-                              id={`ancho-${p.id}`}
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Fila 2A: Geometría (Largo, Ancho, Altura en una misma fila) */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+                        <div className="flex flex-col gap-1">
+                          <AppLabel htmlFor={`largo-${p.id}`}>Largo (m)</AppLabel>
+                          <AppInput
+                            id={`largo-${p.id}`}
+                            disabled={!canEdit}
+                            type="number"
+                            step="0.01"
+                            placeholder="Ej: 6.00"
+                            value={p.largo_m}
+                            onChange={(e) => handlePuntoGeometriaChange(p.id, 'largo_m', e.target.value)}
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <AppLabel htmlFor={`ancho-${p.id}`}>Ancho (m)</AppLabel>
+                          <AppInput
+                            id={`ancho-${p.id}`}
+                            disabled={!canEdit}
+                            type="number"
+                            step="0.01"
+                            placeholder="Ej: 4.00"
+                            value={p.ancho_m}
+                            onChange={(e) => handlePuntoGeometriaChange(p.id, 'ancho_m', e.target.value)}
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <AppLabel htmlFor={`altura-${p.id}`}>Altura (m)</AppLabel>
+                          <AppInput
+                            id={`altura-${p.id}`}
+                            disabled={!canEdit}
+                            type="number"
+                            step="0.01"
+                            placeholder="Ej: 2.50"
+                            value={p.altura_m}
+                            onChange={(e) => handlePuntoGeometriaChange(p.id, 'altura_m', e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Fila 2B (Debajo): Tipo de Iluminación, Tipo de Fuente, Iluminación (Distribución) y Check Uniformidad */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+                        <div className="flex flex-col gap-1">
+                          <AppLabel htmlFor={`tipo-ilu-${p.id}`}>Tipo de iluminación</AppLabel>
+                          {isReadOnly ? (
+                            <AppInput id={`tipo-ilu-${p.id}`} disabled value={p.tipo_iluminacion} />
+                          ) : (
+                            <AppSelect
+                              id={`tipo-ilu-${p.id}`}
+                              placeholder={null}
                               disabled={!canEdit}
-                              type="number"
-                              step="0.01"
-                              value={p.ancho_m}
-                              onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, ancho_m: e.target.value } : x))}
-                            />
-                          </div>
-                          <div className="flex flex-col gap-1">
-                            <AppLabel htmlFor={`altura-${p.id}`}>Altura montaje (m)</AppLabel>
-                            <AppInput
-                              id={`altura-${p.id}`}
-                              disabled={!canEdit}
-                              type="number"
-                              step="0.01"
-                              value={p.altura_m}
-                              onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, altura_m: e.target.value } : x))}
-                            />
-                          </div>
+                              value={p.tipo_iluminacion}
+                              onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, tipo_iluminacion: e.target.value } : x))}
+                            >
+                              <option value="Natural">Natural</option>
+                              <option value="Artificial">Artificial</option>
+                              <option value="Mixta">Mixta</option>
+                            </AppSelect>
+                          )}
                         </div>
 
-                        <div className="grid grid-cols-3 gap-2">
-                          <div className="flex flex-col gap-1">
-                            <AppLabel htmlFor={`tipo-ilu-${p.id}`}>Iluminación</AppLabel>
-                            {isReadOnly ? (
-                              <AppInput id={`tipo-ilu-${p.id}`} disabled value={p.tipo_iluminacion} />
-                            ) : (
-                              <AppSelect
-                                id={`tipo-ilu-${p.id}`}
-                                disabled={!canEdit}
-                                value={p.tipo_iluminacion}
-                                onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, tipo_iluminacion: e.target.value } : x))}
-                              >
-                                <option value="Natural">Natural</option>
-                                <option value="Artificial">Artificial</option>
-                                <option value="Mixta">Mixta</option>
-                              </AppSelect>
-                            )}
+                        <div className="flex flex-col gap-1">
+                          <AppLabel htmlFor={`fuente-${p.id}`}>Tipo de fuente</AppLabel>
+                          {isReadOnly ? (
+                            <AppInput id={`fuente-${p.id}`} disabled value={p.tipo_fuente_luminica} />
+                          ) : (
+                            <AppSelect
+                              id={`fuente-${p.id}`}
+                              placeholder={null}
+                              disabled={!canEdit}
+                              value={p.tipo_fuente_luminica}
+                              onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, tipo_fuente_luminica: e.target.value } : x))}
+                            >
+                              <option value="Incandescente">Incandescente</option>
+                              <option value="Descarga">Descarga</option>
+                              <option value="Mixta">Mixta</option>
+                              <option value="Led">Led</option>
+                            </AppSelect>
+                          )}
+                        </div>
+
+                        <div className="flex flex-col gap-1">
+                          <AppLabel htmlFor={`distribucion-${p.id}`}>Iluminación (Distribución)</AppLabel>
+                          {isReadOnly ? (
+                            <AppInput id={`distribucion-${p.id}`} disabled value={p.iluminacion} />
+                          ) : (
+                            <AppSelect
+                              id={`distribucion-${p.id}`}
+                              placeholder={null}
+                              disabled={!canEdit}
+                              value={p.iluminacion}
+                              onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, iluminacion: e.target.value } : x))}
+                            >
+                              <option value="General">General</option>
+                              <option value="Localizada">Localizada</option>
+                              <option value="Mixta">Mixta</option>
+                            </AppSelect>
+                          )}
+                        </div>
+
+                        <div className="flex flex-col gap-0.5 justify-center pb-1 col-span-full lg:col-span-1">
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="checkbox"
+                              id={`uniformidad-check-${p.id}`}
+                              disabled={!canEdit}
+                              checked={p.aplicaVerificacionUniformidad}
+                              onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, aplicaVerificacionUniformidad: e.target.checked } : x))}
+                              className="rounded text-[#468DFF] focus:ring-[#468DFF] cursor-pointer h-4 w-4 shrink-0"
+                            />
+                            <label htmlFor={`uniformidad-check-${p.id}`} className="text-[11px] font-semibold text-slate-700 cursor-pointer leading-tight">
+                              Aplica verificación de uniformidad (E_mín ≥ E_media / 2)
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => setIsMetodoCuadriculaOpen(true)}
+                              className="text-slate-400 hover:text-[#468DFF] transition-colors p-0.5 shrink-0"
+                              title="Aplica cuando la iluminación es General o se evalúa por el Método de Cuadrícula (Res. SRT 84/12 & Dec. 351/79). Clic para ver criterio."
+                            >
+                              <HelpCircle className="h-3.5 w-3.5" />
+                            </button>
                           </div>
-                          <div className="flex flex-col gap-1">
-                            <AppLabel htmlFor={`fuente-${p.id}`}>Fuente Lumínica</AppLabel>
-                            {isReadOnly ? (
-                              <AppInput id={`fuente-${p.id}`} disabled value={p.tipo_fuente_luminica} />
-                            ) : (
-                              <AppSelect
-                                id={`fuente-${p.id}`}
-                                disabled={!canEdit}
-                                value={p.tipo_fuente_luminica}
-                                onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, tipo_fuente_luminica: e.target.value } : x))}
-                              >
-                                <option value="Incandescente">Incandescente</option>
-                                <option value="Descarga">Descarga</option>
-                                <option value="Mixta">Mixta</option>
-                                <option value="Led">Led</option>
-                              </AppSelect>
-                            )}
+                          <span className="text-[10px] text-slate-400 font-medium pl-5">
+                            *Aplica en iluminación general o recinto evaluado por cuadrícula.
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Fila 3: Criterio Legal (Anexo IV Dec. 351/79) */}
+                      <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200 space-y-2">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-slate-800 text-xs uppercase tracking-wider">
+                              Valor requerido legalmente Según Anexo IV Dec. 351/79
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setTargetPuntoIdForTabla1(p.id);
+                                setIsTabla1Open(true);
+                              }}
+                              className="text-[#468DFF] hover:text-[#0511F2] transition-colors p-1 rounded-full hover:bg-blue-50 flex items-center gap-1 font-bold text-xs"
+                              title="Ver TABLA 1 - Intensidad Media de Iluminación para Diversas Clases de Tarea Visual"
+                            >
+                              <HelpCircle className="h-4 w-4" />
+                              <span className="underline text-[11px]">Ver Tabla 1</span>
+                            </button>
                           </div>
-                          <div className="flex flex-col gap-1">
-                            <AppLabel htmlFor={`distribucion-${p.id}`}>Distribución</AppLabel>
-                            {isReadOnly ? (
-                              <AppInput id={`distribucion-${p.id}`} disabled value={p.iluminacion} />
-                            ) : (
-                              <AppSelect
-                                id={`distribucion-${p.id}`}
-                                disabled={!canEdit}
-                                value={p.iluminacion}
-                                onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, iluminacion: e.target.value } : x))}
-                              >
-                                <option value="General">General</option>
-                                <option value="Localizada">Localizada</option>
-                                <option value="Mixta">Mixta</option>
-                              </AppSelect>
-                            )}
+                          <span className="text-[10px] text-slate-400 font-medium">
+                            Basado en Norma IRAM-AADL J 20-06
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <div className="md:col-span-2 flex flex-col gap-1">
+                            <AppLabel htmlFor={`requerido-sel-${p.id}`} className="min-h-[2.5rem] flex items-center mb-1 text-[10px] text-slate-500 font-semibold">
+                              TABLA 2 - Intensidad mínima de iluminación (Seleccionar opción)
+                            </AppLabel>
+                            <AppSelect
+                              id={`requerido-sel-${p.id}`}
+                              placeholder={null}
+                              disabled={!canEdit}
+                              value={p.selectedTabla2Index !== undefined ? p.selectedTabla2Index : ''}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val !== '') {
+                                  const item = TABLA_2_ILUMINACION[val];
+                                  if (item) {
+                                    setPuntos(puntos.map(x => x.id === p.id ? {
+                                      ...x,
+                                      selectedTabla2Index: val,
+                                      valor_requerido_legal_lux: String(item.lux)
+                                    } : x));
+                                  }
+                                } else {
+                                  setPuntos(puntos.map(x => x.id === p.id ? { ...x, selectedTabla2Index: '' } : x));
+                                }
+                              }}
+                            >
+                              <option value="">Seleccione Tipo de edificio, local y tarea visual...</option>
+                              {TABLA_2_ILUMINACION.map((item, t2Idx) => (
+                                <option key={t2Idx} value={t2Idx}>
+                                  {item.grupo} {item.subtitulo ? `(${item.subtitulo})` : ''} - {item.tarea}: {item.lux} lux
+                                </option>
+                              ))}
+                            </AppSelect>
+                          </div>
+
+                          <div className="md:col-span-1 flex flex-col gap-1">
+                            <AppLabel htmlFor={`requerido-manual-${p.id}`} className="min-h-[2.5rem] flex items-center mb-1 text-[10px] text-slate-500 font-semibold">
+                              Valor mínimo de servicio de iluminación (lux)
+                            </AppLabel>
+                            <AppInput
+                              id={`requerido-manual-${p.id}`}
+                              type="number"
+                              disabled={!canEdit}
+                              placeholder="Ej: 500"
+                              value={p.valor_requerido_legal_lux}
+                              onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? {
+                                ...x,
+                                valor_requerido_legal_lux: e.target.value
+                              } : x))}
+                            />
                           </div>
                         </div>
                       </div>
 
-                      {/* Right: Mediciones y Criterio Legal */}
-                      <div className="space-y-4 border-l border-slate-100 pl-0 md:pl-4">
-                        
-                        {/* Mediciones Lux Grid */}
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between">
-                            <AppLabel htmlFor={`medicion-${p.id}-0`}>Mediciones de Lux Obtenidas</AppLabel>
-                            {canEdit && (
-                              <button
-                                type="button"
-                                onClick={() => handleAddMedicion(p.id)}
-                                className="text-[10px] text-[#468DFF] hover:underline font-bold"
-                              >
-                                + Agregar Medición
-                              </button>
+                      {/* Fila 4: Mediciones Lux Obtenidas */}
+                      <div className="space-y-2 bg-white p-3.5 rounded-xl border border-slate-200">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <div>
+                            <AppLabel htmlFor={`medicion-${p.id}-0`} className="mb-0 font-bold text-slate-800 text-xs">
+                              Mediciones de Lux Obtenidas
+                            </AppLabel>
+                            {cal.numero_minimo_puntos_medicion !== null && (
+                              <p className="text-[11px] text-[#468DFF] font-semibold">
+                                Requerido por norma (Índice Local x={cal.indice_local_corregido}): {cal.numero_minimo_puntos_medicion}
+                              </p>
                             )}
                           </div>
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                            {p.mediciones.map((m, mIdx) => (
-                              <div key={m.id} className="relative flex items-center">
+                          {canEdit && (
+                            <button
+                              type="button"
+                              onClick={() => handleAddMedicion(p.id)}
+                              className="text-[11px] text-[#468DFF] hover:underline font-bold flex items-center gap-1"
+                            >
+                              <Plus className="h-3.5 w-3.5" /> Agregar Medición Extra
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 pt-1">
+                          {p.mediciones.map((m, mIdx) => (
+                            <div key={m.id} className="relative flex flex-col gap-0.5">
+                              <span className="text-[9px] font-bold text-slate-600 uppercase text-center">
+                                Val #{mIdx + 1}
+                              </span>
+                              <div className="relative flex items-center">
                                 <AppInput
                                   id={`medicion-${p.id}-${mIdx}`}
                                   disabled={!canEdit}
                                   type="text"
-                                  className="pr-6 text-center text-xs h-8"
-                                  placeholder={`Val #${mIdx + 1}`}
+                                  className="pr-6 text-center text-xs h-8 font-semibold"
+                                  placeholder="lux"
                                   value={m.valor_lux}
                                   onChange={(e) => handleMedicionValueChange(p.id, m.id, e.target.value)}
                                 />
@@ -1637,72 +1821,16 @@ export default function ProtocoloForm({
                                     type="button"
                                     onClick={() => handleRemoveMedicion(p.id, m.id)}
                                     className="absolute right-1 text-slate-300 hover:text-red-500 p-0.5"
+                                    title="Eliminar esta medición"
                                   >
                                     <Trash2 className="h-3 w-3" />
                                   </button>
                                 )}
                               </div>
-                            ))}
-                          </div>
+                            </div>
+                          ))}
                         </div>
-
-                        {/* Criterio Legal */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          <div className="flex flex-col gap-1">
-                            <AppLabel htmlFor={`actividad-${p.id}`}>Actividad / Sector SRT (Catálogo)</AppLabel>
-                            {isReadOnly ? (
-                              <AppInput id={`actividad-${p.id}`} disabled value={p.selectedActividadIndex !== '' ? ACTIVIDADES_ILUMINACION[p.selectedActividadIndex]?.tarea : ''} />
-                            ) : (
-                              <AppSelect
-                                id={`actividad-${p.id}`}
-                                value={p.selectedActividadIndex}
-                                onChange={(e) => handleActividadSelect(p.id, e.target.value)}
-                              >
-                                <option value="">Selecciona actividad normada...</option>
-                                {ACTIVIDADES_ILUMINACION.map((item, keyIdx) => (
-                                  <option key={keyIdx} value={keyIdx}>
-                                    {item.categoria} - {item.tarea} ({item.lux} lx)
-                                  </option>
-                                ))}
-                              </AppSelect>
-                            )}
-                          </div>
-                          <div className="flex flex-col gap-1">
-                            <AppLabel htmlFor={`requerido-${p.id}`}>Requerido legal (lux)</AppLabel>
-                            <AppInput
-                              id={`requerido-${p.id}`}
-                              type="number"
-                              disabled={!canEdit}
-                              placeholder="Ej: 500"
-                              value={p.valor_requerido_legal_lux}
-                              onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, valor_requerido_legal_lux: e.target.value } : x))}
-                            />
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            id={`uniformidad-check-${p.id}`}
-                            disabled={!canEdit}
-                            checked={p.aplicaVerificacionUniformidad}
-                            onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, aplicaVerificacionUniformidad: e.target.checked } : x))}
-                            className="rounded text-[#468DFF] focus:ring-[#468DFF] cursor-pointer"
-                          />
-                          <label htmlFor={`uniformidad-check-${p.id}`} className="text-xs font-semibold text-slate-600 cursor-pointer">
-                            Aplica verificación de uniformidad (E_mín ≥ E_media / 2)
-                          </label>
-                        </div>
-
-                        <div className="flex flex-col gap-1">
-                          <AppLabel>Observaciones del Punto</AppLabel>
-                          <AppInput
-                            disabled={!canEdit}
-                            placeholder="Notas o desvíos particulares del punto..."
-                            value={p.observaciones_punto}
-                            onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, observaciones_punto: e.target.value } : x))}
-                          />
-                        </div>
+                      </div>
 
                         {/* RESULTADOS CALCULADOS */}
                         {cal.cantidad_mediciones_cargadas > 0 && (
@@ -1733,7 +1861,6 @@ export default function ProtocoloForm({
                           </div>
                         )}
                       </div>
-                    </div>
                   )}
                 </div>
               );
@@ -1796,69 +1923,129 @@ export default function ProtocoloForm({
           </div>
         </AppCard>
 
-        {/* CARD ADJUNTOS */}
-        <AppCard className="p-5 md:p-6 space-y-4">
-          <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-            <FileText className="h-5 w-5 text-[#468DFF]" />
-            <h2 className="font-outfit text-base font-extrabold text-slate-800">Anexos y Documentación Adjunta</h2>
-          </div>
+        {/* CARD DOCUMENTACIÓN ADJUNTA */}
+        {(() => {
+          const certificadoAdjunto = adjuntos.find(a => a.tipo === 'Certificado de Calibración' || a.tipo === 'Certificado');
+          const planoDocAdjunto = adjuntos.find(a => a.tipo === 'Plano / Croquis' || a.tipo === 'Croquis/Certificado');
+          const planoFotosAdjuntos = adjuntos.filter(a => a.tipo === 'Evidencia Fotográfica Plano' || a.tipo === 'Foto Plano');
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-3">
-              <AppLabel>Archivos adjuntos cargados</AppLabel>
-              {adjuntos.length === 0 ? (
-                <p className="text-xs text-slate-400 font-medium">No se han cargado archivos adjuntos para este protocolo.</p>
-              ) : (
-                <div className="space-y-2">
-                  {adjuntos.map(ad => (
-                    <div key={ad.id} className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <FileText className="h-4 w-4 text-[#468DFF] shrink-0" />
-                        <div className="truncate">
-                          <span className="text-xs font-bold text-slate-800 block truncate leading-none">{ad.name}</span>
-                          <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">{ad.tipo}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => window.open(ad.preview, '_blank')}
-                          className="p-1 text-slate-400 hover:text-[#468DFF] transition-colors"
-                          title="Ver archivo"
-                        >
-                          <Info className="h-3.5 w-3.5" />
-                        </button>
-                        {canEdit && (
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteAdjunto(ad.id)}
-                            className="p-1 text-slate-400 hover:text-red-500 transition-colors"
-                            title="Eliminar archivo"
-                          >
-                            <Trash className="h-3.5 w-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {canEdit && (
-              <div className="space-y-3">
-                <AppLabel>Subir nuevo anexo</AppLabel>
-                <DocumentUploadZone
-                  disabled={!canEdit}
-                  accept="application/pdf,image/*"
-                  maxSizeMB={10}
-                  onFileChange={(file) => handleUploadFile(file, 'Croquis/Certificado')}
-                  onDriveImport={(link) => handleImportDriveLink(link, 'Drive Link')}
-                />
+          return (
+            <AppCard className="p-5 md:p-6 space-y-6">
+              <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+                <FileText className="h-5 w-5 text-[#468DFF]" />
+                <h2 className="font-outfit text-base font-extrabold text-slate-800">Documentación Adjunta</h2>
               </div>
-            )}
-          </div>
-        </AppCard>
+
+              <div className="space-y-6">
+                {/* SECCIÓN 1: CERTIFICADO DE CALIBRACIÓN */}
+                <div className="bg-slate-50/70 p-4.5 rounded-2xl border border-slate-200 space-y-3">
+                  <div className="flex items-center gap-2 border-b border-slate-200/60 pb-2">
+                    <ShieldCheck className="h-4.5 w-4.5 text-[#468DFF]" />
+                    <div>
+                      <h3 className="font-outfit text-xs font-bold text-slate-800 uppercase tracking-wider">
+                        Certificado de Calibración del Instrumental
+                      </h3>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        Carga del certificado oficial de calibración del luxómetro / fotómetro utilizado.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Bloque SySO-Document-Compact-Layout */}
+                  <DocumentUploadZone
+                    label="Certificado de Calibración (PDF / Documento)"
+                    fileName={certificadoAdjunto?.name}
+                    url={certificadoAdjunto?.preview}
+                    signedUrl={certificadoAdjunto?.preview}
+                    disabled={!canEdit}
+                    accept="application/pdf,image/*"
+                    maxSizeMB={10}
+                    onFileChange={(file) => {
+                      if (certificadoAdjunto) {
+                        handleDeleteAdjunto(certificadoAdjunto.id);
+                      }
+                      handleUploadFile(file, 'Certificado de Calibración');
+                    }}
+                    onDriveImport={(link) => {
+                      if (certificadoAdjunto) {
+                        handleDeleteAdjunto(certificadoAdjunto.id);
+                      }
+                      handleImportDriveLink(link, 'Certificado de Calibración');
+                    }}
+                    onDelete={certificadoAdjunto ? () => handleDeleteAdjunto(certificadoAdjunto.id) : null}
+                  />
+                </div>
+
+                {/* SECCIÓN 2: PLANO O CROQUIS DEL ESTABLECIMIENTO */}
+                <div className="bg-slate-50/70 p-4.5 rounded-2xl border border-slate-200 space-y-4">
+                  <div className="flex items-center gap-2 border-b border-slate-200/60 pb-2">
+                    <MapPin className="h-4.5 w-4.5 text-[#468DFF]" />
+                    <div>
+                      <h3 className="font-outfit text-xs font-bold text-slate-800 uppercase tracking-wider">
+                        Plano o Croquis del Establecimiento
+                      </h3>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        Carga del plano digitalizado del establecimiento y evidencias fotográficas de los puntos de medición.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Bloque 1: SySO-Document-Compact-Layout (PDF/Documento) */}
+                  <div className="space-y-2">
+                    <DocumentUploadZone
+                      label="Plano o Croquis Digitalizado (PDF / Documento)"
+                      fileName={planoDocAdjunto?.name}
+                      url={planoDocAdjunto?.preview}
+                      signedUrl={planoDocAdjunto?.preview}
+                      disabled={!canEdit}
+                      accept="application/pdf,image/*"
+                      maxSizeMB={15}
+                      onFileChange={(file) => {
+                        if (planoDocAdjunto) {
+                          handleDeleteAdjunto(planoDocAdjunto.id);
+                        }
+                        handleUploadFile(file, 'Plano / Croquis');
+                      }}
+                      onDriveImport={(link) => {
+                        if (planoDocAdjunto) {
+                          handleDeleteAdjunto(planoDocAdjunto.id);
+                        }
+                        handleImportDriveLink(link, 'Plano / Croquis');
+                      }}
+                      onDelete={planoDocAdjunto ? () => handleDeleteAdjunto(planoDocAdjunto.id) : null}
+                    />
+                  </div>
+
+                  {/* Bloque 2: SySO-Multiple-Evidence-Photo-Grid (Imágenes / Evidencias) */}
+                  <div className="pt-3 border-t border-slate-200/80">
+                    <ImageUploadZone
+                      label="Evidencias Fotográficas / Imágenes del Plano o Puntos de Medición"
+                      disabled={!canEdit}
+                      multiple={true}
+                      maxSizeMB={5}
+                      images={planoFotosAdjuntos.map(f => ({
+                        id: f.id,
+                        preview: f.preview || f.path,
+                        name: f.name
+                      }))}
+                      onAddPhotos={async (filesArray) => {
+                        for (const file of filesArray) {
+                          await handleUploadFile(file, 'Evidencia Fotográfica Plano');
+                        }
+                      }}
+                      onRemovePhoto={(index) => {
+                        const targetPhoto = planoFotosAdjuntos[index];
+                        if (targetPhoto) {
+                          handleDeleteAdjunto(targetPhoto.id);
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </AppCard>
+          );
+        })()}
 
         {/* Pie de Página del Formulario */}
         <div className="flex justify-between items-center pt-6 border-t border-slate-100 shrink-0">
@@ -1967,6 +2154,26 @@ export default function ProtocoloForm({
           </div>
         </Dialog.Portal>
       </Dialog.Root>
+
+      {/* TABLA 1 CONSULTA EMERGENTE MODAL */}
+      <Tabla1Modal
+        isOpen={isTabla1Open}
+        onClose={() => setIsTabla1Open(false)}
+        onSelectLux={(selectedLux) => {
+          if (targetPuntoIdForTabla1) {
+            setPuntos(puntos.map(x => x.id === targetPuntoIdForTabla1 ? {
+              ...x,
+              valor_requerido_legal_lux: String(selectedLux)
+            } : x));
+          }
+        }}
+      />
+
+      {/* METODO DE LA CUADRICULA EXPLICATIVO MODAL */}
+      <MetodoCuadriculaModal
+        isOpen={isMetodoCuadriculaOpen}
+        onClose={() => setIsMetodoCuadriculaOpen(false)}
+      />
     </>
   );
 }
