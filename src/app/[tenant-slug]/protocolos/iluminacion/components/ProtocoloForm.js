@@ -11,6 +11,7 @@ import AppSelect from '@/components/ui/AppSelect';
 import AppCard from '@/components/ui/AppCard';
 import AppTextarea from '@/components/ui/AppTextarea';
 import AppLabel from '@/components/ui/AppLabel';
+import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import AITextHelper from '@/components/ui/AITextHelper';
@@ -142,6 +143,47 @@ export default function ProtocoloForm({
 
   const canEdit = mode !== 'view' && estado !== 'anulado';
   const isReadOnly = mode === 'view';
+
+  const getSectionPermissions = (userProfile, sectionName) => {
+    if (!userProfile) return { cargar: true, editar: true, eliminar: true };
+    if (userProfile.role === 'cliente') return { cargar: false, editar: false, eliminar: false };
+    if (userProfile.role === 'admin') return { cargar: true, editar: true, eliminar: true };
+    const perm = userProfile.permisos?.[sectionName];
+    if (perm === true || perm === undefined) return { cargar: true, editar: true, eliminar: true };
+    if (perm === false) return { cargar: false, editar: false, eliminar: false };
+    return {
+      cargar: perm.cargar === true,
+      editar: perm.editar === true,
+      eliminar: perm.eliminar === true
+    };
+  };
+
+  const sectionPerms = getSectionPermissions(profile, 'protocolo_iluminacion');
+  const canEliminar = sectionPerms.eliminar;
+
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const executeDelete = async () => {
+    if (!editingId) return;
+    setDeleteLoading(true);
+    try {
+      const { error: delErr } = await supabase
+        .from('protocolos_iluminacion')
+        .delete()
+        .eq('id', editingId);
+      if (delErr) throw delErr;
+
+      globalToast.toast('Protocolo eliminado correctamente.', 'success');
+      onClose();
+    } catch (err) {
+      console.error('Error al eliminar protocolo:', err);
+      globalToast.toast('Error al eliminar el protocolo.', 'error');
+    } finally {
+      setDeleteLoading(false);
+      setDeleteConfirmOpen(false);
+    }
+  };
 
   // Resolve profile signature preview signed URL
   useEffect(() => {
@@ -1372,8 +1414,8 @@ export default function ProtocoloForm({
 
       const { data: insertedPoints, error: ptsErr } = await supabase
         .from('protocolos_iluminacion_puntos')
-        .select()
-        .insert(pointsPayload);
+        .insert(pointsPayload)
+        .select();
       if (ptsErr) throw ptsErr;
 
       // 3. Guardar Mediciones
@@ -1715,7 +1757,21 @@ export default function ProtocoloForm({
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-2 col-span-full">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 col-span-full">
+              <div className="flex flex-col gap-1">
+                <AppLabel htmlFor="estado" required>Estado del Protocolo</AppLabel>
+                <AppSelect
+                  id="estado"
+                  disabled={!canEdit}
+                  value={estado}
+                  onChange={(e) => setEstado(e.target.value)}
+                  placeholder={null}
+                >
+                  <option value="borrador">Borrador</option>
+                  <option value="completado">Completado</option>
+                  <option value="anulado">Anulado</option>
+                </AppSelect>
+              </div>
               <div className="flex flex-col gap-1">
                 <AppLabel htmlFor="fechaMedicion" required>Fecha Medición</AppLabel>
                 <div className="relative">
@@ -2686,35 +2742,33 @@ export default function ProtocoloForm({
           </button>
 
           <div className="flex items-center gap-3">
-            {canEdit && (
-              <>
-                <AppSelect
-                  disabled={saveLoading}
-                  value={estado}
-                  onChange={(e) => setEstado(e.target.value)}
-                  className="w-32 text-xs py-1.5 h-[38px]"
-                  placeholder={null}
-                >
-                  <option value="borrador">Borrador</option>
-                  <option value="completado">Completado</option>
-                  <option value="anulado">Anulado</option>
-                </AppSelect>
+            {editingId && canEliminar && (
+              <AppButton
+                type="button"
+                variant="destructive"
+                disabled={saveLoading || deleteLoading}
+                onClick={() => setDeleteConfirmOpen(true)}
+                className="px-5 py-2.5 rounded-xl text-sm font-bold active:scale-[0.98] cursor-pointer shadow-lg shadow-red-500/10"
+              >
+                Eliminar
+              </AppButton>
+            )}
 
-                <button
-                  type="submit"
-                  disabled={saveLoading}
-                  className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
-                >
-                  {saveLoading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-1" />
-                      Guardando...
-                    </>
-                  ) : (
-                    'Guardar'
-                  )}
-                </button>
-              </>
+            {canEdit && (
+              <button
+                type="submit"
+                disabled={saveLoading}
+                className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
+              >
+                {saveLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                    Guardando...
+                  </>
+                ) : (
+                  'Guardar'
+                )}
+              </button>
             )}
           </div>
         </div>
@@ -2826,6 +2880,16 @@ export default function ProtocoloForm({
           return list;
         })()}
         onSave={handleSaveEditedPhoto}
+      />
+
+      <AppConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={(open) => !open && setDeleteConfirmOpen(false)}
+        type="destructive"
+        title="Eliminar Protocolo"
+        description="¿Está seguro de que desea eliminar permanentemente este protocolo de iluminación y todos sus puntos de muestreo y mediciones asociados? Esta acción no se puede deshacer."
+        confirmText="Eliminar"
+        onConfirm={executeDelete}
       />
     </>
   );

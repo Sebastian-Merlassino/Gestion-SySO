@@ -35,7 +35,8 @@ import {
   Info,
   Calendar,
   AlertCircle,
-  Sun
+  Sun,
+  MessageCircle
 } from 'lucide-react';
 
 export default function ProtocolosIluminacionPage({ params }) {
@@ -88,6 +89,10 @@ export default function ProtocolosIluminacionPage({ params }) {
   const [availableEmails, setAvailableEmails] = useState([]);
   const [manualEmail, setManualEmail] = useState('');
   const [mailLoading, setMailLoading] = useState(false);
+  const [availablePhones, setAvailablePhones] = useState([]);
+  const [manualPhone, setManualPhone] = useState('');
+  const [activeTab, setActiveTab] = useState('email');
+  const [whatsappLoading, setWhatsappLoading] = useState(false);
 
   // Permissions
   const getSectionPermissions = (userProfile, sectionName) => {
@@ -378,10 +383,106 @@ export default function ProtocolosIluminacionPage({ params }) {
   const openEmailModal = (protoItem) => {
     setMailTarget(protoItem);
     const emp = empresas.find(e => e.id === protoItem.razon_social_id);
+    
+    // Correos
     const emails = emp?.contactos_correos || [];
     setAvailableEmails(emails.map(c => ({ descripcion: `${c.contacto || 'Contacto'}: ${c.valor}`, valor: c.valor, checked: false })));
     setManualEmail('');
+
+    // Teléfonos
+    const phones = emp?.contactos_telefonos || [];
+    setAvailablePhones(phones.map(c => ({ descripcion: `${c.contacto || 'Contacto'}: ${c.valor}`, valor: c.valor, checked: false })));
+    setManualPhone('');
+
+    setActiveTab('email');
     setIsMailModalOpen(true);
+  };
+
+  // Enviar por WhatsApp
+  const handleSendWhatsApp = async () => {
+    setWhatsappLoading(true);
+    try {
+      // 1. Obtener destinatario (si hay)
+      const checkedPhones = availablePhones.filter(p => p.checked).map(p => p.valor);
+      const manualVal = manualPhone.trim();
+      
+      let targetPhone = '';
+      if (checkedPhones.length > 0) {
+        targetPhone = checkedPhones[0];
+      } else if (manualVal) {
+        targetPhone = manualVal;
+      }
+      
+      let cleanPhone = targetPhone.replace(/[^0-9]/g, '');
+      
+      // 2. Generar el PDF
+      const { data: pts } = await supabase
+        .from('protocolos_iluminacion_puntos')
+        .select('*, mediciones:protocolos_iluminacion_mediciones(*)')
+        .eq('protocolo_id', mailTarget.id)
+        .order('orden');
+      
+      const { data: adjs } = await supabase
+        .from('protocolos_iluminacion_adjuntos')
+        .select('*')
+        .eq('protocolo_id', mailTarget.id);
+
+      const doc = await generateLightingProtocolPdf(mailTarget, tenant, empresas, allEstablecimientos, pts || [], adjs || [], isDevMode);
+      if (!doc) throw new Error('No se pudo generar el reporte PDF.');
+      const pdfBlob = doc.output('blob');
+      
+      // 3. Subir a Storage
+      const fileId = crypto.randomUUID();
+      const filePath = `${profile?.id || 'anonymous'}/iluminacion_${mailTarget.id}_${fileId}.pdf`;
+      const { error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, pdfBlob, {
+          contentType: 'application/pdf',
+          upsert: true
+        });
+
+      if (uploadError) {
+        throw new Error(`Error al subir el reporte a Storage: ${uploadError.message}`);
+      }
+
+      // 4. Obtener URL firmada
+      const { data: signData, error: signError } = await supabase.storage
+        .from('documents')
+        .createSignedUrl(filePath, 604800);
+      
+      if (signError || !signData?.signedUrl) {
+        throw new Error(`Error al generar enlace seguro de descarga: ${signError?.message || 'Enlace nulo'}`);
+      }
+
+      const pdfUrl = signData.signedUrl;
+      const emp = empresas.find(e => e.id === mailTarget.razon_social_id);
+      const est = allEstablecimientos.find(e => e.id === mailTarget.establecimiento_id);
+      const empName = emp ? emp.razon_social : 'N/A';
+      const estName = est ? est.denominacion : 'N/A';
+
+      // 5. Construir mensaje
+      const tName = tenant ? (tenant.razon_social || tenant.nombre || 'Gestión SySO') : 'Gestión SySO';
+      const textMessage = `Estimado cliente de *${empName}* (Establecimiento: *${estName}*),\n\nLe adjuntamos el *Protocolo de Iluminación* del día *${formatDate(mailTarget.fecha_medicion)}* generado por el profesional *${mailTarget.profesional_nombre || 'Técnico SySO'}* de *${tName}*.\n\nPuede ver y descargar el documento PDF ingresando al siguiente enlace seguro:\n${pdfUrl}`;
+      
+      const encodedMsg = encodeURIComponent(textMessage);
+      
+      // 6. Abrir WhatsApp
+      let waUrl = '';
+      if (cleanPhone) {
+        waUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodedMsg}`;
+      } else {
+        waUrl = `https://api.whatsapp.com/send?text=${encodedMsg}`;
+      }
+      
+      window.open(waUrl, '_blank');
+      globalToast.toast('Redirigiendo a WhatsApp...', 'success');
+      setIsMailModalOpen(false);
+    } catch (e) {
+      console.error(e);
+      globalToast.toast(e.message || 'Error al intentar enviar por WhatsApp.', 'error');
+    } finally {
+      setWhatsappLoading(false);
+    }
   };
 
   const handleSendEmail = async () => {
@@ -803,71 +904,81 @@ export default function ProtocolosIluminacionPage({ params }) {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                            {/* Ver Detalles (solo Cliente) */}
                             {profile?.role === 'cliente' && (
                               <Link href={`/${tenantSlug}/protocolos/iluminacion/${row.id}`} title="Ver Detalles">
-                                <button className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer inline-flex items-center justify-center">
+                                <AppButton variant="ghost" size="icon" className="bg-slate-100 hover:bg-slate-200 text-slate-600">
                                   <Eye className="h-4.5 w-4.5" />
-                                </button>
+                                </AppButton>
                               </Link>
                             )}
 
-                            {canEditar && row.estado !== 'anulado' && (
-                              <Link href={`/${tenantSlug}/protocolos/iluminacion/${row.id}/editar`} title="Editar">
-                                <button className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer inline-flex items-center justify-center">
-                                  <Edit className="h-4.5 w-4.5" />
-                                </button>
-                              </Link>
-                            )}
-
-                            <button
-                              type="button"
+                            {/* Descargar PDF */}
+                            <AppButton
+                              variant="ghost"
+                              size="icon"
+                              className="bg-slate-100 hover:bg-slate-200 text-slate-650"
                               onClick={() => handleExportPdf(row, false)}
                               title="Descargar PDF"
-                              className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer inline-flex items-center justify-center"
                             >
                               <FileText className="h-4.5 w-4.5" />
-                            </button>
+                            </AppButton>
 
-                            <button
-                              type="button"
+                            {/* Imprimir */}
+                            <AppButton
+                              variant="ghost"
+                              size="icon"
+                              className="bg-slate-100 hover:bg-slate-200 text-slate-650"
                               onClick={() => handleExportPdf(row, true)}
                               title="Imprimir"
-                              className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer inline-flex items-center justify-center"
                             >
                               <Printer className="h-4.5 w-4.5" />
-                            </button>
+                            </AppButton>
 
-                            {canEditar && (
-                              <button
-                                type="button"
+                            {/* Enviar por Correo / WhatsApp (solo no-cliente) */}
+                            {profile?.role !== 'cliente' && canEditar && (
+                              <AppButton
+                                variant="document-table"
+                                size="icon"
                                 onClick={() => openEmailModal(row)}
-                                title="Enviar por Correo"
-                                className="p-1.5 rounded-lg bg-blue-50 hover:bg-[#468DFF]/25 text-[#468DFF] transition-all cursor-pointer inline-flex items-center justify-center"
+                                title="Enviar Protocolo"
                               >
                                 <Mail className="h-4.5 w-4.5" />
-                              </button>
+                              </AppButton>
                             )}
 
-                            {canEditar && (
-                              <button
-                                type="button"
+                            {/* Duplicar Borrador (solo no-cliente) */}
+                            {profile?.role !== 'cliente' && canEditar && (
+                              <AppButton
+                                variant="ghost"
+                                size="icon"
+                                className="bg-indigo-50 hover:bg-indigo-100 text-indigo-650 border border-indigo-100/45 shadow-sm"
                                 onClick={() => handleDuplicate(row)}
                                 title="Duplicar borrador"
-                                className="p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition-all cursor-pointer inline-flex items-center justify-center"
                               >
                                 <Copy className="h-4.5 w-4.5" />
-                              </button>
+                              </AppButton>
                             )}
 
-                            {canEliminar && (
-                              <button
-                                type="button"
+                            {/* Editar (solo no-cliente) */}
+                            {profile?.role !== 'cliente' && canEditar && row.estado !== 'anulado' && (
+                              <Link href={`/${tenantSlug}/protocolos/iluminacion/${row.id}/editar`} title="Editar">
+                                <AppButton variant="edit-table" size="icon">
+                                  <Edit className="h-4.5 w-4.5" />
+                                </AppButton>
+                              </Link>
+                            )}
+
+                            {/* Eliminar (solo no-cliente) */}
+                            {profile?.role !== 'cliente' && canEliminar && (
+                              <AppButton
+                                variant="delete-table"
+                                size="icon"
                                 onClick={() => setDeleteConfirm({ show: true, id: row.id })}
                                 title="Eliminar registro"
-                                className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center"
                               >
                                 <Trash2 className="h-4.5 w-4.5" />
-                              </button>
+                              </AppButton>
                             )}
                           </div>
                         </td>
@@ -883,7 +994,7 @@ export default function ProtocolosIluminacionPage({ params }) {
         </div>
       </main>
 
-      {/* MODAL ENVIAR CORREO */}
+      {/* MODAL DE ENVÍO DE REPORTE (CORREO / WHATSAPP) */}
       {isMailModalOpen && mailTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div onClick={() => setIsMailModalOpen(false)} className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" />
@@ -891,78 +1002,193 @@ export default function ProtocolosIluminacionPage({ params }) {
             
             <div className="flex justify-between items-center">
               <h4 className="font-outfit text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                <Mail className="h-4.5 w-4.5 text-[#468DFF]" />
-                Enviar Protocolo por Correo
+                <Send className="h-4.5 w-4.5 text-[#468DFF]" />
+                Enviar Protocolo (PDF)
               </h4>
               <button onClick={() => setIsMailModalOpen(false)} className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 cursor-pointer border border-slate-200">
                 <X className="h-4.5 w-4.5" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-500 leading-relaxed font-medium">
-              Seleccione los contactos cargados de la Razón Social o ingrese emails manualmente para despachar el informe en formato PDF.
-            </p>
+            {/* Pestañas (Tabs) */}
+            <div className="flex border-b border-slate-200">
+              <button
+                type="button"
+                onClick={() => setActiveTab('email')}
+                className={`flex-1 pb-2 text-xs font-bold transition-all border-b-2 flex items-center justify-center gap-1.5 cursor-pointer ${
+                  activeTab === 'email'
+                    ? 'border-[#468DFF] text-[#468DFF]'
+                    : 'border-transparent text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                <Mail className="h-3.5 w-3.5" />
+                Correo Electrónico
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('whatsapp')}
+                className={`flex-1 pb-2 text-xs font-bold transition-all border-b-2 flex items-center justify-center gap-1.5 cursor-pointer ${
+                  activeTab === 'whatsapp'
+                    ? 'border-[#468DFF] text-[#468DFF]'
+                    : 'border-transparent text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                <MessageCircle className="h-3.5 w-3.5" />
+                WhatsApp
+              </button>
+            </div>
 
-            <div className="space-y-3">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-600 block">Correos de la Razón Social:</label>
-                {availableEmails.length === 0 ? (
-                  <p className="text-xs text-slate-400 italic font-semibold">Sin contactos registrados.</p>
-                ) : (
-                  <div className="bg-slate-50 p-3 border border-slate-200 rounded-xl max-h-36 overflow-y-auto space-y-1.5">
-                    {availableEmails.map((e, idx) => (
-                      <label key={idx} className="flex items-center gap-2.5 text-xs font-semibold text-slate-700 cursor-pointer hover:bg-slate-100/50 py-1 rounded">
-                        <input
-                          type="checkbox"
-                          checked={e.checked}
-                          onChange={() => {
-                            setAvailableEmails(prev => prev.map((item, i) => i === idx ? { ...item, checked: !item.checked } : item));
-                          }}
-                          className="accent-[#468DFF] h-4 w-4"
-                        />
-                        {e.descripcion}
-                      </label>
-                    ))}
+            {activeTab === 'email' ? (
+              // PESTAÑA: CORREO ELECTRÓNICO
+              <div className="space-y-4">
+                <p className="text-[11px] text-slate-500 font-medium">
+                  Seleccione los contactos cargados de la Razón Social o ingrese correos electrónicos manualmente (separados por comas) para enviar el protocolo en PDF.
+                </p>
+
+                <div className="space-y-3">
+                  {/* Contactos de la Razón Social */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-600 block">Correos de la Razón Social:</label>
+                    {availableEmails.length === 0 ? (
+                      <p className="text-xs text-slate-400 italic font-semibold">No hay contactos registrados para esta empresa.</p>
+                    ) : (
+                      <div className="bg-slate-50 p-3 border border-slate-200 rounded-xl max-h-36 overflow-y-auto space-y-1.5">
+                        {availableEmails.map((e, idx) => (
+                          <label key={idx} className="flex items-center gap-2.5 text-xs font-semibold text-slate-700 cursor-pointer hover:bg-slate-100/50 py-1 rounded">
+                            <input
+                              type="checkbox"
+                              checked={e.checked}
+                              onChange={() => {
+                                setAvailableEmails(prev => prev.map((item, i) => i === idx ? { ...item, checked: !item.checked } : item));
+                              }}
+                              className="accent-[#468DFF] h-4 w-4"
+                            />
+                            {e.descripcion}
+                          </label>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-slate-600">Correos Manuales (separados por comas):</label>
-                <textarea
-                  rows="2"
-                  placeholder="ejemplo1@correo.com, ejemplo2@correo.com..."
-                  value={manualEmail}
-                  onChange={(e) => setManualEmail(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 resize-none"
-                />
-              </div>
-            </div>
+                  {/* Ingreso manual */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-slate-600">Correos Manuales:</label>
+                    <textarea
+                      rows="2"
+                      placeholder="ejemplo1@correo.com, ejemplo2@correo.com..."
+                      value={manualEmail}
+                      onChange={(e) => setManualEmail(e.target.value)}
+                      className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 resize-none font-medium"
+                    />
+                  </div>
+                </div>
 
-            <div className="flex justify-end gap-2.5 pt-2">
-              <button
-                type="button"
-                onClick={() => setIsMailModalOpen(false)}
-                className="px-4 py-2 border border-slate-200 text-slate-650 text-xs font-bold rounded-xl hover:bg-slate-100 cursor-pointer transition-all active:scale-98"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                disabled={mailLoading}
-                onClick={handleSendEmail}
-                className="px-4 py-2 bg-[#468DFF] text-white text-xs font-bold rounded-xl hover:bg-[#0511F2] cursor-pointer transition-all active:scale-98 shadow-md shadow-[#468DFF]/10 disabled:opacity-50 flex items-center gap-1.5"
-              >
-                {mailLoading ? (
-                  <>
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    Enviando...
-                  </>
-                ) : (
-                  'Enviar Correo'
-                )}
-              </button>
-            </div>
+                {/* Acciones Correo */}
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsMailModalOpen(false)}
+                    className="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-100 cursor-pointer transition-all active:scale-98"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    disabled={mailLoading}
+                    onClick={handleSendEmail}
+                    className="px-4 py-2 bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold rounded-lg cursor-pointer transition-all flex items-center gap-1.5 shadow-md shadow-[#468DFF]/10 disabled:opacity-50 active:scale-98"
+                  >
+                    {mailLoading ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        Enviando...
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="h-3.5 w-3.5" />
+                        Enviar Correo
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              // PESTAÑA: WHATSAPP
+              <div className="space-y-4">
+                <p className="text-[11px] text-slate-500 font-medium">
+                  Seleccione un contacto registrado o ingrese un número manualmente para compartir el protocolo. Se subirá el documento temporalmente a la nube de forma segura.
+                </p>
+
+                <div className="space-y-3">
+                  {/* Contactos de la empresa */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-600 block">Teléfonos de la Razón Social:</label>
+                    {availablePhones.length === 0 ? (
+                      <p className="text-xs text-slate-400 italic font-semibold">No hay contactos con teléfono registrados.</p>
+                    ) : (
+                      <div className="bg-slate-50 p-3 border border-slate-200 rounded-xl max-h-36 overflow-y-auto space-y-1.5">
+                        {availablePhones.map((p, idx) => (
+                          <label key={idx} className="flex items-center gap-2.5 text-xs font-semibold text-slate-700 cursor-pointer hover:bg-slate-100/50 py-1 rounded">
+                            <input
+                              type="checkbox"
+                              checked={p.checked}
+                              onChange={() => {
+                                // WhatsApp es uno a la vez
+                                setAvailablePhones(prev => prev.map((item, i) => i === idx ? { ...item, checked: !item.checked } : { ...item, checked: false }));
+                              }}
+                              className="accent-[#468DFF] h-4 w-4"
+                            />
+                            {p.descripcion}
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Ingreso manual */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-slate-600">Número Manual (ej: 5491159969956):</label>
+                    <input
+                      type="text"
+                      placeholder="Código de país + área + número (sin espacios ni guiones)"
+                      value={manualPhone}
+                      onChange={(e) => setManualPhone(e.target.value)}
+                      className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 font-medium"
+                    />
+                  </div>
+                </div>
+
+                {/* Acciones WhatsApp */}
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsMailModalOpen(false)}
+                    className="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-100 cursor-pointer transition-all active:scale-98"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    disabled={whatsappLoading}
+                    onClick={handleSendWhatsApp}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-lg cursor-pointer transition-all flex items-center gap-1.5 shadow-md shadow-green-500/10 disabled:opacity-50 active:scale-98"
+                  >
+                    {whatsappLoading ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        Procesando...
+                      </>
+                    ) : (
+                      <>
+                        <MessageCircle className="h-3.5 w-3.5" />
+                        Enviar por WhatsApp
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
       )}

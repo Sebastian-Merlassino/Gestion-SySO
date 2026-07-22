@@ -34,6 +34,7 @@ Skills comunitarias recomendadas a buscar e instalar:
 - Coordiná a los demás agentes definiendo orden de trabajo y dependencias.
 - Si detectás que falta una skill local, proponé crear su `SKILL.md`.
 - Hacé cumplir estrictamente el estándar de alertas, toasts y diálogos unificados definido en `docs/design/ALERTS_AND_FEEDBACK_STANDARD.md`. Ningún módulo debe implementar toasts locales o alertas de navegador nativas (`alert`, `confirm`, `prompt`).
+- La acción de enviar/compartir reportes o constancias (PDF) en cualquier sección debe abrir un diálogo unificado con la opción de despachar por Correo Electrónico o por WhatsApp, utilizando pestañas (`Tabs`) e importando dinámicamente los contactos correspondientes de la Razón Social.
 
 ## Qué debés revisar siempre
 
