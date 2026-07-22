@@ -62,6 +62,30 @@ export default function ImageUploadZone({
   }
   const activeToast = onToast || globalToast?.toast;
 
+  const handleViewImage = (url) => {
+    if (!url) return;
+    if (url.startsWith('data:')) {
+      const newTab = window.open();
+      if (newTab) {
+        newTab.document.body.style.margin = '0';
+        newTab.document.body.style.background = '#0e1117';
+        newTab.document.body.style.display = 'flex';
+        newTab.document.body.style.alignItems = 'center';
+        newTab.document.body.style.justifyContent = 'center';
+        newTab.document.body.style.height = '100vh';
+        const img = newTab.document.createElement('img');
+        img.src = url;
+        img.style.maxWidth = '100%';
+        img.style.maxHeight = '100%';
+        img.style.objectFit = 'contain';
+        newTab.document.body.appendChild(img);
+        newTab.document.title = 'Visualizar Evidencia';
+      }
+    } else {
+      window.open(url, '_blank');
+    }
+  };
+
   const handleDragOver = (e) => {
     e.preventDefault();
     if (!disabled) {
@@ -124,15 +148,14 @@ export default function ImageUploadZone({
         <div className="relative w-full h-64 bg-slate-50 border border-slate-200 rounded-xl overflow-hidden group shadow-sm flex items-center justify-center">
           <img src={preview} alt={label || "Vista previa"} className="w-full h-full object-contain bg-slate-50" />
           <div className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 duration-200">
-            <a
-              href={preview}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={() => handleViewImage(preview)}
               title="Ver en pantalla completa"
-              className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors cursor-pointer shadow-sm"
+              className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors cursor-pointer shadow-sm border-none"
             >
               <Eye className="h-4 w-4" />
-            </a>
+            </button>
             {!disabled && (
               <>
                 <button
@@ -170,15 +193,14 @@ export default function ImageUploadZone({
                 
                 {/* Hover overlay with action buttons */}
                 <div className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity duration-200">
-                  <a
-                    href={img.preview || img}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    type="button"
+                    onClick={() => handleViewImage(img.preview || img)}
                     title="Ver en pantalla completa"
-                    className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors cursor-pointer shadow-sm"
+                    className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors cursor-pointer shadow-sm border-none"
                   >
                     <Eye className="h-4 w-4" />
-                  </a>
+                  </button>
                   {onEditPhoto && (
                     <button
                       type="button"

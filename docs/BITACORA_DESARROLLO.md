@@ -8,15 +8,20 @@
   - El campo de **conclusiones** inicializa automáticamente indicando el cumplimiento de la iluminación mínima conforme al Decreto Nº 351/79 (Anexo IV, Capítulo 12).
   - El campo de **recomendaciones** inicializa con recomendaciones preventivas normalizadas (limpieza, ajuste de altura de luminarias, incorporación de iluminación localizada).
   - Al editar un protocolo existente, estos valores siguen siendo sobrescritos correctamente por los datos recuperados de la base de datos (incluso si están vacíos).
+- **Corrección en Componente Común de Carga de Imágenes**:
+  - En `ImageUploadZone.js` se implementó la función `handleViewImage` y se reemplazaron los links `<a>` nativos de visualización por botones `<button>`.
+  - Cuando se visualiza una imagen temporal en formato de data URL (`data:image/...`), se abre una pestaña nueva y se escribe dinámicamente un elemento `<img>` adaptado al centro de la pantalla con fondo oscuro. Esto evita la restricción de seguridad del navegador *"Not allowed to navigate top frame to data URL"*, permitiendo previsualizar planos modificados antes de guardarse en el backend.
 
 ### Decisiones Clave
 - Agilizar la carga del profesional al proveer plantillas de texto normativas pre-cargadas que cumplen con la SRT, reduciendo la necesidad de tipeo repetitivo.
+- Escribir dinámicamente el documento en la ventana del nuevo tab al detectar una data URL para no violar la política de seguridad de navegación de la pestaña principal del navegador.
 
 ### Skills Utilizadas
 - `gestion-syso-bitacora`
 
 ### Archivos Modificados
 - `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+- `[MODIFY] src/components/ui/ImageUploadZone.js`
 
 ### Validaciones Ejecutadas
 - Verificación del bundle de Next.js (`npm run build`).
