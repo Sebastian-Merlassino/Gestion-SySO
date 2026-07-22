@@ -70,10 +70,7 @@ export default function ProtocolosIluminacionPage({ params }) {
   const [filterText, setFilterText] = useState('');
   const [filterEmpresa, setFilterEmpresa] = useState('');
   const [filterEstablecimiento, setFilterEstablecimiento] = useState('');
-  const [filterResultado, setFilterResultado] = useState('');
-  const [filterEstado, setFilterEstado] = useState('');
-  const [filterFechaDesde, setFilterFechaDesde] = useState('');
-  const [filterFechaHasta, setFilterFechaHasta] = useState('');
+  const [filterAnio, setFilterAnio] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
   // Sorting
@@ -575,19 +572,19 @@ export default function ProtocolosIluminacionPage({ params }) {
     const matchesSearch = searchString.includes(filterText.toLowerCase());
     const matchesEmpresa = !filterEmpresa || pr.razon_social_id === filterEmpresa;
     const matchesEstablecimiento = !filterEstablecimiento || pr.establecimiento_id === filterEstablecimiento;
-    const matchesResultado = !filterResultado || pr.resultado_general === filterResultado;
-    const matchesEstado = !filterEstado || pr.estado === filterEstado;
+    const matchesAnio = !filterAnio || (pr.fecha_medicion && new Date(pr.fecha_medicion).getFullYear().toString() === filterAnio);
 
-    let matchesFecha = true;
-    if (filterFechaDesde) {
-      matchesFecha = matchesFecha && pr.fecha_medicion >= filterFechaDesde;
-    }
-    if (filterFechaHasta) {
-      matchesFecha = matchesFecha && pr.fecha_medicion <= filterFechaHasta;
-    }
-
-    return matchesSearch && matchesEmpresa && matchesEstablecimiento && matchesResultado && matchesEstado && matchesFecha;
+    return matchesSearch && matchesEmpresa && matchesEstablecimiento && matchesAnio;
   });
+
+  // Obtener lista de años únicos a partir de los protocolos cargados
+  const añosDisponibles = Array.from(
+    new Set(
+      protocolos
+        .map(p => p.fecha_medicion ? new Date(p.fecha_medicion).getFullYear().toString() : null)
+        .filter(Boolean)
+    )
+  ).sort((a, b) => b - a); // Orden descendente (más recientes primero)
 
   const sortedProtocolos = [...filteredProtocolos].sort((a, b) => {
     let aVal = a[sortField] || '';
@@ -703,16 +700,13 @@ export default function ProtocolosIluminacionPage({ params }) {
                       {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                     </button>
 
-                    {(filterText || filterEmpresa || filterEstablecimiento || filterResultado || filterEstado || filterFechaDesde || filterFechaHasta) && (
+                    {(filterText || filterEmpresa || filterEstablecimiento || filterAnio) && (
                       <button
                         onClick={() => {
                           setFilterText('');
                           setFilterEmpresa('');
                           setFilterEstablecimiento('');
-                          setFilterResultado('');
-                          setFilterEstado('');
-                          setFilterFechaDesde('');
-                          setFilterFechaHasta('');
+                          setFilterAnio('');
                         }}
                         className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[10px] font-semibold cursor-pointer transition-all border border-slate-200"
                       >
@@ -737,7 +731,7 @@ export default function ProtocolosIluminacionPage({ params }) {
 
               {/* FILTROS AVANZADOS COLLAPSIBLE */}
               {showFilters && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-3 border-t border-slate-100 animate-fade-in">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-slate-100 animate-fade-in">
                   <div className="space-y-1 col-span-1">
                     <label className="text-[10px] font-bold text-slate-400 uppercase">Filtrar por Cliente</label>
                     <select
@@ -771,52 +765,17 @@ export default function ProtocolosIluminacionPage({ params }) {
                   </div>
 
                   <div className="space-y-1 col-span-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Resultado General</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Año</label>
                     <select
-                      value={filterResultado}
-                      onChange={(e) => setFilterResultado(e.target.value)}
+                      value={filterAnio}
+                      onChange={(e) => setFilterAnio(e.target.value)}
                       className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] font-semibold text-slate-600 bg-white focus:outline-none focus:ring-1 focus:ring-[#468DFF] cursor-pointer"
                     >
-                      <option value="">Todos</option>
-                      <option value="Cumple">Cumple</option>
-                      <option value="No cumple">No cumple</option>
-                      <option value="Parcial">Parcial</option>
-                      <option value="Sin evaluar">Sin evaluar</option>
+                      <option value="">Todos los años</option>
+                      {añosDisponibles.map(anio => (
+                        <option key={anio} value={anio}>{anio}</option>
+                      ))}
                     </select>
-                  </div>
-
-                  <div className="space-y-1 col-span-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Estado</label>
-                    <select
-                      value={filterEstado}
-                      onChange={(e) => setFilterEstado(e.target.value)}
-                      className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] font-semibold text-slate-600 bg-white focus:outline-none focus:ring-1 focus:ring-[#468DFF] cursor-pointer"
-                    >
-                      <option value="">Todos</option>
-                      <option value="borrador">Borrador</option>
-                      <option value="completado">Completado</option>
-                      <option value="anulado">Anulado</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1 col-span-1 sm:col-span-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Fecha de Medición (Desde)</label>
-                    <input
-                      type="date"
-                      value={filterFechaDesde}
-                      onChange={(e) => setFilterFechaDesde(e.target.value)}
-                      className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] font-semibold text-slate-600 bg-white focus:outline-none focus:ring-1 focus:ring-[#468DFF] cursor-pointer"
-                    />
-                  </div>
-
-                  <div className="space-y-1 col-span-1 sm:col-span-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Fecha de Medición (Hasta)</label>
-                    <input
-                      type="date"
-                      value={filterFechaHasta}
-                      onChange={(e) => setFilterFechaHasta(e.target.value)}
-                      className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] font-semibold text-slate-600 bg-white focus:outline-none focus:ring-1 focus:ring-[#468DFF] cursor-pointer"
-                    />
                   </div>
                 </div>
               )}
@@ -825,7 +784,7 @@ export default function ProtocolosIluminacionPage({ params }) {
             {/* LISTADO DE PROTOCOLOS (SySO Compact Layout) */}
             <div 
               className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col flex-1 min-h-0 transition-all duration-300 ease-in-out"
-              style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}
+              style={{ height: showFilters ? 'calc(100vh - 280px)' : 'calc(100vh - 240px)' }}
             >
           {sortedProtocolos.length === 0 ? (
             <AppEmptyState
