@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { formatDate } from '@/lib/utils';
@@ -45,6 +45,7 @@ import {
 export default function ProtocolosIluminacionPage({ params }) {
   const tenantSlug = params['tenant-slug'];
   const router = useRouter();
+  const searchParams = useSearchParams();
   const globalToast = useToast();
 
   // Tenant / Profile structural state
@@ -55,13 +56,33 @@ export default function ProtocolosIluminacionPage({ params }) {
   const [isDevMode, setIsDevMode] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // Estados reactivos SPA para formulario/detalle local
+  const [formMode, setFormMode] = useState('list'); // 'list' | 'create' | 'edit' | 'view'
+  const [editingId, setEditingId] = useState(null);
+  const [isFormDirty, setIsFormDirty] = useState(false);
+  const [pendingRoute, setPendingRoute] = useState(null);
+  const [unsavedDialogOpen, setUnsavedDialogOpen] = useState(false);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     window.location.href = '/login';
   };
 
-  const handleSidebarNavigation = () => {
+  const handleSidebarNavigation = (e, path) => {
     setIsMobileMenuOpen(false);
+    if (isFormDirty) {
+      e.preventDefault();
+      setPendingRoute(path);
+      setUnsavedDialogOpen(true);
+    }
+  };
+
+  const handleConfirmLeave = () => {
+    setUnsavedDialogOpen(false);
+    setIsFormDirty(false);
+    if (pendingRoute) {
+      router.push(pendingRoute);
+    }
   };
 
   // Lookups and main list
@@ -193,6 +214,23 @@ export default function ProtocolosIluminacionPage({ params }) {
   useEffect(() => {
     loadRealData();
   }, [tenantSlug]);
+
+  useEffect(() => {
+    if (!loading) {
+      const qId = searchParams.get('id');
+      const qAction = searchParams.get('action');
+      if (qId) {
+        setEditingId(qId);
+        setFormMode(qAction === 'editar' ? 'edit' : 'view');
+      } else if (qAction === 'nuevo') {
+        setEditingId(null);
+        setFormMode('create');
+      } else {
+        setEditingId(null);
+        setFormMode('list');
+      }
+    }
+  }, [loading, searchParams]);
 
   const loadProtocols = async () => {
     if (!tenant) return;
@@ -666,7 +704,31 @@ export default function ProtocolosIluminacionPage({ params }) {
         />
 
         <div className="max-w-[95%] mx-auto w-full py-8 px-4 md:px-0 flex-grow flex flex-col min-h-0">
-          <div className="space-y-6 flex-grow flex flex-col min-h-0">
+          {formMode !== 'list' ? (
+            <ProtocoloForm
+              tenantSlug={tenantSlug}
+              profile={profile}
+              tenant={tenant}
+              editingId={editingId}
+              mode={formMode === 'create' ? 'create' : formMode === 'edit' ? 'edit' : 'view'}
+              onClose={() => {
+                setFormMode('list');
+                setEditingId(null);
+                setIsFormDirty(false);
+                router.replace(`/${tenantSlug}/protocolos/iluminacion`);
+              }}
+              onSaveSuccess={() => {
+                setFormMode('list');
+                setEditingId(null);
+                setIsFormDirty(false);
+                loadProtocols();
+                router.replace(`/${tenantSlug}/protocolos/iluminacion`);
+              }}
+              onEdit={() => setFormMode('edit')}
+              onDirtyChange={setIsFormDirty}
+            />
+          ) : (
+            <div className="space-y-6 flex-grow flex flex-col min-h-0">
 
             {/* CONTENEDOR 1: BUSCADOR Y BOTÓN ACCIÓN (SySO Compact Layout) */}
             <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm space-y-3 shrink-0">
@@ -719,15 +781,17 @@ export default function ProtocolosIluminacionPage({ params }) {
                   </div>
 
                   {canCargar && (
-                    <Link href={`/${tenantSlug}/protocolos/iluminacion/nuevo`} className="inline-flex">
-                      <button
-                        type="button"
-                        className="px-3 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0 border border-[#468DFF] hover:border-[#0511F2]"
-                      >
-                        <PlusCircle className="h-3.5 w-3.5" />
-                        Nuevo Protocolo
-                      </button>
-                    </Link>
+                    <AppButton
+                      onClick={() => {
+                        setEditingId(null);
+                        setFormMode('create');
+                        router.replace(`/${tenantSlug}/protocolos/iluminacion?action=nuevo`);
+                      }}
+                      className="px-3 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0 border border-[#468DFF] hover:border-[#0511F2]"
+                    >
+                      <PlusCircle className="h-3.5 w-3.5" />
+                      Nuevo Protocolo
+                    </AppButton>
                   )}
                 </div>
               </div>
@@ -794,15 +858,18 @@ export default function ProtocolosIluminacionPage({ params }) {
               title="No se encontraron protocolos de iluminación"
               description="Registra un nuevo informe o ajusta los filtros de búsqueda."
               actionButton={canCargar && (
-                <Link href={`/${tenantSlug}/protocolos/iluminacion/nuevo`} className="mt-2 inline-flex">
-                  <AppButton
-                    variant="primary"
-                    size="sm"
-                    className="shadow-md shadow-[#468DFF]/10 flex items-center gap-1.5"
-                  >
-                    Crear primer protocolo
-                  </AppButton>
-                </Link>
+                <AppButton
+                  variant="primary"
+                  size="sm"
+                  onClick={() => {
+                    setEditingId(null);
+                    setFormMode('create');
+                    router.replace(`/${tenantSlug}/protocolos/iluminacion?action=nuevo`);
+                  }}
+                  className="shadow-md shadow-[#468DFF]/10 flex items-center gap-1.5"
+                >
+                  Crear primer protocolo
+                </AppButton>
               )}
             />
           ) : (
@@ -838,7 +905,11 @@ export default function ProtocolosIluminacionPage({ params }) {
                     return (
                       <tr 
                         key={row.id} 
-                        onClick={() => router.push(`/${tenantSlug}/protocolos/iluminacion/${row.id}`)}
+                        onClick={() => {
+                          setEditingId(row.id);
+                          setFormMode('view');
+                          router.replace(`/${tenantSlug}/protocolos/iluminacion?id=${row.id}`);
+                        }}
                         className="hover:bg-slate-100 cursor-pointer transition-colors"
                       >
                         <td className="px-6 py-4">
@@ -868,11 +939,19 @@ export default function ProtocolosIluminacionPage({ params }) {
                           <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                             {/* Ver Detalles (solo Cliente) */}
                             {profile?.role === 'cliente' && (
-                              <Link href={`/${tenantSlug}/protocolos/iluminacion/${row.id}`} title="Ver Detalles">
-                                <AppButton variant="ghost" size="icon" className="bg-slate-100 hover:bg-slate-200 text-slate-600">
-                                  <Eye className="h-4.5 w-4.5" />
-                                </AppButton>
-                              </Link>
+                              <AppButton
+                                variant="ghost"
+                                size="icon"
+                                className="bg-slate-100 hover:bg-slate-200 text-slate-600"
+                                onClick={() => {
+                                  setEditingId(row.id);
+                                  setFormMode('view');
+                                  router.replace(`/${tenantSlug}/protocolos/iluminacion?id=${row.id}`);
+                                }}
+                                title="Ver Detalles"
+                              >
+                                <Eye className="h-4.5 w-4.5" />
+                              </AppButton>
                             )}
 
                             {/* Descargar PDF */}
@@ -924,11 +1003,18 @@ export default function ProtocolosIluminacionPage({ params }) {
 
                             {/* Editar (solo no-cliente) */}
                             {profile?.role !== 'cliente' && canEditar && row.estado !== 'anulado' && (
-                              <Link href={`/${tenantSlug}/protocolos/iluminacion/${row.id}/editar`} title="Editar">
-                                <AppButton variant="edit-table" size="icon">
-                                  <Edit className="h-4.5 w-4.5" />
-                                </AppButton>
-                              </Link>
+                              <AppButton
+                                variant="edit-table"
+                                size="icon"
+                                onClick={() => {
+                                  setEditingId(row.id);
+                                  setFormMode('edit');
+                                  router.replace(`/${tenantSlug}/protocolos/iluminacion?id=${row.id}`);
+                                }}
+                                title="Editar"
+                              >
+                                <Edit className="h-4.5 w-4.5" />
+                              </AppButton>
                             )}
 
                             {/* Eliminar (solo no-cliente) */}
@@ -953,6 +1039,7 @@ export default function ProtocolosIluminacionPage({ params }) {
           )}
         </div>
         </div>
+          )}
         </div>
       </main>
 
@@ -1164,6 +1251,31 @@ export default function ProtocolosIluminacionPage({ params }) {
         description="¿Está seguro de que desea eliminar permanentemente este protocolo de iluminación y todos sus puntos de muestreo y mediciones asociados? Esta acción no se puede deshacer."
         confirmText="Eliminar"
         onConfirm={executeDelete}
+      />
+
+      {/* Navegador Lateral de registros (Anterior / Siguiente) */}
+      <AppFormNavigator
+        activeList={sortedProtocolos}
+        currentId={editingId}
+        onNavigate={(newRecord) => {
+          setIsFormDirty(false); // Resetear estado dirty al navegar lateralmente
+          setEditingId(newRecord.id);
+          setFormMode('view');
+          router.replace(`/${tenantSlug}/protocolos/iluminacion?id=${newRecord.id}`);
+        }}
+        hasUnsavedChanges={isFormDirty}
+        isFormOpen={formMode === 'view' || formMode === 'edit'}
+      />
+
+      {/* Diálogo de cambios sin guardar para salida por Sidebar */}
+      <AppUnsavedChangesDialog
+        open={unsavedDialogOpen}
+        onOpenChange={setUnsavedDialogOpen}
+        onLeave={handleConfirmLeave}
+        title="Cambios sin guardar"
+        description="Tenés cambios sin guardar. Si abandonás esta sección ahora, perderás las modificaciones realizadas."
+        leaveText="Abandonar sin guardar"
+        stayText="Quedarse aquí"
       />
     </div>
   );
