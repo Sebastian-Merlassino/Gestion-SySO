@@ -792,10 +792,15 @@ export default function ProtocoloForm({
 
   useEffect(() => {
     if (onDirtyChange && isReady && initialSnapshotRef.current) {
+      if (mode === 'view') {
+        onDirtyChange(false);
+        return;
+      }
       const currentSnapshot = getFormSnapshot();
       onDirtyChange(currentSnapshot !== initialSnapshotRef.current);
     }
   }, [
+    mode,
     isReady,
     empresaId,
     establecimientoId,
