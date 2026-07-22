@@ -171,6 +171,7 @@ export default function ProtocoloForm({
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [unsavedDialogOpen, setUnsavedDialogOpen] = useState(false);
   const initialSnapshotRef = useRef('');
+  const [isReady, setIsReady] = useState(false);
 
   const executeDelete = async () => {
     if (!editingId) return;
@@ -605,6 +606,10 @@ export default function ProtocoloForm({
           // Initialize with 1 default sampling point
           setPuntos([createNewPunto(1)]);
           setLoading(false);
+          setTimeout(() => {
+            initialSnapshotRef.current = getFormSnapshot();
+            setIsReady(true);
+          }, 100);
         }
       } catch (err) {
         console.error('Error al inicializar formulario:', err);
@@ -749,6 +754,10 @@ export default function ProtocoloForm({
       })));
 
       setLoading(false);
+      setTimeout(() => {
+        initialSnapshotRef.current = getFormSnapshot();
+        setIsReady(true);
+      }, 100);
     } catch (err) {
       console.error('Error al cargar registro existente:', err);
       globalToast.toast('Error al recuperar los datos del protocolo.', 'error');
@@ -782,17 +791,12 @@ export default function ProtocoloForm({
   };
 
   useEffect(() => {
-    if (!loading && !initialSnapshotRef.current) {
-      initialSnapshotRef.current = getFormSnapshot();
-    }
-  }, [loading]);
-
-  useEffect(() => {
-    if (onDirtyChange && initialSnapshotRef.current) {
+    if (onDirtyChange && isReady && initialSnapshotRef.current) {
       const currentSnapshot = getFormSnapshot();
       onDirtyChange(currentSnapshot !== initialSnapshotRef.current);
     }
   }, [
+    isReady,
     empresaId,
     establecimientoId,
     instrumento,

@@ -15,6 +15,9 @@ import AppSelect from '@/components/ui/AppSelect';
 import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
+import ProtocoloForm from './components/ProtocoloForm';
+import AppFormNavigator from '@/components/ui/AppFormNavigator';
+import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
 import { generateLightingProtocolPdf } from './utils/pdfGenerator';
 import { 
   PlusCircle, 
