@@ -18,6 +18,7 @@ import AppCard from '@/components/ui/AppCard';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import * as Dialog from '@radix-ui/react-dialog';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
+import AppSortIcon from '@/components/ui/AppSortIcon';
 import { 
   PlusCircle, 
   Search, 
@@ -4478,43 +4479,43 @@ export default function MatrizRiesgosPage({ params }) {
                             <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[18%]" onClick={() => handleSort('cliente')}>
                               <div className="flex items-center gap-1">
                                 Cliente / Establecimiento
-                                {sortField === 'cliente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                                <AppSortIcon field="cliente" sortField={sortField} sortOrder={sortOrder} />
                               </div>
                             </th>
                             <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[18%]" onClick={() => handleSort('sector')}>
                               <div className="flex items-center gap-1">
                                 Área / Sector / Puesto / Operación
-                                {sortField === 'sector' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                                <AppSortIcon field="sector" sortField={sortField} sortOrder={sortOrder} />
                               </div>
                             </th>
                             <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[20%]" onClick={() => handleSort('tareas')}>
                               <div className="flex items-center gap-1">
                                 Tareas
-                                {sortField === 'tareas' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                                <AppSortIcon field="tareas" sortField={sortField} sortOrder={sortOrder} />
                               </div>
                             </th>
                             <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[10%]" onClick={() => handleSort('peligro')}>
                               <div className="flex items-center gap-1">
                                 Peligro
-                                {sortField === 'peligro' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                                <AppSortIcon field="peligro" sortField={sortField} sortOrder={sortOrder} />
                               </div>
                             </th>
                             <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[18%]" onClick={() => handleSort('riesgo')}>
                               <div className="flex items-center gap-1">
                                 Riesgo
-                                {sortField === 'riesgo' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                                <AppSortIcon field="riesgo" sortField={sortField} sortOrder={sortOrder} />
                               </div>
                             </th>
                             <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[8%] text-center" onClick={() => handleSort('nivel_riesgo')}>
                               <div className="flex items-center justify-center gap-1">
                                 Riesgo Inicial
-                                {sortField === 'nivel_riesgo' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                                <AppSortIcon field="nivel_riesgo" sortField={sortField} sortOrder={sortOrder} />
                               </div>
                             </th>
                             <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[8%] text-center" onClick={() => handleSort('post_nivel_riesgo')}>
                               <div className="flex items-center justify-center gap-1">
                                 Riesgo Residual
-                                {sortField === 'post_nivel_riesgo' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                                <AppSortIcon field="post_nivel_riesgo" sortField={sortField} sortOrder={sortOrder} />
                               </div>
                             </th>
                             <th className="px-6 py-4 text-center w-[5%]">Acciones</th>

@@ -17,6 +17,7 @@ import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
+import AppSortIcon from '@/components/ui/AppSortIcon';
 import {
   Folder,
   FolderOpen,
@@ -1857,25 +1858,25 @@ export default function LegajoPage({ params }) {
                                 <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200 transition-colors" onClick={() => handleSort('cliente')}>
                                   <div className="flex items-center gap-1">
                                     Razón Social
-                                    {sortField === 'cliente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                                    <AppSortIcon field="cliente" sortField={sortField} sortOrder={sortOrder} />
                                   </div>
                                 </th>
                                 <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200 transition-colors" onClick={() => handleSort('establecimiento')}>
                                   <div className="flex items-center gap-1">
                                     Establecimiento
-                                    {sortField === 'establecimiento' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                                    <AppSortIcon field="establecimiento" sortField={sortField} sortOrder={sortOrder} />
                                   </div>
                                 </th>
                                 <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200 transition-colors" onClick={() => handleSort('documento_nombre')}>
                                   <div className="flex items-center gap-1">
                                     Documento / Tipo
-                                    {sortField === 'documento_nombre' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                                    <AppSortIcon field="documento_nombre" sortField={sortField} sortOrder={sortOrder} />
                                   </div>
                                 </th>
                                 <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200 transition-colors" onClick={() => handleSort('fecha')}>
                                   <div className="flex items-center gap-1">
                                     Fecha
-                                    {sortField === 'fecha' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                                    <AppSortIcon field="fecha" sortField={sortField} sortOrder={sortOrder} />
                                   </div>
                                 </th>
                                 <th className="px-6 py-4 text-right sticky top-0 z-10 bg-slate-50 border-b border-slate-200">Acciones</th>

@@ -16,6 +16,7 @@ import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
 import AITextHelper from '@/components/ui/AITextHelper';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
+import AppSortIcon from '@/components/ui/AppSortIcon';
 import { 
   Building, 
   Users, 
@@ -1850,7 +1851,7 @@ export default function EmpresasClientes({ params }) {
                             >
                               <div className="flex items-center gap-1">
                                 Razón Social
-                                {sortField === 'razon_social' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                                <AppSortIcon field="razon_social" sortField={sortField} sortOrder={sortOrder} />
                               </div>
                             </th>
                             <th 
@@ -1859,7 +1860,7 @@ export default function EmpresasClientes({ params }) {
                             >
                               <div className="flex items-center gap-1">
                                 Nombre Comercial
-                                {sortField === 'nombre_comercial' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                                <AppSortIcon field="nombre_comercial" sortField={sortField} sortOrder={sortOrder} />
                               </div>
                             </th>
                             <th 
@@ -1868,7 +1869,7 @@ export default function EmpresasClientes({ params }) {
                             >
                               <div className="flex items-center gap-1">
                                 C.U.I.T.
-                                {sortField === 'cuit' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                                <AppSortIcon field="cuit" sortField={sortField} sortOrder={sortOrder} />
                               </div>
                             </th>
                             <th className="px-6 py-4 text-center w-[12%] sticky top-0 z-10 bg-slate-50 border-b border-slate-200">Establecimientos</th>

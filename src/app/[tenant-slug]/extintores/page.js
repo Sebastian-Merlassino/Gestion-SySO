@@ -16,6 +16,7 @@ import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
+import AppSortIcon from '@/components/ui/AppSortIcon';
 import { 
   PlusCircle, 
   Search, 
@@ -1821,38 +1822,52 @@ export default function ExtintoresPage({ params }) {
                     <div className="overflow-auto flex-grow">
                       <table className="w-full text-left border-collapse min-w-[850px]">
                         <thead>
-                        <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                          <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 py-4 px-6 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('cliente')}>
-                            Cliente / Establecimiento
-                            {sortField === 'cliente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
-                          </th>
-                          <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 py-4 px-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('area_sector')}>
-                            Sector / Referencia
-                            {sortField === 'area_sector' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
-                          </th>
-                          <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 py-4 px-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('n_puesto')}>
-                            Puesto / N° de extintor
-                            {sortField === 'n_puesto' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
-                          </th>
-                          <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 py-4 px-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('tipo')}>
-                            Tipo / Capacidad
-                            {sortField === 'tipo' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
-                          </th>
-                          <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 py-4 px-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('venc_recarga')}>
-                            Venc. Recarga
-                            {sortField === 'venc_recarga' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
-                          </th>
-                          <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 py-4 px-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('venc_ph')}>
-                            Venc. P.H.
-                            {sortField === 'venc_ph' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
-                          </th>
-                          <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 py-4 px-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('estado')}>
-                            Estado
-                            {sortField === 'estado' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
-                          </th>
-                          {(canEditar || canEliminar || profile?.role === 'cliente') && <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 py-4 px-6 text-right">Acciones</th>}
-                        </tr>
-                      </thead>
+                          <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                            <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 py-4 px-6 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('cliente')}>
+                              <div className="flex items-center gap-1.5">
+                                Cliente / Establecimiento
+                                <AppSortIcon field="cliente" sortField={sortField} sortOrder={sortOrder} />
+                              </div>
+                            </th>
+                            <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 py-4 px-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('area_sector')}>
+                              <div className="flex items-center gap-1.5">
+                                Sector / Referencia
+                                <AppSortIcon field="area_sector" sortField={sortField} sortOrder={sortOrder} />
+                              </div>
+                            </th>
+                            <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 py-4 px-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('n_puesto')}>
+                              <div className="flex items-center gap-1.5">
+                                Puesto / N° de extintor
+                                <AppSortIcon field="n_puesto" sortField={sortField} sortOrder={sortOrder} />
+                              </div>
+                            </th>
+                            <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 py-4 px-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('tipo')}>
+                              <div className="flex items-center gap-1.5">
+                                Tipo / Capacidad
+                                <AppSortIcon field="tipo" sortField={sortField} sortOrder={sortOrder} />
+                              </div>
+                            </th>
+                            <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 py-4 px-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('venc_recarga')}>
+                              <div className="flex items-center justify-center gap-1.5">
+                                Venc. Recarga
+                                <AppSortIcon field="venc_recarga" sortField={sortField} sortOrder={sortOrder} />
+                              </div>
+                            </th>
+                            <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 py-4 px-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('venc_ph')}>
+                              <div className="flex items-center justify-center gap-1.5">
+                                Venc. P.H.
+                                <AppSortIcon field="venc_ph" sortField={sortField} sortOrder={sortOrder} />
+                              </div>
+                            </th>
+                            <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 py-4 px-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('estado')}>
+                              <div className="flex items-center justify-center gap-1.5">
+                                Estado
+                                <AppSortIcon field="estado" sortField={sortField} sortOrder={sortOrder} />
+                              </div>
+                            </th>
+                            {(canEditar || canEliminar || profile?.role === 'cliente') && <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 py-4 px-6 text-right">Acciones</th>}
+                          </tr>
+                        </thead>
                       <tbody className="divide-y divide-slate-100 text-sm">
                         {sortedExtintores.length === 0 ? (
                           <AppEmptyState

@@ -16,6 +16,7 @@ import AppSelect from '@/components/ui/AppSelect';
 import AppTextarea from '@/components/ui/AppTextarea';
 import AppEmptyState from '@/components/ui/AppEmptyState';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
+import AppSortIcon from '@/components/ui/AppSortIcon';
 import {
   PlusCircle,
   Search,
@@ -1575,13 +1576,13 @@ export default function NominaPage({ params }) {
                           <th onClick={() => handleSort('empresa')} className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200">
                             <div className="flex items-center gap-1">
                               Cliente / Establecimiento
-                              {sortField === 'empresa' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              <AppSortIcon field="empresa" sortField={sortField} sortOrder={sortOrder} />
                             </div>
                           </th>
                           <th onClick={() => handleSort('nombre_apellido')} className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200">
                             <div className="flex items-center gap-1">
                               Nombre y Apellido
-                              {sortField === 'nombre_apellido' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              <AppSortIcon field="nombre_apellido" sortField={sortField} sortOrder={sortOrder} />
                             </div>
                           </th>
                           <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-200">CUIL</th>
@@ -1589,7 +1590,7 @@ export default function NominaPage({ params }) {
                           <th onClick={() => handleSort('fecha_alta')} className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200">
                             <div className="flex items-center gap-1">
                               Fechas
-                              {sortField === 'fecha_alta' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              <AppSortIcon field="fecha_alta" sortField={sortField} sortOrder={sortOrder} />
                             </div>
                           </th>
                           <th className="px-6 py-4 text-right sticky top-0 z-10 bg-slate-50 border-b border-slate-200">Acciones</th>

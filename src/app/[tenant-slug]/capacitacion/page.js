@@ -18,6 +18,7 @@ import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
 import AITextHelper from '@/components/ui/AITextHelper';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
+import AppSortIcon from '@/components/ui/AppSortIcon';
 import { 
   PlusCircle, 
   Search, 
@@ -2213,39 +2214,39 @@ export default function CapacitacionPage({ params }) {
                         <thead>
                         <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider">
                           <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[20%] sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('cliente')}>
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1.5">
                               Cliente / Establecimiento
-                              {sortField === 'cliente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              <AppSortIcon field="cliente" sortField={sortField} sortOrder={sortOrder} />
                             </div>
                           </th>
                           <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[15%] sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('puesto')}>
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1.5">
                               Puesto
-                              {sortField === 'puesto' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              <AppSortIcon field="puesto" sortField={sortField} sortOrder={sortOrder} />
                             </div>
                           </th>
                           <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[25%] sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('tema')}>
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1.5">
                               Tema de Capacitación
-                              {sortField === 'tema' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              <AppSortIcon field="tema" sortField={sortField} sortOrder={sortOrder} />
                             </div>
                           </th>
                           <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[15%] sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('capacitador')}>
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1.5">
                               Capacitador
-                              {sortField === 'capacitador' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              <AppSortIcon field="capacitador" sortField={sortField} sortOrder={sortOrder} />
                             </div>
                           </th>
                           <th className="px-6 py-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors w-[12%] sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('fecha_inicio_planificada')}>
-                            <div className="flex items-center justify-center gap-1">
+                            <div className="flex items-center justify-center gap-1.5">
                               Fechas Programadas
-                              {sortField === 'fecha_inicio_planificada' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              <AppSortIcon field="fecha_inicio_planificada" sortField={sortField} sortOrder={sortOrder} />
                             </div>
                           </th>
                           <th className="px-6 py-4 text-center cursor-pointer hover:text-slate-700 select-none transition-colors w-[8%] sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('progreso')}>
-                            <div className="flex items-center justify-center gap-1">
+                            <div className="flex items-center justify-center gap-1.5">
                               Progreso / Estado
-                              {sortField === 'progreso' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                              <AppSortIcon field="progreso" sortField={sortField} sortOrder={sortOrder} />
                             </div>
                           </th>
                           {(canEditar || canEliminar || profile?.role === 'cliente') && <th className="px-6 py-4 text-right w-[5%] sticky top-0 z-10 bg-slate-50 border-b border-slate-200">Acciones</th>}

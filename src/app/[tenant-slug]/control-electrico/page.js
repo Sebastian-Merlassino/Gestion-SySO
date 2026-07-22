@@ -17,6 +17,7 @@ import AppEmptyState from '@/components/ui/AppEmptyState';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import AITextHelper from '@/components/ui/AITextHelper';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
+import AppSortIcon from '@/components/ui/AppSortIcon';
 import { 
   PlusCircle, 
   Search, 
@@ -2438,13 +2439,22 @@ export default function ControlElectricoPage({ params }) {
                         <thead>
                           <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wider sticky top-0 z-10">
                             <th onClick={() => toggleSort('empresa')} className="px-6 py-4 cursor-pointer select-none">
-                              Cliente / Razón Social {sortField === 'empresa' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
+                              <div className="flex items-center gap-1.5">
+                                Cliente / Razón Social
+                                <AppSortIcon field="empresa" sortField={sortField} sortOrder={sortOrder} />
+                              </div>
                             </th>
                             <th onClick={() => toggleSort('establecimiento')} className="px-6 py-4 cursor-pointer select-none">
-                              Establecimiento {sortField === 'establecimiento' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
+                              <div className="flex items-center gap-1.5">
+                                Establecimiento
+                                <AppSortIcon field="establecimiento" sortField={sortField} sortOrder={sortOrder} />
+                              </div>
                             </th>
                             <th onClick={() => toggleSort('fecha')} className="px-6 py-4 cursor-pointer select-none">
-                              Fecha {sortField === 'fecha' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
+                              <div className="flex items-center gap-1.5">
+                                Fecha
+                                <AppSortIcon field="fecha" sortField={sortField} sortOrder={sortOrder} />
+                              </div>
                             </th>
                             <th className="px-6 py-4">Profesional Interviniente</th>
                             <th className="px-6 py-4">Aclaración Responsable</th>

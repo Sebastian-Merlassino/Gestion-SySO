@@ -1,5 +1,105 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-22] Reubicación del módulo Protocolo de Iluminación en la Barra Lateral
+
+### Resumen de Cambios
+- **Barra Lateral (`Sidebar.js`)**:
+  - Se modificó el orden del arreglo `menuItems` en `src/components/Sidebar.js` para mover el ítem de navegación `protocolo-iluminacion` (Protocolo de Iluminación) y ubicarlo inmediatamente debajo de `checklist-personalizados` (Checklist Personalizados).
+
+### Decisiones Clave
+- Mantener la coherencia del flujo de trabajo agrupando los protocolos de mediciones (como iluminación) cerca de las herramientas de inspección y checklists personalizados.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+
+### Archivos Modificados
+- `[MODIFY] src/components/Sidebar.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción exitosa (`npm run build`).
+
+---
+
+## [2026-07-22] Integración de Botones de Descargar y Enviar PDF en Detalle de Protocolo de Iluminación
+
+### Resumen de Cambios
+- **Botones de Descarga y Envío en Detalle**:
+  - En `ProtocoloForm.js` se integraron los botones **Enviar PDF** (con el icono `Mail` y variante `secondary`) y **Descargar PDF** (con el icono `Download` y variante `primary`) en el pie de página de la vista. Se condicionó su visibilidad a que el protocolo ya esté guardado en base de datos (`editingId` existente), y en el caso del envío por correo, restringiendo la acción a usuarios con rol diferente de `cliente`.
+  - En `page.js` de Protocolo de Iluminación, se pasaron los manejadores callback correspondientes (`onExportPdf` y `onSendPdf`) a la instancia de `<ProtocoloForm />` para reutilizar el modal de correo/whatsapp unificado y la generación/descarga asíncrona de PDF, garantizando simetría funcional con Avisos de Riesgo y Constancias de Visita.
+
+### Decisiones Clave
+- Utilizar callbacks (`onExportPdf`, `onSendPdf`) pasados desde el componente contenedor (`page.js`) hacia el formulario (`ProtocoloForm.js`) para evitar la duplicidad de la lógica de exportación y la declaración redundante del modal de envío.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/page.js`
+
+### Validaciones Ejecutadas
+- Compilación del bundle de producción exitosa (`npm run build`).
+
+---
+
+## [2026-07-22] Unificación de Diseño Visual de Ordenamiento en Cabeceras de Tablas
+
+### Resumen de Cambios
+- **Componente Unificado (`AppSortIcon.js`)**:
+  - Se creó el componente `<AppSortIcon />` en `src/components/ui/` el cual estandariza visualmente el indicador de ordenamiento. Muestra un icono de Lucide `ArrowUpDown` en color gris muy tenue (`text-slate-300`) en columnas ordenables inactivas, y una flecha con el color de marca activa `#468DFF` (`ArrowUp`/`ArrowDown`) cuando la columna tiene foco.
+- **Documentación del Estándar**:
+  - Se redactó `docs/design/TABLES_SORTING_STANDARD.md` formalizando el comportamiento interactivo, las clases de Tailwind requeridas para las cabeceras (`cursor-pointer select-none hover:text-slate-700 transition-colors`) y el layout flex para guiar desarrollos futuros.
+- **Homogeneización en los Módulos del SaaS**:
+  - Se migraron las 14 secciones principales que soportan ordenamiento a este componente común, envolviendo el título y el icono en un flex div (`flex items-center gap-1.5`) para asegurar alineación vertical milimétrica:
+    - *Visitas* (`visitas/page.js`) - Se agregaron las flechas y el layout flex.
+    - *Protocolo de Iluminación* (`protocolos/iluminacion/page.js`) - Se reemplazó el texto condicional ASCII.
+    - *Programa Anual* (`programa/page.js`) - Se reemplazaron las flechas ASCII.
+    - *Nómina* (`nomina/page.js`) - Se reemplazaron las flechas ASCII.
+    - *Matriz de Riesgos* (`matriz-riesgos/page.js`) - Se reemplazaron las flechas ASCII.
+    - *Legajos* (`legajo/page.js`) - Se reemplazaron las flechas ASCII.
+    - *Extintores* (`extintores/page.js`) - Se reemplazaron las flechas ASCII.
+    - *Empresas* (`empresas/page.js`) - Se reemplazaron las flechas ASCII.
+    - *Acciones Correctivas* (`correctivas/page.js`) - Se reemplazaron las flechas ASCII.
+    - *Control Eléctrico* (`control-electrico/page.js`) - Se reemplazó el texto condicional.
+    - *Checklists Personalizados* (`checklist-personalizados/page.js`) - Se agregaron las flechas y el layout flex.
+    - *Capacitación* (`capacitacion/page.js`) - Se reemplazaron las flechas ASCII.
+    - *Avisos de Riesgo* (`avisos/page.js`) - Se agregaron las flechas y el layout flex.
+    - *Investigación de Accidentes* (`accidentes/page.js`) - Se retiró la función local de ordenación y se implementó el componente común.
+
+### Decisiones Clave
+- Utilizar iconos de la biblioteca core `lucide-react` en lugar de caracteres textuales crudos o emojis para asegurar una presentación premium y uniforme sin desajustes tipográficos.
+- Mostrar una flecha bidireccional tenue en columnas inactivas para informar visualmente al usuario qué campos admiten ordenamiento interactivo antes de que haga clic.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[NEW] src/components/ui/AppSortIcon.js`
+- `[NEW] docs/design/TABLES_SORTING_STANDARD.md`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/nomina/page.js`
+- `[MODIFY] src/app/[tenant-slug]/matriz-riesgos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+
+### Validaciones Ejecutadas
+- Verificación del bundle de Next.js mediante compilación exitosa (`npm run build`).
+
+---
+
 ## [2026-07-22] Estandarización de Botones, Edición Local SPA y Carga de Firma en Protocolo de Iluminación
 
 ### Resumen de Cambios

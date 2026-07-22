@@ -18,6 +18,7 @@ import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
+import AppSortIcon from '@/components/ui/AppSortIcon';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import {
   ShieldAlert,
@@ -757,13 +758,6 @@ export default function AccidentesPage({ params }) {
   const handleSort = (field) => {
     setSortOrder(prev => (sortField === field && prev === 'asc' ? 'desc' : 'asc'));
     setSortField(field);
-  };
-
-  const SortIcon = ({ field }) => {
-    if (sortField !== field) return <ChevronDown className="h-3 w-3 opacity-30 inline ml-1" />;
-    return sortOrder === 'asc'
-      ? <ChevronUp className="h-3 w-3 opacity-70 inline ml-1" />
-      : <ChevronDown className="h-3 w-3 opacity-70 inline ml-1" />;
   };
 
   // ── Filtrado + Ordenamiento de lista ──────────────────────────────────────
@@ -4039,24 +4033,24 @@ export default function AccidentesPage({ params }) {
                               className="px-6 py-4 cursor-pointer hover:text-slate-700 transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-200 whitespace-nowrap"
                               onClick={() => handleSort('empresa_id')}
                             >
-                              <div className="flex items-center gap-1">
-                                Empresa / Establecimiento <SortIcon field="empresa_id" />
+                              <div className="flex items-center gap-1.5">
+                                Empresa / Establecimiento <AppSortIcon field="empresa_id" sortField={sortField} sortOrder={sortOrder} />
                               </div>
                             </th>
                             <th
                               className="px-6 py-4 cursor-pointer hover:text-slate-700 transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-200 whitespace-nowrap"
                               onClick={() => handleSort('nombre_apellido')}
                             >
-                              <div className="flex items-center gap-1">
-                                Accidentado <SortIcon field="nombre_apellido" />
+                              <div className="flex items-center gap-1.5">
+                                Accidentado <AppSortIcon field="nombre_apellido" sortField={sortField} sortOrder={sortOrder} />
                               </div>
                             </th>
                             <th
                               className="px-6 py-4 cursor-pointer hover:text-slate-700 transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-200 whitespace-nowrap"
                               onClick={() => handleSort('fecha_siniestro')}
                             >
-                              <div className="flex items-center gap-1">
-                                Fecha siniestro <SortIcon field="fecha_siniestro" />
+                              <div className="flex items-center gap-1.5">
+                                Fecha siniestro <AppSortIcon field="fecha_siniestro" sortField={sortField} sortOrder={sortOrder} />
                               </div>
                             </th>
                             <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-200 whitespace-nowrap">
@@ -4066,8 +4060,8 @@ export default function AccidentesPage({ params }) {
                               className="px-6 py-4 cursor-pointer hover:text-slate-700 transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-200 whitespace-nowrap"
                               onClick={() => handleSort('gravedad')}
                             >
-                              <div className="flex items-center gap-1">
-                                Gravedad <SortIcon field="gravedad" />
+                              <div className="flex items-center gap-1.5">
+                                Gravedad <AppSortIcon field="gravedad" sortField={sortField} sortOrder={sortOrder} />
                               </div>
                             </th>
                             <th className="px-6 py-4 text-center sticky top-0 z-10 bg-slate-50 border-b border-slate-200 whitespace-nowrap">

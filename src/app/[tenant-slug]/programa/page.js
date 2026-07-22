@@ -18,6 +18,7 @@ import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
+import AppSortIcon from '@/components/ui/AppSortIcon';
 import {
   Calendar,
   List,
@@ -2182,37 +2183,37 @@ export default function ProgramaGestion({ params }) {
                             <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('cliente')}>
                               <div className="flex items-center gap-1">
                                 Cliente / Establecimiento
-                                {sortField === 'cliente' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                                <AppSortIcon field="cliente" sortField={sortField} sortOrder={sortOrder} />
                               </div>
                             </th>
                             <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('actividad')}>
                               <div className="flex items-center gap-1">
                                 Actividad / Legal
-                                {sortField === 'actividad' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                                <AppSortIcon field="actividad" sortField={sortField} sortOrder={sortOrder} />
                               </div>
                             </th>
                             <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('responsable')}>
                               <div className="flex items-center gap-1">
                                 Responsable
-                                {sortField === 'responsable' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                                <AppSortIcon field="responsable" sortField={sortField} sortOrder={sortOrder} />
                               </div>
                             </th>
                             <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('fecha_planificada')}>
                               <div className="flex items-center gap-1">
                                 F. Planificada
-                                {sortField === 'fecha_planificada' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                                <AppSortIcon field="fecha_planificada" sortField={sortField} sortOrder={sortOrder} />
                               </div>
                             </th>
                             <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors" onClick={() => handleSort('fecha_realizacion')}>
                               <div className="flex items-center gap-1">
                                 F. Realización
-                                {sortField === 'fecha_realizacion' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                                <AppSortIcon field="fecha_realizacion" sortField={sortField} sortOrder={sortOrder} />
                               </div>
                             </th>
                             <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors w-[15%]" onClick={() => handleSort('progreso')}>
                               <div className="flex items-center gap-1">
                                 Progreso / Estado
-                                {sortField === 'progreso' && (sortOrder === 'asc' ? ' ▲' : ' ▼')}
+                                <AppSortIcon field="progreso" sortField={sortField} sortOrder={sortOrder} />
                               </div>
                             </th>
                             <th className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 px-6 py-4 text-center">Doc</th>

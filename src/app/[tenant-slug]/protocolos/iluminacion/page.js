@@ -18,6 +18,7 @@ import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import ProtocoloForm from './components/ProtocoloForm';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
+import AppSortIcon from '@/components/ui/AppSortIcon';
 import { generateLightingProtocolPdf } from './utils/pdfGenerator';
 import { 
   PlusCircle, 
@@ -39,7 +40,8 @@ import {
   Calendar,
   AlertCircle,
   Sun,
-  MessageCircle
+  MessageCircle,
+  Send
 } from 'lucide-react';
 
 export default function ProtocolosIluminacionPage({ params }) {
@@ -726,6 +728,14 @@ export default function ProtocolosIluminacionPage({ params }) {
               }}
               onEdit={() => setFormMode('edit')}
               onDirtyChange={setIsFormDirty}
+              onExportPdf={() => {
+                const proto = protocolos.find(p => p.id === editingId);
+                if (proto) handleExportPdf(proto, false);
+              }}
+              onSendPdf={() => {
+                const proto = protocolos.find(p => p.id === editingId);
+                if (proto) openEmailModal(proto);
+              }}
             />
           ) : (
             <div className="space-y-6 flex-grow flex flex-col min-h-0">
@@ -878,13 +888,22 @@ export default function ProtocolosIluminacionPage({ params }) {
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wider sticky top-0 z-10">
                     <th onClick={() => toggleSort('razon_social_text')} className="px-6 py-4 cursor-pointer select-none hover:text-slate-700 w-[35%]">
-                      Cliente / Establecimiento {sortField === 'razon_social_text' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
+                      <div className="flex items-center gap-1.5">
+                        Cliente / Establecimiento
+                        <AppSortIcon field="razon_social_text" sortField={sortField} sortOrder={sortOrder} />
+                      </div>
                     </th>
                     <th onClick={() => toggleSort('instrumento_marca_modelo_serie')} className="px-6 py-4 cursor-pointer select-none hover:text-slate-700 w-[25%]">
-                      Luxómetro {sortField === 'instrumento_marca_modelo_serie' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
+                      <div className="flex items-center gap-1.5">
+                        Luxómetro
+                        <AppSortIcon field="instrumento_marca_modelo_serie" sortField={sortField} sortOrder={sortOrder} />
+                      </div>
                     </th>
                     <th onClick={() => toggleSort('fecha_medicion')} className="px-6 py-4 cursor-pointer select-none hover:text-slate-700 w-[15%]">
-                      Fecha Medición {sortField === 'fecha_medicion' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
+                      <div className="flex items-center gap-1.5">
+                        Fecha Medición
+                        <AppSortIcon field="fecha_medicion" sortField={sortField} sortOrder={sortOrder} />
+                      </div>
                     </th>
                     <th className="px-6 py-4 text-center w-[10%]">Resultado</th>
                     <th className="px-6 py-4 text-center w-[10%]">Estado</th>

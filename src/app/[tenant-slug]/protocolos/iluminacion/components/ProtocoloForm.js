@@ -28,6 +28,7 @@ import {
   Loader2, 
   FileText, 
   Mail,
+  Download,
   Copy,
   Info,
   Calendar,
@@ -69,7 +70,9 @@ export default function ProtocoloForm({
   onClose,
   onSaveSuccess,
   onEdit = null,
-  onDirtyChange = null
+  onDirtyChange = null,
+  onSendPdf = null,
+  onExportPdf = null
 }) {
   const router = useRouter();
   const globalToast = useToast();
@@ -2820,6 +2823,31 @@ export default function ProtocoloForm({
           </AppButton>
 
           <div className="flex items-center gap-3">
+            {editingId && (
+              <>
+                {profile?.role !== 'cliente' && onSendPdf && (
+                  <AppButton
+                    variant="secondary"
+                    onClick={onSendPdf}
+                    className="flex items-center gap-1.5 shadow-sm"
+                  >
+                    <Mail className="h-4 w-4" />
+                    Enviar PDF
+                  </AppButton>
+                )}
+                {onExportPdf && (
+                  <AppButton
+                    variant="primary"
+                    onClick={onExportPdf}
+                    className="flex items-center gap-1.5 shadow-md shadow-[#468DFF]/10"
+                  >
+                    <Download className="h-4 w-4" />
+                    Descargar PDF
+                  </AppButton>
+                )}
+              </>
+            )}
+
             {isReadOnly ? (
               canEditar && estado !== 'anulado' && (
                 <AppButton

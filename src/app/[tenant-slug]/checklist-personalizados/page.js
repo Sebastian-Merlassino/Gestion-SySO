@@ -16,6 +16,7 @@ import AppEmptyState from '@/components/ui/AppEmptyState';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import AITextHelper from '@/components/ui/AITextHelper';
+import AppSortIcon from '@/components/ui/AppSortIcon';
 import { 
   PlusCircle, 
   Search, 
@@ -1950,9 +1951,24 @@ export default function ChecklistPersonalizadosPage({ params }) {
                     <table className="w-full text-left border-collapse min-w-[850px] text-xs">
                       <thead>
                         <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider select-none">
-                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('template')}>Plantilla</th>
-                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('empresa')}>Cliente</th>
-                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('fecha')}>Fecha</th>
+                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('template')}>
+                            <div className="flex items-center gap-1.5">
+                              Plantilla
+                              <AppSortIcon field="template" sortField={sortField} sortOrder={sortOrder} />
+                            </div>
+                          </th>
+                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('empresa')}>
+                            <div className="flex items-center gap-1.5">
+                              Cliente
+                              <AppSortIcon field="empresa" sortField={sortField} sortOrder={sortOrder} />
+                            </div>
+                          </th>
+                          <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('fecha')}>
+                            <div className="flex items-center gap-1.5">
+                              Fecha
+                              <AppSortIcon field="fecha" sortField={sortField} sortOrder={sortOrder} />
+                            </div>
+                          </th>
                           <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-200">Responsable H&S</th>
                           <th className="px-6 py-4 text-right w-36 sticky top-0 z-10 bg-slate-50 border-b border-slate-200">Acciones</th>
                         </tr>
