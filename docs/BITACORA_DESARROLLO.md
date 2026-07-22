@@ -1,5 +1,29 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-21] Solución de Error 400 en Refinamiento de Texto (IA)
+
+### Resumen de Cambios
+- **Modificación en Backend (API route `/api/ai/refine-text`)**:
+  - En `src/app/api/ai/refine-text/route.js`, se incrementó la longitud máxima del parámetro `context` de 100 a 200 caracteres, permitiendo prompts y descripciones de contexto más largas y robustas sin generar errores 400.
+- **Modificación en UI de Accidentes**:
+  - En `src/app/[tenant-slug]/accidentes/page.js`, se simplificaron y acortaron dos textos de contexto largos del asistente de IA para optimizar la redacción y mantenerse dentro de los límites.
+
+### Decisiones Clave
+- Ampliar el límite en el backend a 200 caracteres para dotar de robustez al sistema ante futuras adiciones de contextos descriptivos largos en otros formularios.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/app/api/ai/refine-text/route.js`
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+
+### Validaciones Ejecutadas
+- Ejecución exitosa de `npm run build`.
+
+---
+
 ## [2026-07-21] Integración de SySO-AI-Voice-Helper en Observaciones de Avisos de Riesgo
 
 ### Resumen de Cambios

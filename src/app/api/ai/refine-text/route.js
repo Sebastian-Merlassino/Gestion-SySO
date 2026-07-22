@@ -41,9 +41,9 @@ export async function POST(req) {
       );
     }
 
-    if (context && (typeof context !== 'string' || context.length > 100)) {
+    if (context && (typeof context !== 'string' || context.length > 200)) {
       return NextResponse.json(
-        { error: 'El contexto del reporte no debe superar los 100 caracteres.' },
+        { error: 'El contexto del reporte no debe superar los 200 caracteres.' },
         { status: 400 }
       );
     }

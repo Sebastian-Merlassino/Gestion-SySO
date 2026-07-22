@@ -4274,7 +4274,7 @@ export default function AccidentesPage({ params }) {
                   <AITextHelper
                     value={aiAdditionalComments}
                     onChange={setAiAdditionalComments}
-                    context="Comentarios u observaciones adicionales para guiar la generación del informe de investigación del siniestro"
+                    context="Comentarios adicionales para guiar la generación del informe de investigación"
                     disabled={false}
                   />
                 </div>
@@ -4642,7 +4642,7 @@ export default function AccidentesPage({ params }) {
                   <AITextHelper
                     value={aiTempComments}
                     onChange={setAiTempComments}
-                    context="Directivas adicionales para guiar la regeneración del informe de investigación del siniestro por la IA"
+                    context="Directivas adicionales para guiar la regeneración del informe por la IA"
                     disabled={false}
                   />
                 </div>
