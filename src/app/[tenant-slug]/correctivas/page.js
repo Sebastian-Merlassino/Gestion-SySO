@@ -17,8 +17,6 @@ import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
 import AITextHelper from '@/components/ui/AITextHelper';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import { 
   PlusCircle, 
@@ -661,6 +659,9 @@ export default function AccionesCorrectivasPage({ params }) {
   const handleExportPdfReport = async (shouldPrint = false) => {
     try {
       triggerToast('Generando reporte PDF con imágenes...', 'info');
+
+      const { jsPDF } = await import('jspdf');
+      const { default: autoTable } = await import('jspdf-autotable');
 
       const doc = new jsPDF({
         orientation: 'landscape',
@@ -1552,14 +1553,14 @@ export default function AccionesCorrectivasPage({ params }) {
                           <label className="text-xs font-bold text-slate-600">
                             Nivel de Riesgo <span className="text-[#468DFF]">*</span>
                           </label>
-                          <button
-                            type="button"
+                          <span
+                            role="button"
                             onClick={() => setShowRiskMatrix(true)}
-                            className="text-slate-400 hover:text-[#468DFF] transition-colors focus:outline-none flex items-center"
+                            className="text-slate-400 hover:text-[#468DFF] transition-colors cursor-pointer flex items-center"
                             title="Ver Método BS 8800"
                           >
                             <HelpCircle className="h-3.5 w-3.5" />
-                          </button>
+                          </span>
                         </div>
                         <select
                           required

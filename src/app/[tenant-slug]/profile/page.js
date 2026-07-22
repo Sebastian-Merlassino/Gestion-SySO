@@ -695,7 +695,10 @@ const [partidosList, setPartidosList] = useState([]);
     setLoading(true);
 
     // Validar obligatorios (localidad es opcional)
-    if (!fullName || !email || !phone || !cuit || !provincia || !partido || !birthDate) {
+    const isCliente = profileData?.role === 'cliente';
+    const isBirthDateMissing = !isCliente && !birthDate;
+
+    if (!fullName || !email || !phone || !cuit || !provincia || !partido || isBirthDateMissing) {
       triggerToast('Por favor completa todos los campos obligatorios (*).', 'error');
       setLoading(false);
       return;
@@ -1276,22 +1279,21 @@ const [partidosList, setPartidosList] = useState([]);
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                  Fecha de Nacimiento <span className="text-[#468DFF]">*</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    required
-                    placeholder="DD/MM/YYYY"
-                    maxLength={10}
-                    value={birthDate}
-                    onChange={(e) => setBirthDate(formatAsDateInput(e.target.value))}
-                    className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono text-slate-700"
-                    disabled={profileData?.role === 'cliente'}
-                  />
-                  {profileData?.role !== 'cliente' && (
+              {profileData?.role !== 'cliente' && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                    Fecha de Nacimiento <span className="text-[#468DFF]">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      required
+                      placeholder="DD/MM/YYYY"
+                      maxLength={10}
+                      value={birthDate}
+                      onChange={(e) => setBirthDate(formatAsDateInput(e.target.value))}
+                      className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono text-slate-700"
+                    />
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center" onClick={(e) => e.stopPropagation()}>
                       <Calendar className="h-4 w-4" />
                       <input
@@ -1300,19 +1302,19 @@ const [partidosList, setPartidosList] = useState([]);
                         onChange={(e) => {
                           const val = e.target.value;
                           if (val) {
-    const parts = val.split('-');
-    if (parts.length === 3) {
-      setBirthDate(`${parts[2]}/${parts[1]}/${parts[0]}`);
-    }
-  } else {
-    setBirthDate('');
-  }
+                            const parts = val.split('-');
+                            if (parts.length === 3) {
+                              setBirthDate(`${parts[2]}/${parts[1]}/${parts[0]}`);
+                            }
+                          } else {
+                            setBirthDate('');
+                          }
                         }}
                       />
                     </div>
-                  )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             <div className="grid md:grid-cols-3 gap-6">

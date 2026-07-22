@@ -131,7 +131,7 @@ export default function Sidebar({
     { id: 'matriz-riesgos', label: 'Matriz de riesgos', path: `/${tenantSlug}/matriz-riesgos`, icon: AlertTriangle },
     { id: 'extintores', label: 'Extintores', path: `/${tenantSlug}/extintores`, icon: Flame },
     { id: 'control-electrico', label: 'Control Eléctrico', path: `/${tenantSlug}/control-electrico`, icon: Zap },
-    { id: 'protocolo-iluminacion', label: 'Protocolo de Iluminación', path: `/${tenantSlug}/protocolos/iluminacion`, icon: Sun },
+    { id: 'protocolo-iluminacion', label: 'Protocolo de Iluminación', path: `/${tenantSlug}/protocolos/iluminacion`, icon: Sun, adminOnly: true },
     { id: 'visitas', label: 'Constancia de Visita', path: `/${tenantSlug}/visitas`, icon: ClipboardCheck },
     { id: 'avisos', label: 'Aviso de Riesgo', path: `/${tenantSlug}/avisos`, icon: AlertTriangle },
     { id: 'checklist-personalizados', label: 'Checklist Personalizados', path: `/${tenantSlug}/checklist-personalizados`, icon: ClipboardCheck },

@@ -7,7 +7,6 @@ import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
-import { jsPDF } from 'jspdf';
 import { useToast } from '@/components/providers/ToastProvider';
 import AppPageHeader from '@/components/ui/AppPageHeader';
 import AppButton from '@/components/ui/AppButton';
@@ -17,7 +16,6 @@ import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
-import autoTable from 'jspdf-autotable';
 import { 
   PlusCircle, 
   Search, 
@@ -568,6 +566,9 @@ export default function ExtintoresPage({ params }) {
   const handleExportPdfReport = async (shouldPrint = false) => {
     try {
       triggerToast('Generando reporte PDF...', 'info');
+
+      const { jsPDF } = await import('jspdf');
+      const { default: autoTable } = await import('jspdf-autotable');
 
       const doc = new jsPDF({
         orientation: 'landscape',

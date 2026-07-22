@@ -1,6 +1,3 @@
-// src/app/[tenant-slug]/protocolos/iluminacion/utils/pdfGenerator.js
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { formatDate } from '@/lib/utils';
 
 // Helper to convert image URL to base64
@@ -76,6 +73,9 @@ const getImgDimensions = (base64Str) => {
 };
 
 export const generateLightingProtocolPdf = async (proto, tenant, empresas, allEstablecimientos, puntosList, adjuntosList, isDevMode = false) => {
+  const { jsPDF } = await import('jspdf');
+  const { default: autoTable } = await import('jspdf-autotable');
+
   // A4 size in points: 595.28 x 841.89
   const doc = new jsPDF({
     orientation: 'portrait',

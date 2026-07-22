@@ -59,9 +59,6 @@ import {
   Phone,
   MessageCircle
 } from 'lucide-react';
-import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
-
 // Opciones de Mediciones
 const MEDICIONES_OPTS = [
   'Evaluación ergonómica',
@@ -1554,6 +1551,10 @@ export default function VisitasPage({ params }) {
   const handleGeneratePdf = async (v, shouldDownload = true) => {
     try {
       triggerToast('Generando reporte PDF...', 'info');
+
+      const { jsPDF } = await import('jspdf');
+      await import('jspdf-autotable');
+
       // 1. Obtener nombres de empresa y establecimiento
       const emp = empresas.find(e => e.id === v.empresa_id);
       const est = allEstablecimientos.find(e => e.id === v.establecimiento_id);

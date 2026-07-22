@@ -59,8 +59,6 @@ import {
   Phone,
   MessageCircle
 } from 'lucide-react';
-import { jsPDF } from 'jspdf';
-
 const RISK_LEVELS = {
   trivial: { label: 'Trivial', color: '#00B050', text: '#FFFFFF' },
   tolerable: { label: 'Tolerable', color: '#00FF00', text: '#000000' },
@@ -1096,6 +1094,9 @@ export default function AvisosRiesgoPage({ params }) {
   const generateAvisoPdf = async (av, shouldDownload = true) => {
     try {
       triggerToast('Generando reporte PDF...', 'info');
+
+      const { jsPDF } = await import('jspdf');
+
       const emp = empresas.find(e => e.id === av.empresa_id);
       const est = allEstablecimientos.find(e => e.id === av.establecimiento_id);
       const empName = emp ? emp.razon_social : 'N/A';

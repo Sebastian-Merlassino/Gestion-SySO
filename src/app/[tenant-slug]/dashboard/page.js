@@ -48,7 +48,6 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { jsPDF } from 'jspdf';
 
 export default function TenantDashboard({ params }) {
   const tenantSlug = params['tenant-slug'];
@@ -787,6 +786,9 @@ export default function TenantDashboard({ params }) {
   const handleDownloadPdfReport = async (shouldPrint = false) => {
     try {
       triggerToast('Generando reporte PDF...', 'info');
+
+      const { jsPDF } = await import('jspdf');
+
       const emp = empresas.find(e => e.id === accidentFilterEmpresa);
       const est = establecimientos.find(e => e.id === accidentFilterEstablecimiento);
       

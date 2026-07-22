@@ -14,8 +14,6 @@ import AppSelect from '@/components/ui/AppSelect';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import AITextHelper from '@/components/ui/AITextHelper';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
@@ -1200,6 +1198,9 @@ export default function ControlElectricoPage({ params }) {
   const handleExportPdfReport = async (c, shouldPrint = false, shouldDownload = true) => {
     try {
       triggerToast('Generando reporte PDF...', 'info');
+
+      const { jsPDF } = await import('jspdf');
+      const { default: autoTable } = await import('jspdf-autotable');
 
       // A4 portrait en pt es aprox 595.28 x 841.89 (redondeado a 596 x 842)
       const doc = new jsPDF({

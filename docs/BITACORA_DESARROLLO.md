@@ -1,5 +1,160 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-21] Resolución de Closures en Firmas, Ocultamiento de Protocolo de Iluminación en Sidebar, y Ajuste de Fecha de Nacimiento para Clientes
+
+### Resumen de Cambios
+- **Ocultamiento de Protocolo de Iluminación para Clientes**:
+  - En `src/components/Sidebar.js`, se agregó la propiedad `adminOnly: true` a la definición del ítem de navegación `protocolo-iluminacion` en el listado de `menuItems`. De esta forma, el componente Sidebar (tanto en desktop como en mobile) oculta automáticamente el acceso al Protocolo de Iluminación si el usuario logueado cuenta con el rol de Cliente (`profile?.role === 'cliente'`).
+- **Remoción del Campo de Fecha de Nacimiento para Cliente**:
+  - En `src/app/[tenant-slug]/profile/page.js`, se condicionó el renderizado del div del input de Fecha de Nacimiento con `{profileData?.role !== 'cliente' && ( ... )}` para evitar que se muestre a usuarios con rol Cliente.
+  - Se modificó la validación JS de obligatorios en la función `handleSaveChanges` de modo que la fecha de nacimiento sólo sea obligatoria si el rol no es `'cliente'` (`const isBirthDateMissing = !isCliente && !birthDate`), permitiendo a las cuentas de tipo cliente guardar cambios de perfil correctamente.
+- **Corrección de Closure Obsoleto (Stale Closure) en Firmas (Accidentes)**:
+  - En `src/app/[tenant-slug]/accidentes/page.js`, se definió una referencia mutable `isDrawingDisabledRef` (`useRef(false)`) y un `useEffect` para sincronizarla dinámicamente con `isReadOnlyView || profile?.role === 'cliente'`.
+  - En `setupCanvas`, los manejadores de dibujo (`startDrawing` y `draw`) ahora consultan `isDrawingDisabledRef.current` al dispararse. Esto evita que los listeners del canvas retengan los valores iniciales obsoletos tras la carga asíncrona de la sesión del cliente, logrando bloquear el pad de firmas para clientes de manera infalible.
+- **Alineación Geométrica Unificada en Firmas (Accidentes)**:
+  - Se re-estructuraron ambas columnas de firmas con `flex flex-col justify-between h-full space-y-4` y se aplicó `mt-auto` en las aclaraciones e inputs inferiores, garantizando la alineación de labels e inputs a lo largo de toda la fila.
+  - Se restauró el espaciador de 51px arriba del pad del Responsable.
+  - Se restableció la relación de aspecto `aspect-[2/1]` y bordes `rounded-xl` en todos los recuadros de firma (tanto en el Responsable como en el Profesional).
+  - Se devolvió el contenedor de Firma del Profesional a `min-h-[220px]` con sus canvas/previsualizaciones internas configurados con `aspect-[2/1] min-h-[140px] rounded-xl`. Esto alinea perfectamente los rectángulos de firma de forma horizontal.
+
+### Decisiones Clave
+- Resolver la pérdida de reactividad en listeners del DOM mediante `useRef` para evitar tener que remover e insertar event listeners de dibujo recurrentemente.
+- Homogeneizar al 100% el layout y comportamiento de firmas del módulo de accidentes con el de visitas y avisos de riesgo.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Validaciones Ejecutadas
+- Compilación del bundle de producción exitosa (`npm run build`).
+
+---
+
+## [2026-07-21] Bloqueo de Dibujo y Alineación de Altura en Contenedores de Firmas (Accidentes)
+
+### Resumen de Cambios
+- **Bloqueo Reactivo de Canvas de Firmas**:
+  - En `src/app/[tenant-slug]/accidentes/page.js`, dentro del inicializador `setupCanvas`, se agregaron validaciones de `isDisabled = isReadOnlyView || profile?.role === 'cliente'` al inicio de los manejadores `startDrawing` y `draw`. Esto detiene por completo el evento de dibujo si el registro está en modo lectura o corresponde a un Cliente.
+- **Alineación de la Cuadrícula de Firmas**:
+  - Se removió el espaciador vertical de 51px arriba de la Firma del Responsable del Establecimiento.
+  - Se redefinieron las dimensiones de los dos contenedores principales a una altura fija idéntica de `h-[220px]` con `rounded-2xl` y `shadow-sm`, y se ajustaron las firmas del Profesional a layout flexible (`flex-1 min-h-[120px]`). Esto asegura una alineación simétrica perfecta y responsiva en columnas `md:grid-cols-2`.
+
+### Decisiones Clave
+- Asegurar que el estado inhabilitado no solo altere estilos visuales (clases CSS) sino que bloquee imperativamente los manejadores de mouse y touch del Canvas de dibujo.
+- Consolidar la consistencia estructural de firmas establecida en Checklist Personalizados a lo largo de los formularios de siniestros.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Validaciones Ejecutadas
+- Compilación del bundle de producción exitosa (`npm run build`).
+
+---
+
+## [2026-07-21] Resolución de Colisión de Nombres del Constructor Image en Programa Anual
+
+### Resumen de Cambios
+- **Fix en Redimensionamiento de Imagen (Programa Anual)**:
+  - En `src/app/[tenant-slug]/programa/page.js`, en la función `resizeImage`, se cambió `new Image()` por `new window.Image()`.
+  - Esto previene el `TypeError` de ejecución al descargar/imprimir reportes en el cual Next.js resolvía el constructor `Image` como el componente de icono homónimo importado de `lucide-react` en vez de la clase nativa del navegador, provocando que fallara la carga del logotipo del reporte.
+
+### Decisiones Clave
+- Utilizar de forma explícita el objeto global del navegador (`window.Image`) en lugar de variables globales implícitas para evitar colisiones de ámbito con imports homónimos de React o Lucide.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `next-best-practices`
+
+### Validaciones Ejecutadas
+- Compilación del bundle de producción exitosa (`npm run build`).
+
+---
+
+## [2026-07-21] Rediseño de Firmas y Restricciones de Acceso/Edición en Siniestros (Accidentes y Enfermedades Profesionales)
+
+### Resumen de Cambios
+- **Integración de Estándar de Firma del Profesional**:
+  - En `src/app/[tenant-slug]/accidentes/page.js` (Investigación de Accidentes y Enfermedades Profesionales), se implementó la tarjeta unificada de diseño `SySO-Signature-Tabbed-Container` para la firma del profesional de Higiene y Seguridad. Se integraron solapas superiores para seleccionar origen ("Firma de Perfil" o "Firmar a mano") y cuerpo dashed con canvas de dibujo o previsualización.
+- **Restricción de Edición de Firmas a Clientes**:
+  - Se bloquearon todas las interacciones de firmas en la sesión del cliente:
+    - Firma del Responsable: Desactivado del canvas de dibujo, bloqueo del botón "Limpiar Firma" y campo de aclaración en modo disabled (`disabled={isReadOnlyView || profile?.role === 'cliente'}`).
+    - Firma del Profesional: Desactivado del canvas, botones de solapas superiores desactivados, bloqueo del botón de limpiar, y visualización del selector de profesional interviniente en texto plano deshabilitado para clientes.
+- **Restricción de Botón de IA a Clientes**:
+  - Se ocultó el botón de "Generar Informe IA" del formulario de siniestro cuando el usuario logueado posee el rol de Cliente (`profile?.role === 'cliente'`).
+
+### Decisiones Clave
+- Cumplir estrictamente con las brand guidelines del estándar de diseño `SySO-Signature-Tabbed-Container` en el módulo de accidentes, homogeneizándolo con los módulos de iluminación, avisos de riesgo y constancias de visita.
+- Reforzar la seguridad y el modelo multi-tenant limitando las facultades de alteración de firmas y acceso a herramientas de IA exclusivamente a administradores y técnicos de la plataforma, dejando al rol del Cliente final solo facultades de inspección y lectura de siniestros.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `gestion-syso-multitenant-security`
+- `next-best-practices`
+
+### Validaciones Ejecutadas
+- Compilación del bundle de producción exitosa (`npm run build`).
+
+---
+
+## [2026-07-21] Habilitación de Botón de Ayuda de Nivel de Riesgo en Modo Solo Lectura / Cliente (Acciones Correctivas)
+
+### Resumen de Cambios
+- **Interactividad del Botón de Ayuda (Acciones Correctivas)**:
+  - En `src/app/[tenant-slug]/correctivas/page.js`, se reemplazó el elemento `<button>` del botón de ayuda `?` junto a "Nivel de Riesgo *" por un `<span role="button">`.
+  - Esta modificación resuelve la inactividad del botón cuando la vista está en modo de solo lectura (`isReadOnlyView`) o en la sesión de un usuario con rol de Cliente. Como el formulario está envuelto en un `<fieldset disabled={!canEdit}>`, HTML deshabilita automáticamente cualquier control de formulario nativo como `<button>`. Al usar un `span` interactivo con `role="button"`, el navegador mantiene el comportamiento del evento `onClick` sin desactivarlo, permitiendo abrir la matriz explicativa del Método BS 8800 en cualquier contexto.
+
+### Decisiones Clave
+- Utilizar `span` en lugar de `button` dentro de contenedores de formularios desactivados por `fieldset` para mantener disponibles elementos puramente informativos o aclaratorios (como modales de ayuda) que no alteran los datos del formulario.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Validaciones Ejecutadas
+- Compilación del bundle de producción exitosa (`npm run build`).
+
+---
+
+## [2026-07-21] Corrección de Constructor jsPDF y jspdf-autotable en Producción (TypeError: g.Z is not a constructor)
+
+### Resumen de Cambios
+- **Modificación en Generación de PDFs (Carga Dinámica Diferida)**:
+  - Se eliminaron las importaciones estáticas de `jsPDF` y `jspdf-autotable` en los 12 archivos clave que generan PDFs en la plataforma.
+  - Se implementó la importación dinámica asíncrona (`const { jsPDF } = await import('jspdf')` y `const { default: autoTable } = await import('jspdf-autotable')`) dentro de las funciones de exportación de PDFs, ejecutándose únicamente en el lado del cliente (navegador) al hacer clic en el botón de descarga.
+  - Esto erradica el error crítico de producción `TypeError: g.Z is not a constructor` causado por la optimización estática de bundles de Next.js en producción, y a la vez disminuye el peso del First Load JS de la aplicación (mejorando LCP y performance general).
+
+### Módulos Protegidos y Modificados
+- **Programa Anual**: `src/app/[tenant-slug]/programa/page.js`
+- **Protocolo de Iluminación**: `src/app/[tenant-slug]/protocolos/iluminacion/utils/pdfGenerator.js`
+- **Matriz de Riesgos**: `src/app/[tenant-slug]/matriz-riesgos/page.js`
+- **Control de Extintores**: `src/app/[tenant-slug]/extintores/page.js`
+- **Acciones Correctivas**: `src/app/[tenant-slug]/correctivas/page.js`
+- **Checklists Personalizados**: `src/app/[tenant-slug]/checklist-personalizados/page.js`
+- **Registro de Capacitaciones**: `src/app/[tenant-slug]/capacitacion/page.js`
+- **Investigación de Accidentes**: `src/app/[tenant-slug]/accidentes/page.js`
+- **Constancia de Visitas**: `src/app/[tenant-slug]/visitas/page.js`
+- **Control Eléctrico**: `src/app/[tenant-slug]/control-electrico/page.js`
+- **Avisos de Riesgo**: `src/app/[tenant-slug]/avisos/page.js`
+- **Dashboard Principal**: `src/app/[tenant-slug]/dashboard/page.js`
+
+### Decisiones Clave
+- Utilizar importación dinámica asíncrona dentro del manejador del clic en el navegador. Es la estrategia estándar en Next.js para librerías que dependen de APIs del navegador (objeto `window`) y que sufren problemas de mapeo de constructores ESM/CJS durante el empaquetado minificado de producción.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `next-best-practices`
+- `vercel-react-best-practices`
+
+### Validaciones Ejecutadas
+- Ejecución exitosa de `npm run build` local, verificando que el compilador de Next.js optimice todos los bundles y finalice la compilación de producción con éxito sin advertencias sintácticas.
+
+---
+
 ## [2026-07-21] Solución de Error 400 en Refinamiento de Texto (IA)
 
 ### Resumen de Cambios

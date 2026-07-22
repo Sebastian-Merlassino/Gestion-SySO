@@ -17,8 +17,6 @@ import AppEmptyState from '@/components/ui/AppEmptyState';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
 import AITextHelper from '@/components/ui/AITextHelper';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import { 
   PlusCircle, 
@@ -545,6 +543,10 @@ export default function CapacitacionPage({ params }) {
   const handleExportPdfReport = async (shouldPrint = false) => {
     try {
       triggerToast('Generando reporte PDF...', 'info');
+
+      const { jsPDF } = await import('jspdf');
+      const { default: autoTable } = await import('jspdf-autotable');
+
       const doc = new jsPDF({
         orientation: 'landscape',
         unit: 'pt',

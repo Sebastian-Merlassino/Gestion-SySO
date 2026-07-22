@@ -18,8 +18,6 @@ import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import {
   Calendar,
   List,
@@ -597,7 +595,7 @@ export default function ProgramaGestion({ params }) {
         resolve('');
         return;
       }
-      const img = new Image();
+      const img = new window.Image();
       img.src = base64Str;
       img.onload = () => {
         const canvas = document.createElement('canvas');
@@ -629,6 +627,10 @@ export default function ProgramaGestion({ params }) {
   const handleExportPdfReport = async (shouldPrint = false) => {
     try {
       triggerToast('Generando reporte PDF...', 'info');
+      
+      const { jsPDF } = await import('jspdf');
+      const { default: autoTable } = await import('jspdf-autotable');
+
       const doc = new jsPDF({
         orientation: 'landscape',
         unit: 'pt',
