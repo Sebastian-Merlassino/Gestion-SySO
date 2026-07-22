@@ -16,6 +16,7 @@ import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
+import AITextHelper from '@/components/ui/AITextHelper';
 import { 
   PlusCircle, 
   AlertCircle,
@@ -2359,16 +2360,27 @@ export default function AvisosRiesgoPage({ params }) {
                     </div>
 
                     {/* Observaciones Generales */}
-                    <div>
-                      <label className="text-xs font-bold text-slate-600 block mb-1.5">
-                        Observaciones
-                      </label>
-                      <textarea
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex items-center justify-between gap-2 min-h-[28px]">
+                        <label className="text-xs font-bold text-slate-600 block">
+                          Observaciones
+                        </label>
+                        <AITextHelper
+                          value={observaciones}
+                          onChange={setObservaciones}
+                          context="Observaciones generales de cierre y recomendaciones complementarias del aviso de riesgo"
+                          disabled={isFormDisabled}
+                          allowExpand={true}
+                        />
+                      </div>
+                      <AppTextarea
+                        id="observaciones"
                         rows="3"
                         placeholder="Escribe comentarios de cierre del reporte, recomendaciones complementarias, etc..."
                         value={observaciones}
                         onChange={(e) => setObservaciones(e.target.value)}
-                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all h-24 resize-none"
+                        disabled={isFormDisabled}
+                        className="h-24 resize-none"
                       />
                     </div>
 

@@ -1,5 +1,29 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-21] Integración de SySO-AI-Voice-Helper en Observaciones de Avisos de Riesgo
+
+### Resumen de Cambios
+- **Modificación en Formulario de Avisos de Riesgo**:
+  - En `src/app/[tenant-slug]/avisos/page.js` se eliminó el textarea crudo del campo Observaciones y se reemplazó por el componente unificado `AppTextarea`.
+  - Se colocó el asistente de dictado y pulido de IA `AITextHelper` junto a la etiqueta del campo, configurando la propiedad `allowExpand={true}` para habilitar el diálogo a pantalla completa.
+  - Se configuró la desactivación dinámica de los botones del helper cuando la vista está en modo lectura o deshabilitada (`isFormDisabled`).
+
+### Decisiones Clave
+- Utilizar el componente `AppTextarea` unificado del sistema para cumplir estrictamente con las directivas del sistema de diseño unificado.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `SySO-AI-Voice-Helper`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+
+### Validaciones Ejecutadas
+- Ejecución exitosa de `npm run build`.
+
+---
+
 ## [2026-07-21] Edición de Evidencias Fotográficas con Marcadores en Protocolo de Iluminación
 
 ### Resumen de Cambios
