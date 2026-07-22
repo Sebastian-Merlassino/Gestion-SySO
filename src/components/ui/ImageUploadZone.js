@@ -201,7 +201,7 @@ export default function ImageUploadZone({
                   >
                     <Eye className="h-4 w-4" />
                   </button>
-                  {onEditPhoto && (
+                  {!disabled && onEditPhoto && (
                     <button
                       type="button"
                       onClick={() => onEditPhoto(idx)}

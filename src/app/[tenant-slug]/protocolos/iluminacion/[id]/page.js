@@ -21,6 +21,7 @@ export default function VerProtocoloPage({ params }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [formMode, setFormMode] = useState('view');
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -146,9 +147,10 @@ export default function VerProtocoloPage({ params }) {
             profile={profile}
             tenant={tenant}
             editingId={protocolId}
-            mode="view"
+            mode={formMode}
             onClose={() => router.push(`/${tenantSlug}/protocolos/iluminacion`)}
             onSaveSuccess={() => router.push(`/${tenantSlug}/protocolos/iluminacion`)}
+            onEdit={() => setFormMode('edit')}
           />
         </div>
       </main>

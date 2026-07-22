@@ -13,6 +13,7 @@ import AppCard from '@/components/ui/AppCard';
 import AppTextarea from '@/components/ui/AppTextarea';
 import AppLabel from '@/components/ui/AppLabel';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
+import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
 import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import AITextHelper from '@/components/ui/AITextHelper';
@@ -66,7 +67,8 @@ export default function ProtocoloForm({
   editingId = null,
   mode = 'create', // 'create' | 'edit' | 'view'
   onClose,
-  onSaveSuccess
+  onSaveSuccess,
+  onEdit = null
 }) {
   const router = useRouter();
   const globalToast = useToast();
@@ -166,6 +168,8 @@ export default function ProtocoloForm({
 
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [unsavedDialogOpen, setUnsavedDialogOpen] = useState(false);
+  const initialSnapshotRef = useRef('');
 
   const executeDelete = async () => {
     if (!editingId) return;
@@ -595,7 +599,7 @@ export default function ProtocoloForm({
 
         // Load existing record if editing
         if (editingId) {
-          await loadExistingRecord(session);
+          await loadExistingRecord(session, mems);
         } else {
           // Initialize with 1 default sampling point
           setPuntos([createNewPunto(1)]);
@@ -611,7 +615,7 @@ export default function ProtocoloForm({
   }, [editingId, tenant]);
 
   // Load existing record
-  const loadExistingRecord = async (session) => {
+  const loadExistingRecord = async (session, memsList = []) => {
     try {
       if (!session) {
         // Dev Mock Record
@@ -652,8 +656,24 @@ export default function ProtocoloForm({
       setProfesionalNombre(proto.profesional_nombre || '');
       setProfesionalMatricula(proto.profesional_matricula || '');
       setFirmaTipo(proto.firma_tipo || 'perfil');
+      
+      // Buscar coincidencia en la nómina para pre-seleccionar profesionalId
+      const matchingMem = memsList.find(
+        m => m.nombre === proto.profesional_nombre && 
+        (m.matricula === proto.profesional_matricula || proto.profesional_matricula?.includes(m.matricula))
+      );
+      if (matchingMem) {
+        setProfesionalId(matchingMem.id);
+      } else {
+        setProfesionalId(proto.profesional_nombre ? '__custom__' : '');
+      }
+
       if (proto.firma_profesional) {
-        setFirmaProfSavedUrl(proto.firma_profesional);
+        if (proto.firma_tipo === 'perfil') {
+          setSignaturePath(proto.firma_profesional);
+        } else {
+          setFirmaProfSavedUrl(proto.firma_profesional);
+        }
       }
 
       // Cargar sectores del establecimiento seleccionado
@@ -732,6 +752,50 @@ export default function ProtocoloForm({
       console.error('Error al cargar registro existente:', err);
       globalToast.toast('Error al recuperar los datos del protocolo.', 'error');
       setLoading(false);
+    }
+  };
+
+  const getFormSnapshot = () => {
+    return JSON.stringify({
+      empresaId,
+      establecimientoId,
+      instrumento,
+      fechaCalibracion,
+      metodologia,
+      fechaMedicion,
+      horaInicio,
+      horaFinalizacion,
+      condicionesAtmosfericas,
+      documentacionAdjunta,
+      observacionesGenerales,
+      conclusiones,
+      recomendaciones,
+      estado,
+      profesionalId,
+      profesionalNombre,
+      profesionalMatricula,
+      firmaTipo,
+      puntosCount: puntos.length,
+      adjuntosCount: adjuntos.length
+    });
+  };
+
+  useEffect(() => {
+    if (!loading && !initialSnapshotRef.current) {
+      initialSnapshotRef.current = getFormSnapshot();
+    }
+  }, [loading]);
+
+  const handleExitAttempt = () => {
+    if (mode === 'view') {
+      onClose();
+      return;
+    }
+    const currentSnapshot = getFormSnapshot();
+    if (initialSnapshotRef.current && currentSnapshot !== initialSnapshotRef.current) {
+      setUnsavedDialogOpen(true);
+    } else {
+      onClose();
     }
   };
 
@@ -1311,7 +1375,7 @@ export default function ProtocoloForm({
 
       let finalFirmaProf = firmaProfSavedUrl;
       if (firmaTipo === 'perfil') {
-        finalFirmaProf = firmaPerfilPreviewUrl || signaturePath || '';
+        finalFirmaProf = signaturePath || '';
       } else if (firmaTipo === 'mano' && firmaProfCanvasRef.current && hasSignedProf) {
         finalFirmaProf = firmaProfCanvasRef.current.toDataURL('image/png');
       }
@@ -1558,7 +1622,7 @@ export default function ProtocoloForm({
       {/* Cabecera del Formulario */}
       <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-150 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
-          <button type="button" onClick={onClose} className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 cursor-pointer">
+          <button type="button" onClick={handleExitAttempt} className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 cursor-pointer">
             <ArrowLeft className="h-5 w-5" />
           </button>
           <span className="font-outfit text-base font-bold text-slate-900">
@@ -1575,7 +1639,7 @@ export default function ProtocoloForm({
             <span className="sm:hidden text-[10px]">Método Cuadrícula</span>
           </button>
         </div>
-        <button type="button" onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200 cursor-pointer">
+        <button type="button" onClick={handleExitAttempt} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200 cursor-pointer">
           <X className="h-5 w-5" />
         </button>
       </div>
@@ -2736,21 +2800,26 @@ export default function ProtocoloForm({
 
         {/* Pie de Página del Formulario */}
         <div className="flex justify-between items-center pt-6 border-t border-slate-100 shrink-0">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-5 py-2.5 bg-[#FFFFFF] text-[#468DFF] border border-[#468DFF] rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-[#FFFFFF] hover:border-[#FFFFFF] transition-all active:scale-[0.98] cursor-pointer"
+          <AppButton
+            variant="secondary"
+            onClick={handleExitAttempt}
           >
             Salir
-          </button>
+          </AppButton>
 
           <div className="flex items-center gap-3">
             {isReadOnly ? (
               canEditar && estado !== 'anulado' && (
                 <AppButton
                   type="button"
-                  onClick={() => router.push(`/${tenantSlug}/protocolos/iluminacion/${editingId}/editar`)}
-                  className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10"
+                  onClick={() => {
+                    if (onEdit) {
+                      onEdit();
+                    } else {
+                      router.push(`/${tenantSlug}/protocolos/iluminacion/${editingId}/editar`);
+                    }
+                  }}
+                  className="bg-amber-500 hover:bg-amber-600 border-amber-500 hover:border-amber-600 text-white shadow-lg shadow-amber-500/10 text-center"
                 >
                   Editar
                 </AppButton>
@@ -2907,6 +2976,12 @@ export default function ProtocoloForm({
         description="¿Está seguro de que desea eliminar permanentemente este protocolo de iluminación y todos sus puntos de muestreo y mediciones asociados? Esta acción no se puede deshacer."
         confirmText="Eliminar"
         onConfirm={executeDelete}
+      />
+
+      <AppUnsavedChangesDialog
+        open={unsavedDialogOpen}
+        onOpenChange={setUnsavedDialogOpen}
+        onLeave={onClose}
       />
     </>
   );

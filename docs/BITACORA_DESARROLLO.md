@@ -1,5 +1,37 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-22] Estandarización de Botones, Edición Local SPA y Carga de Firma en Protocolo de Iluminación
+
+### Resumen de Cambios
+- **Módulo de Protocolo de Iluminación**:
+  - **Estandarización de Botones (Pie)**: Se reemplazó el botón crudo "Salir" por el componente unificado `<AppButton variant="secondary">`. Se cambió la estética del botón "Editar" en modo lectura a color ámbar (`bg-amber-500 hover:bg-amber-600 border-amber-500 hover:border-amber-600`) alineándolo al estándar visual global dictado en `AGENTS.md`.
+  - **Edición Local SPA (Sin Recarga)**: En `[id]/page.js` se introdujo el estado local de React `formMode` (inicialmente `'view'`). Se pasó la callback prop `onEdit={() => setFormMode('edit')}` a `<ProtocoloForm>`. Al hacer clic en "Editar", el formulario alterna localmente a edición de manera instantánea y fluida sin desmontar el Sidebar ni forzar una recarga dura de página.
+  - **Corrección de Carga y Persistencia de Firma Profesional**:
+    - **Pre-selección de Profesional**: Se modificó `loadExistingRecord` para recibir la nómina de miembros. Se busca si el nombre y matrícula guardados en base de datos coinciden con un miembro activo para pre-seleccionar automáticamente su ID en el dropdown `AppSelect`, impidiendo que el selector quede vacío en modo edición.
+    - **Persistencia Limpia (Storage Path)**: Al guardar un protocolo con firma de perfil, se almacena en `firma_profesional` la ruta relativa del archivo en el bucket (`signaturePath`) y no la URL firmada temporal con el token que expira en una hora (`firmaPerfilPreviewUrl`).
+    - **Resolución Dinámica de Previsualización**: Al recuperar los datos en `loadExistingRecord`, si la firma es de perfil, se asigna el path relativo a `signaturePath`, lo cual dispara la generación dinámica de una URL firmada válida mediante el bucket en cada carga del navegador.
+- **Componente de Carga de Imágenes (`ImageUploadZone.js`)**:
+  - Se condicionó el botón de lápiz de edición (`onEditPhoto`) al estado `!disabled`. Esto impide que los usuarios puedan editar o eliminar marcadores de imágenes en la vista de detalle de solo lectura (`disabled={true}`).
+
+### Decisiones Clave
+- Manejar el cambio de modo de visualización a edición localmente con un estado en la misma pantalla para evitar la penalización de rendimiento y el parpadeo de carga que genera Next.js al alternar entre páginas que recrean el Sidebar y consultan de nuevo la sesión.
+- Evitar almacenar parámetros dinámicos temporales (tokens de storage firmados) en la base de datos para prevenir imágenes rotas tras la expiración de la URL.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/components/ui/ImageUploadZone.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/[id]/page.js`
+
+### Validaciones Ejecutadas
+- Compilación de producción exitosa (`npm run build`).
+
+---
+
 ## [2026-07-22] Valores por Defecto en Conclusiones y Recomendaciones de Protocolo de Iluminación
 
 ### Resumen de Cambios
