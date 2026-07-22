@@ -1,6 +1,29 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-07-21] Resolución de Closures en Firmas, Ocultamiento de Protocolo de Iluminación en Sidebar, y Ajuste de Fecha de Nacimiento para Clientes
+## [2026-07-22] Valores por Defecto en Conclusiones y Recomendaciones de Protocolo de Iluminación
+
+### Resumen de Cambios
+- **Modulo de Protocolo de Iluminación**:
+  - En `ProtocoloForm.js` se definieron textos explicativos detallados y normativos por defecto en las variables de estado `conclusiones` y `recomendaciones` para nuevos registros.
+  - El campo de **conclusiones** inicializa automáticamente indicando el cumplimiento de la iluminación mínima conforme al Decreto Nº 351/79 (Anexo IV, Capítulo 12).
+  - El campo de **recomendaciones** inicializa con recomendaciones preventivas normalizadas (limpieza, ajuste de altura de luminarias, incorporación de iluminación localizada).
+  - Al editar un protocolo existente, estos valores siguen siendo sobrescritos correctamente por los datos recuperados de la base de datos (incluso si están vacíos).
+
+### Decisiones Clave
+- Agilizar la carga del profesional al proveer plantillas de texto normativas pre-cargadas que cumplen con la SRT, reduciendo la necesidad de tipeo repetitivo.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+
+### Validaciones Ejecutadas
+- Verificación del bundle de Next.js (`npm run build`).
+
+---
+
+## [2026-07-21] Resolución de Closures en Firmas y Ajustes Generales
 
 ### Resumen de Cambios
 - **Ocultamiento de Protocolo de Iluminación para Clientes**:

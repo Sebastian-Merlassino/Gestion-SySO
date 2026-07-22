@@ -106,8 +106,11 @@ export default function ProtocoloForm({
   const [observacionesGenerales, setObservacionesGenerales] = useState('');
 
   // Análisis
-  const [conclusiones, setConclusiones] = useState('');
-  const [recomendaciones, setRecomendaciones] = useState('');
+  const [conclusiones, setConclusiones] = useState('Los valores obtenidos en los puntos de muestreo, Cumplen con los valores de iluminación mínimos establecidos en el ANEXO IV - CAPITULO 12 (Iluminación y Color), del Decreto Nº 351/79.');
+  const [recomendaciones, setRecomendaciones] = useState(`En los sectores en los que el valor de la iluminancia obtenido sea menor a los rangos mínimos establecidos en el ANEXO IV - CAPITULO 12 (Iluminación y Color), del Decreto Nº 351/79, o que no se cumplan con la relación de la uniformidad de Iluminancia, el  es recomendable (según corresponda):
+• limpiar y reparar luminarias defectuosas (de ser posible, implementar un plan de mantenimiento preventivo), 
+• si es posible, bajar la altura de las luminarias instaladas, 
+• incorporar nuevas luminarias (en los puestos fijos puede incorporarce iluminación localizada).`);
   const [estado, setEstado] = useState('borrador'); // 'borrador' | 'completado' | 'anulado'
 
   // Sampling Points State
