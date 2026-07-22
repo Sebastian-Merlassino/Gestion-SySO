@@ -1546,7 +1546,7 @@ export default function ProtocoloForm({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex flex-col gap-1">
-              <AppLabel htmlFor="empresaId">Razón Social</AppLabel>
+              <AppLabel htmlFor="empresaId" required>Razón Social</AppLabel>
               {isReadOnly ? (
                 <AppInput id="empresaId" disabled value={razonSocialText} />
               ) : (
@@ -1570,7 +1570,7 @@ export default function ProtocoloForm({
             </div>
 
             <div className="flex flex-col gap-1">
-              <AppLabel htmlFor="establecimientoId">Establecimiento</AppLabel>
+              <AppLabel htmlFor="establecimientoId" required>Establecimiento</AppLabel>
               {isReadOnly ? (
                 <AppInput id="establecimientoId" disabled value={establecimientoText} />
               ) : (
@@ -1646,7 +1646,7 @@ export default function ProtocoloForm({
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="flex flex-col gap-1 md:col-span-2">
-              <AppLabel htmlFor="instrumento" className="min-h-[2.5rem] flex items-center mb-1">
+              <AppLabel htmlFor="instrumento" className="min-h-[2.5rem] flex items-center mb-1" required>
                 Marca, modelo y N° de serie del instrumento
               </AppLabel>
               <AppInput
@@ -1659,7 +1659,7 @@ export default function ProtocoloForm({
             </div>
 
             <div className="flex flex-col gap-1 relative md:col-span-1">
-              <AppLabel htmlFor="fechaCalibracion" className="min-h-[2.5rem] flex items-center mb-1">
+              <AppLabel htmlFor="fechaCalibracion" className="min-h-[2.5rem] flex items-center mb-1" required={estado === 'completado'}>
                 Fecha de Calibración del Instrumental
               </AppLabel>
               <div className="relative">
@@ -1698,7 +1698,7 @@ export default function ProtocoloForm({
 
             <div className="flex flex-col gap-1 col-span-full">
               <div className="flex items-center justify-between">
-                <AppLabel htmlFor="metodologia">Metodología Utilizada en la Medición</AppLabel>
+                <AppLabel htmlFor="metodologia" required={estado === 'completado'}>Metodología Utilizada en la Medición</AppLabel>
                 <AITextHelper
                   disabled={!canEdit}
                   value={metodologia}
@@ -1717,7 +1717,7 @@ export default function ProtocoloForm({
 
             <div className="grid grid-cols-3 gap-2 col-span-full">
               <div className="flex flex-col gap-1">
-                <AppLabel htmlFor="fechaMedicion">Fecha Medición</AppLabel>
+                <AppLabel htmlFor="fechaMedicion" required>Fecha Medición</AppLabel>
                 <div className="relative">
                   <AppInput
                     id="fechaMedicion"
@@ -1930,7 +1930,7 @@ export default function ProtocoloForm({
                       {/* Fila 1: Sector y Puesto */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="flex flex-col gap-1">
-                          <AppLabel htmlFor={`sector-sel-${p.id}`}>Sector</AppLabel>
+                          <AppLabel htmlFor={`sector-sel-${p.id}`} required={estado === 'completado'}>Sector</AppLabel>
                           {isReadOnly ? (
                             <AppInput id={`sector-sel-${p.id}`} disabled value={p.sector_text} />
                           ) : (
@@ -2191,7 +2191,7 @@ export default function ProtocoloForm({
                           </div>
 
                           <div className="md:col-span-1 flex flex-col gap-1">
-                            <AppLabel htmlFor={`requerido-manual-${p.id}`} className="min-h-[2.5rem] flex items-center mb-1 text-[10px] text-slate-500 font-semibold">
+                            <AppLabel htmlFor={`requerido-manual-${p.id}`} className="min-h-[2.5rem] flex items-center mb-1 text-[10px] text-slate-500 font-semibold" required={estado === 'completado'}>
                               Valor mínimo de servicio de iluminación (lux)
                             </AppLabel>
                             <AppInput
