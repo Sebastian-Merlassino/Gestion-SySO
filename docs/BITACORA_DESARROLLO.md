@@ -8,6 +8,8 @@
   - El campo de **conclusiones** inicializa automáticamente indicando el cumplimiento de la iluminación mínima conforme al Decreto Nº 351/79 (Anexo IV, Capítulo 12).
   - El campo de **recomendaciones** inicializa con recomendaciones preventivas normalizadas (limpieza, ajuste de altura de luminarias, incorporación de iluminación localizada).
   - Al editar un protocolo existente, estos valores siguen siendo sobrescritos correctamente por los datos recuperados de la base de datos (incluso si están vacíos).
+  - **Remoción de Marcadores (Guardado con 0 puntos)**: Se eliminó la restricción `points.length === 0` del botón "Guardar marcadores" en `MeasurementPointsEditorModal` para permitir la eliminación completa de los marcadores.
+  - Además, se ajustó la persistencia en `handleSubmit` para que, si un archivo adjunto que antes tenía marcadores queda con un listado vacío de puntos, su `storage_path` revierta automáticamente al `originalPath` (la imagen limpia original sin procesar), eliminando rastros del archivo horneado anterior y limpiando la visualización.
 - **Corrección en Componente Común de Carga de Imágenes**:
   - En `ImageUploadZone.js` se implementó la función `handleViewImage` y se reemplazaron los links `<a>` nativos de visualización por botones `<button>`.
   - Cuando se visualiza una imagen temporal en formato de data URL (`data:image/...`), se abre una pestaña nueva y se escribe dinámicamente un elemento `<img>` adaptado al centro de la pantalla con fondo oscuro. Esto evita la restricción de seguridad del navegador *"Not allowed to navigate top frame to data URL"*, permitiendo previsualizar planos modificados antes de guardarse en el backend.

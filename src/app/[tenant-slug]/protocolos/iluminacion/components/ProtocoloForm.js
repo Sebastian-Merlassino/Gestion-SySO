@@ -1457,16 +1457,25 @@ export default function ProtocoloForm({
       }
 
       if (updatedAdjuntos.length > 0) {
-        const adjPayload = updatedAdjuntos.map(ad => ({
-          protocolo_id: tempId,
-          tipo: ad.tipo,
-          nombre_archivo: ad.name,
-          storage_path: ad.path,
-          public_url: ad.preview,
-          original_path: ad.originalPath || ad.path,
-          markers: ad.markers || [],
-          created_by: user.id
-        }));
+        const adjPayload = updatedAdjuntos.map(ad => {
+          const hasMarkers = ad.markers && ad.markers.length > 0;
+          
+          let dbPreview = ad.preview;
+          if (dbPreview && dbPreview.startsWith('data:')) {
+            dbPreview = ''; // Evitar guardar base64 en la base de datos
+          }
+
+          return {
+            protocolo_id: tempId,
+            tipo: ad.tipo,
+            nombre_archivo: ad.name,
+            storage_path: hasMarkers ? ad.path : (ad.originalPath || ad.path),
+            public_url: hasMarkers ? dbPreview : (ad.originalPath && ad.originalPath.startsWith('http') ? ad.originalPath : dbPreview),
+            original_path: ad.originalPath || ad.path,
+            markers: ad.markers || [],
+            created_by: user.id
+          };
+        });
 
         const { error: insAdjErr } = await supabase
           .from('protocolos_iluminacion_adjuntos')
@@ -3016,7 +3025,7 @@ function MeasurementPointsEditorModal({ isOpen, onClose, imageUrl, initialPoints
                 <AppButton
                   variant="primary"
                   onClick={handleSave}
-                  disabled={loading || points.length === 0}
+                  disabled={loading}
                   className="text-xs py-1.5 h-[34px]"
                 >
                   Guardar marcadores
