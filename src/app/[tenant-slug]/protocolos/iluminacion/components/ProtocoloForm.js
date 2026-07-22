@@ -2521,7 +2521,6 @@ export default function ProtocoloForm({
         {/* CARD DOCUMENTACIÓN ADJUNTA */}
         {(() => {
           const certificadoAdjunto = adjuntos.find(a => a.tipo === 'Certificado de Calibración' || a.tipo === 'Certificado');
-          const planoDocAdjunto = adjuntos.find(a => a.tipo === 'Plano / Croquis' || a.tipo === 'Croquis/Certificado');
           const planoFotosAdjuntos = adjuntos.filter(a => a.tipo === 'Evidencia Fotográfica Plano' || a.tipo === 'Foto Plano');
 
           return (
@@ -2580,39 +2579,13 @@ export default function ProtocoloForm({
                         Plano o Croquis del Establecimiento
                       </h3>
                       <p className="text-[11px] text-slate-500 font-medium leading-tight mt-0.5">
-                        Carga del plano digitalizado del establecimiento y evidencias fotográficas de los puntos de medición.
+                        Carga el plano en formato de imagen (PNG, JPG) para posicionar los puntos de medición y subir las evidencias fotográficas.
                       </p>
                     </div>
                   </div>
 
-                  {/* Bloque 1: SySO-Document-Compact-Layout (PDF/Documento) */}
-                  <div>
-                    <DocumentUploadZone
-                      label="Plano o Croquis Digitalizado (PDF / Documento)"
-                      fileName={planoDocAdjunto?.name}
-                      url={planoDocAdjunto?.preview}
-                      signedUrl={planoDocAdjunto?.preview}
-                      disabled={!canEdit}
-                      accept="application/pdf,image/*"
-                      maxSizeMB={15}
-                      onFileChange={(file) => {
-                        if (planoDocAdjunto) {
-                          handleDeleteAdjunto(planoDocAdjunto.id);
-                        }
-                        handleUploadFile(file, 'Plano / Croquis');
-                      }}
-                      onDriveImport={(link) => {
-                        if (planoDocAdjunto) {
-                          handleDeleteAdjunto(planoDocAdjunto.id);
-                        }
-                        handleImportDriveLink(link, 'Plano / Croquis');
-                      }}
-                      onDelete={planoDocAdjunto ? () => handleDeleteAdjunto(planoDocAdjunto.id) : null}
-                    />
-                  </div>
-
                   {/* Bloque 2: SySO-Multiple-Evidence-Photo-Grid (Imágenes / Evidencias) */}
-                  <div className="pt-4 border-t border-slate-200/80">
+                  <div className="pt-2">
                     <ImageUploadZone
                       label="Evidencias Fotográficas / Imágenes del Plano o Puntos de Medición"
                       disabled={!canEdit}
