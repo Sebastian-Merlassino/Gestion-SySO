@@ -8,6 +8,8 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/providers/ToastProvider';
 import AppPageHeader from '@/components/ui/AppPageHeader';
 import ProtocoloForm from '../components/ProtocoloForm';
+import AppFormNavigator from '@/components/ui/AppFormNavigator';
+import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
 import { Loader2, Sun } from 'lucide-react';
 
 export default function VerProtocoloPage({ params }) {
@@ -23,13 +25,33 @@ export default function VerProtocoloPage({ params }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [formMode, setFormMode] = useState('view');
 
+  // Estado para la navegación lateral (AppFormNavigator)
+  const [protocolos, setProtocolos] = useState([]);
+  const [isFormDirty, setIsFormDirty] = useState(false);
+
+  // Estado para el control de salida por Sidebar
+  const [pendingRoute, setPendingRoute] = useState(null);
+  const [unsavedDialogOpen, setUnsavedDialogOpen] = useState(false);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/login');
   };
 
-  const handleSidebarNavigation = () => {
+  const handleSidebarNavigation = (e, path) => {
     setIsMobileMenuOpen(false);
+    if (isFormDirty) {
+      e.preventDefault(); // Detener la navegación automática
+      setPendingRoute(path);
+      setUnsavedDialogOpen(true);
+    }
+  };
+
+  const handleConfirmLeave = () => {
+    setUnsavedDialogOpen(false);
+    if (pendingRoute) {
+      router.push(pendingRoute);
+    }
   };
 
   useEffect(() => {
@@ -72,6 +94,17 @@ export default function VerProtocoloPage({ params }) {
           return;
         }
         setTenant(ten);
+
+        // Cargar lista simplificada de protocolos del tenant para el navegador lateral
+        const { data: protosData, error: protosErr } = await supabase
+          .from('protocolos_iluminacion')
+          .select('id, fecha_medicion')
+          .eq('tenant_id', ten.id)
+          .order('fecha_medicion', { ascending: false });
+
+        if (!protosErr && protosData) {
+          setProtocolos(protosData);
+        }
 
         setLoading(false);
       } catch (err) {
@@ -149,11 +182,39 @@ export default function VerProtocoloPage({ params }) {
             editingId={protocolId}
             mode={formMode}
             onClose={() => router.push(`/${tenantSlug}/protocolos/iluminacion`)}
-            onSaveSuccess={() => router.push(`/${tenantSlug}/protocolos/iluminacion`)}
+            onSaveSuccess={() => {
+              setIsFormDirty(false);
+              router.push(`/${tenantSlug}/protocolos/iluminacion`);
+            }}
             onEdit={() => setFormMode('edit')}
+            onDirtyChange={setIsFormDirty}
           />
         </div>
       </main>
+
+      {/* Navegador Lateral de registros (Anterior / Siguiente) */}
+      <AppFormNavigator
+        activeList={protocolos}
+        currentId={protocolId}
+        onNavigate={(newRecord) => {
+          setIsFormDirty(false); // Resetear estado dirty al navegar lateralmente
+          router.push(`/${tenantSlug}/protocolos/iluminacion/${newRecord.id}`);
+          setFormMode('view'); // Volver al modo lectura
+        }}
+        hasUnsavedChanges={isFormDirty}
+        isFormOpen={true}
+      />
+
+      {/* Diálogo de cambios sin guardar para salida por Sidebar */}
+      <AppUnsavedChangesDialog
+        open={unsavedDialogOpen}
+        onOpenChange={setUnsavedDialogOpen}
+        onLeave={handleConfirmLeave}
+        title="Cambios sin guardar"
+        description="Tenés cambios sin guardar. Si abandonás esta sección ahora, perderás las modificaciones realizadas."
+        leaveText="Abandonar sin guardar"
+        stayText="Quedarse aquí"
+      />
     </div>
   );
 }

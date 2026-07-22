@@ -68,7 +68,8 @@ export default function ProtocoloForm({
   mode = 'create', // 'create' | 'edit' | 'view'
   onClose,
   onSaveSuccess,
-  onEdit = null
+  onEdit = null,
+  onDirtyChange = null
 }) {
   const router = useRouter();
   const globalToast = useToast();
@@ -785,6 +786,35 @@ export default function ProtocoloForm({
       initialSnapshotRef.current = getFormSnapshot();
     }
   }, [loading]);
+
+  useEffect(() => {
+    if (onDirtyChange && initialSnapshotRef.current) {
+      const currentSnapshot = getFormSnapshot();
+      onDirtyChange(currentSnapshot !== initialSnapshotRef.current);
+    }
+  }, [
+    empresaId,
+    establecimientoId,
+    instrumento,
+    fechaCalibracion,
+    metodologia,
+    fechaMedicion,
+    horaInicio,
+    horaFinalizacion,
+    condicionesAtmosfericas,
+    documentacionAdjunta,
+    observacionesGenerales,
+    conclusiones,
+    recomendaciones,
+    estado,
+    profesionalId,
+    profesionalNombre,
+    profesionalMatricula,
+    firmaTipo,
+    puntos,
+    adjuntos,
+    onDirtyChange
+  ]);
 
   const handleExitAttempt = () => {
     if (mode === 'view') {
