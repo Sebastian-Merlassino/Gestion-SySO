@@ -2579,7 +2579,7 @@ export default function ProtocoloForm({
                         Plano o Croquis del Establecimiento
                       </h3>
                       <p className="text-[11px] text-slate-500 font-medium leading-tight mt-0.5">
-                        Carga el plano en formato de imagen (PNG, JPG) para posicionar los puntos de medición y subir las evidencias fotográficas.
+                        Carga el plano en formato de imagen (PNG, JPG) para posicionar los puntos de medición.
                       </p>
                     </div>
                   </div>
@@ -2587,7 +2587,7 @@ export default function ProtocoloForm({
                   {/* Bloque 2: SySO-Multiple-Evidence-Photo-Grid (Imágenes / Evidencias) */}
                   <div className="pt-2">
                     <ImageUploadZone
-                      label="Evidencias Fotográficas / Imágenes del Plano o Puntos de Medición"
+                      label="Imágenes del plano o croquis del establecimiento"
                       disabled={!canEdit}
                       multiple={true}
                       maxSizeMB={5}
