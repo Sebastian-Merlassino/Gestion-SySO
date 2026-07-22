@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import * as Dialog from '@radix-ui/react-dialog';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/providers/ToastProvider';
@@ -67,6 +68,7 @@ export default function ProtocoloForm({
   onClose,
   onSaveSuccess
 }) {
+  const router = useRouter();
   const globalToast = useToast();
   
   // Loading states
@@ -160,6 +162,7 @@ export default function ProtocoloForm({
 
   const sectionPerms = getSectionPermissions(profile, 'protocolo_iluminacion');
   const canEliminar = sectionPerms.eliminar;
+  const canEditar = sectionPerms.editar;
 
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -2742,33 +2745,47 @@ export default function ProtocoloForm({
           </button>
 
           <div className="flex items-center gap-3">
-            {editingId && canEliminar && (
-              <AppButton
-                type="button"
-                variant="destructive"
-                disabled={saveLoading || deleteLoading}
-                onClick={() => setDeleteConfirmOpen(true)}
-                className="px-5 py-2.5 rounded-xl text-sm font-bold active:scale-[0.98] cursor-pointer shadow-lg shadow-red-500/10"
-              >
-                Eliminar
-              </AppButton>
-            )}
-
-            {canEdit && (
-              <button
-                type="submit"
-                disabled={saveLoading}
-                className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
-              >
-                {saveLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-1" />
-                    Guardando...
-                  </>
-                ) : (
-                  'Guardar'
+            {isReadOnly ? (
+              canEditar && estado !== 'anulado' && (
+                <AppButton
+                  type="button"
+                  onClick={() => router.push(`/${tenantSlug}/protocolos/iluminacion/${editingId}/editar`)}
+                  className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10"
+                >
+                  Editar
+                </AppButton>
+              )
+            ) : (
+              <>
+                {editingId && canEliminar && (
+                  <AppButton
+                    type="button"
+                    variant="destructive"
+                    disabled={saveLoading || deleteLoading}
+                    onClick={() => setDeleteConfirmOpen(true)}
+                    className="px-5 py-2.5 rounded-xl text-sm font-bold active:scale-[0.98] cursor-pointer shadow-lg shadow-red-500/10"
+                  >
+                    Eliminar
+                  </AppButton>
                 )}
-              </button>
+
+                {canEdit && (
+                  <button
+                    type="submit"
+                    disabled={saveLoading}
+                    className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
+                  >
+                    {saveLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                        Guardando...
+                      </>
+                    ) : (
+                      'Guardar'
+                    )}
+                  </button>
+                )}
+              </>
             )}
           </div>
         </div>
