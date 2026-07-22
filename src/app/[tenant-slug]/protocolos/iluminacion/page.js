@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { formatDate } from '@/lib/utils';
@@ -39,6 +40,7 @@ import {
 
 export default function ProtocolosIluminacionPage({ params }) {
   const tenantSlug = params['tenant-slug'];
+  const router = useRouter();
   const globalToast = useToast();
 
   // Tenant / Profile structural state
@@ -771,7 +773,11 @@ export default function ProtocolosIluminacionPage({ params }) {
                     if (row.estado === 'anulado') stateBadge = 'bg-red-50 text-red-500 border-red-150';
 
                     return (
-                      <tr key={row.id} className="hover:bg-slate-100 cursor-pointer transition-colors">
+                      <tr 
+                        key={row.id} 
+                        onClick={() => router.push(`/${tenantSlug}/protocolos/iluminacion/${row.id}`)}
+                        className="hover:bg-slate-100 cursor-pointer transition-colors"
+                      >
                         <td className="px-6 py-4">
                           <span className="font-bold text-slate-800 block text-xs leading-none mb-1.5">{row.razon_social_text}</span>
                           <span className="text-[10px] text-slate-400 font-medium flex items-center gap-1">
@@ -797,11 +803,13 @@ export default function ProtocolosIluminacionPage({ params }) {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                            <Link href={`/${tenantSlug}/protocolos/iluminacion/${row.id}`} title="Ver Detalles">
-                              <button className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer inline-flex items-center justify-center">
-                                <Eye className="h-4.5 w-4.5" />
-                              </button>
-                            </Link>
+                            {profile?.role === 'cliente' && (
+                              <Link href={`/${tenantSlug}/protocolos/iluminacion/${row.id}`} title="Ver Detalles">
+                                <button className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer inline-flex items-center justify-center">
+                                  <Eye className="h-4.5 w-4.5" />
+                                </button>
+                              </Link>
+                            )}
 
                             {canEditar && row.estado !== 'anulado' && (
                               <Link href={`/${tenantSlug}/protocolos/iluminacion/${row.id}/editar`} title="Editar">
