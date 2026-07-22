@@ -1,5 +1,80 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-22] Corrección del Color de Fondo y Contraste en Cabeceras de Tablas del PDF de Iluminación
+
+### Resumen de Cambios
+- **Corrección en `pdfGenerator.js`**:
+  - Se crearon las funciones auxiliares de asignación de color `setFillColor()`, `setDrawColor()` y `setTextColor()` que convierten automáticamente cadenas hexadecimales a valores numéricos enteros RGB `(r, g, b)`.
+  - Se solucionó una incompatibilidad nativa en `jsPDF` por la cual la invocación directa de `doc.setFillColor(hexString)` interpretaba el argumento como RGB `(0, 0, 0)` generando un relleno negro en la fila de encabezados de la Tabla General de Medición.
+  - Las cabeceras ahora se renderizan con un fondo gris suave neutro (`#D9D9D9` / `#E2E8F0`) y texto en negrita negro nítido (`#000000`), garantizando legibilidad y contraste.
+
+### Decisiones Clave
+- Asegurar la conversión RGB de todos los valores de color hexadecimales pasados a `jsPDF` para prevenir fallbacks inesperados a relleno negro en cualquier entorno o navegador.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/utils/pdfGenerator.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-07-22] Estandarización y Refinamiento Estético del PDF del Protocolo de Medición de Iluminación
+
+### Resumen de Cambios
+- **Refinamiento del Generador de PDF (`pdfGenerator.js`)**:
+  - **Identidad Visual SaaS**: Se adaptaron los encabezados, pies de página, colores de acento (`#468DFF`, `#0F172A`, `#F8FAFC`) y tipografías para homogeneizar el PDF con el estándar visual de las Constancias de Visita y Control Eléctrico.
+  - **Logo del Usuario en Cabecera (Todas las Páginas)**: Inserción del logotipo corporativo del tenant (`tenant.logo_1_url` o fallback `/brand/logo-primary.png`) calculando dinámicamente sus proporciones `(width / height)` para mantener el aspecto original sin deformación en hojas A4 verticales y apaisadas.
+  - **Pie de Página Completo del Tenant**: Inserción en todas las páginas interiores de la barra de acento azul (`#468DFF`), la línea de contacto centralizada con el nombre de la consultora, teléfono y correo electrónico (`${companyName} • Tel: ${phoneVal} • Email: ${emailVal}`), identificación del protocolo a la izquierda y contador `Página X de Y` a la derecha.
+  - **Protección Estricta contra Desborde de Texto en Celdas**: Creación de la función `drawCellText()` que envuelve y trunca matemáticamente cualquier texto que supere la anchura útil de la celda (`width - padding`), garantizando que ningún dato o descripción sobresalga de las líneas del cuadro.
+  - **Firmas y Planos/Croquis**: Inserción proporcional de la firma digital del profesional interviniente (`proto.firma_profesional`) e imágenes de planos/croquis adjuntos (`adjuntosList`) escaladas en modo `contain` para evitar distorsiones.
+
+### Decisiones Clave
+- Preservar al 100% todos los datos normativos, tablas, valores lux medidos, fórmulas fraccionarias de índice de local $I$ y uniformidad $E_{mín} \ge E_{media}/2$.
+- Utilizar una función común de truncamiento `drawCellText` para evitar desbordes visuales en cualquier resolución de texto ingresada por el usuario.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/utils/pdfGenerator.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-07-22] Implementación del Diseño de Referencia para el PDF del Protocolo de Medición de Iluminación
+
+### Resumen de Cambios
+- **Generador de PDF (`pdfGenerator.js`)**:
+  - Se reestructuró la función `generateLightingProtocolPdf` en `src/app/[tenant-slug]/protocolos/iluminacion/utils/pdfGenerator.js` para adoptar el sistema de coordenadas absolutas en milímetros (`unit: 'mm'`) según la especificación de referencia para A4.
+  - **Página 1 (Portada Vertical)**: Borde exterior de 0.75pt, rectángulo azul de año (`#4F81BD`), logo corporativo, título de 34pt, referencia al Decreto 351/79 Anexo IV Cap. 12 / Res. SRT 84/2012 y marca institucional.
+  - **Página 2 (Introducción Normativa Vertical)**: Texto normativo detallando los artículos 71 a 75 y la fórmula de uniformidad $E_{mín} \ge E_{media}/2$.
+  - **Página 3 (Datos del Establecimiento y Medición Vertical)**: Tablas agrupadas con bordes exteriores de 1.25pt de Razón Social, CUIT, Dirección, Instrumental, Fecha de Calibración, Horarios/Turnos, Condiciones Atmosféricas, Documentación Adjunta y Observaciones.
+  - **Páginas 4 y 5 (Tabla General Apaisada)**: Tabla matricial de 10 columnas en A4 Apaisado con máximo 12 filas por página, fondo gris claro (`#F2F2F2`) para filas vacías y resaltado en rojo negrita (`#FF0000`) para desvíos de uniformidad e iluminancia.
+  - **Página 6 (Análisis y Mejoras Apaisada)**: Tabla en 2 columnas al 50% con Conclusiones y Recomendaciones Preventivas de adecuación lumínica.
+  - **Páginas 7 a N (Fichas de Cálculo por Punto Verticales)**: 1 hoja vertical por cada punto de muestreo incluyendo dimensiones del local, fórmula fraccionaria y decimal de índice de local $I$, puntos mínimos $(I+2)^2$, grilla matricial de valores Lux (hasta 9x5), promedio $E_{media}$, verificación legal vs Tabla 2 (Cumple `#00B050` / No cumple `#FF0000`), uniformidad $E_{media}/2$ y verificación de uniformidad.
+  - **Páginas N+1 a M (Croquis Apaisados)**: Marco apaisado para planos/croquis del establecimiento con título por sector/piso.
+  - **Pie de Página y Firmas**: Integración del bloque de firma digital superpuesta del profesional interviniente en todas las páginas clave y barra inferior azul con contador total de páginas (`Página X de Y`).
+
+### Decisiones Clave
+- Utilizar dimensiones exactas en milímetros (`mm`) en jsPDF para asegurar que la maquetación mantenga proporciones estrictas en cualquier visor o impresión sin escalado distorsionado.
+- Formatear expresiones matemáticas compuestas (índice de local y uniformidad) utilizando trazados geométricos de fracciones con numerador, denominador y barra horizontal.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/utils/pdfGenerator.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
 ## [2026-07-22] Reubicación del módulo Protocolo de Iluminación en la Barra Lateral
 
 ### Resumen de Cambios
