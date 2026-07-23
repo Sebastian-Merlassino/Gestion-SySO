@@ -12,6 +12,7 @@ import AppButton from '@/components/ui/AppButton';
 import AppInput from '@/components/ui/AppInput';
 import AppSelect from '@/components/ui/AppSelect';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
+import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
 import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
 import AITextHelper from '@/components/ui/AITextHelper';
@@ -260,6 +261,8 @@ export default function EmpresasClientes({ params }) {
   // Diálogo modal de alerta / confirmación
   const globalToast = useToast();
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', type: 'info', onConfirm: null, confirmText: 'Confirmar' });
+  const [unsavedDialogOpen, setUnsavedDialogOpen] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState(null);
 
   // Estados para el Portal de Cliente
   const [clientProfile, setClientProfile] = useState(null);
@@ -1475,16 +1478,8 @@ export default function EmpresasClientes({ params }) {
       setView('list');
       return;
     }
-    showAlert(
-      'Salir sin guardar',
-      '¿Estás seguro de que deseas salir del formulario? Perderás todos los cambios cargados que no se hayan guardado.',
-      'warning',
-      () => {
-        closeAlert();
-        setView('list');
-      },
-      'Confirmar'
-    );
+    setPendingNavigation(null);
+    setUnsavedDialogOpen(true);
   };
 
   const handleSidebarNavigation = (e, path) => {
@@ -1498,20 +1493,21 @@ export default function EmpresasClientes({ params }) {
         return;
       }
       e.preventDefault();
-      showAlert(
-        'Salir sin guardar',
-        '¿Estás seguro de que deseas salir? Los cambios no guardados se perderán.',
-        'warning',
-        () => {
-          closeAlert();
-          if (path === 'list') {
-            setView('list');
-          } else {
-            window.location.href = path;
-          }
-        },
-        'Confirmar'
-      );
+      setPendingNavigation(path);
+      setUnsavedDialogOpen(true);
+    }
+  };
+
+  const executeUnsavedLeave = () => {
+    if (pendingNavigation) {
+      if (pendingNavigation === 'list') {
+        setView('list');
+      } else {
+        window.location.href = pendingNavigation;
+      }
+      setPendingNavigation(null);
+    } else {
+      setView('list');
     }
   };
 
@@ -3532,6 +3528,13 @@ export default function EmpresasClientes({ params }) {
           </div>
         </div>
       )}
+
+      {/* DIÁLOGO ESTÁNDAR SALIR SIN GUARDAR */}
+      <AppUnsavedChangesDialog
+        open={unsavedDialogOpen}
+        onOpenChange={setUnsavedDialogOpen}
+        onLeave={executeUnsavedLeave}
+      />
 
       {/* Notificación Toast flotante en esquina removido - consumido globalmente */}
       <AppFormNavigator

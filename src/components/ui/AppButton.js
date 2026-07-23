@@ -13,7 +13,7 @@ export default function AppButton({
   type = 'button',
   ...props
 }) {
-  const baseClasses = 'inline-flex items-center justify-center rounded-xl font-bold transition-all duration-200 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 select-none';
+  const baseClasses = 'inline-flex items-center justify-center rounded-xl font-bold transition-all duration-200 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 select-none focus:outline-none focus:ring-2 focus:ring-[#468DFF]/30 focus:ring-offset-1';
   
   const variants = {
     primary: 'bg-[#468DFF] text-white border border-[#468DFF] hover:bg-[#0511F2] hover:border-[#0511F2] shadow-md shadow-blue-500/10 hover:shadow-blue-500/20',

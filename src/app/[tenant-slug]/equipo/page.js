@@ -13,6 +13,7 @@ import AppButton from '@/components/ui/AppButton';
 import AppInput from '@/components/ui/AppInput';
 import AppSelect from '@/components/ui/AppSelect';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
+import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
 import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
@@ -214,6 +215,8 @@ export default function EquipoPage({ params }) {
 
   // Initial values for dirty checking
   const [initialValues, setInitialValues] = useState(null);
+  const [unsavedDialogOpen, setUnsavedDialogOpen] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState(null);
 
   const originalDataRef = useRef('');
 
@@ -1237,20 +1240,8 @@ export default function EquipoPage({ params }) {
       return;
     }
 
-    showAlert(
-      'Salir sin guardar',
-      '¿Estás seguro de que deseas salir del formulario? Perderás todos los cambios cargados que no se hayan guardado.',
-      'warning',
-      () => {
-        closeAlert();
-        if (onConfirmOverride) {
-          onConfirmOverride();
-        } else {
-          setView('list');
-        }
-      },
-      'Confirmar'
-    );
+    setPendingNavigation(onConfirmOverride ? 'override' : null);
+    setUnsavedDialogOpen(true);
   };
 
   const handleSidebarNavigation = (e, path) => {
@@ -1264,13 +1255,21 @@ export default function EquipoPage({ params }) {
         return;
       }
       e.preventDefault();
-      handleExitWithoutSave(() => {
-        if (path === 'list') {
-          setView('list');
-        } else {
-          window.location.href = path;
-        }
-      });
+      setPendingNavigation(path);
+      setUnsavedDialogOpen(true);
+    }
+  };
+
+  const executeUnsavedLeave = () => {
+    if (pendingNavigation) {
+      if (pendingNavigation === 'list') {
+        setView('list');
+      } else if (pendingNavigation !== 'override') {
+        window.location.href = pendingNavigation;
+      }
+      setPendingNavigation(null);
+    } else {
+      setView('list');
     }
   };
 
@@ -2110,7 +2109,14 @@ export default function EquipoPage({ params }) {
           </div>
         </div>
       )}
-      
+
+      {/* DIÁLOGO ESTÁNDAR SALIR SIN GUARDAR */}
+      <AppUnsavedChangesDialog
+        open={unsavedDialogOpen}
+        onOpenChange={setUnsavedDialogOpen}
+        onLeave={executeUnsavedLeave}
+      />
+
       <AppFormNavigator
         activeList={filteredMiembros}
         currentId={editingId}

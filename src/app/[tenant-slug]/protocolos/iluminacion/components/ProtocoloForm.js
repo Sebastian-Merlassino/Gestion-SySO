@@ -106,7 +106,7 @@ export default function ProtocoloForm({
   // Medicion
   const [instrumento, setInstrumento] = useState('');
   const [fechaCalibracion, setFechaCalibracion] = useState('');
-  const [metodologia, setMetodologia] = useState('Guía Práctica sobre Iluminación en el Ambiente Laboral de la SRT (Método de la Cuadrícula).');
+  const [metodologia, setMetodologia] = useState('Método de la Cuadrícula');
   const [fechaMedicion, setFechaMedicion] = useState('');
   const [horaInicio, setHoraInicio] = useState('');
   const [horaFinalizacion, setHoraFinalizacion] = useState('');
@@ -1660,9 +1660,9 @@ export default function ProtocoloForm({
 
   return (
     <>
-      <div className="bg-white rounded-2xl border border-slate-150 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in w-full">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in w-full">
       {/* Cabecera del Formulario */}
-      <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-150 flex items-center justify-between shrink-0">
+      <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
           <button type="button" onClick={handleExitAttempt} className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 cursor-pointer">
             <ArrowLeft className="h-5 w-5" />
@@ -2528,7 +2528,7 @@ export default function ProtocoloForm({
 
           return (
             <AppCard className="p-5 md:p-6 space-y-5">
-              <div className="flex items-center gap-2.5 border-b border-slate-150 pb-3">
+              <div className="flex items-center gap-2.5 border-b border-slate-200 pb-3">
                 <FileText className="h-5 w-5 text-[#468DFF]" />
                 <h2 className="font-outfit text-base font-extrabold text-slate-800">Documentación Adjunta</h2>
               </div>
@@ -2637,7 +2637,7 @@ export default function ProtocoloForm({
 
         {/* CARD FIRMA DEL PROFESIONAL */}
         <AppCard className="p-5 md:p-6 space-y-5">
-          <div className="flex items-center gap-2.5 border-b border-slate-150 pb-3">
+          <div className="flex items-center gap-2.5 border-b border-slate-200 pb-3">
             <PenTool className="h-5 w-5 text-[#468DFF]" />
             <h2 className="font-outfit text-base font-extrabold text-slate-800">
               Firma del Profesional de Higiene y Seguridad
@@ -2898,132 +2898,9 @@ export default function ProtocoloForm({
             )}
           </div>
         </div>
-
       </form>
     </div>
-
-      {/* SYNC PROFILE RADIX DIALOG */}
-      <Dialog.Root open={isSyncOpen} onOpenChange={setIsSyncOpen}>
-        <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm animate-fade-in" />
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <Dialog.Content className="relative w-full max-w-md p-6 bg-white border border-slate-200 rounded-2xl shadow-2xl animate-scale-up focus:outline-none space-y-4">
-              <Dialog.Close asChild>
-                <button 
-                  className="absolute top-4 right-4 p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#468DFF]"
-                  aria-label="Cerrar"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </Dialog.Close>
-
-              <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-blue-50 text-[#468DFF] border border-blue-100">
-                <Building className="h-6 w-6 shrink-0" />
-              </div>
-
-              <div className="space-y-1.5 text-center">
-                <Dialog.Title className="font-outfit text-base font-extrabold text-slate-800">
-                  Sincronización del Perfil de Cliente
-                </Dialog.Title>
-                <Dialog.Description className="text-xs text-slate-500 leading-relaxed">
-                  {syncQueue[syncIndex]?.message}
-                </Dialog.Description>
-              </div>
-
-              <div className="flex flex-col gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => handleSyncConfirm('save_profile')}
-                  className="w-full py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#468DFF]"
-                >
-                  {syncQueue[syncIndex]?.type === 'modify_dimensions' 
-                    ? 'Sí, actualizar perfil del cliente'
-                    : 'Sí, guardar en perfil del cliente'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSyncConfirm('bypass')}
-                  className="w-full py-2.5 bg-white border border-slate-300 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer focus:outline-none focus:ring-2 focus:ring-slate-400"
-                >
-                  No, usar solo en este protocolo
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsSyncOpen(false);
-                    setSyncQueue([]);
-                  }}
-                  className="w-full py-2 bg-red-50 text-red-600 rounded-xl text-xs font-semibold hover:bg-red-100 transition-all cursor-pointer text-center"
-                >
-                  Cancelar guardado
-                </button>
-              </div>
-            </Dialog.Content>
-          </div>
-        </Dialog.Portal>
-      </Dialog.Root>
-
-      {/* TABLA 1 CONSULTA EMERGENTE MODAL */}
-      <Tabla1Modal
-        isOpen={isTabla1Open}
-        onClose={() => setIsTabla1Open(false)}
-        onSelectLux={(selectedLux) => {
-          if (targetPuntoIdForTabla1) {
-            setPuntos(puntos.map(x => x.id === targetPuntoIdForTabla1 ? {
-              ...x,
-              valor_requerido_legal_lux: String(selectedLux)
-            } : x));
-          }
-        }}
-      />
-
-      {/* METODO DE LA CUADRICULA EXPLICATIVO MODAL */}
-      <MetodoCuadriculaModal
-        isOpen={isMetodoCuadriculaOpen}
-        onClose={() => setIsMetodoCuadriculaOpen(false)}
-      />
-
-      {/* MODAL EDITOR DE PUNTOS DE MEDICION EN FOTOS */}
-      <MeasurementPointsEditorModal
-        isOpen={isEditorOpen}
-        onClose={() => setIsEditorOpen(false)}
-        imageUrl={editorImageUrl}
-        initialPoints={(() => {
-          const planoFotosAdjuntos = adjuntos.filter(a => a.tipo === 'Evidencia Fotográfica Plano' || a.tipo === 'Foto Plano');
-          return planoFotosAdjuntos[editPhotoIndex]?.markers || [];
-        })()}
-        otherImagesMarkers={(() => {
-          let list = [];
-          adjuntos.forEach((ad, idx) => {
-            if (ad.tipo === 'Evidencia Fotográfica Plano' || ad.tipo === 'Foto Plano') {
-              const planoFotosAdjuntos = adjuntos.filter(a => a.tipo === 'Evidencia Fotográfica Plano' || a.tipo === 'Foto Plano');
-              const targetPhoto = planoFotosAdjuntos[editPhotoIndex];
-              if (targetPhoto && ad.id !== targetPhoto.id) {
-                list.push(...(ad.markers || []));
-              }
-            }
-          });
-          return list;
-        })()}
-        onSave={handleSaveEditedPhoto}
-      />
-
-      <AppConfirmDialog
-        open={deleteConfirmOpen}
-        onOpenChange={(open) => !open && setDeleteConfirmOpen(false)}
-        type="destructive"
-        title="Eliminar Protocolo"
-        description="¿Está seguro de que desea eliminar permanentemente este protocolo de iluminación y todos sus puntos de muestreo y mediciones asociados? Esta acción no se puede deshacer."
-        confirmText="Eliminar"
-        onConfirm={executeDelete}
-      />
-
-      <AppUnsavedChangesDialog
-        open={unsavedDialogOpen}
-        onOpenChange={setUnsavedDialogOpen}
-        onLeave={onClose}
-      />
-    </>
+  </>
   );
 }
 
@@ -3136,7 +3013,7 @@ function MeasurementPointsEditorModal({ isOpen, onClose, imageUrl, initialPoints
         <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm animate-fade-in" />
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <Dialog.Content className="relative w-full max-w-4xl p-6 bg-white border border-slate-200 rounded-2xl shadow-2xl animate-scale-up focus:outline-none flex flex-col max-h-[90vh]">
-            <div className="flex justify-between items-center border-b border-slate-150 pb-3 mb-4 shrink-0">
+            <div className="flex justify-between items-center border-b border-slate-200 pb-3 mb-4 shrink-0">
               <Dialog.Title className="font-outfit text-base font-extrabold text-slate-800">
                 Identificar Puntos de Medición en Evidencia
               </Dialog.Title>
@@ -3189,7 +3066,7 @@ function MeasurementPointsEditorModal({ isOpen, onClose, imageUrl, initialPoints
             </div>
 
             {/* Acciones de edición */}
-            <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 mt-4 pt-3 border-t border-slate-150 shrink-0">
+            <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 mt-4 pt-3 border-t border-slate-200 shrink-0">
               <div className="flex items-center gap-2">
                 <AppButton
                   variant="secondary"

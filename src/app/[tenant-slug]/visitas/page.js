@@ -11,6 +11,7 @@ import AITextHelper from '@/components/ui/AITextHelper';
 import { useToast } from '@/components/providers/ToastProvider';
 import AppButton from '@/components/ui/AppButton';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
+import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
 import AppPageHeader from '@/components/ui/AppPageHeader';
 import AppInput from '@/components/ui/AppInput';
 import AppSelect from '@/components/ui/AppSelect';
@@ -19,6 +20,7 @@ import AppEmptyState from '@/components/ui/AppEmptyState';
 import AppCard from '@/components/ui/AppCard';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import AppSortIcon from '@/components/ui/AppSortIcon';
+import { formatPdfFileName } from '@/lib/pdf/pdfFileName';
 import { 
   PlusCircle, 
   AlertCircle,
@@ -257,6 +259,8 @@ export default function VisitasPage({ params }) {
   // Modales, Toast y loading
   const globalToast = useToast();
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
+  const [unsavedDialogOpen, setUnsavedDialogOpen] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState(null);
   const [saveLoading, setSaveLoading] = useState(false);
 
   const originalDataRef = useRef('');
@@ -736,16 +740,8 @@ export default function VisitasPage({ params }) {
       handleCloseForm();
       return;
     }
-    setModalAlert({
-      show: true,
-      title: 'Salir sin guardar',
-      message: '¿Estás seguro de que deseas salir? Los cambios no guardados se perderán.',
-      confirmText: 'Confirmar',
-      onConfirm: () => {
-        handleCloseForm();
-        closeAlert();
-      }
-    });
+    setPendingNavigation(null);
+    setUnsavedDialogOpen(true);
   };
 
   const handleSidebarNavigation = (e, path) => {
@@ -759,20 +755,21 @@ export default function VisitasPage({ params }) {
         return;
       }
       e.preventDefault();
-      setModalAlert({
-        show: true,
-        title: 'Salir sin guardar',
-        message: '¿Estás seguro de que deseas salir? Los cambios no guardados se perderán.',
-        confirmText: 'Confirmar',
-        onConfirm: () => {
-          closeAlert();
-          if (path.endsWith('/visitas')) {
-            handleCloseForm();
-          } else {
-            window.location.href = path;
-          }
-        }
-      });
+      setPendingNavigation(path);
+      setUnsavedDialogOpen(true);
+    }
+  };
+
+  const executeUnsavedLeave = () => {
+    if (pendingNavigation) {
+      if (pendingNavigation.endsWith('/visitas')) {
+        handleCloseForm();
+      } else {
+        window.location.href = pendingNavigation;
+      }
+      setPendingNavigation(null);
+    } else {
+      handleCloseForm();
     }
   };
 
@@ -1728,6 +1725,7 @@ export default function VisitasPage({ params }) {
       const isMedFisQuim = (v.mediciones_realizadas || []).some(x => x !== 'Evaluación ergonómica' && x !== 'N/A');
       const isMedErg = (v.mediciones_realizadas || []).includes('Evaluación ergonómica');
       const isMedOther = (v.mediciones_realizadas || []).some(x => !MEDICIONES_OPTS.includes(x) && x !== 'N/A');
+      const fisQuimMedText = (v.mediciones_realizadas || []).filter(x => x !== 'Evaluación ergonómica' && MEDICIONES_OPTS.includes(x) && x !== 'N/A').join(', ');
       const otherMedText = (v.mediciones_realizadas || []).filter(x => x !== 'Evaluación ergonómica' && !MEDICIONES_OPTS.includes(x)).join(', ');
 
       const p1Rows = [
@@ -1736,13 +1734,13 @@ export default function VisitasPage({ params }) {
         { id: '1.2', text: '  1.2. ¿Cuál fue la causa raíz?:\n  ' + (v.causa_raiz || 'N/A'), type: 'desc', height: 36 },
         { id: '1.3', text: '  1.3. ¿Qué acción correctiva se planificó / realizó?:\n  ' + (v.accion_correctiva || 'N/A'), type: 'desc', height: 37 },
         { id: '2', text: '2. ¿Se realizó relevamiento de:', type: 'group', height: 24 },
-        { id: '2.1', text: '  2.1. Condiciones de Higiene y Seguridad', type: 'sub', height: 25, val: v.relevamiento_higiene_seguridad },
-        { id: '2.2', text: '  2.2. Prácticas de trabajo seguro', type: 'sub', height: 25, val: v.relevamiento_practicas_seguras },
+        { id: '2.1', text: '  2.1. Condiciones inseguras', type: 'sub', height: 25, val: v.relevamiento_higiene_seguridad },
+        { id: '2.2', text: '  2.2. Actos inseguros', type: 'sub', height: 25, val: v.relevamiento_practicas_seguras },
         { id: '2.3', text: '  2.3. Uso adecuado de elementos de protección personal (EPP’s)', type: 'sub', height: 25, val: v.relevamiento_epp },
         { id: '3', text: '3. ¿Se realizaron mediciones o evaluaciones técnicas específicas?', type: 'main', height: 25, val: v.realizaron_mediciones },
-        { id: '3.1', text: '  3.1. Medición de contaminantes físicos y/o químicos?', type: 'sub', height: 25, val: isMedFisQuim ? 'Sí' : (v.realizaron_mediciones === 'No' ? 'No' : (v.realizaron_mediciones === 'N/A' ? 'N/A' : '')) },
-        { id: '3.2', text: '  3.2. Evaluación de riesgos ergonómicos', type: 'sub', height: 25, val: isMedErg ? 'Sí' : (v.realizaron_mediciones === 'No' ? 'No' : (v.realizaron_mediciones === 'N/A' ? 'N/A' : '')) },
-        { id: '3.3', text: '  3.3. Otras (especificar): ' + (otherMedText || 'Ninguna'), type: 'sub', height: 25, val: isMedOther ? 'Sí' : (v.realizaron_mediciones === 'No' ? 'No' : (v.realizaron_mediciones === 'N/A' ? 'N/A' : '')) },
+        { id: '3.1', text: '  3.1. Medición de contaminantes físicos y/o químicos?: ' + (fisQuimMedText || 'Ninguna'), type: 'sub', height: 25, val: isMedFisQuim ? 'Sí' : (v.realizaron_mediciones === 'N/A' ? 'N/A' : 'No') },
+        { id: '3.2', text: '  3.2. Evaluación de riesgos ergonómicos', type: 'sub', height: 25, val: isMedErg ? 'Sí' : (v.realizaron_mediciones === 'N/A' ? 'N/A' : 'No') },
+        { id: '3.3', text: '  3.3. Otras (especificar): ' + (otherMedText || 'Ninguna'), type: 'sub', height: 25, val: isMedOther ? 'Sí' : (v.realizaron_mediciones === 'N/A' ? 'N/A' : 'No') },
         { id: '4', text: '4. ¿Se verificó la implementación de acciones correctivas previamente recomendadas?', type: 'main', height: 37, val: v.verifico_acciones_correctivas }
       ];
 
@@ -2129,7 +2127,14 @@ export default function VisitasPage({ params }) {
 
       // Guardar o retornar
       if (shouldDownload === true) {
-        doc.save(`Constancia_Visita_${empName.replace(/\s+/g, '_')}_${v.fecha}.pdf`);
+        const fileName = formatPdfFileName({
+          modulo: 'visita',
+          empresa: empName,
+          establecimiento: estName,
+          fecha: v.fecha,
+          id: v.id
+        });
+        doc.save(fileName);
         triggerToast('PDF descargado exitosamente.');
         return null;
       } else if (shouldDownload === 'bloburl') {
@@ -3019,9 +3024,10 @@ export default function VisitasPage({ params }) {
 
                     <div className="space-y-3">
                       {[
-                        { label: 'Relevamiento Higiene y Seguridad *', value: relevamientoHigieneSeguridad, setter: setRelevamientoHigieneSeguridad, options: ['Sí', 'No', 'N/A'] },
+                        { label: 'Relevamiento de condiciones inseguras *', value: relevamientoHigieneSeguridad, setter: setRelevamientoHigieneSeguridad, options: ['Sí', 'No', 'N/A'] },
                         { label: 'Relevamiento Actos Inseguros *', value: relevamientoPracticasSeguras, setter: setRelevamientoPracticasSeguras, options: ['Sí', 'No', 'N/A'] },
                         { label: 'Relevamiento Uso de EPP *', value: relevamientoEpp, setter: setRelevamientoEpp, options: ['Sí', 'No', 'N/A'] },
+                        { label: 'Verificó implementación de acciones correctivas previas *', value: verificoAccionesCorrectivas, setter: setVerificoAccionesCorrectivas, options: ['Sí', 'No', 'N/A'] },
                         {
                           label: '¿Realizaron Mediciones? *',
                           value: realizaronMediciones,
@@ -3115,29 +3121,6 @@ export default function VisitasPage({ params }) {
                     </h3>
 
                     <div className="space-y-3">
-                      {/* ¿Verificó correctivas previas? */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-white">
-                        <div className="flex gap-2 items-start">
-                          <label className="text-xs font-bold text-slate-700 leading-normal">¿Verificó correctivas previas? *</label>
-                        </div>
-                        <div className="flex items-center gap-1.5 w-full sm:w-48 shrink-0">
-                          {['Sí', 'No', 'N/A'].map(opt => (
-                            <button
-                              key={opt}
-                              type="button"
-                              onClick={() => setVerificoAccionesCorrectivas(opt)}
-                              className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                                verificoAccionesCorrectivas === opt
-                                  ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-sm'
-                                  : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                              }`}
-                            >
-                              {opt}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
                       {/* ¿Se dictaron capacitaciones? */}
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-white">
                         <div className="flex gap-2 items-start">
@@ -3171,6 +3154,93 @@ export default function VisitasPage({ params }) {
                           </button>
                         </div>
                       </div>
+
+                      {/* Especificar temas capacitados (condicional) */}
+                      {dictaronCapacitaciones && (
+                        <div className="bg-slate-50/50 p-4 border border-slate-200 rounded-2xl space-y-3 animate-fade-in relative">
+                          <label className="text-xs font-bold text-slate-600 block">Especificar Temas Capacitados:</label>
+                          
+                          {/* Selector multiselect dropdown interactivo */}
+                          <div className="relative">
+                            <div 
+                              onClick={() => setIsTemasDropdownOpen(!isTemasDropdownOpen)}
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-white cursor-pointer flex justify-between items-center"
+                            >
+                              <span className="text-slate-500">
+                                {selectedTemas.length === 0 
+                                  ? 'Seleccione temas...' 
+                                  : `${selectedTemas.length} tema(s) seleccionado(s)`}
+                              </span>
+                              <span className="text-slate-400">▼</span>
+                            </div>
+
+                            {isTemasDropdownOpen && (
+                              <>
+                                <div className="fixed inset-0 z-20" onClick={() => setIsTemasDropdownOpen(false)} />
+                                <div className="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-30 max-h-60 overflow-y-auto p-3 space-y-2">
+                                  <input
+                                    type="text"
+                                    placeholder="Filtrar temas..."
+                                    value={searchTopicTerm}
+                                    onChange={(e) => setSearchTopicTerm(e.target.value)}
+                                    className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs outline-none focus:border-[#468DFF]"
+                                  />
+                                  <div className="divide-y divide-slate-100 max-h-40 overflow-y-auto">
+                                    {Array.from(new Set([
+                                      ...temasList.map(t => t.tema),
+                                      ...selectedTemas
+                                    ]))
+                                      .filter(tName => tName.toLowerCase().includes(searchTopicTerm.toLowerCase()))
+                                      .map((tName, idx) => {
+                                        const isChecked = selectedTemas.includes(tName);
+                                        return (
+                                          <label key={idx} className="flex items-center gap-2 py-1.5 text-xs font-semibold hover:bg-slate-50 cursor-pointer px-1">
+                                            <input
+                                              type="checkbox"
+                                              checked={isChecked}
+                                              onChange={() => handleToggleTemaCapacitacion(tName)}
+                                              className="accent-[#468DFF]"
+                                            />
+                                            {tName}
+                                          </label>
+                                        );
+                                      })
+                                    }
+                                  </div>
+                                </div>
+                              </>
+                            )}
+                          </div>
+
+                          {/* Temas seleccionados (visuales) */}
+                          <div className="flex flex-wrap gap-1.5">
+                            {selectedTemas.map(t => (
+                              <span key={t} className="px-2 py-1 rounded bg-indigo-50 border border-indigo-150 text-indigo-600 text-xs font-semibold flex items-center gap-1">
+                                {t}
+                                <button type="button" onClick={() => handleToggleTemaCapacitacion(t)} className="hover:text-red-500 text-[10px] font-bold">×</button>
+                              </span>
+                            ))}
+                          </div>
+
+                          {/* Agregar tema manual */}
+                          <div className="flex gap-2 max-w-md pt-2">
+                            <input
+                              type="text"
+                              placeholder="Agregar otro tema..."
+                              value={temaCustomText}
+                              onChange={(e) => setTemaCustomText(e.target.value)}
+                              className="flex-1 px-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-[#468DFF] bg-white"
+                            />
+                            <button
+                              type="button"
+                              onClick={handleAddCustomTema}
+                              className="px-3 py-1.5 bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold rounded-lg cursor-pointer"
+                            >
+                              Agregar
+                            </button>
+                          </div>
+                        </div>
+                      )}
 
                       {/* ¿Se realizaron simulacros? */}
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-white">
@@ -3206,93 +3276,6 @@ export default function VisitasPage({ params }) {
                         </div>
                       </div>
                     </div>
-
-                    {/* Especificar temas capacitados (condicional) */}
-                    {dictaronCapacitaciones && (
-                      <div className="bg-slate-50/50 p-4 border border-slate-200 rounded-2xl space-y-3 animate-fade-in relative">
-                        <label className="text-xs font-bold text-slate-600 block">Especificar Temas Capacitados:</label>
-                        
-                        {/* Selector multiselect dropdown interactivo */}
-                        <div className="relative">
-                          <div 
-                            onClick={() => setIsTemasDropdownOpen(!isTemasDropdownOpen)}
-                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-white cursor-pointer flex justify-between items-center"
-                          >
-                            <span className="text-slate-500">
-                              {selectedTemas.length === 0 
-                                ? 'Seleccione temas...' 
-                                : `${selectedTemas.length} tema(s) seleccionado(s)`}
-                            </span>
-                            <span className="text-slate-400">▼</span>
-                          </div>
-
-                          {isTemasDropdownOpen && (
-                            <>
-                              <div className="fixed inset-0 z-20" onClick={() => setIsTemasDropdownOpen(false)} />
-                              <div className="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-30 max-h-60 overflow-y-auto p-3 space-y-2">
-                                <input
-                                  type="text"
-                                  placeholder="Filtrar temas..."
-                                  value={searchTopicTerm}
-                                  onChange={(e) => setSearchTopicTerm(e.target.value)}
-                                  className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs outline-none focus:border-[#468DFF]"
-                                />
-                                <div className="divide-y divide-slate-100 max-h-40 overflow-y-auto">
-                                  {Array.from(new Set([
-                                    ...temasList.map(t => t.tema),
-                                    ...selectedTemas
-                                  ]))
-                                    .filter(tName => tName.toLowerCase().includes(searchTopicTerm.toLowerCase()))
-                                    .map((tName, idx) => {
-                                      const isChecked = selectedTemas.includes(tName);
-                                      return (
-                                        <label key={idx} className="flex items-center gap-2 py-1.5 text-xs font-semibold hover:bg-slate-50 cursor-pointer px-1">
-                                          <input
-                                            type="checkbox"
-                                            checked={isChecked}
-                                            onChange={() => handleToggleTemaCapacitacion(tName)}
-                                            className="accent-[#468DFF]"
-                                          />
-                                          {tName}
-                                        </label>
-                                      );
-                                    })
-                                  }
-                                </div>
-                              </div>
-                            </>
-                          )}
-                        </div>
-
-                        {/* Temas seleccionados (visuales) */}
-                        <div className="flex flex-wrap gap-1.5">
-                          {selectedTemas.map(t => (
-                            <span key={t} className="px-2 py-1 rounded bg-indigo-50 border border-indigo-150 text-indigo-600 text-xs font-semibold flex items-center gap-1">
-                              {t}
-                              <button type="button" onClick={() => handleToggleTemaCapacitacion(t)} className="hover:text-red-500 text-[10px] font-bold">×</button>
-                            </span>
-                          ))}
-                        </div>
-
-                        {/* Agregar tema manual */}
-                        <div className="flex gap-2 max-w-md pt-2">
-                          <input
-                            type="text"
-                            placeholder="Agregar otro tema..."
-                            value={temaCustomText}
-                            onChange={(e) => setTemaCustomText(e.target.value)}
-                            className="flex-1 px-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-[#468DFF] bg-white"
-                          />
-                          <button
-                            type="button"
-                            onClick={handleAddCustomTema}
-                            className="px-3 py-1.5 bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold rounded-lg cursor-pointer"
-                          >
-                            Agregar
-                          </button>
-                        </div>
-                      </div>
-                    )}
 
                     {/* Especificar simulacros (condicional) */}
                     {realizaronSimulacros && (
@@ -3934,6 +3917,13 @@ export default function VisitasPage({ params }) {
         onConfirm={modalAlert.onConfirm}
         confirmText={modalAlert.confirmText}
         cancelText="Cancelar"
+      />
+
+      {/* DIÁLOGO ESTÁNDAR SALIR SIN GUARDAR */}
+      <AppUnsavedChangesDialog
+        open={unsavedDialogOpen}
+        onOpenChange={setUnsavedDialogOpen}
+        onLeave={executeUnsavedLeave}
       />
 
       {/* TOAST DE FEEDBACK removido - consumidos globalmente */}

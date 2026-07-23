@@ -14,6 +14,7 @@ import AppButton from '@/components/ui/AppButton';
 import AppInput from '@/components/ui/AppInput';
 import AppSelect from '@/components/ui/AppSelect';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
+import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
 import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
@@ -393,6 +394,8 @@ export default function LegajoPage({ params }) {
   // Alertas, Toast y Modales
   const globalToast = useToast();
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', type: 'info', onConfirm: null, confirmText: 'Confirmar' });
+  const [unsavedDialogOpen, setUnsavedDialogOpen] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState(null);
   const [showIndexModal, setShowIndexModal] = useState(false);
 
   // Estados de ordenamiento
@@ -766,17 +769,37 @@ export default function LegajoPage({ params }) {
       handleCloseForm();
       return;
     }
-    setModalAlert({
-      show: true,
-      title: 'Salir sin guardar',
-      message: '¿Estás seguro de que deseas salir del formulario? Perderás todos los cambios cargados que no se hayan guardado.',
-      type: 'warning',
-      confirmText: 'Confirmar',
-      onConfirm: () => {
-        handleCloseForm();
-        closeAlert();
+    setPendingNavigation(null);
+    setUnsavedDialogOpen(true);
+  };
+
+  const handleSidebarNavigation = (e, path) => {
+    if (isFormOpen) {
+      if (isReadOnlyView) {
+        if (path.endsWith('/legajo')) {
+          handleCloseForm();
+        } else {
+          window.location.href = path;
+        }
+        return;
       }
-    });
+      e.preventDefault();
+      setPendingNavigation(path);
+      setUnsavedDialogOpen(true);
+    }
+  };
+
+  const executeUnsavedLeave = () => {
+    if (pendingNavigation) {
+      if (pendingNavigation.endsWith('/legajo')) {
+        handleCloseForm();
+      } else {
+        window.location.href = pendingNavigation;
+      }
+      setPendingNavigation(null);
+    } else {
+      handleCloseForm();
+    }
   };
 
   const handleCloseForm = () => {
@@ -1069,34 +1092,7 @@ export default function LegajoPage({ params }) {
     }
   };
 
-  const handleSidebarNavigation = (e, path) => {
-    if (isFormOpen) {
-      if (isReadOnlyView) {
-        if (path.endsWith('/legajo')) {
-          handleCloseForm();
-        } else {
-          window.location.href = path;
-        }
-        return;
-      }
-      e.preventDefault();
-      setModalAlert({
-        show: true,
-        title: 'Salir sin guardar',
-        message: '¿Estás seguro de que deseas salir? Los cambios no guardados se perderán.',
-        type: 'warning',
-        confirmText: 'Confirmar',
-        onConfirm: () => {
-          closeAlert();
-          if (path.endsWith('/legajo')) {
-            handleCloseForm();
-          } else {
-            window.location.href = path;
-          }
-        }
-      });
-    }
-  };
+
 
   // Documentos en la carpeta/subcarpeta activa sin filtros adicionales aplicados
   const activeFolderDocs = documents.filter((doc) => {
@@ -2074,6 +2070,13 @@ export default function LegajoPage({ params }) {
           </div>
         </div>
       )}
+
+      {/* DIÁLOGO ESTÁNDAR SALIR SIN GUARDAR */}
+      <AppUnsavedChangesDialog
+        open={unsavedDialogOpen}
+        onOpenChange={setUnsavedDialogOpen}
+        onLeave={executeUnsavedLeave}
+      />
 
       <AppFormNavigator
         activeList={sortedDocuments}

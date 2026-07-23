@@ -1,4 +1,5 @@
 import { formatDate } from '@/lib/utils';
+import { supabase } from '@/lib/supabase';
 
 // Helper to convert hex color string to RGB array [r, g, b]
 const hexToRgb = (hex) => {
@@ -32,14 +33,18 @@ const getBase64ImageFromUrl = async (imageUrl) => {
   if (imageUrl.startsWith('data:')) return imageUrl;
   try {
     const res = await fetch(imageUrl);
+    if (!res.ok) {
+      console.warn(`[getBase64ImageFromUrl] No se pudo descargar la imagen (${res.status}): ${imageUrl}`);
+      return '';
+    }
     const blob = await res.blob();
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const reader = new FileReader();
       reader.addEventListener("load", () => {
         resolve(reader.result);
       }, false);
       reader.addEventListener("error", () => {
-        reject(new Error("Error reading image"));
+        resolve('');
       }, false);
       reader.readAsDataURL(blob);
     });
@@ -148,13 +153,48 @@ export const generateLightingProtocolPdf = async (
     logoDims = await getImgDimensions(logoBase64);
   }
 
-  // Download Signature base64 if present
+  // Download Signature base64 if present (regenerate signed URL if expired)
   let signatureBase64 = '';
+  let signatureDims = { width: 150, height: 60 };
   if (proto.firma_profesional) {
     try {
-      signatureBase64 = await getBase64ImageFromUrl(proto.firma_profesional);
+      let sigUrl = proto.firma_profesional;
+      if (sigUrl && !sigUrl.startsWith('data:')) {
+        let relativePath = sigUrl;
+        let bucketName = 'signatures';
+
+        if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
+          try {
+            const urlObj = new URL(relativePath);
+            const pathParts = urlObj.pathname.split('/');
+            const bIdx = pathParts.findIndex(p => p === 'signatures' || p === 'documents' || p === 'avatars');
+            if (bIdx !== -1 && bIdx < pathParts.length - 1) {
+              bucketName = pathParts[bIdx];
+              relativePath = pathParts.slice(bIdx + 1).join('/');
+            }
+          } catch (urlErr) {
+            console.error('Error parseando URL de firma:', urlErr);
+          }
+        }
+
+        if (relativePath && !relativePath.startsWith('http')) {
+          try {
+            const { data: sData, error: sErr } = await supabase.storage
+              .from(bucketName)
+              .createSignedUrl(relativePath, 3600);
+            if (!sErr && sData?.signedUrl) {
+              sigUrl = sData.signedUrl;
+            }
+          } catch (sErr) {
+            console.error('Error generando URL firmada para la firma:', sErr);
+          }
+        }
+      }
+
+      signatureBase64 = await getBase64ImageFromUrl(sigUrl);
       if (signatureBase64) {
-        signatureBase64 = await resizeImageForPdf(signatureBase64, 350, 350);
+        signatureBase64 = await resizeImageForPdf(signatureBase64, 450, 450);
+        signatureDims = await getImgDimensions(signatureBase64);
       }
     } catch (e) {
       console.error('Error fetching signature:', e);
@@ -177,9 +217,9 @@ export const generateLightingProtocolPdf = async (
   const COLOR_ROJO_NO_CUMPLE = '#FF0000'; // Red
 
   // Contact Info for Footer
-  const companyName = tenant?.name || tenant?.razon_social || tenant?.nombre || 'Gestión SySO';
-  const emailVal = tenant?.email || tenant?.correo || userProfile?.email || 'contacto@gestionsyso.com';
-  const phoneVal = tenant?.phone || tenant?.telefono || userProfile?.phone || userProfile?.telefono || '—';
+  const companyName = tenant?.name || tenant?.razon_social || userProfile?.empresa || userProfile?.consultora || 'Gestión SySO';
+  const emailVal = userProfile?.email || tenant?.email || tenant?.correo || '—';
+  const phoneVal = userProfile?.phone || userProfile?.telefono || tenant?.phone || tenant?.telefono || '—';
 
   // Helper: Draw cell text perfectly constrained within width & height without overflow
   const drawCellText = (docInst, text, x, y, w, h, options = {}) => {
@@ -255,17 +295,21 @@ export const generateLightingProtocolPdf = async (
     // Logo
     drawHeaderLogo(isLandscape);
 
-    // Right Header Text (Tenant Info)
+    // Right Header Text (Normative Protocol Title & Client Name)
     const rightX = isLandscape ? 280 : 195;
+    
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9.5);
+    doc.setFontSize(8);
     setTextColor(doc, COLOR_AZUL_PRINCIPAL);
-    doc.text(companyName.toUpperCase(), rightX, 11, { align: 'right' });
+    doc.text('ANEXO - RESOLUCIÓN 84 / 2012 (PROTOCOLO DE ILUMINACIÓN)', rightX, 11, { align: 'right' });
 
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.5);
-    setTextColor(doc, COLOR_SLATE_500);
-    doc.text('Consultora en Higiene, Seguridad y Medio Ambiente', rightX, 16, { align: 'right' });
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    setTextColor(doc, COLOR_SLATE_700);
+    const clientText = String(razonSocial || '').toUpperCase();
+    const maxClientWidth = isLandscape ? 200 : 120;
+    const clientLines = doc.splitTextToSize(clientText, maxClientWidth);
+    doc.text(clientLines[0], rightX, 16, { align: 'right' });
 
     // Divider line
     const startX = isLandscape ? 17 : 15;
@@ -295,12 +339,7 @@ export const generateLightingProtocolPdf = async (
     setTextColor(doc, COLOR_SLATE_700);
     doc.text(contactText, startX + (totalW / 2), textY, { align: 'center' });
 
-    // Sub-footer: Protocol title left, Page count right
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    setTextColor(doc, COLOR_SLATE_500);
-    doc.text('Protocolo Medición de Iluminación - Res. SRT 84/12', startX, subFooterY, { align: 'left' });
-
+    // Sub-footer: Page count right
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7.5);
     setTextColor(doc, COLOR_SLATE_600);
@@ -321,32 +360,68 @@ export const generateLightingProtocolPdf = async (
 
   // Helper: Signature Block
   const drawSignatureBlock = (x, y, w, h) => {
-    // Signature area with contain fit
+    const imgMaxW = w - 4;
+    const imgMaxH = 28;
+
+    // 1. Signature image (rendered larger, allowed to overlap line/text as transparent PNG)
     if (signatureBase64) {
       try {
-        doc.addImage(signatureBase64, 'PNG', x + 4, y, w - 8, h - 8, undefined, 'FAST');
+        const ratio = (signatureDims.width && signatureDims.height)
+          ? signatureDims.width / signatureDims.height
+          : 2.5;
+
+        let renderW = imgMaxW;
+        let renderH = imgMaxW / ratio;
+        if (renderH > imgMaxH) {
+          renderH = imgMaxH;
+          renderW = imgMaxH * ratio;
+        }
+
+        const renderX = x + (w - renderW) / 2;
+        const lineY = y + 21;
+        const renderY = lineY - (renderH * 0.70);
+
+        doc.addImage(signatureBase64, 'PNG', renderX, renderY, renderW, renderH, undefined, 'FAST');
       } catch (e) {
         console.error('Error drawing signature image:', e);
       }
     }
 
-    // Dotted line
+    // 2. Dotted line
+    const lineY = y + 21;
     setDrawColor(doc, COLOR_NEGRO);
     doc.setLineWidth(0.25);
-    const startX = x;
-    const endX = x + w;
-    const lineY = y + h - 6;
+    const startX = x + 2;
+    const endX = x + w - 2;
     let currX = startX;
     while (currX < endX) {
       doc.line(currX, lineY, Math.min(currX + 1.5, endX), lineY);
       currX += 2.5;
     }
 
-    // Label below
-    doc.setFont('helvetica', 'normal');
+    // 3. Label below line
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(7.5);
     setTextColor(doc, COLOR_NEGRO);
-    doc.text('Firma, Aclaración y Registro del Profesional Interviniente', x + (w / 2), y + h - 1.5, { align: 'center' });
+    doc.text('Firma, Aclaración y Registro del Profesional Interviniente', x + (w / 2), lineY + 3.5, { align: 'center' });
+
+    // 4. Nombre y Apellido del Profesional
+    let currentTextY = lineY + 7.5;
+    if (profNombre) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      setTextColor(doc, COLOR_SLATE_900);
+      doc.text(profNombre, x + (w / 2), currentTextY, { align: 'center' });
+      currentTextY += 3.8;
+    }
+
+    // 5. Matrícula Profesional
+    if (profMatricula) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      setTextColor(doc, COLOR_SLATE_600);
+      doc.text(profMatricula, x + (w / 2), currentTextY, { align: 'center' });
+    }
   };
 
   // Helper: Draw math fraction
@@ -375,30 +450,40 @@ export const generateLightingProtocolPdf = async (
   const horarios = proto.horarios_turnos_text || '24hs';
   const marcaModeloNser = proto.instrumento_marca_modelo_serie || 'Luxómetro marca Amprobe, modelo LM 100, N° de serie 12093081';
   const fechaCalib = proto.fecha_calibracion ? formatDate(proto.fecha_calibracion) : '';
-  const metodologia = proto.metodologia_utilizada || 'Método de la grilla o cuadricula.';
+  const metodologia = proto.metodologia_utilizada || 'Método de la Cuadrícula';
   const fechaMedicion = proto.fecha_medicion ? formatDate(proto.fecha_medicion) : '17/07/26';
   const horaInicio = proto.hora_inicio || '13:30';
   const horaFin = proto.hora_finalizacion || '';
   const condAtmos = proto.condiciones_atmosfericas || 'Parcialmente nublado\nTemperatura: 8 °C\nNubosidad: 80%\nHumedad: 96 %\nVisibilidad: 10 Km';
+
+  const profNombre = proto.profesional_nombre || userProfile?.full_name || '';
+  let profMatricula = proto.profesional_matricula || '';
+  if (!profMatricula && userProfile) {
+    if (userProfile.matricula_institucion && userProfile.matricula_numero) {
+      profMatricula = `${userProfile.matricula_institucion} N° ${userProfile.matricula_numero}`;
+    } else if (userProfile.matricula_numero) {
+      profMatricula = `Mat. N° ${userProfile.matricula_numero}`;
+    }
+  }
 
   let pageCounter = 1;
 
   // ==========================================
   // PAGINA 1: PORTADA (A4 Vertical)
   // ==========================================
-  // Outer Border
+  // Outer Border (A4: 210 x 297 mm, 10mm margin from all paper edges)
   setDrawColor(doc, COLOR_AZUL_PRINCIPAL);
   doc.setLineWidth(0.4);
-  doc.rect(5, 5, 200, 287, 'S');
+  doc.rect(10, 10, 190, 277, 'S');
 
   // Year Rectangle
   const currentYear = proto.fecha_medicion ? new Date(proto.fecha_medicion).getFullYear() : 2026;
-  setFillColor(doc, COLOR_AZUL_SECUNDARIO);
-  doc.rect(165, 9, 20, 28, 'F');
+  setFillColor(doc, COLOR_AZUL_PRINCIPAL);
+  doc.rect(168, 15, 20, 28, 'F');
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
   setTextColor(doc, COLOR_BLANCO);
-  doc.text(String(currentYear), 175, 26, { align: 'center' });
+  doc.text(String(currentYear), 178, 32, { align: 'center' });
 
   // Main Cover Logo
   if (logoBase64) {
@@ -423,7 +508,7 @@ export const generateLightingProtocolPdf = async (
   // Cover Main Title
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(32);
-  setTextColor(doc, COLOR_AZUL_SECUNDARIO);
+  setTextColor(doc, COLOR_AZUL_PRINCIPAL);
   const titleLines = doc.splitTextToSize('Protocolo de medición de iluminación en el ambiente laboral', 145);
   doc.text(titleLines, 39, 172);
 
@@ -459,25 +544,66 @@ export const generateLightingProtocolPdf = async (
 
   // Body Text
   const introParagraphs = [
-    "Art. 71.- La intensidad mínima de iluminación sobre el plano de trabajo, general o localizado, se fijará de acuerdo a la tabla 1 del Anexo IV.",
-    "Art. 72.- Las iluminancias que se indican en la tabla 1 se refieren a trabajos que se ejecutan sobre el plano de trabajo horizontal, situado a 0.80 metros sobre el suelo, a menos que el tipo o índole del trabajo exija otra posición.",
-    "Art. 73.- Las fuentes de iluminación no deberán ser causa de deslumbramiento, directo o reflejado. Para evitarlo se adoptarán las siguientes medidas preventivas:\n" +
-    "1. En las luminarias se colocarán difusores, pantallas, rejillas u otros elementos adecuados para evitar la visión directa de la fuente luminosa.\n" +
-    "2. Se evitará la presencia de superficies reflectantes en el campo visual del trabajador.\n" +
-    "3. La relación entre las iluminancias de los locales contiguos no será mayor de 5 a 1.",
-    "Art. 74.- Para evitar el efecto estroboscópico en la iluminación con tubos fluorescentes o lámparas de descarga, se alimentarán con sistemas polifásicos o mediante balastos de fase dividida.",
-    "Art. 75.- Para el cálculo de la iluminancia media y la verificación del cumplimiento del nivel exigido legalmente, se aplicará el método de la grilla o cuadrícula normado en la Resolución S.R.T. 84/2012.",
-    "UNIFORMIDAD DE ILUMINACIÓN:\nLa relación entre la iluminancia mínima y la iluminancia media medida sobre el plano de trabajo no será inferior a 0,5 (E mínima >= E media / 2), garantizando una distribución lumínica uniforme en todo el recinto de trabajo."
+    {
+      text: "La intensidad mínima de iluminación, medida sobre el plano de trabajo, ya sea este horizontal, vertical u oblicuo, está establecida en la tabla 1, de acuerdo con la dificultad de la tarea visual y en la tabla 2, de acuerdo con el destino del local.",
+      style: 'normal'
+    },
+    {
+      text: "Los valores indicados en la tabla 1, se usarán para estimar los requeridos para tareas que no han sido incluidas en la tabla 2.",
+      style: 'normal'
+    },
+    {
+      text: "Con el objeto de evitar diferencias de iluminancias causantes de incomodidad visual o deslumbramiento, se deberán mantener las relaciones máximas indicadas en la tabla 3.",
+      style: 'normal'
+    },
+    {
+      text: "La tarea visual se sitúa en el centro del campo visual y abarca un cono cuyo ángulo de abertura es de un grado, estando el vértice del mismo en el ojo del trabajador.",
+      style: 'normal'
+    },
+    {
+      text: "Para asegurar una uniformidad razonable en la iluminancia de un local, se exigirá una relación no menor de 0,5 entre sus valores mínimo y medio.",
+      style: 'normal'
+    },
+    {
+      text: "E mínima >= E media / 2",
+      style: 'formula'
+    },
+    {
+      text: "* E = Exigencia",
+      style: 'legend'
+    },
+    {
+      text: "La iluminancia media se determinará efectuando la media aritmética de la iluminancia general considerada en todo el local, y la iluminancia mínima será el menor valor de iluminancia en las superficies de trabajo o en un plano horizontal a 0,80 m. del suelo. Este procedimiento no se aplicará a lugares de tránsito, de ingreso o egreso de personal o iluminación de emergencia",
+      style: 'normal'
+    },
+    {
+      text: "En los casos en que se ilumine en forma localizada uno o varios lugares de trabajo para completar la iluminación general, esta última no podrá tener una intensidad menor que la indicada en la tabla 4.",
+      style: 'normal'
+    }
   ];
 
-  let currentY = 42;
+  let currentY = 43;
   introParagraphs.forEach(p => {
-    const lines = doc.splitTextToSize(p, 180);
-    doc.setFont('helvetica', p.startsWith('UNIFORMIDAD') ? 'bold' : 'normal');
-    doc.setFontSize(8.5);
-    setTextColor(doc, COLOR_SLATE_900);
-    doc.text(lines, 15, currentY);
-    currentY += (lines.length * 3.8) + 4;
+    if (p.style === 'formula') {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      setTextColor(doc, COLOR_AZUL_PRINCIPAL);
+      doc.text(p.text, 25, currentY);
+      currentY += 6;
+    } else if (p.style === 'legend') {
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(8);
+      setTextColor(doc, COLOR_SLATE_600);
+      doc.text(p.text, 25, currentY);
+      currentY += 7;
+    } else {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      setTextColor(doc, COLOR_SLATE_900);
+      const lines = doc.splitTextToSize(p.text, 180);
+      doc.text(lines, 15, currentY);
+      currentY += (lines.length * 4.2) + 4.5;
+    }
   });
 
   // ==========================================
@@ -610,16 +736,17 @@ export const generateLightingProtocolPdf = async (
   // Tabla 4: Observaciones
   const t4X = 15;
   const t4Y = 233;
-  const t4W = 180;
+  const t4W = 110;
+  const t4H = 35;
 
   doc.setLineWidth(0.45);
-  doc.rect(t4X, t4Y, t4W, 25, 'S');
+  doc.rect(t4X, t4Y, t4W, t4H, 'S');
   drawCellText(doc, 'Observaciones:', t4X, t4Y, t4W, 5, { fontStyle: 'bold', fontSize: 8.5 });
   const obsText = proto.observaciones || 'NA';
-  drawCellText(doc, obsText, t4X, t4Y + 5, t4W, 19, { fontSize: 8.5, valign: 'top' });
+  drawCellText(doc, obsText, t4X + 2, t4Y + 5, t4W - 4, t4H - 6, { fontSize: 8.5, valign: 'top' });
 
-  // Firma Profesional
-  drawSignatureBlock(122, 232, 65, 30);
+  // Firma Profesional (Box independiente de 67mm de ancho alineado a la derecha)
+  drawSignatureBlock(128, 233, 67, 35);
 
   // ==========================================
   // PAGINAS 4 Y 5: TABLA GENERAL DE MEDICIÓN (A4 Apaisado)

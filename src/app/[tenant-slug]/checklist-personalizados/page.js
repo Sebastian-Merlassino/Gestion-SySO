@@ -11,6 +11,7 @@ import AppButton from '@/components/ui/AppButton';
 import AppInput from '@/components/ui/AppInput';
 import AppSelect from '@/components/ui/AppSelect';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
+import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
 import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
@@ -125,6 +126,8 @@ export default function ChecklistPersonalizadosPage({ params }) {
   // Toasts y Modal Alert
   const globalToast = useToast();
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
+  const [unsavedDialogOpen, setUnsavedDialogOpen] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState(null);
   const [saveLoading, setSaveLoading] = useState(false);
 
   const originalDataRef = useRef('');
@@ -825,17 +828,40 @@ export default function ChecklistPersonalizadosPage({ params }) {
       setIsTemplateFormOpen(false);
       return;
     }
-    setModalAlert({
-      show: true,
-      title: 'Salir sin guardar',
-      message: '¿Estás seguro de que deseas salir? Los cambios no guardados se perderán.',
-      confirmText: 'Confirmar',
-      onConfirm: () => {
+    setPendingNavigation(null);
+    setUnsavedDialogOpen(true);
+  };
+
+  const handleSidebarNavigation = (e, path) => {
+    if (isInspeccionFormOpen || isTemplateFormOpen) {
+      if (isInspeccionReadOnly) {
+        if (path.endsWith('/checklist-personalizados')) {
+          setIsInspeccionFormOpen(false);
+          setIsTemplateFormOpen(false);
+        } else {
+          window.location.href = path;
+        }
+        return;
+      }
+      e.preventDefault();
+      setPendingNavigation(path);
+      setUnsavedDialogOpen(true);
+    }
+  };
+
+  const executeUnsavedLeave = () => {
+    if (pendingNavigation) {
+      if (pendingNavigation.endsWith('/checklist-personalizados')) {
         setIsInspeccionFormOpen(false);
         setIsTemplateFormOpen(false);
-        closeAlert();
+      } else {
+        window.location.href = pendingNavigation;
       }
-    });
+      setPendingNavigation(null);
+    } else {
+      setIsInspeccionFormOpen(false);
+      setIsTemplateFormOpen(false);
+    }
   };
 
   const handleClearCanvas = (canvasRef, setHasSigned, savedUrlSetter) => {
@@ -3079,6 +3105,13 @@ export default function ChecklistPersonalizadosPage({ params }) {
           </div>
         </div>
       )}
+
+      {/* DIÁLOGO ESTÁNDAR SALIR SIN GUARDAR */}
+      <AppUnsavedChangesDialog
+        open={unsavedDialogOpen}
+        onOpenChange={setUnsavedDialogOpen}
+        onLeave={executeUnsavedLeave}
+      />
       <AppFormNavigator
         activeList={inspecciones}
         currentId={editingInspeccionId}

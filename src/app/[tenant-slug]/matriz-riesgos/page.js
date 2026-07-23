@@ -16,6 +16,7 @@ import AppInput from '@/components/ui/AppInput';
 import AppSelect from '@/components/ui/AppSelect';
 import AppCard from '@/components/ui/AppCard';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
+import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
 import * as Dialog from '@radix-ui/react-dialog';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import AppSortIcon from '@/components/ui/AppSortIcon';
@@ -250,6 +251,8 @@ export default function MatrizRiesgosPage({ params }) {
   // Modales y Feedback
   const globalToast = useToast();
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
+  const [unsavedDialogOpen, setUnsavedDialogOpen] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState(null);
   const [saveLoading, setSaveLoading] = useState(false);
 
   const originalDataRef = useRef('');
@@ -2451,16 +2454,8 @@ export default function MatrizRiesgosPage({ params }) {
       handleCloseForm();
       return;
     }
-    setModalAlert({
-      show: true,
-      title: 'Salir sin guardar',
-      message: '¿Estás seguro de que deseas salir del formulario? Perderás todos los cambios cargados que no se hayan guardado.',
-      confirmText: 'Confirmar',
-      onConfirm: () => {
-        handleCloseForm();
-        closeAlert();
-      }
-    });
+    setPendingNavigation(null);
+    setUnsavedDialogOpen(true);
   };
 
   const handleSidebarNavigation = (e, path) => {
@@ -2474,20 +2469,21 @@ export default function MatrizRiesgosPage({ params }) {
         return;
       }
       e.preventDefault();
-      setModalAlert({
-        show: true,
-        title: 'Salir sin guardar',
-        message: '¿Estás seguro de que deseas salir del formulario? Perderás todos los cambios cargados que no se hayan guardado.',
-        confirmText: 'Confirmar',
-        onConfirm: () => {
-          closeAlert();
-          if (path.endsWith('/matriz-riesgos')) {
-            handleCloseForm();
-          } else {
-            window.location.href = path;
-          }
-        }
-      });
+      setPendingNavigation(path);
+      setUnsavedDialogOpen(true);
+    }
+  };
+
+  const executeUnsavedLeave = () => {
+    if (pendingNavigation) {
+      if (pendingNavigation.endsWith('/matriz-riesgos')) {
+        handleCloseForm();
+      } else {
+        window.location.href = pendingNavigation;
+      }
+      setPendingNavigation(null);
+    } else {
+      handleCloseForm();
     }
   };
 
@@ -4946,6 +4942,13 @@ export default function MatrizRiesgosPage({ params }) {
           </div>
         </Dialog.Portal>
       </Dialog.Root>
+
+      {/* DIÁLOGO ESTÁNDAR SALIR SIN GUARDAR */}
+      <AppUnsavedChangesDialog
+        open={unsavedDialogOpen}
+        onOpenChange={setUnsavedDialogOpen}
+        onLeave={executeUnsavedLeave}
+      />
 
       {/* TOAST ALERT FEEDBACK removidos - consumidos globalmente */}
       <AppFormNavigator

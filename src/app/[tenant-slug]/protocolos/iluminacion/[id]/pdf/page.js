@@ -59,7 +59,14 @@ export default function ProtocoloPdfPage({ params }) {
           .select('*')
           .eq('protocolo_id', protocolId);
 
-        // 6. Generate PDF
+        // 6. Fetch logged profile
+        const { data: userProf } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .maybeSingle();
+
+        // 7. Generate PDF
         const doc = await generateLightingProtocolPdf(
           proto,
           tenant,
@@ -67,7 +74,8 @@ export default function ProtocoloPdfPage({ params }) {
           allEstablecimientos || [],
           pts || [],
           adjs || [],
-          false
+          false,
+          userProf
         );
 
         // 7. Auto-print and open native viewer

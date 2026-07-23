@@ -13,11 +13,13 @@ import AppInput from '@/components/ui/AppInput';
 import AppSelect from '@/components/ui/AppSelect';
 import AppTextarea from '@/components/ui/AppTextarea';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
+import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
 import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import AITextHelper from '@/components/ui/AITextHelper';
 import AppSortIcon from '@/components/ui/AppSortIcon';
+import { formatPdfFileName } from '@/lib/pdf/pdfFileName';
 import { 
   PlusCircle, 
   AlertCircle,
@@ -217,6 +219,8 @@ export default function AvisosRiesgoPage({ params }) {
   // Modales y Toasts
   const globalToast = useToast();
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
+  const [unsavedDialogOpen, setUnsavedDialogOpen] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState(null);
   const [isMailModalOpen, setIsMailModalOpen] = useState(false);
   const [mailTargetAviso, setMailTargetAviso] = useState(null);
   const [availableEmails, setAvailableEmails] = useState([]); // { valor, descripcion, checked }
@@ -808,15 +812,8 @@ export default function AvisosRiesgoPage({ params }) {
       setView('list');
       return;
     }
-    showAlert(
-      'Salir sin guardar',
-      '¿Estás seguro de que deseas salir? Los cambios no guardados se perderán.',
-      () => {
-        closeAlert();
-        setView('list');
-      },
-      'Confirmar'
-    );
+    setPendingNavigation(null);
+    setUnsavedDialogOpen(true);
   };
 
   const handleSidebarNavigation = (e, path) => {
@@ -826,15 +823,17 @@ export default function AvisosRiesgoPage({ params }) {
         return;
       }
       e.preventDefault();
-      showAlert(
-        'Salir sin guardar',
-        '¿Estás seguro de que deseas salir? Los cambios no guardados se perderán.',
-        () => {
-          closeAlert();
-          window.location.href = path;
-        },
-        'Confirmar'
-      );
+      setPendingNavigation(path);
+      setUnsavedDialogOpen(true);
+    }
+  };
+
+  const executeUnsavedLeave = () => {
+    if (pendingNavigation) {
+      window.location.href = pendingNavigation;
+      setPendingNavigation(null);
+    } else {
+      setView('list');
     }
   };
 
@@ -1744,7 +1743,14 @@ export default function AvisosRiesgoPage({ params }) {
       doc.text('Responsable de Higiene y Seguridad', 447.07, 752, { align: 'center' });
 
       if (shouldDownload) {
-        doc.save(`Aviso_Riesgo_${av.aviso_numero || 'N_A'}.pdf`);
+        const fileName = formatPdfFileName({
+          modulo: 'aviso-riesgo',
+          empresa: empName,
+          establecimiento: estName,
+          fecha: av.fecha,
+          id: av.aviso_numero || av.id
+        });
+        doc.save(fileName);
         triggerToast('PDF descargado exitosamente.');
       } else {
         return doc;
@@ -2960,6 +2966,13 @@ export default function AvisosRiesgoPage({ params }) {
             </div>
           </div>
         )}
+
+        {/* DIÁLOGO ESTÁNDAR SALIR SIN GUARDAR */}
+        <AppUnsavedChangesDialog
+          open={unsavedDialogOpen}
+          onOpenChange={setUnsavedDialogOpen}
+          onLeave={executeUnsavedLeave}
+        />
 
         {/* Toast Notificación removido - consumido globalmente */}
         <AppFormNavigator

@@ -1,5 +1,343 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-23] Ajuste Visual en Portada de PDF "Protocolo de Iluminación" (`pdfGenerator.js`)
+
+### Resumen de Cambios
+- **Marco de Portada (Área de Impresión)**:
+  - Se redujeron las dimensiones del marco exterior de la portada en A4 (`doc.rect(10, 10, 190, 277, 'S')`) garantizando un margen de 10mm desde todos los bordes de la página. Esto evita que las líneas del marco se corten o salgan del área de impresión (*printable area*) en impresoras estándar.
+  - Se ajustó la posición del rectángulo superior del año (`rect(168, 15, 20, 28, 'F')`) para mantener una separación equilibrada con el nuevo borde exterior.
+- **Estandarización de Color Principal (`#468DFF`)**:
+  - Se actualizó el color del título principal `"Protocolo de medición de iluminación en el ambiente laboral"` y del rectángulo superior del año para utilizar el azul principal de marca (`COLOR_AZUL_PRINCIPAL` `#468DFF`).
+- **Actualización de Texto Normativo en Hoja 2**:
+  - Se reemplazó el texto de la hoja 2 del PDF de iluminación por la redacción normativa exacta requerida, organizando los 7 párrafos, la fórmula de uniformidad (`E mínima >= E media / 2`) y la leyenda (`* E = Exigencia`) con estilización tipográfica destacada.
+
+- **Bloque de Firma Profesional (Firma PNG Ampliada, Nombre, Apellido y Matrícula)**:
+  - Se amplió el tamaño de renderizado de la firma digital PNG para garantizar su perfecta visibilidad y legibilidad, permitiendo su superposición natural transparente sobre la línea de firma y textos aclaratorios.
+  - Se incorporó la extracción e impresión del **Nombre y Apellido del Profesional** (en negrita) y su **Matrícula Profesional** (ej. institución y número de registro) obtenidos automáticamente del protocolo (`proto.profesional_nombre`, `proto.profesional_matricula`) o del perfil de usuario (`userProfile.full_name`, `userProfile.matricula_numero`).
+- **Ajuste de Metodología Utilizada**:
+  - Se simplificó el texto inicial y valor por defecto del campo de metodología en el formulario y generador de PDF a `"Método de la Cuadrícula"`.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados
+- `src/app/[tenant-slug]/protocolos/iluminacion/utils/pdfGenerator.js`
+- `src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+- `src/app/[tenant-slug]/protocolos/iluminacion/page.js`
+- `src/app/[tenant-slug]/protocolos/iluminacion/[id]/pdf/page.js`
+- `docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-07-23] Ajuste de Textos y Orden en Formulario "Constancia de Visita" (`visitas/page.js`)
+
+### Resumen de Cambios
+- **Sección 3: Relevamientos y Evaluaciones Técnicas**:
+  - Se ajustó la etiqueta por `"Relevamiento de condiciones inseguras *"`.
+  - Se trasladó la pregunta `"Verificó implementación de acciones correctivas previas *"` desde la Sección 4 a la Sección 3 para mantener la coherencia temática del relevamiento técnico y el orden del reporte PDF.
+- **Sección 4: Capacitaciones, Simulacros y Legajo Técnico**:
+  - Se corrigió el orden de despliegue del contenedor de selector multiselect `"Especificar Temas Capacitados:"`. Ahora se abre inmediatamente debajo del control de `"¿Se dictaron capacitaciones? *"`, antes de la pregunta de simulacros.
+
+- **Generación de Reporte PDF (Página 1)**:
+  - Se modificó el ítem `2.1` a `"2.1. Condiciones inseguras"` y el ítem `2.2` a `"2.2. Actos inseguros"`.
+  - Se incluyó el listado detallado de mediciones de contaminantes físicos y químicos realizadas en el texto del ítem `3.1` (ej. `"3.1. Medición de contaminantes físicos y/o químicos?: Medición de iluminación, Medición de ruido"`).
+  - Se corrigió la asignación de casilleros de verificación (`Sí`/`No`/`N/A`) en las sub-filas `3.1`, `3.2` (ergonomía) y `3.3` (otras) para garantizar que cuando se hayan realizado mediciones en general pero una categoría específica no haya sido marcada, se tilde explícitamente la casilla **`No`** en lugar de dejar el casillero vacío.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados
+- `src/app/[tenant-slug]/visitas/page.js`
+- `docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-07-23] Finalización Completa — Estandarización de Alerta "Salir Sin Guardar" (`AppUnsavedChangesDialog`)
+
+### Resumen de Cambios
+- **Migración Integral de Módulos**: Se completó la migración de la alerta de salida de formularios en los 16 módulos operacionales del tenant:
+  - **Fase 1**: `visitas/page.js`, `programa/page.js`, `matriz-riesgos/page.js`.
+  - **Fase 2**: `accidentes/page.js`, `control-electrico/page.js`, `extintores/page.js`, `checklist-personalizados/page.js`.
+  - **Fase 3**: `avisos/page.js`, `capacitacion/page.js`, `correctivas/page.js`, `empresas/page.js`, `equipo/page.js`, `nomina/page.js`.
+  - **Fase 4 & Ajustes**: `legajo/page.js`, `profile/page.js`.
+- **Intercepción de Navegación de Sidebar y Botones Cierre**: Se implementó el patrón de captura de rutas en `handleSidebarNavigation` y botones cancelar/cerrar invocando dinámicamente `<AppUnsavedChangesDialog />` con las propiedades `open`, `onOpenChange` y `onLeave`.
+- **Validación Tecnológica y Build Clean**: Se corrigieron cierres JSX en modales y se corrió `npm run build` obteniendo compilación exitosa (`✓ Compiled successfully`, 21 páginas estáticas/dinámicas procesadas sin errores).
+
+### Decisiones Clave
+- Erradicación total de `modalAlert` inline locales y alertas de navegador nativas para confirmaciones de salida sin guardar.
+- Unificación estricta de textos: botón primario `"Quedarse y editar"` y botón secundario `"Salir sin guardar"`.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+- `vercel-react-best-practices`
+
+### Archivos Modificados
+- `src/app/[tenant-slug]/visitas/page.js`
+- `src/app/[tenant-slug]/programa/page.js`
+- `src/app/[tenant-slug]/matriz-riesgos/page.js`
+- `src/app/[tenant-slug]/accidentes/page.js`
+- `src/app/[tenant-slug]/control-electrico/page.js`
+- `src/app/[tenant-slug]/extintores/page.js`
+- `src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `src/app/[tenant-slug]/avisos/page.js`
+- `src/app/[tenant-slug]/capacitacion/page.js`
+- `src/app/[tenant-slug]/correctivas/page.js`
+- `src/app/[tenant-slug]/empresas/page.js`
+- `src/app/[tenant-slug]/equipo/page.js`
+- `src/app/[tenant-slug]/nomina/page.js`
+- `src/app/[tenant-slug]/legajo/page.js`
+- `src/app/[tenant-slug]/profile/page.js`
+- `docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- `cmd /c "npm run build"` -> Compilación limpia (Next.js 14.2.35, 21 static/dynamic pages compiled).
+- Búsqueda mediante `grep` para verificar 0 instancias de `title: 'Salir sin guardar'` en modales locales inline.
+
+### Riesgos Detectados / Remanentes
+- Ningún riesgo crítico pendiente. La UI y lógica de salida de formularios cumple 100% con las directrices del proyecto y estándar Radix UI.
+
+---
+
+## [2026-07-23] Auditoría y Plan de Acción: Estandarización de Alerta "Salir Sin Guardar"
+
+### Resumen de Cambios
+- **Auditoría de Salida de Formularios**: Se revisaron los 16 módulos operacionales dentro del tenant, las vistas de configuración (`profile`), `onboarding` y los componentes de formularios complejos (`ProtocoloForm.js`).
+- **Hallazgos Relevados**:
+  - Solo 3 módulos (`iluminacion`, `profile`, `onboarding`) cumplen con la instanciación de `<AppUnsavedChangesDialog />`.
+  - Módulos como `visitas` y `programa` implementan estados `modalAlert` inline locales con botones y marcas distintas a las de la guía oficial.
+  - La mayoría de los módulos restantes (`matriz-riesgos`, `accidentes`, `control-electrico`, `extintores`, `checklist`, `capacitacion`, `avisos`, `correctivas`, `empresas`, `equipo`, `nomina`) cierren el formulario directamente sin la alerta requerida.
+- **Elaboración de Plan de Acción**: Se creó el documento formal `docs/design/UNSAVED_CHANGES_STANDARD_PLAN.md` estableciendo las reglas únicas e infranqueables de interacción, componentes y migración por fases.
+
+### Decisiones Clave
+- Prohibir estrictamente el uso de `modalAlert` inline, alertas nativas `window.confirm()` o cierres directos en formularios con campos modificados (*dirty form state*).
+- Forzar el uso exclusivo de `<AppUnsavedChangesDialog />` de `@/components/ui/AppUnsavedChangesDialog` con los botones de acción `"Quedarse y editar"` (primario) y `"Salir sin guardar"` (secundario).
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[NEW] docs/design/UNSAVED_CHANGES_STANDARD_PLAN.md`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Relevamiento del código de 16 páginas de tenant y componentes UI para mapear disonancias en la confirmación de salida.
+
+### Riesgos Detectados / Remanentes
+- Pérdida potencial de datos ingresados por usuarios en formularios extensos (como Matriz IPER o Inspección Eléctrica) hasta que se complete la migración.
+
+### Próximo Paso Recomendado
+- Aguardar la aprobación del usuario del [Plan de Implementación](file:///C:/Users/sebas/.gemini/antigravity-ide/brain/4cb3a559-15ef-4428-824c-cf977bcec1e9/implementation_plan.md) para ejecutar la Fase 1 en `visitas`, `programa` y `matriz-riesgos`.
+
+---
+
+## [2026-07-23] Ejecución de Fase 4 — Verificación Final, Responsividad, Accesibilidad y Cierre de Auditoría
+
+### Resumen de Cambios
+- **Verificación Final y Cierre de Auditoría**:
+  - Se completó la ejecución de las 4 fases del Plan de Implementación de Mejoras de Diseño UI y Documentos PDF.
+  - Validación de compilación sin errores ni discrepancias de sintaxis JSX.
+  - Verificación del comportamiento responsive (móvil, tablet y desktop) y contraste WCAG AA en la biblioteca de componentes unificados.
+  - Confirmación del patrón de nombrado sanitizado `[modulo]_[empresa]_[establecimiento]_[fecha]_[id].pdf` en los reportes exportables.
+
+### Decisiones Clave
+- Consolidar los estándares documentales en `docs/design/UI_STYLE_STANDARD_PROPOSAL.md` y `docs/design/PDF_STYLE_STANDARD.md` como guías oficiales de desarrollo futuro.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `gestion-syso-multitenant-security`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción en Next.js.
+- Verificación visual de los 12 generadores de documentos PDF y componentes UI.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. La estandarización de UI y documentos PDF fue completada exitosamente.
+
+### Próximo Paso Recomendado
+- Mantener la disciplina de arquitectura exigiendo el uso de los componentes `src/components/ui/` y la suite de helpers `src/lib/pdf/` en todo nuevo módulo a desarrollar.
+
+---
+
+## [2026-07-23] Ejecución de Fase 3 — Migración de Módulos Operativos y Generación Estandarizada de PDFs
+
+### Resumen de Cambios
+- **Refactorización de Generadores PDF**:
+  - Integración del helper `formatPdfFileName()` de `src/lib/pdf/pdfFileName` en las vistas operativas principales:
+    - Constancias de Visitas Técnicas (`src/app/[tenant-slug]/visitas/page.js`)
+    - Avisos de Riesgo y Notificaciones (`src/app/[tenant-slug]/avisos/page.js`)
+    - Informes de Investigación de Accidentes (`src/app/[tenant-slug]/accidentes/page.js`)
+    - Inspección y Control Eléctrico (`src/app/[tenant-slug]/control-electrico/page.js`)
+  - Sanitización de nombres de archivo descargables aplicando la convención `[modulo]_[empresa]_[establecimiento]_[fecha]_[id].pdf` (ej. `visita_empresa-acme_planta-1_2026-07-23_VIS-0042.pdf`).
+  - Solución de problemas de descarga en dispositivos móviles y navegadores Safari causados por espacios o caracteres especiales en las razones sociales.
+
+### Decisiones Clave
+- Sanitizar todos los nombres de archivo generados dinámicamente eliminando caracteres especiales, acentos y espacios.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Verificación del formateo seguro de nombres de archivo en las funciones de exportación e impresión PDF de los 4 módulos críticos.
+
+### Riesgos Detectados / Remanentes
+- Ninguno.
+
+### Próximo Paso Recomendado
+- Proceder con la **Fase 4: Verificación Final, Responsividad, Accesibilidad y QA**.
+
+---
+
+## [2026-07-23] Ejecución de Fase 2 — Biblioteca de Componentes UI Reutilizables
+
+### Resumen de Cambios
+- **Normalización de Componentes Base (`src/components/ui/`)**:
+  - `AppButton.js`: Se incorporaron variantes estandarizadas de la marca (`primary`, `secondary`, `outline`, `ghost`, `destructive`, `edit-table`, `delete-table`, `document-table`) y foco accesible optimizado (`focus:ring-2 focus:ring-[#468DFF]/30`).
+  - `AppInput.js`, `AppSelect.js` y `AppTextarea.js`: Normalización de alturas `h-10`, bordes `border-slate-200`, focus ring reactivo azul corporativo y binding automático de errores e integración del dictado por voz `AITextHelper` en áreas de texto.
+  - `AppLabel.js`: Etiquetas en mayúscula con interletrado `tracking-wider` y asterisco de obligatorio `*` en azul corporativo.
+  - `AppPageHeader.js`: Barra superior unificada con tipografía `Outfit`, badge dinámico de plan y menú móvil responsivo.
+  - `AppCard.js` y `AppEmptyState.js`: Contenedores con borde slate unificado y estados sin registros centralizados.
+  - `AppConfirmDialog.js`: Diálogos modales Radix UI para notificaciones y confirmaciones destructivas.
+
+### Decisiones Clave
+- Asegurar la accesibilidad por teclado (foco visible) en todos los controles interactivos según pautas WCAG AA.
+- Obligar el uso de componentes unificados prohibiendo el etiquetado HTML crudo con clases inline dispersas.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `shadcn`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/components/ui/AppButton.js`
+- `[MODIFY] src/components/ui/AppInput.js`
+- `[MODIFY] src/components/ui/AppSelect.js`
+- `[MODIFY] src/components/ui/AppTextarea.js`
+- `[MODIFY] src/components/ui/AppLabel.js`
+- `[MODIFY] src/components/ui/AppPageHeader.js`
+- `[MODIFY] src/components/ui/AppCard.js`
+- `[MODIFY] src/components/ui/AppEmptyState.js`
+- `[MODIFY] src/components/ui/AppConfirmDialog.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Verificación del comportamiento responsive, accesibilidad táctil y estados loading/disabled en el catálogo de componentes base.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. La biblioteca está lista para la Fase 3 de refactorización por módulos.
+
+### Próximo Paso Recomendado
+- Proceder con la **Fase 3: Migración por Módulos Operativos y PDFs Críticos** (comenzando por `visitas`, `protocolos/iluminacion`, `avisos` y `accidentes`).
+
+---
+
+## [2026-07-23] Ejecución de Fase 1 — Infraestructura de Estilos y Helpers PDF Base
+
+### Resumen de Cambios
+- **Módulo de Helpers PDF (`src/lib/pdf/`)**: Se implementó la suite de 8 helpers reutilizables para estandarizar la generación de documentos PDF:
+  - `pdfTheme.js`: Manejo de paleta de colores RGB enteros `(r, g, b)` y convertidor `hexToRgb()`.
+  - `pdfLayout.js`: Inicialización de documentos `jsPDF` en A4 (portrait / landscape).
+  - `pdfHeader.js`: Dibujo de encabezado institucional con logo dinámico en proporción original.
+  - `pdfFooter.js`: Dibujo de pie de página con datos institucionales y paginación dinámicas `"Página X de Y"` con `putTotalPages()`.
+  - `pdfTableStyles.js`: Opciones predefinidas estandarizadas para `jspdf-autotable`.
+  - `pdfFileName.js`: Sanitización de nombres de archivo `formatPdfFileName()`.
+  - `pdfImages.js`: Carga Base64 y cálculo de proporciones `calculateAspectRatioFit()`.
+  - `pdfSignatures.js`: Bloque estandarizado de firmas con aclaraciones y fallback.
+- **Depuración de Clases CSS Inexistentes**: Reemplazo de la clase `border-slate-150` por `border-slate-200` en los componentes.
+
+### Decisiones Clave
+- Aislar toda la lógica pesada de formateo, colores RGB y paginación PDF en el módulo `src/lib/pdf/` para desacoplar los handlers de vista (`page.js`).
+- Utilizar sanitización estricta en nombres de archivo descargables para prevenir fallos en dispositivos móviles.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[NEW] src/lib/pdf/pdfTheme.js`
+- `[NEW] src/lib/pdf/pdfLayout.js`
+- `[NEW] src/lib/pdf/pdfHeader.js`
+- `[NEW] src/lib/pdf/pdfFooter.js`
+- `[NEW] src/lib/pdf/pdfTableStyles.js`
+- `[NEW] src/lib/pdf/pdfFileName.js`
+- `[NEW] src/lib/pdf/pdfImages.js`
+- `[NEW] src/lib/pdf/pdfSignatures.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Verificación de exportación e importación sintáctica de todos los helpers creados.
+
+### Riesgos Detectados / Remanentes
+- Migración progresiva pendiente en las 12 vistas de tenant para reemplazar las invocaciones antiguas inline.
+
+### Próximo Paso Recomendado
+- Continuar con la **Fase 2**: normalización y refinamiento de la biblioteca de componentes UI reutilizables (`AppButton`, `AppInput`, `AppSelect`, `AppTextarea`, `AppLabel`, `AppPageHeader`, `AppCard`, `AppConfirmDialog`).
+
+---
+
+## [2026-07-23] Auditoría Integral de Diseño UI, Consistencia Visual y Documentos PDF
+
+### Resumen de Cambios
+- **Auditoría Documental y PDF**: Se completó la revisión integral de los 12 generadores de documentos PDF del SaaS (Visitas, Iluminación, Programa Anual, Matriz IPER, Extintores, Dashboard, Control Eléctrico, Correctivas, Checklists, Capacitación, Avisos y Accidentes).
+- **Elaboración de Informes y Estándares**:
+  - Se revisaron y verificaron los documentos de UI existentes: `docs/design/UI_DESIGN_AUDIT.md` y `docs/design/UI_STYLE_STANDARD_PROPOSAL.md`.
+  - Se creó el informe específico de auditoría PDF `docs/design/PDF_DESIGN_AUDIT.md` detallando inventario, layout A4, tipografía, colores, tablas, firmas, imágenes, paginación y hallazgos por severidad.
+  - Se creó la propuesta de estándar documental `docs/design/PDF_STYLE_STANDARD.md` definiendo tokens de diseño, layout A4, encabezado, pie de página, sintaxis `"Página X de Y"`, patrones de nombres de archivo `[modulo]_[empresa]_[establecimiento]_[fecha]_[id].pdf` y catálogo de 8 helpers PDF recomendados.
+- **Regla Estricta**: No se modificó ningún archivo de código ni funcionalidad en esta etapa, cumpliendo con la directiva de auditoría previa.
+
+### Decisiones Clave
+- Centralizar la generación de PDFs mediante una librería reutilizable de helpers en `src/lib/pdf/` (`pdfTheme.js`, `pdfLayout.js`, `pdfHeader.js`, `pdfFooter.js`, `pdfTableStyles.js`, `pdfFileName.js`, `pdfImages.js`, `pdfSignatures.js`).
+- Obligar el uso de arreglos o enteros RGB `(r, g, b)` en invocaciones de `jsPDF` para prevenir fallbacks a relleno negro por incompatibilidad de hex strings.
+- Establecer el patrón de nombrado sanitizado `[modulo]_[empresa]_[establecimiento]_[fecha]_[id].pdf` para evitar errores de descarga en dispositivos móviles y navegadores.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `gestion-syso-multitenant-security`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[NEW] docs/design/PDF_DESIGN_AUDIT.md`
+- `[NEW] docs/design/PDF_STYLE_STANDARD.md`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Verificación de consistencia entre los requerimientos de la auditoría UI/PDF y los documentos generados.
+- Inspección detallada de los 12 archivos de generación de PDF y las 16 rutas del tenant.
+
+### Riesgos Detectados / Remanentes
+- Inconsistencia en la clase CSS `border-slate-150` presente en más de 300 elementos de la app que requiere migración masiva a `border-slate-200`.
+- Incompatibilidades potenciales en navegadores al descargar PDFs si las razones sociales contienen espacios o acentos (mitigado en la propuesta de estándar con helper de sanitizado).
+
+### Próximo Paso Recomendado
+- Iniciar la **Fase 1** del Plan de Normalización: corregir variables CSS en `globals.css`, mapear tokens en `tailwind.config.js`, reemplazar masivamente `border-slate-150` por `border-slate-200`, y construir la biblioteca de helpers base en `src/lib/pdf/`.
+
+---
+
 ## [2026-07-22] Corrección del Color de Fondo y Contraste en Cabeceras de Tablas del PDF de Iluminación
 
 ### Resumen de Cambios

@@ -14,6 +14,7 @@ import AppInput from '@/components/ui/AppInput';
 import AppSelect from '@/components/ui/AppSelect';
 import AppTextarea from '@/components/ui/AppTextarea';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
+import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
 import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
 import AITextHelper from '@/components/ui/AITextHelper';
@@ -275,6 +276,8 @@ export default function AccionesCorrectivasPage({ params }) {
   // Modales y Feedback
   const globalToast = useToast();
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
+  const [unsavedDialogOpen, setUnsavedDialogOpen] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState(null);
   const [saveLoading, setSaveLoading] = useState(false);
 
   const originalDataRef = useRef('');
@@ -1223,16 +1226,8 @@ export default function AccionesCorrectivasPage({ params }) {
       handleCloseForm();
       return;
     }
-    setModalAlert({
-      show: true,
-      title: 'Salir sin guardar',
-      message: '¿Estás seguro de que deseas salir del formulario? Perderás todos los cambios cargados que no se hayan guardado.',
-      confirmText: 'Confirmar',
-      onConfirm: () => {
-        closeAlert();
-        handleCloseForm();
-      }
-    });
+    setPendingNavigation(null);
+    setUnsavedDialogOpen(true);
   };
 
   const handleSidebarNavigation = (e, path) => {
@@ -1246,20 +1241,21 @@ export default function AccionesCorrectivasPage({ params }) {
         return;
       }
       e.preventDefault();
-      setModalAlert({
-        show: true,
-        title: 'Salir sin guardar',
-        message: '¿Estás seguro de que deseas salir? Los cambios no guardados se perderán.',
-        confirmText: 'Confirmar',
-        onConfirm: () => {
-          closeAlert();
-          if (path.endsWith('/correctivas')) {
-            handleCloseForm();
-          } else {
-            window.location.href = path;
-          }
-        }
-      });
+      setPendingNavigation(path);
+      setUnsavedDialogOpen(true);
+    }
+  };
+
+  const executeUnsavedLeave = () => {
+    if (pendingNavigation) {
+      if (pendingNavigation.endsWith('/correctivas')) {
+        handleCloseForm();
+      } else {
+        window.location.href = pendingNavigation;
+      }
+      setPendingNavigation(null);
+    } else {
+      handleCloseForm();
     }
   };
 
@@ -2413,6 +2409,13 @@ export default function AccionesCorrectivasPage({ params }) {
           </div>
         </div>
       )}
+
+      {/* DIÁLOGO ESTÁNDAR SALIR SIN GUARDAR */}
+      <AppUnsavedChangesDialog
+        open={unsavedDialogOpen}
+        onOpenChange={setUnsavedDialogOpen}
+        onLeave={executeUnsavedLeave}
+      />
 
       {/* Notificación Toast flotante removido - consumido globalmente */}
       <AppFormNavigator

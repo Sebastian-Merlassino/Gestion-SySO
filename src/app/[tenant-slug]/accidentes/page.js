@@ -15,10 +15,12 @@ import AppInput from '@/components/ui/AppInput';
 import AppSelect from '@/components/ui/AppSelect';
 import AppTextarea from '@/components/ui/AppTextarea';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
+import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
 import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import AppSortIcon from '@/components/ui/AppSortIcon';
+import { formatPdfFileName } from '@/lib/pdf/pdfFileName';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import {
   ShieldAlert,
@@ -306,6 +308,8 @@ export default function AccidentesPage({ params }) {
   // ── UI/Modales ────────────────────────────────────────────────────────────
   const globalToast = useToast();
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
+  const [unsavedDialogOpen, setUnsavedDialogOpen] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState(null);
   const [saveLoading, setSaveLoading] = useState(false);
   const [showGravedadGuide, setShowGravedadGuide] = useState(false);
 
@@ -2632,7 +2636,13 @@ export default function AccidentesPage({ params }) {
     try {
       triggerToast('Generando reporte PDF...', 'info');
       const doc = await generateTechnicalReportPdfDoc(report, accData);
-      const pdfName = `Informe_Investigacion_${accData.nombre_apellido?.replace(/\s+/g, '_') || 'Accidente'}_${Date.now()}.pdf`;
+      const pdfName = formatPdfFileName({
+        modulo: 'investigacion-accidente',
+        empresa: accData.empresa_nombre || 'empresa',
+        establecimiento: accData.establecimiento_nombre || 'establecimiento',
+        fecha: accData.fecha_accidente,
+        id: accData.id
+      });
       doc.save(pdfName);
       triggerToast('Reporte PDF descargado con éxito.');
     } catch (pdfErr) {
@@ -2709,13 +2719,37 @@ export default function AccidentesPage({ params }) {
   // ── Cierre de formulario ──────────────────────────────────────────────────
   const handleExitForm = () => {
     if (isReadOnlyView) { handleCloseForm(); return; }
-    setModalAlert({
-      show: true,
-      title: 'Salir sin guardar',
-      message: '¿Estás seguro de que deseas salir del formulario? Perderás los cambios no guardados.',
-      confirmText: 'Confirmar',
-      onConfirm: () => { closeAlert(); handleCloseForm(); },
-    });
+    setPendingNavigation(null);
+    setUnsavedDialogOpen(true);
+  };
+
+  const handleSidebarNavigation = (e, path) => {
+    if (isFormOpen) {
+      if (isReadOnlyView) {
+        if (path.endsWith('/accidentes')) {
+          handleCloseForm();
+        } else {
+          window.location.href = path;
+        }
+        return;
+      }
+      e.preventDefault();
+      setPendingNavigation(path);
+      setUnsavedDialogOpen(true);
+    }
+  };
+
+  const executeUnsavedLeave = () => {
+    if (pendingNavigation) {
+      if (pendingNavigation.endsWith('/accidentes')) {
+        handleCloseForm();
+      } else {
+        window.location.href = pendingNavigation;
+      }
+      setPendingNavigation(null);
+    } else {
+      handleCloseForm();
+    }
   };
 
   const handleCloseForm = () => {
@@ -2757,25 +2791,7 @@ export default function AccidentesPage({ params }) {
     setFirmaPerfilPreviewUrl('');
   };
 
-  // ── Navegación del sidebar ────────────────────────────────────────────────
-  const handleSidebarNavigation = (e, path) => {
-    if (!isFormOpen) return;
-    if (isReadOnlyView) {
-      if (path.endsWith('/accidentes')) { handleCloseForm(); } else { window.location.href = path; }
-      return;
-    }
-    e.preventDefault();
-    setModalAlert({
-      show: true,
-      title: 'Salir sin guardar',
-      message: '¿Estás seguro de que deseas salir? Los cambios no guardados se perderán.',
-      confirmText: 'Confirmar',
-      onConfirm: () => {
-        closeAlert();
-        if (path.endsWith('/accidentes')) { handleCloseForm(); } else { window.location.href = path; }
-      },
-    });
-  };
+
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -4738,6 +4754,13 @@ export default function AccidentesPage({ params }) {
           </div>
         </div>
       )}
+
+      {/* DIÁLOGO ESTÁNDAR SALIR SIN GUARDAR */}
+      <AppUnsavedChangesDialog
+        open={unsavedDialogOpen}
+        onOpenChange={setUnsavedDialogOpen}
+        onLeave={executeUnsavedLeave}
+      />
       <AppFormNavigator
         activeList={filteredAccidentes}
         currentId={editingId}

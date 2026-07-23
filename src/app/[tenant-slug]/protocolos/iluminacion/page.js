@@ -405,7 +405,7 @@ export default function ProtocolosIluminacionPage({ params }) {
         .select('*')
         .eq('protocolo_id', protoItem.id);
 
-      const doc = await generateLightingProtocolPdf(protoItem, tenant, empresas, allEstablecimientos, pts || [], adjs || [], isDevMode);
+      const doc = await generateLightingProtocolPdf(protoItem, tenant, empresas, allEstablecimientos, pts || [], adjs || [], isDevMode, profile);
       if (shouldPrint) {
         doc.autoPrint();
         window.open(doc.output('bloburl'), '_blank');
@@ -467,7 +467,7 @@ export default function ProtocolosIluminacionPage({ params }) {
         .select('*')
         .eq('protocolo_id', mailTarget.id);
 
-      const doc = await generateLightingProtocolPdf(mailTarget, tenant, empresas, allEstablecimientos, pts || [], adjs || [], isDevMode);
+      const doc = await generateLightingProtocolPdf(mailTarget, tenant, empresas, allEstablecimientos, pts || [], adjs || [], isDevMode, profile);
       if (!doc) throw new Error('No se pudo generar el reporte PDF.');
       const pdfBlob = doc.output('blob');
       
@@ -549,7 +549,7 @@ export default function ProtocolosIluminacionPage({ params }) {
         .select('*')
         .eq('protocolo_id', mailTarget.id);
 
-      const doc = await generateLightingProtocolPdf(mailTarget, tenant, empresas, allEstablecimientos, pts || [], adjs || [], isDevMode);
+      const doc = await generateLightingProtocolPdf(mailTarget, tenant, empresas, allEstablecimientos, pts || [], adjs || [], isDevMode, profile);
       const pdfBlob = doc.output('blob');
 
       // 2. Upload PDF to temp storage in the 'documents' bucket (send-email route hardcoded bucket)

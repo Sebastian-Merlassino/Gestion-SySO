@@ -12,7 +12,8 @@ import { useToast } from '@/components/providers/ToastProvider';
 import AppPageHeader from '@/components/ui/AppPageHeader';
 import AppButton from '@/components/ui/AppButton';
 import AppInput from '@/components/ui/AppInput';
-import AppSelect from '@/components/ui/AppSelect';
+import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
+import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
 import AppTextarea from '@/components/ui/AppTextarea';
 import AppEmptyState from '@/components/ui/AppEmptyState';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
@@ -113,6 +114,8 @@ export default function NominaPage({ params }) {
   const [selectedLegajoPath, setSelectedLegajoPath] = useState('');
   const [loadingLegajoFile, setLoadingLegajoFile] = useState(false);
   const [previewRows, setPreviewRows] = useState([]);
+  const [unsavedDialogOpen, setUnsavedDialogOpen] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState(null);
 
   const originalDataRef = useRef('');
   const lastEditingIdRef = useRef(null);
@@ -404,16 +407,8 @@ export default function NominaPage({ params }) {
       handleCloseForm();
       return;
     }
-    setModalAlert({
-      show: true,
-      title: 'Salir sin guardar',
-      message: '¿Estás seguro de que deseas salir del formulario? Perderás todos los cambios cargados que no se hayan guardado.',
-      confirmText: 'Confirmar',
-      onConfirm: () => {
-        closeAlert();
-        handleCloseForm();
-      }
-    });
+    setPendingNavigation(null);
+    setUnsavedDialogOpen(true);
   };
 
   // MANUAL MULTILINE ROWS ACTIONS
@@ -887,6 +882,37 @@ export default function NominaPage({ params }) {
     });
   };
 
+
+
+  const handleSidebarNavigation = (e, path) => {
+    if (isFormOpen) {
+      if (isReadOnlyView) {
+        if (path.endsWith('/nomina')) {
+          handleCloseForm();
+        } else {
+          window.location.href = path;
+        }
+        return;
+      }
+      e.preventDefault();
+      setPendingNavigation(path);
+      setUnsavedDialogOpen(true);
+    }
+  };
+
+  const executeUnsavedLeave = () => {
+    if (pendingNavigation) {
+      if (pendingNavigation.endsWith('/nomina')) {
+        handleCloseForm();
+      } else {
+        window.location.href = pendingNavigation;
+      }
+      setPendingNavigation(null);
+    } else {
+      handleCloseForm();
+    }
+  };
+
   // Años únicos disponibles en la nómina para el filtro
   const uniqueYears = Array.from(
     new Set(
@@ -949,6 +975,7 @@ export default function NominaPage({ params }) {
         isMobileMenuOpen={isMobileMenuOpen}
         setIsMobileMenuOpen={setIsMobileMenuOpen}
         handleLogout={handleLogout}
+        onNavigate={handleSidebarNavigation}
       />
 
       {/* Main Container */}
@@ -1704,6 +1731,13 @@ export default function NominaPage({ params }) {
           </div>
         </div>
       )}
+
+      {/* DIÁLOGO ESTÁNDAR SALIR SIN GUARDAR */}
+      <AppUnsavedChangesDialog
+        open={unsavedDialogOpen}
+        onOpenChange={setUnsavedDialogOpen}
+        onLeave={executeUnsavedLeave}
+      />
 
       {/* Notificación Toast flotante removido - consumido globalmente */}
       <AppFormNavigator

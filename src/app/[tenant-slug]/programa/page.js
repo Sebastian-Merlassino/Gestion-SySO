@@ -15,6 +15,7 @@ import AppButton from '@/components/ui/AppButton';
 import AppInput from '@/components/ui/AppInput';
 import AppSelect from '@/components/ui/AppSelect';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
+import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
 import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
@@ -253,6 +254,8 @@ export default function ProgramaGestion({ params }) {
   // Modales y Toasts
   const globalToast = useToast();
   const [confirmModal, setConfirmModal] = useState({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Eliminar' });
+  const [unsavedDialogOpen, setUnsavedDialogOpen] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState(null);
 
   // 1. Cargar datos iniciales
   useEffect(() => {
@@ -1359,16 +1362,8 @@ export default function ProgramaGestion({ params }) {
       handleCloseForm();
       return;
     }
-    setConfirmModal({
-      show: true,
-      title: 'Salir sin guardar',
-      message: '¿Estás seguro de que deseas salir? Los cambios no guardados se perderán.',
-      confirmText: 'Confirmar',
-      onConfirm: () => {
-        handleCloseForm();
-        setConfirmModal({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Eliminar' });
-      }
-    });
+    setPendingNavigation(null);
+    setUnsavedDialogOpen(true);
   };
 
   const handleSidebarNavigation = (e, path) => {
@@ -1382,20 +1377,21 @@ export default function ProgramaGestion({ params }) {
         return;
       }
       e.preventDefault();
-      setConfirmModal({
-        show: true,
-        title: 'Salir sin guardar',
-        message: '¿Estás seguro de que deseas salir? Los cambios no guardados se perderán.',
-        confirmText: 'Confirmar',
-        onConfirm: () => {
-          setConfirmModal({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Eliminar' });
-          if (path.endsWith('/programa')) {
-            handleCloseForm();
-          } else {
-            window.location.href = path;
-          }
-        }
-      });
+      setPendingNavigation(path);
+      setUnsavedDialogOpen(true);
+    }
+  };
+
+  const executeUnsavedLeave = () => {
+    if (pendingNavigation) {
+      if (pendingNavigation.endsWith('/programa')) {
+        handleCloseForm();
+      } else {
+        window.location.href = pendingNavigation;
+      }
+      setPendingNavigation(null);
+    } else {
+      handleCloseForm();
     }
   };
 
@@ -2424,6 +2420,13 @@ export default function ProgramaGestion({ params }) {
             </div>
           </div>
         )}
+
+        {/* DIÁLOGO ESTÁNDAR SALIR SIN GUARDAR */}
+        <AppUnsavedChangesDialog
+          open={unsavedDialogOpen}
+          onOpenChange={setUnsavedDialogOpen}
+          onLeave={executeUnsavedLeave}
+        />
 
         {/* TOAST NOTIFICACIÓN removido - consumido globalmente */}
         <AppFormNavigator

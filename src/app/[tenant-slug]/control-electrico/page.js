@@ -12,12 +12,14 @@ import AppButton from '@/components/ui/AppButton';
 import AppInput from '@/components/ui/AppInput';
 import AppSelect from '@/components/ui/AppSelect';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
+import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
 import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import AITextHelper from '@/components/ui/AITextHelper';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import AppSortIcon from '@/components/ui/AppSortIcon';
+import { formatPdfFileName } from '@/lib/pdf/pdfFileName';
 import { 
   PlusCircle, 
   Search, 
@@ -177,6 +179,8 @@ export default function ControlElectricoPage({ params }) {
   // Modales y Feedback
   const globalToast = useToast();
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
+  const [unsavedDialogOpen, setUnsavedDialogOpen] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState(null);
   const [saveLoading, setSaveLoading] = useState(false);
 
   const originalDataRef = useRef('');
@@ -613,16 +617,8 @@ export default function ControlElectricoPage({ params }) {
       handleCloseForm();
       return;
     }
-    setModalAlert({
-      show: true,
-      title: 'Salir sin guardar',
-      message: '¿Estás seguro de que deseas salir? Los cambios no guardados se perderán.',
-      confirmText: 'Confirmar',
-      onConfirm: () => {
-        handleCloseForm();
-        closeAlert();
-      }
-    });
+    setPendingNavigation(null);
+    setUnsavedDialogOpen(true);
   };
 
   const handleSidebarNavigation = (e, path) => {
@@ -636,20 +632,21 @@ export default function ControlElectricoPage({ params }) {
         return;
       }
       e.preventDefault();
-      setModalAlert({
-        show: true,
-        title: 'Salir sin guardar',
-        message: '¿Estás seguro de que deseas salir? Los cambios no guardados se perderán.',
-        confirmText: 'Confirmar',
-        onConfirm: () => {
-          closeAlert();
-          if (path.endsWith('/control-electrico')) {
-            handleCloseForm();
-          } else {
-            window.location.href = path;
-          }
-        }
-      });
+      setPendingNavigation(path);
+      setUnsavedDialogOpen(true);
+    }
+  };
+
+  const executeUnsavedLeave = () => {
+    if (pendingNavigation) {
+      if (pendingNavigation.endsWith('/control-electrico')) {
+        handleCloseForm();
+      } else {
+        window.location.href = pendingNavigation;
+      }
+      setPendingNavigation(null);
+    } else {
+      handleCloseForm();
     }
   };
 
@@ -1648,7 +1645,14 @@ export default function ControlElectricoPage({ params }) {
         window.open(blobUrl, '_blank');
         triggerToast('Vista previa abierta.');
       } else if (shouldDownload) {
-        doc.save(`Control_Electrico_${emp?.razon_social.replace(/\s+/g, '_') || ''}_${c.fecha}.pdf`);
+        const fileName = formatPdfFileName({
+          modulo: 'control-electrico',
+          empresa: emp?.razon_social || 'empresa',
+          establecimiento: est?.denominacion || 'establecimiento',
+          fecha: c.fecha,
+          id: c.id
+        });
+        doc.save(fileName);
         triggerToast('PDF descargado exitosamente.');
       } else {
         return doc;
@@ -2741,7 +2745,14 @@ export default function ControlElectricoPage({ params }) {
           </div>
         </div>
       )}
-      
+
+      {/* DIÁLOGO ESTÁNDAR SALIR SIN GUARDAR */}
+      <AppUnsavedChangesDialog
+        open={unsavedDialogOpen}
+        onOpenChange={setUnsavedDialogOpen}
+        onLeave={executeUnsavedLeave}
+      />
+
       <AppFormNavigator
         activeList={sortedControles}
         currentId={editingId}

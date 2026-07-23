@@ -1041,16 +1041,8 @@ const [partidosList, setPartidosList] = useState([]);
 
     if (isDirty) {
       e.preventDefault();
-      setModalAlert({
-        show: true,
-        title: 'Salir sin guardar',
-        message: '¿Estás seguro de que deseas salir? Los cambios no guardados se perderán.',
-        confirmText: 'Confirmar',
-        onConfirm: () => {
-          closeAlert();
-          window.location.href = path;
-        }
-      });
+      setUnsavedChangesConfig({ onLeave: () => { window.location.href = path; } });
+      setShowUnsavedChangesDialog(true);
     }
   };
 
