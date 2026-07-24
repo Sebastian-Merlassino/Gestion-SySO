@@ -856,18 +856,40 @@ export default function TenantDashboard({ params }) {
         d.line(50, 70, 791, 70);
 
         // Línea divisora pie
+        // Línea divisora pie (espesor 1 pt, Azul Corporativo)
+        d.setDrawColor(70, 141, 255); // COLOR_AZUL_PRINCIPAL RGB
+        d.setLineWidth(1);
         d.line(50, 545, 791, 545);
 
-        // Pie de página
-        d.setFont('helvetica', 'normal');
-        d.setFontSize(8);
-        d.setTextColor(100, 100, 100);
-        const tenantName = tenant?.name || 'Gestión SySO';
+        // Pie de página: Consultora en bold y los datos de contacto en normal
+        const boldText = tenant?.name || 'Gestión SySO';
         const phoneVal = profile?.role === 'miembro' ? (profile?.phone || '') : adminContact.phone;
         const emailVal = profile?.role === 'miembro' ? (profile?.email || '') : adminContact.email;
-        d.text(`${tenantName} - Tel: ${phoneVal} - Email: ${emailVal}`, 420.94, 560, { align: 'center' });
+        const normalText = `  •  Tel: ${phoneVal}  •  Email: ${emailVal}`;
 
-        // Número de página
+        d.setFontSize(7.5);
+        d.setTextColor(71, 85, 105); // COLOR_SLATE_700 RGB
+
+        // Medir anchos
+        d.setFont('helvetica', 'bold');
+        const boldWidth = d.getTextWidth(boldText);
+
+        d.setFont('helvetica', 'normal');
+        const normalWidth = d.getTextWidth(normalText);
+
+        const totalTextWidth = boldWidth + normalWidth;
+        const totalW = 791 - 50; // 741 pt
+        const lineStartX = 50 + (totalW / 2) - (totalTextWidth / 2);
+
+        // Dibujar secuencialmente
+        d.setFont('helvetica', 'bold');
+        d.text(boldText, lineStartX, 560);
+
+        d.setFont('helvetica', 'normal');
+        d.text(normalText, lineStartX + boldWidth, 560);
+
+        // Número de página (derecha, negrita)
+        d.setFont('helvetica', 'bold');
         d.text(`Página ${pageNum} de 4`, 791, 560, { align: 'right' });
       };
 

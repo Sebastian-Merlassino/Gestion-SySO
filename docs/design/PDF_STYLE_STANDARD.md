@@ -50,16 +50,45 @@ Todos los documentos PDF deben incluir una cabecera institucional normalizada en
 
 El pie de página debe renderizarse automáticamente en **todas** las hojas del PDF mediante `doc.putTotalPages()` o hooks de `jspdf-autotable`:
 
-* **Barra Inferior de Acento**: Línea horizontal de `1 pt` de grosor en Azul Corporativo `#468DFF`.
-* **Texto Institucional Central**:
-  - Texto: `${NombreConsultora} • Tel: ${Telefono} • Email: ${Email}`.
-  - Tamaño: `8pt`, alineado al centro en color `#64748B`.
+* **Barra Inferior de Acento (Línea Divisoria)**: 
+  - Trazo horizontal fino de **$0.35\text{ mm}$** ($1\text{ pt}$ de grosor) en color Azul Corporativo `#468DFF` (`RGB(70, 141, 255)`), dibujado mediante `doc.line()`. Queda estrictamente prohibido usar rectángulos rellenos (`doc.rect`) de gran espesor para representar líneas divisorias.
+* **Texto Institucional Central (Híbrido)**:
+  - Estructura: `[NombreConsultora]  •  Tel: [Telefono]  •  Email: [Email]`.
+  - Estilo Mixto: El `${NombreConsultora}` se dibuja en **negrita (`bold`)** para resaltar la identidad de la empresa emisora del informe, y los datos adicionales de contacto se dibujan en estilo **regular (`normal`)**.
+  - Tamaño: `7.5 pt` o `8 pt`, en color Gris Slate `#475569` (`RGB(71, 85, 105)`).
+  - Centrado Dinámico: Para asegurar que el texto mixto quede centrado, se deben calcular dinámicamente los anchos de los segmentos usando `doc.getTextWidth()` bajo sus tipografías respectivas antes de renderizarlos.
 * **Identificación del Módulo (Izquierda)**:
   - Texto: `${CódigoDocumento} — Gestión SySO`.
-  - Tamaño: `7.5pt` en negrita.
+  - Tamaño: `7.5 pt` en negrita, alineado a la izquierda.
 * **Contador de Páginas Dinámico (Derecha)**:
   - Sintaxis estandarizada: `"Página X de Y"` (ej. `Página 1 de 3`).
-  - Tamaño: `8pt` en negrita, alineado a la derecha.
+  - Tamaño: `8 pt` en negrita, alineado a la derecha.
+
+### Algoritmo de Centrado de Texto Mixto (jsPDF)
+```javascript
+const boldText = companyName;
+const normalText = `  •  Tel: ${phoneVal}  •  Email: ${emailVal}`;
+
+doc.setFontSize(7.5);
+
+// Medir anchos de los segmentos según su estilo
+doc.setFont('helvetica', 'bold');
+const boldWidth = doc.getTextWidth(boldText);
+
+doc.setFont('helvetica', 'normal');
+const normalWidth = doc.getTextWidth(normalText);
+
+// Calcular X inicial para centrado absoluto en el área útil totalW
+const totalTextWidth = boldWidth + normalWidth;
+const lineStartX = startX + (totalW / 2) - (totalTextWidth / 2);
+
+// Dibujar secuencialmente
+doc.setFont('helvetica', 'bold');
+doc.text(boldText, lineStartX, textY);
+
+doc.setFont('helvetica', 'normal');
+doc.text(normalText, lineStartX + boldWidth, textY);
+```
 
 ---
 

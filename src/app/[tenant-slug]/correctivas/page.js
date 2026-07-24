@@ -850,20 +850,39 @@ export default function AccionesCorrectivasPage({ params }) {
         didDrawPage: function(data) {
           drawHeader(doc);
           
-          doc.setFont('helvetica', 'normal');
-          doc.setFontSize(8);
-          doc.setTextColor(100, 100, 100);
-          
-          doc.setDrawColor(217, 217, 217);
+          // Línea divisora pie (espesor 1 pt, Azul Corporativo)
+          doc.setDrawColor(70, 141, 255); // COLOR_AZUL_PRINCIPAL RGB
           doc.setLineWidth(1);
           doc.line(40, 545, 801, 545);
           
-          const companyName = tenant?.name || 'Gestión SySO';
+          const boldText = tenant?.name || 'Gestión SySO';
           const phoneVal = profile?.role === 'miembro' ? (profile?.phone || '') : adminContact.phone;
           const emailVal = profile?.role === 'miembro' ? (profile?.email || '') : adminContact.email;
-          const footerText = `${companyName} - Tel: ${phoneVal} - Email: ${emailVal}`;
-          doc.text(footerText, 420.94, 560, { align: 'center' });
-          
+          const normalText = `  •  Tel: ${phoneVal}  •  Email: ${emailVal}`;
+
+          doc.setFontSize(7.5);
+          doc.setTextColor(71, 85, 105); // COLOR_SLATE_700 RGB
+
+          // Medir anchos
+          doc.setFont('helvetica', 'bold');
+          const boldWidth = doc.getTextWidth(boldText);
+
+          doc.setFont('helvetica', 'normal');
+          const normalWidth = doc.getTextWidth(normalText);
+
+          const totalTextWidth = boldWidth + normalWidth;
+          const totalW = 801 - 40; // 761 pt
+          const lineStartX = 40 + (totalW / 2) - (totalTextWidth / 2);
+
+          // Dibujar secuencialmente
+          doc.setFont('helvetica', 'bold');
+          doc.text(boldText, lineStartX, 560);
+
+          doc.setFont('helvetica', 'normal');
+          doc.text(normalText, lineStartX + boldWidth, 560);
+
+          // Número de página (derecha, negrita)
+          doc.setFont('helvetica', 'bold');
           doc.text(`Página ${data.pageNumber}`, 801, 560, { align: 'right' });
         },
         didDrawCell: function(data) {

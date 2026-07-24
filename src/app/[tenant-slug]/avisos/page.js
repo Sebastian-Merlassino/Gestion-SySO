@@ -1347,21 +1347,40 @@ export default function AvisosRiesgoPage({ params }) {
           doc.text(String(av.aviso_numero || 'N/A'), 443.77, 116.0);
         }
 
-        // Footer: Línea azul y texto comercial
-        doc.setFillColor(68, 114, 196); // #4472C4
-        doc.rect(27.89, 790, 539.22, 5, 'F');
+        // Footer: Línea Azul Corporativo de 1pt
+        doc.setDrawColor(70, 141, 255); // COLOR_AZUL_PRINCIPAL RGB
+        doc.setLineWidth(1);
+        doc.line(27.89, 790, 567.11, 790);
 
         // Footer Central Text (centered at x=297.5)
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(9.75);
-        doc.setTextColor(0, 0, 0);
-        const companyName = tenant?.name || 'Gestión SySO';
+        const boldText = tenant?.name || 'Gestión SySO';
         const phoneVal = profile?.role === 'miembro' ? (profile?.phone || '') : adminContact.phone;
         const emailVal = profile?.role === 'miembro' ? (profile?.email || '') : adminContact.email;
-        const footerText = `${companyName} - Tel: ${phoneVal} - Email: ${emailVal}`;
-        doc.text(footerText, 297.5, 812.23, { align: 'center' });
+        const normalText = `  •  Tel: ${phoneVal}  •  Email: ${emailVal}`;
 
-        // Footer Page Number (right-aligned at x=567.11)
+        doc.setFontSize(7.5);
+        doc.setTextColor(71, 85, 105); // COLOR_SLATE_700 RGB
+
+        // Medir anchos
+        doc.setFont('helvetica', 'bold');
+        const boldWidth = doc.getTextWidth(boldText);
+
+        doc.setFont('helvetica', 'normal');
+        const normalWidth = doc.getTextWidth(normalText);
+
+        const totalTextWidth = boldWidth + normalWidth;
+        const totalW = 567.11 - 27.89; // 539.22 pt
+        const lineStartX = 27.89 + (totalW / 2) - (totalTextWidth / 2);
+
+        // Dibujar secuencialmente
+        doc.setFont('helvetica', 'bold');
+        doc.text(boldText, lineStartX, 812.23);
+
+        doc.setFont('helvetica', 'normal');
+        doc.text(normalText, lineStartX + boldWidth, 812.23);
+
+        // Footer Page Number (right-aligned at x=567.11, bold)
+        doc.setFont('helvetica', 'bold');
         doc.text(`Pág. ${pageNum}`, 567.11, 812.23, { align: 'right' });
       };
 

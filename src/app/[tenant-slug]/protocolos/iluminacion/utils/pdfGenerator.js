@@ -328,16 +328,34 @@ export const generateLightingProtocolPdf = async (
     const subFooterY = isLandscape ? 204.5 : 289.5;
     const totalW = endX - startX;
 
-    // Accent Blue Bar
-    setFillColor(doc, COLOR_AZUL_PRINCIPAL);
-    doc.rect(startX, barY, totalW, 0.8, 'F');
+    // Accent Blue Bar (espesor 0.35 mm o ~1 pt)
+    setDrawColor(doc, COLOR_AZUL_PRINCIPAL);
+    doc.setLineWidth(0.35);
+    doc.line(startX, barY, endX, barY);
 
     // Contact Info Line Centered
-    const contactText = `${companyName}  •  Tel: ${phoneVal}  •  Email: ${emailVal}`;
-    doc.setFont('helvetica', 'normal');
+    const boldText = companyName;
+    const normalText = `  •  Tel: ${phoneVal}  •  Email: ${emailVal}`;
+
     doc.setFontSize(7.5);
     setTextColor(doc, COLOR_SLATE_700);
-    doc.text(contactText, startX + (totalW / 2), textY, { align: 'center' });
+
+    // Medir anchos de los segmentos según su estilo
+    doc.setFont('helvetica', 'bold');
+    const boldWidth = doc.getTextWidth(boldText);
+
+    doc.setFont('helvetica', 'normal');
+    const normalWidth = doc.getTextWidth(normalText);
+
+    const totalTextWidth = boldWidth + normalWidth;
+    const lineStartX = startX + (totalW / 2) - (totalTextWidth / 2);
+
+    // Dibujar secuencialmente
+    doc.setFont('helvetica', 'bold');
+    doc.text(boldText, lineStartX, textY);
+
+    doc.setFont('helvetica', 'normal');
+    doc.text(normalText, lineStartX + boldWidth, textY);
 
     // Sub-footer: Page count right
     doc.setFont('helvetica', 'bold');

@@ -2069,14 +2069,40 @@ export default function AccidentesPage({ params }) {
       doc.setLineWidth(0.5);
       doc.line(14, 53, 581, 53);
 
-      const footerText = `${tenant?.name || 'Gestión SySO'}  |  Tel: ${profile?.phone || profile?.telefono || '—'}  |  Email: ${profile?.email || 'sebastian.merlassino@gestionsyso.com'}`;
-      doc.setDrawColor(0, 0, 0);
-      doc.setLineWidth(0.5);
+      // Línea divisora pie (espesor 1 pt, Azul Corporativo)
+      doc.setDrawColor(70, 141, 255); // COLOR_AZUL_PRINCIPAL RGB
+      doc.setLineWidth(1);
       doc.line(14, 815, 581, 815);
+
+      // Pie de página: Consultora en bold y los datos de contacto en normal
+      const boldText = tenant?.name || 'Gestión SySO';
+      const phoneVal = profile?.phone || profile?.telefono || '—';
+      const emailVal = profile?.email || 'sebastian.merlassino@gestionsyso.com';
+      const normalText = `  •  Tel: ${phoneVal}  •  Email: ${emailVal}`;
+
+      doc.setFontSize(7.5);
+      doc.setTextColor(71, 85, 105); // COLOR_SLATE_700 RGB
+
+      // Medir anchos
+      doc.setFont('Helvetica', 'bold');
+      const boldWidth = doc.getTextWidth(boldText);
+
       doc.setFont('Helvetica', 'normal');
-      doc.setFontSize(7);
-      doc.setTextColor(0, 0, 0);
-      doc.text(footerText, 297.5, 825, { align: 'center' });
+      const normalWidth = doc.getTextWidth(normalText);
+
+      const totalTextWidth = boldWidth + normalWidth;
+      const totalW = 581 - 14; // 567 pt
+      const lineStartX = 14 + (totalW / 2) - (totalTextWidth / 2);
+
+      // Dibujar secuencialmente
+      doc.setFont('Helvetica', 'bold');
+      doc.text(boldText, lineStartX, 825);
+
+      doc.setFont('Helvetica', 'normal');
+      doc.text(normalText, lineStartX + boldWidth, 825);
+
+      // Número de página (derecha, negrita)
+      doc.setFont('Helvetica', 'bold');
       doc.text(`Página ${pageNumber} de 3`, 581, 825, { align: 'right' });
     };
 

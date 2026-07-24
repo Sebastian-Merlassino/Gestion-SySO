@@ -1,5 +1,90 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-24] Personalización de Colores de Marca y Red Social X (Twitter)
+
+### Resumen de Cambios
+- **Nueva Migración de Base de Datos (`supabase/migrations/20260810000000_add_brand_colors_to_tenants.sql`):**
+  - Se agregaron las columnas `primary_color` y `secondary_color` para colores personalizados y `social_x` para almacenar el enlace a la red social X (Twitter) en la tabla `public.tenants`.
+- **Estandarización de Identidad de Empresa en Perfil (`src/app/[tenant-slug]/profile/page.js`):**
+  - Implementación de estados y mapeo para cargar y persistir los colores de la marca y la red social X.
+  - Se rediseñó el bloque de redes sociales para organizar en 3 columnas LinkedIn, Instagram y X (Twitter).
+  - Se añadió la sección de "Colores de la Marca" con selectores de color (`type="color"`) e inputs de texto HEX sincronizados, permitiendo restablecer los valores por defecto.
+  - Sincronización de las nuevas variables con el sistema de confirmación de salida sin guardar (`AppUnsavedChangesDialog`).
+- **Actualización de Flujo de Onboarding (`src/app/onboarding/page.js`):**
+  - Homogeneización de la interfaz del formulario agregando el campo de X (Twitter) y el panel de Colores de la Marca.
+  - Sincronización del guardado inicial del inquilino (*tenant*) con los colores seleccionados al registrarse.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados
+- `supabase/migrations/20260810000000_add_brand_colors_to_tenants.sql` (Nuevo)
+- `src/app/[tenant-slug]/profile/page.js` (Modificado)
+- `src/app/onboarding/page.js` (Modificado)
+- `docs/BITACORA_DESARROLLO.md` (Modificado)
+
+### Validaciones Ejecutadas
+- Compilación de producción limpia y exitosa de Next.js (`npm run build`).
+
+---
+
+## [2026-07-24] Estandarización Global de Pie de Página en PDFs y Negrita en Consultora
+
+### Resumen de Cambios
+- **Actualización de Estándar de Diseño PDF (`docs/design/PDF_STYLE_STANDARD.md`):**
+  - Se formalizó el diseño del pie de página para todos los reportes del sistema.
+  - Se especificó el espesor de la línea de acento azul en $0.35\text{ mm}$ ($1\text{ pt}$) mediante `doc.line()`.
+  - Se estableció el estilo híbrido (nombre de consultora en **negrita**, datos de contacto en **normal**) y el algoritmo de centrado dinámico mediante `doc.getTextWidth()`.
+- **Actualización del Helper Central de Pie de Página (`src/lib/pdf/pdfFooter.js`):**
+  - Se implementó la nueva especificación en el componente de infraestructura común para heredar automáticamente el diseño de pie de página estandarizado en todos los futuros reportes que consuman este módulo.
+- **Normalización de Todos los Módulos PDF del Sistema (12 Generadores en total):**
+  - Se aplicó la línea divisoria azul corporativo fina de $1\text{ pt}$ ($0.35\text{ mm}$) y el centrado dinámico híbrido (consultora en **negrita**, contactos en **normal**) en los siguientes archivos:
+    1. **Protocolo de Iluminación:** [pdfGenerator.js](file:///src/app/[tenant-slug]/protocolos/iluminacion/utils/pdfGenerator.js) (función `drawFooter`).
+    2. **Reporte de Siniestralidad e Índices (Dashboard):** [page.js](file:///src/app/[tenant-slug]/dashboard/page.js) (función `drawHeaderAndFooter`).
+    3. **Programa de Higiene y Seguridad:** [page.js](file:///src/app/[tenant-slug]/programa/page.js) (hook `didDrawPage`).
+    4. **Matriz de Riesgos IPER:** [page.js](file:///src/app/[tenant-slug]/matriz-riesgos/page.js) (hook `didDrawPage`).
+    5. **Seguimiento y Control de Extintores:** [page.js](file:///src/app/[tenant-slug]/extintores/page.js) (hook `didDrawPage`).
+    6. **Acciones Correctivas:** [page.js](file:///src/app/[tenant-slug]/correctivas/page.js) (hook `didDrawPage`).
+    7. **Programa Anual de Capacitación:** [page.js](file:///src/app/[tenant-slug]/capacitacion/page.js) (hook `didDrawPage`).
+    8. **Constancia de Visita:** [page.js](file:///src/app/[tenant-slug]/visitas/page.js) (función `drawHeaderAndFooter`).
+    9. **Inspección de Control Eléctrico:** [page.js](file:///src/app/[tenant-slug]/control-electrico/page.js) (función `drawFooter`).
+    10. **Checklists Personalizados:** [page.js](file:///src/app/[tenant-slug]/checklist-personalizados/page.js) (función `drawFooter`).
+    11. **Investigación de Accidentes:** [page.js](file:///src/app/[tenant-slug]/accidentes/page.js) (función `drawHeaderAndFooter`).
+    12. **Aviso de Riesgo:** [page.js](file:///src/app/[tenant-slug]/avisos/page.js) (función `drawHeaderAndFooter`).
+- **Ajustes de Maquetación y Colores en PDF "Constancia de Visita" (`visitas/page.js`):**
+  - Se solucionó la deriva azul en la tabla de la Página 2 (causada por el pie de página previo) forzando explícitamente `setDrawColor(0, 0, 0)` y `setLineWidth(0.8)` en todas las tablas, celdas y casilleros de verificación (checkboxes) de las páginas 1 y 2.
+  - Se modificaron los fondos de los encabezados de las tablas de actividades y del bloque de observaciones a color gris medio profesional `#666666` (RGB 102, 102, 102).
+  - Se asignó el color principal de la marca `#468DFF` (RGB 70, 141, 255) al banner superior de "Constancia de visita".
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados
+- `docs/design/PDF_STYLE_STANDARD.md`
+- `src/lib/pdf/pdfFooter.js`
+- `src/app/[tenant-slug]/protocolos/iluminacion/utils/pdfGenerator.js`
+- `src/app/[tenant-slug]/dashboard/page.js`
+- `src/app/[tenant-slug]/programa/page.js`
+- `src/app/[tenant-slug]/matriz-riesgos/page.js`
+- `src/app/[tenant-slug]/extintores/page.js`
+- `src/app/[tenant-slug]/correctivas/page.js`
+- `src/app/[tenant-slug]/capacitacion/page.js`
+- `src/app/[tenant-slug]/visitas/page.js`
+- `src/app/[tenant-slug]/control-electrico/page.js`
+- `src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `src/app/[tenant-slug]/accidentes/page.js`
+- `src/app/[tenant-slug]/avisos/page.js`
+- `docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción en Next.js (`npm run build`).
+
+---
+
 ## [2026-07-23] Ajuste Visual en Portada de PDF "Protocolo de Iluminación" (`pdfGenerator.js`)
 
 ### Resumen de Cambios

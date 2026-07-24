@@ -1603,29 +1603,41 @@ export default function VisitasPage({ params }) {
           }
         }
         
-        // Footer: Barra azul
-        doc.setFillColor(60, 120, 216); // #3C78D8
-        doc.rect(42.1, 730.63, 525.75, 10.5, 'F');
+        // Footer: Línea Azul Corporativo de 1pt
+        doc.setDrawColor(70, 141, 255); // COLOR_AZUL_PRINCIPAL RGB
+        doc.setLineWidth(1);
+        doc.line(42.1, 735.63, 567.85, 735.63);
         
-        // Footer: Texto centrado
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-        doc.setTextColor(0, 0, 0);
-        
-        const companyName = tenant?.name || "Gestión SySO";
+        // Footer: Texto centrado híbrido
+        const boldText = tenant?.name || "Gestión SySO";
         const phoneVal = profile?.role === 'miembro' ? (profile?.phone || '') : adminContact.phone;
         const emailVal = profile?.role === 'miembro' ? (profile?.email || '') : adminContact.email;
-        const footerText = `${companyName} - Tel: ${phoneVal} - Email: ${emailVal}`;
-        const totalFooterWidth = doc.getTextWidth(footerText);
-        const footerX = (595.28 - totalFooterWidth) / 2;
-        
-        doc.text(footerText, footerX, 751);
-        
-        // Footer: Número de página
+        const normalText = `  •  Tel: ${phoneVal}  •  Email: ${emailVal}`;
+
+        doc.setFontSize(7.5);
+        doc.setTextColor(71, 85, 105); // COLOR_SLATE_700 RGB
+
+        // Medir anchos
+        doc.setFont('helvetica', 'bold');
+        const boldWidth = doc.getTextWidth(boldText);
+
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(9);
-        doc.setTextColor(128, 128, 128); // #808080
-        doc.text(`${pageNum}`, 549, 751, { align: 'right' });
+        const normalWidth = doc.getTextWidth(normalText);
+
+        const totalTextWidth = boldWidth + normalWidth;
+        const totalW = 567.85 - 42.1; // 525.75 pt
+        const lineStartX = 42.1 + (totalW / 2) - (totalTextWidth / 2);
+
+        // Dibujar secuencialmente
+        doc.setFont('helvetica', 'bold');
+        doc.text(boldText, lineStartX, 751);
+
+        doc.setFont('helvetica', 'normal');
+        doc.text(normalText, lineStartX + boldWidth, 751);
+        
+        // Footer: Número de página (derecha, negrita, Slate 700)
+        doc.setFont('helvetica', 'bold');
+        doc.text(`${pageNum}`, 567.85, 751, { align: 'right' });
       };
 
       // ==========================================
@@ -1634,7 +1646,7 @@ export default function VisitasPage({ params }) {
       drawHeaderAndFooter(1);
 
       // Título del documento
-      doc.setFillColor(60, 120, 216); // #3C78D8
+      doc.setFillColor(70, 141, 255); // COLOR_AZUL_PRINCIPAL RGB (#468DFF)
       doc.rect(61.6, 116.71, 486.75, 25.5, 'F');
       
       doc.setFont('helvetica', 'bold');
@@ -1644,7 +1656,7 @@ export default function VisitasPage({ params }) {
 
       // Tabla de Datos Generales (Renderizado manual del grid)
       doc.setDrawColor(0, 0, 0);
-      doc.setLineWidth(1);
+      doc.setLineWidth(0.8); // Delineado estandarizado a 0.8 pt
       doc.rect(62, 156, 487, 144);
 
       // Líneas horizontales de división
@@ -1704,7 +1716,7 @@ export default function VisitasPage({ params }) {
       doc.text(v.profesional_nombre || 'N/A', 205, 291);
 
       // Tabla de Actividades de la Página 1
-      doc.setFillColor(60, 120, 216); // #3C78D8
+      doc.setFillColor(102, 102, 102); // Gris medio #666666 para encabezado
       doc.rect(62.35, 314.25, 486, 24.75, 'F');
       
       doc.setFont('helvetica', 'bold');
@@ -1717,6 +1729,7 @@ export default function VisitasPage({ params }) {
 
       // Líneas verticales de cabecera
       doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(0.8); // Delineado estandarizado a 0.8 pt
       doc.line(462.85, 314.25, 462.85, 314.25 + 24.75);
       doc.line(491.35, 314.25, 491.35, 314.25 + 24.75);
       doc.line(519.85, 314.25, 519.85, 314.25 + 24.75);
@@ -1802,7 +1815,7 @@ export default function VisitasPage({ params }) {
       drawHeaderAndFooter(2);
 
       // Tabla de Actividades de la Página 2
-      doc.setFillColor(60, 120, 216); // #3C78D8
+      doc.setFillColor(102, 102, 102); // Gris medio #666666
       doc.rect(62.35, 102.91, 486, 24.75, 'F');
       
       doc.setFont('helvetica', 'bold');
@@ -1814,6 +1827,8 @@ export default function VisitasPage({ params }) {
       doc.text('NA', 519.85 + 14.25, 102.91 + 15.5, { align: 'center' });
 
       // Líneas verticales de cabecera
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(0.8); // Delineado estandarizado a 0.8 pt
       doc.line(462.85, 102.91, 462.85, 102.91 + 24.75);
       doc.line(491.35, 102.91, 491.35, 102.91 + 24.75);
       doc.line(519.85, 102.91, 519.85, 102.91 + 24.75);
@@ -1913,7 +1928,7 @@ export default function VisitasPage({ params }) {
 
       // Sección de Observaciones
       const obsY = 302.25;
-      doc.setFillColor(60, 120, 216); // #3C78D8
+      doc.setFillColor(102, 102, 102); // Gris medio #666666
       doc.rect(62.35, obsY, 486.75, 24.75, 'F');
       
       doc.setFont('helvetica', 'bold');
@@ -1923,7 +1938,7 @@ export default function VisitasPage({ params }) {
 
       // Contenedor principal de observaciones
       doc.setDrawColor(0, 0, 0);
-      doc.setLineWidth(1);
+      doc.setLineWidth(0.8); // Delineado estandarizado a 0.8 pt
       doc.rect(62.35, obsY, 486.75, 237.75); // Llega hasta y ~ 540
 
       // Texto introductorio

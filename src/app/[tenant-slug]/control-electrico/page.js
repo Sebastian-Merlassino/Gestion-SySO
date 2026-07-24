@@ -1607,29 +1607,40 @@ export default function ControlElectricoPage({ params }) {
       const totalPages = doc.internal.getNumberOfPages();
       
       const drawFooter = (d, pageNum) => {
-        // Barra azul inferior
-        d.setFillColor(60, 120, 216); // #3C78D8
-        d.rect(34.5, 780.9, 525.75, 10.5, 'F');
+        // Línea divisora pie (espesor 1 pt, Azul Corporativo)
+        d.setDrawColor(70, 141, 255); // COLOR_AZUL_PRINCIPAL RGB
+        d.setLineWidth(1);
+        d.line(34.5, 785.9, 552.75, 785.9);
 
-        // Texto institucional
-        d.setFont('helvetica', 'normal');
-        d.setFontSize(8);
-        d.setTextColor(0, 0, 0);
-        
+        // Pie de página: Consultora en bold y los datos de contacto en normal
+        const boldText = companyName || tenant?.name || 'Gestión SySO';
         const phoneVal = profile?.role === 'miembro' ? (profile?.phone || '') : adminContact.phone;
         const emailVal = profile?.role === 'miembro' ? (profile?.email || '') : adminContact.email;
-        
-        d.setFont('helvetica', 'bold');
-        const compW = d.getTextWidth(companyName);
-        d.text(companyName, 135.72, 798.68);
-        
-        d.setFont('helvetica', 'normal');
-        d.text(` - Tel.: ${phoneVal || '1159969956 / 1132296691'} - Email: ${emailVal || 'info@gestionsyso.com'}`, 135.72 + compW, 798.68);
+        const normalText = `  •  Tel: ${phoneVal || '1159969956 / 1132296691'}  •  Email: ${emailVal || 'info@gestionsyso.com'}`;
 
-        // Número de página
+        d.setFontSize(7.5);
+        d.setTextColor(71, 85, 105); // COLOR_SLATE_700 RGB
+
+        // Medir anchos
+        d.setFont('helvetica', 'bold');
+        const boldWidth = d.getTextWidth(boldText);
+
         d.setFont('helvetica', 'normal');
-        d.setFontSize(9);
-        d.setTextColor(128, 128, 128); // #808080
+        const normalWidth = d.getTextWidth(normalText);
+
+        const totalTextWidth = boldWidth + normalWidth;
+        const totalW = 552.75 - 34.5; // 518.25 pt
+        const lineStartX = 34.5 + (totalW / 2) - (totalTextWidth / 2);
+
+        // Dibujar secuencialmente
+        d.setFont('helvetica', 'bold');
+        d.text(boldText, lineStartX, 798.68);
+
+        d.setFont('helvetica', 'normal');
+        d.text(normalText, lineStartX + boldWidth, 798.68);
+
+        // Número de página (derecha, negrita)
+        d.setFont('helvetica', 'bold');
         d.text(`Página ${pageNum} de ${totalPages}`, 552.75, 799.05, { align: 'right' });
       };
 

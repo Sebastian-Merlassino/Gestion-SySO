@@ -28,7 +28,8 @@ import {
   Calendar,
   X,
   CheckCircle,
-  PlusCircle
+  PlusCircle,
+  Palette
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useToast } from '@/components/providers/ToastProvider';
@@ -119,6 +120,9 @@ export default function OnboardingPage() {
   const [logo1Preview, setLogo1Preview] = useState('');
   const [logo2, setLogo2] = useState(null);
   const [logo2Preview, setLogo2Preview] = useState('');
+  const [socialX, setSocialX] = useState('');
+  const [primaryColor, setPrimaryColor] = useState('#468DFF');
+  const [secondaryColor, setSecondaryColor] = useState('#0D0D0D');
 
   // Campos Opcionales - Sitio Web y Redes Sociales de la Empresa
   const [website, setWebsite] = useState('');
@@ -187,6 +191,9 @@ export default function OnboardingPage() {
           facebook: '',
           tiktok: '',
           youtube: '',
+          socialX: '',
+          primaryColor: '#468DFF',
+          secondaryColor: '#0D0D0D',
           matriculas: [
             {
               institucion: '',
@@ -528,6 +535,9 @@ export default function OnboardingPage() {
               social_facebook: facebook || null,
               social_tiktok: tiktok || null,
               social_youtube: youtube || null,
+              social_x: socialX || null,
+              primary_color: primaryColor || '#468DFF',
+              secondary_color: secondaryColor || '#0D0D0D',
             })
             .eq('id', existingTenant.id)
             .select()
@@ -551,6 +561,9 @@ export default function OnboardingPage() {
               social_facebook: facebook || null,
               social_tiktok: tiktok || null,
               social_youtube: youtube || null,
+              social_x: socialX || null,
+              primary_color: primaryColor || '#468DFF',
+              secondary_color: secondaryColor || '#0D0D0D',
             })
             .select()
             .single();
@@ -573,6 +586,9 @@ export default function OnboardingPage() {
             social_facebook: facebook || null,
             social_tiktok: tiktok || null,
             social_youtube: youtube || null,
+            social_x: socialX || null,
+            primary_color: primaryColor || '#468DFF',
+            secondary_color: secondaryColor || '#0D0D0D',
           })
           .select()
           .single();
@@ -763,6 +779,9 @@ export default function OnboardingPage() {
       facebook !== '' ||
       tiktok !== '' ||
       youtube !== '' ||
+      socialX !== '' ||
+      primaryColor !== '#468DFF' ||
+      secondaryColor !== '#0D0D0D' ||
       !areMatriculasEqual(
         matriculas.map(m => ({
           institucion: m.institucion,
@@ -839,6 +858,9 @@ export default function OnboardingPage() {
             .update({
               name: finalCompanyName,
               plan_id: selectedPlan,
+              social_x: socialX || null,
+              primary_color: primaryColor || '#468DFF',
+              secondary_color: secondaryColor || '#0D0D0D',
             })
             .eq('id', existingTenant.id)
             .select()
@@ -856,6 +878,9 @@ export default function OnboardingPage() {
               slug: newSlug,
               status: 'active',
               plan_id: selectedPlan,
+              social_x: socialX || null,
+              primary_color: primaryColor || '#468DFF',
+              secondary_color: secondaryColor || '#0D0D0D',
             })
             .select()
             .single();
@@ -872,6 +897,9 @@ export default function OnboardingPage() {
             slug: companySlug,
             status: 'active',
             plan_id: selectedPlan,
+            social_x: socialX || null,
+            primary_color: primaryColor || '#468DFF',
+            secondary_color: secondaryColor || '#0D0D0D',
           })
           .select()
           .single();
@@ -1348,7 +1376,7 @@ export default function OnboardingPage() {
             <div className="space-y-4">
               <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Redes Sociales de la Empresa</h4>
               
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">LinkedIn</label>
                   <input
@@ -1366,6 +1394,16 @@ export default function OnboardingPage() {
                     placeholder="https://instagram.com/usuario"
                     value={instagram}
                     onChange={(e) => setInstagram(e.target.value)}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">X (Twitter)</label>
+                  <input
+                    type="url"
+                    placeholder="https://x.com/usuario"
+                    value={socialX}
+                    onChange={(e) => setSocialX(e.target.value)}
                     className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                   />
                 </div>
@@ -1439,6 +1477,88 @@ export default function OnboardingPage() {
                     onToast={triggerToast}
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* Colores de la Marca */}
+            <div className="pt-6 border-t border-slate-100 space-y-4">
+              <div>
+                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <Palette className="text-[#468DFF] h-4 w-4" />
+                  Colores de la Marca
+                </h4>
+                <p className="text-[10px] text-slate-400 mt-1">Define los colores institucionales de tu consultora o empresa.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-2">Color Principal</label>
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm shrink-0 cursor-pointer">
+                      <input
+                        type="color"
+                        value={primaryColor}
+                        onChange={(e) => setPrimaryColor(e.target.value.toUpperCase())}
+                        disabled={loading}
+                        className="absolute inset-0 w-full h-full p-0 border-0 scale-[1.5] cursor-pointer disabled:cursor-not-allowed"
+                      />
+                    </div>
+                    <AppInput
+                      type="text"
+                      maxLength={7}
+                      placeholder="#468DFF"
+                      value={primaryColor}
+                      onChange={(e) => {
+                        let val = e.target.value;
+                        if (!val.startsWith('#') && val.length > 0) val = '#' + val;
+                        setPrimaryColor(val.toUpperCase());
+                      }}
+                      disabled={loading}
+                      className="w-full text-xs font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-2">Color Secundario</label>
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm shrink-0 cursor-pointer">
+                      <input
+                        type="color"
+                        value={secondaryColor}
+                        onChange={(e) => setSecondaryColor(e.target.value.toUpperCase())}
+                        disabled={loading}
+                        className="absolute inset-0 w-full h-full p-0 border-0 scale-[1.5] cursor-pointer disabled:cursor-not-allowed"
+                      />
+                    </div>
+                    <AppInput
+                      type="text"
+                      maxLength={7}
+                      placeholder="#0D0D0D"
+                      value={secondaryColor}
+                      onChange={(e) => {
+                        let val = e.target.value;
+                        if (!val.startsWith('#') && val.length > 0) val = '#' + val;
+                        setSecondaryColor(val.toUpperCase());
+                      }}
+                      disabled={loading}
+                      className="w-full text-xs font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPrimaryColor('#468DFF');
+                    setSecondaryColor('#0D0D0D');
+                  }}
+                  className="text-[10px] text-slate-400 hover:text-[#468DFF] font-semibold transition-colors flex items-center gap-1 cursor-pointer bg-slate-50 hover:bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg"
+                >
+                  Restaurar colores predeterminados
+                </button>
               </div>
             </div>
           </div>

@@ -50,7 +50,8 @@ import {
   GraduationCap,
   Flame,
   ClipboardCheck,
-  Folder
+  Folder,
+  Palette
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -179,6 +180,8 @@ const [partidosList, setPartidosList] = useState([]);
   const [logo1Preview, setLogo1Preview] = useState('');
   const [logo2, setLogo2] = useState(null);
   const [logo2Preview, setLogo2Preview] = useState('');
+  const [primaryColor, setPrimaryColor] = useState('#468DFF');
+  const [secondaryColor, setSecondaryColor] = useState('#0D0D0D');
 
   // Cambio de contraseña
   const [currentPassword, setCurrentPassword] = useState('');
@@ -201,6 +204,7 @@ const [partidosList, setPartidosList] = useState([]);
   const [facebook, setFacebook] = useState('');
   const [tiktok, setTiktok] = useState('');
   const [youtube, setYoutube] = useState('');
+  const [socialX, setSocialX] = useState('');
 
   // Plan
   const [selectedPlan, setSelectedPlan] = useState('free');
@@ -483,6 +487,9 @@ const [partidosList, setPartidosList] = useState([]);
         setFacebook(tenant.social_facebook || '');
         setTiktok(tenant.social_tiktok || '');
         setYoutube(tenant.social_youtube || '');
+        setSocialX(tenant.social_x || '');
+        setPrimaryColor(tenant.primary_color || '#468DFF');
+        setSecondaryColor(tenant.secondary_color || '#0D0D0D');
 
         // Guardar valores iniciales para dirty checking
         setInitialValues({
@@ -507,7 +514,10 @@ const [partidosList, setPartidosList] = useState([]);
           facebook: tenant.social_facebook || '',
           tiktok: tenant.social_tiktok || '',
           youtube: tenant.social_youtube || '',
-          planId: tenant.plan_id || 'free'
+          socialX: tenant.social_x || '',
+          planId: tenant.plan_id || 'free',
+          primaryColor: tenant.primary_color || '#468DFF',
+          secondaryColor: tenant.secondary_color || '#0D0D0D'
         });
 
         setInitialLoading(false);
@@ -831,6 +841,9 @@ const [partidosList, setPartidosList] = useState([]);
             social_facebook: facebook || null,
             social_tiktok: tiktok || null,
             social_youtube: youtube || null,
+            social_x: socialX || null,
+            primary_color: primaryColor || '#468DFF',
+            secondary_color: secondaryColor || '#0D0D0D',
           })
           .eq('id', tenantId);
 
@@ -971,7 +984,10 @@ const [partidosList, setPartidosList] = useState([]);
         facebook,
         tiktok,
         youtube,
-        planId: selectedPlan
+        socialX,
+        planId: selectedPlan,
+        primaryColor,
+        secondaryColor
       });
 
     } catch (err) {
@@ -1033,6 +1049,9 @@ const [partidosList, setPartidosList] = useState([]);
       facebook !== (initialValues?.facebook || '') ||
       tiktok !== (initialValues?.tiktok || '') ||
       youtube !== (initialValues?.youtube || '') ||
+      socialX !== (initialValues?.socialX || '') ||
+      primaryColor !== (initialValues?.primaryColor || '#468DFF') ||
+      secondaryColor !== (initialValues?.secondaryColor || '#0D0D0D') ||
       selectedPlan !== (initialValues?.planId || 'free') ||
       matriculas.some(m => m.fotoFrente !== null || m.fotoDorso !== null) ||
       fotoFirma !== null ||
@@ -1678,7 +1697,7 @@ const [partidosList, setPartidosList] = useState([]);
             <div className="space-y-4">
               <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Redes Sociales de la Empresa</h4>
               
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">LinkedIn</label>
                   <input
@@ -1694,6 +1713,15 @@ const [partidosList, setPartidosList] = useState([]);
                     type="url"
                     value={instagram}
                     onChange={(e) => setInstagram(e.target.value)}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">X (Twitter)</label>
+                  <input
+                    type="url"
+                    value={socialX}
+                    onChange={(e) => setSocialX(e.target.value)}
                     className="w-full border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                   />
                 </div>
@@ -1765,6 +1793,90 @@ const [partidosList, setPartidosList] = useState([]);
                   />
                 </div>
               </div>
+            </div>
+
+            {/* Colores de la Marca */}
+            <div className="pt-6 border-t border-slate-100 space-y-4">
+              <div>
+                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <Palette className="text-[#468DFF] h-4 w-4" />
+                  Colores de la Marca
+                </h4>
+                <p className="text-[10px] text-slate-400 mt-1">Define los colores institucionales de tu consultora o empresa.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-2">Color Principal</label>
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm shrink-0 cursor-pointer">
+                      <input
+                        type="color"
+                        value={primaryColor}
+                        onChange={(e) => setPrimaryColor(e.target.value.toUpperCase())}
+                        disabled={profileData?.role === 'cliente'}
+                        className="absolute inset-0 w-full h-full p-0 border-0 scale-[1.5] cursor-pointer disabled:cursor-not-allowed"
+                      />
+                    </div>
+                    <AppInput
+                      type="text"
+                      maxLength={7}
+                      placeholder="#468DFF"
+                      value={primaryColor}
+                      onChange={(e) => {
+                        let val = e.target.value;
+                        if (!val.startsWith('#') && val.length > 0) val = '#' + val;
+                        setPrimaryColor(val.toUpperCase());
+                      }}
+                      disabled={profileData?.role === 'cliente'}
+                      className="w-full text-xs font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-2">Color Secundario</label>
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm shrink-0 cursor-pointer">
+                      <input
+                        type="color"
+                        value={secondaryColor}
+                        onChange={(e) => setSecondaryColor(e.target.value.toUpperCase())}
+                        disabled={profileData?.role === 'cliente'}
+                        className="absolute inset-0 w-full h-full p-0 border-0 scale-[1.5] cursor-pointer disabled:cursor-not-allowed"
+                      />
+                    </div>
+                    <AppInput
+                      type="text"
+                      maxLength={7}
+                      placeholder="#0D0D0D"
+                      value={secondaryColor}
+                      onChange={(e) => {
+                        let val = e.target.value;
+                        if (!val.startsWith('#') && val.length > 0) val = '#' + val;
+                        setSecondaryColor(val.toUpperCase());
+                      }}
+                      disabled={profileData?.role === 'cliente'}
+                      className="w-full text-xs font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {profileData?.role !== 'cliente' && (
+                <div className="flex justify-end pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPrimaryColor('#468DFF');
+                      setSecondaryColor('#0D0D0D');
+                    }}
+                    className="text-[10px] text-slate-400 hover:text-[#468DFF] font-semibold transition-colors flex items-center gap-1 cursor-pointer bg-slate-50 hover:bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg"
+                  >
+                    Restaurar colores predeterminados
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
