@@ -1,5 +1,37 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-24] Portal de Acceso Cliente y Compartir Credenciales (Ruta por Slug)
+
+### Resumen de Cambios
+- **Portal de Acceso Cliente (Login por Slug):**
+  - **`src/app/[tenant-slug]/login/page.js`:** Creada nueva página de acceso específica para cada inquilino (*tenant*).
+  - Carga dinámicamente el logo y la paleta de 6 colores personalizados de la consultora desde Supabase.
+  - Modifica los estilos utilizando variables CSS inyectadas en línea para los botones primarios, secundarios, campos de texto y pestañas de selección de portal.
+  - Ofrece inicio de sesión para profesionales y clientes, con control de intentos fallidos, cooldown de bloqueo temporal y restablecimiento de clave.
+- **Diálogo para Compartir Credenciales en Clientes:**
+  - **`src/app/[tenant-slug]/empresas/page.js`:** Añadida una tarjeta de acceso premium en la pestaña "Portal de Cliente" que expone el enlace personalizado del portal.
+  - Implementado el diálogo unificado `SharePortalAccessDialog` con pestañas para **WhatsApp** y **Correo Electrónico**.
+  - Sincronizados y expuestos dinámicamente todos los teléfonos y correos electrónicos registrados en los contactos de la empresa como opciones de selección, permitiendo además el ingreso de datos manuales.
+  - **Despacho:**
+    - WhatsApp: Abre `https://api.whatsapp.com/send` con el número y el mensaje autocompletado en un nuevo tab.
+    - Correo Electrónico: Abre `mailto:` pre-cargado con destinatario, asunto y cuerpo del mensaje de forma segura y client-side.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+- `gestion-syso-multitenant-security`
+
+### Archivos Modificados
+- `src/app/[tenant-slug]/login/page.js` (Nuevo)
+- `src/app/[tenant-slug]/empresas/page.js` (Modificado)
+- `docs/BITACORA_DESARROLLO.md` (Modificado)
+
+### Validaciones Ejecutadas
+- Compilación de producción limpia y exitosa de Next.js (`npm run build`).
+
+---
+
 ## [2026-07-24] Personalización Manual Completa de 6 Colores de Marca y Red Social X (Twitter)
 
 ### Resumen de Cambios

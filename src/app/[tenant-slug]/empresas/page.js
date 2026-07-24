@@ -270,6 +270,13 @@ export default function EmpresasClientes({ params }) {
   const [clientPassword, setClientPassword] = useState('');
   const [clientName, setClientName] = useState('');
   const [portalLoading, setPortalLoading] = useState(false);
+  const [showSharePortalModal, setShowSharePortalModal] = useState(false);
+  const [sharePortalTab, setSharePortalTab] = useState('whatsapp'); // 'whatsapp' o 'email'
+  const [selectedSharePhone, setSelectedSharePhone] = useState('');
+  const [selectedShareEmail, setSelectedShareEmail] = useState('');
+  const [manualSharePhone, setManualSharePhone] = useState('');
+  const [manualShareEmail, setManualShareEmail] = useState('');
+  const [shareLoading, setShareLoading] = useState(false);
 
   const originalDataRef = useRef('');
   const lastEditingIdRef = useRef(null);
@@ -3324,6 +3331,38 @@ export default function EmpresasClientes({ params }) {
                             </div>
                           </div>
 
+                          {/* Tarjeta de Acceso y Compartir */}
+                          <div className="p-5 rounded-2xl border border-[#468DFF]/20 bg-gradient-to-br from-blue-50/50 via-slate-50 to-indigo-50/10 space-y-4">
+                            <div>
+                              <h5 className="text-xs font-bold text-slate-755 uppercase tracking-wider">Acceso al Portal del Cliente</h5>
+                              <p className="text-[10px] text-slate-500 mt-1">Comparte este enlace para que el cliente ingrese a su portal con su CUIT y contraseña.</p>
+                            </div>
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                              <div className="flex-1 bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-650 truncate select-all">
+                                {`https://app.gestionsyso.com/${tenantSlug}/login`}
+                              </div>
+                              <div className="flex gap-2 shrink-0">
+                                <AppButton
+                                  variant="secondary"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(`https://app.gestionsyso.com/${tenantSlug}/login`);
+                                    triggerToast('Enlace de acceso copiado al portapapeles.');
+                                  }}
+                                  className="text-xs py-2 px-3 flex items-center justify-center gap-1.5"
+                                >
+                                  Copiar
+                                </AppButton>
+                                <AppButton
+                                  variant="primary"
+                                  onClick={() => setShowSharePortalModal(true)}
+                                  className="text-xs py-2 px-3 flex items-center justify-center gap-1.5 shadow-md shadow-[#468DFF]/10"
+                                >
+                                  Compartir Acceso
+                                </AppButton>
+                              </div>
+                            </div>
+                          </div>
+
                           <div className="p-4 rounded-xl border border-red-200 bg-red-50 text-red-800 text-xs leading-relaxed">
                             <strong>Atención:</strong> Si deshabilitas el acceso, las credenciales del cliente serán eliminadas de inmediato de manera permanente y éste ya no podrá iniciar sesión en la plataforma. Sus datos e informes de seguridad no serán borrados, sólo el acceso del usuario.
                           </div>
@@ -3535,6 +3574,226 @@ export default function EmpresasClientes({ params }) {
         onOpenChange={setUnsavedDialogOpen}
         onLeave={executeUnsavedLeave}
       />
+
+      {/* DIÁLOGO COMPARTIR ACCESO PORTAL CLIENTE */}
+      {showSharePortalModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div onClick={() => setShowSharePortalModal(false)} className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 max-w-md w-full z-10 shadow-2xl relative space-y-4 animate-fade-in">
+            
+            <div className="flex justify-between items-center">
+              <h4 className="font-outfit text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                <Users className="h-4.5 w-4.5 text-[#468DFF]" />
+                Compartir Acceso al Portal
+              </h4>
+              <button onClick={() => setShowSharePortalModal(false)} className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 cursor-pointer border-0 bg-transparent">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Pestañas (Tabs) */}
+            <div className="flex border-b border-slate-200">
+              <button
+                type="button"
+                onClick={() => setSharePortalTab('whatsapp')}
+                className={`flex-1 pb-2 text-xs font-bold transition-all border-b-2 flex items-center justify-center gap-1.5 cursor-pointer bg-transparent border-0 ${
+                  sharePortalTab === 'whatsapp'
+                    ? 'border-[#468DFF] text-[#468DFF]'
+                    : 'border-transparent text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                <MessageCircle className="h-3.5 w-3.5" />
+                WhatsApp
+              </button>
+              <button
+                type="button"
+                onClick={() => setSharePortalTab('email')}
+                className={`flex-1 pb-2 text-xs font-bold transition-all border-b-2 flex items-center justify-center gap-1.5 cursor-pointer bg-transparent border-0 ${
+                  sharePortalTab === 'email'
+                    ? 'border-[#468DFF] text-[#468DFF]'
+                    : 'border-transparent text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                <Mail className="h-3.5 w-3.5" />
+                Correo Electrónico
+              </button>
+            </div>
+
+            {sharePortalTab === 'whatsapp' ? (
+              // PESTAÑA: WHATSAPP
+              <div className="space-y-4">
+                <p className="text-[11px] text-slate-500 font-medium">
+                  Selecciona el contacto de WhatsApp registrado para esta empresa o introduce un número de teléfono manualmente.
+                </p>
+
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-600 block">Teléfonos Registrados:</label>
+                    {telefonos.filter(t => t.valor).length === 0 ? (
+                      <p className="text-xs text-slate-400 italic font-semibold">No hay teléfonos registrados en los contactos.</p>
+                    ) : (
+                      <div className="bg-slate-50 p-3 border border-slate-200 rounded-xl max-h-36 overflow-y-auto space-y-1.5">
+                        {telefonos.filter(t => t.valor).map((t, idx) => (
+                          <label key={idx} className="flex items-center gap-2.5 text-xs font-semibold text-slate-700 cursor-pointer hover:bg-slate-100/50 py-1 rounded">
+                            <input
+                              type="radio"
+                              name="share-phone"
+                              checked={selectedSharePhone === t.valor}
+                              onChange={() => {
+                                setSelectedSharePhone(t.valor);
+                                setManualSharePhone('');
+                              }}
+                              className="accent-[#468DFF] h-4 w-4"
+                            />
+                            <span>{t.nombre ? `${t.nombre} (${t.cargo || 'Contacto'}): ` : ''}{t.valor}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-slate-600">Número Manual (ej: 5491159969956):</label>
+                    <input
+                      type="text"
+                      placeholder="Código de país + área + número (sin espacios ni guiones)"
+                      value={manualSharePhone}
+                      onChange={(e) => {
+                        setManualSharePhone(e.target.value.replace(/[^0-9]/g, ''));
+                        setSelectedSharePhone('');
+                      }}
+                      className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowSharePortalModal(false)}
+                    className="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-100 cursor-pointer transition-all bg-white"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    disabled={shareLoading}
+                    onClick={async () => {
+                      setShareLoading(true);
+                      try {
+                        const targetPhone = selectedSharePhone || manualSharePhone;
+                        if (!targetPhone) {
+                          throw new Error('Debe seleccionar o ingresar un número de teléfono.');
+                        }
+                        const cleanPhone = targetPhone.replace(/[^0-9]/g, '');
+                        const msg = `Hola ${clientName || razonSocial}. Te invitamos a acceder a nuestro portal de Higiene y Seguridad para visualizar y descargar tus informes, constancias y visitas.\n\n🔗 Accede aquí: https://app.gestionsyso.com/${tenantSlug}/login\n\nUsuario (CUIT): ${cuit}\nClave: (Tu número de CUIT o la clave provista por el administrador)`;
+                        const waUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(msg)}`;
+                        window.open(waUrl, '_blank');
+                        triggerToast('Redirigiendo a WhatsApp...');
+                        setShowSharePortalModal(false);
+                      } catch (err) {
+                        triggerToast(err.message, 'error');
+                      } finally {
+                        setShareLoading(false);
+                      }
+                    }}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-lg cursor-pointer transition-all flex items-center gap-1.5 shadow-md shadow-green-500/10 border-0"
+                  >
+                    <MessageCircle className="h-3.5 w-3.5" />
+                    Enviar por WhatsApp
+                  </button>
+                </div>
+              </div>
+            ) : (
+              // PESTAÑA: CORREO ELECTRÓNICO (MAILTO CLIENT-SIDE)
+              <div className="space-y-4">
+                <p className="text-[11px] text-slate-500 font-medium">
+                  Selecciona el correo electrónico registrado para esta empresa o introduce uno manualmente. Se abrirá tu cliente de correo local.
+                </p>
+
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-600 block">Correos Registrados:</label>
+                    {correos.filter(c => c.valor).length === 0 ? (
+                      <p className="text-xs text-slate-400 italic font-semibold">No hay correos registrados en los contactos.</p>
+                    ) : (
+                      <div className="bg-slate-50 p-3 border border-slate-200 rounded-xl max-h-36 overflow-y-auto space-y-1.5">
+                        {correos.filter(c => c.valor).map((c, idx) => (
+                          <label key={idx} className="flex items-center gap-2.5 text-xs font-semibold text-slate-700 cursor-pointer hover:bg-slate-100/50 py-1 rounded">
+                            <input
+                              type="radio"
+                              name="share-email"
+                              checked={selectedShareEmail === c.valor}
+                              onChange={() => {
+                                setSelectedShareEmail(c.valor);
+                                setManualShareEmail('');
+                              }}
+                              className="accent-[#468DFF] h-4 w-4"
+                            />
+                            <span>{c.nombre ? `${c.nombre} (${c.cargo || 'Contacto'}): ` : ''}{c.valor}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-slate-600">Correo Manual:</label>
+                    <input
+                      type="email"
+                      placeholder="correo@cliente.com"
+                      value={manualShareEmail}
+                      onChange={(e) => {
+                        setManualShareEmail(e.target.value);
+                        setSelectedShareEmail('');
+                      }}
+                      className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowSharePortalModal(false)}
+                    className="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-100 cursor-pointer transition-all bg-white"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    disabled={shareLoading}
+                    onClick={async () => {
+                      setShareLoading(true);
+                      try {
+                        const targetEmail = selectedShareEmail || manualShareEmail;
+                        if (!targetEmail) {
+                          throw new Error('Debe seleccionar o ingresar una dirección de correo.');
+                        }
+                        const subject = `Acceso al Portal de Higiene y Seguridad - ${tenant?.name || 'Gestión SySO'}`;
+                        const body = `Estimado cliente,\n\nTe invitamos a acceder a nuestro portal de Higiene y Seguridad para visualizar y descargar tus informes, constancias y visitas.\n\n🔗 Accede aquí: https://app.gestionsyso.com/${tenantSlug}/login\n\nUsuario (CUIT): ${cuit}\nClave: (Tu número de CUIT o la clave provista por el administrador)\n\nSaludos cordiales,\nEl equipo de ${tenant?.name || 'Higiene y Seguridad'}`;
+                        
+                        window.location.href = `mailto:${targetEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                        triggerToast('Abriendo cliente de correo...');
+                        setShowSharePortalModal(false);
+                      } catch (err) {
+                        triggerToast(err.message, 'error');
+                      } finally {
+                        setShareLoading(false);
+                      }
+                    }}
+                    className="px-4 py-2 bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold rounded-lg cursor-pointer transition-all flex items-center gap-1.5 shadow-md shadow-[#468DFF]/10 border-0"
+                  >
+                    <Mail className="h-3.5 w-3.5" />
+                    Enviar por Correo
+                  </button>
+                </div>
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
 
       {/* Notificación Toast flotante en esquina removido - consumido globalmente */}
       <AppFormNavigator
