@@ -1,18 +1,20 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-07-24] Personalización de Colores de Marca y Red Social X (Twitter)
+## [2026-07-24] Personalización Manual Completa de 6 Colores de Marca y Red Social X (Twitter)
 
 ### Resumen de Cambios
-- **Nueva Migración de Base de Datos (`supabase/migrations/20260810000000_add_brand_colors_to_tenants.sql`):**
-  - Se agregaron las columnas `primary_color` y `secondary_color` para colores personalizados y `social_x` para almacenar el enlace a la red social X (Twitter) en la tabla `public.tenants`.
+- **Migraciones de Base de Datos (Supabase DDL):**
+  - **`supabase/migrations/20260810000000_add_brand_colors_to_tenants.sql`:** Agregó las columnas `primary_color`, `secondary_color` y `social_x` a `tenants`.
+  - **`supabase/migrations/20260811000000_add_remaining_brand_colors_to_tenants.sql`:** Agregó las columnas `primary_color_text`, `secondary_color_text`, `hover_color` y `hover_color_text` a `tenants`.
+  - Ambas migraciones fueron aplicadas con éxito sobre la base de datos Supabase en vivo (`wbykmdexenparduosadj`).
 - **Estandarización de Identidad de Empresa en Perfil (`src/app/[tenant-slug]/profile/page.js`):**
-  - Implementación de estados y mapeo para cargar y persistir los colores de la marca y la red social X.
-  - Se rediseñó el bloque de redes sociales para organizar en 3 columnas LinkedIn, Instagram y X (Twitter).
-  - Se añadió la sección de "Colores de la Marca" con selectores de color (`type="color"`) e inputs de texto HEX sincronizados, permitiendo restablecer los valores por defecto.
-  - Sincronización de las nuevas variables con el sistema de confirmación de salida sin guardar (`AppUnsavedChangesDialog`).
+  - Implementación de los 6 estados de color, incluyendo pre-carga en `loadProfileAndTenant`, guardado en base de datos en `handleSaveChanges` y reseteo al guardar.
+  - Sincronización completa con el sistema de dirty checking (`initialValues` e `isDirty`) para asegurar advertencias correctas al intentar salir sin guardar.
+  - Diseño de una grilla simétrica de 3 filas x 2 columnas en la UI para contrastar de forma directa los colores de fondo (Principal, Secundario, Hover) con sus textos correspondientes.
+  - Reorganización de redes sociales a 3 columnas en la misma fila (LinkedIn, Instagram y **X (Twitter)**).
 - **Actualización de Flujo de Onboarding (`src/app/onboarding/page.js`):**
-  - Homogeneización de la interfaz del formulario agregando el campo de X (Twitter) y el panel de Colores de la Marca.
-  - Sincronización del guardado inicial del inquilino (*tenant*) con los colores seleccionados al registrarse.
+  - Replicados los mismos 6 estados de color y la grilla de selección 3x2 en la interfaz de configuración empresarial.
+  - Sincronizada la persistencia de los 6 colores e X (Twitter) en `handleSaveData` y `executeSaveOnlyRequired` al registrar un nuevo inquilino.
 
 ### Skills Utilizadas
 - `gestion-syso-bitacora`

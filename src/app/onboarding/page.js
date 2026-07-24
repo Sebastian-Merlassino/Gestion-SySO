@@ -122,7 +122,11 @@ export default function OnboardingPage() {
   const [logo2Preview, setLogo2Preview] = useState('');
   const [socialX, setSocialX] = useState('');
   const [primaryColor, setPrimaryColor] = useState('#468DFF');
+  const [primaryColorText, setPrimaryColorText] = useState('#FFFFFF');
   const [secondaryColor, setSecondaryColor] = useState('#0D0D0D');
+  const [secondaryColorText, setSecondaryColorText] = useState('#FFFFFF');
+  const [hoverColor, setHoverColor] = useState('#0511F2');
+  const [hoverColorText, setHoverColorText] = useState('#FFFFFF');
 
   // Campos Opcionales - Sitio Web y Redes Sociales de la Empresa
   const [website, setWebsite] = useState('');
@@ -193,7 +197,11 @@ export default function OnboardingPage() {
           youtube: '',
           socialX: '',
           primaryColor: '#468DFF',
+          primaryColorText: '#FFFFFF',
           secondaryColor: '#0D0D0D',
+          secondaryColorText: '#FFFFFF',
+          hoverColor: '#0511F2',
+          hoverColorText: '#FFFFFF',
           matriculas: [
             {
               institucion: '',
@@ -537,7 +545,11 @@ export default function OnboardingPage() {
               social_youtube: youtube || null,
               social_x: socialX || null,
               primary_color: primaryColor || '#468DFF',
+              primary_color_text: primaryColorText || '#FFFFFF',
               secondary_color: secondaryColor || '#0D0D0D',
+              secondary_color_text: secondaryColorText || '#FFFFFF',
+              hover_color: hoverColor || '#0511F2',
+              hover_color_text: hoverColorText || '#FFFFFF',
             })
             .eq('id', existingTenant.id)
             .select()
@@ -588,7 +600,11 @@ export default function OnboardingPage() {
             social_youtube: youtube || null,
             social_x: socialX || null,
             primary_color: primaryColor || '#468DFF',
+            primary_color_text: primaryColorText || '#FFFFFF',
             secondary_color: secondaryColor || '#0D0D0D',
+            secondary_color_text: secondaryColorText || '#FFFFFF',
+            hover_color: hoverColor || '#0511F2',
+            hover_color_text: hoverColorText || '#FFFFFF',
           })
           .select()
           .single();
@@ -781,7 +797,11 @@ export default function OnboardingPage() {
       youtube !== '' ||
       socialX !== '' ||
       primaryColor !== '#468DFF' ||
+      primaryColorText !== '#FFFFFF' ||
       secondaryColor !== '#0D0D0D' ||
+      secondaryColorText !== '#FFFFFF' ||
+      hoverColor !== '#0511F2' ||
+      hoverColorText !== '#FFFFFF' ||
       !areMatriculasEqual(
         matriculas.map(m => ({
           institucion: m.institucion,
@@ -860,7 +880,11 @@ export default function OnboardingPage() {
               plan_id: selectedPlan,
               social_x: socialX || null,
               primary_color: primaryColor || '#468DFF',
+              primary_color_text: primaryColorText || '#FFFFFF',
               secondary_color: secondaryColor || '#0D0D0D',
+              secondary_color_text: secondaryColorText || '#FFFFFF',
+              hover_color: hoverColor || '#0511F2',
+              hover_color_text: hoverColorText || '#FFFFFF',
             })
             .eq('id', existingTenant.id)
             .select()
@@ -880,7 +904,11 @@ export default function OnboardingPage() {
               plan_id: selectedPlan,
               social_x: socialX || null,
               primary_color: primaryColor || '#468DFF',
+              primary_color_text: primaryColorText || '#FFFFFF',
               secondary_color: secondaryColor || '#0D0D0D',
+              secondary_color_text: secondaryColorText || '#FFFFFF',
+              hover_color: hoverColor || '#0511F2',
+              hover_color_text: hoverColorText || '#FFFFFF',
             })
             .select()
             .single();
@@ -899,7 +927,11 @@ export default function OnboardingPage() {
             plan_id: selectedPlan,
             social_x: socialX || null,
             primary_color: primaryColor || '#468DFF',
+            primary_color_text: primaryColorText || '#FFFFFF',
             secondary_color: secondaryColor || '#0D0D0D',
+            secondary_color_text: secondaryColorText || '#FFFFFF',
+            hover_color: hoverColor || '#0511F2',
+            hover_color_text: hoverColorText || '#FFFFFF',
           })
           .select()
           .single();
@@ -1490,60 +1522,178 @@ export default function OnboardingPage() {
                 <p className="text-[10px] text-slate-400 mt-1">Define los colores institucionales de tu consultora o empresa.</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-2">Color Principal</label>
-                  <div className="flex items-center gap-3">
-                    <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm shrink-0 cursor-pointer">
-                      <input
-                        type="color"
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-2">Color Principal</label>
+                    <div className="flex items-center gap-3">
+                      <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm shrink-0 cursor-pointer">
+                        <input
+                          type="color"
+                          value={primaryColor}
+                          onChange={(e) => setPrimaryColor(e.target.value.toUpperCase())}
+                          disabled={loading}
+                          className="absolute inset-0 w-full h-full p-0 border-0 scale-[1.5] cursor-pointer disabled:cursor-not-allowed"
+                        />
+                      </div>
+                      <AppInput
+                        type="text"
+                        maxLength={7}
+                        placeholder="#468DFF"
                         value={primaryColor}
-                        onChange={(e) => setPrimaryColor(e.target.value.toUpperCase())}
+                        onChange={(e) => {
+                          let val = e.target.value;
+                          if (!val.startsWith('#') && val.length > 0) val = '#' + val;
+                          setPrimaryColor(val.toUpperCase());
+                        }}
                         disabled={loading}
-                        className="absolute inset-0 w-full h-full p-0 border-0 scale-[1.5] cursor-pointer disabled:cursor-not-allowed"
+                        className="w-full text-xs font-mono"
                       />
                     </div>
-                    <AppInput
-                      type="text"
-                      maxLength={7}
-                      placeholder="#468DFF"
-                      value={primaryColor}
-                      onChange={(e) => {
-                        let val = e.target.value;
-                        if (!val.startsWith('#') && val.length > 0) val = '#' + val;
-                        setPrimaryColor(val.toUpperCase());
-                      }}
-                      disabled={loading}
-                      className="w-full text-xs font-mono"
-                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-2">Texto sobre Principal</label>
+                    <div className="flex items-center gap-3">
+                      <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm shrink-0 cursor-pointer">
+                        <input
+                          type="color"
+                          value={primaryColorText}
+                          onChange={(e) => setPrimaryColorText(e.target.value.toUpperCase())}
+                          disabled={loading}
+                          className="absolute inset-0 w-full h-full p-0 border-0 scale-[1.5] cursor-pointer disabled:cursor-not-allowed"
+                        />
+                      </div>
+                      <AppInput
+                        type="text"
+                        maxLength={7}
+                        placeholder="#FFFFFF"
+                        value={primaryColorText}
+                        onChange={(e) => {
+                          let val = e.target.value;
+                          if (!val.startsWith('#') && val.length > 0) val = '#' + val;
+                          setPrimaryColorText(val.toUpperCase());
+                        }}
+                        disabled={loading}
+                        className="w-full text-xs font-mono"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-2">Color Secundario</label>
-                  <div className="flex items-center gap-3">
-                    <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm shrink-0 cursor-pointer">
-                      <input
-                        type="color"
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-2">Color Secundario</label>
+                    <div className="flex items-center gap-3">
+                      <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm shrink-0 cursor-pointer">
+                        <input
+                          type="color"
+                          value={secondaryColor}
+                          onChange={(e) => setSecondaryColor(e.target.value.toUpperCase())}
+                          disabled={loading}
+                          className="absolute inset-0 w-full h-full p-0 border-0 scale-[1.5] cursor-pointer disabled:cursor-not-allowed"
+                        />
+                      </div>
+                      <AppInput
+                        type="text"
+                        maxLength={7}
+                        placeholder="#0D0D0D"
                         value={secondaryColor}
-                        onChange={(e) => setSecondaryColor(e.target.value.toUpperCase())}
+                        onChange={(e) => {
+                          let val = e.target.value;
+                          if (!val.startsWith('#') && val.length > 0) val = '#' + val;
+                          setSecondaryColor(val.toUpperCase());
+                        }}
                         disabled={loading}
-                        className="absolute inset-0 w-full h-full p-0 border-0 scale-[1.5] cursor-pointer disabled:cursor-not-allowed"
+                        className="w-full text-xs font-mono"
                       />
                     </div>
-                    <AppInput
-                      type="text"
-                      maxLength={7}
-                      placeholder="#0D0D0D"
-                      value={secondaryColor}
-                      onChange={(e) => {
-                        let val = e.target.value;
-                        if (!val.startsWith('#') && val.length > 0) val = '#' + val;
-                        setSecondaryColor(val.toUpperCase());
-                      }}
-                      disabled={loading}
-                      className="w-full text-xs font-mono"
-                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-2">Texto sobre Secundario</label>
+                    <div className="flex items-center gap-3">
+                      <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm shrink-0 cursor-pointer">
+                        <input
+                          type="color"
+                          value={secondaryColorText}
+                          onChange={(e) => setSecondaryColorText(e.target.value.toUpperCase())}
+                          disabled={loading}
+                          className="absolute inset-0 w-full h-full p-0 border-0 scale-[1.5] cursor-pointer disabled:cursor-not-allowed"
+                        />
+                      </div>
+                      <AppInput
+                        type="text"
+                        maxLength={7}
+                        placeholder="#FFFFFF"
+                        value={secondaryColorText}
+                        onChange={(e) => {
+                          let val = e.target.value;
+                          if (!val.startsWith('#') && val.length > 0) val = '#' + val;
+                          setSecondaryColorText(val.toUpperCase());
+                        }}
+                        disabled={loading}
+                        className="w-full text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-2">Color Hover / Resaltado</label>
+                    <div className="flex items-center gap-3">
+                      <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm shrink-0 cursor-pointer">
+                        <input
+                          type="color"
+                          value={hoverColor}
+                          onChange={(e) => setHoverColor(e.target.value.toUpperCase())}
+                          disabled={loading}
+                          className="absolute inset-0 w-full h-full p-0 border-0 scale-[1.5] cursor-pointer disabled:cursor-not-allowed"
+                        />
+                      </div>
+                      <AppInput
+                        type="text"
+                        maxLength={7}
+                        placeholder="#0511F2"
+                        value={hoverColor}
+                        onChange={(e) => {
+                          let val = e.target.value;
+                          if (!val.startsWith('#') && val.length > 0) val = '#' + val;
+                          setHoverColor(val.toUpperCase());
+                        }}
+                        disabled={loading}
+                        className="w-full text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-2">Texto sobre Hover / Resaltado</label>
+                    <div className="flex items-center gap-3">
+                      <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm shrink-0 cursor-pointer">
+                        <input
+                          type="color"
+                          value={hoverColorText}
+                          onChange={(e) => setHoverColorText(e.target.value.toUpperCase())}
+                          disabled={loading}
+                          className="absolute inset-0 w-full h-full p-0 border-0 scale-[1.5] cursor-pointer disabled:cursor-not-allowed"
+                        />
+                      </div>
+                      <AppInput
+                        type="text"
+                        maxLength={7}
+                        placeholder="#FFFFFF"
+                        value={hoverColorText}
+                        onChange={(e) => {
+                          let val = e.target.value;
+                          if (!val.startsWith('#') && val.length > 0) val = '#' + val;
+                          setHoverColorText(val.toUpperCase());
+                        }}
+                        disabled={loading}
+                        className="w-full text-xs font-mono"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1553,7 +1703,11 @@ export default function OnboardingPage() {
                   type="button"
                   onClick={() => {
                     setPrimaryColor('#468DFF');
+                    setPrimaryColorText('#FFFFFF');
                     setSecondaryColor('#0D0D0D');
+                    setSecondaryColorText('#FFFFFF');
+                    setHoverColor('#0511F2');
+                    setHoverColorText('#FFFFFF');
                   }}
                   className="text-[10px] text-slate-400 hover:text-[#468DFF] font-semibold transition-colors flex items-center gap-1 cursor-pointer bg-slate-50 hover:bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg"
                 >
