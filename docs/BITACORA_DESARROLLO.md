@@ -15,19 +15,24 @@
   - **Despacho:**
     - WhatsApp: Abre `https://api.whatsapp.com/send` con el número y el mensaje autocompletado en un nuevo tab.
     - Correo Electrónico: Abre `mailto:` pre-cargado con destinatario, asunto y cuerpo del mensaje de forma segura y client-side.
+- **Corrección de Seguridad y Visibilidad RLS en Perfiles:**
+  - **`supabase/migrations/20260812000000_add_profile_tenant_select_policy.sql`:** Creada y aplicada la política `profile_tenant_select` en `public.profiles` para permitir que los técnicos del tenant lean los perfiles de los clientes pertenecientes a la misma organización. Esto soluciona el bug por el cual el portal figuraba como "INACTIVO" a pesar de haberse habilitado (lo que arrojaba error "El CUIT ya tiene un usuario de portal activo en este tenant" al intentar habilitarlo nuevamente).
 
 ### Skills Utilizadas
 - `gestion-syso-bitacora`
 - `gestion-syso-brand-guidelines`
 - `next-best-practices`
 - `gestion-syso-multitenant-security`
+- `supabase`
 
 ### Archivos Modificados
 - `src/app/[tenant-slug]/login/page.js` (Nuevo)
 - `src/app/[tenant-slug]/empresas/page.js` (Modificado)
+- `supabase/migrations/20260812000000_add_profile_tenant_select_policy.sql` (Nuevo)
 - `docs/BITACORA_DESARROLLO.md` (Modificado)
 
 ### Validaciones Ejecutadas
+- Aplicada y testeada la política en la base de datos Supabase en vivo (`wbykmdexenparduosadj`).
 - Compilación de producción limpia y exitosa de Next.js (`npm run build`).
 
 ---
