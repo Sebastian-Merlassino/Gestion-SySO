@@ -51,9 +51,24 @@ import {
   Flame,
   ClipboardCheck,
   Folder,
-  Palette
+  Palette,
+  MapPin
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+
+const slugify = (text) => {
+  if (!text) return '';
+  return text
+    .toString()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\-]+/g, '')
+    .replace(/\-\-+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
+};
 
 const PROVINCIAS_ARGENTINAS = [
   'BUENOS AIRES',
@@ -840,11 +855,18 @@ const [partidosList, setPartidosList] = useState([]);
       if (!logo2Preview) logo2Url = '';
 
       // 2. Actualizar Tenant
+      let slugChanged = false;
+      let newSlug = tenantSlug;
       if (tenantId && profileData?.role === 'admin') {
+        const generatedSlug = companyName ? slugify(companyName) : slugify(`${fullName} Consultora`);
+        newSlug = generatedSlug || tenantSlug;
+        slugChanged = newSlug !== tenantSlug;
+
         const { error: tenantErr } = await supabase
           .from('tenants')
           .update({
             name: companyName || `${fullName} Consultora`,
+            slug: newSlug,
             logo_1_url: logo1Url,
             logo_2_url: logo2Url,
             website: website || null,
@@ -954,6 +976,11 @@ const [partidosList, setPartidosList] = useState([]);
 
       setLoading(false);
       triggerToast('¡Datos guardados con éxito en Supabase!', 'success');
+
+      if (slugChanged && typeof window !== 'undefined') {
+        window.location.href = `/${newSlug}/profile`;
+        return;
+      }
       
       // Resolve signed URLs for updated paths
       const signedSignature = signatureUrl ? await getSignedUrl('signatures', signatureUrl) : '';

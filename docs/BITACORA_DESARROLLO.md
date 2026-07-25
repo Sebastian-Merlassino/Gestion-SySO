@@ -3,6 +3,19 @@
 ## [2026-07-24] Portal de Acceso Cliente y Compartir Credenciales (Ruta por Slug)
 
 ### Resumen de Cambios
+- **Sincronización del Slug del Tenant con la Empresa en Perfil (`src/app/[tenant-slug]/profile/page.js`):**
+  - Agregada la función `slugify()` para convertir de forma segura el "Nombre de la Empresa o Consultora" ingresado por el usuario a un slug URL sanitizado.
+  - Guardado automático del nuevo slug generado en la base de datos Supabase (`tenants.slug`).
+  - Redirección SPA inmediata a la nueva dirección web `/${newSlug}/profile` en caso de que el slug haya cambiado al guardar, manteniendo la sesión intacta.
+- **Habilitación de Compartir y Copiar Acceso en Vista Lectura (`src/app/[tenant-slug]/empresas/page.js`):**
+  - Removida la restricción `disabled={!canEdit}` del fieldset de la pestaña **Portal de Cliente** para permitir a los profesionales copiar el enlace o abrir el diálogo de compartir incluso si están en vista de sólo lectura (sin modo editar activo).
+  - Aplicada la restricción de deshabilitar individualmente solo a los campos de entrada y botones de acción de habilitación/deshabilitación del portal.
+  - Añadida una validación en la copia y el envío para alertar al usuario si el "Nombre de la Empresa o Consultora" no está definido o es un valor placeholder (evitando enlaces genéricos o con nombres de prueba como `sebastian`).
+  - **Corrección de validación:** Se reemplazó la detección parcial de la palabra `'Consultora'` (que causaba falsos positivos en nombres de empresas legítimas que incluyeran dicho término) y se removió la restricción automática sobre el slug `sebastian` cuando ya hay un nombre personalizado válido declarado, usando una validación exacta contra el template de nombre por defecto del profesional (`${profile.full_name} Consultora`) y fallbacks de control.
+- **Botón de Compartir Portal en Tabla de Empresas (`src/app/[tenant-slug]/empresas/page.js`):**
+  - Añadido el botón de Compartir en la columna **Acciones** para cada fila de la tabla principal de empresas.
+  - Utilizado el diseño estándar del botón (variante azul suave `bg-blue-50 hover:bg-blue-100 text-[#468DFF]` y el icono `Share2` de Lucide).
+  - El botón carga dinámicamente los datos de contacto y la información del portal de cliente correspondientes a la empresa seleccionada antes de abrir el modal estándar.
 - **Portal de Acceso Cliente (Login por Slug):**
   - **`src/app/[tenant-slug]/login/page.js`:** Creada nueva página de acceso específica para cada inquilino (*tenant*).
   - Carga dinámicamente el logo y la paleta de 6 colores personalizados de la consultora desde Supabase.
@@ -28,6 +41,7 @@
 ### Archivos Modificados
 - `src/app/[tenant-slug]/login/page.js` (Nuevo)
 - `src/app/[tenant-slug]/empresas/page.js` (Modificado)
+- `src/app/[tenant-slug]/profile/page.js` (Modificado)
 - `supabase/migrations/20260812000000_add_profile_tenant_select_policy.sql` (Nuevo)
 - `docs/BITACORA_DESARROLLO.md` (Modificado)
 

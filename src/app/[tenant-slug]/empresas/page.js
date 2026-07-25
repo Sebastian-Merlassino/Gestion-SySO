@@ -54,7 +54,8 @@ import {
   Sliders,
   Flame,
   ClipboardCheck,
-  Folder
+  Folder,
+  Share2
 } from 'lucide-react';
 
 const PROVINCIAS_ARGENTINAS = [
@@ -1085,6 +1086,79 @@ export default function EmpresasClientes({ params }) {
     );
   };
 
+  const handleQuickSharePortal = async (emp) => {
+    const isDefaultOrPlaceholderName = !tenant?.name || tenant.name.trim() === '' || tenant.name === `${profile?.full_name} Consultora` || tenant.name === 'Sebastian Merlassino Consultora';
+    if (isDefaultOrPlaceholderName) {
+      triggerToast('Para compartir el acceso, primero debes definir el "Nombre de la Empresa o Consultora" en tu Perfil (Identidad de la empresa).', 'error');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // 1. Fetch full company details (cuit, contactos)
+      let fullEmp = emp;
+      if (!isDevMode) {
+        const { data, error } = await supabase
+          .from('empresas')
+          .select('contactos_telefonos, contactos_correos, cuit, razon_social')
+          .eq('id', emp.id)
+          .single();
+        if (error) throw error;
+        fullEmp = data;
+      } else {
+        // Fallback for dev mode
+        fullEmp = {
+          ...emp,
+          contactos_telefonos: emp.contactos_telefonos || [{ nombre: 'Juan Pérez', cargo: 'Responsable', valor: '1123456789' }],
+          contactos_correos: emp.contactos_correos || [{ nombre: 'Juan Pérez', cargo: 'Responsable', valor: 'cliente@acme.com' }],
+        };
+      }
+
+      // 2. Fetch the client profile for this company
+      let clientProf = null;
+      if (isDevMode) {
+        clientProf = {
+          id: 'mock-client-id',
+          email: 'cliente@acme.com',
+          full_name: 'Juan Pérez Acme',
+          cuit: fullEmp.cuit || '30712345678'
+        };
+      } else {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('empresa_id', emp.id)
+          .eq('role', 'cliente')
+          .maybeSingle();
+
+        if (error) throw error;
+        clientProf = data;
+      }
+
+      if (!clientProf) {
+        triggerToast('El portal de acceso para este cliente aún no está activo. Debes habilitarlo primero desde la pestaña "Portal de Cliente" al editar la empresa.', 'warning');
+        setLoading(false);
+        return;
+      }
+
+      // 3. Set the states for the modal
+      setClientProfile(clientProf);
+      setClientEmail(clientProf.email || '');
+      setClientName(clientProf.full_name || fullEmp.razon_social);
+      setTelefonos(fullEmp.contactos_telefonos || []);
+      setCorreos(fullEmp.contactos_correos || []);
+      setCuit(fullEmp.cuit);
+      
+      // 4. Open the modal
+      setShowSharePortalModal(true);
+    } catch (err) {
+      console.error('Error in handleQuickSharePortal:', err);
+      triggerToast('Error al cargar la información del portal.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleEnablePortal = async () => {
     if (!clientEmail || !clientName) {
       triggerToast('Por favor completa todos los campos requeridos para habilitar el portal.', 'error');
@@ -1913,6 +1987,13 @@ export default function EmpresasClientes({ params }) {
                                 {(canEditar || canEliminar) && (
                                   <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                                     <div className="flex items-center justify-end gap-2">
+                                      <button
+                                        onClick={() => handleQuickSharePortal(emp)}
+                                        className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-[#468DFF] hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                        title="Compartir acceso al portal"
+                                      >
+                                        <Share2 className="h-4.5 w-4.5" />
+                                      </button>
                                       {canEditar ? (
                                         <button
                                           onClick={() => { setIsReadOnlyView(false); handleEdit(emp.id); }}
@@ -3281,13 +3362,12 @@ export default function EmpresasClientes({ params }) {
                         />
                       </div>
                     </div>
-
                   </fieldset>
                 )}
 
                 {/* TAB 5: PORTAL DE CLIENTE */}
                 {activeTab === 'portal' && (
-                  <fieldset disabled={!canEdit} className="space-y-6 block w-full border-none p-0">
+                  <fieldset className="space-y-6 block w-full border-none p-0">
                     <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
                       <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                         <div className="flex items-center gap-3">
@@ -3345,6 +3425,11 @@ export default function EmpresasClientes({ params }) {
                                 <AppButton
                                   variant="secondary"
                                   onClick={() => {
+                                    const isDefaultOrPlaceholderName = !tenant?.name || tenant.name.trim() === '' || tenant.name === `${profile?.full_name} Consultora` || tenant.name === 'Sebastian Merlassino Consultora';
+                                    if (isDefaultOrPlaceholderName) {
+                                      triggerToast('Para copiar el enlace, primero debes definir el "Nombre de la Empresa o Consultora" en tu Perfil (Identidad de la empresa).', 'error');
+                                      return;
+                                    }
                                     navigator.clipboard.writeText(`https://app.gestionsyso.com/${tenantSlug}/login`);
                                     triggerToast('Enlace de acceso copiado al portapapeles.');
                                   }}
@@ -3354,7 +3439,14 @@ export default function EmpresasClientes({ params }) {
                                 </AppButton>
                                 <AppButton
                                   variant="primary"
-                                  onClick={() => setShowSharePortalModal(true)}
+                                  onClick={() => {
+                                    const isDefaultOrPlaceholderName = !tenant?.name || tenant.name.trim() === '' || tenant.name === `${profile?.full_name} Consultora` || tenant.name === 'Sebastian Merlassino Consultora';
+                                    if (isDefaultOrPlaceholderName) {
+                                      triggerToast('Para compartir el acceso, primero debes definir el "Nombre de la Empresa o Consultora" en tu Perfil (Identidad de la empresa).', 'error');
+                                      return;
+                                    }
+                                    setShowSharePortalModal(true);
+                                  }}
                                   className="text-xs py-2 px-3 flex items-center justify-center gap-1.5 shadow-md shadow-[#468DFF]/10"
                                 >
                                   Compartir Acceso
@@ -3370,9 +3462,9 @@ export default function EmpresasClientes({ params }) {
                           <div className="flex justify-start">
                             <button
                               type="button"
-                              disabled={portalLoading}
+                              disabled={!canEdit || portalLoading}
                               onClick={handleDisablePortal}
-                              className="py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-red-500/10 active:scale-[0.98] disabled:opacity-50"
+                              className="py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-red-500/10 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               {portalLoading ? (
                                 <>
@@ -3409,21 +3501,23 @@ export default function EmpresasClientes({ params }) {
                                   <label className="text-xs font-bold text-slate-600 block">Nombre del Contacto / Responsable <span className="text-[#468DFF]">*</span></label>
                                   <input
                                     type="text"
+                                    disabled={!canEdit}
                                     value={clientName}
                                     onChange={(e) => setClientName(e.target.value)}
                                     placeholder="Nombre del cliente"
-                                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
+                                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
                                   />
                                 </div>
                                 <div className="space-y-1">
                                   <label className="text-xs font-bold text-slate-600 block">Correo Electrónico del Contacto <span className="text-[#468DFF]">*</span></label>
                                   <input
                                     type="email"
+                                    disabled={!canEdit}
                                     value={clientEmail}
                                     onChange={(e) => setClientEmail(e.target.value)}
                                     placeholder="correo@cliente.com"
                                     autoComplete="username"
-                                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
+                                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
                                   />
                                 </div>
                               </div>
@@ -3432,20 +3526,21 @@ export default function EmpresasClientes({ params }) {
                                 <label className="text-xs font-bold text-slate-600 block">Contraseña Inicial (Opcional - por defecto será el CUIT)</label>
                                 <input
                                   type="password"
+                                  disabled={!canEdit}
                                   value={clientPassword}
                                   onChange={(e) => setClientPassword(e.target.value)}
                                   placeholder="Dejar vacío para usar el CUIT como clave"
                                   autoComplete="new-password"
-                                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
+                                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
                                 />
                               </div>
 
                               <div className="flex justify-end pt-2">
                                 <button
                                   type="button"
-                                  disabled={portalLoading}
+                                  disabled={!canEdit || portalLoading}
                                   onClick={handleEnablePortal}
-                                  className="py-2.5 px-5 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-blue-500/10 active:scale-[0.98] disabled:opacity-50"
+                                  className="py-2.5 px-5 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-blue-500/10 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   {portalLoading ? (
                                     <>
