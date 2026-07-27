@@ -392,6 +392,34 @@ export default function ProtocolosIluminacionPage({ params }) {
 
   // Export PDF Report Download/Print
   const handleExportPdf = async (protoItem, shouldPrint = false) => {
+    let printWindow = null;
+    if (shouldPrint) {
+      // Abre la ventana de forma síncrona en la interacción del usuario para evitar bloqueos del navegador
+      printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Imprimiendo Protocolo...</title>
+              <style>
+                body { margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: system-ui, -apple-system, sans-serif; background: #f8fafc; color: #475569; }
+                .loader { text-align: center; }
+                .spinner { width: 36px; height: 36px; border: 3px solid #cbd5e1; border-top-color: #468DFF; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+                @keyframes spin { to { transform: rotate(360deg); } }
+              </style>
+            </head>
+            <body>
+              <div class="loader">
+                <div class="spinner"></div>
+                <p style="font-weight: 600; margin: 0;">Generando vista de impresión...</p>
+              </div>
+            </body>
+          </html>
+        `);
+      }
+    }
+
     try {
       globalToast.toast('Generando reporte PDF...', 'info');
       const { data: pts } = await supabase
@@ -406,14 +434,31 @@ export default function ProtocolosIluminacionPage({ params }) {
         .eq('protocolo_id', protoItem.id);
 
       const doc = await generateLightingProtocolPdf(protoItem, tenant, empresas, allEstablecimientos, pts || [], adjs || [], isDevMode, profile);
+      if (!doc) throw new Error('No se pudo generar el reporte PDF.');
+
       if (shouldPrint) {
         doc.autoPrint();
-        window.open(doc.output('bloburl'), '_blank');
+        const pdfBlob = doc.output('blob');
+        const blobUrl = URL.createObjectURL(pdfBlob);
+
+        if (printWindow && !printWindow.closed) {
+          printWindow.location.href = blobUrl;
+        } else {
+          const win = window.open(blobUrl, '_blank');
+          if (!win) {
+            doc.save(`Protocolo_Iluminacion_${protoItem.razon_social_text.replace(/\s+/g, '_')}_${protoItem.fecha_medicion}.pdf`);
+            globalToast.toast('Se descargó el PDF directamente.', 'warning');
+          }
+        }
+        globalToast.toast('Ventana de impresión abierta.', 'success');
       } else {
         doc.save(`Protocolo_Iluminacion_${protoItem.razon_social_text.replace(/\s+/g, '_')}_${protoItem.fecha_medicion}.pdf`);
         globalToast.toast('PDF descargado con éxito.', 'success');
       }
     } catch (err) {
+      if (printWindow && !printWindow.closed) {
+        printWindow.close();
+      }
       console.error('Error al exportar PDF:', err);
       globalToast.toast('No se pudo generar el reporte PDF.', 'error');
     }
@@ -777,6 +822,7 @@ export default function ProtocolosIluminacionPage({ params }) {
 
                     {(filterText || filterEmpresa || filterEstablecimiento || filterAnio) && (
                       <button
+                        type="button"
                         onClick={() => {
                           setFilterText('');
                           setFilterEmpresa('');
@@ -791,17 +837,18 @@ export default function ProtocolosIluminacionPage({ params }) {
                   </div>
 
                   {canCargar && (
-                    <AppButton
+                    <button
+                      type="button"
                       onClick={() => {
                         setEditingId(null);
                         setFormMode('create');
                         router.replace(`/${tenantSlug}/protocolos/iluminacion?action=nuevo`);
                       }}
-                      className="px-3 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0 border border-[#468DFF] hover:border-[#0511F2]"
+                      className="px-3 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0"
                     >
                       <PlusCircle className="h-3.5 w-3.5" />
                       Nuevo Protocolo
-                    </AppButton>
+                    </button>
                   )}
                 </div>
               </div>
@@ -1028,7 +1075,7 @@ export default function ProtocolosIluminacionPage({ params }) {
                                 onClick={() => {
                                   setEditingId(row.id);
                                   setFormMode('edit');
-                                  router.replace(`/${tenantSlug}/protocolos/iluminacion?id=${row.id}`);
+                                  router.replace(`/${tenantSlug}/protocolos/iluminacion?id=${row.id}&action=editar`);
                                 }}
                                 title="Editar"
                               >

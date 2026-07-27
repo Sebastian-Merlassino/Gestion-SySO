@@ -423,6 +423,30 @@ export default function ProtocoloForm({
     return 'Cumple';
   }, [puntos, getPuntoCalculos]);
 
+  // Check if protocol has all required technical and regulatory fields to be marked as 'completado'
+  const checkIsProtocoloCompleto = useCallback(() => {
+    if (!empresaId || !establecimientoId || !fechaMedicion) return false;
+    if (!instrumento || !instrumento.trim()) return false;
+    if (!fechaCalibracion || !metodologia || !metodologia.trim()) return false;
+    if (!puntos || puntos.length === 0) return false;
+
+    for (let i = 0; i < puntos.length; i++) {
+      const p = puntos[i];
+      if (!p.sector_text || !p.sector_text.trim()) return false;
+
+      const cal = getPuntoCalculos(p);
+      if (cal.cantidad_mediciones_cargadas === 0) return false;
+      if (isNaN(parseFloat(p.valor_requerido_legal_lux)) || parseFloat(p.valor_requerido_legal_lux) <= 0) return false;
+    }
+
+    const generalRes = getResultadoGeneral();
+    if (generalRes === 'No cumple' && (!conclusiones || !conclusiones.trim() || !recomendaciones || !recomendaciones.trim())) {
+      return false;
+    }
+
+    return true;
+  }, [empresaId, establecimientoId, fechaMedicion, instrumento, fechaCalibracion, metodologia, puntos, conclusiones, recomendaciones, getPuntoCalculos, getResultadoGeneral]);
+
   // Load companies & establishments lookups
   useEffect(() => {
     const loadLookups = async () => {
@@ -1193,131 +1217,143 @@ export default function ProtocoloForm({
     e.preventDefault();
     if (!canEdit) return;
 
-    if (!empresaId || !establecimientoId || !fechaMedicion) {
-      globalToast.toast('Complete la Razón Social, Establecimiento y Fecha de Medición.', 'error');
-      return;
-    }
+    try {
+      const instStr = (instrumento || '').trim();
+      const metStr = (metodologia || '').trim();
+      const concStr = (conclusiones || '').trim();
+      const recStr = (recomendaciones || '').trim();
 
-    if (!instrumento.trim()) {
-      globalToast.toast('Ingrese el instrumento utilizado en la medición.', 'error');
-      return;
-    }
-
-    // Validaciones para guardado como COMPLETADO
-    if (estado === 'completado') {
-      if (!fechaCalibracion || !metodologia.trim()) {
-        globalToast.toast('Para completar el protocolo es obligatorio cargar la fecha de calibración y la metodología.', 'error');
+      if (!empresaId || !establecimientoId || !fechaMedicion) {
+        globalToast.toast('Complete la Razón Social, Establecimiento y Fecha de Medición.', 'error');
         return;
       }
 
-      if (puntos.length === 0) {
-        globalToast.toast('Debe cargar al menos un punto de muestreo.', 'error');
+      if (!instStr) {
+        globalToast.toast('Ingrese el instrumento utilizado en la medición.', 'error');
         return;
       }
 
-      for (let i = 0; i < puntos.length; i++) {
-        const p = puntos[i];
-        if (!p.sector_text.trim()) {
-          globalToast.toast(`Falta definir el sector en el punto #${i + 1}.`, 'error');
+      // Validaciones para guardado como COMPLETADO
+      if (estado === 'completado') {
+        if (!fechaCalibracion || !metStr) {
+          globalToast.toast('Para completar el protocolo es obligatorio cargar la fecha de calibración y la metodología.', 'error');
           return;
         }
 
-        const cal = getPuntoCalculos(p);
-        if (cal.cantidad_mediciones_cargadas === 0) {
-          globalToast.toast(`Debe cargar al menos una medición lux en el punto #${i + 1}.`, 'error');
+        if (puntos.length === 0) {
+          globalToast.toast('Debe cargar al menos un punto de muestreo.', 'error');
           return;
         }
 
-        if (isNaN(parseFloat(p.valor_requerido_legal_lux)) || parseFloat(p.valor_requerido_legal_lux) <= 0) {
-          globalToast.toast(`Debe definir el valor legal requerido en el punto #${i + 1}.`, 'error');
-          return;
-        }
+        for (let i = 0; i < puntos.length; i++) {
+          const p = puntos[i];
+          const secStr = (p.sector_text || '').trim();
 
-        // Si el resultado general es No cumple, debe requerir conclusiones y recomendaciones
-        const generalRes = getResultadoGeneral();
-        if (generalRes === 'No cumple' && (!conclusiones.trim() || !recomendaciones.trim())) {
-          globalToast.toast('Al detectarse puntos que NO CUMPLEN, es obligatorio completar las Conclusiones y Recomendaciones.', 'error');
-          return;
-        }
-      }
-    }
+          if (!secStr) {
+            globalToast.toast(`Falta definir el sector en el punto #${i + 1}.`, 'error');
+            return;
+          }
 
-    // WIZARD: Escaneo de perfiles para sincronización
-    const queue = [];
-    const localSectors = JSON.parse(JSON.stringify(estSectoresLocal));
+          const cal = getPuntoCalculos(p);
+          if (cal.cantidad_mediciones_cargadas === 0) {
+            globalToast.toast(`Debe cargar al menos una medición lux en el punto #${i + 1}.`, 'error');
+            return;
+          }
 
-    puntos.forEach(p => {
-      const sectorName = p.sector_text.trim();
-      const puestoName = p.puesto_text.trim();
-      const largo = parseFloat(p.largo_m);
-      const ancho = parseFloat(p.ancho_m);
-      const altura = parseFloat(p.altura_m);
+          if (isNaN(parseFloat(p.valor_requerido_legal_lux)) || parseFloat(p.valor_requerido_legal_lux) <= 0) {
+            globalToast.toast(`Debe definir el valor legal requerido en el punto #${i + 1}.`, 'error');
+            return;
+          }
 
-      if (!sectorName) return;
-
-      // 1. Validar si el sector ya existe en el perfil (búsqueda insensible a mayúsculas)
-      let sectorIdx = localSectors.findIndex(s => s.denominacion.toLowerCase() === sectorName.toLowerCase());
-
-      if (sectorIdx === -1) {
-        // El sector no existe
-        queue.push({
-          type: 'new_sector',
-          sectorName,
-          puestoName,
-          largo,
-          ancho,
-          altura,
-          message: `El sector "${sectorName}" ingresado no se encuentra cargado en el perfil del establecimiento. ¿Desea guardarlo para futuras mediciones?`
-        });
-      } else {
-        // El sector existe. Validar si se modificaron o agregaron dimensiones
-        const dbSec = localSectors[sectorIdx];
-        const dbLargo = parseFloat(dbSec.largo);
-        const dbAncho = parseFloat(dbSec.ancho);
-        const dbAltura = parseFloat(dbSec.altura);
-
-        const dimChanged = 
-          (!isNaN(largo) && largo > 0 && largo !== dbLargo) ||
-          (!isNaN(ancho) && ancho > 0 && ancho !== dbAncho) ||
-          (!isNaN(altura) && altura > 0 && altura !== dbAltura);
-
-        if (dimChanged) {
-          queue.push({
-            type: 'modify_dimensions',
-            sectorIndex: sectorIdx,
-            sectorName,
-            largo: !isNaN(largo) ? largo : dbLargo,
-            ancho: !isNaN(ancho) ? ancho : dbAncho,
-            altura: !isNaN(altura) ? altura : dbAltura,
-            message: `Se detectaron datos dimensionales nuevos o modificados para el sector "${sectorName}". ¿Desea actualizar el perfil del cliente?`
-          });
-        }
-
-        // Validar si el puesto existe en ese sector
-        if (puestoName) {
-          const dbPuestos = dbSec.puestos || [];
-          const puestoExists = dbPuestos.some(pst => pst.denominacion.toLowerCase() === puestoName.toLowerCase());
-
-          if (!puestoExists) {
-            queue.push({
-              type: 'new_puesto',
-              sectorIndex: sectorIdx,
-              sectorName,
-              puestoName,
-              message: `El puesto "${puestoName}" ingresado no se encuentra cargado en el sector "${sectorName}" del cliente. ¿Desea guardarlo para futuras mediciones?`
-            });
+          // Si el resultado general es No cumple, debe requerir conclusiones y recomendaciones
+          const generalRes = getResultadoGeneral();
+          if (generalRes === 'No cumple' && (!concStr || !recStr)) {
+            globalToast.toast('Al detectarse puntos que NO CUMPLEN, es obligatorio completar las Conclusiones y Recomendaciones.', 'error');
+            return;
           }
         }
       }
-    });
 
-    if (queue.length > 0) {
-      setSyncQueue(queue);
-      setSyncIndex(0);
-      setIsSyncOpen(true);
-    } else {
-      // No hay sincronizaciones pendientes, guardar directamente
-      await executeSave(localSectors);
+      // WIZARD: Escaneo de perfiles para sincronización
+      const queue = [];
+      const localSectors = JSON.parse(JSON.stringify(estSectoresLocal));
+
+      puntos.forEach(p => {
+        const sectorName = (p.sector_text || '').trim();
+        const puestoName = (p.puesto_text || '').trim();
+        const largo = parseFloat(p.largo_m);
+        const ancho = parseFloat(p.ancho_m);
+        const altura = parseFloat(p.altura_m);
+
+        if (!sectorName) return;
+
+        // 1. Validar si el sector ya existe en el perfil (búsqueda insensible a mayúsculas)
+        let sectorIdx = localSectors.findIndex(s => (s.denominacion || '').toLowerCase() === sectorName.toLowerCase());
+
+        if (sectorIdx === -1) {
+          // El sector no existe
+          queue.push({
+            type: 'new_sector',
+            sectorName,
+            puestoName,
+            largo,
+            ancho,
+            altura,
+            message: `El sector "${sectorName}" ingresado no se encuentra cargado en el perfil del establecimiento. ¿Desea guardarlo para futuras mediciones?`
+          });
+        } else {
+          // El sector existe. Validar si se modificaron o agregaron dimensiones
+          const dbSec = localSectors[sectorIdx];
+          const dbLargo = parseFloat(dbSec.largo);
+          const dbAncho = parseFloat(dbSec.ancho);
+          const dbAltura = parseFloat(dbSec.altura);
+
+          const dimChanged = 
+            (!isNaN(largo) && largo > 0 && largo !== dbLargo) ||
+            (!isNaN(ancho) && ancho > 0 && ancho !== dbAncho) ||
+            (!isNaN(altura) && altura > 0 && altura !== dbAltura);
+
+          if (dimChanged) {
+            queue.push({
+              type: 'modify_dimensions',
+              sectorIndex: sectorIdx,
+              sectorName,
+              largo: !isNaN(largo) ? largo : dbLargo,
+              ancho: !isNaN(ancho) ? ancho : dbAncho,
+              altura: !isNaN(altura) ? altura : dbAltura,
+              message: `Se detectaron datos dimensionales nuevos o modificados para el sector "${sectorName}". ¿Desea actualizar el perfil del cliente?`
+            });
+          }
+
+          // Validar si el puesto existe en ese sector
+          if (puestoName) {
+            const dbPuestos = dbSec.puestos || [];
+            const puestoExists = dbPuestos.some(pst => (pst.denominacion || '').toLowerCase() === puestoName.toLowerCase());
+
+            if (!puestoExists) {
+              queue.push({
+                type: 'new_puesto',
+                sectorIndex: sectorIdx,
+                sectorName,
+                puestoName,
+                message: `El puesto "${puestoName}" ingresado no se encuentra cargado en el sector "${sectorName}" del cliente. ¿Desea guardarlo para futuras mediciones?`
+              });
+            }
+          }
+        }
+      });
+
+      if (queue.length > 0) {
+        setSyncQueue(queue);
+        setSyncIndex(0);
+        setIsSyncOpen(true);
+      } else {
+        // No hay sincronizaciones pendientes, guardar directamente
+        await executeSave(localSectors);
+      }
+    } catch (err) {
+      console.error('Error al enviar formulario:', err);
+      globalToast.toast('Ocurrió un error al procesar el formulario.', 'error');
     }
   };
 
@@ -1458,7 +1494,13 @@ export default function ProtocoloForm({
       };
 
       if (isDevMode) {
-        globalToast.toast('Protocolo de Iluminación guardado con éxito (Mock).', 'success');
+        if (estado === 'completado') {
+          globalToast.toast('Protocolo de Iluminación guardado como COMPLETADO (Mock).', 'success');
+        } else if (estado === 'anulado') {
+          globalToast.toast('Protocolo de Iluminación guardado como ANULADO (Mock).', 'success');
+        } else {
+          globalToast.toast('Protocolo guardado como BORRADOR (Mock).', 'info');
+        }
         onSaveSuccess();
         return;
       }
@@ -1634,7 +1676,13 @@ export default function ProtocoloForm({
         if (insAdjErr) throw insAdjErr;
       }
 
-      globalToast.toast('Protocolo de Iluminación guardado correctamente.', 'success');
+      if (estado === 'completado') {
+        globalToast.toast('Protocolo de Iluminación guardado como COMPLETADO.', 'success');
+      } else if (estado === 'anulado') {
+        globalToast.toast('Protocolo de Iluminación guardado como ANULADO.', 'success');
+      } else {
+        globalToast.toast('Protocolo guardado como BORRADOR.', 'info');
+      }
       onSaveSuccess();
     } catch (err) {
       console.error(err);
@@ -1866,21 +1914,7 @@ export default function ProtocoloForm({
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 col-span-full">
-              <div className="flex flex-col gap-1">
-                <AppLabel htmlFor="estado" required>Estado del Protocolo</AppLabel>
-                <AppSelect
-                  id="estado"
-                  disabled={!canEdit}
-                  value={estado}
-                  onChange={(e) => setEstado(e.target.value)}
-                  placeholder={null}
-                >
-                  <option value="borrador">Borrador</option>
-                  <option value="completado">Completado</option>
-                  <option value="anulado">Anulado</option>
-                </AppSelect>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 col-span-full">
               <div className="flex flex-col gap-1">
                 <AppLabel htmlFor="fechaMedicion" required>Fecha Medición</AppLabel>
                 <div className="relative">
@@ -2814,13 +2848,44 @@ export default function ProtocoloForm({
         </AppCard>
 
         {/* Pie de Página del Formulario */}
-        <div className="flex justify-between items-center pt-6 border-t border-slate-100 shrink-0">
-          <AppButton
-            variant="secondary"
-            onClick={handleExitAttempt}
-          >
-            Salir
-          </AppButton>
+        <div className="flex justify-between items-center pt-6 border-t border-slate-100 shrink-0 flex-wrap gap-4">
+          <div className="flex items-center gap-3">
+            <AppButton
+              variant="secondary"
+              onClick={handleExitAttempt}
+            >
+              Salir
+            </AppButton>
+
+            {/* Switch de Estado: Borrador (default) <-> Completado */}
+            {canEdit && estado !== 'anulado' && (
+              <div className="flex items-center gap-2.5 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 select-none">
+                <span className={`text-xs font-bold ${estado === 'borrador' ? 'text-amber-600' : 'text-slate-400'}`}>
+                  Borrador
+                </span>
+
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={estado === 'completado'}
+                  onClick={() => setEstado(estado === 'completado' ? 'borrador' : 'completado')}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    estado === 'completado' ? 'bg-[#468DFF]' : 'bg-slate-300'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                      estado === 'completado' ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+
+                <span className={`text-xs font-bold ${estado === 'completado' ? 'text-[#468DFF]' : 'text-slate-400'}`}>
+                  Completado
+                </span>
+              </div>
+            )}
+          </div>
 
           <div className="flex items-center gap-3">
             {editingId && (
@@ -2881,6 +2946,7 @@ export default function ProtocoloForm({
                 {canEdit && (
                   <button
                     type="submit"
+                    onClick={handleSubmit}
                     disabled={saveLoading}
                     className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
                   >
@@ -2900,6 +2966,103 @@ export default function ProtocoloForm({
         </div>
       </form>
     </div>
+
+    {/* MODAL EDITOR DE PUNTOS DE MEDICIÓN EN PLANO / CROQUIS */}
+    {(() => {
+      const planoFotosAdjuntos = adjuntos.filter(a => a.tipo === 'Evidencia Fotográfica Plano' || a.tipo === 'Foto Plano');
+      const currentTargetPhoto = editPhotoIndex !== null ? planoFotosAdjuntos[editPhotoIndex] : null;
+      const otherImagesMarkers = editPhotoIndex !== null 
+        ? planoFotosAdjuntos.filter((_, idx) => idx !== editPhotoIndex).flatMap(a => a.markers || [])
+        : [];
+
+      return (
+        <MeasurementPointsEditorModal
+          isOpen={isEditorOpen}
+          onClose={() => {
+            setIsEditorOpen(false);
+            setEditPhotoIndex(null);
+          }}
+          imageUrl={editorImageUrl}
+          initialPoints={currentTargetPhoto?.markers || []}
+          otherImagesMarkers={otherImagesMarkers}
+          onSave={(newPoints, bakedDataUrl) => {
+            handleSaveEditedPhoto(newPoints, bakedDataUrl);
+          }}
+        />
+      );
+    })()}
+
+    {/* DIÁLOGO DE CONFIRMACIÓN DE CAMBIOS SIN GUARDAR (BOTÓN SALIR) */}
+    <AppUnsavedChangesDialog
+      open={unsavedDialogOpen}
+      onOpenChange={setUnsavedDialogOpen}
+      onLeave={() => {
+        setUnsavedDialogOpen(false);
+        onClose();
+      }}
+    />
+
+    {/* DIÁLOGO DE CONFIRMACIÓN DE ELIMINACIÓN */}
+    <AppConfirmDialog
+      open={deleteConfirmOpen}
+      onOpenChange={setDeleteConfirmOpen}
+      type="destructive"
+      title="Eliminar Protocolo"
+      description="¿Está seguro de que desea eliminar permanentemente este protocolo de iluminación y todos sus puntos de muestreo y mediciones asociados? Esta acción no se puede deshacer."
+      confirmText="Eliminar"
+      onConfirm={executeDelete}
+    />
+
+    {/* MODAL DE SINCRONIZACIÓN DE PERFIL DEL ESTABLECIMIENTO (WIZARD) */}
+    {isSyncOpen && syncQueue[syncIndex] && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div 
+          onClick={() => {
+            setIsSyncOpen(false);
+            executeSave(estSectoresLocal);
+          }} 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" 
+        />
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 max-w-lg w-full z-10 shadow-2xl relative space-y-4 animate-scale-up select-none">
+          
+          <div className="flex items-start gap-3 border-b border-slate-100 pb-3">
+            <div className="p-2.5 bg-blue-50 text-[#468DFF] rounded-xl shrink-0">
+              <HelpCircle className="h-6 w-6" />
+            </div>
+            <div className="space-y-0.5">
+              <h3 className="font-outfit text-base font-extrabold text-slate-900">
+                Sincronización con Perfil de Establecimiento
+              </h3>
+              <p className="text-xs text-slate-500 font-semibold">
+                Paso {syncIndex + 1} de {syncQueue.length}
+              </p>
+            </div>
+          </div>
+
+          <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 leading-relaxed">
+            {syncQueue[syncIndex].message}
+          </div>
+
+          <div className="flex flex-col sm:flex-row justify-end gap-2.5 pt-2">
+            <button
+              type="button"
+              onClick={() => handleSyncConfirm('skip')}
+              className="px-4 py-2.5 border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-bold rounded-xl transition-all cursor-pointer text-center"
+            >
+              Solo guardar en este protocolo
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSyncConfirm('save_profile')}
+              className="px-4 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold rounded-xl shadow-md shadow-[#468DFF]/10 transition-all cursor-pointer text-center"
+            >
+              Guardar y actualizar perfil
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
   </>
   );
 }

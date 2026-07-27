@@ -1,53 +1,141 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-07-24] Portal de Acceso Cliente y Compartir Credenciales (Ruta por Slug)
+## [2026-07-27] Switch de Estado en Pie de Página y Ventana de Impresión Directa en Tabla de Protocolos
 
 ### Resumen de Cambios
-- **Sincronización del Slug del Tenant con la Empresa en Perfil (`src/app/[tenant-slug]/profile/page.js`):**
-  - Agregada la función `slugify()` para convertir de forma segura el "Nombre de la Empresa o Consultora" ingresado por el usuario a un slug URL sanitizado.
-  - Guardado automático del nuevo slug generado en la base de datos Supabase (`tenants.slug`).
-  - Redirección SPA inmediata a la nueva dirección web `/${newSlug}/profile` en caso de que el slug haya cambiado al guardar, manteniendo la sesión intacta.
-- **Habilitación de Compartir y Copiar Acceso en Vista Lectura (`src/app/[tenant-slug]/empresas/page.js`):**
-  - Removida la restricción `disabled={!canEdit}` del fieldset de la pestaña **Portal de Cliente** para permitir a los profesionales copiar el enlace o abrir el diálogo de compartir incluso si están en vista de sólo lectura (sin modo editar activo).
-  - Aplicada la restricción de deshabilitar individualmente solo a los campos de entrada y botones de acción de habilitación/deshabilitación del portal.
-  - Añadida una validación en la copia y el envío para alertar al usuario si el "Nombre de la Empresa o Consultora" no está definido o es un valor placeholder (evitando enlaces genéricos o con nombres de prueba como `sebastian`).
-  - **Corrección de validación:** Se reemplazó la detección parcial de la palabra `'Consultora'` (que causaba falsos positivos en nombres de empresas legítimas que incluyeran dicho término) y se removió la restricción automática sobre el slug `sebastian` cuando ya hay un nombre personalizado válido declarado, usando una validación exacta contra el template de nombre por defecto del profesional (`${profile.full_name} Consultora`) y fallbacks de control.
-- **Botón de Compartir Portal en Tabla de Empresas (`src/app/[tenant-slug]/empresas/page.js`):**
-  - Añadido el botón de Compartir en la columna **Acciones** para cada fila de la tabla principal de empresas.
-  - Utilizado el diseño estándar del botón (variante azul suave `bg-blue-50 hover:bg-blue-100 text-[#468DFF]` y el icono `Share2` de Lucide).
-  - El botón carga dinámicamente los datos de contacto y la información del portal de cliente correspondientes a la empresa seleccionada antes de abrir el modal estándar.
-- **Portal de Acceso Cliente (Login por Slug):**
-  - **`src/app/[tenant-slug]/login/page.js`:** Creada nueva página de acceso específica para cada inquilino (*tenant*).
-  - Carga dinámicamente el logo y la paleta de 6 colores personalizados de la consultora desde Supabase.
-  - Modifica los estilos utilizando variables CSS inyectadas en línea para los botones primarios, secundarios, campos de texto y pestañas de selección de portal.
-  - Ofrece inicio de sesión para profesionales y clientes, con control de intentos fallidos, cooldown de bloqueo temporal y restablecimiento de clave.
-- **Diálogo para Compartir Credenciales en Clientes:**
-  - **`src/app/[tenant-slug]/empresas/page.js`:** Añadida una tarjeta de acceso premium en la pestaña "Portal de Cliente" que expone el enlace personalizado del portal.
-  - Implementado el diálogo unificado `SharePortalAccessDialog` con pestañas para **WhatsApp** y **Correo Electrónico**.
-  - Sincronizados y expuestos dinámicamente todos los teléfonos y correos electrónicos registrados en los contactos de la empresa como opciones de selección, permitiendo además el ingreso de datos manuales.
-  - **Despacho:**
-    - WhatsApp: Abre `https://api.whatsapp.com/send` con el número y el mensaje autocompletado en un nuevo tab.
-    - Correo Electrónico: Abre `mailto:` pre-cargado con destinatario, asunto y cuerpo del mensaje de forma segura y client-side.
-- **Corrección de Seguridad y Visibilidad RLS en Perfiles:**
-  - **`supabase/migrations/20260812000000_add_profile_tenant_select_policy.sql`:** Creada y aplicada la política `profile_tenant_select` en `public.profiles` para permitir que los técnicos del tenant lean los perfiles de los clientes pertenecientes a la misma organización. Esto soluciona el bug por el cual el portal figuraba como "INACTIVO" a pesar de haberse habilitado (lo que arrojaba error "El CUIT ya tiene un usuario de portal activo en este tenant" al intentar habilitarlo nuevamente).
+- **Switch de Estado y Validación Segura de Formulario (`src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`):**
+  - Se reestructuró la grilla del formulario a 3 columnas simétricas (*Fecha Medición*, *Hora de Inicio*, *Hora de Finalización*).
+  - Se ubicó un componente **Switch de Estado** en la barra de pie de página (misma línea de los botones *Salir* y *Guardar*) que inicia en `Borrador` por defecto y conmuta dinámicamente a `Completado` al ser activado.
+- **Estandarización Fiel SySO Compact Layout (`src/app/[tenant-slug]/protocolos/iluminacion/page.js` y `src/app/[tenant-slug]/empresas/page.js`):**
+  - Se restauró la estructura exacta de la tarjeta de cabecera y buscador tomando como referencia visual patrón el módulo **Constancia de Visita** (`visitas/page.js`).
+  - Tanto en *Protocolo de Iluminación* como en *Clientes/Empresas*, la barra de búsqueda se ubica a la derecha en la fila superior, mientras que el botón de acción principal (**+ Nuevo Protocolo** / **+ Agregar nueva empresa**) se alinea a la derecha en la barra secundaria inferior junto a los *Filtros de Búsqueda* (`px-3 py-1.5 bg-[#468DFF] rounded-xl text-xs font-bold shadow-lg shadow-[#468DFF]/10`), unificando al 100% el diseño en todo el sistema.
+- **Inyección de Diccionario de Impresión Nativo (`src/app/[tenant-slug]/protocolos/iluminacion/utils/pdfGenerator.js` y `page.js`):**
+  - Se inyectó la clave de catálogo `OpenAction` `/Named /Print` en los documentos fusionados por `pdf-lib`.
+  - Al abrir la ventana Blob URL síncrona en `handleExportPdf`, el visor nativo de PDF de Chrome/Edge lee la instrucción `/Print` dentro del catálogo del propio PDF y **despliega inmediatamente la ventana de impresión nativa superpuesta** (con previsualización y botón Imprimir).
 
 ### Skills Utilizadas
 - `gestion-syso-bitacora`
 - `gestion-syso-brand-guidelines`
 - `next-best-practices`
-- `gestion-syso-multitenant-security`
-- `supabase`
 
 ### Archivos Modificados
-- `src/app/[tenant-slug]/login/page.js` (Nuevo)
-- `src/app/[tenant-slug]/empresas/page.js` (Modificado)
-- `src/app/[tenant-slug]/profile/page.js` (Modificado)
-- `supabase/migrations/20260812000000_add_profile_tenant_select_policy.sql` (Nuevo)
-- `docs/BITACORA_DESARROLLO.md` (Modificado)
+- `src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+- `src/app/[tenant-slug]/protocolos/iluminacion/utils/pdfGenerator.js`
+- `src/app/[tenant-slug]/protocolos/iluminacion/page.js`
+- `docs/BITACORA_DESARROLLO.md`
 
 ### Validaciones Ejecutadas
-- Aplicada y testeada la política en la base de datos Supabase en vivo (`wbykmdexenparduosadj`).
-- Compilación de producción limpia y exitosa de Next.js (`npm run build`).
+- Compilación de producción en Next.js (`npm run build`).
+
+---
+
+## [2026-07-27] Botón de Acción para Estado del Protocolo e Inclusión del Certificado de Calibración en PDF
+
+### Resumen de Cambios
+- **Botón de Estado Interactivo (`src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`):**
+  - Se removió el cálculo forzado en `handleSubmit` para otorgar el control manual al profesional. El estado inicia por defecto en `Borrador`.
+  - Se incorporó un botón de acción (*"Marcar como Completado"* / *"✓ Completado"*) junto al selector de estado que permite alternar directamente entre `Borrador` y `Completado`.
+- **Anexo del Certificado de Calibración en PDF (`src/app/[tenant-slug]/protocolos/iluminacion/utils/pdfGenerator.js`):**
+  - **Fusión de Documentos PDF (`pdf-lib`):** Se instaló e integró `pdf-lib`. Al descargar, imprimir o compartir un protocolo cuyo certificado adjunto es un documento PDF, sus páginas se concatenan automáticamente al final del reporte generado.
+  - **Previsualización de Imagen:** Si el certificado es una imagen (JPG/PNG), se añade como una página de anexo dedicada *"ANEXO: CERTIFICADO DE CALIBRACIÓN DEL INSTRUMENTAL"* con membrete y pie de página estandarizado.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados
+- `package.json`
+- `src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+- `src/app/[tenant-slug]/protocolos/iluminacion/utils/pdfGenerator.js`
+- `docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción en Next.js (`npm run build`).
+
+---
+
+## [2026-07-27] Evaluación Automática del Estado del Protocolo (Completado vs Borrador) en Protocolo de Iluminación
+
+### Resumen de Cambios
+- **Evaluación Automática de Estado (`src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`):**
+  - **Helper `checkIsProtocoloCompleto`**: Se implementó una función evaluadora que verifica la integridad total de los datos técnicos requeridos (establecimiento, instrumental, fecha de calibración, metodología, sectores, lecturas Lux por punto de muestreo y conclusiones/recomendaciones obligatorias si el resultado general es *"No cumple"*).
+  - **Auto-clasificación en `handleSubmit`**: Al guardar, salvo que se haya seleccionado explícitamente `Anulado`, el sistema asigna automáticamente `estado = 'completado'` si se cumple la totalidad de los datos requeridos, o `estado = 'borrador'` si aún faltan datos de campo o calibración.
+  - **Notificación Toast Dinámica**: Se adaptaron los mensajes toast de éxito para indicar de forma transparente al usuario si el protocolo se guardó como `COMPLETADO`, `BORRADOR` o `ANULADO`.
+  - **Indicador UI en Formulario**: Se agregó una nota aclaratoria en el campo selector indicando *"Se evalúa automáticamente al guardar (salvo Anulado)"*.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados
+- `src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+- `docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción en Next.js (`npm run build`).
+
+---
+
+## [2026-07-27] Corrección de Modo Edición, Editor de Puntos de Muestreo en Planos y Botón Salir en Protocolo de Iluminación
+
+### Resumen de Cambios
+- **Corrección de Acción de Edición en Tabla de Protocolos (`src/app/[tenant-slug]/protocolos/iluminacion/page.js`):**
+  - Se agregó el parámetro query `&action=editar` al callback del botón de edición en la columna de acciones del listado (`router.replace(`/${tenantSlug}/protocolos/iluminacion?id=${row.id}&action=editar`)`), corrigiendo la apertura del formulario en modo edición en lugar de modo solo lectura (`view`).
+- **Integración de Modales Faltantes en Formulario (`src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`):**
+  - **Editor Interactivo de Puntos de Muestreo (`MeasurementPointsEditorModal`):** Se renderizó el componente modal dentro del JSX de `ProtocoloForm`, permitiendo abrir la ventana de edición al hacer clic en el lápiz sobre imágenes del plano o croquis para posicionar marcadores numerados secuenciales.
+  - **Confirmación de Cambios sin Guardar (`AppUnsavedChangesDialog`):** Se renderizó el diálogo modal de confirmación de salida sin guardar, reactivando la funcionalidad del botón "Salir", la flecha atrás y el botón de cierre superior.
+  - **Confirmación de Eliminación (`AppConfirmDialog`):** Se renderizó el diálogo modal unificado de confirmación destructiva al eliminar un protocolo desde el formulario.
+- **Corrección de Texto en Cabecera de Tabla del PDF (`src/app/[tenant-slug]/protocolos/iluminacion/utils/pdfGenerator.js`):**
+  - Se reemplazó el símbolo especial `≥` por `>=` en la definición del encabezado de columna (*"Valor de la uniformidad de Iluminancia E mínima >= (E media)/2"*), resolviendo la conversión a caracteres corruptos (`*e`) en las Páginas 4 y 5.
+- **Ajuste de Color de Tipografía y Subrayado en Página 2 (Marco Normativo):**
+  - Se cambió el color del título de sección *"Iluminación y Color (ANEXO IV - Capítulo 12 – Dec. 351/79)"*, su línea divisoria horizontal y el texto en negrita de la fórmula `"E mínima >= E media / 2"` de azul a negro (`COLOR_NEGRO`).
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados
+- `src/app/[tenant-slug]/protocolos/iluminacion/page.js`
+- `src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+- `docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción en Next.js (`npm run build`).
+
+---
+
+## [2026-07-27] Rediseño y Ajuste de Altura de Filas en Página 3 del PDF del Protocolo de Iluminación
+
+### Resumen de Cambios
+- **Ajuste de Dimensiones en `pdfGenerator.js` (`src/app/[tenant-slug]/protocolos/iluminacion/utils/pdfGenerator.js`):**
+  - **Fila "Horarios/Turnos Habituales de Trabajo":** Se redujo la altura de la casilla de $54\text{ mm}$ a $22\text{ mm}$, optimizando el espacio vertical del bloque *Datos del establecimiento*.
+  - **Fila "Condiciones Atmosféricas":** Se redujo la altura de la casilla de $40\text{ mm}$ a $22\text{ mm}$, optimizando el espacio vertical del bloque *Datos de la Medición*.
+  - **Fila "Observaciones":** Se ensanchó del ancho parcial ($110\text{ mm}$) al ancho completo de la tabla ($180\text{ mm}$), alineándola con el resto de las tablas de la página. Se ajustó su altura a $22\text{ mm}$.
+  - **Corrección de Doble Línea en "Condiciones Atmosféricas":** Se corrigió la altura exterior de la Tabla 2 (`t2H`) de $58\text{ mm}$ a $59\text{ mm}$, logrando la coincidencia exacta entre la línea inferior del recuadro interior y el marco exterior para eliminar la superposición parcial/doble línea.
+  - **Líneas Divisorias Verticales en Fechas y Horas (Página 3):** Se subdividió la fila única de $180\text{ mm}$ en 3 recuadros individuales (`61mm`, `54mm` y `65mm`), dibujando las líneas verticales separadoras entre "Fecha de la Medición", "Hora de Inicio" y "Hora de Finalización".
+  - **Líneas Divisorias Verticales en Encabezado Apaisado (Páginas 4, 5 y 8):** Se subdividieron la Fila 1 (Razón Social | CUIT) y la Fila 2 (Dirección | Localidad | CP | Provincia) en celdas rect de columna independientes, trazando las divisiones verticales entre los datos del establecimiento en todas las páginas apaisadas del protocolo.
+  - **Ajustes en Fichas de Cálculo por Punto de Muestreo (Página 7):**
+    - Se unificó la celda superior del sector y puesto en un único recuadro continuo de $100\text{ mm}$ de ancho (`"SUBSUELO  -  COCINA"`), eliminando la línea divisoria vertical intermedia.
+    - Se redujo el margen vertical entre el cálculo de *Número Mínimo de Puntos de Medición* y el bloque de *Iluminancia Media*.
+    - Se actualizó el helper `drawFraction` para renderizar el símbolo matemático $\Sigma$ utilizando la fuente `'symbol'` combinada de forma centrada con `"Valores Puntos de Medición"` en el numerador y `"Cantidad Puntos de Medición"` en el denominador.
+    - Se convirtió el inicio del bloque *Uniformidad de Iluminancia* (`uY`) en una posición dinámica (`iY + 7`), haciendo 100% visible e ininterrumpida la fila verde de *Verificación* de Iluminancia Media.
+    - Se reemplazaron los caracteres corruptos `"e,"` por el operador de comparación `>=` en las celdas de *Verificación de Uniformidad*.
+  - **Resolución e Inserción de Planos/Croquis Adjuntos en PDF (`getAdjuntoBase64`):** Se actualizó la obtención de evidencias fotográficas utilizando la función `.download()` del SDK de Supabase Storage directamente sobre el bucket `'protocolos-iluminacion'`, permitiendo descargar el blob nativo del plano de forma autenticada. Se removió la etiqueta de texto superior con el nombre del archivo (`images.png`), maximizando el espacio de visualización de la imagen dentro del recuadro del plano.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados
+- `src/app/[tenant-slug]/protocolos/iluminacion/utils/pdfGenerator.js`
+- `docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción en Next.js (`npm run build`).
 
 ---
 

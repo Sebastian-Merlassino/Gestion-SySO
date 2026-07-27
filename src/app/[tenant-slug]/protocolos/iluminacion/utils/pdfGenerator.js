@@ -1,3 +1,4 @@
+import { PDFDocument, PDFName } from 'pdf-lib';
 import { formatDate } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 
@@ -52,6 +53,56 @@ const getBase64ImageFromUrl = async (imageUrl) => {
     console.error('Error fetching image to base64:', e);
     return '';
   }
+};
+
+// Robust Base64 getter for attachments from Supabase storage / URLs
+const getAdjuntoBase64 = async (adj) => {
+  if (!adj) return '';
+
+  // 1. Check direct base64 data URLs
+  if (adj.preview && adj.preview.startsWith('data:image/')) return adj.preview;
+  if (adj.public_url && adj.public_url.startsWith('data:image/')) return adj.public_url;
+
+  const path = adj.storage_path || adj.original_path || adj.public_url || adj.url || adj.archivo_url;
+  if (!path) return '';
+
+  // 2. Direct download from Supabase Storage bucket for relative paths
+  if (!path.startsWith('http') && !path.startsWith('data:')) {
+    try {
+      const { data: blob, error } = await supabase.storage
+        .from('protocolos-iluminacion')
+        .download(path);
+
+      if (!error && blob) {
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result || '');
+          reader.onerror = () => resolve('');
+          reader.readAsDataURL(blob);
+        });
+      }
+    } catch (err) {
+      console.warn('[getAdjuntoBase64] Direct Supabase storage download warning:', err);
+    }
+  }
+
+  // 3. If HTTP URL or fallback: fetch signed/public URL
+  let targetUrl = path;
+  if (!targetUrl.startsWith('http') && !targetUrl.startsWith('data:')) {
+    try {
+      const { data: sData } = await supabase.storage
+        .from('protocolos-iluminacion')
+        .createSignedUrl(path, 3600);
+      if (sData?.signedUrl) targetUrl = sData.signedUrl;
+    } catch (e) {
+      const { data: pData } = supabase.storage
+        .from('protocolos-iluminacion')
+        .getPublicUrl(path);
+      if (pData?.publicUrl) targetUrl = pData.publicUrl;
+    }
+  }
+
+  return await getBase64ImageFromUrl(targetUrl);
 };
 
 // Resize image for PDF
@@ -131,11 +182,12 @@ export const generateLightingProtocolPdf = async (
   const emp = empresas.find(e => e.id === proto.razon_social_id);
   const est = allEstablecimientos.find(e => e.id === proto.establecimiento_id);
 
-  // Download Header Logo (Tenant or Default)
+  // Download Header Logo (Tenant, User Profile Admin or Default)
   let logoBase64 = '';
   try {
-    if (tenant && tenant.logo_1_url) {
-      logoBase64 = await getBase64ImageFromUrl(tenant.logo_1_url);
+    const logoUrl = tenant?.logo_1_url || userProfile?.logo_1_url || userProfile?.logo_url;
+    if (logoUrl) {
+      logoBase64 = await getBase64ImageFromUrl(logoUrl);
     }
   } catch (logoErr) {
     console.error('Error al descargar logo para PDF:', logoErr);
@@ -292,31 +344,8 @@ export const generateLightingProtocolPdf = async (
 
   // Helper: Header across all inner pages
   const drawHeader = (isLandscape = false) => {
-    // Logo
+    // Logo únicamente (se elimina texto del anexo, cliente y línea divisoria superior)
     drawHeaderLogo(isLandscape);
-
-    // Right Header Text (Normative Protocol Title & Client Name)
-    const rightX = isLandscape ? 280 : 195;
-    
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    setTextColor(doc, COLOR_AZUL_PRINCIPAL);
-    doc.text('ANEXO - RESOLUCIÓN 84 / 2012 (PROTOCOLO DE ILUMINACIÓN)', rightX, 11, { align: 'right' });
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8.5);
-    setTextColor(doc, COLOR_SLATE_700);
-    const clientText = String(razonSocial || '').toUpperCase();
-    const maxClientWidth = isLandscape ? 200 : 120;
-    const clientLines = doc.splitTextToSize(clientText, maxClientWidth);
-    doc.text(clientLines[0], rightX, 16, { align: 'right' });
-
-    // Divider line
-    const startX = isLandscape ? 17 : 15;
-    const endX = isLandscape ? 280 : 195;
-    setDrawColor(doc, COLOR_SLATE_300);
-    doc.setLineWidth(0.3);
-    doc.line(startX, 23, endX, 23);
   };
 
   // Helper: Footer across all inner pages
@@ -366,7 +395,7 @@ export const generateLightingProtocolPdf = async (
 
   // Helper: Protocol Bar Title
   const drawProtocolTitleBar = (isLandscape = false, customPos = null) => {
-    const pos = customPos || (isLandscape ? { x: 17, y: 26, w: 263, h: 5.5 } : { x: 15, y: 26, w: 180, h: 5.5 });
+    const pos = customPos || (isLandscape ? { x: 17, y: 22, w: 263, h: 5.5 } : { x: 15, y: 22, w: 180, h: 5.5 });
     setFillColor(doc, COLOR_AZUL_PRINCIPAL);
     doc.rect(pos.x, pos.y, pos.w, pos.h, 'F');
     doc.setFont('helvetica', 'bold');
@@ -378,10 +407,10 @@ export const generateLightingProtocolPdf = async (
 
   // Helper: Signature Block
   const drawSignatureBlock = (x, y, w, h) => {
-    const imgMaxW = w - 4;
-    const imgMaxH = 28;
+    const imgMaxW = w;
+    const imgMaxH = Math.max(28, h - 8);
 
-    // 1. Signature image (rendered larger, allowed to overlap line/text as transparent PNG)
+    // 1. Signature image (rendered larger, allowed to overlap line/text as transparent PNG without deforming aspect ratio)
     if (signatureBase64) {
       try {
         const ratio = (signatureDims.width && signatureDims.height)
@@ -396,8 +425,8 @@ export const generateLightingProtocolPdf = async (
         }
 
         const renderX = x + (w - renderW) / 2;
-        const lineY = y + 21;
-        const renderY = lineY - (renderH * 0.70);
+        const lineY = y + 24;
+        const renderY = lineY - (renderH * 0.72);
 
         doc.addImage(signatureBase64, 'PNG', renderX, renderY, renderW, renderH, undefined, 'FAST');
       } catch (e) {
@@ -406,7 +435,7 @@ export const generateLightingProtocolPdf = async (
     }
 
     // 2. Dotted line
-    const lineY = y + 21;
+    const lineY = y + 24;
     setDrawColor(doc, COLOR_NEGRO);
     doc.setLineWidth(0.25);
     const startX = x + 2;
@@ -444,17 +473,40 @@ export const generateLightingProtocolPdf = async (
 
   // Helper: Draw math fraction
   const drawFraction = (topText, bottomText, x, y, width, height) => {
-    doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     setTextColor(doc, COLOR_NEGRO);
     const midX = x + (width / 2);
+    const topStr = String(topText);
+
     // Numerator
-    doc.text(String(topText), midX, y + (height * 0.38), { align: 'center' });
+    if (topStr.includes('Σ')) {
+      const restText = topStr.replace('Σ', '').trim();
+      doc.setFont('symbol', 'normal');
+      doc.setFontSize(8);
+      const sigWidth = doc.getTextWidth('S');
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      const restWidth = doc.getTextWidth(' ' + restText);
+      const totalW = sigWidth + restWidth;
+      const startX = midX - (totalW / 2);
+
+      doc.setFont('symbol', 'normal');
+      doc.text('S', startX, y + (height * 0.38));
+      doc.setFont('helvetica', 'normal');
+      doc.text(' ' + restText, startX + sigWidth, y + (height * 0.38));
+    } else {
+      doc.setFont('helvetica', 'normal');
+      doc.text(topStr, midX, y + (height * 0.38), { align: 'center' });
+    }
+
     // Line
     setDrawColor(doc, COLOR_NEGRO);
     doc.setLineWidth(0.25);
     doc.line(x + 2, y + (height * 0.52), x + width - 2, y + (height * 0.52));
+
     // Denominator
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
     doc.text(String(bottomText), midX, y + (height * 0.88), { align: 'center' });
   };
 
@@ -554,11 +606,11 @@ export const generateLightingProtocolPdf = async (
   // Section Title
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
-  setTextColor(doc, COLOR_AZUL_PRINCIPAL);
-  doc.text('Iluminación y Color (ANEXO IV - Capítulo 12 – Dec. 351/79)', 15, 33);
-  setDrawColor(doc, COLOR_AZUL_PRINCIPAL);
+  setTextColor(doc, COLOR_NEGRO);
+  doc.text('Iluminación y Color (ANEXO IV - Capítulo 12 – Dec. 351/79)', 15, 28);
+  setDrawColor(doc, COLOR_NEGRO);
   doc.setLineWidth(0.4);
-  doc.line(15, 35, 195, 35);
+  doc.line(15, 30, 195, 30);
 
   // Body Text
   const introParagraphs = [
@@ -605,7 +657,7 @@ export const generateLightingProtocolPdf = async (
     if (p.style === 'formula') {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(9.5);
-      setTextColor(doc, COLOR_AZUL_PRINCIPAL);
+      setTextColor(doc, COLOR_NEGRO);
       doc.text(p.text, 25, currentY);
       currentY += 6;
     } else if (p.style === 'legend') {
@@ -631,16 +683,17 @@ export const generateLightingProtocolPdf = async (
   pageCounter++;
 
   drawHeader(false);
-  drawProtocolTitleBar(false, { x: 15, y: 26, w: 180, h: 5.5 });
+  drawProtocolTitleBar(false, { x: 15, y: 22, w: 180, h: 5.5 });
 
   // Tabla 1: Datos del Establecimiento
   const t1X = 15;
-  const t1Y = 34;
+  const t1Y = 29;
   const t1W = 180;
+  const t1H = 58;
 
   setDrawColor(doc, COLOR_NEGRO);
   doc.setLineWidth(0.45);
-  doc.rect(t1X, t1Y, t1W, 90, 'S');
+  doc.rect(t1X, t1Y, t1W, t1H, 'S');
 
   // Title
   setFillColor(doc, COLOR_SLATE_200);
@@ -684,17 +737,18 @@ export const generateLightingProtocolPdf = async (
   rY += 6;
 
   // Row: Horarios/Turnos
-  doc.rect(t1X, rY, t1W, 54, 'S');
+  doc.rect(t1X, rY, t1W, 22, 'S');
   drawCellText(doc, 'Horarios/Turnos Habituales de Trabajo:', t1X, rY, t1W, 5, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, horarios, t1X, rY + 5, t1W, 48, { fontSize: 8.5, valign: 'top' });
+  drawCellText(doc, horarios, t1X, rY + 5, t1W, 16, { fontSize: 8.5, valign: 'top' });
 
   // Tabla 2: Datos de la Medición
   const t2X = 15;
-  const t2Y = 127;
+  const t2Y = t1Y + t1H + 3;
   const t2W = 180;
+  const t2H = 59;
 
   doc.setLineWidth(0.45);
-  doc.rect(t2X, t2Y, t2W, 77, 'S');
+  doc.rect(t2X, t2Y, t2W, t2H, 'S');
 
   // Title
   setFillColor(doc, COLOR_SLATE_200);
@@ -722,28 +776,33 @@ export const generateLightingProtocolPdf = async (
   drawCellText(doc, metodologia, t2X + 68, rY, 112, 6, { fontSize: 8.5 });
   rY += 6;
 
-  // Fechas y Horas
-  doc.rect(t2X, rY, t2W, 6, 'S');
+  // Fechas y Horas (dividido en 3 columnas con líneas divisorias verticales)
+  doc.rect(t2X, rY, 61, 6, 'S');
   drawCellText(doc, 'Fecha de la Medición:', t2X, rY, 36, 6, { fontStyle: 'bold', fontSize: 8.5 });
   drawCellText(doc, fechaMedicion, t2X + 36, rY, 25, 6, { fontSize: 8.5 });
-  drawCellText(doc, 'Hora de Inicio:', t2X + 65, rY, 25, 6, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, horaInicio, t2X + 90, rY, 20, 6, { fontSize: 8.5 });
+
+  doc.rect(t2X + 61, rY, 54, 6, 'S');
+  drawCellText(doc, 'Hora de Inicio:', t2X + 61, rY, 27, 6, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, horaInicio, t2X + 88, rY, 27, 6, { fontSize: 8.5 });
+
+  doc.rect(t2X + 115, rY, 65, 6, 'S');
   drawCellText(doc, 'Hora de Finalización:', t2X + 115, rY, 35, 6, { fontStyle: 'bold', fontSize: 8.5 });
   drawCellText(doc, horaFin, t2X + 150, rY, 30, 6, { fontSize: 8.5 });
   rY += 6;
 
   // Condiciones Atmosfericas
-  doc.rect(t2X, rY, t2W, 40, 'S');
+  doc.rect(t2X, rY, t2W, 22, 'S');
   drawCellText(doc, 'Condiciones Atmosféricas:', t2X, rY, t2W, 5, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, condAtmos, t2X, rY + 5, t2W, 34, { fontSize: 8.5, valign: 'top' });
+  drawCellText(doc, condAtmos, t2X, rY + 5, t2W, 16, { fontSize: 8.5, valign: 'top' });
 
   // Tabla 3: Documentación Adjunta
   const t3X = 15;
-  const t3Y = 207;
+  const t3Y = t2Y + t2H + 3;
   const t3W = 180;
+  const t3H = 23;
 
   doc.setLineWidth(0.45);
-  doc.rect(t3X, t3Y, t3W, 23, 'S');
+  doc.rect(t3X, t3Y, t3W, t3H, 'S');
   setFillColor(doc, COLOR_SLATE_200);
   doc.rect(t3X, t3Y, t3W, 6, 'FD');
   drawCellText(doc, 'Documentación que se Adjuntará a la Medición', t3X, t3Y, t3W, 6, { align: 'center', fontStyle: 'bold', fontSize: 9 });
@@ -753,9 +812,9 @@ export const generateLightingProtocolPdf = async (
 
   // Tabla 4: Observaciones
   const t4X = 15;
-  const t4Y = 233;
-  const t4W = 110;
-  const t4H = 35;
+  const t4Y = t3Y + t3H + 3;
+  const t4W = 180;
+  const t4H = 22;
 
   doc.setLineWidth(0.45);
   doc.rect(t4X, t4Y, t4W, t4H, 'S');
@@ -763,55 +822,66 @@ export const generateLightingProtocolPdf = async (
   const obsText = proto.observaciones || 'NA';
   drawCellText(doc, obsText, t4X + 2, t4Y + 5, t4W - 4, t4H - 6, { fontSize: 8.5, valign: 'top' });
 
-  // Firma Profesional (Box independiente de 67mm de ancho alineado a la derecha)
-  drawSignatureBlock(128, 233, 67, 35);
+  // Firma Profesional (Box independiente ampliado alineado a la derecha de la tabla)
+  drawSignatureBlock(110, t4Y + t4H + 5, 85, 38);
 
   // ==========================================
   // PAGINAS 4 Y 5: TABLA GENERAL DE MEDICIÓN (A4 Apaisado)
   // ==========================================
   const maxRowsPerPage = 12;
   const totalPoints = puntosList.length;
-  const totalTablePages = Math.max(2, Math.ceil(totalPoints / maxRowsPerPage));
+  const totalTablePages = Math.max(1, Math.ceil(totalPoints / maxRowsPerPage));
 
   for (let pIdx = 0; pIdx < totalTablePages; pIdx++) {
     doc.addPage('a4', 'landscape');
     pageCounter++;
 
     drawHeader(true);
-    drawProtocolTitleBar(true, { x: 17, y: 26, w: 263, h: 5.5 });
+    drawProtocolTitleBar(true, { x: 17, y: 22, w: 263, h: 5.5 });
 
     // Encabezado Establecimiento
     const eX = 17;
-    const eY = 33;
+    const eY = 29;
     const eW = 263;
 
     doc.setLineWidth(0.45);
     setDrawColor(doc, COLOR_NEGRO);
     doc.rect(eX, eY, eW, 14, 'S');
     doc.setLineWidth(0.25);
-    doc.rect(eX, eY, eW, 7, 'S');
 
+    // Fila 1: Razón Social (160mm) | C.U.I.T. (103mm)
+    doc.rect(eX, eY, 160, 7, 'S');
     drawCellText(doc, 'Razón Social:', eX, eY, 22, 7, { fontStyle: 'bold', fontSize: 8 });
     drawCellText(doc, razonSocial, eX + 22, eY, 138, 7, { fontSize: 8 });
+
+    doc.rect(eX + 160, eY, 103, 7, 'S');
     drawCellText(doc, 'C.U.I.T.:', eX + 160, eY, 18, 7, { fontStyle: 'bold', fontSize: 8 });
     drawCellText(doc, cuit, eX + 178, eY, 85, 7, { fontSize: 8 });
 
+    // Fila 2: Dirección (135mm) | Localidad (55mm) | C.P. (25mm) | Provincia (48mm)
+    doc.rect(eX, eY + 7, 135, 7, 'S');
     drawCellText(doc, 'Dirección:', eX, eY + 7, 18, 7, { fontStyle: 'bold', fontSize: 8 });
     drawCellText(doc, direccion, eX + 18, eY + 7, 117, 7, { fontSize: 8 });
+
+    doc.rect(eX + 135, eY + 7, 55, 7, 'S');
     drawCellText(doc, 'Localidad:', eX + 135, eY + 7, 18, 7, { fontStyle: 'bold', fontSize: 8 });
     drawCellText(doc, localidad, eX + 153, eY + 7, 37, 7, { fontSize: 8 });
+
+    doc.rect(eX + 190, eY + 7, 25, 7, 'S');
     drawCellText(doc, 'C.P.:', eX + 190, eY + 7, 10, 7, { fontStyle: 'bold', fontSize: 8 });
     drawCellText(doc, cp, eX + 200, eY + 7, 15, 7, { fontSize: 8 });
+
+    doc.rect(eX + 215, eY + 7, 48, 7, 'S');
     drawCellText(doc, 'Provincia:', eX + 215, eY + 7, 16, 7, { fontStyle: 'bold', fontSize: 8 });
     drawCellText(doc, provincia, eX + 231, eY + 7, 32, 7, { fontSize: 8 });
 
     // Tabla de Datos Apaisada
     const gX = 17;
-    const gY = 49;
+    const gY = 45;
     const gW = 263;
 
     doc.setLineWidth(0.45);
-    doc.rect(gX, gY, gW, 95, 'S');
+    doc.rect(gX, gY, gW, 96.4, 'S');
 
     // Title Header "Datos de la Medición"
     setFillColor(doc, COLOR_SLATE_200);
@@ -827,7 +897,7 @@ export const generateLightingProtocolPdf = async (
       { key: 'tipo_ilum', name: 'Tipo de Iluminación: Natural / Artificial / Mixta', w: 20.5 },
       { key: 'fuente', name: 'Tipo de Fuente Lumínica: Incandescente / Descarga / Mixta / Led', w: 23 },
       { key: 'iluminacion', name: 'Iluminación: General / Localizada / Mixta', w: 27.5 },
-      { key: 'uniformidad', name: 'Valor de la uniformidad de Iluminancia E mínima ≥ (E media)/2', w: 29.5 },
+      { key: 'uniformidad', name: 'Valor de la uniformidad de Iluminancia E mínima >= (E media)/2', w: 29.5 },
       { key: 'valor_medido', name: 'Valor Medido (Lux)', w: 23 },
       { key: 'valor_req', name: 'Valor requerido legalmente Según Anexo IV Dec. 351/79', w: 25 }
     ];
@@ -918,15 +988,16 @@ export const generateLightingProtocolPdf = async (
       }
     }
 
-    // Fila Observaciones
-    const obsY = gY + 81;
+    // Fila Observaciones (posicionada dinámicamente justo al finalizar las 12 filas de datos)
+    const obsY = rowStartY + (maxRowsPerPage * rowH);
+    const obsH = 14;
     setDrawColor(doc, COLOR_NEGRO);
-    doc.rect(gX, obsY, gW, 14, 'S');
-    drawCellText(doc, 'Observaciones:', gX, obsY, 26, 14, { fontStyle: 'bold', fontSize: 8.5 });
-    drawCellText(doc, proto.observaciones || 'N/A', gX + 26, obsY, gW - 26, 14, { fontSize: 8.5, valign: 'top' });
+    doc.rect(gX, obsY, gW, obsH, 'S');
+    drawCellText(doc, 'Observaciones:', gX, obsY, 26, obsH, { fontStyle: 'bold', fontSize: 8.5, valign: 'top', padding: 1.5 });
+    drawCellText(doc, proto.observaciones || 'N/A', gX + 26, obsY, gW - 26, obsH, { fontSize: 8.5, valign: 'top', padding: 1.5 });
 
-    // Firma
-    drawSignatureBlock(190, 146, 75, 30);
+    // Firma Profesional (Alineada a la derecha de la página apaisada)
+    drawSignatureBlock(185, obsY + obsH + 4, 95, 38);
   }
 
   // ==========================================
@@ -936,53 +1007,74 @@ export const generateLightingProtocolPdf = async (
   pageCounter++;
 
   drawHeader(true);
-  drawProtocolTitleBar(true, { x: 18, y: 26, w: 263, h: 5.5 });
+  drawProtocolTitleBar(true, { x: 18, y: 22, w: 263, h: 5.5 });
 
   // Encabezado Establecimiento
   const aX = 18;
-  const aY = 33;
+  const aY = 29;
   const aW = 263;
 
   doc.setLineWidth(0.45);
   setDrawColor(doc, COLOR_NEGRO);
   doc.rect(aX, aY, aW, 14, 'S');
+  doc.setLineWidth(0.25);
+
+  // Fila 1: Razón Social (160mm) | C.U.I.T. (103mm)
+  doc.rect(aX, aY, 160, 7, 'S');
   drawCellText(doc, 'Razón Social:', aX, aY, 22, 7, { fontStyle: 'bold', fontSize: 8 });
   drawCellText(doc, razonSocial, aX + 22, aY, 138, 7, { fontSize: 8 });
+
+  doc.rect(aX + 160, aY, 103, 7, 'S');
   drawCellText(doc, 'C.U.I.T.:', aX + 160, aY, 18, 7, { fontStyle: 'bold', fontSize: 8 });
   drawCellText(doc, cuit, aX + 178, aY, 85, 7, { fontSize: 8 });
 
+  // Fila 2: Dirección (135mm) | Localidad (55mm) | C.P. (25mm) | Provincia (48mm)
+  doc.rect(aX, aY + 7, 135, 7, 'S');
   drawCellText(doc, 'Dirección:', aX, aY + 7, 18, 7, { fontStyle: 'bold', fontSize: 8 });
   drawCellText(doc, direccion, aX + 18, aY + 7, 117, 7, { fontSize: 8 });
+
+  doc.rect(aX + 135, aY + 7, 55, 7, 'S');
   drawCellText(doc, 'Localidad:', aX + 135, aY + 7, 18, 7, { fontStyle: 'bold', fontSize: 8 });
   drawCellText(doc, localidad, aX + 153, aY + 7, 37, 7, { fontSize: 8 });
 
+  doc.rect(aX + 190, aY + 7, 25, 7, 'S');
+  drawCellText(doc, 'C.P.:', aX + 190, aY + 7, 10, 7, { fontStyle: 'bold', fontSize: 8 });
+  drawCellText(doc, cp, aX + 200, aY + 7, 15, 7, { fontSize: 8 });
+
+  doc.rect(aX + 215, aY + 7, 48, 7, 'S');
+  drawCellText(doc, 'Provincia:', aX + 215, aY + 7, 16, 7, { fontStyle: 'bold', fontSize: 8 });
+  drawCellText(doc, provincia, aX + 231, aY + 7, 32, 7, { fontSize: 8 });
+
   // Tabla Análisis
   const tAX = 18;
-  const tAY = 49;
+  const tAY = 45;
   const tAW = 263;
+  const contentH = 75;
+  const totalBoxH = 6 + 8 + contentH; // 89mm total height (49 a 138mm)
 
   doc.setLineWidth(0.45);
-  doc.rect(tAX, tAY, tAW, 118, 'S');
+  doc.rect(tAX, tAY, tAW, totalBoxH, 'S');
 
-  // Title
+  // Title Header
   setFillColor(doc, COLOR_SLATE_200);
   doc.rect(tAX, tAY, tAW, 6, 'FD');
   drawCellText(doc, 'Análisis de los Datos y Mejoras a Realizar', tAX, tAY, tAW, 6, { align: 'center', fontStyle: 'bold', fontSize: 9, color: COLOR_NEGRO });
 
-  // 2 Columns
+  // 2 Columns Subheader Titles
   const colW = tAW / 2;
+  setFillColor(doc, COLOR_SLATE_200);
   doc.rect(tAX, tAY + 6, colW, 8, 'FD');
   doc.rect(tAX + colW, tAY + 6, colW, 8, 'FD');
 
-  drawCellText(doc, 'Conclusiones.', tAX, tAY + 6, colW, 8, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, 'Recomendaciones para adecuar el nivel de iluminación a la legislación vigente.', tAX + colW, tAY + 6, colW, 8, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, 'Conclusiones.', tAX, tAY + 6, colW, 8, { fontStyle: 'bold', fontSize: 8.5, color: COLOR_NEGRO });
+  drawCellText(doc, 'Recomendaciones para adecuar el nivel de iluminación a la legislación vigente.', tAX + colW, tAY + 6, colW, 8, { fontStyle: 'bold', fontSize: 8.5, color: COLOR_NEGRO });
 
-  doc.rect(tAX, tAY + 14, colW, 104, 'S');
-  doc.rect(tAX + colW, tAY + 14, colW, 104, 'S');
+  doc.rect(tAX, tAY + 14, colW, contentH, 'S');
+  doc.rect(tAX + colW, tAY + 14, colW, contentH, 'S');
 
   // Conclusiones text
   const concText = proto.conclusiones || "Indicar puntos que no cumplen valores mínimos de iluminación y puntos que no cumplen relación de uniformidad.";
-  drawCellText(doc, concText, tAX, tAY + 14, colW, 104, { fontSize: 8.5, valign: 'top' });
+  drawCellText(doc, concText, tAX, tAY + 14, colW, contentH, { fontSize: 8.5, valign: 'top', padding: 2 });
 
   // Recomendaciones text
   const defaultRecom = [
@@ -1009,8 +1101,8 @@ export const generateLightingProtocolPdf = async (
     recY += (lines.length * 4) + 2;
   });
 
-  // Firma
-  drawSignatureBlock(185, 146, 78, 30);
+  // Firma Profesional (Ubicada debajo del cuadro de análisis alineada a la derecha)
+  drawSignatureBlock(185, tAY + totalBoxH + 5, 95, 38);
 
   // ==========================================
   // PAGINAS 7 A N: FICHAS DE CÁLCULO POR PUNTO DE MUESTREO (A4 Vertical)
@@ -1020,7 +1112,7 @@ export const generateLightingProtocolPdf = async (
     pageCounter++;
 
     drawHeader(false);
-    drawProtocolTitleBar(false, { x: 16, y: 26, w: 175, h: 5.5 });
+    drawProtocolTitleBar(false, { x: 16, y: 22, w: 175, h: 5.5 });
 
     const puntoNum = pt.punto_muestreo || (pIndex + 1);
     const sectorStr = pt.sector_text || pt.sector || 'SUBSUELO';
@@ -1058,25 +1150,21 @@ export const generateLightingProtocolPdf = async (
 
     // Tabla Identificación Punto
     const ptX = 16;
-    const ptY = 33;
+    const ptY = 29;
     const ptW = 175;
 
     doc.setLineWidth(0.45);
     setDrawColor(doc, COLOR_NEGRO);
     doc.rect(ptX, ptY, ptW, 20, 'S');
 
+    doc.rect(ptX, ptY, 75, 8, 'S');
     setFillColor(doc, COLOR_SLATE_200);
     doc.rect(ptX, ptY, 75, 8, 'FD');
     drawCellText(doc, `PUNTO DE MUESTREO ${puntoNum}`, ptX, ptY, 75, 8, { align: 'center', fontStyle: 'bold', fontSize: 9, color: COLOR_NEGRO });
 
-    doc.rect(ptX + 75, ptY, 50, 8, 'S');
-    drawCellText(doc, sectorStr, ptX + 75, ptY, 50, 8, { align: 'center', fontSize: 8.5 });
-
-    doc.rect(ptX + 125, ptY, 7, 8, 'S');
-    drawCellText(doc, '-', ptX + 125, ptY, 7, 8, { align: 'center', fontSize: 8.5 });
-
-    doc.rect(ptX + 132, ptY, 43, 8, 'S');
-    drawCellText(doc, puestoStr, ptX + 132, ptY, 43, 8, { align: 'center', fontSize: 8.5 });
+    const sectorPuestoStr = `${sectorStr}  -  ${puestoStr}`;
+    doc.rect(ptX + 75, ptY, 100, 8, 'S');
+    drawCellText(doc, sectorPuestoStr, ptX + 75, ptY, 100, 8, { align: 'center', fontSize: 8.5 });
 
     // Formula Índice
     doc.rect(ptX, ptY + 8, 75, 12, 'S');
@@ -1087,7 +1175,7 @@ export const generateLightingProtocolPdf = async (
 
     // Tabla Datos Dimensión Local
     const dX = 16;
-    const dY = 55;
+    const dY = 50;
     const dW = 175;
 
     doc.rect(dX, dY, dW, 25, 'S');
@@ -1113,7 +1201,7 @@ export const generateLightingProtocolPdf = async (
 
     // Bloques Cálculo Índice
     const bX = 16;
-    let bY = 83;
+    let bY = 78;
 
     // Item 1: Indice Local I (fraccion)
     doc.rect(bX, bY, 75, 12, 'S');
@@ -1163,7 +1251,7 @@ export const generateLightingProtocolPdf = async (
 
     // Bloque Iluminancia Media
     const iX = 16;
-    let iY = 135;
+    let iY = bY + 8;
 
     doc.rect(iX, iY, 75, 14, 'S');
     setFillColor(doc, COLOR_SLATE_200); doc.rect(iX, iY, 75, 14, 'FD');
@@ -1242,9 +1330,9 @@ export const generateLightingProtocolPdf = async (
     doc.rect(iX + 75, iY, 100, 6, 'FD');
     drawCellText(doc, cumpleIluminancia ? 'Cumple' : 'No cumple', iX + 75, iY, 100, 6, { align: 'center', fontStyle: 'bold', fontSize: 8.5, color: COLOR_BLANCO });
 
-    // Bloque Uniformidad de Iluminancia
+    // Bloque Uniformidad de Iluminancia (Posicionado dinámicamente justo debajo de Verificación)
     const uX = 16;
-    let uY = 205;
+    let uY = iY + 7;
 
     doc.rect(uX, uY, 75, 12, 'S');
     setFillColor(doc, COLOR_SLATE_200); doc.rect(uX, uY, 75, 12, 'FD');
@@ -1277,7 +1365,7 @@ export const generateLightingProtocolPdf = async (
     drawCellText(doc, 'Verificación de Uniformidad', uX, uY, 75, 6, { fontSize: 8.5, color: COLOR_NEGRO });
 
     doc.rect(uX + 75, uY, 100, 6, 'S');
-    drawCellText(doc, 'Menor Valor Medido ≥ Uniformidad', uX + 75, uY, 100, 6, { align: 'center', fontStyle: 'bold', fontSize: 8.5 });
+    drawCellText(doc, 'Menor Valor Medido >= Uniformidad', uX + 75, uY, 100, 6, { align: 'center', fontStyle: 'bold', fontSize: 8.5 });
     uY += 7;
 
     doc.rect(uX, uY, 75, 6, 'S');
@@ -1285,7 +1373,7 @@ export const generateLightingProtocolPdf = async (
     drawCellText(doc, 'Verificación de Uniformidad', uX, uY, 75, 6, { fontSize: 8.5, color: COLOR_NEGRO });
 
     doc.rect(uX + 75, uY, 100, 6, 'S');
-    const compStr = countLux > 0 ? `${Math.round(menorValorMedido)} ≥ ${Math.round(uniformidadLimit)}` : '';
+    const compStr = countLux > 0 ? `${Math.round(menorValorMedido)} >= ${Math.round(uniformidadLimit)}` : '';
     drawCellText(doc, compStr, uX + 75, uY, 100, 6, { align: 'center', fontStyle: 'bold', fontSize: 8.5 });
     uY += 7;
 
@@ -1299,7 +1387,7 @@ export const generateLightingProtocolPdf = async (
     drawCellText(doc, cumpleUniformidad ? 'Cumple' : 'No cumple', uX + 75, uY, 100, 6, { align: 'center', fontStyle: 'bold', fontSize: 8.5, color: COLOR_BLANCO });
 
     // Firma
-    drawSignatureBlock(110, 238, 70, 32);
+    drawSignatureBlock(110, uY + 4, 70, 32);
   });
 
   // ==========================================
@@ -1314,9 +1402,20 @@ export const generateLightingProtocolPdf = async (
     { title: "Piso 12" }
   ];
 
-  const croquisItems = (adjuntosList && adjuntosList.length > 0)
-    ? adjuntosList.map((adj, idx) => ({ title: adj.descripcion || adj.nombre || `Plano ${idx + 1}`, url: adj.url || adj.archivo_url }))
-    : croquisPagesDef.map(c => ({ title: c.title, url: '' }));
+  // Filter attachments for Plano / Croquis
+  const planoAdjuntos = (adjuntosList || []).filter(adj => 
+    adj.tipo !== 'Certificado de Calibración' && adj.tipo !== 'Certificado'
+  );
+
+  let croquisItems = [];
+  if (planoAdjuntos.length > 0) {
+    croquisItems = planoAdjuntos.map((adj, idx) => ({
+      title: adj.descripcion || adj.nombre_archivo || adj.nombre || `Plano ${idx + 1}`,
+      rawAdj: adj
+    }));
+  } else {
+    croquisItems = croquisPagesDef.map(c => ({ title: c.title, rawAdj: null }));
+  }
 
   for (let cIdx = 0; cIdx < croquisItems.length; cIdx++) {
     const cItem = croquisItems[cIdx];
@@ -1325,10 +1424,10 @@ export const generateLightingProtocolPdf = async (
     pageCounter++;
 
     drawHeader(true);
-    drawProtocolTitleBar(true, { x: 15, y: 26, w: 267, h: 5.5 });
+    drawProtocolTitleBar(true, { x: 15, y: 22, w: 267, h: 5.5 });
 
     const kX = 15;
-    const kY = 33;
+    const kY = 29;
     const kW = 267;
 
     doc.setLineWidth(0.45);
@@ -1336,20 +1435,116 @@ export const generateLightingProtocolPdf = async (
     doc.rect(kX, kY, kW, 6, 'S');
     drawCellText(doc, 'Puntos de muestreo', kX, kY, kW, 6, { fontStyle: 'bold', fontSize: 9 });
 
-    const mY = 41;
-    const mH = 145;
+    const mY = 37;
+    const mH = 150;
     doc.rect(kX, mY, kW, mH, 'S');
 
-    drawCellText(doc, cItem.title, kX, mY + 2, kW, 10, { align: 'center', fontStyle: 'bold', fontSize: 13, color: COLOR_AZUL_PRINCIPAL });
-
-    if (cItem.url) {
+    let finalBase64 = '';
+    if (cItem.rawAdj) {
       try {
-        const croqBase64 = await getBase64ImageFromUrl(cItem.url);
-        if (croqBase64) {
-          const dims = await getImgDimensions(croqBase64);
-          const maxW = kW - 20;
-          const maxH = mH - 18;
-          const ratio = dims.width / dims.height;
+        const rawBase64 = await getAdjuntoBase64(cItem.rawAdj);
+        if (rawBase64) {
+          const resized = await resizeImageForPdf(rawBase64, 1200, 1200);
+          finalBase64 = resized || rawBase64;
+        }
+      } catch (err) {
+        console.error('Error al procesar base64 de croquis:', err);
+      }
+    }
+
+    if (finalBase64 && finalBase64.startsWith('data:image/')) {
+      try {
+        const dims = await getImgDimensions(finalBase64);
+        const maxW = kW - 10;
+        const maxH = mH - 8;
+        const ratio = (dims.width && dims.height) ? (dims.width / dims.height) : 1.5;
+
+        let renderW = maxW;
+        let renderH = maxW / ratio;
+        if (renderH > maxH) {
+          renderH = maxH;
+          renderW = maxH * ratio;
+        }
+
+        const imgX = kX + (kW - renderW) / 2;
+        const imgY = mY + 4 + (maxH - renderH) / 2;
+
+        doc.addImage(finalBase64, 'PNG', imgX, imgY, renderW, renderH, undefined, 'FAST');
+      } catch (err) {
+        console.error('Error al insertar imagen de croquis en PDF:', err);
+        setDrawColor(doc, COLOR_SLATE_300);
+        doc.setLineWidth(0.3);
+        doc.rect(kX + 10, mY + 14, kW - 20, mH - 20, 'S');
+        drawCellText(doc, `[ CROQUIS / PLANO DEL ESTABLECIMIENTO ]`, kX + 10, mY + 14, kW - 20, mH - 20, { align: 'center', fontStyle: 'bold', fontSize: 11, color: COLOR_SLATE_500 });
+      }
+    } else {
+      setDrawColor(doc, COLOR_SLATE_300);
+      doc.setLineWidth(0.3);
+      doc.rect(kX + 10, mY + 14, kW - 20, mH - 20, 'S');
+      drawCellText(doc, `[ CROQUIS / PLANO DEL ESTABLECIMIENTO ]`, kX + 10, mY + 14, kW - 20, mH - 20, { align: 'center', fontStyle: 'bold', fontSize: 11, color: COLOR_SLATE_500 });
+    }
+  }
+
+  // ==========================================
+  // PAGINAS FINALES: ANEXO CERTIFICADO DE CALIBRACIÓN
+  // ==========================================
+  const certAdjunto = (adjuntosList || []).find(adj => 
+    adj.tipo === 'Certificado de Calibración' || adj.tipo === 'Certificado' || adj.tipo === 'Certificado de Calibración del Instrumental'
+  );
+
+  let certPdfArrayBuffer = null;
+
+  if (certAdjunto) {
+    try {
+      const path = certAdjunto.storage_path || certAdjunto.original_path || certAdjunto.public_url || certAdjunto.url || certAdjunto.archivo_url;
+      const fileName = certAdjunto.nombre_archivo || certAdjunto.name || '';
+      const isPdfFile = fileName.toLowerCase().endsWith('.pdf') || (path && path.toLowerCase().endsWith('.pdf')) || (certAdjunto.preview && certAdjunto.preview.startsWith('data:application/pdf'));
+
+      if (isPdfFile) {
+        if (certAdjunto.preview && certAdjunto.preview.startsWith('data:application/pdf')) {
+          const res = await fetch(certAdjunto.preview);
+          certPdfArrayBuffer = await res.arrayBuffer();
+        } else if (path) {
+          if (!path.startsWith('http') && !path.startsWith('data:')) {
+            const { data: blob } = await supabase.storage.from('protocolos-iluminacion').download(path);
+            if (blob) {
+              certPdfArrayBuffer = await blob.arrayBuffer();
+            }
+          } else {
+            const res = await fetch(path);
+            if (res.ok) {
+              const blob = await res.blob();
+              certPdfArrayBuffer = await blob.arrayBuffer();
+            }
+          }
+        }
+      } else {
+        const certBase64 = await getAdjuntoBase64(certAdjunto);
+        if (certBase64 && certBase64.startsWith('data:image/')) {
+          doc.addPage('a4', 'portrait');
+          pageCounter++;
+
+          drawHeader(false);
+          drawProtocolTitleBar(false, { x: 15, y: 22, w: 180, h: 5.5 });
+
+          const cX = 15;
+          const cY = 29;
+          const cW = 180;
+          const cH = 238;
+
+          doc.setLineWidth(0.45);
+          setDrawColor(doc, COLOR_NEGRO);
+          doc.rect(cX, cY, cW, 6, 'S');
+          drawCellText(doc, 'ANEXO: CERTIFICADO DE CALIBRACIÓN DEL INSTRUMENTAL', cX, cY, cW, 6, { fontStyle: 'bold', fontSize: 9, align: 'center' });
+
+          const imgY = 37;
+          const imgH = 228;
+          doc.rect(cX, imgY, cW, imgH, 'S');
+
+          const dims = await getImgDimensions(certBase64);
+          const maxW = cW - 10;
+          const maxH = imgH - 10;
+          const ratio = (dims.width && dims.height) ? (dims.width / dims.height) : 0.75;
 
           let renderW = maxW;
           let renderH = maxW / ratio;
@@ -1358,19 +1553,14 @@ export const generateLightingProtocolPdf = async (
             renderW = maxH * ratio;
           }
 
-          const imgX = kX + (kW - renderW) / 2;
-          const imgY = mY + 14 + (maxH - renderH) / 2;
+          const imgX = cX + (cW - renderW) / 2;
+          const posX = imgY + (imgH - renderH) / 2;
 
-          doc.addImage(croqBase64, 'PNG', imgX, imgY, renderW, renderH, undefined, 'FAST');
+          doc.addImage(certBase64, 'PNG', imgX, posX, renderW, renderH, undefined, 'FAST');
         }
-      } catch (err) {
-        console.error('Error al insertar imagen de croquis:', err);
       }
-    } else {
-      setDrawColor(doc, COLOR_SLATE_300);
-      doc.setLineWidth(0.3);
-      doc.rect(kX + 10, mY + 14, kW - 20, mH - 20, 'S');
-      drawCellText(doc, `[ CROQUIS / PLANO DEL ESTABLECIMIENTO: ${cItem.title.toUpperCase()} ]`, kX + 10, mY + 14, kW - 20, mH - 20, { align: 'center', fontStyle: 'bold', fontSize: 11, color: COLOR_SLATE_500 });
+    } catch (e) {
+      console.error('Error procesando certificado de calibración en PDF:', e);
     }
   }
 
@@ -1382,6 +1572,49 @@ export const generateLightingProtocolPdf = async (
       const pageInfo = doc.internal.pageSize;
       const isLand = pageInfo.width > pageInfo.height;
       drawFooter(isLand, i, totalPagesCount);
+    }
+  }
+
+  // If a PDF certificate document was uploaded, merge pages using pdf-lib
+  if (certPdfArrayBuffer) {
+    try {
+      const mainPdfBytes = doc.output('arraybuffer');
+      const finalPdfDoc = await PDFDocument.load(mainPdfBytes);
+      const certDoc = await PDFDocument.load(certPdfArrayBuffer);
+      const certPages = await finalPdfDoc.copyPages(certDoc, certDoc.getPageIndices());
+      certPages.forEach(p => finalPdfDoc.addPage(p));
+
+      // Preserve / Inject OpenAction Print catalog entry so browser auto-opens print dialog
+      const catalog = finalPdfDoc.catalog;
+      const openAction = finalPdfDoc.context.obj({
+        S: PDFName.of('Named'),
+        N: PDFName.of('Print'),
+      });
+      catalog.set(PDFName.of('OpenAction'), openAction);
+
+      const mergedPdfBytes = await finalPdfDoc.save();
+      const mergedBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+
+      // Override doc output & save methods to return merged PDF
+      const origOutput = doc.output.bind(doc);
+      doc.output = (type, ...args) => {
+        if (type === 'blob') return mergedBlob;
+        if (type === 'arraybuffer') return mergedPdfBytes.buffer;
+        if (type === 'bloburl' || type === 'bloburi') return URL.createObjectURL(mergedBlob);
+        if (type === 'datauristring' || type === 'dataurlstring') {
+          return 'data:application/pdf;base64,' + Buffer.from(mergedPdfBytes).toString('base64');
+        }
+        return origOutput(type, ...args);
+      };
+
+      doc.save = (filename) => {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(mergedBlob);
+        link.download = filename || 'Protocolo_Iluminacion.pdf';
+        link.click();
+      };
+    } catch (mergeErr) {
+      console.error('Error al fusionar certificado PDF con pdf-lib:', mergeErr);
     }
   }
 
