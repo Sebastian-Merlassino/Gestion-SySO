@@ -149,6 +149,15 @@ export default function ProtocoloForm({
   const [editPhotoIndex, setEditPhotoIndex] = useState(null);
   const [estSectoresLocal, setEstSectoresLocal] = useState([]);
 
+  const handleSelectLuxFromTabla1 = (luxValue) => {
+    if (!targetPuntoIdForTabla1) return;
+    setPuntos(prev => prev.map(p => p.id === targetPuntoIdForTabla1 ? {
+      ...p,
+      valor_requerido_legal_lux: String(luxValue)
+    } : p));
+    setTargetPuntoIdForTabla1(null);
+  };
+
   const canEdit = mode !== 'view' && estado !== 'anulado';
   const isReadOnly = mode === 'view';
 
@@ -3063,6 +3072,22 @@ export default function ProtocoloForm({
         </div>
       </div>
     )}
+
+    {/* MODAL MÉTODO DE LA CUADRÍCULA Y CRITERIO DE UNIFORMIDAD (Res. SRT 84/12 & Dec. 351/79) */}
+    <MetodoCuadriculaModal
+      isOpen={isMetodoCuadriculaOpen}
+      onClose={() => setIsMetodoCuadriculaOpen(false)}
+    />
+
+    {/* MODAL ANEXO IV DEC 351/79 TABLA 1 (Buscador y Selección de Lux) */}
+    <Tabla1Modal
+      isOpen={isTabla1Open}
+      onClose={() => {
+        setIsTabla1Open(false);
+        setTargetPuntoIdForTabla1(null);
+      }}
+      onSelectLux={handleSelectLuxFromTabla1}
+    />
   </>
   );
 }

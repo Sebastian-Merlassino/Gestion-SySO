@@ -6,12 +6,15 @@
 - **Switch de Estado y Validación Segura de Formulario (`src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`):**
   - Se reestructuró la grilla del formulario a 3 columnas simétricas (*Fecha Medición*, *Hora de Inicio*, *Hora de Finalización*).
   - Se ubicó un componente **Switch de Estado** en la barra de pie de página (misma línea de los botones *Salir* y *Guardar*) que inicia en `Borrador` por defecto y conmuta dinámicamente a `Completado` al ser activado.
-- **Estandarización Fiel SySO Compact Layout (`src/app/[tenant-slug]/protocolos/iluminacion/page.js` y `src/app/[tenant-slug]/empresas/page.js`):**
-  - Se restauró la estructura exacta de la tarjeta de cabecera y buscador tomando como referencia visual patrón el módulo **Constancia de Visita** (`visitas/page.js`).
-  - Tanto en *Protocolo de Iluminación* como en *Clientes/Empresas*, la barra de búsqueda se ubica a la derecha en la fila superior, mientras que el botón de acción principal (**+ Nuevo Protocolo** / **+ Agregar nueva empresa**) se alinea a la derecha en la barra secundaria inferior junto a los *Filtros de Búsqueda* (`px-3 py-1.5 bg-[#468DFF] rounded-xl text-xs font-bold shadow-lg shadow-[#468DFF]/10`), unificando al 100% el diseño en todo el sistema.
+- **Conexión de Modales Normativos de Ayuda (`src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`):**
+  - Se declararon los estados `isMetodoCuadriculaOpen`, `isTabla1Open` y `targetPuntoIdForTabla1` y se renderizaron los componentes `<MetodoCuadriculaModal>` y `<Tabla1Modal>` en la vista del formulario.
+  - Al presionar el botón **Método de Cuadrícula (Res. 84/12)** en la cabecera del formulario o el icono de ayuda `(?)` en la verificación de uniformidad, se despliega la ventana explicativa con la geometría de local, la fórmula N=(x+2)² y el criterio E_mín ≥ E_media / 2.
+  - Al presionar el botón **Ver Tabla 1** en los puntos de muestreo, se despliega el buscador normativo del Anexo IV Dec. 351/79 con selección directa del valor lux legal hacia la celda del punto correspondiente.
 - **Inyección de Diccionario de Impresión Nativo (`src/app/[tenant-slug]/protocolos/iluminacion/utils/pdfGenerator.js` y `page.js`):**
   - Se inyectó la clave de catálogo `OpenAction` `/Named /Print` en los documentos fusionados por `pdf-lib`.
   - Al abrir la ventana Blob URL síncrona en `handleExportPdf`, el visor nativo de PDF de Chrome/Edge lee la instrucción `/Print` dentro del catálogo del propio PDF y **despliega inmediatamente la ventana de impresión nativa superpuesta** (con previsualización y botón Imprimir).
+- **Color de Línea Divisoria del Título en Página 2 del PDF (`src/app/[tenant-slug]/protocolos/iluminacion/utils/pdfGenerator.js`):**
+  - Se actualizó el color de la línea divisoria horizontal debajo del título en la Página 2 al color principal de la marca (`COLOR_AZUL_PRINCIPAL` / `#468DFF`).
 
 ### Skills Utilizadas
 - `gestion-syso-bitacora`

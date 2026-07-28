@@ -608,7 +608,7 @@ export const generateLightingProtocolPdf = async (
   doc.setFontSize(11);
   setTextColor(doc, COLOR_NEGRO);
   doc.text('Iluminación y Color (ANEXO IV - Capítulo 12 – Dec. 351/79)', 15, 28);
-  setDrawColor(doc, COLOR_NEGRO);
+  setDrawColor(doc, COLOR_AZUL_PRINCIPAL);
   doc.setLineWidth(0.4);
   doc.line(15, 30, 195, 30);
 
