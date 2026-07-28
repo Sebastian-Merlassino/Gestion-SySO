@@ -33,6 +33,7 @@
   - Se modificó la etiqueta de *Documentación que se Adjuntará* por **"Describa las condiciones normales y/o habituales de trabajo"**, eliminando su contenido por defecto tanto en el formulario como en el reporte PDF.
   - Se modificó la etiqueta de *Observaciones Generales de la Medición* por **"Describa las condiciones de trabajo al momento de la medición."**, estableciendo como contenido inicial por defecto y placeholder `"Al momento de la medición, el establecimiento se encontraba funcionando en condiciones normales."` tanto en el formulario como en el reporte PDF.
   - Se agregó una nueva tarjeta independiente `<AppCard>` debajo de *Datos de la Medición* titulada **"Documentación que se Adjuntará a la Medición"**, con campo de texto expandible, valor predeterminado `"Certificado de Calibración.\nPlano o Croquis del establecimiento."` e integración con el módulo de voz e IA `SySO-AI-Voice-Helper`.
+  - Se realizó el commit `feat: agregar seccion protocolo de ruido con Res 295/03 ANEXO V y PDF` (hash `4139d0a`) y se ejecutó exitosamente el `git push origin main`.
 
 ### Skills Utilizadas
 - `gestion-syso-bitacora`
