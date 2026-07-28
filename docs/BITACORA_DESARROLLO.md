@@ -1,5 +1,67 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-28] Actualización de Placeholder de Instrumento en Protocolo de Iluminación
+
+### Resumen de Cambios
+- **Ajuste de Formulario de Iluminación (`src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`):**
+  - Se actualizó el placeholder del campo de entrada del instrumento a `"Decibelimetro Marca: ...; Modelo: ...; Número de serie: ... ."`.
+  - Se homogeneizó el texto de ejemplo con el formulario del protocolo de ruido.
+
+### Archivos Modificados
+- `src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+- `src/app/[tenant-slug]/protocolos/ruido/components/ProtocoloForm.js`
+- `docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-07-28] Creación e Integración de la Sección Protocolo de Ruido (Réplica de Protocolo de Iluminación)
+
+### Resumen de Cambios
+- **Migración DDL y Configuración Supabase (`supabase/migrations/20260812000000_create_protocolo_ruido.sql`):**
+  - Se crearon 4 tablas independientes aisladas por `tenant_id` y con borrado lógico: `protocolos_ruido`, `protocolos_ruido_puntos`, `protocolos_ruido_mediciones` y `protocolos_ruido_adjuntos`.
+  - Se habilitó RLS con políticas de lectura, inserción, edición y eliminación evaluando el permiso `'protocolo_ruido'`.
+  - Se aprovisionó el bucket de almacenamiento `'protocolos-ruido'` y sus políticas de acceso por miembro de tenant.
+  - Se ejecutó exitosamente la migración SQL sobre la base de datos Supabase en vivo (`wbykmdexenparduosadj`).
+- **Navegación e Integración UI (`src/components/Sidebar.js`):**
+  - Se agregó la opción **Protocolo de Ruido** con icono `Volume2` en el menú del Sidebar respetando el acceso por rol técnico/administrador.
+  - Se habilitó `'protocolo-ruido'` en la matriz de funcionalidades `planFeatures` para todos los planes (`free`, `basic_5`, `standard_25`, `libre`).
+- **Estructura y Generación de PDF del Módulo Ruido (`src/app/[tenant-slug]/protocolos/ruido/`):**
+  - Se reestructuró la página principal `page.js` para ser una réplica exacta 1:1 de Iluminación: `AppPageHeader` estandarizado, contenedor de filtros SySO compact, listado tabular con acciones de tabla, modal de despacho de reportes PDF por Correo y WhatsApp (`Tabs`), navegador SPA y alertas de cambios sin guardar.
+  - Se replicaron 1:1 los componentes `ProtocoloForm.js` (con dictado por voz `AITextHelper`, carga de planos con marcadores interactivos, modal de asistente de perfiles del cliente, estado de borrador/completado/anulado, firmado digital e histórico) y el generador `pdfGenerator.js` adaptado a normativas de Ruido (Res. SRT 85/12 y Dec. 351/79) manteniendo idéntica maquetación y paleta de colores de marca.
+  - Se actualizó el botón de la cabecera en el formulario a **"Resolución N° 295/2003 - ANEXO V"** y se cargó en su ventana emergente (`MetodoCuadriculaModal.js`) el texto normativo completo de la **Resolución N° 295/2003 (ANEXO V)**, cubriendo Infrasonidos, Ruido Continuo/Intermitente (con la Tabla 1 de Valores Límite Umbral y ecuación de exposición combinada), Ruido de Impulso y Ultrasonido.
+  - Se ajustaron los campos del formulario y del PDF: se eliminó el campo de Horarios de la tarjeta *Datos del Establecimiento*, se actualizó el placeholder del instrumento a `"Decibelimetro Marca: ...; Modelo: ...; Número de serie: ..."`, se eliminó el bloque de *Metodología Utilizada*, y se reemplazó el campo *Condiciones Atmosféricas* por **"Horarios / Turnos Habituales de Trabajo"** (con placeholder predeterminado `"Lunes a viernes de 8 a 17 hs"`).
+  - Se modificó la etiqueta de *Documentación que se Adjuntará* por **"Describa las condiciones normales y/o habituales de trabajo"**, eliminando su contenido por defecto tanto en el formulario como en el reporte PDF.
+  - Se modificó la etiqueta de *Observaciones Generales de la Medición* por **"Describa las condiciones de trabajo al momento de la medición."**, estableciendo como contenido inicial por defecto y placeholder `"Al momento de la medición, el establecimiento se encontraba funcionando en condiciones normales."` tanto en el formulario como en el reporte PDF.
+  - Se agregó una nueva tarjeta independiente `<AppCard>` debajo de *Datos de la Medición* titulada **"Documentación que se Adjuntará a la Medición"**, con campo de texto expandible, valor predeterminado `"Certificado de Calibración.\nPlano o Croquis del establecimiento."` e integración con el módulo de voz e IA `SySO-AI-Voice-Helper`.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `supabase`
+- `next-best-practices`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados / Creados
+- `supabase/migrations/20260812000000_create_protocolo_ruido.sql` (Nuevo)
+- `src/components/Sidebar.js` (Modificado)
+- `src/app/[tenant-slug]/protocolos/ruido/page.js` (Nuevo)
+- `src/app/[tenant-slug]/protocolos/ruido/nuevo/page.js` (Nuevo)
+- `src/app/[tenant-slug]/protocolos/ruido/[id]/page.js` (Nuevo)
+- `src/app/[tenant-slug]/protocolos/ruido/[id]/editar/page.js` (Nuevo)
+- `src/app/[tenant-slug]/protocolos/ruido/[id]/pdf/page.js` (Nuevo)
+- `src/app/[tenant-slug]/protocolos/ruido/components/ProtocoloForm.js` (Nuevo)
+- `src/app/[tenant-slug]/protocolos/ruido/components/MetodoCuadriculaModal.js` (Nuevo)
+- `src/app/[tenant-slug]/protocolos/ruido/components/Tabla1Modal.js` (Nuevo)
+- `src/app/[tenant-slug]/protocolos/ruido/utils/pdfGenerator.js` (Nuevo)
+- `src/app/[tenant-slug]/protocolos/ruido/utils/tablasAnexoIV.js` (Nuevo)
+- `docs/BITACORA_DESARROLLO.md` (Modificado)
+
+### Validaciones Ejecutadas
+- Ejecución directa de DDL en Supabase DB.
+- Compilación de producción en Next.js (`npm run build`).
+
+---
+
 ## [2026-07-27] Switch de Estado en Pie de Página y Ventana de Impresión Directa en Tabla de Protocolos
 
 ### Resumen de Cambios

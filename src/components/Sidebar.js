@@ -22,7 +22,8 @@ import {
   Zap,
   Lock,
   Share2,
-  Sun
+  Sun,
+  Volume2
 } from 'lucide-react';
 import { useToast } from '@/components/providers/ToastProvider';
 
@@ -135,6 +136,7 @@ export default function Sidebar({
     { id: 'avisos', label: 'Aviso de Riesgo', path: `/${tenantSlug}/avisos`, icon: AlertTriangle },
     { id: 'checklist-personalizados', label: 'Checklist Personalizados', path: `/${tenantSlug}/checklist-personalizados`, icon: ClipboardCheck },
     { id: 'protocolo-iluminacion', label: 'Protocolo de Iluminación', path: `/${tenantSlug}/protocolos/iluminacion`, icon: Sun, adminOnly: true },
+    { id: 'protocolo-ruido', label: 'Protocolo de Ruido', path: `/${tenantSlug}/protocolos/ruido`, icon: Volume2, adminOnly: true },
     { id: 'legajo', label: 'Legajo Técnico', path: `/${tenantSlug}/legajo`, icon: Folder },
     { id: 'nomina', label: 'Nómina de Personal', path: `/${tenantSlug}/nomina`, icon: Users },
     { id: 'divider-2', type: 'divider' },
@@ -157,10 +159,10 @@ export default function Sidebar({
   }
 
   const planFeatures = {
-    free: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'empresas', 'equipo', 'protocolo-iluminacion'],
-    basic_5: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'protocolo-iluminacion', 'empresas', 'equipo'],
-    standard_25: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'protocolo-iluminacion', 'visitas', 'avisos', 'empresas', 'equipo'],
-    libre: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'protocolo-iluminacion', 'visitas', 'avisos', 'checklist-personalizados', 'legajo', 'portal-clientes', 'empresas', 'equipo']
+    free: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'empresas', 'equipo', 'protocolo-iluminacion', 'protocolo-ruido'],
+    basic_5: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'protocolo-iluminacion', 'protocolo-ruido', 'empresas', 'equipo'],
+    standard_25: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'protocolo-iluminacion', 'protocolo-ruido', 'visitas', 'avisos', 'empresas', 'equipo'],
+    libre: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'protocolo-iluminacion', 'protocolo-ruido', 'visitas', 'avisos', 'checklist-personalizados', 'legajo', 'portal-clientes', 'empresas', 'equipo']
   };
 
   const allowedFeatures = planFeatures[effectivePlan] || planFeatures.free;
