@@ -864,6 +864,8 @@ export default function ProtocoloForm({
     nivel_pico_lc_pico_dbc: '',
     tipo_carga_continuo: 'laeq',
     nivel_laeq_te_dba: '',
+    modo_suma_fracciones: 'directo',
+    fracciones: [{ id: 'f-' + Date.now() + '-1', c_horas: '', t_horas: '' }],
     resultado_suma_fracciones: '',
     dosis_porcentaje: '',
     observaciones_punto: '',
@@ -995,7 +997,9 @@ export default function ProtocoloForm({
   const handleAddFraccion = (puntoId) => {
     setPuntos(puntos.map(p => {
       if (p.id === puntoId) {
-        const fracs = p.fracciones || [{ id: 'f-' + Date.now() + '-1', c_horas: '', t_horas: '' }];
+        const fracs = (p.fracciones && p.fracciones.length > 0)
+          ? p.fracciones
+          : [{ id: 'f-' + Date.now() + '-1', c_horas: '', t_horas: '' }];
         const newFrac = { id: 'f-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4), c_horas: '', t_horas: '' };
         return recalculateSumaFracciones(p, [...fracs, newFrac]);
       }
@@ -1017,7 +1021,10 @@ export default function ProtocoloForm({
   const handleFraccionChange = (puntoId, fracId, field, value) => {
     setPuntos(puntos.map(p => {
       if (p.id === puntoId) {
-        const fracs = (p.fracciones || []).map(f => f.id === fracId ? { ...f, [field]: value } : f);
+        const baseFracs = (p.fracciones && p.fracciones.length > 0)
+          ? p.fracciones
+          : [{ id: fracId || ('f-' + Date.now() + '-1'), c_horas: '', t_horas: '' }];
+        const fracs = baseFracs.map(f => f.id === fracId ? { ...f, [field]: value } : f);
         return recalculateSumaFracciones(p, fracs);
       }
       return p;
@@ -2456,13 +2463,13 @@ export default function ProtocoloForm({
 
                                     {/* Lista de filas de fracciones */}
                                     <div className="space-y-2">
-                                      {(p.fracciones || [{ id: 'f-1', c_horas: '', t_horas: '' }]).map((f, fIdx) => {
+                                      {((p.fracciones && p.fracciones.length > 0) ? p.fracciones : [{ id: 'f-' + p.id + '-1', c_horas: '', t_horas: '' }]).map((f, fIdx) => {
                                         const cVal = parseFloat(f.c_horas);
                                         const tVal = parseFloat(f.t_horas);
                                         const fracRes = (!isNaN(cVal) && !isNaN(tVal) && tVal > 0) ? (cVal / tVal).toFixed(3) : '-';
 
                                         return (
-                                          <div key={f.id || fIdx} className="grid grid-cols-12 gap-2 items-center bg-white p-2.5 rounded-lg border border-slate-200 shadow-sm">
+                                          <div key={f.id || `f-${fIdx}`} className="grid grid-cols-12 gap-2 items-center bg-white p-2.5 rounded-lg border border-slate-200 shadow-sm">
                                             <div className="col-span-12 sm:col-span-1 text-center font-extrabold text-xs text-slate-500">
                                               #{fIdx + 1}
                                             </div>
@@ -2476,7 +2483,7 @@ export default function ProtocoloForm({
                                                 disabled={!canEdit}
                                                 className="h-8 text-xs"
                                                 value={f.c_horas || ''}
-                                                onChange={(e) => handleFraccionChange(p.id, f.id, 'c_horas', e.target.value)}
+                                                onChange={(e) => handleFraccionChange(p.id, f.id || ('f-' + p.id + '-1'), 'c_horas', e.target.value)}
                                               />
                                             </div>
                                             <div className="col-span-12 sm:col-span-4 flex flex-col gap-0.5">
@@ -2489,14 +2496,14 @@ export default function ProtocoloForm({
                                                 disabled={!canEdit}
                                                 className="h-8 text-xs"
                                                 value={f.t_horas || ''}
-                                                onChange={(e) => handleFraccionChange(p.id, f.id, 't_horas', e.target.value)}
+                                                onChange={(e) => handleFraccionChange(p.id, f.id || ('f-' + p.id + '-1'), 't_horas', e.target.value)}
                                               />
                                             </div>
                                             <div className="col-span-10 sm:col-span-2 text-center bg-blue-50/60 py-1 px-2 rounded-md font-bold text-xs text-[#468DFF] border border-blue-100">
                                               C/T = {fracRes}
                                             </div>
                                             <div className="col-span-2 sm:col-span-1 flex justify-center">
-                                              {canEdit && (p.fracciones || []).length > 1 && (
+                                              {canEdit && (p.fracciones && p.fracciones.length > 1) && (
                                                 <button
                                                   type="button"
                                                   onClick={() => handleRemoveFraccion(p.id, f.id)}
