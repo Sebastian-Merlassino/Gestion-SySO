@@ -12,3 +12,7 @@ ALTER TABLE public.protocolos_ruido_puntos
   ADD COLUMN IF NOT EXISTS fracciones JSONB NULL,
   ADD COLUMN IF NOT EXISTS resultado_suma_fracciones NUMERIC NULL,
   ADD COLUMN IF NOT EXISTS dosis_porcentaje NUMERIC NULL;
+
+ALTER TABLE public.protocolos_ruido_adjuntos
+  ADD COLUMN IF NOT EXISTS original_path TEXT NULL,
+  ADD COLUMN IF NOT EXISTS markers JSONB NULL;
