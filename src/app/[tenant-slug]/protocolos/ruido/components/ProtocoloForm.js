@@ -2366,9 +2366,6 @@ export default function ProtocoloForm({
                                   value={p.nivel_laeq_te_dba}
                                   onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, nivel_laeq_te_dba: e.target.value } : x))}
                                 />
-                                <span className="text-[10px] text-slate-500 font-medium mt-0.5">
-                                  *Límite legal según Tabla 1 (Res. 295/03) para {p.tiempo_exposicion_hs ? `${p.tiempo_exposicion_hs} hs` : '8 hs'} de exposición: <strong className="text-slate-800 font-bold">{getLimiteDbaForTe(p.tiempo_exposicion_hs)} dBA</strong>.
-                                </span>
                               </div>
                             )}
 
