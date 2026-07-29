@@ -96,7 +96,7 @@ export default function Tabla1RuidoModal({ isOpen, onClose, onSelectHoras }) {
       <div className="mt-3 bg-amber-50 p-2.5 rounded-lg border border-amber-200 text-[11px] text-amber-800">
         <p className="font-semibold">Nota legal (Res. 295/03 ANEXO V):</p>
         <p className="mt-0.5">
-          No se permite ninguna exposición a ruido continuo, intermitente o de impacto no protegido que sea superior a 140 dBC (pico). Para tiempos entre los valores indicados en la tabla, utilizar la fórmula de la suma de las fracciones $\Sigma (C_i / T_i) \le 1.00$.
+          No se permite ninguna exposición a ruido continuo, intermitente o de impacto no protegido que sea superior a 140 dBC (pico).
         </p>
       </div>
     </AppInfoModal>
