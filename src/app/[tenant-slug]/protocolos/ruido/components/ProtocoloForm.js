@@ -350,85 +350,58 @@ export default function ProtocoloForm({
     setFirmaProfSavedUrl('');
   };
 
-  // Calculations helper for points
+  // Calculations helper for noise points
   const getPuntoCalculos = useCallback((p) => {
-    const largo = parseFloat(p.largo_m);
-    const ancho = parseFloat(p.ancho_m);
-    const altura = parseFloat(p.altura_m);
-    const required = parseFloat(p.valor_requerido_legal_lux);
+    let resultado = 'Pendiente';
+    let valorMedidoText = '-';
+    let limiteLegalText = '-';
 
-    let indice_local = null;
-    let indice_local_corregido = null;
-    let numero_minimo_puntos_medicion = null;
-
-    if (largo > 0 && ancho > 0 && altura > 0) {
-      indice_local = (largo * ancho) / (altura * (largo + ancho));
-      indice_local_corregido = indice_local >= 3 ? 4 : Math.ceil(indice_local);
-      numero_minimo_puntos_medicion = Math.pow(indice_local_corregido + 2, 2);
-    }
-
-    const validMediciones = p.mediciones
-      .map(m => parseFloat(m.valor_lux))
-      .filter(val => !isNaN(val) && val >= 0);
-
-    let iluminancia_media = null;
-    let iluminancia_minima = null;
-    let uniformidad_requerida = null;
-    let verificacion_uniformidad = 'Sin evaluar';
-    let verificacion_legal = 'Sin evaluar';
-    let resultado_punto = 'Sin evaluar';
-
-    const count = validMediciones.length;
-
-    if (count > 0) {
-      const suma = validMediciones.reduce((a, b) => a + b, 0);
-      iluminancia_media = suma / count;
-      iluminancia_minima = Math.min(...validMediciones);
-      uniformidad_requerida = iluminancia_media / 2;
-
-      if (p.aplicaVerificacionUniformidad) {
-        verificacion_uniformidad = iluminancia_minima >= uniformidad_requerida ? 'Cumple' : 'No cumple';
-      } else {
-        verificacion_uniformidad = 'No aplica';
+    if (p.caracteristicas_ruido === 'impulso_impacto') {
+      const valPico = parseFloat(p.nivel_pico_lc_pico_dbc);
+      limiteLegalText = '140 dBC (Techo)';
+      if (!isNaN(valPico)) {
+        valorMedidoText = `${valPico} dBC`;
+        resultado = valPico <= 140 ? 'Cumple' : 'No cumple';
       }
-
-      if (!isNaN(required) && required > 0) {
-        verificacion_legal = iluminancia_media >= required ? 'Cumple' : 'No cumple';
-      }
-
-      const isLegalOk = verificacion_legal === 'Cumple';
-      const isUniformityOk = !p.aplicaVerificacionUniformidad || verificacion_uniformidad === 'Cumple';
-
-      if (verificacion_legal === 'No cumple' || (p.aplicaVerificacionUniformidad && verificacion_uniformidad === 'No cumple')) {
-        resultado_punto = 'No cumple';
-      } else if (verificacion_legal === 'Cumple' && isUniformityOk) {
-        resultado_punto = 'Cumple';
-      } else {
-        resultado_punto = 'Parcial';
+    } else {
+      // continuo_intermitente
+      if (p.tipo_carga_continuo === 'laeq') {
+        const valLaeq = parseFloat(p.nivel_laeq_te_dba);
+        limiteLegalText = '85 dBA (8hs)';
+        if (!isNaN(valLaeq)) {
+          valorMedidoText = `${valLaeq} dBA`;
+          resultado = valLaeq <= 85 ? 'Cumple' : 'No cumple';
+        }
+      } else if (p.tipo_carga_continuo === 'suma_fracciones') {
+        const valSuma = parseFloat(p.resultado_suma_fracciones);
+        limiteLegalText = '1.00';
+        if (!isNaN(valSuma)) {
+          valorMedidoText = `${valSuma}`;
+          resultado = valSuma <= 1.0 ? 'Cumple' : 'No cumple';
+        }
+      } else if (p.tipo_carga_continuo === 'dosis') {
+        const valDosis = parseFloat(p.dosis_porcentaje);
+        limiteLegalText = '100 %';
+        if (!isNaN(valDosis)) {
+          valorMedidoText = `${valDosis} %`;
+          resultado = valDosis <= 100 ? 'Cumple' : 'No cumple';
+        }
       }
     }
 
     return {
-      indice_local: indice_local ? Number(indice_local.toFixed(2)) : null,
-      indice_local_corregido,
-      numero_minimo_puntos_medicion,
-      cantidad_mediciones_cargadas: count,
-      iluminancia_media: iluminancia_media ? Number(iluminancia_media.toFixed(2)) : null,
-      iluminancia_minima: iluminancia_minima ? Number(iluminancia_minima.toFixed(2)) : null,
-      uniformidad_requerida: uniformidad_requerida ? Number(uniformidad_requerida.toFixed(2)) : null,
-      verificacion_uniformidad,
-      verificacion_legal,
-      resultado_punto,
-      valor_medido_lux: iluminancia_media ? Number(iluminancia_media.toFixed(2)) : null
+      resultado_punto: resultado,
+      valorMedidoText,
+      limiteLegalText
     };
   }, []);
 
   // Calculate Overall Protocol Result
   const getResultadoGeneral = useCallback(() => {
-    if (puntos.length === 0) return 'Sin evaluar';
+    if (!puntos || puntos.length === 0) return 'Sin evaluar';
     const calculados = puntos.map(p => getPuntoCalculos(p));
     if (calculados.some(c => c.resultado_punto === 'No cumple')) return 'No cumple';
-    if (calculados.some(c => c.resultado_punto === 'Parcial' || c.resultado_punto === 'Sin evaluar')) return 'Parcial';
+    if (calculados.some(c => c.resultado_punto === 'Pendiente')) return 'Borrador';
     return 'Cumple';
   }, [puntos, getPuntoCalculos]);
 
@@ -436,16 +409,14 @@ export default function ProtocoloForm({
   const checkIsProtocoloCompleto = useCallback(() => {
     if (!empresaId || !establecimientoId || !fechaMedicion) return false;
     if (!instrumento || !instrumento.trim()) return false;
-    if (!fechaCalibracion || !metodologia || !metodologia.trim()) return false;
+    if (!fechaCalibracion) return false;
     if (!puntos || puntos.length === 0) return false;
 
     for (let i = 0; i < puntos.length; i++) {
       const p = puntos[i];
       if (!p.sector_text || !p.sector_text.trim()) return false;
-
       const cal = getPuntoCalculos(p);
-      if (cal.cantidad_mediciones_cargadas === 0) return false;
-      if (isNaN(parseFloat(p.valor_requerido_legal_lux)) || parseFloat(p.valor_requerido_legal_lux) <= 0) return false;
+      if (cal.resultado_punto === 'Pendiente') return false;
     }
 
     const generalRes = getResultadoGeneral();
@@ -454,7 +425,7 @@ export default function ProtocoloForm({
     }
 
     return true;
-  }, [empresaId, establecimientoId, fechaMedicion, instrumento, fechaCalibracion, metodologia, puntos, conclusiones, recomendaciones, getPuntoCalculos, getResultadoGeneral]);
+  }, [empresaId, establecimientoId, fechaMedicion, instrumento, fechaCalibracion, puntos, conclusiones, recomendaciones, getPuntoCalculos, getResultadoGeneral]);
 
   // Load companies & establishments lookups
   useEffect(() => {
@@ -740,19 +711,18 @@ export default function ProtocoloForm({
         punto_muestreo: p.punto_muestreo,
         sector_id: p.sector_id || '',
         sector_text: p.sector_text || '',
-        largo_m: p.largo_m !== null ? String(p.largo_m) : '',
-        ancho_m: p.ancho_m !== null ? String(p.ancho_m) : '',
-        altura_m: p.altura_m !== null ? String(p.altura_m) : '',
         puesto_id: p.puesto_id || '',
         puesto_text: p.puesto_text || '',
-        tipo_iluminacion: p.tipo_iluminacion || 'Artificial',
-        tipo_fuente_luminica: p.tipo_fuente_luminica || 'Led',
-        iluminacion: p.iluminacion || 'General',
-        valor_requerido_legal_lux: p.valor_requerido_legal_lux !== null ? String(p.valor_requerido_legal_lux) : '',
+        tiempo_exposicion_hs: p.tiempo_exposicion_hs !== null ? String(p.tiempo_exposicion_hs) : '8',
+        tiempo_integracion: p.tiempo_integracion || '15 min',
+        caracteristicas_ruido: p.caracteristicas_ruido || 'continuo_intermitente',
+        nivel_pico_lc_pico_dbc: p.nivel_pico_lc_pico_dbc !== null ? String(p.nivel_pico_lc_pico_dbc) : '',
+        tipo_carga_continuo: p.tipo_carga_continuo || 'laeq',
+        nivel_laeq_te_dba: p.nivel_laeq_te_dba !== null ? String(p.nivel_laeq_te_dba) : '',
+        resultado_suma_fracciones: p.resultado_suma_fracciones !== null ? String(p.resultado_suma_fracciones) : '',
+        dosis_porcentaje: p.dosis_porcentaje !== null ? String(p.dosis_porcentaje) : '',
         observaciones_punto: p.observaciones_punto || '',
-        aplicaVerificacionUniformidad: p.verificacion_uniformidad !== 'No aplica',
-        isCollapsed: true,
-        mediciones: (p.mediciones || []).map(m => ({ id: m.id, valor_lux: String(m.valor_lux) }))
+        isCollapsed: true
       }));
 
       setPuntos(loadedPuntos.length > 0 ? loadedPuntos : [createNewPunto(1)]);
@@ -880,22 +850,18 @@ export default function ProtocoloForm({
     punto_muestreo: num,
     sector_id: '',
     sector_text: '',
-    largo_m: '',
-    ancho_m: '',
-    altura_m: '',
     puesto_id: '',
     puesto_text: '',
-    tipo_iluminacion: 'Artificial',
-    tipo_fuente_luminica: 'Led',
-    iluminacion: 'General',
-    mediciones: [
-      { id: 'm-' + Date.now() + '-1', valor_lux: '' }
-    ],
-    valor_requerido_legal_lux: '',
+    tiempo_exposicion_hs: '8',
+    tiempo_integracion: '15 min',
+    caracteristicas_ruido: 'continuo_intermitente',
+    nivel_pico_lc_pico_dbc: '',
+    tipo_carga_continuo: 'laeq',
+    nivel_laeq_te_dba: '',
+    resultado_suma_fracciones: '',
+    dosis_porcentaje: '',
     observaciones_punto: '',
-    aplicaVerificacionUniformidad: true,
-    isCollapsed: false,
-    selectedActividadIndex: ''
+    isCollapsed: false
   });
 
   // Handle company change
@@ -1017,6 +983,58 @@ export default function ProtocoloForm({
       }
       return p;
     }));
+  };
+
+  // Fraction breakdown manipulation and automated sum calculation (Res. 295/03 ANEXO V)
+  const handleAddFraccion = (puntoId) => {
+    setPuntos(puntos.map(p => {
+      if (p.id === puntoId) {
+        const fracs = p.fracciones || [{ id: 'f-' + Date.now() + '-1', c_horas: '', t_horas: '' }];
+        const newFrac = { id: 'f-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4), c_horas: '', t_horas: '' };
+        return recalculateSumaFracciones(p, [...fracs, newFrac]);
+      }
+      return p;
+    }));
+  };
+
+  const handleRemoveFraccion = (puntoId, fracId) => {
+    setPuntos(puntos.map(p => {
+      if (p.id === puntoId) {
+        const fracs = (p.fracciones || []).filter(f => f.id !== fracId);
+        const nextFracs = fracs.length > 0 ? fracs : [{ id: 'f-' + Date.now() + '-1', c_horas: '', t_horas: '' }];
+        return recalculateSumaFracciones(p, nextFracs);
+      }
+      return p;
+    }));
+  };
+
+  const handleFraccionChange = (puntoId, fracId, field, value) => {
+    setPuntos(puntos.map(p => {
+      if (p.id === puntoId) {
+        const fracs = (p.fracciones || []).map(f => f.id === fracId ? { ...f, [field]: value } : f);
+        return recalculateSumaFracciones(p, fracs);
+      }
+      return p;
+    }));
+  };
+
+  const recalculateSumaFracciones = (p, fracs) => {
+    let total = 0;
+    let validCount = 0;
+    fracs.forEach(f => {
+      const c = parseFloat(f.c_horas);
+      const t = parseFloat(f.t_horas);
+      if (!isNaN(c) && c >= 0 && !isNaN(t) && t > 0) {
+        total += (c / t);
+        validCount++;
+      }
+    });
+
+    return {
+      ...p,
+      fracciones: fracs,
+      resultado_suma_fracciones: validCount > 0 ? Number(total.toFixed(3)).toString() : p.resultado_suma_fracciones
+    };
   };
 
   // Specific Activity selection (Table 2 lookup)
@@ -1547,26 +1565,16 @@ export default function ProtocoloForm({
           punto_muestreo: p.punto_muestreo,
           sector_id: p.sector_id || null,
           sector_text: p.sector_text || null,
-          largo_m: parseFloat(p.largo_m) || null,
-          ancho_m: parseFloat(p.ancho_m) || null,
-          altura_m: parseFloat(p.altura_m) || null,
           puesto_id: p.puesto_id || null,
           puesto_text: p.puesto_text || null,
-          tipo_iluminacion: p.tipo_iluminacion,
-          tipo_fuente_luminica: p.tipo_fuente_luminica,
-          iluminacion: p.iluminacion,
-          indice_local: cal.indice_local,
-          indice_local_corregido: cal.indice_local_corregido,
-          numero_minimo_puntos_medicion: cal.numero_minimo_puntos_medicion,
-          cantidad_mediciones_cargadas: cal.cantidad_mediciones_cargadas,
-          iluminancia_media: cal.iluminancia_media,
-          iluminancia_minima: cal.iluminancia_minima,
-          uniformidad_requerida: cal.uniformidad_requerida,
-          valor_uniformidad_iluminancia: cal.uniformidad_requerida,
-          valor_medido_lux: cal.valor_medido_lux,
-          valor_requerido_legal_lux: parseFloat(p.valor_requerido_legal_lux) || null,
-          verificacion_uniformidad: cal.verificacion_uniformidad,
-          verificacion_legal: cal.verificacion_legal,
+          tiempo_exposicion_hs: parseFloat(p.tiempo_exposicion_hs) || null,
+          tiempo_integracion: p.tiempo_integracion || null,
+          caracteristicas_ruido: p.caracteristicas_ruido || 'continuo_intermitente',
+          nivel_pico_lc_pico_dbc: parseFloat(p.nivel_pico_lc_pico_dbc) || null,
+          tipo_carga_continuo: p.tipo_carga_continuo || 'laeq',
+          nivel_laeq_te_dba: parseFloat(p.nivel_laeq_te_dba) || null,
+          resultado_suma_fracciones: parseFloat(p.resultado_suma_fracciones) || null,
+          dosis_porcentaje: parseFloat(p.dosis_porcentaje) || null,
           resultado_punto: cal.resultado_punto,
           observaciones_punto: p.observaciones_punto || null
         };
@@ -1996,21 +2004,20 @@ export default function ProtocoloForm({
 
         {/* CARD DOCUMENTACIÓN QUE SE ADJUNTARÁ */}
         <AppCard className="p-5 md:p-6 space-y-4">
-          <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-            <FileText className="h-5 w-5 text-[#468DFF]" />
-            <h2 className="font-outfit text-base font-extrabold text-slate-800">Documentación que se Adjuntará a la Medición</h2>
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-[#468DFF]" />
+              <h2 className="font-outfit text-base font-extrabold text-slate-800">Documentación que se Adjuntará a la Medición</h2>
+            </div>
+            <AITextHelper
+              disabled={!canEdit}
+              value={documentacionAdjunta}
+              onChange={setDocumentacionAdjunta}
+              context="Listado de anexos técnicos y documentación adjunta a la medición de ruido"
+            />
           </div>
 
           <div className="flex flex-col gap-1 col-span-full">
-            <div className="flex items-center justify-between">
-              <AppLabel htmlFor="documentacionAdjunta">Documentación que se Adjuntará a la Medición</AppLabel>
-              <AITextHelper
-                disabled={!canEdit}
-                value={documentacionAdjunta}
-                onChange={setDocumentacionAdjunta}
-                context="Listado de anexos técnicos y documentación adjunta a la medición de ruido"
-              />
-            </div>
             <AppTextarea
               id="documentacionAdjunta"
               disabled={!canEdit}
@@ -2191,298 +2198,371 @@ export default function ProtocoloForm({
                         </div>
                       </div>
 
-                      {/* Fila 2A: Geometría (Largo, Ancho, Altura en una misma fila) */}
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+                      {/* Fila 2: Tiempos de Exposición e Integración */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
                         <div className="flex flex-col gap-1">
-                          <AppLabel htmlFor={`largo-${p.id}`}>Largo (m)</AppLabel>
+                          <AppLabel htmlFor={`tiempo-exp-${p.id}`} required={estado === 'completado'}>
+                            Tiempo de exposición del trabajador (Te, en horas)
+                          </AppLabel>
                           <AppInput
-                            id={`largo-${p.id}`}
+                            id={`tiempo-exp-${p.id}`}
                             disabled={!canEdit}
                             type="number"
-                            step="0.01"
-                            placeholder="Ej: 6.00"
-                            value={p.largo_m}
-                            onChange={(e) => handlePuntoGeometriaChange(p.id, 'largo_m', e.target.value)}
+                            step="0.1"
+                            min="0"
+                            placeholder="Ej: 8"
+                            value={p.tiempo_exposicion_hs}
+                            onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, tiempo_exposicion_hs: e.target.value } : x))}
                           />
                         </div>
+
                         <div className="flex flex-col gap-1">
-                          <AppLabel htmlFor={`ancho-${p.id}`}>Ancho (m)</AppLabel>
+                          <AppLabel htmlFor={`tiempo-integ-${p.id}`}>
+                            Tiempo de integración (tiempo de medición)
+                          </AppLabel>
                           <AppInput
-                            id={`ancho-${p.id}`}
+                            id={`tiempo-integ-${p.id}`}
                             disabled={!canEdit}
-                            type="number"
-                            step="0.01"
-                            placeholder="Ej: 4.00"
-                            value={p.ancho_m}
-                            onChange={(e) => handlePuntoGeometriaChange(p.id, 'ancho_m', e.target.value)}
-                          />
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <AppLabel htmlFor={`altura-${p.id}`}>Altura (m)</AppLabel>
-                          <AppInput
-                            id={`altura-${p.id}`}
-                            disabled={!canEdit}
-                            type="number"
-                            step="0.01"
-                            placeholder="Ej: 2.50"
-                            value={p.altura_m}
-                            onChange={(e) => handlePuntoGeometriaChange(p.id, 'altura_m', e.target.value)}
+                            placeholder="Ej: 15 min / 1 hs"
+                            value={p.tiempo_integracion}
+                            onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, tiempo_integracion: e.target.value } : x))}
                           />
                         </div>
                       </div>
 
-                      {/* Fila 2B (Debajo): Tipo de Iluminación, Tipo de Fuente, Iluminación (Distribución) y Check Uniformidad */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
-                        <div className="flex flex-col gap-1">
-                          <AppLabel htmlFor={`tipo-ilu-${p.id}`}>Tipo de iluminación</AppLabel>
-                          {isReadOnly ? (
-                            <AppInput id={`tipo-ilu-${p.id}`} disabled value={p.tipo_iluminacion} />
-                          ) : (
-                            <AppSelect
-                              id={`tipo-ilu-${p.id}`}
-                              placeholder={null}
-                              disabled={!canEdit}
-                              value={p.tipo_iluminacion}
-                              onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, tipo_iluminacion: e.target.value } : x))}
-                            >
-                              <option value="Natural">Natural</option>
-                              <option value="Artificial">Artificial</option>
-                              <option value="Mixta">Mixta</option>
-                            </AppSelect>
-                          )}
-                        </div>
+                      {/* Fila 3: Características generales del ruido a medir */}
+                      <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                        <AppLabel htmlFor={`carac-ruido-${p.id}`}>
+                          Características generales del ruido a medir
+                        </AppLabel>
 
-                        <div className="flex flex-col gap-1">
-                          <AppLabel htmlFor={`fuente-${p.id}`}>Tipo de fuente</AppLabel>
-                          {isReadOnly ? (
-                            <AppInput id={`fuente-${p.id}`} disabled value={p.tipo_fuente_luminica} />
-                          ) : (
-                            <AppSelect
-                              id={`fuente-${p.id}`}
-                              placeholder={null}
-                              disabled={!canEdit}
-                              value={p.tipo_fuente_luminica}
-                              onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, tipo_fuente_luminica: e.target.value } : x))}
-                            >
-                              <option value="Incandescente">Incandescente</option>
-                              <option value="Descarga">Descarga</option>
-                              <option value="Mixta">Mixta</option>
-                              <option value="Led">Led</option>
-                            </AppSelect>
-                          )}
-                        </div>
-
-                        <div className="flex flex-col gap-1">
-                          <AppLabel htmlFor={`distribucion-${p.id}`}>Iluminación (Distribución)</AppLabel>
-                          {isReadOnly ? (
-                            <AppInput id={`distribucion-${p.id}`} disabled value={p.iluminacion} />
-                          ) : (
-                            <AppSelect
-                              id={`distribucion-${p.id}`}
-                              placeholder={null}
-                              disabled={!canEdit}
-                              value={p.iluminacion}
-                              onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, iluminacion: e.target.value } : x))}
-                            >
-                              <option value="General">General</option>
-                              <option value="Localizada">Localizada</option>
-                              <option value="Mixta">Mixta</option>
-                            </AppSelect>
-                          )}
-                        </div>
-
-                        <div className="flex flex-col gap-0.5 justify-center pb-1 col-span-full lg:col-span-1">
-                          <div className="flex items-center gap-1.5">
-                            <input
-                              type="checkbox"
-                              id={`uniformidad-check-${p.id}`}
-                              disabled={!canEdit}
-                              checked={p.aplicaVerificacionUniformidad}
-                              onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, aplicaVerificacionUniformidad: e.target.checked } : x))}
-                              className="rounded text-[#468DFF] focus:ring-[#468DFF] cursor-pointer h-4 w-4 shrink-0"
-                            />
-                            <label htmlFor={`uniformidad-check-${p.id}`} className="text-[11px] font-semibold text-slate-700 cursor-pointer leading-tight">
-                              Aplica verificación de uniformidad (E_mín ≥ E_media / 2)
-                            </label>
-                            <button
-                              type="button"
-                              onClick={() => setIsMetodoCuadriculaOpen(true)}
-                              className="text-slate-400 hover:text-[#468DFF] transition-colors p-0.5 shrink-0"
-                              title="Aplica cuando la iluminación es General o se evalúa por el Método de Cuadrícula (Res. SRT 84/12 & Dec. 351/79). Clic para ver criterio."
-                            >
-                              <HelpCircle className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                          <span className="text-[10px] text-slate-400 font-medium pl-5">
-                            *Aplica en iluminación general o recinto evaluado por cuadrícula.
-                          </span>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            disabled={!canEdit}
+                            onClick={() => setPuntos(puntos.map(x => x.id === p.id ? { ...x, caracteristicas_ruido: 'continuo_intermitente' } : x))}
+                            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                              p.caracteristicas_ruido === 'continuo_intermitente'
+                                ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-sm'
+                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                            }`}
+                          >
+                            Continuo / Intermitente
+                          </button>
+                          <button
+                            type="button"
+                            disabled={!canEdit}
+                            onClick={() => setPuntos(puntos.map(x => x.id === p.id ? { ...x, caracteristicas_ruido: 'impulso_impacto' } : x))}
+                            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                              p.caracteristicas_ruido === 'impulso_impacto'
+                                ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-sm'
+                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                            }`}
+                          >
+                            De impulso o de impacto
+                          </button>
                         </div>
                       </div>
 
-                      {/* Fila 3: Criterio Legal (Anexo IV Dec. 351/79) */}
-                      <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200 space-y-2">
-                        <div className="flex items-center justify-between gap-2 flex-wrap">
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-slate-800 text-xs uppercase tracking-wider">
-                              Valor requerido legalmente Según Anexo IV Dec. 351/79
-                            </span>
+                      {/* CONDICIONAL: Impulso o Impacto */}
+                      {p.caracteristicas_ruido === 'impulso_impacto' && (
+                        <div className="bg-amber-50/60 p-4 rounded-xl border border-amber-200/80 space-y-2 animate-scale-up">
+                          <AppLabel htmlFor={`pico-dbc-${p.id}`} className="font-extrabold text-amber-900 text-xs">
+                            RUIDO DE IMPULSO O DE IMPACTO - Nivel pico de presión acústica ponderado C (LCpico, en dBC)
+                          </AppLabel>
+                          <AppInput
+                            id={`pico-dbc-${p.id}`}
+                            disabled={!canEdit}
+                            type="number"
+                            step="0.1"
+                            placeholder="Ej: 135.0"
+                            className="bg-white border-amber-300 focus:border-[#468DFF]"
+                            value={p.nivel_pico_lc_pico_dbc}
+                            onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, nivel_pico_lc_pico_dbc: e.target.value } : x))}
+                          />
+                          <p className="text-[10px] text-amber-700 font-medium">
+                            *Límite legal techo según Res. 295/03 ANEXO V: Nivel pico ponderado C no debe exceder 140 dBC.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* CONDICIONAL: Sonido Continuo o Intermitente */}
+                      {p.caracteristicas_ruido === 'continuo_intermitente' && (
+                        <div className="bg-slate-100/80 p-4 rounded-xl border border-slate-200 space-y-3.5 animate-scale-up">
+                          <h4 className="font-extrabold text-slate-800 font-outfit uppercase tracking-wider text-xs flex items-center gap-2 border-b border-slate-200 pb-2">
+                            SONIDO CONTINUO o INTERMITENTE
+                          </h4>
+
+                          {/* Pestañas de selección de modalidad de carga */}
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             <button
                               type="button"
-                              onClick={() => {
-                                setTargetPuntoIdForTabla1(p.id);
-                                setIsTabla1Open(true);
-                              }}
-                              className="text-[#468DFF] hover:text-[#0511F2] transition-colors p-1 rounded-full hover:bg-blue-50 flex items-center gap-1 font-bold text-xs"
-                              title="Ver TABLA 1 - Intensidad Media de Iluminación para Diversas Clases de Tarea Visual"
+                              disabled={!canEdit}
+                              onClick={() => setPuntos(puntos.map(x => x.id === p.id ? { ...x, tipo_carga_continuo: 'laeq' } : x))}
+                              className={`p-2.5 rounded-lg text-[11px] font-bold text-center border transition-all cursor-pointer ${
+                                p.tipo_carga_continuo === 'laeq'
+                                  ? 'bg-white text-[#468DFF] border-[#468DFF] shadow-sm'
+                                  : 'bg-slate-200/60 text-slate-600 border-slate-300/40 hover:bg-slate-200'
+                              }`}
                             >
-                              <HelpCircle className="h-4 w-4" />
-                              <span className="underline text-[11px]">Ver Tabla 1</span>
+                              Nivel Integrado (LAeq,Te en dBA)
                             </button>
-                          </div>
-                          <span className="text-[10px] text-slate-400 font-medium">
-                            Basado en Norma IRAM-AADL J 20-06
-                          </span>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                          <div className="md:col-span-2 flex flex-col gap-1">
-                            <AppLabel htmlFor={`requerido-sel-${p.id}`} className="min-h-[2.5rem] flex items-center mb-1 text-[10px] text-slate-500 font-semibold">
-                              TABLA 2 - Intensidad mínima de iluminación (Seleccionar opción)
-                            </AppLabel>
-                            <AppSelect
-                              id={`requerido-sel-${p.id}`}
-                              placeholder={null}
-                              disabled={!canEdit}
-                              value={p.selectedTabla2Index !== undefined ? p.selectedTabla2Index : ''}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (val !== '') {
-                                  const item = TABLA_2_ILUMINACION[val];
-                                  if (item) {
-                                    setPuntos(puntos.map(x => x.id === p.id ? {
-                                      ...x,
-                                      selectedTabla2Index: val,
-                                      valor_requerido_legal_lux: String(item.lux)
-                                    } : x));
-                                  }
-                                } else {
-                                  setPuntos(puntos.map(x => x.id === p.id ? { ...x, selectedTabla2Index: '' } : x));
-                                }
-                              }}
-                            >
-                              <option value="">Seleccione Tipo de edificio, local y tarea visual...</option>
-                              {TABLA_2_ILUMINACION.map((item, t2Idx) => (
-                                <option key={t2Idx} value={t2Idx}>
-                                  {item.grupo} {item.subtitulo ? `(${item.subtitulo})` : ''} - {item.tarea}: {item.lux} lux
-                                </option>
-                              ))}
-                            </AppSelect>
-                          </div>
-
-                          <div className="md:col-span-1 flex flex-col gap-1">
-                            <AppLabel htmlFor={`requerido-manual-${p.id}`} className="min-h-[2.5rem] flex items-center mb-1 text-[10px] text-slate-500 font-semibold" required={estado === 'completado'}>
-                              Valor mínimo de servicio de iluminación (lux)
-                            </AppLabel>
-                            <AppInput
-                              id={`requerido-manual-${p.id}`}
-                              type="number"
-                              disabled={!canEdit}
-                              placeholder="Ej: 500"
-                              value={p.valor_requerido_legal_lux}
-                              onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? {
-                                ...x,
-                                valor_requerido_legal_lux: e.target.value
-                              } : x))}
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Fila 4: Mediciones Lux Obtenidas */}
-                      <div className="space-y-2 bg-white p-3.5 rounded-xl border border-slate-200">
-                        <div className="flex items-center justify-between flex-wrap gap-2">
-                          <div>
-                            <AppLabel htmlFor={`medicion-${p.id}-0`} className="mb-0 font-bold text-slate-800 text-xs">
-                              Mediciones de Lux Obtenidas
-                            </AppLabel>
-                            {cal.numero_minimo_puntos_medicion !== null && (
-                              <p className="text-[11px] text-[#468DFF] font-semibold">
-                                Requerido por norma (Índice Local x={cal.indice_local_corregido}): {cal.numero_minimo_puntos_medicion}
-                              </p>
-                            )}
-                          </div>
-                          {canEdit && (
                             <button
                               type="button"
-                              onClick={() => handleAddMedicion(p.id)}
-                              className="text-[11px] text-[#468DFF] hover:underline font-bold flex items-center gap-1"
+                              disabled={!canEdit}
+                              onClick={() => setPuntos(puntos.map(x => x.id === p.id ? { ...x, tipo_carga_continuo: 'suma_fracciones' } : x))}
+                              className={`p-2.5 rounded-lg text-[11px] font-bold text-center border transition-all cursor-pointer ${
+                                p.tipo_carga_continuo === 'suma_fracciones'
+                                  ? 'bg-white text-[#468DFF] border-[#468DFF] shadow-sm'
+                                  : 'bg-slate-200/60 text-slate-600 border-slate-300/40 hover:bg-slate-200'
+                              }`}
                             >
-                              <Plus className="h-3.5 w-3.5" /> Agregar Medición Extra
+                              Suma de las Fracciones (Σ Ci/Ti)
                             </button>
-                          )}
-                        </div>
+                            <button
+                              type="button"
+                              disabled={!canEdit}
+                              onClick={() => setPuntos(puntos.map(x => x.id === p.id ? { ...x, tipo_carga_continuo: 'dosis' } : x))}
+                              className={`p-2.5 rounded-lg text-[11px] font-bold text-center border transition-all cursor-pointer ${
+                                p.tipo_carga_continuo === 'dosis'
+                                  ? 'bg-white text-[#468DFF] border-[#468DFF] shadow-sm'
+                                  : 'bg-slate-200/60 text-slate-600 border-slate-300/40 hover:bg-slate-200'
+                              }`}
+                            >
+                              Dosis (en porcentaje %)
+                            </button>
+                          </div>
 
-                        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 pt-1">
-                          {p.mediciones.map((m, mIdx) => (
-                            <div key={m.id} className="relative flex flex-col gap-0.5">
-                              <span className="text-[9px] font-bold text-slate-600 uppercase text-center">
-                                Val #{mIdx + 1}
-                              </span>
-                              <div className="relative flex items-center">
+                          {/* Inputs según modalidad de carga */}
+                          <div className="bg-white p-3 rounded-xl border border-slate-200">
+                            {p.tipo_carga_continuo === 'laeq' && (
+                              <div className="flex flex-col gap-1">
+                                <AppLabel htmlFor={`laeq-${p.id}`} className="text-xs font-semibold">
+                                  Nivel de presión acústica integrado (LAeq,Te en dBA)
+                                </AppLabel>
                                 <AppInput
-                                  id={`medicion-${p.id}-${mIdx}`}
+                                  id={`laeq-${p.id}`}
                                   disabled={!canEdit}
-                                  type="text"
-                                  className="pr-6 text-center text-xs h-8 font-semibold"
-                                  placeholder="lux"
-                                  value={m.valor_lux}
-                                  onChange={(e) => handleMedicionValueChange(p.id, m.id, e.target.value)}
+                                  type="number"
+                                  step="0.1"
+                                  placeholder="Ej: 82.5"
+                                  value={p.nivel_laeq_te_dba}
+                                  onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, nivel_laeq_te_dba: e.target.value } : x))}
                                 />
-                                {canEdit && p.mediciones.length > 1 && (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRemoveMedicion(p.id, m.id)}
-                                    className="absolute right-1 text-slate-300 hover:text-red-500 p-0.5"
-                                    title="Eliminar esta medición"
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </button>
+                                <span className="text-[10px] text-slate-400 font-medium mt-0.5">
+                                  *Límite legal estándar Res. 295/03: 85 dBA para 8 hs.
+                                </span>
+                              </div>
+                            )}
+
+                            {p.tipo_carga_continuo === 'suma_fracciones' && (
+                              <div className="space-y-3">
+                                {/* Selector de modalidad para Suma de Fracciones */}
+                                <div className="flex items-center justify-between gap-2 flex-wrap bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                                  <span className="text-xs font-bold text-slate-700">
+                                    Modalidad de carga para Suma de Fracciones:
+                                  </span>
+                                  <div className="flex items-center gap-1.5">
+                                    <button
+                                      type="button"
+                                      disabled={!canEdit}
+                                      onClick={() => setPuntos(puntos.map(x => x.id === p.id ? { ...x, modo_suma_fracciones: 'directo' } : x))}
+                                      className={`px-3 py-1 rounded-md text-[11px] font-bold border transition-all cursor-pointer ${
+                                        (p.modo_suma_fracciones || 'directo') === 'directo'
+                                          ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-sm'
+                                          : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                                      }`}
+                                    >
+                                      Resultado Directo
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={!canEdit}
+                                      onClick={() => setPuntos(puntos.map(x => x.id === p.id ? { ...x, modo_suma_fracciones: 'desglose' } : x))}
+                                      className={`px-3 py-1 rounded-md text-[11px] font-bold border transition-all cursor-pointer ${
+                                        p.modo_suma_fracciones === 'desglose'
+                                          ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-sm'
+                                          : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                                      }`}
+                                    >
+                                      Desglose de Fracciones (C1/T1 + C2/T2 + ...)
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* MODALIDAD 1: RESULTADO DIRECTO */}
+                                {(p.modo_suma_fracciones || 'directo') === 'directo' && (
+                                  <div className="flex flex-col gap-1">
+                                    <AppLabel htmlFor={`suma-${p.id}`} className="text-xs font-semibold">
+                                      Resultado final de la suma de fracciones (Σ C1/T1 + C2/T2 + ...)
+                                    </AppLabel>
+                                    <AppInput
+                                      id={`suma-${p.id}`}
+                                      disabled={!canEdit}
+                                      type="number"
+                                      step="0.01"
+                                      placeholder="Ej: 0.85"
+                                      value={p.resultado_suma_fracciones}
+                                      onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, resultado_suma_fracciones: e.target.value } : x))}
+                                    />
+                                    <span className="text-[10px] text-slate-400 font-medium mt-0.5">
+                                      *Límite legal según Anexo V Res. 295/03: La suma acumulada no debe exceder de 1.00.
+                                    </span>
+                                  </div>
+                                )}
+
+                                {/* MODALIDAD 2: DESGLOSE DE FRACCIONES */}
+                                {p.modo_suma_fracciones === 'desglose' && (
+                                  <div className="space-y-2.5 bg-slate-50/80 p-3 rounded-xl border border-slate-200">
+                                    <div className="flex items-center justify-between flex-wrap gap-2 border-b border-slate-200 pb-2">
+                                      <span className="text-xs font-bold text-slate-800 uppercase tracking-wider text-[11px]">
+                                        Desglose de Fracciones (Res. 295/03 ANEXO V)
+                                      </span>
+                                      {canEdit && (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleAddFraccion(p.id)}
+                                          className="text-[11px] text-[#468DFF] hover:underline font-bold flex items-center gap-1 cursor-pointer"
+                                        >
+                                          <Plus className="h-3.5 w-3.5" /> Agregar Fracción (Cn/Tn)
+                                        </button>
+                                      )}
+                                    </div>
+
+                                    {/* Lista de filas de fracciones */}
+                                    <div className="space-y-2">
+                                      {(p.fracciones || [{ id: 'f-1', c_horas: '', t_horas: '' }]).map((f, fIdx) => {
+                                        const cVal = parseFloat(f.c_horas);
+                                        const tVal = parseFloat(f.t_horas);
+                                        const fracRes = (!isNaN(cVal) && !isNaN(tVal) && tVal > 0) ? (cVal / tVal).toFixed(3) : '-';
+
+                                        return (
+                                          <div key={f.id || fIdx} className="grid grid-cols-12 gap-2 items-center bg-white p-2.5 rounded-lg border border-slate-200 shadow-sm">
+                                            <div className="col-span-12 sm:col-span-1 text-center font-extrabold text-xs text-slate-500">
+                                              #{fIdx + 1}
+                                            </div>
+                                            <div className="col-span-12 sm:col-span-4 flex flex-col gap-0.5">
+                                              <span className="text-[10px] text-slate-500 font-semibold">Ci (Exposición en hs)</span>
+                                              <AppInput
+                                                type="number"
+                                                step="0.1"
+                                                min="0"
+                                                placeholder="Ej: 4"
+                                                disabled={!canEdit}
+                                                className="h-8 text-xs"
+                                                value={f.c_horas || ''}
+                                                onChange={(e) => handleFraccionChange(p.id, f.id, 'c_horas', e.target.value)}
+                                              />
+                                            </div>
+                                            <div className="col-span-12 sm:col-span-4 flex flex-col gap-0.5">
+                                              <span className="text-[10px] text-slate-500 font-semibold">Ti (Máximo permitido en hs)</span>
+                                              <AppInput
+                                                type="number"
+                                                step="0.1"
+                                                min="0.1"
+                                                placeholder="Ej: 8"
+                                                disabled={!canEdit}
+                                                className="h-8 text-xs"
+                                                value={f.t_horas || ''}
+                                                onChange={(e) => handleFraccionChange(p.id, f.id, 't_horas', e.target.value)}
+                                              />
+                                            </div>
+                                            <div className="col-span-10 sm:col-span-2 text-center bg-blue-50/60 py-1 px-2 rounded-md font-bold text-xs text-[#468DFF] border border-blue-100">
+                                              C/T = {fracRes}
+                                            </div>
+                                            <div className="col-span-2 sm:col-span-1 flex justify-center">
+                                              {canEdit && (p.fracciones || []).length > 1 && (
+                                                <button
+                                                  type="button"
+                                                  onClick={() => handleRemoveFraccion(p.id, f.id)}
+                                                  className="text-slate-400 hover:text-red-500 p-1 cursor-pointer transition-colors"
+                                                  title="Eliminar fracción"
+                                                >
+                                                  <Trash2 className="h-4 w-4" />
+                                                </button>
+                                              )}
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+
+                                    {/* Resumen Total Calculado de la Suma de Fracciones */}
+                                    <div className="flex items-center justify-between bg-white p-2.5 rounded-lg border border-slate-200 text-xs mt-2">
+                                      <span className="font-semibold text-slate-600">Suma Total Acumulada Calculada:</span>
+                                      <span className={`font-extrabold text-sm ${parseFloat(p.resultado_suma_fracciones) > 1.0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                                        Σ (Ci / Ti) = {p.resultado_suma_fracciones || '0.00'}
+                                      </span>
+                                    </div>
+
+                                    <p className="text-[10px] text-slate-400 font-medium">
+                                      *Donde Ci = Tiempo total de exposición a un nivel determinado (hs) y Ti = Tiempo total permitido a ese nivel según Res. 295/03 ANEXO V (hs). Límite legal = 1.00.
+                                    </p>
+                                  </div>
                                 )}
                               </div>
-                            </div>
-                          ))}
+                            )}
+
+                            {p.tipo_carga_continuo === 'dosis' && (
+                              <div className="flex flex-col gap-1">
+                                <AppLabel htmlFor={`dosis-${p.id}`} className="text-xs font-semibold">
+                                  Dosis de ruido diaria acumulada (Dosis %)
+                                </AppLabel>
+                                <AppInput
+                                  id={`dosis-${p.id}`}
+                                  disabled={!canEdit}
+                                  type="number"
+                                  step="0.1"
+                                  placeholder="Ej: 75.0"
+                                  value={p.dosis_porcentaje}
+                                  onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, dosis_porcentaje: e.target.value } : x))}
+                                />
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[10px] text-slate-500 font-medium mt-0.5">
+                                  <span>*Límite legal: Dosis máxima diaria permitida = 100 %.</span>
+                                  <span className="text-amber-700 font-semibold">NOTA: Completar este campo sólo cuando la medición se realice con un dosímetro</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Observaciones del Punto */}
+                      <div className="flex flex-col gap-1">
+                        <AppLabel htmlFor={`obs-punto-${p.id}`}>Observaciones del Punto</AppLabel>
+                        <AppInput
+                          id={`obs-punto-${p.id}`}
+                          disabled={!canEdit}
+                          placeholder="Observaciones particulares de este punto de muestreo..."
+                          value={p.observaciones_punto}
+                          onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, observaciones_punto: e.target.value } : x))}
+                        />
+                      </div>
+
+                      {/* RESULTADOS Y EVALUACIÓN TÉCNICA */}
+                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs space-y-2">
+                        <h4 className="font-extrabold text-slate-700 font-outfit uppercase tracking-wider text-[10px]">Cálculos e Indicadores Técnicos</h4>
+                        
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 text-slate-500">
+                          <div>Característica de ruido: <span className="font-bold text-slate-800 capitalize">{p.caracteristicas_ruido === 'impulso_impacto' ? 'Impulso / Impacto' : 'Continuo / Intermitente'}</span></div>
+                          <div>Parámetro medido: <span className="font-bold text-slate-800">{cal.valorMedidoText}</span></div>
+                          <div>Límite normativo: <span className="font-bold text-slate-800">{cal.limiteLegalText}</span></div>
+                        </div>
+
+                        <div className="border-t border-slate-200 pt-1.5 flex justify-between items-center text-slate-600">
+                          <div>Verificación de Cumplimiento (Res. 295/03 ANEXO V):</div>
+                          <span className={`font-extrabold text-xs px-2.5 py-0.5 rounded-full border ${
+                            cal.resultado_punto === 'Cumple'
+                              ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                              : cal.resultado_punto === 'No cumple'
+                              ? 'bg-rose-50 text-rose-600 border-rose-200'
+                              : 'bg-slate-100 text-slate-500 border-slate-200'
+                          }`}>
+                            {cal.resultado_punto}
+                          </span>
                         </div>
                       </div>
-
-                        {/* RESULTADOS CALCULADOS */}
-                        {cal.cantidad_mediciones_cargadas > 0 && (
-                          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs space-y-2">
-                            <h4 className="font-extrabold text-slate-700 font-outfit uppercase tracking-wider text-[10px]">Cálculos e Indicadores Técnicos</h4>
-                            
-                            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-slate-500">
-                              <div>Índice de Local (I): <span className="font-bold text-slate-800">{cal.indice_local !== null ? cal.indice_local : '-'}</span></div>
-                              <div>Índice Corregido (x): <span className="font-bold text-slate-800">{cal.indice_local_corregido !== null ? cal.indice_local_corregido : '-'}</span></div>
-                              <div>Puntos mínimos requeridos: <span className="font-bold text-slate-800">{cal.numero_minimo_puntos_medicion !== null ? cal.numero_minimo_puntos_medicion : '-'}</span></div>
-                              <div>Muestreo suficiente: <span className={`font-bold ${cal.cantidad_mediciones_cargadas >= cal.numero_minimo_puntos_medicion ? 'text-green-600' : 'text-amber-600'}`}>
-                                {cal.numero_minimo_puntos_medicion !== null ? (cal.cantidad_mediciones_cargadas >= cal.numero_minimo_puntos_medicion ? 'Sí' : 'Insuficiente') : '-'}
-                              </span></div>
-                            </div>
-                            
-                            <div className="border-t border-slate-200 pt-1.5 grid grid-cols-2 gap-x-4 gap-y-1 text-slate-500">
-                              <div>Iluminancia media (E_med): <span className="font-bold text-slate-800">{cal.iluminancia_media} lx</span></div>
-                              <div>Iluminancia mínima (E_mín): <span className="font-bold text-slate-800">{cal.iluminancia_minima} lx</span></div>
-                              <div>Límite Uniformidad (E_med/2): <span className="font-bold text-slate-800">{cal.uniformidad_requerida} lx</span></div>
-                              <div>Uniformidad: <span className={`font-bold ${cal.verificacion_uniformidad === 'Cumple' ? 'text-green-600' : cal.verificacion_uniformidad === 'No aplica' ? 'text-slate-400' : 'text-red-600'}`}>
-                                {cal.verificacion_uniformidad}
-                              </span></div>
-                            </div>
-
-                            <div className="border-t border-slate-200 pt-1.5 flex justify-between items-center text-slate-600">
-                              <div>Criterio Legal (Tabla 2): <span className={`font-bold ${cal.verificacion_legal === 'Cumple' ? 'text-green-600' : 'text-red-600'}`}>{cal.verificacion_legal}</span></div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                    </div>
                   )}
                 </div>
               );

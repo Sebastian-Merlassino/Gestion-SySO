@@ -5,7 +5,8 @@
 ### Resumen de Cambios
 - **Ajuste de Formulario de Iluminación (`src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`):**
   - Se actualizó el texto por defecto de **Documentación que se Adjuntará** a `"Certificado de Calibración. Plano o Croquis del establecimiento."`.
-  - Se simplificó la sección de Observaciones para que su título de tarjeta, subtítulo y etiqueta digan unificadamente **"Observaciones"**.
+  - Se simplificó la sección de Observaciones para que su título de tarjeta diga **"Observaciones"**.
+  - Se eliminaron las etiquetas/subtítulos redundantes que se encontraban entre el título de la tarjeta y el área de texto en **Documentación que se Adjuntará a la Medición** y **Observaciones**, reubicando el botón de ayuda de IA `<AITextHelper />` a la derecha en la fila de cabecera.
 
 ### Archivos Modificados
 - `src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
@@ -32,6 +33,10 @@
   - Se modificó la etiqueta de *Documentación que se Adjuntará* por **"Describa las condiciones normales y/o habituales de trabajo"**, eliminando su contenido por defecto tanto en el formulario como en el reporte PDF.
   - Se modificó la etiqueta de *Observaciones Generales de la Medición* por **"Describa las condiciones de trabajo al momento de la medición."**, estableciendo como contenido inicial por defecto y placeholder `"Al momento de la medición, el establecimiento se encontraba funcionando en condiciones normales."` tanto en el formulario como en el reporte PDF.
   - Se agregó una nueva tarjeta independiente `<AppCard>` debajo de *Datos de la Medición* titulada **"Documentación que se Adjuntará a la Medición"**, con campo de texto expandible, valor predeterminado `"Certificado de Calibración.\nPlano o Croquis del establecimiento."` e integración con el módulo de voz e IA `SySO-AI-Voice-Helper`.
+  - Se eliminó la etiqueta de texto duplicada entre el título de la tarjeta y la caja de texto en la sección *Documentación que se Adjuntará a la Medición*, ubicando el componente `AITextHelper` directamente en la barra superior del contenedor.
+  - Se implementó la estructura acústica completa por punto de muestreo (`ProtocoloForm.js`, `pdfGenerator.js` y migración SQL `20260813000000_update_protocolo_ruido_puntos.sql`): Tiempo de exposición ($T_e$), tiempo de integración, selector de características generales del ruido (`Continuo / Intermitente` vs `De impulso o de impacto`), sub-contenedor **"SONIDO CONTINUO o INTERMITENTE"** con modalidades de carga $L_{\text{Aeq},Te}$ (dBA), Suma de Fracciones ($\sum C_i/T_i$) y Dosis (%), o campo $L_{C\text{pico}}$ (dBC) para impulso/impacto, integrando evaluación automática de cumplimiento normativo (Res. 295/03 ANEXO V) y actualización de las columnas en la tabla apaisada del PDF.
+  - Se agregó la aclaración técnica `NOTA: Completar este campo sólo cuando la medición se realice con un dosímetro` en la sección de carga de Dosis de ruido acumulada.
+  - Se implementó la doble modalidad para la opción Suma de Fracciones ($\sum C_i/T_i$): selector entre **Resultado Directo** y **Desglose de Fracciones ($C_1/T_1 + C_2/T_2 + ... + C_n/T_n$)** con agregado/eliminación dinámica de filas, cálculo en tiempo real de $C_i/T_i$ y actualización automática del total acumulado en el punto.
   - Se realizó el commit `feat: agregar seccion protocolo de ruido con Res 295/03 ANEXO V y PDF` (hash `4139d0a`) y se ejecutó exitosamente el `git push origin main`.
 
 ### Skills Utilizadas

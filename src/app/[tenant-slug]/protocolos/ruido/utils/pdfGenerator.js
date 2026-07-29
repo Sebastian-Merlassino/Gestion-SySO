@@ -877,18 +877,16 @@ export const generateNoiseProtocolPdf = async (
     doc.rect(gX, gY, gW, 6, 'FD');
     drawCellText(doc, 'Datos de la Medición', gX, gY, gW, 6, { align: 'center', fontStyle: 'bold', fontSize: 9, color: COLOR_NEGRO });
 
-    // Columns Definition
+    // Columns Definition for Noise Protocol
     const cols = [
-      { key: 'punto', name: 'Punto de Muestreo', w: 17 },
-      { key: 'hora', name: 'Hora', w: 13.6 },
-      { key: 'sector', name: 'Sector', w: 42 },
-      { key: 'puesto', name: 'Sección / Puesto / Puesto Tipo', w: 42 },
-      { key: 'tipo_ilum', name: 'Tipo de Iluminación: Natural / Artificial / Mixta', w: 20.5 },
-      { key: 'fuente', name: 'Tipo de Fuente Lumínica: Incandescente / Descarga / Mixta / Led', w: 23 },
-      { key: 'iluminacion', name: 'Iluminación: General / Localizada / Mixta', w: 27.5 },
-      { key: 'uniformidad', name: 'Valor de la uniformidad de Iluminancia E mínima >= (E media)/2', w: 29.5 },
-      { key: 'valor_medido', name: 'Valor Medido (Lux)', w: 23 },
-      { key: 'valor_req', name: 'Valor requerido legalmente Según Anexo IV Dec. 351/79', w: 25 }
+      { key: 'punto', name: 'N° Punto', w: 15 },
+      { key: 'sector', name: 'Sector / Área', w: 45 },
+      { key: 'puesto', name: 'Puesto de Trabajo / Sección', w: 45 },
+      { key: 'tiempo_exp', name: 'Te (hs)', w: 22 },
+      { key: 'tiempo_integ', name: 'Tiempo Integración', w: 24 },
+      { key: 'caracteristica', name: 'Características del Ruido', w: 38 },
+      { key: 'valor_medido', name: 'Valor Medido', w: 42 },
+      { key: 'verificacion', name: 'Verificación Legal (Res. 295/03)', w: 32 }
     ];
 
     let currX = gX;
@@ -925,50 +923,64 @@ export const generateNoiseProtocolPdf = async (
           currX += c.w;
         });
       } else {
-        const validVals = (pt.mediciones || [])
-          .map(m => parseFloat(m.valor_lux))
-          .filter(val => !isNaN(val));
+        let caracText = 'Continuo / Intermitente';
+        let valorMedidoText = '-';
+        let cumplePoint = true;
 
-        let avgLux = 0;
-        let minLux = 0;
-        if (validVals.length > 0) {
-          avgLux = validVals.reduce((a, b) => a + b, 0) / validVals.length;
-          minLux = Math.min(...validVals);
+        if (pt.caracteristicas_ruido === 'impulso_impacto') {
+          caracText = 'Impulso / Impacto';
+          const vPico = parseFloat(pt.nivel_pico_lc_pico_dbc);
+          if (!isNaN(vPico)) {
+            valorMedidoText = `${vPico} dBC (Pico)`;
+            cumplePoint = vPico <= 140;
+          }
+        } else {
+          // continuo_intermitente
+          if (pt.tipo_carga_continuo === 'laeq') {
+            const vLaeq = parseFloat(pt.nivel_laeq_te_dba);
+            if (!isNaN(vLaeq)) {
+              valorMedidoText = `${vLaeq} dBA (LAeq,Te)`;
+              cumplePoint = vLaeq <= 85;
+            }
+          } else if (pt.tipo_carga_continuo === 'suma_fracciones') {
+            const vSuma = parseFloat(pt.resultado_suma_fracciones);
+            if (!isNaN(vSuma)) {
+              valorMedidoText = `Σ Ci/Ti = ${vSuma}`;
+              cumplePoint = vSuma <= 1.0;
+            }
+          } else if (pt.tipo_carga_continuo === 'dosis') {
+            const vDosis = parseFloat(pt.dosis_porcentaje);
+            if (!isNaN(vDosis)) {
+              valorMedidoText = `Dosis: ${vDosis}%`;
+              cumplePoint = vDosis <= 100;
+            }
+          }
         }
 
-        const reqLux = parseFloat(pt.valor_requerido_legal_lux) || 0;
-        const uniformidadLimit = avgLux / 2;
-
-        const cumpleUniformidad = validVals.length > 0 ? (minLux >= uniformidadLimit) : true;
-        const cumpleMedido = validVals.length > 0 ? (avgLux >= reqLux) : true;
+        const resStatus = pt.resultado_punto || (cumplePoint ? 'Cumple' : 'No cumple');
 
         const rowValues = {
           punto: String(pt.punto_muestreo),
-          hora: pt.hora || horaInicio,
           sector: pt.sector_text || pt.sector || '-',
           puesto: pt.puesto_text || pt.puesto || '-',
-          tipo_ilum: pt.tipo_iluminacion || 'Artificial',
-          fuente: pt.tipo_fuente_luminica || 'Led',
-          iluminacion: pt.iluminacion || 'General',
-          uniformidad: cumpleUniformidad ? 'Cumple' : 'No cumple',
-          valor_medido: validVals.length > 0 ? Math.round(avgLux) + ' Lux' : '-',
-          valor_req: reqLux > 0 ? reqLux + ' Lux' : '-'
+          tiempo_exp: pt.tiempo_exposicion_hs ? `${pt.tiempo_exposicion_hs} hs` : '8 hs',
+          tiempo_integ: pt.tiempo_integracion || '15 min',
+          caracteristica: caracText,
+          valor_medido: valorMedidoText,
+          verificacion: resStatus
         };
 
         cols.forEach(c => {
           setDrawColor(doc, COLOR_NEGRO);
           doc.rect(currX, rowY, c.w, rowH, 'S');
           const valText = rowValues[c.key] || '-';
-          let isFail = false;
-
-          if (c.key === 'uniformidad' && valText === 'No cumple') isFail = true;
-          if (c.key === 'valor_medido' && !cumpleMedido) isFail = true;
+          let isFail = (c.key === 'verificacion' && valText === 'No cumple');
 
           drawCellText(doc, valText, currX, rowY, c.w, rowH, {
             align: 'center',
             fontSize: 7.5,
             fontStyle: isFail ? 'bold' : 'normal',
-            color: isFail ? COLOR_ROJO_NO_CUMPLE : COLOR_NEGRO,
+            color: isFail ? COLOR_ROJO_NO_CUMPLE : (c.key === 'verificacion' && valText === 'Cumple' ? COLOR_VERDE_CUMPLE : COLOR_NEGRO),
             maxLines: 1
           });
 
