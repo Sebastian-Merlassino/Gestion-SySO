@@ -1,15 +1,14 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-07-28] Actualización de Placeholder de Instrumento en Protocolo de Iluminación
+## [2026-07-29] Leyenda de Ejemplo en Campo Instrumento de Protocolo de Iluminación
 
 ### Resumen de Cambios
 - **Ajuste de Formulario de Iluminación (`src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`):**
-  - Se actualizó el placeholder del campo de entrada del instrumento a `"Decibelimetro Marca: ...; Modelo: ...; Número de serie: ... ."`.
-  - Se homogeneizó el texto de ejemplo con el formulario del protocolo de ruido.
+  - Se actualizó el texto por defecto de **Documentación que se Adjuntará** a `"Certificado de Calibración. Plano o Croquis del establecimiento."`.
+  - Se simplificó la sección de Observaciones para que su título de tarjeta, subtítulo y etiqueta digan unificadamente **"Observaciones"**.
 
 ### Archivos Modificados
 - `src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
-- `src/app/[tenant-slug]/protocolos/ruido/components/ProtocoloForm.js`
 - `docs/BITACORA_DESARROLLO.md`
 
 ---

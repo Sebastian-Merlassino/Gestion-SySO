@@ -111,7 +111,7 @@ export default function ProtocoloForm({
   const [horaInicio, setHoraInicio] = useState('');
   const [horaFinalizacion, setHoraFinalizacion] = useState('');
   const [condicionesAtmosfericas, setCondicionesAtmosfericas] = useState('Medición realizada en condiciones diurnas normales, cielo despejado, iluminación artificial encendida.');
-  const [documentacionAdjunta, setDocumentacionAdjunta] = useState('Certificado de calibración del luxómetro, croquis de distribución de los puntos.');
+  const [documentacionAdjunta, setDocumentacionAdjunta] = useState('Certificado de Calibración. Plano o Croquis del establecimiento.');
   const [observacionesGenerales, setObservacionesGenerales] = useState('');
 
   // Análisis
@@ -1862,7 +1862,7 @@ export default function ProtocoloForm({
                 disabled={!canEdit}
                 value={instrumento}
                 onChange={(e) => setInstrumento(e.target.value)}
-                placeholder="Ej: Luxómetro LUTRON LX-101 N/S 12345"
+                placeholder="Luxometro Marca: ...; Modelo: ...; Número de serie: ..."
               />
             </div>
 
@@ -1999,45 +1999,63 @@ export default function ProtocoloForm({
                 onChange={(e) => setCondicionesAtmosfericas(e.target.value)}
               />
             </div>
+          </div>
+        </AppCard>
 
-            <div className="flex flex-col gap-1 col-span-full">
-              <div className="flex items-center justify-between">
-                <AppLabel htmlFor="documentacionAdjunta">Documentación que se Adjuntará</AppLabel>
-                <AITextHelper
-                  disabled={!canEdit}
-                  value={documentacionAdjunta}
-                  onChange={setDocumentacionAdjunta}
-                  context="Listado de anexos técnicos del protocolo de iluminación"
-                />
-              </div>
-              <AppTextarea
-                id="documentacionAdjunta"
+        {/* CARD DOCUMENTACIÓN QUE SE ADJUNTARÁ A LA MEDICIÓN */}
+        <AppCard className="p-5 md:p-6 space-y-4">
+          <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+            <FileText className="h-5 w-5 text-[#468DFF]" />
+            <h2 className="font-outfit text-base font-extrabold text-slate-800">
+              Documentación que se Adjuntará a la Medición
+            </h2>
+          </div>
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center justify-between">
+              <AppLabel htmlFor="documentacionAdjunta">Documentación que se Adjuntará</AppLabel>
+              <AITextHelper
                 disabled={!canEdit}
-                rows={2}
                 value={documentacionAdjunta}
-                onChange={(e) => setDocumentacionAdjunta(e.target.value)}
+                onChange={setDocumentacionAdjunta}
+                context="Listado de anexos técnicos del protocolo de iluminación"
               />
             </div>
+            <AppTextarea
+              id="documentacionAdjunta"
+              disabled={!canEdit}
+              rows={3}
+              value={documentacionAdjunta}
+              onChange={(e) => setDocumentacionAdjunta(e.target.value)}
+            />
+          </div>
+        </AppCard>
 
-            <div className="flex flex-col gap-1 col-span-full">
-              <div className="flex items-center justify-between">
-                <AppLabel htmlFor="observacionesGenerales">Observaciones Generales de la Medición</AppLabel>
-                <AITextHelper
-                  disabled={!canEdit}
-                  value={observacionesGenerales}
-                  onChange={setObservacionesGenerales}
-                  context="Observaciones generales sobre la instalación luminaria o del ambiente de trabajo"
-                />
-              </div>
-              <AppTextarea
-                id="observacionesGenerales"
+        {/* CARD OBSERVACIONES */}
+        <AppCard className="p-5 md:p-6 space-y-4">
+          <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+            <Info className="h-5 w-5 text-[#468DFF]" />
+            <h2 className="font-outfit text-base font-extrabold text-slate-800">
+              Observaciones
+            </h2>
+          </div>
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center justify-between">
+              <AppLabel htmlFor="observacionesGenerales">Observaciones</AppLabel>
+              <AITextHelper
                 disabled={!canEdit}
-                rows={2}
                 value={observacionesGenerales}
-                onChange={(e) => setObservacionesGenerales(e.target.value)}
-                placeholder="Observaciones generales..."
+                onChange={setObservacionesGenerales}
+                context="Observaciones sobre la instalación luminaria o del ambiente de trabajo"
               />
             </div>
+            <AppTextarea
+              id="observacionesGenerales"
+              disabled={!canEdit}
+              rows={3}
+              value={observacionesGenerales}
+              onChange={(e) => setObservacionesGenerales(e.target.value)}
+              placeholder="Observaciones..."
+            />
           </div>
         </AppCard>
 
