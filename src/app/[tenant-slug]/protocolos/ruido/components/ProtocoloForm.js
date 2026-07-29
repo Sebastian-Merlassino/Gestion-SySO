@@ -703,10 +703,10 @@ export default function ProtocoloForm({
         }
       }
 
-      // 2. Puntos y mediciones
+      // 2. Puntos
       const { data: ptsData, error: ptsErr } = await supabase
         .from('protocolos_ruido_puntos')
-        .select('*, mediciones:protocolos_iluminacion_mediciones(*)')
+        .select('*')
         .eq('protocolo_id', editingId)
         .order('orden');
       if (ptsErr) throw ptsErr;
@@ -725,6 +725,10 @@ export default function ProtocoloForm({
         nivel_pico_lc_pico_dbc: p.nivel_pico_lc_pico_dbc !== null ? String(p.nivel_pico_lc_pico_dbc) : '',
         tipo_carga_continuo: p.tipo_carga_continuo || 'laeq',
         nivel_laeq_te_dba: p.nivel_laeq_te_dba !== null ? String(p.nivel_laeq_te_dba) : '',
+        modo_suma_fracciones: p.modo_suma_fracciones || 'directo',
+        fracciones: (Array.isArray(p.fracciones) && p.fracciones.length > 0)
+          ? p.fracciones
+          : [{ id: 'f-' + p.id + '-1', c_horas: '', t_horas: '' }],
         resultado_suma_fracciones: p.resultado_suma_fracciones !== null ? String(p.resultado_suma_fracciones) : '',
         dosis_porcentaje: p.dosis_porcentaje !== null ? String(p.dosis_porcentaje) : '',
         observaciones_punto: p.observaciones_punto || '',
@@ -1586,6 +1590,8 @@ export default function ProtocoloForm({
           nivel_pico_lc_pico_dbc: parseFloat(p.nivel_pico_lc_pico_dbc) || null,
           tipo_carga_continuo: p.tipo_carga_continuo || 'laeq',
           nivel_laeq_te_dba: parseFloat(p.nivel_laeq_te_dba) || null,
+          modo_suma_fracciones: p.modo_suma_fracciones || 'directo',
+          fracciones: p.fracciones || null,
           resultado_suma_fracciones: parseFloat(p.resultado_suma_fracciones) || null,
           dosis_porcentaje: parseFloat(p.dosis_porcentaje) || null,
           resultado_punto: cal.resultado_punto,
@@ -1599,24 +1605,25 @@ export default function ProtocoloForm({
         .select();
       if (ptsErr) throw ptsErr;
 
-      // 3. Guardar Mediciones
+      // 3. Guardar Mediciones (si aplican)
       const medicionesPayload = [];
-      insertedPoints.forEach(dbPunto => {
-        // Encontrar punto local correspondiente por orden correlativo
-        const localP = puntos.find(lp => lp.punto_muestreo === dbPunto.punto_muestreo);
-        if (localP) {
-          localP.mediciones.forEach((m, mIdx) => {
-            const val = parseFloat(m.valor_lux);
-            if (!isNaN(val)) {
-              medicionesPayload.push({
-                punto_id: dbPunto.id,
-                orden: mIdx + 1,
-                valor_lux: val
-              });
-            }
-          });
-        }
-      });
+      if (Array.isArray(insertedPoints)) {
+        insertedPoints.forEach(dbPunto => {
+          const localP = puntos.find(lp => lp.punto_muestreo === dbPunto.punto_muestreo);
+          if (localP && Array.isArray(localP.mediciones)) {
+            localP.mediciones.forEach((m, mIdx) => {
+              const val = parseFloat(m.valor_lux);
+              if (!isNaN(val)) {
+                medicionesPayload.push({
+                  punto_id: dbPunto.id,
+                  orden: mIdx + 1,
+                  valor_lux: val
+                });
+              }
+            });
+          }
+        });
+      }
 
       if (medicionesPayload.length > 0) {
         const { error: medErr } = await supabase
