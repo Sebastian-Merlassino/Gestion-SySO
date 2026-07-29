@@ -49,7 +49,7 @@ export default function Tabla1RuidoModal({ isOpen, onClose, onSelectHoras }) {
           <table className="w-full text-left text-xs text-slate-700">
             <thead className="bg-slate-100 text-slate-700 font-outfit uppercase text-[10px] tracking-wider font-extrabold sticky top-0 border-b border-slate-200 z-10">
               <tr>
-                <th className="p-3 w-[45%]">Duración Permitida (Te / Ti)</th>
+                <th className="p-3 w-[45%]">Duración por día</th>
                 <th className="p-3 w-[35%] text-center">Nivel de Presión Acústica (dBA)</th>
                 {onSelectHoras && <th className="p-3 w-[20%] text-center">Acción</th>}
               </tr>
@@ -65,7 +65,7 @@ export default function Tabla1RuidoModal({ isOpen, onClose, onSelectHoras }) {
                 filteredItems.map((item, idx) => (
                   <tr key={idx} className="hover:bg-blue-50/50 transition-colors">
                     <td className="p-3 font-semibold text-slate-800">
-                      {item.label}
+                      {item.duracion.toString().replace('.', ',')} {item.unidad}
                     </td>
                     <td className="p-3 text-center font-extrabold text-[#468DFF] text-sm">
                       {item.nivel_presion_acustica_dba} dBA
