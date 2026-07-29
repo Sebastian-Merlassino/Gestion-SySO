@@ -2234,9 +2234,20 @@ export default function ProtocoloForm({
 
                       {/* Fila 3: Características generales del ruido a medir */}
                       <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-3">
-                        <AppLabel htmlFor={`carac-ruido-${p.id}`}>
-                          Características generales del ruido a medir
-                        </AppLabel>
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <AppLabel htmlFor={`carac-ruido-${p.id}`}>
+                            Características generales del ruido a medir
+                          </AppLabel>
+                          <button
+                            type="button"
+                            onClick={() => setIsTabla1RuidoOpen(true)}
+                            className="text-[#468DFF] hover:text-[#0511F2] transition-colors p-1 rounded-full hover:bg-blue-50 flex items-center gap-1 font-bold text-xs cursor-pointer"
+                            title="Ver Tabla 1 — Valores límite para ruido"
+                          >
+                            <HelpCircle className="h-4 w-4" />
+                            <span className="underline text-[11px]">Ver Tabla 1</span>
+                          </button>
+                        </div>
 
                         <div className="flex flex-wrap gap-2">
                           <button
