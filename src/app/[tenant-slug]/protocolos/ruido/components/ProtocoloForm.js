@@ -43,6 +43,7 @@ import {
 } from 'lucide-react';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import { TABLA_2_ILUMINACION } from '../utils/tablasAnexoIV';
+import { getLimiteDbaForTe } from '../utils/tablasAnexoV';
 import Tabla1Modal from './Tabla1Modal';
 import Tabla1RuidoModal from './Tabla1RuidoModal';
 import MetodoCuadriculaModal from './MetodoCuadriculaModal';
@@ -369,10 +370,13 @@ export default function ProtocoloForm({
       // continuo_intermitente
       if (p.tipo_carga_continuo === 'laeq') {
         const valLaeq = parseFloat(p.nivel_laeq_te_dba);
-        limiteLegalText = '85 dBA (8hs)';
+        const teHs = parseFloat(p.tiempo_exposicion_hs);
+        const limiteDba = getLimiteDbaForTe(teHs);
+        const labelTe = (!isNaN(teHs) && teHs > 0) ? `${teHs} hs` : '8 hs';
+        limiteLegalText = `${limiteDba} dBA (${labelTe})`;
         if (!isNaN(valLaeq)) {
           valorMedidoText = `${valLaeq} dBA`;
-          resultado = valLaeq <= 85 ? 'Cumple' : 'No cumple';
+          resultado = valLaeq <= limiteDba ? 'Cumple' : 'No cumple';
         }
       } else if (p.tipo_carga_continuo === 'suma_fracciones') {
         const valSuma = parseFloat(p.resultado_suma_fracciones);
@@ -2362,8 +2366,8 @@ export default function ProtocoloForm({
                                   value={p.nivel_laeq_te_dba}
                                   onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, nivel_laeq_te_dba: e.target.value } : x))}
                                 />
-                                <span className="text-[10px] text-slate-400 font-medium mt-0.5">
-                                  *Límite legal estándar Res. 295/03: 85 dBA para 8 hs.
+                                <span className="text-[10px] text-slate-500 font-medium mt-0.5">
+                                  *Límite legal según Tabla 1 (Res. 295/03) para {p.tiempo_exposicion_hs ? `${p.tiempo_exposicion_hs} hs` : '8 hs'} de exposición: <strong className="text-slate-800 font-bold">{getLimiteDbaForTe(p.tiempo_exposicion_hs)} dBA</strong>.
                                 </span>
                               </div>
                             )}

@@ -150,3 +150,22 @@ export const TABLA_1_RUIDO = [
     horas_decimales: 0.00003
   }
 ];
+
+/**
+ * Obtiene el límite normativo en dBA de la Tabla 1 (Res. 295/03 ANEXO V)
+ * según el tiempo de exposición Te en horas.
+ */
+export function getLimiteDbaForTe(teHs) {
+  const te = parseFloat(teHs);
+  if (isNaN(te) || te <= 0) return 85;
+
+  // Búsqueda exacta en el catálogo de la Tabla 1
+  const match = TABLA_1_RUIDO.find(item => Math.abs(item.horas_decimales - te) < 0.001);
+  if (match) {
+    return match.nivel_presion_acustica_dba;
+  }
+
+  // Ecuación según Res. 295/03 ANEXO V (tasa de cambio de 3 dBA): L_limite = 85 + 3 * log2(8 / te)
+  const limiteCalculado = 85 + (3 * Math.log2(8 / te));
+  return Math.round(limiteCalculado * 10) / 10;
+}

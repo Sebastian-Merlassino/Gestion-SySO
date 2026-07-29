@@ -1,6 +1,7 @@
 import { PDFDocument, PDFName } from 'pdf-lib';
 import { formatDate } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
+import { getLimiteDbaForTe } from './tablasAnexoV';
 
 // Helper to convert hex color string to RGB array [r, g, b]
 const hexToRgb = (hex) => {
@@ -938,9 +939,11 @@ export const generateNoiseProtocolPdf = async (
           // continuo_intermitente
           if (pt.tipo_carga_continuo === 'laeq') {
             const vLaeq = parseFloat(pt.nivel_laeq_te_dba);
+            const teHs = parseFloat(pt.tiempo_exposicion_hs);
+            const limiteDba = getLimiteDbaForTe(teHs);
             if (!isNaN(vLaeq)) {
               valorMedidoText = `${vLaeq} dBA (LAeq,Te)`;
-              cumplePoint = vLaeq <= 85;
+              cumplePoint = vLaeq <= limiteDba;
             }
           } else if (pt.tipo_carga_continuo === 'suma_fracciones') {
             const vSuma = parseFloat(pt.resultado_suma_fracciones);
