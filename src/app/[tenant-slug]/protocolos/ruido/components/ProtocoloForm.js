@@ -44,6 +44,7 @@ import {
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import { TABLA_2_ILUMINACION } from '../utils/tablasAnexoIV';
 import Tabla1Modal from './Tabla1Modal';
+import Tabla1RuidoModal from './Tabla1RuidoModal';
 import MetodoCuadriculaModal from './MetodoCuadriculaModal';
 
 // Catálogo normativo según Anexo IV Dec. 351/79 y SRT
@@ -121,6 +122,7 @@ export default function ProtocoloForm({
 • si es posible, bajar la altura de las luminarias instaladas, 
 • incorporar nuevas luminarias (en los puestos fijos puede incorporarce iluminación localizada).`);
   const [estado, setEstado] = useState('borrador'); // 'borrador' | 'completado' | 'anulado'
+  const [isTabla1RuidoOpen, setIsTabla1RuidoOpen] = useState(false);
 
   // Sampling Points State
   const [puntos, setPuntos] = useState([]);
@@ -2415,9 +2417,20 @@ export default function ProtocoloForm({
                                 {p.modo_suma_fracciones === 'desglose' && (
                                   <div className="space-y-2.5 bg-slate-50/80 p-3 rounded-xl border border-slate-200">
                                     <div className="flex items-center justify-between flex-wrap gap-2 border-b border-slate-200 pb-2">
-                                      <span className="text-xs font-bold text-slate-800 uppercase tracking-wider text-[11px]">
-                                        Desglose de Fracciones (Res. 295/03 ANEXO V)
-                                      </span>
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="text-xs font-bold text-slate-800 uppercase tracking-wider text-[11px]">
+                                          Desglose de Fracciones (Res. 295/03 ANEXO V)
+                                        </span>
+                                        <button
+                                          type="button"
+                                          onClick={() => setIsTabla1RuidoOpen(true)}
+                                          className="text-[#468DFF] hover:text-[#0511F2] transition-colors p-1 rounded-full hover:bg-blue-50 flex items-center gap-1 font-bold text-xs cursor-pointer"
+                                          title="Ver Tabla 1 — Valores límite para ruido"
+                                        >
+                                          <HelpCircle className="h-4 w-4" />
+                                          <span className="underline text-[11px]">Ver Tabla 1</span>
+                                        </button>
+                                      </div>
                                       {canEdit && (
                                         <button
                                           type="button"
@@ -3357,6 +3370,11 @@ function MeasurementPointsEditorModal({ isOpen, onClose, imageUrl, initialPoints
           </Dialog.Content>
         </div>
       </Dialog.Portal>
+      {/* MODAL TABLA 1 VALORES LIMITE RUIDO (RES. 295/03 ANEXO V) */}
+      <Tabla1RuidoModal
+        isOpen={isTabla1RuidoOpen}
+        onClose={() => setIsTabla1RuidoOpen(false)}
+      />
     </Dialog.Root>
   );
 }
