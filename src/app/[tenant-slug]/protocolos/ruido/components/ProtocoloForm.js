@@ -3162,6 +3162,12 @@ export default function ProtocoloForm({
       }}
       onSelectLux={handleSelectLuxFromTabla1}
     />
+
+    {/* MODAL TABLA 1 VALORES LIMITE RUIDO (RES. 295/03 ANEXO V) */}
+    <Tabla1RuidoModal
+      isOpen={isTabla1RuidoOpen}
+      onClose={() => setIsTabla1RuidoOpen(false)}
+    />
   </>
   );
 }
@@ -3370,11 +3376,6 @@ function MeasurementPointsEditorModal({ isOpen, onClose, imageUrl, initialPoints
           </Dialog.Content>
         </div>
       </Dialog.Portal>
-      {/* MODAL TABLA 1 VALORES LIMITE RUIDO (RES. 295/03 ANEXO V) */}
-      <Tabla1RuidoModal
-        isOpen={isTabla1RuidoOpen}
-        onClose={() => setIsTabla1RuidoOpen(false)}
-      />
     </Dialog.Root>
   );
 }
