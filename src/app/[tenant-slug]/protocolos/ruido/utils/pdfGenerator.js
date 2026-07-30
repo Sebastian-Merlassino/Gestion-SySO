@@ -587,7 +587,7 @@ export const generateNoiseProtocolPdf = async (
   doc.setFontSize(10.5);
   doc.setFont('helvetica', 'normal');
   setTextColor(doc, COLOR_SLATE_600);
-  doc.text('LEY Nº 19.587 - DECRETO Nº 351/79, ANEXO V (VALORES LÍMITE DE RUIDO)', 39, 222);
+  doc.text('LEY Nº 19.587 - DECRETO Nº 351/79, ANEXO V, CAPITULO 13 - ACUSTICA', 39, 222);
   doc.text('ANEXO - RESOLUCIÓN SRT 85 / 2012 (PROTOCOLO DE MEDICIÓN DE RUIDO)', 39, 228);
 
   // Brand / Consultora
@@ -734,18 +734,18 @@ export const generateNoiseProtocolPdf = async (
 
   rY = t3Y + 6;
   drawCellText(doc, 'Certificado de calibración.', t3X + 3, rY + 0.5, 120, 6, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, hasCert ? '✓ Adjunto' : '—', t3X + 130, rY + 0.5, 47, 6, { fontSize: 8.5, fontStyle: hasCert ? 'bold' : 'normal', color: hasCert ? COLOR_VERDE_CUMPLE : COLOR_SLATE_500, align: 'right' });
+  drawCellText(doc, hasCert ? '✓ Adjunto' : '', t3X + 130, rY + 0.5, 47, 6, { fontSize: 8.5, fontStyle: hasCert ? 'bold' : 'normal', color: hasCert ? COLOR_VERDE_CUMPLE : COLOR_SLATE_500, align: 'right' });
 
   drawCellText(doc, 'Plano o croquis.', t3X + 3, rY + 6.5, 120, 6, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, hasPlano ? '✓ Adjunto' : '—', t3X + 130, rY + 6.5, 47, 6, { fontSize: 8.5, fontStyle: hasPlano ? 'bold' : 'normal', color: hasPlano ? COLOR_VERDE_CUMPLE : COLOR_SLATE_500, align: 'right' });
+  drawCellText(doc, hasPlano ? '✓ Adjunto' : '', t3X + 130, rY + 6.5, 47, 6, { fontSize: 8.5, fontStyle: hasPlano ? 'bold' : 'normal', color: hasPlano ? COLOR_VERDE_CUMPLE : COLOR_SLATE_500, align: 'right' });
 
   // Firma Profesional (Alineada abajo a la derecha de la hoja 1)
   drawSignatureBlock(105, t3Y + t3H + 4, 90, 36);
 
   // ==========================================
-  // PAGINAS 4 Y 5: TABLA GENERAL DE MEDICIÓN (A4 Apaisado)
+  // PAGINAS 3 Y SIGUIENTES: TABLA GENERAL DE MEDICIÓN RUIDO (A4 Apaisado - RES. SRT 85/12)
   // ==========================================
-  const maxRowsPerPage = 12;
+  const maxRowsPerPage = 10;
   const totalPoints = puntosList.length;
   const totalTablePages = Math.max(1, Math.ceil(totalPoints / maxRowsPerPage));
 
@@ -754,28 +754,28 @@ export const generateNoiseProtocolPdf = async (
     pageCounter++;
 
     drawHeader(true);
-    drawProtocolTitleBar(true, { x: 17, y: 22, w: 263, h: 5.5 });
+    drawProtocolTitleBar(true, { x: 15, y: 22, w: 267, h: 5.5 });
 
     // Encabezado Establecimiento
-    const eX = 17;
+    const eX = 15;
     const eY = 29;
-    const eW = 263;
+    const eW = 267;
 
     doc.setLineWidth(0.45);
     setDrawColor(doc, COLOR_NEGRO);
     doc.rect(eX, eY, eW, 14, 'S');
     doc.setLineWidth(0.25);
 
-    // Fila 1: Razón Social (160mm) | C.U.I.T. (103mm)
-    doc.rect(eX, eY, 160, 7, 'S');
-    drawCellText(doc, 'Razón Social:', eX, eY, 22, 7, { fontStyle: 'bold', fontSize: 8 });
-    drawCellText(doc, razonSocial, eX + 22, eY, 138, 7, { fontSize: 8 });
+    // Fila 1: Razón Social (164mm) | C.U.I.T. (103mm)
+    doc.rect(eX, eY, 164, 7, 'S');
+    drawCellText(doc, 'Razón social:', eX, eY, 22, 7, { fontStyle: 'bold', fontSize: 8 });
+    drawCellText(doc, razonSocial, eX + 22, eY, 142, 7, { fontSize: 8 });
 
-    doc.rect(eX + 160, eY, 103, 7, 'S');
-    drawCellText(doc, 'C.U.I.T.:', eX + 160, eY, 18, 7, { fontStyle: 'bold', fontSize: 8 });
-    drawCellText(doc, cuit, eX + 178, eY, 85, 7, { fontSize: 8 });
+    doc.rect(eX + 164, eY, 103, 7, 'S');
+    drawCellText(doc, 'C.U.I.T.:', eX + 164, eY, 18, 7, { fontStyle: 'bold', fontSize: 8 });
+    drawCellText(doc, cuit, eX + 182, eY, 85, 7, { fontSize: 8 });
 
-    // Fila 2: Dirección (135mm) | Localidad (55mm) | C.P. (25mm) | Provincia (48mm)
+    // Fila 2: Dirección (135mm) | Localidad (55mm) | C.P. (25mm) | Provincia (52mm)
     doc.rect(eX, eY + 7, 135, 7, 'S');
     drawCellText(doc, 'Dirección:', eX, eY + 7, 18, 7, { fontStyle: 'bold', fontSize: 8 });
     drawCellText(doc, direccion, eX + 18, eY + 7, 117, 7, { fontSize: 8 });
@@ -788,147 +788,170 @@ export const generateNoiseProtocolPdf = async (
     drawCellText(doc, 'C.P.:', eX + 190, eY + 7, 10, 7, { fontStyle: 'bold', fontSize: 8 });
     drawCellText(doc, cp, eX + 200, eY + 7, 15, 7, { fontSize: 8 });
 
-    doc.rect(eX + 215, eY + 7, 48, 7, 'S');
+    doc.rect(eX + 215, eY + 7, 52, 7, 'S');
     drawCellText(doc, 'Provincia:', eX + 215, eY + 7, 16, 7, { fontStyle: 'bold', fontSize: 8 });
-    drawCellText(doc, provincia, eX + 231, eY + 7, 32, 7, { fontSize: 8 });
+    drawCellText(doc, provincia, eX + 231, eY + 7, 36, 7, { fontSize: 8 });
 
     // Tabla de Datos Apaisada
-    const gX = 17;
+    const gX = 15;
     const gY = 45;
-    const gW = 263;
+    const gW = 267;
 
-    doc.setLineWidth(0.45);
-    doc.rect(gX, gY, gW, 96.4, 'S');
-
-    // Title Header "Datos de la Medición"
+    // Title Header "DATOS DE LA MEDICIÓN"
     setFillColor(doc, COLOR_SLATE_200);
     doc.rect(gX, gY, gW, 6, 'FD');
-    drawCellText(doc, 'Datos de la Medición', gX, gY, gW, 6, { align: 'center', fontStyle: 'bold', fontSize: 9, color: COLOR_NEGRO });
+    drawCellText(doc, 'DATOS DE LA MEDICIÓN', gX, gY, gW, 6, { align: 'center', fontStyle: 'bold', fontSize: 9, color: COLOR_NEGRO });
 
-    // Columns Definition for Noise Protocol
-    const cols = [
-      { key: 'punto', name: 'N° Punto', w: 15 },
-      { key: 'sector', name: 'Sector / Área', w: 45 },
-      { key: 'puesto', name: 'Puesto de Trabajo / Sección', w: 45 },
-      { key: 'tiempo_exp', name: 'Te (hs)', w: 22 },
-      { key: 'tiempo_integ', name: 'Tiempo Integración', w: 24 },
-      { key: 'caracteristica', name: 'Características del Ruido', w: 38 },
-      { key: 'valor_medido', name: 'Valor Medido', w: 42 },
-      { key: 'verificacion', name: 'Verificación Legal (Res. 295/03)', w: 32 }
-    ];
+    const colY = gY + 6;
+    const colH = 20;
 
-    let currX = gX;
-    const colHeaderY = gY + 6;
-    const colHeaderH = 14;
+    doc.setLineWidth(0.3);
+    setDrawColor(doc, COLOR_NEGRO);
 
-    // Render Column Headers with soft gray fill and crisp black text
-    cols.forEach(c => {
-      setFillColor(doc, COLOR_SLATE_200);
-      doc.rect(currX, colHeaderY, c.w, colHeaderH, 'FD');
-      drawCellText(doc, c.name, currX, colHeaderY, c.w, colHeaderH, { align: 'center', fontStyle: 'bold', fontSize: 7, color: COLOR_NEGRO, maxLines: 4 });
-      currX += c.w;
-    });
+    let xPos = gX;
+    
+    // Col 1: Punto de medición (16mm)
+    doc.rect(xPos, colY, 16, colH, 'FD');
+    drawCellText(doc, 'Punto de medición', xPos, colY, 16, colH, { align: 'center', fontStyle: 'bold', fontSize: 6.5, maxLines: 3 });
+    xPos += 16;
 
-    const rowStartY = colHeaderY + colHeaderH;
-    const rowH = 5.2;
+    // Col 2: Sector (36mm)
+    doc.rect(xPos, colY, 36, colH, 'FD');
+    drawCellText(doc, 'Sector', xPos, colY, 36, colH, { align: 'center', fontStyle: 'bold', fontSize: 7, maxLines: 2 });
+    xPos += 36;
+
+    // Col 3: Puesto (38mm)
+    doc.rect(xPos, colY, 38, colH, 'FD');
+    drawCellText(doc, 'Puesto / Puesto tipo / Puesto móvil', xPos, colY, 38, colH, { align: 'center', fontStyle: 'bold', fontSize: 6.5, maxLines: 3 });
+    xPos += 38;
+
+    // Col 4: Te (hs) (22mm)
+    doc.rect(xPos, colY, 22, colH, 'FD');
+    drawCellText(doc, 'Tiempo de exposición del trabajador (Te, en horas)', xPos, colY, 22, colH, { align: 'center', fontStyle: 'bold', fontSize: 6, maxLines: 5 });
+    xPos += 22;
+
+    // Col 5: Tiempo integración (22mm)
+    doc.rect(xPos, colY, 22, colH, 'FD');
+    drawCellText(doc, 'Tiempo de integración (tiempo de medición)', xPos, colY, 22, colH, { align: 'center', fontStyle: 'bold', fontSize: 6, maxLines: 5 });
+    xPos += 22;
+
+    // Col 6: Características del ruido (34mm)
+    doc.rect(xPos, colY, 34, colH, 'FD');
+    drawCellText(doc, 'Características generales del ruido a medir (continuo / intermitente / de impulso o de impacto)', xPos, colY, 34, colH, { align: 'center', fontStyle: 'bold', fontSize: 6, maxLines: 5 });
+    xPos += 34;
+
+    // Col 7: RUIDO DE IMPULSO O DE IMPACTO (25mm)
+    doc.rect(xPos, colY, 25, 7, 'FD');
+    drawCellText(doc, 'RUIDO DE IMPULSO O DE IMPACTO', xPos, colY, 25, 7, { align: 'center', fontStyle: 'bold', fontSize: 5.5, maxLines: 2 });
+    
+    doc.rect(xPos, colY + 7, 25, 13, 'FD');
+    drawCellText(doc, 'Nivel pico de presión acústica ponderado C (LC pico, en dBC)', xPos, colY + 7, 25, 13, { align: 'center', fontStyle: 'bold', fontSize: 5.5, maxLines: 5 });
+    xPos += 25;
+
+    // Col 8: SONIDO CONTINUO o INTERMITENTE (54mm)
+    doc.rect(xPos, colY, 54, 7, 'FD');
+    drawCellText(doc, 'SONIDO CONTINUO o INTERMITENTE', xPos, colY, 54, 7, { align: 'center', fontStyle: 'bold', fontSize: 6.5 });
+
+    // Sub-col 8a: LAeq,Te (19mm)
+    doc.rect(xPos, colY + 7, 19, 13, 'FD');
+    drawCellText(doc, 'Nivel de presión acústica integrado (LAeq,Te en dBA)', xPos, colY + 7, 19, 13, { align: 'center', fontStyle: 'bold', fontSize: 5.5, maxLines: 5 });
+
+    // Sub-col 8b: Suma de las fracciones (18mm)
+    doc.rect(xPos + 19, colY + 7, 18, 13, 'FD');
+    drawCellText(doc, 'Resultado de la suma de las fracciones', xPos + 19, colY + 7, 18, 13, { align: 'center', fontStyle: 'bold', fontSize: 5.5, maxLines: 5 });
+
+    // Sub-col 8c: Dosis % (17mm)
+    doc.rect(xPos + 37, colY + 7, 17, 13, 'FD');
+    drawCellText(doc, 'Dosis (en porcentaje %)', xPos + 37, colY + 7, 17, 13, { align: 'center', fontStyle: 'bold', fontSize: 5.5, maxLines: 4 });
+    xPos += 54;
+
+    // Col 9: Cumple (20mm)
+    doc.rect(xPos, colY, 20, colH, 'FD');
+    drawCellText(doc, 'Cumple con los valores de exposición diaria permitidos? (SI / NO)', xPos, colY, 20, colH, { align: 'center', fontStyle: 'bold', fontSize: 5.5, maxLines: 6 });
+
+    // Data Rows
+    const rowStartY = colY + colH;
+    const rowH = 6.2;
 
     const startSlice = pIdx * maxRowsPerPage;
     const endSlice = startSlice + maxRowsPerPage;
     const pagePuntos = puntosList.slice(startSlice, endSlice);
 
+    const tableColsDef = [
+      { w: 16, key: 'punto' },
+      { w: 36, key: 'sector' },
+      { w: 38, key: 'puesto' },
+      { w: 22, key: 'tiempo_exp' },
+      { w: 22, key: 'tiempo_integ' },
+      { w: 34, key: 'caracteristica' },
+      { w: 25, key: 'lc_pico' },
+      { w: 19, key: 'laeq_te' },
+      { w: 18, key: 'suma_fracciones' },
+      { w: 17, key: 'dosis' },
+      { w: 20, key: 'cumple' }
+    ];
+
     for (let r = 0; r < maxRowsPerPage; r++) {
       const rowY = rowStartY + (r * rowH);
       const pt = pagePuntos[r];
-
-      currX = gX;
+      let currXPos = gX;
 
       if (!pt) {
-        // Empty row with background fill
-        cols.forEach(c => {
+        tableColsDef.forEach(c => {
           setFillColor(doc, COLOR_SLATE_50);
-          doc.rect(currX, rowY, c.w, rowH, 'FD');
-          drawCellText(doc, '-', currX, rowY, c.w, rowH, { align: 'center', fontSize: 7.5, color: COLOR_SLATE_500 });
-          currX += c.w;
+          doc.rect(currXPos, rowY, c.w, rowH, 'FD');
+          drawCellText(doc, '-', currXPos, rowY, c.w, rowH, { align: 'center', fontSize: 7, color: COLOR_SLATE_500 });
+          currXPos += c.w;
         });
       } else {
-        let caracText = 'Continuo / Intermitente';
-        let valorMedidoText = '-';
-        let cumplePoint = true;
+        const cal = getPuntoCalculos(pt);
+        const isImpulso = pt.caracteristicas_ruido === 'impulso_impacto';
 
-        if (pt.caracteristicas_ruido === 'impulso_impacto') {
-          caracText = 'Impulso / Impacto';
-          const vPico = parseFloat(pt.nivel_pico_lc_pico_dbc);
-          if (!isNaN(vPico)) {
-            valorMedidoText = `${vPico} dBC (Pico)`;
-            cumplePoint = vPico <= 140;
-          }
-        } else {
-          // continuo_intermitente
-          if (pt.tipo_carga_continuo === 'laeq') {
-            const vLaeq = parseFloat(pt.nivel_laeq_te_dba);
-            const teHs = parseFloat(pt.tiempo_exposicion_hs);
-            const limiteDba = getLimiteDbaForTe(teHs);
-            if (!isNaN(vLaeq)) {
-              valorMedidoText = `${vLaeq} dBA (LAeq,Te)`;
-              cumplePoint = vLaeq <= limiteDba;
-            }
-          } else if (pt.tipo_carga_continuo === 'suma_fracciones') {
-            const vSuma = parseFloat(pt.resultado_suma_fracciones);
-            if (!isNaN(vSuma)) {
-              valorMedidoText = `Σ Ci/Ti = ${vSuma}`;
-              cumplePoint = vSuma <= 1.0;
-            }
-          } else if (pt.tipo_carga_continuo === 'dosis') {
-            const vDosis = parseFloat(pt.dosis_porcentaje);
-            if (!isNaN(vDosis)) {
-              valorMedidoText = `Dosis: ${vDosis}%`;
-              cumplePoint = vDosis <= 100;
-            }
-          }
-        }
-
-        const resStatus = pt.resultado_punto || (cumplePoint ? 'Cumple' : 'No cumple');
-
-        const rowValues = {
+        const rowData = {
           punto: String(pt.punto_muestreo),
           sector: pt.sector_text || pt.sector || '-',
           puesto: pt.puesto_text || pt.puesto || '-',
           tiempo_exp: pt.tiempo_exposicion_hs ? `${pt.tiempo_exposicion_hs} hs` : '8 hs',
           tiempo_integ: pt.tiempo_integracion || '15 min',
-          caracteristica: caracText,
-          valor_medido: valorMedidoText,
-          verificacion: resStatus
+          caracteristica: isImpulso ? 'Impulso / Impacto' : 'Continuo / Intermitente',
+          lc_pico: isImpulso ? (pt.nivel_pico_lc_pico_dbc ? `${pt.nivel_pico_lc_pico_dbc} dBC` : '—') : '—',
+          laeq_te: (!isImpulso && pt.nivel_laeq_te_dba) ? `${pt.nivel_laeq_te_dba} dBA` : '—',
+          suma_fracciones: (!isImpulso && pt.modo_suma_fracciones === 'desglose' && pt.resultado_suma_fracciones) ? String(pt.resultado_suma_fracciones) : '—',
+          dosis: (!isImpulso && pt.dosis_porcentaje) ? `${pt.dosis_porcentaje}%` : '—',
+          cumple: cal.resultado_punto === 'Cumple' ? 'SI' : (cal.resultado_punto === 'No cumple' ? 'NO' : '—')
         };
 
-        cols.forEach(c => {
-          setDrawColor(doc, COLOR_NEGRO);
-          doc.rect(currX, rowY, c.w, rowH, 'S');
-          const valText = rowValues[c.key] || '-';
-          let isFail = (c.key === 'verificacion' && valText === 'No cumple');
+        tableColsDef.forEach(c => {
+          doc.rect(currXPos, rowY, c.w, rowH, 'S');
+          const val = rowData[c.key] || '—';
+          const isFail = (c.key === 'cumple' && val === 'NO');
+          const isPass = (c.key === 'cumple' && val === 'SI');
 
-          drawCellText(doc, valText, currX, rowY, c.w, rowH, {
+          drawCellText(doc, val, currXPos, rowY, c.w, rowH, {
             align: 'center',
-            fontSize: 7.5,
-            fontStyle: isFail ? 'bold' : 'normal',
-            color: isFail ? COLOR_ROJO_NO_CUMPLE : (c.key === 'verificacion' && valText === 'Cumple' ? COLOR_VERDE_CUMPLE : COLOR_NEGRO),
+            fontSize: 7,
+            fontStyle: (isFail || isPass) ? 'bold' : 'normal',
+            color: isFail ? COLOR_ROJO_NO_CUMPLE : (isPass ? COLOR_VERDE_CUMPLE : COLOR_NEGRO),
             maxLines: 1
           });
-
-          currX += c.w;
+          currXPos += c.w;
         });
       }
     }
 
-    // Fila Observaciones (posicionada dinámicamente justo al finalizar las 12 filas de datos)
-    const obsY = rowStartY + (maxRowsPerPage * rowH);
-    const obsH = 14;
-    setDrawColor(doc, COLOR_NEGRO);
-    doc.rect(gX, obsY, gW, obsH, 'S');
-    drawCellText(doc, 'Observaciones:', gX, obsY, 26, obsH, { fontStyle: 'bold', fontSize: 8.5, valign: 'top', padding: 1.5 });
-    drawCellText(doc, proto.observaciones || 'N/A', gX + 26, obsY, gW - 26, obsH, { fontSize: 8.5, valign: 'top', padding: 1.5 });
+    // Bottom Box: Información adicional
+    const infoY = rowStartY + (maxRowsPerPage * rowH) + 3;
+    const infoH = 22;
+    doc.setLineWidth(0.45);
+    doc.rect(gX, infoY, gW, infoH, 'S');
+    doc.setLineWidth(0.25);
 
-    // Firma Profesional (Alineada a la derecha de la página apaisada)
-    drawSignatureBlock(185, obsY + obsH + 4, 95, 38);
+    drawCellText(doc, 'Información adicional:', gX, infoY, gW, 5, { fontStyle: 'bold', fontSize: 8 });
+    const addInfoText = proto.conclusiones || proto.observaciones || 'Sin información adicional registrada.';
+    drawCellText(doc, addInfoText, gX + 2, infoY + 5, gW - 4, 16, { fontSize: 8, valign: 'top' });
+
+    // Firma Profesional (Esquina inferior derecha)
+    drawSignatureBlock(185, infoY + infoH + 3, 90, 32);
   }
 
   // ==========================================
