@@ -745,7 +745,7 @@ export const generateNoiseProtocolPdf = async (
   // ==========================================
   // PAGINAS 3 Y SIGUIENTES: TABLA GENERAL DE MEDICIÓN RUIDO (A4 Apaisado - RES. SRT 85/12)
   // ==========================================
-  const maxRowsPerPage = 10;
+  const maxRowsPerPage = 12;
   const totalPoints = puntosList.length;
   const totalTablePages = Math.max(1, Math.ceil(totalPoints / maxRowsPerPage));
 
@@ -807,71 +807,72 @@ export const generateNoiseProtocolPdf = async (
 
     doc.setLineWidth(0.3);
     setDrawColor(doc, COLOR_NEGRO);
+    setFillColor(doc, COLOR_SLATE_200);
 
     let xPos = gX;
     
     // Col 1: Punto de medición (16mm)
     doc.rect(xPos, colY, 16, colH, 'FD');
-    drawCellText(doc, 'Punto de medición', xPos, colY, 16, colH, { align: 'center', fontStyle: 'bold', fontSize: 6.5, maxLines: 3 });
+    drawCellText(doc, 'Punto de medición', xPos, colY, 16, colH, { align: 'center', fontStyle: 'bold', fontSize: 6.5, maxLines: 3, color: COLOR_NEGRO });
     xPos += 16;
 
     // Col 2: Sector (36mm)
     doc.rect(xPos, colY, 36, colH, 'FD');
-    drawCellText(doc, 'Sector', xPos, colY, 36, colH, { align: 'center', fontStyle: 'bold', fontSize: 7, maxLines: 2 });
+    drawCellText(doc, 'Sector', xPos, colY, 36, colH, { align: 'center', fontStyle: 'bold', fontSize: 7, maxLines: 2, color: COLOR_NEGRO });
     xPos += 36;
 
     // Col 3: Puesto (38mm)
     doc.rect(xPos, colY, 38, colH, 'FD');
-    drawCellText(doc, 'Puesto / Puesto tipo / Puesto móvil', xPos, colY, 38, colH, { align: 'center', fontStyle: 'bold', fontSize: 6.5, maxLines: 3 });
+    drawCellText(doc, 'Puesto / Puesto tipo / Puesto móvil', xPos, colY, 38, colH, { align: 'center', fontStyle: 'bold', fontSize: 6.5, maxLines: 3, color: COLOR_NEGRO });
     xPos += 38;
 
     // Col 4: Te (hs) (22mm)
     doc.rect(xPos, colY, 22, colH, 'FD');
-    drawCellText(doc, 'Tiempo de exposición del trabajador (Te, en horas)', xPos, colY, 22, colH, { align: 'center', fontStyle: 'bold', fontSize: 6, maxLines: 5 });
+    drawCellText(doc, 'Tiempo de exposición del trabajador (Te, en horas)', xPos, colY, 22, colH, { align: 'center', fontStyle: 'bold', fontSize: 6, maxLines: 5, color: COLOR_NEGRO });
     xPos += 22;
 
     // Col 5: Tiempo integración (22mm)
     doc.rect(xPos, colY, 22, colH, 'FD');
-    drawCellText(doc, 'Tiempo de integración (tiempo de medición)', xPos, colY, 22, colH, { align: 'center', fontStyle: 'bold', fontSize: 6, maxLines: 5 });
+    drawCellText(doc, 'Tiempo de integración (tiempo de medición)', xPos, colY, 22, colH, { align: 'center', fontStyle: 'bold', fontSize: 6, maxLines: 5, color: COLOR_NEGRO });
     xPos += 22;
 
     // Col 6: Características del ruido (34mm)
     doc.rect(xPos, colY, 34, colH, 'FD');
-    drawCellText(doc, 'Características generales del ruido a medir (continuo / intermitente / de impulso o de impacto)', xPos, colY, 34, colH, { align: 'center', fontStyle: 'bold', fontSize: 6, maxLines: 5 });
+    drawCellText(doc, 'Características generales del ruido a medir (continuo / intermitente / de impulso o de impacto)', xPos, colY, 34, colH, { align: 'center', fontStyle: 'bold', fontSize: 6, maxLines: 5, color: COLOR_NEGRO });
     xPos += 34;
 
     // Col 7: RUIDO DE IMPULSO O DE IMPACTO (25mm)
     doc.rect(xPos, colY, 25, 7, 'FD');
-    drawCellText(doc, 'RUIDO DE IMPULSO O DE IMPACTO', xPos, colY, 25, 7, { align: 'center', fontStyle: 'bold', fontSize: 5.5, maxLines: 2 });
+    drawCellText(doc, 'RUIDO DE IMPULSO O DE IMPACTO', xPos, colY, 25, 7, { align: 'center', fontStyle: 'bold', fontSize: 5.5, maxLines: 2, color: COLOR_NEGRO });
     
     doc.rect(xPos, colY + 7, 25, 13, 'FD');
-    drawCellText(doc, 'Nivel pico de presión acústica ponderado C (LC pico, en dBC)', xPos, colY + 7, 25, 13, { align: 'center', fontStyle: 'bold', fontSize: 5.5, maxLines: 5 });
+    drawCellText(doc, 'Nivel pico de presión acústica ponderado C (LC pico, en dBC)', xPos, colY + 7, 25, 13, { align: 'center', fontStyle: 'bold', fontSize: 5.5, maxLines: 5, color: COLOR_NEGRO });
     xPos += 25;
 
     // Col 8: SONIDO CONTINUO o INTERMITENTE (54mm)
     doc.rect(xPos, colY, 54, 7, 'FD');
-    drawCellText(doc, 'SONIDO CONTINUO o INTERMITENTE', xPos, colY, 54, 7, { align: 'center', fontStyle: 'bold', fontSize: 6.5 });
+    drawCellText(doc, 'SONIDO CONTINUO o INTERMITENTE', xPos, colY, 54, 7, { align: 'center', fontStyle: 'bold', fontSize: 6.5, color: COLOR_NEGRO });
 
     // Sub-col 8a: LAeq,Te (19mm)
     doc.rect(xPos, colY + 7, 19, 13, 'FD');
-    drawCellText(doc, 'Nivel de presión acústica integrado (LAeq,Te en dBA)', xPos, colY + 7, 19, 13, { align: 'center', fontStyle: 'bold', fontSize: 5.5, maxLines: 5 });
+    drawCellText(doc, 'Nivel de presión acústica integrado (LAeq,Te en dBA)', xPos, colY + 7, 19, 13, { align: 'center', fontStyle: 'bold', fontSize: 5.5, maxLines: 5, color: COLOR_NEGRO });
 
     // Sub-col 8b: Suma de las fracciones (18mm)
     doc.rect(xPos + 19, colY + 7, 18, 13, 'FD');
-    drawCellText(doc, 'Resultado de la suma de las fracciones', xPos + 19, colY + 7, 18, 13, { align: 'center', fontStyle: 'bold', fontSize: 5.5, maxLines: 5 });
+    drawCellText(doc, 'Resultado de la suma de las fracciones', xPos + 19, colY + 7, 18, 13, { align: 'center', fontStyle: 'bold', fontSize: 5.5, maxLines: 5, color: COLOR_NEGRO });
 
     // Sub-col 8c: Dosis % (17mm)
     doc.rect(xPos + 37, colY + 7, 17, 13, 'FD');
-    drawCellText(doc, 'Dosis (en porcentaje %)', xPos + 37, colY + 7, 17, 13, { align: 'center', fontStyle: 'bold', fontSize: 5.5, maxLines: 4 });
+    drawCellText(doc, 'Dosis (en porcentaje %)', xPos + 37, colY + 7, 17, 13, { align: 'center', fontStyle: 'bold', fontSize: 5.5, maxLines: 4, color: COLOR_NEGRO });
     xPos += 54;
 
     // Col 9: Cumple (20mm)
     doc.rect(xPos, colY, 20, colH, 'FD');
-    drawCellText(doc, 'Cumple con los valores de exposición diaria permitidos? (SI / NO)', xPos, colY, 20, colH, { align: 'center', fontStyle: 'bold', fontSize: 5.5, maxLines: 6 });
+    drawCellText(doc, 'Cumple con los valores de exposición diaria permitidos? (SI / NO)', xPos, colY, 20, colH, { align: 'center', fontStyle: 'bold', fontSize: 5.5, maxLines: 6, color: COLOR_NEGRO });
 
-    // Data Rows
+    // Data Rows (12 filas por página)
     const rowStartY = colY + colH;
-    const rowH = 6.2;
+    const rowH = 5.8;
 
     const startSlice = pIdx * maxRowsPerPage;
     const endSlice = startSlice + maxRowsPerPage;
@@ -939,16 +940,16 @@ export const generateNoiseProtocolPdf = async (
       }
     }
 
-    // Bottom Box: Información adicional
-    const infoY = rowStartY + (maxRowsPerPage * rowH) + 3;
-    const infoH = 22;
+    // Bottom Box: Información adicional (Adosado directamente sin espacio a la última fila de la tabla)
+    const infoY = rowStartY + (maxRowsPerPage * rowH);
+    const infoH = 20;
     doc.setLineWidth(0.45);
     doc.rect(gX, infoY, gW, infoH, 'S');
     doc.setLineWidth(0.25);
 
-    drawCellText(doc, 'Información adicional:', gX, infoY, gW, 5, { fontStyle: 'bold', fontSize: 8 });
+    drawCellText(doc, 'Información adicional:', gX, infoY, gW, 5, { fontStyle: 'bold', fontSize: 8, color: COLOR_NEGRO });
     const addInfoText = proto.informacion_adicional || proto.conclusiones || proto.observaciones || 'Sin información adicional registrada.';
-    drawCellText(doc, addInfoText, gX + 2, infoY + 5, gW - 4, 16, { fontSize: 8, valign: 'top' });
+    drawCellText(doc, addInfoText, gX + 2, infoY + 5, gW - 4, 14, { fontSize: 8, valign: 'top', color: COLOR_NEGRO });
 
     // Firma Profesional (Esquina inferior derecha)
     drawSignatureBlock(185, infoY + infoH + 3, 90, 32);
