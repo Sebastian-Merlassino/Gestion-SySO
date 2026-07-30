@@ -578,17 +578,17 @@ export const generateNoiseProtocolPdf = async (
 
   // Cover Main Title
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(32);
+  doc.setFontSize(30);
   setTextColor(doc, COLOR_AZUL_PRINCIPAL);
-  const titleLines = doc.splitTextToSize('Protocolo de medición de iluminación en el ambiente laboral', 145);
+  const titleLines = doc.splitTextToSize('Protocolo para la Medición del nivel de Ruido en el Ambiente Laboral', 145);
   doc.text(titleLines, 39, 172);
 
   // Normative reference
-  doc.setFontSize(11);
+  doc.setFontSize(10.5);
   doc.setFont('helvetica', 'normal');
   setTextColor(doc, COLOR_SLATE_600);
-  doc.text('DECRETO Nº 351/79, ANEXO IV - CAPÍTULO 12 - ILUMINACIÓN Y COLOR', 39, 222);
-  doc.text('ANEXO - RESOLUCIÓN 84 / 2012 (PROTOCOLO DE ILUMINACIÓN)', 39, 228);
+  doc.text('LEY Nº 19.587 - DECRETO Nº 351/79, ANEXO V (VALORES LÍMITE DE RUIDO)', 39, 222);
+  doc.text('ANEXO - RESOLUCIÓN SRT 85 / 2012 (PROTOCOLO DE MEDICIÓN DE RUIDO)', 39, 228);
 
   // Brand / Consultora
   doc.setFont('helvetica', 'bold');
@@ -597,94 +597,13 @@ export const generateNoiseProtocolPdf = async (
   doc.text(companyName.toUpperCase(), 39, 246);
 
   // ==========================================
-  // PAGINA 2: INTRODUCCIÓN NORMATIVA (A4 Vertical)
+  // PAGINA 2: HOJA 1 - FORMULARIO OFICIAL RUIDO (A4 Vertical - RES. SRT 85/12)
   // ==========================================
   doc.addPage('a4', 'portrait');
   pageCounter++;
 
   drawHeader(false);
-
-  // Section Title
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  setTextColor(doc, COLOR_NEGRO);
-  doc.text('Iluminación y Color (ANEXO IV - Capítulo 12 – Dec. 351/79)', 15, 28);
-  setDrawColor(doc, COLOR_AZUL_PRINCIPAL);
-  doc.setLineWidth(0.4);
-  doc.line(15, 30, 195, 30);
-
-  // Body Text
-  const introParagraphs = [
-    {
-      text: "La intensidad mínima de iluminación, medida sobre el plano de trabajo, ya sea este horizontal, vertical u oblicuo, está establecida en la tabla 1, de acuerdo con la dificultad de la tarea visual y en la tabla 2, de acuerdo con el destino del local.",
-      style: 'normal'
-    },
-    {
-      text: "Los valores indicados en la tabla 1, se usarán para estimar los requeridos para tareas que no han sido incluidas en la tabla 2.",
-      style: 'normal'
-    },
-    {
-      text: "Con el objeto de evitar diferencias de iluminancias causantes de incomodidad visual o deslumbramiento, se deberán mantener las relaciones máximas indicadas en la tabla 3.",
-      style: 'normal'
-    },
-    {
-      text: "La tarea visual se sitúa en el centro del campo visual y abarca un cono cuyo ángulo de abertura es de un grado, estando el vértice del mismo en el ojo del trabajador.",
-      style: 'normal'
-    },
-    {
-      text: "Para asegurar una uniformidad razonable en la iluminancia de un local, se exigirá una relación no menor de 0,5 entre sus valores mínimo y medio.",
-      style: 'normal'
-    },
-    {
-      text: "E mínima >= E media / 2",
-      style: 'formula'
-    },
-    {
-      text: "* E = Exigencia",
-      style: 'legend'
-    },
-    {
-      text: "La iluminancia media se determinará efectuando la media aritmética de la iluminancia general considerada en todo el local, y la iluminancia mínima será el menor valor de iluminancia en las superficies de trabajo o en un plano horizontal a 0,80 m. del suelo. Este procedimiento no se aplicará a lugares de tránsito, de ingreso o egreso de personal o iluminación de emergencia",
-      style: 'normal'
-    },
-    {
-      text: "En los casos en que se ilumine en forma localizada uno o varios lugares de trabajo para completar la iluminación general, esta última no podrá tener una intensidad menor que la indicada en la tabla 4.",
-      style: 'normal'
-    }
-  ];
-
-  let currentY = 43;
-  introParagraphs.forEach(p => {
-    if (p.style === 'formula') {
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9.5);
-      setTextColor(doc, COLOR_NEGRO);
-      doc.text(p.text, 25, currentY);
-      currentY += 6;
-    } else if (p.style === 'legend') {
-      doc.setFont('helvetica', 'italic');
-      doc.setFontSize(8);
-      setTextColor(doc, COLOR_SLATE_600);
-      doc.text(p.text, 25, currentY);
-      currentY += 7;
-    } else {
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      setTextColor(doc, COLOR_SLATE_900);
-      const lines = doc.splitTextToSize(p.text, 180);
-      doc.text(lines, 15, currentY);
-      currentY += (lines.length * 4.2) + 4.5;
-    }
-  });
-
-  // ==========================================
-  // PAGINA 3: DATOS DEL ESTABLECIMIENTO Y MEDICIÓN (A4 Vertical)
-  // ==========================================
-  doc.addPage('a4', 'portrait');
-  pageCounter++;
-
-  drawHeader(false);
-  drawProtocolTitleBar(false, { x: 15, y: 22, w: 180, h: 5.5 });
+  drawProtocolTitleBar(false, { x: 15, y: 22, w: 180, h: 6 });
 
   // Tabla 1: Datos del Establecimiento
   const t1X = 15;
@@ -696,7 +615,7 @@ export const generateNoiseProtocolPdf = async (
   doc.setLineWidth(0.45);
   doc.rect(t1X, t1Y, t1W, t1H, 'S');
 
-  // Title
+  // Title: Datos del establecimiento
   setFillColor(doc, COLOR_SLATE_200);
   doc.rect(t1X, t1Y, t1W, 6, 'FD');
   drawCellText(doc, 'Datos del establecimiento', t1X, t1Y, t1W, 6, { align: 'center', fontStyle: 'bold', fontSize: 9 });
@@ -704,116 +623,128 @@ export const generateNoiseProtocolPdf = async (
   let rY = t1Y + 6;
   doc.setLineWidth(0.25);
 
-  // Row: Razón Social
+  // Row (1): Razón Social
   doc.rect(t1X, rY, t1W, 6, 'S');
-  drawCellText(doc, 'Razón Social:', t1X, rY, 30, 6, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, razonSocial, t1X + 30, rY, 150, 6, { fontSize: 8.5 });
+  drawCellText(doc, '(1) Razón Social:', t1X, rY, 34, 6, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, razonSocial, t1X + 34, rY, 146, 6, { fontSize: 8.5 });
   rY += 6;
 
-  // Row: Dirección
+  // Row (2): Dirección
   doc.rect(t1X, rY, t1W, 6, 'S');
-  drawCellText(doc, 'Dirección:', t1X, rY, 30, 6, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, direccion, t1X + 30, rY, 150, 6, { fontSize: 8.5 });
+  drawCellText(doc, '(2) Dirección:', t1X, rY, 34, 6, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, direccion, t1X + 34, rY, 146, 6, { fontSize: 8.5 });
   rY += 6;
 
-  // Row: Localidad
+  // Row (3): Localidad
   doc.rect(t1X, rY, t1W, 6, 'S');
-  drawCellText(doc, 'Localidad:', t1X, rY, 30, 6, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, localidad, t1X + 30, rY, 150, 6, { fontSize: 8.5 });
+  drawCellText(doc, '(3) Localidad:', t1X, rY, 34, 6, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, localidad, t1X + 34, rY, 146, 6, { fontSize: 8.5 });
   rY += 6;
 
-  // Row: Provincia
+  // Row (4): Provincia
   doc.rect(t1X, rY, t1W, 6, 'S');
-  drawCellText(doc, 'Provincia:', t1X, rY, 30, 6, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, provincia, t1X + 30, rY, 150, 6, { fontSize: 8.5 });
+  drawCellText(doc, '(4) Provincia:', t1X, rY, 34, 6, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, provincia, t1X + 34, rY, 146, 6, { fontSize: 8.5 });
   rY += 6;
 
-  // Row: CP / CUIT
+  // Row (5) CP y (6) CUIT
   doc.rect(t1X, rY, 50, 6, 'S');
   doc.rect(t1X + 50, rY, 130, 6, 'S');
-  drawCellText(doc, 'C.P.:', t1X, rY, 12, 6, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, cp, t1X + 12, rY, 38, 6, { fontSize: 8.5 });
-  drawCellText(doc, 'C.U.I.T.:', t1X + 50, rY, 20, 6, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, cuit, t1X + 70, rY, 110, 6, { fontSize: 8.5 });
-  rY += 6;
+  drawCellText(doc, '(5) C.P.:', t1X, rY, 16, 6, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, cp, t1X + 16, rY, 34, 6, { fontSize: 8.5 });
+  drawCellText(doc, '(6) C.U.I.T.:', t1X + 50, rY, 24, 6, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, cuit, t1X + 74, rY, 106, 6, { fontSize: 8.5 });
 
-  // Tabla 2: Datos de la Medición
+  // Tabla 2: Datos para la Medición
   const t2X = 15;
-  const t2Y = t1Y + t1H + 4;
+  const t2Y = t1Y + t1H + 3;
   const t2W = 180;
-  const t2H = 49;
+  const t2H = 125;
 
   doc.setLineWidth(0.45);
   doc.rect(t2X, t2Y, t2W, t2H, 'S');
 
-  // Title
+  // Title: Datos para la medición
   setFillColor(doc, COLOR_SLATE_200);
   doc.rect(t2X, t2Y, t2W, 6, 'FD');
-  drawCellText(doc, 'Datos de la Medición', t2X, t2Y, t2W, 6, { align: 'center', fontStyle: 'bold', fontSize: 9 });
+  drawCellText(doc, 'Datos para la medición', t2X, t2Y, t2W, 6, { align: 'center', fontStyle: 'bold', fontSize: 9 });
 
   rY = t2Y + 6;
   doc.setLineWidth(0.25);
 
-  // Instrumento
-  doc.rect(t2X, rY, t2W, 13, 'S');
-  drawCellText(doc, 'Marca, modelo y número de serie del instrumento utilizado:', t2X, rY, t2W, 5, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, marcaModeloNser, t2X, rY + 5, t2W, 7.5, { fontSize: 8.5 });
-  rY += 13;
+  // (7) Marca, modelo y número de serie del instrumento utilizado
+  doc.rect(t2X, rY, t2W, 12, 'S');
+  drawCellText(doc, '(7) Marca, modelo y número de serie del instrumento utilizado:', t2X, rY, t2W, 5, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, marcaModeloNser, t2X, rY + 5, t2W, 7, { fontSize: 8.5 });
+  rY += 12;
 
-  // Fecha Calibracion
+  // (8) Fecha del certificado de calibración del instrumento utilizado en la medición
   doc.rect(t2X, rY, t2W, 6, 'S');
-  drawCellText(doc, 'Fecha de Calibración del Instrumental utilizado en la medición:', t2X, rY, 105, 6, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, fechaCalib, t2X + 105, rY, 75, 6, { fontSize: 8.5 });
+  drawCellText(doc, '(8) Fecha del certificado de calibración del instrumento utilizado en la medición:', t2X, rY, 130, 6, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, fechaCalib, t2X + 130, rY, 50, 6, { fontSize: 8.5 });
   rY += 6;
 
-  // Fechas y Horas (dividido en 3 columnas con líneas divisorias verticales)
-  doc.rect(t2X, rY, 61, 6, 'S');
-  drawCellText(doc, 'Fecha de la Medición:', t2X, rY, 36, 6, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, fechaMedicion, t2X + 36, rY, 25, 6, { fontSize: 8.5 });
+  // (9) Fecha de la medición | (10) Hora de inicio | (11) Hora finalización
+  doc.rect(t2X, rY, 60, 7, 'S');
+  drawCellText(doc, '(9) Fecha de la medición:', t2X, rY, 36, 7, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, fechaMedicion, t2X + 36, rY, 24, 7, { fontSize: 8.5 });
 
-  doc.rect(t2X + 61, rY, 54, 6, 'S');
-  drawCellText(doc, 'Hora de Inicio:', t2X + 61, rY, 27, 6, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, horaInicio, t2X + 88, rY, 27, 6, { fontSize: 8.5 });
+  doc.rect(t2X + 60, rY, 55, 7, 'S');
+  drawCellText(doc, '(10) Hora de inicio:', t2X + 60, rY, 30, 7, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, horaInicio, t2X + 90, rY, 25, 7, { fontSize: 8.5 });
 
-  doc.rect(t2X + 115, rY, 65, 6, 'S');
-  drawCellText(doc, 'Hora de Finalización:', t2X + 115, rY, 35, 6, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, horaFin, t2X + 150, rY, 30, 6, { fontSize: 8.5 });
-  rY += 6;
+  doc.rect(t2X + 115, rY, 65, 7, 'S');
+  drawCellText(doc, '(11) Hora finalización:', t2X + 115, rY, 35, 7, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, horaFin, t2X + 150, rY, 30, 7, { fontSize: 8.5 });
+  rY += 7;
 
-  // Horarios / Turnos Habituales de Trabajo (reemplaza Condiciones Atmosféricas)
-  doc.rect(t2X, rY, t2W, 18, 'S');
-  drawCellText(doc, 'Horarios/Turnos Habituales de Trabajo:', t2X, rY, t2W, 5, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, condAtmos || 'Lunes a viernes de 8 a 17 hs', t2X, rY + 5, t2W, 12, { fontSize: 8.5, valign: 'top' });
+  // (12) Horarios/turnos habituales de trabajo
+  doc.rect(t2X, rY, t2W, 12, 'S');
+  drawCellText(doc, '(12) Horarios/turnos habituales de trabajo:', t2X, rY, t2W, 5, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, horarios || 'Lunes a viernes de 8:00 a 17:00 hs', t2X, rY + 5, t2W, 7, { fontSize: 8.5, valign: 'top' });
+  rY += 12;
+
+  // (13) Describa las condiciones normales y/o habituales de trabajo.
+  doc.rect(t2X, rY, t2W, 41, 'S');
+  drawCellText(doc, '(13) Describa las condiciones normales y/o habituales de trabajo.', t2X, rY, t2W, 5, { fontStyle: 'bold', fontSize: 8.5 });
+  const condHabitualesText = proto.documentacion_adjunta || 'Al momento de la medición, el establecimiento se encontraba funcionando en condiciones normales de producción.';
+  drawCellText(doc, condHabitualesText, t2X + 2, rY + 5, t2W - 4, 35, { fontSize: 8.5, valign: 'top' });
+  rY += 41;
+
+  // (14) Describa las condiciones de trabajo al momento de la medición.
+  doc.rect(t2X, rY, t2W, 41, 'S');
+  drawCellText(doc, '(14) Describa las condiciones de trabajo al momento de la medición.', t2X, rY, t2W, 5, { fontStyle: 'bold', fontSize: 8.5 });
+  const obsText = proto.observaciones || 'Al momento de la medición, el establecimiento se encontraba funcionando en condiciones normales.';
+  drawCellText(doc, obsText, t2X + 2, rY + 5, t2W - 4, 35, { fontSize: 8.5, valign: 'top' });
 
   // Tabla 3: Documentación que se Adjuntará a la Medición
   const t3X = 15;
   const t3Y = t2Y + t2H + 3;
   const t3W = 180;
-  const t3H = 23;
+  const t3H = 19;
 
   doc.setLineWidth(0.45);
   doc.rect(t3X, t3Y, t3W, t3H, 'S');
   setFillColor(doc, COLOR_SLATE_200);
   doc.rect(t3X, t3Y, t3W, 6, 'FD');
-  drawCellText(doc, 'Documentación que se Adjuntará a la Medición', t3X, t3Y, t3W, 6, { align: 'center', fontStyle: 'bold', fontSize: 9 });
+  drawCellText(doc, 'Documentación que se adjuntara a la medición', t3X, t3Y, t3W, 6, { align: 'center', fontStyle: 'bold', fontSize: 9 });
 
-  const docAdjText = proto.documentacion_adjunta || 'Certificado de Calibración.\nPlano o Croquis del establecimiento.';
-  drawCellText(doc, docAdjText, t3X + 2, t3Y + 7, t3W - 4, t3H - 8, { fontSize: 8.5, valign: 'top' });
+  const hasCert = (adjuntosList || []).some(a => a.tipo === 'Certificado de Calibración' || a.tipo === 'Certificado' || a.tipo === 'Certificado de Calibración del Instrumental');
+  const hasPlano = (adjuntosList || []).some(a => a.tipo === 'Evidencia Fotográfica Plano' || a.tipo === 'Foto Plano' || a.tipo === 'Plano');
 
-  // Tabla 4: Condiciones de trabajo al momento de la medición
-  const t4X = 15;
-  const t4Y = t3Y + t3H + 3;
-  const t4W = 180;
-  const t4H = 22;
+  rY = t3Y + 6;
+  doc.setLineWidth(0.25);
+  doc.rect(t3X, rY, t3W, 6.5, 'S');
+  drawCellText(doc, '(15) Certificado de calibración.', t3X, rY, 130, 6.5, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, hasCert ? '✓ Adjunto' : '—', t3X + 130, rY, 50, 6.5, { fontSize: 8.5, fontStyle: hasCert ? 'bold' : 'normal', color: hasCert ? COLOR_VERDE_CUMPLE : COLOR_SLATE_500 });
+  rY += 6.5;
 
-  doc.setLineWidth(0.45);
-  doc.rect(t4X, t4Y, t4W, t4H, 'S');
-  drawCellText(doc, 'Describa las condiciones de trabajo al momento de la medición:', t4X, t4Y, t4W, 5, { fontStyle: 'bold', fontSize: 8.5 });
-  const obsText = proto.observaciones || 'Al momento de la medición, el establecimiento se encontraba funcionando en condiciones normales.';
-  drawCellText(doc, obsText, t4X + 2, t4Y + 5, t4W - 4, t4H - 6, { fontSize: 8.5, valign: 'top' });
+  doc.rect(t3X, rY, t3W, 6.5, 'S');
+  drawCellText(doc, '(16) Plano o croquis.', t3X, rY, 130, 6.5, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, hasPlano ? '✓ Adjunto' : '—', t3X + 130, rY, 50, 6.5, { fontSize: 8.5, fontStyle: hasPlano ? 'bold' : 'normal', color: hasPlano ? COLOR_VERDE_CUMPLE : COLOR_SLATE_500 });
 
-  // Firma Profesional (Box independiente ampliado alineado a la derecha de la tabla)
-  drawSignatureBlock(110, t4Y + t4H + 5, 85, 38);
+  // Firma Profesional (Alineada abajo a la derecha de la hoja 1)
+  drawSignatureBlock(105, t3Y + t3H + 4, 90, 36);
 
   // ==========================================
   // PAGINAS 4 Y 5: TABLA GENERAL DE MEDICIÓN (A4 Apaisado)
