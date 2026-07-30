@@ -1051,320 +1051,18 @@ export const generateNoiseProtocolPdf = async (
   drawSignatureBlock(185, tAY + totalBoxH + 5, 95, 38);
 
   // ==========================================
-  // PAGINAS 7 A N: FICHAS DE CÁLCULO POR PUNTO DE MUESTREO (A4 Vertical)
+  // PLANOS Y CROQUIS DEL ESTABLECIMIENTO (Tantas páginas como planos adjuntos cargados)
   // ==========================================
-  puntosList.forEach((pt, pIndex) => {
-    doc.addPage('a4', 'portrait');
-    pageCounter++;
-
-    drawHeader(false);
-    drawProtocolTitleBar(false, { x: 16, y: 22, w: 175, h: 5.5 });
-
-    const puntoNum = pt.punto_muestreo || (pIndex + 1);
-    const sectorStr = pt.sector_text || pt.sector || 'SUBSUELO';
-    const puestoStr = pt.puesto_text || pt.puesto || 'COCINA';
-
-    const largoM = parseFloat(pt.largo_m) || 0;
-    const anchoM = parseFloat(pt.ancho_m) || 0;
-    const alturaM = parseFloat(pt.altura_m) || 0;
-    const reqLuxLegal = parseFloat(pt.valor_requerido_legal_lux) || 300;
-
-    let indiceDec = 0;
-    let indiceCorregido = 0;
-    let ptosMinimos = 0;
-    if (largoM > 0 && anchoM > 0 && alturaM > 0) {
-      const rawI = (largoM * anchoM) / (alturaM * (largoM + anchoM));
-      indiceDec = rawI;
-      indiceCorregido = Math.round(rawI);
-      if (rawI < 1) indiceCorregido = 1;
-      const xVal = rawI >= 3 ? 4 : Math.ceil(rawI);
-      ptosMinimos = Math.pow(xVal + 2, 2);
-    }
-
-    const validVals = (pt.mediciones || [])
-      .map(m => parseFloat(m.valor_lux))
-      .filter(val => !isNaN(val));
-
-    const sumLux = validVals.reduce((a, b) => a + b, 0);
-    const countLux = validVals.length;
-    const iluminanciaMedia = countLux > 0 ? (sumLux / countLux) : 0;
-    const menorValorMedido = countLux > 0 ? Math.min(...validVals) : 0;
-    const uniformidadLimit = iluminanciaMedia / 2;
-
-    const cumpleIluminancia = iluminanciaMedia >= reqLuxLegal;
-    const cumpleUniformidad = countLux > 0 ? (menorValorMedido >= uniformidadLimit) : true;
-
-    // Tabla Identificación Punto
-    const ptX = 16;
-    const ptY = 29;
-    const ptW = 175;
-
-    doc.setLineWidth(0.45);
-    setDrawColor(doc, COLOR_NEGRO);
-    doc.rect(ptX, ptY, ptW, 20, 'S');
-
-    doc.rect(ptX, ptY, 75, 8, 'S');
-    setFillColor(doc, COLOR_SLATE_200);
-    doc.rect(ptX, ptY, 75, 8, 'FD');
-    drawCellText(doc, `PUNTO DE MUESTREO ${puntoNum}`, ptX, ptY, 75, 8, { align: 'center', fontStyle: 'bold', fontSize: 9, color: COLOR_NEGRO });
-
-    const sectorPuestoStr = `${sectorStr}  -  ${puestoStr}`;
-    doc.rect(ptX + 75, ptY, 100, 8, 'S');
-    drawCellText(doc, sectorPuestoStr, ptX + 75, ptY, 100, 8, { align: 'center', fontSize: 8.5 });
-
-    // Formula Índice
-    doc.rect(ptX, ptY + 8, 75, 12, 'S');
-    drawCellText(doc, 'Índice', ptX, ptY + 8, 75, 12, { fontSize: 8.5 });
-
-    doc.rect(ptX + 75, ptY + 8, 100, 12, 'S');
-    drawFraction('Largo  x  Ancho', 'Altura  x  ( Largo + Ancho )', ptX + 75, ptY + 8, 100, 12);
-
-    // Tabla Datos Dimensión Local
-    const dX = 16;
-    const dY = 50;
-    const dW = 175;
-
-    doc.rect(dX, dY, dW, 25, 'S');
-    setFillColor(doc, COLOR_SLATE_200);
-    doc.rect(dX, dY, 75, 6, 'FD');
-    doc.rect(dX + 75, dY, 100, 6, 'FD');
-    drawCellText(doc, 'DATOS', dX, dY, 75, 6, { align: 'center', fontStyle: 'bold', fontSize: 8.5, color: COLOR_NEGRO });
-
-    const dimRows = [
-      { label: 'Largo ( en metros )', val: largoM > 0 ? largoM.toFixed(2) : '' },
-      { label: 'Ancho ( en metros)', val: anchoM > 0 ? anchoM.toFixed(2) : '' },
-      { label: 'Altura ( en metros)', val: alturaM > 0 ? alturaM.toFixed(2) : '' }
-    ];
-
-    let dimY = dY + 6;
-    dimRows.forEach(r => {
-      doc.rect(dX, dimY, 75, 6.3, 'S');
-      doc.rect(dX + 75, dimY, 100, 6.3, 'S');
-      drawCellText(doc, r.label, dX, dimY, 75, 6.3, { fontSize: 8.5 });
-      drawCellText(doc, r.val, dX + 75, dimY, 100, 6.3, { align: 'center', fontStyle: 'bold', fontSize: 8.5 });
-      dimY += 6.3;
-    });
-
-    // Bloques Cálculo Índice
-    const bX = 16;
-    let bY = 78;
-
-    // Item 1: Indice Local I (fraccion)
-    doc.rect(bX, bY, 75, 12, 'S');
-    setFillColor(doc, COLOR_SLATE_200); doc.rect(bX, bY, 75, 12, 'FD');
-    drawCellText(doc, 'Índice de Local “ I “', bX, bY, 75, 12, { fontSize: 8.5, color: COLOR_NEGRO });
-
-    doc.rect(bX + 75, bY, 100, 12, 'S');
-    if (largoM > 0 && anchoM > 0 && alturaM > 0) {
-      drawFraction(`${largoM} x ${anchoM}`, `${alturaM} x (${largoM} + ${anchoM})`, bX + 75, bY, 100, 12);
-    }
-    bY += 14;
-
-    // Item 2: Indice Local I (decimal)
-    doc.rect(bX, bY, 75, 6, 'S');
-    setFillColor(doc, COLOR_SLATE_200); doc.rect(bX, bY, 75, 6, 'FD');
-    drawCellText(doc, 'Índice de Local “ I “', bX, bY, 75, 6, { fontSize: 8.5, color: COLOR_NEGRO });
-
-    doc.rect(bX + 75, bY, 100, 6, 'S');
-    drawCellText(doc, indiceDec > 0 ? indiceDec.toFixed(2) : '', bX + 75, bY, 100, 6, { align: 'center', fontStyle: 'bold', fontSize: 8.5 });
-    bY += 8;
-
-    // Item 3: Indice Corregido
-    doc.rect(bX, bY, 75, 6, 'S');
-    setFillColor(doc, COLOR_SLATE_200); doc.rect(bX, bY, 75, 6, 'FD');
-    drawCellText(doc, 'Índice de Local Corregido “ I “', bX, bY, 75, 6, { fontSize: 8.5, color: COLOR_NEGRO });
-
-    doc.rect(bX + 75, bY, 100, 6, 'S');
-    drawCellText(doc, indiceCorregido > 0 ? String(indiceCorregido) : '', bX + 75, bY, 100, 6, { align: 'center', fontStyle: 'bold', fontSize: 8.5 });
-    bY += 8;
-
-    // Item 4: Numero Minimo Puntos Formula
-    doc.rect(bX, bY, 75, 6, 'S');
-    setFillColor(doc, COLOR_SLATE_200); doc.rect(bX, bY, 75, 6, 'FD');
-    drawCellText(doc, 'Número Mínimo de Puntos de Medición', bX, bY, 75, 6, { fontSize: 8.5, color: COLOR_NEGRO });
-
-    doc.rect(bX + 75, bY, 100, 6, 'S');
-    drawCellText(doc, '( I + 2 )²', bX + 75, bY, 100, 6, { align: 'center', fontStyle: 'bold', fontSize: 8.5 });
-    bY += 8;
-
-    // Item 5: Numero Minimo Puntos Resultado
-    doc.rect(bX, bY, 75, 6, 'S');
-    setFillColor(doc, COLOR_SLATE_200); doc.rect(bX, bY, 75, 6, 'FD');
-    drawCellText(doc, 'Número Mínimo de Puntos de Medición', bX, bY, 75, 6, { fontSize: 8.5, color: COLOR_NEGRO });
-
-    doc.rect(bX + 75, bY, 100, 6, 'S');
-    drawCellText(doc, ptosMinimos > 0 ? String(ptosMinimos) : '', bX + 75, bY, 100, 6, { align: 'center', fontStyle: 'bold', fontSize: 8.5 });
-
-    // Bloque Iluminancia Media
-    const iX = 16;
-    let iY = bY + 8;
-
-    doc.rect(iX, iY, 75, 14, 'S');
-    setFillColor(doc, COLOR_SLATE_200); doc.rect(iX, iY, 75, 14, 'FD');
-    drawCellText(doc, 'Iluminancia Media', iX, iY, 75, 14, { fontSize: 8.5, color: COLOR_NEGRO });
-
-    doc.rect(iX + 75, iY, 100, 14, 'S');
-    drawFraction('Σ Valores Puntos de Medición', 'Cantidad Puntos de Medición', iX + 75, iY, 100, 14);
-    iY += 15;
-
-    // Matrix Values Lux
-    const mRows = 5;
-    const mCols = 9;
-    const cellW = 11.1;
-    const cellH = 5.2;
-
-    doc.rect(iX, iY, 75, mRows * cellH, 'S');
-    setFillColor(doc, COLOR_SLATE_200); doc.rect(iX, iY, 75, mRows * cellH, 'FD');
-    drawCellText(doc, 'Iluminancia Media', iX, iY, 75, mRows * cellH, { fontSize: 8.5, color: COLOR_NEGRO });
-
-    let mX = iX + 75;
-    for (let r = 0; r < mRows; r++) {
-      for (let c = 0; c < mCols; c++) {
-        const cellIdx = (r * mCols) + c;
-        const valLux = validVals[cellIdx];
-        const cx = mX + (c * cellW);
-        const cy = iY + (r * cellH);
-
-        if (valLux !== undefined) {
-          setDrawColor(doc, COLOR_NEGRO);
-          doc.rect(cx, cy, cellW, cellH, 'S');
-          drawCellText(doc, String(valLux), cx, cy, cellW, cellH, { align: 'center', fontSize: 7.5 });
-        } else {
-          setFillColor(doc, COLOR_SLATE_50);
-          doc.rect(cx, cy, cellW, cellH, 'FD');
-        }
-      }
-    }
-    iY += (mRows * cellH) + 1;
-
-    // Formula Suma / N
-    doc.rect(iX, iY, 75, 12, 'S');
-    setFillColor(doc, COLOR_SLATE_200); doc.rect(iX, iY, 75, 12, 'FD');
-    drawCellText(doc, 'Iluminancia Media', iX, iY, 75, 12, { fontSize: 8.5, color: COLOR_NEGRO });
-
-    doc.rect(iX + 75, iY, 100, 12, 'S');
-    if (countLux > 0) {
-      drawFraction(String(sumLux), String(countLux), iX + 75, iY, 100, 12);
-    }
-    iY += 13;
-
-    // Iluminancia Media Obtenida
-    doc.rect(iX, iY, 75, 6, 'S');
-    setFillColor(doc, COLOR_SLATE_200); doc.rect(iX, iY, 75, 6, 'FD');
-    drawCellText(doc, 'Iluminancia Media Obtenida', iX, iY, 75, 6, { fontSize: 8.5, color: COLOR_NEGRO });
-
-    doc.rect(iX + 75, iY, 100, 6, 'S');
-    drawCellText(doc, countLux > 0 ? Math.round(iluminanciaMedia) + ' Lux' : '', iX + 75, iY, 100, 6, { align: 'center', fontStyle: 'bold', fontSize: 8.5 });
-    iY += 7;
-
-    // Ilum. Media Mínima S/ Tabla 2
-    doc.rect(iX, iY, 75, 6, 'S');
-    setFillColor(doc, COLOR_SLATE_200); doc.rect(iX, iY, 75, 6, 'FD');
-    drawCellText(doc, 'Ilum. Media Mínima S/ Tabla 2 Anexo IV', iX, iY, 75, 6, { fontSize: 8.5, color: COLOR_NEGRO });
-
-    doc.rect(iX + 75, iY, 100, 6, 'S');
-    drawCellText(doc, reqLuxLegal + ' Lux', iX + 75, iY, 100, 6, { align: 'center', fontStyle: 'bold', fontSize: 8.5 });
-    iY += 7;
-
-    // Verificación Iluminancia
-    doc.rect(iX, iY, 75, 6, 'S');
-    setFillColor(doc, COLOR_SLATE_200); doc.rect(iX, iY, 75, 6, 'FD');
-    drawCellText(doc, 'Verificación', iX, iY, 75, 6, { fontSize: 8.5, color: COLOR_NEGRO });
-
-    const resIlumColor = cumpleIluminancia ? COLOR_VERDE_CUMPLE : COLOR_ROJO_NO_CUMPLE;
-    setFillColor(doc, resIlumColor);
-    doc.rect(iX + 75, iY, 100, 6, 'FD');
-    drawCellText(doc, cumpleIluminancia ? 'Cumple' : 'No cumple', iX + 75, iY, 100, 6, { align: 'center', fontStyle: 'bold', fontSize: 8.5, color: COLOR_BLANCO });
-
-    // Bloque Uniformidad de Iluminancia (Posicionado dinámicamente justo debajo de Verificación)
-    const uX = 16;
-    let uY = iY + 7;
-
-    doc.rect(uX, uY, 75, 12, 'S');
-    setFillColor(doc, COLOR_SLATE_200); doc.rect(uX, uY, 75, 12, 'FD');
-    drawCellText(doc, 'Uniformidad de Iluminancia', uX, uY, 75, 12, { fontSize: 8.5, color: COLOR_NEGRO });
-
-    doc.rect(uX + 75, uY, 100, 12, 'S');
-    drawFraction('Iluminancia Media', '2', uX + 75, uY, 100, 12);
-    uY += 13;
-
-    doc.rect(uX, uY, 75, 12, 'S');
-    setFillColor(doc, COLOR_SLATE_200); doc.rect(uX, uY, 75, 12, 'FD');
-    drawCellText(doc, 'Uniformidad de Iluminancia', uX, uY, 75, 12, { fontSize: 8.5, color: COLOR_NEGRO });
-
-    doc.rect(uX + 75, uY, 100, 12, 'S');
-    if (countLux > 0) {
-      drawFraction(String(Math.round(iluminanciaMedia)), '2', uX + 75, uY, 100, 12);
-    }
-    uY += 13;
-
-    doc.rect(uX, uY, 75, 6, 'S');
-    setFillColor(doc, COLOR_SLATE_200); doc.rect(uX, uY, 75, 6, 'FD');
-    drawCellText(doc, 'Uniformidad de Iluminancia', uX, uY, 75, 6, { fontSize: 8.5, color: COLOR_NEGRO });
-
-    doc.rect(uX + 75, uY, 100, 6, 'S');
-    drawCellText(doc, countLux > 0 ? Math.round(uniformidadLimit) + ' Lux' : '', uX + 75, uY, 100, 6, { align: 'center', fontStyle: 'bold', fontSize: 8.5 });
-    uY += 7;
-
-    doc.rect(uX, uY, 75, 6, 'S');
-    setFillColor(doc, COLOR_SLATE_200); doc.rect(uX, uY, 75, 6, 'FD');
-    drawCellText(doc, 'Verificación de Uniformidad', uX, uY, 75, 6, { fontSize: 8.5, color: COLOR_NEGRO });
-
-    doc.rect(uX + 75, uY, 100, 6, 'S');
-    drawCellText(doc, 'Menor Valor Medido >= Uniformidad', uX + 75, uY, 100, 6, { align: 'center', fontStyle: 'bold', fontSize: 8.5 });
-    uY += 7;
-
-    doc.rect(uX, uY, 75, 6, 'S');
-    setFillColor(doc, COLOR_SLATE_200); doc.rect(uX, uY, 75, 6, 'FD');
-    drawCellText(doc, 'Verificación de Uniformidad', uX, uY, 75, 6, { fontSize: 8.5, color: COLOR_NEGRO });
-
-    doc.rect(uX + 75, uY, 100, 6, 'S');
-    const compStr = countLux > 0 ? `${Math.round(menorValorMedido)} >= ${Math.round(uniformidadLimit)}` : '';
-    drawCellText(doc, compStr, uX + 75, uY, 100, 6, { align: 'center', fontStyle: 'bold', fontSize: 8.5 });
-    uY += 7;
-
-    doc.rect(uX, uY, 75, 6, 'S');
-    setFillColor(doc, COLOR_SLATE_200); doc.rect(uX, uY, 75, 6, 'FD');
-    drawCellText(doc, 'Verificación', uX, uY, 75, 6, { fontSize: 8.5, color: COLOR_NEGRO });
-
-    const resUnifColor = cumpleUniformidad ? COLOR_VERDE_CUMPLE : COLOR_ROJO_NO_CUMPLE;
-    setFillColor(doc, resUnifColor);
-    doc.rect(uX + 75, uY, 100, 6, 'FD');
-    drawCellText(doc, cumpleUniformidad ? 'Cumple' : 'No cumple', uX + 75, uY, 100, 6, { align: 'center', fontStyle: 'bold', fontSize: 8.5, color: COLOR_BLANCO });
-
-    // Firma
-    drawSignatureBlock(110, uY + 4, 70, 32);
-  });
-
-  // ==========================================
-  // PAGINAS N+1 A M: CROQUIS PUNTOS DE MUESTREO (A4 Apaisado)
-  // ==========================================
-  const croquisPagesDef = [
-    { title: "Subsuelo" },
-    { title: "Planta baja" },
-    { title: "Piso 1 a 9" },
-    { title: "Piso 10" },
-    { title: "Piso 11" },
-    { title: "Piso 12" }
-  ];
-
-  // Filter attachments for Plano / Croquis
   const planoAdjuntos = (adjuntosList || []).filter(adj => 
-    adj.tipo !== 'Certificado de Calibración' && adj.tipo !== 'Certificado'
+    adj.tipo === 'Evidencia Fotográfica Plano' ||
+    adj.tipo === 'Foto Plano' ||
+    adj.tipo === 'Plano' ||
+    adj.tipo === 'Croquis' ||
+    (adj.tipo !== 'Certificado de Calibración' && adj.tipo !== 'Certificado' && adj.tipo !== 'Certificado de Calibración del Instrumental')
   );
 
-  let croquisItems = [];
-  if (planoAdjuntos.length > 0) {
-    croquisItems = planoAdjuntos.map((adj, idx) => ({
-      title: adj.descripcion || adj.nombre_archivo || adj.nombre || `Plano ${idx + 1}`,
-      rawAdj: adj
-    }));
-  } else {
-    croquisItems = croquisPagesDef.map(c => ({ title: c.title, rawAdj: null }));
-  }
-
-  for (let cIdx = 0; cIdx < croquisItems.length; cIdx++) {
-    const cItem = croquisItems[cIdx];
+  for (let cIdx = 0; cIdx < planoAdjuntos.length; cIdx++) {
+    const rawAdj = planoAdjuntos[cIdx];
 
     doc.addPage('a4', 'landscape');
     pageCounter++;
@@ -1379,16 +1077,20 @@ export const generateNoiseProtocolPdf = async (
     doc.setLineWidth(0.45);
     setDrawColor(doc, COLOR_NEGRO);
     doc.rect(kX, kY, kW, 6, 'S');
-    drawCellText(doc, 'Puntos de muestreo', kX, kY, kW, 6, { fontStyle: 'bold', fontSize: 9 });
+    setFillColor(doc, COLOR_SLATE_200);
+    doc.rect(kX, kY, kW, 6, 'FD');
+    
+    const planoTitle = rawAdj.descripcion || rawAdj.nombre_archivo || rawAdj.nombre || `PLANO O CROQUIS DE MEDICIÓN (${cIdx + 1} de ${planoAdjuntos.length})`;
+    drawCellText(doc, planoTitle.toUpperCase(), kX, kY, kW, 6, { fontStyle: 'bold', fontSize: 9, align: 'center', color: COLOR_NEGRO });
 
     const mY = 37;
     const mH = 150;
     doc.rect(kX, mY, kW, mH, 'S');
 
     let finalBase64 = '';
-    if (cItem.rawAdj) {
+    if (rawAdj) {
       try {
-        const rawBase64 = await getAdjuntoBase64(cItem.rawAdj);
+        const rawBase64 = await getAdjuntoBase64(rawAdj);
         if (rawBase64) {
           const resized = await resizeImageForPdf(rawBase64, 1200, 1200);
           finalBase64 = resized || rawBase64;
@@ -1421,22 +1123,22 @@ export const generateNoiseProtocolPdf = async (
         setDrawColor(doc, COLOR_SLATE_300);
         doc.setLineWidth(0.3);
         doc.rect(kX + 10, mY + 14, kW - 20, mH - 20, 'S');
-        drawCellText(doc, `[ CROQUIS / PLANO DEL ESTABLECIMIENTO ]`, kX + 10, mY + 14, kW - 20, mH - 20, { align: 'center', fontStyle: 'bold', fontSize: 11, color: COLOR_SLATE_500 });
+        drawCellText(doc, `[ PLANO O CROQUIS DEL ESTABLECIMIENTO ]`, kX + 10, mY + 14, kW - 20, mH - 20, { align: 'center', fontStyle: 'bold', fontSize: 11, color: COLOR_SLATE_500 });
       }
     } else {
       setDrawColor(doc, COLOR_SLATE_300);
       doc.setLineWidth(0.3);
       doc.rect(kX + 10, mY + 14, kW - 20, mH - 20, 'S');
-      drawCellText(doc, `[ CROQUIS / PLANO DEL ESTABLECIMIENTO ]`, kX + 10, mY + 14, kW - 20, mH - 20, { align: 'center', fontStyle: 'bold', fontSize: 11, color: COLOR_SLATE_500 });
+      drawCellText(doc, `[ PLANO O CROQUIS DEL ESTABLECIMIENTO ]`, kX + 10, mY + 14, kW - 20, mH - 20, { align: 'center', fontStyle: 'bold', fontSize: 11, color: COLOR_SLATE_500 });
     }
   }
 
   // ==========================================
   // PAGINAS FINALES: ANEXO CERTIFICADO DE CALIBRACIÓN
   // ==========================================
-  const certAdjunto = (adjuntosList || []).find(adj => 
+  const certAdjunto = (adjuntosList || []).filter(adj => 
     adj.tipo === 'Certificado de Calibración' || adj.tipo === 'Certificado' || adj.tipo === 'Certificado de Calibración del Instrumental'
-  );
+  )[0];
 
   let certPdfArrayBuffer = null;
 
@@ -1556,7 +1258,7 @@ export const generateNoiseProtocolPdf = async (
       doc.save = (filename) => {
         const link = document.createElement('a');
         link.href = URL.createObjectURL(mergedBlob);
-        link.download = filename || 'Protocolo_Iluminacion.pdf';
+        link.download = filename || 'Protocolo_Ruido.pdf';
         link.click();
       };
     } catch (mergeErr) {
