@@ -1560,14 +1560,14 @@ export default function ProtocoloForm({
       }
 
       if (editingId) {
-        payloadProto.updated_by = user.id;
+        payloadProto.updated_by = userId;
         const { error: prErr } = await supabase
           .from('protocolos_iluminacion')
           .update(payloadProto)
           .eq('id', editingId);
         if (prErr) throw prErr;
       } else {
-        payloadProto.created_by = user.id;
+        payloadProto.created_by = userId;
         payloadProto.created_at = new Date().toISOString();
         const { error: prErr } = await supabase
           .from('protocolos_iluminacion')
@@ -1673,7 +1673,7 @@ export default function ProtocoloForm({
             const file = new File([blob], `baked_${Date.now()}_${cleanName.replace(/\s+/g, '_')}`, { type: 'image/jpeg' });
             
             const uuid = editingId || tempId;
-            const filename = `${user.id}/${uuid}/adjuntos/${Date.now()}_baked_${cleanName.replace(/\s+/g, '_')}`;
+            const filename = `${userId}/${uuid}/adjuntos/${Date.now()}_baked_${cleanName.replace(/\s+/g, '_')}`;
             const { error: uploadErr } = await supabase.storage
               .from('protocolos-iluminacion')
               .upload(filename, file, { cacheControl: '3600', upsert: true });
@@ -1720,7 +1720,7 @@ export default function ProtocoloForm({
             public_url: hasMarkers ? dbPreview : (ad.originalPath && ad.originalPath.startsWith('http') ? ad.originalPath : dbPreview),
             original_path: ad.originalPath || ad.path,
             markers: ad.markers || [],
-            created_by: user.id
+            created_by: userId
           };
         });
 

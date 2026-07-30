@@ -1595,14 +1595,14 @@ export default function ProtocoloForm({
       }
 
       if (editingId) {
-        payloadProto.updated_by = user.id;
+        payloadProto.updated_by = userId;
         const { error: prErr } = await supabase
           .from('protocolos_ruido')
           .update(payloadProto)
           .eq('id', editingId);
         if (prErr) throw prErr;
       } else {
-        payloadProto.created_by = user.id;
+        payloadProto.created_by = userId;
         payloadProto.created_at = new Date().toISOString();
         const { error: prErr } = await supabase
           .from('protocolos_ruido')
@@ -1701,7 +1701,7 @@ export default function ProtocoloForm({
             const file = new File([blob], `baked_${Date.now()}_${cleanName.replace(/\s+/g, '_')}`, { type: 'image/jpeg' });
             
             const uuid = editingId || tempId;
-            const filename = `${user.id}/${uuid}/adjuntos/${Date.now()}_baked_${cleanName.replace(/\s+/g, '_')}`;
+            const filename = `${userId}/${uuid}/adjuntos/${Date.now()}_baked_${cleanName.replace(/\s+/g, '_')}`;
             const { error: uploadErr } = await supabase.storage
               .from('protocolos-ruido')
               .upload(filename, file, { cacheControl: '3600', upsert: true });
@@ -1748,7 +1748,7 @@ export default function ProtocoloForm({
             public_url: hasMarkers ? dbPreview : (ad.originalPath && ad.originalPath.startsWith('http') ? ad.originalPath : dbPreview),
             original_path: ad.originalPath || ad.path,
             markers: ad.markers || [],
-            created_by: user.id
+            created_by: userId
           };
         });
 
@@ -2678,6 +2678,33 @@ export default function ProtocoloForm({
                 </div>
               );
             })}
+          </div>
+        </AppCard>
+
+        {/* CARD INFORMACIÓN ADICIONAL */}
+        <AppCard className="p-5 md:p-6 space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2">
+              <Info className="h-5 w-5 text-[#468DFF]" />
+              <h2 className="font-outfit text-base font-extrabold text-slate-800">Información adicional</h2>
+            </div>
+            <AITextHelper
+              disabled={!canEdit}
+              value={informacionAdicional}
+              onChange={setInformacionAdicional}
+              context="Información adicional referente a las mediciones del protocolo de ruido"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <AppTextarea
+              id="informacionAdicional"
+              disabled={!canEdit}
+              rows={4}
+              value={informacionAdicional}
+              onChange={(e) => setInformacionAdicional(e.target.value)}
+              placeholder="Ingrese cualquier información adicional relevante respecto a las mediciones de ruido..."
+            />
           </div>
         </AppCard>
 

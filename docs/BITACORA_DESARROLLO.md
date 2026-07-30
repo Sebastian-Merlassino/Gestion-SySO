@@ -7,6 +7,10 @@
   - Se actualizaron los valores por defecto tanto en el formulario (`ProtocoloForm.js`) como en la generación del PDF (`pdfGenerator.js`) para el Protocolo de Ruido según las especificaciones normativas requeridas por el usuario:
   - **Conclusiones:** `"Los valores obtenidos en todos los puntos de muestreo, Cumplen con lo establecido en el ANEXO V - CAPITULO 13 (Acústica), del Decreto Nº 351/79."`
   - **Recomendaciones Preventivas:** `"Cuando los niveles de exposición al ruido superen o se encuentren próximos a los valores establecidos en el Anexo V de la Resolución MTEySS N.º 295/03, se recomienda:"` seguido de los 6 ítems normalizados de controles de ingeniería, sustitución de equipos, señalización/uso obligatorio de EPP auditivo, provención de protectores adecuados, capacitación del personal y control de tiempos de exposición por rotación.
+- **Contenedor "Información adicional" Debajo de Puntos de Muestreo (Protocolo de Ruido):**
+  - Se reubicó la tarjeta `<AppCard>` de **Información adicional** para ser presentada inmediatamente debajo del contenedor de **Puntos de Muestreo** en `ProtocoloForm.js`.
+  - Integra área de texto expandible `<AppTextarea>` y el componente de dictado por voz y refinamiento por IA `<AITextHelper />` (`SySO-AI-Voice-Helper`).
+  - Su contenido se imprime dinámicamente en el recuadro `Información adicional:` ubicado al pie de la tabla de datos en la Hoja 3 del reporte PDF (`pdfGenerator.js`).
 - **Resolución Resiliente de Usuario Autenticado (`handleUploadFile` & `executeSave`):**
   - Se implementó un flujo de resolución en cascada (`profile?.id` $\rightarrow$ `supabase.auth.getUser()` $\rightarrow$ `supabase.auth.getSession()`) con bloques `try/catch` defensivos en las funciones de subida de archivos y guardado en la base de datos tanto de Ruido como de Iluminación.
   - Se corrigió el `ReferenceError: user is not defined` en `executeSave` mapeando la propiedad al identificador desinfectado `user_id: userId || 'mock-user-id'`.

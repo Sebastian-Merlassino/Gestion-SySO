@@ -939,7 +939,7 @@ export const generateNoiseProtocolPdf = async (
     doc.setLineWidth(0.25);
 
     drawCellText(doc, 'Información adicional:', gX, infoY, gW, 5, { fontStyle: 'bold', fontSize: 8, color: COLOR_NEGRO });
-    const addInfoText = proto.informacion_adicional || proto.conclusiones || proto.observaciones || 'Sin información adicional registrada.';
+    const addInfoText = proto.informacion_adicional || 'Sin información adicional registrada.';
     drawCellText(doc, addInfoText, gX + 2, infoY + 5, gW - 4, 14, { fontSize: 8, valign: 'top', color: COLOR_NEGRO });
 
     // Firma Profesional (Esquina inferior derecha)
