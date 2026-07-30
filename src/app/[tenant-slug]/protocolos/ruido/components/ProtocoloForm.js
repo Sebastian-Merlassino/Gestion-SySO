@@ -115,6 +115,7 @@ export default function ProtocoloForm({
   const [condicionesAtmosfericas, setCondicionesAtmosfericas] = useState('Lunes a viernes de 8 a 17 hs');
   const [documentacionAdjunta, setDocumentacionAdjunta] = useState('Certificado de Calibración.\nPlano o Croquis del establecimiento.');
   const [observacionesGenerales, setObservacionesGenerales] = useState('Al momento de la medición, el establecimiento se encontraba funcionando en condiciones normales.');
+  const [informacionAdicional, setInformacionAdicional] = useState('');
 
   // Análisis
   const [conclusiones, setConclusiones] = useState('Los valores obtenidos en los puntos de muestreo, Cumplen con los valores de iluminación mínimos establecidos en el ANEXO V (Ruido y Vibraciones) del Decreto Nº 351/79 y Res. SRT 85/12.');
@@ -669,6 +670,7 @@ export default function ProtocoloForm({
       setCondicionesAtmosfericas(proto.condiciones_atmosfericas || '');
       setDocumentacionAdjunta(proto.documentacion_adjunta || '');
       setObservacionesGenerales(proto.observaciones || '');
+      setInformacionAdicional(proto.informacion_adicional || '');
       setConclusiones(proto.conclusiones || '');
       setRecomendaciones(proto.recomendaciones || '');
       setEstado(proto.estado || 'borrador');
@@ -1526,6 +1528,7 @@ export default function ProtocoloForm({
         condiciones_atmosfericas: condicionesAtmosfericas,
         documentacion_adjunta: documentacionAdjunta,
         observaciones: observacionesGenerales || null,
+        informacion_adicional: informacionAdicional || null,
         conclusiones: conclusiones || null,
         recomendaciones: recomendaciones || null,
         resultado_general: resultadoGeneralVal,
@@ -2045,6 +2048,33 @@ export default function ProtocoloForm({
               value={documentacionAdjunta}
               onChange={(e) => setDocumentacionAdjunta(e.target.value)}
               placeholder="Certificado de Calibración.&#10;Plano o Croquis del establecimiento."
+            />
+          </div>
+        </AppCard>
+
+        {/* CARD INFORMACIÓN ADICIONAL */}
+        <AppCard className="p-5 md:p-6 space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2">
+              <Info className="h-5 w-5 text-[#468DFF]" />
+              <h2 className="font-outfit text-base font-extrabold text-slate-800">Información adicional</h2>
+            </div>
+            <AITextHelper
+              disabled={!canEdit}
+              value={informacionAdicional}
+              onChange={setInformacionAdicional}
+              context="Información adicional y aclaraciones complementarias respecto a la medición de ruido"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 col-span-full">
+            <AppTextarea
+              id="informacionAdicional"
+              disabled={!canEdit}
+              rows={3}
+              value={informacionAdicional}
+              onChange={(e) => setInformacionAdicional(e.target.value)}
+              placeholder="Ingrese cualquier información adicional relevante respecto a la medición de ruido..."
             />
           </div>
         </AppCard>
