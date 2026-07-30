@@ -1,7 +1,7 @@
 import { PDFDocument, PDFName } from 'pdf-lib';
 import { formatDate } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
-import { getLimiteDbaForTe } from './tablasAnexoV';
+import { getLimiteDbaForTe, getPuntoCalculos } from './tablasAnexoV';
 
 // Helper to convert hex color string to RGB array [r, g, b]
 const hexToRgb = (hex) => {

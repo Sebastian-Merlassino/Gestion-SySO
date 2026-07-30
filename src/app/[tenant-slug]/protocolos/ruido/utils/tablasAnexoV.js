@@ -169,3 +169,55 @@ export function getLimiteDbaForTe(teHs) {
   const limiteCalculado = 85 + (3 * Math.log2(8 / te));
   return Math.round(limiteCalculado * 10) / 10;
 }
+
+/**
+ * Función central de evaluación técnica y cumplimiento normativo para un punto de muestreo de ruido.
+ */
+export function getPuntoCalculos(p) {
+  if (!p) return { resultado_punto: 'Pendiente', valorMedidoText: '-', limiteLegalText: '-' };
+  let resultado = 'Pendiente';
+  let valorMedidoText = '-';
+  let limiteLegalText = '-';
+
+  if (p.caracteristicas_ruido === 'impulso_impacto') {
+    const valPico = parseFloat(p.nivel_pico_lc_pico_dbc);
+    limiteLegalText = '140 dBC (Techo)';
+    if (!isNaN(valPico)) {
+      valorMedidoText = `${valPico} dBC`;
+      resultado = valPico <= 140 ? 'Cumple' : 'No cumple';
+    }
+  } else {
+    // continuo_intermitente
+    if (p.tipo_carga_continuo === 'laeq') {
+      const valLaeq = parseFloat(p.nivel_laeq_te_dba);
+      const teHs = parseFloat(p.tiempo_exposicion_hs);
+      const limiteDba = getLimiteDbaForTe(teHs);
+      const labelTe = (!isNaN(teHs) && teHs > 0) ? `${teHs} hs` : '8 hs';
+      limiteLegalText = `${limiteDba} dBA (${labelTe})`;
+      if (!isNaN(valLaeq)) {
+        valorMedidoText = `${valLaeq} dBA`;
+        resultado = valLaeq <= limiteDba ? 'Cumple' : 'No cumple';
+      }
+    } else if (p.tipo_carga_continuo === 'suma_fracciones') {
+      const valSuma = parseFloat(p.resultado_suma_fracciones);
+      limiteLegalText = '1.00';
+      if (!isNaN(valSuma)) {
+        valorMedidoText = `${valSuma}`;
+        resultado = valSuma <= 1.0 ? 'Cumple' : 'No cumple';
+      }
+    } else if (p.tipo_carga_continuo === 'dosis') {
+      const valDosis = parseFloat(p.dosis_porcentaje);
+      limiteLegalText = '100 %';
+      if (!isNaN(valDosis)) {
+        valorMedidoText = `${valDosis} %`;
+        resultado = valDosis <= 100 ? 'Cumple' : 'No cumple';
+      }
+    }
+  }
+
+  return {
+    resultado_punto: resultado,
+    valorMedidoText,
+    limiteLegalText
+  };
+}

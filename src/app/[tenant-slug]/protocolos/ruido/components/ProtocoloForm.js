@@ -43,7 +43,7 @@ import {
 } from 'lucide-react';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import { TABLA_2_ILUMINACION } from '../utils/tablasAnexoIV';
-import { getLimiteDbaForTe } from '../utils/tablasAnexoV';
+import { getLimiteDbaForTe, getPuntoCalculos } from '../utils/tablasAnexoV';
 import Tabla1Modal from './Tabla1Modal';
 import Tabla1RuidoModal from './Tabla1RuidoModal';
 import MetodoCuadriculaModal from './MetodoCuadriculaModal';
