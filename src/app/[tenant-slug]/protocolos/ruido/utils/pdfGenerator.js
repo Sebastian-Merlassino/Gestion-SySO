@@ -403,7 +403,7 @@ export const generateNoiseProtocolPdf = async (
     doc.setFontSize(9.5);
     setTextColor(doc, COLOR_BLANCO);
     const textY = pos.y + (pos.h / 2) + 1.1;
-    doc.text('PROTOCOLO PARA MEDICIÓN DE ILUMINACIÓN EN EL AMBIENTE LABORAL', pos.x + (pos.w / 2), textY, { align: 'center' });
+    doc.text('PROTOCOLO PARA MEDICIÓN DE RUIDO EN EL AMBIENTE LABORAL', pos.x + (pos.w / 2), textY, { align: 'center' });
   };
 
   // Helper: Signature Block
@@ -623,37 +623,37 @@ export const generateNoiseProtocolPdf = async (
   let rY = t1Y + 6;
   doc.setLineWidth(0.25);
 
-  // Row (1): Razón Social
+  // Row: Razón Social
   doc.rect(t1X, rY, t1W, 6, 'S');
-  drawCellText(doc, '(1) Razón Social:', t1X, rY, 34, 6, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, razonSocial, t1X + 34, rY, 146, 6, { fontSize: 8.5 });
+  drawCellText(doc, 'Razón Social:', t1X, rY, 30, 6, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, razonSocial, t1X + 30, rY, 150, 6, { fontSize: 8.5 });
   rY += 6;
 
-  // Row (2): Dirección
+  // Row: Dirección
   doc.rect(t1X, rY, t1W, 6, 'S');
-  drawCellText(doc, '(2) Dirección:', t1X, rY, 34, 6, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, direccion, t1X + 34, rY, 146, 6, { fontSize: 8.5 });
+  drawCellText(doc, 'Dirección:', t1X, rY, 30, 6, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, direccion, t1X + 30, rY, 150, 6, { fontSize: 8.5 });
   rY += 6;
 
-  // Row (3): Localidad
+  // Row: Localidad
   doc.rect(t1X, rY, t1W, 6, 'S');
-  drawCellText(doc, '(3) Localidad:', t1X, rY, 34, 6, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, localidad, t1X + 34, rY, 146, 6, { fontSize: 8.5 });
+  drawCellText(doc, 'Localidad:', t1X, rY, 30, 6, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, localidad, t1X + 30, rY, 150, 6, { fontSize: 8.5 });
   rY += 6;
 
-  // Row (4): Provincia
+  // Row: Provincia
   doc.rect(t1X, rY, t1W, 6, 'S');
-  drawCellText(doc, '(4) Provincia:', t1X, rY, 34, 6, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, provincia, t1X + 34, rY, 146, 6, { fontSize: 8.5 });
+  drawCellText(doc, 'Provincia:', t1X, rY, 30, 6, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, provincia, t1X + 30, rY, 150, 6, { fontSize: 8.5 });
   rY += 6;
 
-  // Row (5) CP y (6) CUIT
+  // Row: CP y CUIT
   doc.rect(t1X, rY, 50, 6, 'S');
   doc.rect(t1X + 50, rY, 130, 6, 'S');
-  drawCellText(doc, '(5) C.P.:', t1X, rY, 16, 6, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, cp, t1X + 16, rY, 34, 6, { fontSize: 8.5 });
-  drawCellText(doc, '(6) C.U.I.T.:', t1X + 50, rY, 24, 6, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, cuit, t1X + 74, rY, 106, 6, { fontSize: 8.5 });
+  drawCellText(doc, 'C.P.:', t1X, rY, 14, 6, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, cp, t1X + 14, rY, 36, 6, { fontSize: 8.5 });
+  drawCellText(doc, 'C.U.I.T.:', t1X + 50, rY, 20, 6, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, cuit, t1X + 70, rY, 110, 6, { fontSize: 8.5 });
 
   // Tabla 2: Datos para la Medición
   const t2X = 15;
@@ -672,52 +672,52 @@ export const generateNoiseProtocolPdf = async (
   rY = t2Y + 6;
   doc.setLineWidth(0.25);
 
-  // (7) Marca, modelo y número de serie del instrumento utilizado
+  // Marca, modelo y número de serie del instrumento utilizado
   doc.rect(t2X, rY, t2W, 12, 'S');
-  drawCellText(doc, '(7) Marca, modelo y número de serie del instrumento utilizado:', t2X, rY, t2W, 5, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, 'Marca, modelo y número de serie del instrumento utilizado:', t2X, rY, t2W, 5, { fontStyle: 'bold', fontSize: 8.5 });
   drawCellText(doc, marcaModeloNser, t2X, rY + 5, t2W, 7, { fontSize: 8.5 });
   rY += 12;
 
-  // (8) Fecha del certificado de calibración del instrumento utilizado en la medición
+  // Fecha del certificado de calibración del instrumento utilizado en la medición
   doc.rect(t2X, rY, t2W, 6, 'S');
-  drawCellText(doc, '(8) Fecha del certificado de calibración del instrumento utilizado en la medición:', t2X, rY, 130, 6, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, 'Fecha del certificado de calibración del instrumento utilizado en la medición:', t2X, rY, 130, 6, { fontStyle: 'bold', fontSize: 8.5 });
   drawCellText(doc, fechaCalib, t2X + 130, rY, 50, 6, { fontSize: 8.5 });
   rY += 6;
 
-  // (9) Fecha de la medición | (10) Hora de inicio | (11) Hora finalización
+  // Fecha de la medición | Hora de inicio | Hora finalización
   doc.rect(t2X, rY, 60, 7, 'S');
-  drawCellText(doc, '(9) Fecha de la medición:', t2X, rY, 36, 7, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, fechaMedicion, t2X + 36, rY, 24, 7, { fontSize: 8.5 });
+  drawCellText(doc, 'Fecha de la medición:', t2X, rY, 34, 7, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, fechaMedicion, t2X + 34, rY, 26, 7, { fontSize: 8.5 });
 
   doc.rect(t2X + 60, rY, 55, 7, 'S');
-  drawCellText(doc, '(10) Hora de inicio:', t2X + 60, rY, 30, 7, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, horaInicio, t2X + 90, rY, 25, 7, { fontSize: 8.5 });
+  drawCellText(doc, 'Hora de inicio:', t2X + 60, rY, 28, 7, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, horaInicio, t2X + 88, rY, 27, 7, { fontSize: 8.5 });
 
   doc.rect(t2X + 115, rY, 65, 7, 'S');
-  drawCellText(doc, '(11) Hora finalización:', t2X + 115, rY, 35, 7, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, horaFin, t2X + 150, rY, 30, 7, { fontSize: 8.5 });
+  drawCellText(doc, 'Hora finalización:', t2X + 115, rY, 32, 7, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, horaFin, t2X + 147, rY, 33, 7, { fontSize: 8.5 });
   rY += 7;
 
-  // (12) Horarios/turnos habituales de trabajo
+  // Horarios/turnos habituales de trabajo
   doc.rect(t2X, rY, t2W, 12, 'S');
-  drawCellText(doc, '(12) Horarios/turnos habituales de trabajo:', t2X, rY, t2W, 5, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, 'Horarios/turnos habituales de trabajo:', t2X, rY, t2W, 5, { fontStyle: 'bold', fontSize: 8.5 });
   drawCellText(doc, horarios || 'Lunes a viernes de 8:00 a 17:00 hs', t2X, rY + 5, t2W, 7, { fontSize: 8.5, valign: 'top' });
   rY += 12;
 
-  // (13) Describa las condiciones normales y/o habituales de trabajo.
+  // Describa las condiciones normales y/o habituales de trabajo.
   doc.rect(t2X, rY, t2W, 41, 'S');
-  drawCellText(doc, '(13) Describa las condiciones normales y/o habituales de trabajo.', t2X, rY, t2W, 5, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, 'Describa las condiciones normales y/o habituales de trabajo.', t2X, rY, t2W, 5, { fontStyle: 'bold', fontSize: 8.5 });
   const condHabitualesText = proto.documentacion_adjunta || 'Al momento de la medición, el establecimiento se encontraba funcionando en condiciones normales de producción.';
   drawCellText(doc, condHabitualesText, t2X + 2, rY + 5, t2W - 4, 35, { fontSize: 8.5, valign: 'top' });
   rY += 41;
 
-  // (14) Describa las condiciones de trabajo al momento de la medición.
+  // Describa las condiciones de trabajo al momento de la medición.
   doc.rect(t2X, rY, t2W, 41, 'S');
-  drawCellText(doc, '(14) Describa las condiciones de trabajo al momento de la medición.', t2X, rY, t2W, 5, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, 'Describa las condiciones de trabajo al momento de la medición.', t2X, rY, t2W, 5, { fontStyle: 'bold', fontSize: 8.5 });
   const obsText = proto.observaciones || 'Al momento de la medición, el establecimiento se encontraba funcionando en condiciones normales.';
   drawCellText(doc, obsText, t2X + 2, rY + 5, t2W - 4, 35, { fontSize: 8.5, valign: 'top' });
 
-  // Tabla 3: Documentación que se Adjuntará a la Medición
+  // Tabla 3: Documentación que se Adjuntará a la Medición (Cuadro único sin división horizontal en el medio)
   const t3X = 15;
   const t3Y = t2Y + t2H + 3;
   const t3W = 180;
@@ -727,21 +727,17 @@ export const generateNoiseProtocolPdf = async (
   doc.rect(t3X, t3Y, t3W, t3H, 'S');
   setFillColor(doc, COLOR_SLATE_200);
   doc.rect(t3X, t3Y, t3W, 6, 'FD');
-  drawCellText(doc, 'Documentación que se adjuntara a la medición', t3X, t3Y, t3W, 6, { align: 'center', fontStyle: 'bold', fontSize: 9 });
+  drawCellText(doc, 'Documentación que se adjuntará a la medición', t3X, t3Y, t3W, 6, { align: 'center', fontStyle: 'bold', fontSize: 9 });
 
   const hasCert = (adjuntosList || []).some(a => a.tipo === 'Certificado de Calibración' || a.tipo === 'Certificado' || a.tipo === 'Certificado de Calibración del Instrumental');
   const hasPlano = (adjuntosList || []).some(a => a.tipo === 'Evidencia Fotográfica Plano' || a.tipo === 'Foto Plano' || a.tipo === 'Plano');
 
   rY = t3Y + 6;
-  doc.setLineWidth(0.25);
-  doc.rect(t3X, rY, t3W, 6.5, 'S');
-  drawCellText(doc, '(15) Certificado de calibración.', t3X, rY, 130, 6.5, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, hasCert ? '✓ Adjunto' : '—', t3X + 130, rY, 50, 6.5, { fontSize: 8.5, fontStyle: hasCert ? 'bold' : 'normal', color: hasCert ? COLOR_VERDE_CUMPLE : COLOR_SLATE_500 });
-  rY += 6.5;
+  drawCellText(doc, 'Certificado de calibración.', t3X + 3, rY + 0.5, 120, 6, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, hasCert ? '✓ Adjunto' : '—', t3X + 130, rY + 0.5, 47, 6, { fontSize: 8.5, fontStyle: hasCert ? 'bold' : 'normal', color: hasCert ? COLOR_VERDE_CUMPLE : COLOR_SLATE_500, align: 'right' });
 
-  doc.rect(t3X, rY, t3W, 6.5, 'S');
-  drawCellText(doc, '(16) Plano o croquis.', t3X, rY, 130, 6.5, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, hasPlano ? '✓ Adjunto' : '—', t3X + 130, rY, 50, 6.5, { fontSize: 8.5, fontStyle: hasPlano ? 'bold' : 'normal', color: hasPlano ? COLOR_VERDE_CUMPLE : COLOR_SLATE_500 });
+  drawCellText(doc, 'Plano o croquis.', t3X + 3, rY + 6.5, 120, 6, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, hasPlano ? '✓ Adjunto' : '—', t3X + 130, rY + 6.5, 47, 6, { fontSize: 8.5, fontStyle: hasPlano ? 'bold' : 'normal', color: hasPlano ? COLOR_VERDE_CUMPLE : COLOR_SLATE_500, align: 'right' });
 
   // Firma Profesional (Alineada abajo a la derecha de la hoja 1)
   drawSignatureBlock(105, t3Y + t3H + 4, 90, 36);
