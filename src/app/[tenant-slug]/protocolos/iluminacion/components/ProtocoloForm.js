@@ -61,6 +61,11 @@ export const ACTIVIDADES_ILUMINACION = [
   { categoria: 'Educación', subcategoria: 'Aulas', tarea: 'Clases generales, laboratorios, bibliotecas', lux: 300 }
 ];
 
+const isValidUuid = (val) => {
+  if (!val || typeof val !== 'string') return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val);
+};
+
 export default function ProtocoloForm({
   tenantSlug,
   profile,
@@ -111,8 +116,9 @@ export default function ProtocoloForm({
   const [horaInicio, setHoraInicio] = useState('');
   const [horaFinalizacion, setHoraFinalizacion] = useState('');
   const [condicionesAtmosfericas, setCondicionesAtmosfericas] = useState('Medición realizada en condiciones diurnas normales, cielo despejado, iluminación artificial encendida.');
-  const [documentacionAdjunta, setDocumentacionAdjunta] = useState('Certificado de Calibración. Plano o Croquis del establecimiento.');
+  const [documentacionAdjunta, setDocumentacionAdjunta] = useState('Certificado de Calibración.\nPlano o Croquis del establecimiento.');
   const [observacionesGenerales, setObservacionesGenerales] = useState('');
+  const [observacionesPuntos, setObservacionesPuntos] = useState('');
 
   // Análisis
   const [conclusiones, setConclusiones] = useState('Los valores obtenidos en los puntos de muestreo, Cumplen con los valores de iluminación mínimos establecidos en el ANEXO IV - CAPITULO 12 (Iluminación y Color), del Decreto Nº 351/79.');
@@ -692,6 +698,7 @@ export default function ProtocoloForm({
       setCondicionesAtmosfericas(proto.condiciones_atmosfericas || '');
       setDocumentacionAdjunta(proto.documentacion_adjunta || '');
       setObservacionesGenerales(proto.observaciones || '');
+      setObservacionesPuntos(proto.observaciones_mediciones || proto.observaciones_puntos || '');
       setConclusiones(proto.conclusiones || '');
       setRecomendaciones(proto.recomendaciones || '');
       setEstado(proto.estado || 'borrador');
@@ -974,6 +981,32 @@ export default function ProtocoloForm({
     setPuntos(puntos.map(p => p.id === id ? { ...p, isCollapsed: !p.isCollapsed } : p));
   };
 
+  // Helper to auto-recalculate measurement array according to geometry
+  const recalculatePuntoMediciones = (p) => {
+    const largo = parseFloat(p.largo_m);
+    const ancho = parseFloat(p.ancho_m);
+    const altura = parseFloat(p.altura_m);
+
+    if (largo > 0 && ancho > 0 && altura > 0) {
+      const indice_local = (largo * ancho) / (altura * (largo + ancho));
+      const indice_local_corregido = indice_local >= 3 ? 4 : Math.ceil(indice_local);
+      const numero_minimo_puntos_medicion = Math.pow(indice_local_corregido + 2, 2);
+
+      let currentMediciones = [...(p.mediciones || [])];
+      if (currentMediciones.length < numero_minimo_puntos_medicion) {
+        const needed = numero_minimo_puntos_medicion - currentMediciones.length;
+        for (let i = 0; i < needed; i++) {
+          currentMediciones.push({
+            id: 'm-' + Date.now() + '-' + i + '-' + Math.random().toString(36).substr(2, 4),
+            valor_lux: ''
+          });
+        }
+        return { ...p, mediciones: currentMediciones };
+      }
+    }
+    return p;
+  };
+
   // Sector selection within point
   const handlePuntoSectorChange = (puntoId, sectorVal) => {
     setPuntos(puntos.map(p => {
@@ -982,7 +1015,7 @@ export default function ProtocoloForm({
           return { ...p, sector_id: '', sector_text: '', largo_m: '', ancho_m: '', altura_m: '', puesto_id: '', puesto_text: '' };
         } else {
           const sec = estSectoresLocal.find(s => s.id === sectorVal);
-          return {
+          const updatedPunto = {
             ...p,
             sector_id: sectorVal,
             sector_text: sec ? sec.denominacion : '',
@@ -992,6 +1025,7 @@ export default function ProtocoloForm({
             puesto_id: '',
             puesto_text: ''
           };
+          return recalculatePuntoMediciones(updatedPunto);
         }
       }
       return p;
@@ -1039,30 +1073,7 @@ export default function ProtocoloForm({
     setPuntos(puntos.map(p => {
       if (p.id !== puntoId) return p;
       const updatedPunto = { ...p, [field]: val };
-
-      const largo = parseFloat(field === 'largo_m' ? val : updatedPunto.largo_m);
-      const ancho = parseFloat(field === 'ancho_m' ? val : updatedPunto.ancho_m);
-      const altura = parseFloat(field === 'altura_m' ? val : updatedPunto.altura_m);
-
-      if (largo > 0 && ancho > 0 && altura > 0) {
-        const indice_local = (largo * ancho) / (altura * (largo + ancho));
-        const indice_local_corregido = indice_local >= 3 ? 4 : Math.ceil(indice_local);
-        const numero_minimo_puntos_medicion = Math.pow(indice_local_corregido + 2, 2);
-
-        let currentMediciones = [...updatedPunto.mediciones];
-        if (currentMediciones.length < numero_minimo_puntos_medicion) {
-          const needed = numero_minimo_puntos_medicion - currentMediciones.length;
-          for (let i = 0; i < needed; i++) {
-            currentMediciones.push({
-              id: 'm-' + Date.now() + '-' + i + '-' + Math.random().toString(36).substr(2, 4),
-              valor_lux: ''
-            });
-          }
-          updatedPunto.mediciones = currentMediciones;
-        }
-      }
-
-      return updatedPunto;
+      return recalculatePuntoMediciones(updatedPunto);
     }));
   };
 
@@ -1112,12 +1123,29 @@ export default function ProtocoloForm({
   // Upload attachment file
   const handleUploadFile = async (file, type) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuario no autenticado.');
+      let userId = profile?.id;
+      if (!userId) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          userId = user?.id;
+        } catch (e) {
+          console.warn('Network error fetching user:', e);
+        }
+      }
+      if (!userId) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          userId = session?.user?.id;
+        } catch (e) {
+          console.warn('Network error fetching session:', e);
+        }
+      }
+      if (!userId && !isDevMode) throw new Error('Usuario no autenticado.');
+      if (!userId && isDevMode) userId = 'dev-user';
 
       const fileExt = file.name.split('.').pop();
       const uuid = editingId || crypto.randomUUID();
-      const filename = `${user.id}/${uuid}/adjuntos/${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
+      const filename = `${userId}/${uuid}/adjuntos/${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
 
       // Upload to private bucket
       const { error } = await supabase.storage
@@ -1424,8 +1452,24 @@ export default function ProtocoloForm({
   const executeSave = async (sectorsToSave) => {
     setSaveLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user && !isDevMode) throw new Error('No autorizado');
+      let userId = profile?.id;
+      if (!userId) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          userId = user?.id;
+        } catch (e) {
+          console.warn('Network error fetching user in save:', e);
+        }
+      }
+      if (!userId) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          userId = session?.user?.id;
+        } catch (e) {
+          console.warn('Network error fetching session in save:', e);
+        }
+      }
+      if (!userId && !isDevMode) throw new Error('No autorizado');
 
       // 1. Si se actualizaron sectores, localidad, cp o horarios en el perfil del establecimiento, guardarlos en BD
       if (!isDevMode && establecimientoId) {
@@ -1472,8 +1516,8 @@ export default function ProtocoloForm({
         tenant_id: tenant.id,
         user_id: user?.id || 'mock-user-id',
         organization_id: tenant.id,
-        razon_social_id: empresaId || null,
-        establecimiento_id: establecimientoId || null,
+        razon_social_id: isValidUuid(empresaId) ? empresaId : null,
+        establecimiento_id: isValidUuid(establecimientoId) ? establecimientoId : null,
         razon_social_text: razonSocialText,
         cuit_text: cuitText,
         establecimiento_text: establecimientoText,
@@ -1491,6 +1535,7 @@ export default function ProtocoloForm({
         condiciones_atmosfericas: condicionesAtmosfericas,
         documentacion_adjunta: documentacionAdjunta,
         observaciones: observacionesGenerales || null,
+        observaciones_mediciones: observacionesPuntos || null,
         conclusiones: conclusiones || null,
         recomendaciones: recomendaciones || null,
         resultado_general: resultadoGeneralVal,
@@ -1545,12 +1590,12 @@ export default function ProtocoloForm({
           protocolo_id: tempId,
           orden: idx + 1,
           punto_muestreo: p.punto_muestreo,
-          sector_id: p.sector_id || null,
+          sector_id: isValidUuid(p.sector_id) ? p.sector_id : null,
           sector_text: p.sector_text || null,
           largo_m: parseFloat(p.largo_m) || null,
           ancho_m: parseFloat(p.ancho_m) || null,
           altura_m: parseFloat(p.altura_m) || null,
-          puesto_id: p.puesto_id || null,
+          puesto_id: isValidUuid(p.puesto_id) ? p.puesto_id : null,
           puesto_text: p.puesto_text || null,
           tipo_iluminacion: p.tipo_iluminacion,
           tipo_fuente_luminica: p.tipo_fuente_luminica,
@@ -2004,59 +2049,53 @@ export default function ProtocoloForm({
 
         {/* CARD DOCUMENTACIÓN QUE SE ADJUNTARÁ A LA MEDICIÓN */}
         <AppCard className="p-5 md:p-6 space-y-4">
-          <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-            <FileText className="h-5 w-5 text-[#468DFF]" />
-            <h2 className="font-outfit text-base font-extrabold text-slate-800">
-              Documentación que se Adjuntará a la Medición
-            </h2>
-          </div>
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center justify-between">
-              <AppLabel htmlFor="documentacionAdjunta">Documentación que se Adjuntará</AppLabel>
-              <AITextHelper
-                disabled={!canEdit}
-                value={documentacionAdjunta}
-                onChange={setDocumentacionAdjunta}
-                context="Listado de anexos técnicos del protocolo de iluminación"
-              />
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-[#468DFF]" />
+              <h2 className="font-outfit text-base font-extrabold text-slate-800">
+                Documentación que se Adjuntará a la Medición
+              </h2>
             </div>
-            <AppTextarea
-              id="documentacionAdjunta"
+            <AITextHelper
               disabled={!canEdit}
-              rows={3}
               value={documentacionAdjunta}
-              onChange={(e) => setDocumentacionAdjunta(e.target.value)}
+              onChange={setDocumentacionAdjunta}
+              context="Listado de anexos técnicos del protocolo de iluminación"
             />
           </div>
+          <AppTextarea
+            id="documentacionAdjunta"
+            disabled={!canEdit}
+            rows={3}
+            value={documentacionAdjunta}
+            onChange={(e) => setDocumentacionAdjunta(e.target.value)}
+          />
         </AppCard>
 
         {/* CARD OBSERVACIONES */}
         <AppCard className="p-5 md:p-6 space-y-4">
-          <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-            <Info className="h-5 w-5 text-[#468DFF]" />
-            <h2 className="font-outfit text-base font-extrabold text-slate-800">
-              Observaciones
-            </h2>
-          </div>
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center justify-between">
-              <AppLabel htmlFor="observacionesGenerales">Observaciones</AppLabel>
-              <AITextHelper
-                disabled={!canEdit}
-                value={observacionesGenerales}
-                onChange={setObservacionesGenerales}
-                context="Observaciones sobre la instalación luminaria o del ambiente de trabajo"
-              />
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2">
+              <Info className="h-5 w-5 text-[#468DFF]" />
+              <h2 className="font-outfit text-base font-extrabold text-slate-800">
+                Observaciones
+              </h2>
             </div>
-            <AppTextarea
-              id="observacionesGenerales"
+            <AITextHelper
               disabled={!canEdit}
-              rows={3}
               value={observacionesGenerales}
-              onChange={(e) => setObservacionesGenerales(e.target.value)}
-              placeholder="Observaciones..."
+              onChange={setObservacionesGenerales}
+              context="Observaciones generales sobre la medición del protocolo de iluminación"
             />
           </div>
+          <AppTextarea
+            id="observacionesGenerales"
+            disabled={!canEdit}
+            rows={3}
+            value={observacionesGenerales}
+            onChange={(e) => setObservacionesGenerales(e.target.value)}
+            placeholder="Observaciones de la medición..."
+          />
         </AppCard>
 
         {/* CARD PUNTOS DE MUESTREO */}
@@ -2527,6 +2566,32 @@ export default function ProtocoloForm({
           </div>
         </AppCard>
 
+        {/* CARD OBSERVACIONES DE LAS MEDICIONES */}
+        <AppCard className="p-5 md:p-6 space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2">
+              <Info className="h-5 w-5 text-[#468DFF]" />
+              <h2 className="font-outfit text-base font-extrabold text-slate-800">
+                Observaciones
+              </h2>
+            </div>
+            <AITextHelper
+              disabled={!canEdit}
+              value={observacionesPuntos}
+              onChange={setObservacionesPuntos}
+              context="Observaciones sobre la tabla de datos de las mediciones del protocolo de iluminación"
+            />
+          </div>
+          <AppTextarea
+            id="observacionesPuntos"
+            disabled={!canEdit}
+            rows={3}
+            value={observacionesPuntos}
+            onChange={(e) => setObservacionesPuntos(e.target.value)}
+            placeholder="Observaciones de la tabla de mediciones..."
+          />
+        </AppCard>
+
         {/* CARD ANALISIS Y MEJORAS */}
         <AppCard className="p-5 md:p-6 space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
@@ -2618,11 +2683,11 @@ export default function ProtocoloForm({
                     disabled={!canEdit}
                     accept="application/pdf,image/*"
                     maxSizeMB={10}
-                    onFileChange={(file) => {
+                    onFileChange={async (file) => {
                       if (certificadoAdjunto) {
                         handleDeleteAdjunto(certificadoAdjunto.id);
                       }
-                      handleUploadFile(file, 'Certificado de Calibración');
+                      await handleUploadFile(file, 'Certificado de Calibración');
                     }}
                     onDriveImport={(link) => {
                       if (certificadoAdjunto) {

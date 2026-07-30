@@ -807,8 +807,8 @@ export const generateLightingProtocolPdf = async (
   doc.rect(t3X, t3Y, t3W, 6, 'FD');
   drawCellText(doc, 'Documentación que se Adjuntará a la Medición', t3X, t3Y, t3W, 6, { align: 'center', fontStyle: 'bold', fontSize: 9 });
 
-  drawCellText(doc, '•  Certificado de Calibración.', t3X + 2, t3Y + 7, t3W, 5, { fontSize: 8.5 });
-  drawCellText(doc, '•  Plano o Croquis del establecimiento.', t3X + 2, t3Y + 13, t3W, 5, { fontSize: 8.5 });
+  const docText = proto.documentacion_adjunta || proto.documentacion || 'Certificado de Calibración.\nPlano o Croquis del establecimiento.';
+  drawCellText(doc, docText, t3X + 2, t3Y + 6, t3W - 4, t3H - 6, { fontSize: 8.5, valign: 'top' });
 
   // Tabla 4: Observaciones
   const t4X = 15;
@@ -994,7 +994,7 @@ export const generateLightingProtocolPdf = async (
     setDrawColor(doc, COLOR_NEGRO);
     doc.rect(gX, obsY, gW, obsH, 'S');
     drawCellText(doc, 'Observaciones:', gX, obsY, 26, obsH, { fontStyle: 'bold', fontSize: 8.5, valign: 'top', padding: 1.5 });
-    drawCellText(doc, proto.observaciones || 'N/A', gX + 26, obsY, gW - 26, obsH, { fontSize: 8.5, valign: 'top', padding: 1.5 });
+    drawCellText(doc, proto.observaciones_mediciones || proto.observaciones_puntos || proto.observaciones || 'N/A', gX + 26, obsY, gW - 26, obsH, { fontSize: 8.5, valign: 'top', padding: 1.5 });
 
     // Firma Profesional (Alineada a la derecha de la página apaisada)
     drawSignatureBlock(185, obsY + obsH + 4, 95, 38);

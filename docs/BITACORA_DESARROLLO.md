@@ -1,5 +1,59 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-07-30] Textos por Defecto en Conclusiones/Recomendaciones y Resiliencia en Carga de Archivos para Ruido e Iluminación
+
+### Resumen de Cambios
+- **Textos por Defecto en Conclusiones y Recomendaciones Preventivas (Protocolo de Ruido):**
+  - Se actualizaron los valores por defecto tanto en el formulario (`ProtocoloForm.js`) como en la generación del PDF (`pdfGenerator.js`) para el Protocolo de Ruido según las especificaciones normativas requeridas por el usuario:
+  - **Conclusiones:** `"Los valores obtenidos en todos los puntos de muestreo, Cumplen con lo establecido en el ANEXO V - CAPITULO 13 (Acústica), del Decreto Nº 351/79."`
+  - **Recomendaciones Preventivas:** `"Cuando los niveles de exposición al ruido superen o se encuentren próximos a los valores establecidos en el Anexo V de la Resolución MTEySS N.º 295/03, se recomienda:"` seguido de los 6 ítems normalizados de controles de ingeniería, sustitución de equipos, señalización/uso obligatorio de EPP auditivo, provención de protectores adecuados, capacitación del personal y control de tiempos de exposición por rotación.
+- **Resolución Resiliente de Usuario Autenticado (`handleUploadFile` & `executeSave`):**
+  - Se implementó un flujo de resolución en cascada (`profile?.id` $\rightarrow$ `supabase.auth.getUser()` $\rightarrow$ `supabase.auth.getSession()`) con bloques `try/catch` defensivos en las funciones de subida de archivos y guardado en la base de datos tanto de Ruido como de Iluminación.
+  - Esto evita excepciones por errores temporales de red/DNS (`ERR_NAME_NOT_RESOLVED`) y mensajes de `Usuario no autenticado` / `No autorizado` al cargar adjuntos o imágenes.
+
+---
+
+## [2026-07-30] Reubicación de Tarjeta de Observaciones Debajo de Puntos de Muestreo
+
+### Resumen de Cambios
+- **Ajuste Estético de Contenedor Documentación Adjunta (`src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`):**
+  - Se eliminó el subtítulo/etiqueta intermedia `<AppLabel>` ubicado entre el título principal de la tarjeta y el área de texto en **Documentación que se Adjuntará a la Medición**.
+  - Se reubicó el componente de asistencia por voz e IA `<AITextHelper />` a la derecha en la barra superior de cabecera del contenedor, manteniendo la estética limpia y unificada de todo el formulario.
+  - Se formateó el texto inicial por defecto en dos líneas separadas: `Certificado de Calibración.` y en la siguiente línea `Plano o Croquis del establecimiento.`.
+- **Contenedor 1 de Observaciones - Hoja 3 PDF (`src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`):**
+  - Se posicionó el contenedor dedicado de **Observaciones** exactamente debajo de **Documentación que se Adjuntará a la Medición**, replicando la secuencia de la Hoja 3 del PDF oficial. Incluye `<AppTextarea>` y el módulo `<AITextHelper />` y se mapea al recuadro `Observaciones:` de la Hoja 3.
+- **Contenedor 2 de Observaciones - Hoja 4 Tabla de Mediciones (`src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`):**
+  - Se agregó el contenedor dedicado de **Observaciones** exactamente debajo de **Puntos de Muestreo**. Cuenta con área de texto expandible `<AppTextarea>` y el módulo `<AITextHelper />` y su contenido se imprime dinámicamente en la fila `Observaciones:` ubicada debajo de la tabla de datos de mediciones en la Hoja 4 del documento PDF (`pdfGenerator.js`).
+
+- **Migración DDL Supabase y Resolución de Error de Columna (`supabase/migrations/20260815000000_add_observaciones_mediciones_to_protocolo_iluminacion.sql`):**
+  - Se agregó la columna `observaciones_mediciones TEXT NULL` a la tabla `public.protocolos_iluminacion` mediante SQL DDL directo en Supabase y archivo de migración.
+- **Sanitización de Campos UUID y Resolución de Error PostgreSQL `22P02` (`ProtocoloForm.js`):**
+  - Se agregó el validador estricto `isValidUuid()` para desinfectar los identificadores `sector_id`, `puesto_id`, `razon_social_id` y `establecimiento_id` antes de realizar el `insert`/`update` en Supabase.
+  - Se solucionó el error PostgreSQL `22P02` ("invalid input syntax for type uuid: 'pst-1784469841549xwul2'") que ocurría al guardar puntos de muestreo creados dinámicamente con IDs de texto temporal, asignando `null` en el ID relacional sin perder la descripción textual (`sector_text`, `puesto_text`).
+
+- **Cálculo Automático de Mediciones al Seleccionar Sector (`ProtocoloForm.js`):**
+  - Se modularizó la lógica de cálculo de mediciones mínimas por geometría (`recalculatePuntoMediciones()`).
+  - Se vinculó `recalculatePuntoMediciones()` a `handlePuntoSectorChange()`, logrando que al seleccionar un sector precargado del perfil del cliente (con sus dimensiones de largo, ancho y alto), el sistema calcule de forma automática e inmediata el `numero_minimo_puntos_medicion` y genere la cantidad exacta de inputs de mediciones requeridas sin necesidad de modificar manualmente la geometría.
+
+- **Indicador Visual de Carga (Spinner) en Zonas de Upload (`DocumentUploadZone.js` & `ImageUploadZone.js`):**
+  - Se agregó la animación de carga con `Loader2` de Lucide y leyendas contextuales ("Subiendo documento...", "Subiendo imagen...", "Subiendo foto...") tanto en `DocumentUploadZone` como en `ImageUploadZone`.
+  - El estado `uploading` deshabilita las interacciones mientras la promesa de carga a Supabase Storage está en curso, garantizando respuesta visual inmediata al usuario y evitando dudas sobre si la subida está colgada o en progreso en todos los módulos de la aplicación.
+
+- **Impresión Dinámica de "Documentación que se Adjuntará a la Medición" en PDF (`pdfGenerator.js`):**
+  - Se corrigió la función de renderizado de la Tabla 3 en la Hoja 3 del PDF oficial de Iluminación.
+  - Se reemplazaron las líneas de viñetas estáticas por la lectura dinámica de `proto.documentacion_adjunta`, garantizando que el texto multilínea escrito o dictado por voz desde el formulario en la tarjeta correspondiente aparezca reflejado exactamente en el cuadro del documento PDF final.
+
+### Archivos Modificados
+- `src/app/[tenant-slug]/protocolos/iluminacion/utils/pdfGenerator.js`
+- `src/components/ui/DocumentUploadZone.js`
+- `src/components/ui/ImageUploadZone.js`
+- `supabase/migrations/20260815000000_add_observaciones_mediciones_to_protocolo_iluminacion.sql`
+- `src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+- `src/app/[tenant-slug]/protocolos/ruido/components/ProtocoloForm.js`
+- `docs/BITACORA_DESARROLLO.md`
+
+---
+
 ## [2026-07-29] Leyenda de Ejemplo en Campo Instrumento de Protocolo de Iluminación
 
 ### Resumen de Cambios

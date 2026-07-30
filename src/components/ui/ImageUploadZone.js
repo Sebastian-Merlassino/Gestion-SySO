@@ -50,6 +50,7 @@ export default function ImageUploadZone({
   onEditPhoto,        // Edit photo handler
 }) {
   const [isDragging, setIsDragging] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [showSourceSelector, setShowSourceSelector] = useState(false);
   const fileRef = useRef(null);
   const cameraRef = useRef(null);
@@ -88,7 +89,7 @@ export default function ImageUploadZone({
 
   const handleDragOver = (e) => {
     e.preventDefault();
-    if (!disabled) {
+    if (!disabled && !uploading) {
       setIsDragging(true);
     }
   };
@@ -97,43 +98,55 @@ export default function ImageUploadZone({
     setIsDragging(false);
   };
 
-  const handleDrop = (e) => {
+  const handleDrop = async (e) => {
     e.preventDefault();
     setIsDragging(false);
-    if (disabled) return;
+    if (disabled || uploading) return;
 
-    if (multiple) {
-      const droppedFiles = Array.from(e.dataTransfer.files || []);
-      const validFiles = droppedFiles.filter(file => validateImage(file, maxSizeMB, activeToast));
-      if (validFiles.length > 0 && onAddPhotos) {
-        onAddPhotos(validFiles);
+    setUploading(true);
+    try {
+      if (multiple) {
+        const droppedFiles = Array.from(e.dataTransfer.files || []);
+        const validFiles = droppedFiles.filter(file => validateImage(file, maxSizeMB, activeToast));
+        if (validFiles.length > 0 && onAddPhotos) {
+          await onAddPhotos(validFiles);
+        }
+      } else {
+        const file = e.dataTransfer.files?.[0];
+        if (file && validateImage(file, maxSizeMB, activeToast) && onFileChange) {
+          await onFileChange(file);
+        }
       }
-    } else {
-      const file = e.dataTransfer.files?.[0];
-      if (file && validateImage(file, maxSizeMB, activeToast) && onFileChange) {
-        onFileChange(file);
-      }
+    } catch (err) {
+      console.error('Error al subir imagen:', err);
+    } finally {
+      setUploading(false);
     }
   };
 
-  const handleFileChangeInternal = (e) => {
+  const handleFileChangeInternal = async (e) => {
     const selectedFiles = Array.from(e.target.files || []);
-    if (selectedFiles.length === 0) return;
+    if (selectedFiles.length === 0 || uploading) return;
 
-    if (multiple) {
-      const validFiles = selectedFiles.filter(file => validateImage(file, maxSizeMB, activeToast));
-      if (validFiles.length > 0 && onAddPhotos) {
-        onAddPhotos(validFiles);
+    setUploading(true);
+    try {
+      if (multiple) {
+        const validFiles = selectedFiles.filter(file => validateImage(file, maxSizeMB, activeToast));
+        if (validFiles.length > 0 && onAddPhotos) {
+          await onAddPhotos(validFiles);
+        }
+      } else {
+        const file = selectedFiles[0];
+        if (file && validateImage(file, maxSizeMB, activeToast) && onFileChange) {
+          await onFileChange(file);
+        }
       }
-    } else {
-      const file = selectedFiles[0];
-      if (file && validateImage(file, maxSizeMB, activeToast) && onFileChange) {
-        onFileChange(file);
-      }
+    } catch (err) {
+      console.error('Error al cargar imagen:', err);
+    } finally {
+      setUploading(false);
+      if (e.target) e.target.value = '';
     }
-
-    // Reset input value to allow selecting same file again
-    e.target.value = '';
   };
 
   return (
@@ -146,37 +159,47 @@ export default function ImageUploadZone({
       {/* Upload Zone */}
       {!multiple && preview ? (
         <div className="relative w-full h-64 bg-slate-50 border border-slate-200 rounded-xl overflow-hidden group shadow-sm flex items-center justify-center">
-          <img src={preview} alt={label || "Vista previa"} className="w-full h-full object-contain bg-slate-50" />
-          <div className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 duration-200">
-            <button
-              type="button"
-              onClick={() => handleViewImage(preview)}
-              title="Ver en pantalla completa"
-              className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors cursor-pointer shadow-sm border-none"
-            >
-              <Eye className="h-4 w-4" />
-            </button>
-            {!disabled && (
-              <>
+          {uploading ? (
+            <div className="flex flex-col items-center justify-center gap-2 p-4 text-center">
+              <Loader2 className="h-8 w-8 animate-spin text-[#468DFF]" />
+              <p className="text-xs font-bold text-slate-700">Subiendo imagen...</p>
+              <p className="text-[10px] text-slate-400">Por favor aguarde unos instantes</p>
+            </div>
+          ) : (
+            <>
+              <img src={preview} alt={label || "Vista previa"} className="w-full h-full object-contain bg-slate-50" />
+              <div className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 duration-200">
                 <button
                   type="button"
-                  onClick={() => fileRef.current?.click()}
-                  title="Cambiar imagen"
-                  className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors cursor-pointer shadow-sm"
+                  onClick={() => handleViewImage(preview)}
+                  title="Ver en pantalla completa"
+                  className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors cursor-pointer shadow-sm border-none"
                 >
-                  <Upload className="h-4 w-4" />
+                  <Eye className="h-4 w-4" />
                 </button>
-                <button
-                  type="button"
-                  onClick={onClear}
-                  title="Quitar"
-                  className="p-1.5 rounded-lg bg-red-600/80 hover:bg-red-600 text-white transition-colors cursor-pointer shadow-sm"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </>
-            )}
-          </div>
+                {!disabled && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => fileRef.current?.click()}
+                      title="Cambiar imagen"
+                      className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors cursor-pointer shadow-sm"
+                    >
+                      <Upload className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onClear}
+                      title="Quitar"
+                      className="p-1.5 rounded-lg bg-red-600/80 hover:bg-red-600 text-white transition-colors cursor-pointer shadow-sm"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </>
+                )}
+              </div>
+            </>
+          )}
         </div>
       ) : multiple && images.length > 0 ? (
         <div
@@ -225,8 +248,16 @@ export default function ImageUploadZone({
               </div>
             ))}
 
+            {/* Spinner si se están subiendo fotos nuevas */}
+            {uploading && (
+              <div className="relative aspect-square rounded-xl border-2 border-dashed border-[#468DFF] bg-blue-50/50 flex flex-col items-center justify-center gap-1.5 p-2 text-center shadow-sm">
+                <Loader2 className="h-6 w-6 animate-spin text-[#468DFF]" />
+                <span className="text-[10px] font-bold text-[#468DFF]">Subiendo foto...</span>
+              </div>
+            )}
+
             {/* Tarjeta de añadir foto */}
-            {!disabled && (
+            {!disabled && !uploading && (
               <div
                 className="relative aspect-square rounded-xl border-2 border-dashed border-slate-200 bg-white hover:border-[#468DFF] hover:bg-blue-50/20 transition-all flex flex-col items-center justify-center gap-1.5 cursor-pointer shadow-sm group overflow-hidden"
               >
@@ -282,40 +313,50 @@ export default function ImageUploadZone({
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          onClick={() => !disabled && fileRef.current?.click()}
+          onClick={() => (!disabled && !uploading) && fileRef.current?.click()}
           className={`relative border-2 border-dashed rounded-xl p-6 text-center transition-all ${multiple ? 'py-8' : 'h-48'} flex flex-col items-center justify-center gap-3
             ${isDragging ? 'border-[#468DFF] bg-blue-50/50' : 'border-slate-200 bg-white hover:border-[#468DFF] hover:bg-blue-50/30'}
-            ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+            ${disabled || uploading ? 'opacity-75 cursor-default' : 'cursor-pointer'}`}
         >
-          <div className="flex flex-col items-center gap-1">
-            <ImageIcon className="h-8 w-8 text-slate-400" />
-            <p className="text-xs font-semibold text-slate-600">
-              {multiple ? 'Arrastrá tus imágenes aquí o' : 'Arrastrá tu imagen aquí o'}
-            </p>
-          </div>
+          {uploading ? (
+            <div className="flex flex-col items-center justify-center gap-2">
+              <Loader2 className="h-8 w-8 animate-spin text-[#468DFF]" />
+              <p className="text-xs font-bold text-slate-700">Subiendo imagen...</p>
+              <p className="text-[10px] text-slate-400">Por favor aguarde unos instantes</p>
+            </div>
+          ) : (
+            <>
+              <div className="flex flex-col items-center gap-1">
+                <ImageIcon className="h-8 w-8 text-slate-400" />
+                <p className="text-xs font-semibold text-slate-600">
+                  {multiple ? 'Arrastrá tus imágenes aquí o' : 'Arrastrá tu imagen aquí o'}
+                </p>
+              </div>
 
-          <div className="flex gap-2">
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={(e) => { e.stopPropagation(); fileRef.current?.click(); }}
-              className="px-3 py-1.5 bg-[#468DFF]/15 text-[#468DFF] hover:bg-[#468DFF]/25 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shadow-sm"
-            >
-              <Upload className="h-3.5 w-3.5" />
-              Seleccionar archivo
-            </button>
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={(e) => { e.stopPropagation(); cameraRef.current?.click(); }}
-              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shadow-sm"
-            >
-              <Camera className="h-3.5 w-3.5 text-[#468DFF]" />
-              Sacar foto
-            </button>
-          </div>
-          
-          <p className="text-[9px] text-slate-400 font-medium">PNG, JPG, JPEG o WEBP de hasta {maxSizeMB} MB por archivo</p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  disabled={disabled || uploading}
+                  onClick={(e) => { e.stopPropagation(); fileRef.current?.click(); }}
+                  className="px-3 py-1.5 bg-[#468DFF]/15 text-[#468DFF] hover:bg-[#468DFF]/25 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shadow-sm"
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  Seleccionar archivo
+                </button>
+                <button
+                  type="button"
+                  disabled={disabled || uploading}
+                  onClick={(e) => { e.stopPropagation(); cameraRef.current?.click(); }}
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shadow-sm"
+                >
+                  <Camera className="h-3.5 w-3.5 text-[#468DFF]" />
+                  Sacar foto
+                </button>
+              </div>
+              
+              <p className="text-[9px] text-slate-400 font-medium">PNG, JPG, JPEG o WEBP de hasta {maxSizeMB} MB por archivo</p>
+            </>
+          )}
         </div>
       )}
 

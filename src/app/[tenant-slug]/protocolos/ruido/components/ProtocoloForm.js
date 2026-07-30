@@ -63,6 +63,11 @@ export const ACTIVIDADES_ILUMINACION = [
   { categoria: 'Educación', subcategoria: 'Aulas', tarea: 'Clases generales, laboratorios, bibliotecas', lux: 300 }
 ];
 
+const isValidUuid = (val) => {
+  if (!val || typeof val !== 'string') return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val);
+};
+
 export default function ProtocoloForm({
   tenantSlug,
   profile,
@@ -118,11 +123,15 @@ export default function ProtocoloForm({
   const [informacionAdicional, setInformacionAdicional] = useState('');
 
   // Análisis
-  const [conclusiones, setConclusiones] = useState('Los valores obtenidos en los puntos de muestreo, Cumplen con los valores de iluminación mínimos establecidos en el ANEXO V (Ruido y Vibraciones) del Decreto Nº 351/79 y Res. SRT 85/12.');
-  const [recomendaciones, setRecomendaciones] = useState(`En los sectores en los que el valor de la iluminancia obtenido sea menor a los rangos mínimos establecidos en el ANEXO V (Ruido y Vibraciones) del Decreto Nº 351/79 y Res. SRT 85/12, o que no se cumplan con la relación de la uniformidad de Iluminancia, el  es recomendable (según corresponda):
-• limpiar y reparar luminarias defectuosas (de ser posible, implementar un plan de mantenimiento preventivo), 
-• si es posible, bajar la altura de las luminarias instaladas, 
-• incorporar nuevas luminarias (en los puestos fijos puede incorporarce iluminación localizada).`);
+  const [conclusiones, setConclusiones] = useState('Los valores obtenidos en todos los puntos de muestreo, Cumplen con lo establecido en el ANEXO V - CAPITULO 13 (Acústica), del Decreto Nº 351/79.');
+  const [recomendaciones, setRecomendaciones] = useState(`Cuando los niveles de exposición al ruido superen o se encuentren próximos a los valores establecidos en el Anexo V de la Resolución MTEySS N.º 295/03, se recomienda:
+
+• Implementar controles de ingeniería sobre las fuentes generadoras, mediante mantenimiento, reparación, aislamiento, encapsulamiento, instalación de barreras acústicas, silenciadores o elementos antivibratorios.
+• Evaluar la sustitución o modificación de máquinas, herramientas, equipos o procesos por alternativas de menor emisión sonora.
+• Delimitar y señalizar el sector, restringiendo el acceso al personal autorizado y estableciendo el uso obligatorio de protección auditiva cuando corresponda.
+• Proveer protectores auditivos adecuados, seleccionados según el nivel de exposición, la atenuación requerida y su compatibilidad con otros elementos de protección personal.
+• Capacitar al personal expuesto sobre los riesgos del ruido, las medidas preventivas y el uso, ajuste, conservación y reposición de los protectores auditivos.
+• Controlar los tiempos de exposición, mediante rotación de tareas, reducción de permanencia o reorganización de las actividades, cuando las medidas técnicas no resulten suficientes.`);
   const [estado, setEstado] = useState('borrador'); // 'borrador' | 'completado' | 'anulado'
   const [isTabla1RuidoOpen, setIsTabla1RuidoOpen] = useState(false);
 
@@ -1149,12 +1158,29 @@ export default function ProtocoloForm({
   // Upload attachment file
   const handleUploadFile = async (file, type) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuario no autenticado.');
+      let userId = profile?.id;
+      if (!userId) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          userId = user?.id;
+        } catch (e) {
+          console.warn('Network error fetching user:', e);
+        }
+      }
+      if (!userId) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          userId = session?.user?.id;
+        } catch (e) {
+          console.warn('Network error fetching session:', e);
+        }
+      }
+      if (!userId && !isDevMode) throw new Error('Usuario no autenticado.');
+      if (!userId && isDevMode) userId = 'dev-user';
 
       const fileExt = file.name.split('.').pop();
       const uuid = editingId || crypto.randomUUID();
-      const filename = `${user.id}/${uuid}/adjuntos/${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
+      const filename = `${userId}/${uuid}/adjuntos/${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
 
       // Upload to private bucket
       const { error } = await supabase.storage
@@ -1461,8 +1487,24 @@ export default function ProtocoloForm({
   const executeSave = async (sectorsToSave) => {
     setSaveLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user && !isDevMode) throw new Error('No autorizado');
+      let userId = profile?.id;
+      if (!userId) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          userId = user?.id;
+        } catch (e) {
+          console.warn('Network error fetching user in save:', e);
+        }
+      }
+      if (!userId) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          userId = session?.user?.id;
+        } catch (e) {
+          console.warn('Network error fetching session in save:', e);
+        }
+      }
+      if (!userId && !isDevMode) throw new Error('No autorizado');
 
       // 1. Si se actualizaron sectores, localidad, cp o horarios en el perfil del establecimiento, guardarlos en BD
       if (!isDevMode && establecimientoId) {
@@ -1509,8 +1551,8 @@ export default function ProtocoloForm({
         tenant_id: tenant.id,
         user_id: user?.id || 'mock-user-id',
         organization_id: tenant.id,
-        razon_social_id: empresaId || null,
-        establecimiento_id: establecimientoId || null,
+        razon_social_id: isValidUuid(empresaId) ? empresaId : null,
+        establecimiento_id: isValidUuid(establecimientoId) ? establecimientoId : null,
         razon_social_text: razonSocialText,
         cuit_text: cuitText,
         establecimiento_text: establecimientoText,
@@ -1583,9 +1625,9 @@ export default function ProtocoloForm({
           protocolo_id: tempId,
           orden: idx + 1,
           punto_muestreo: p.punto_muestreo,
-          sector_id: p.sector_id || null,
+          sector_id: isValidUuid(p.sector_id) ? p.sector_id : null,
           sector_text: p.sector_text || null,
-          puesto_id: p.puesto_id || null,
+          puesto_id: isValidUuid(p.puesto_id) ? p.puesto_id : null,
           puesto_text: p.puesto_text || null,
           tiempo_exposicion_hs: parseFloat(p.tiempo_exposicion_hs) || null,
           tiempo_integracion: p.tiempo_integracion || null,
@@ -2730,11 +2772,11 @@ export default function ProtocoloForm({
                     disabled={!canEdit}
                     accept="application/pdf,image/*"
                     maxSizeMB={10}
-                    onFileChange={(file) => {
+                    onFileChange={async (file) => {
                       if (certificadoAdjunto) {
                         handleDeleteAdjunto(certificadoAdjunto.id);
                       }
-                      handleUploadFile(file, 'Certificado de Calibración');
+                      await handleUploadFile(file, 'Certificado de Calibración');
                     }}
                     onDriveImport={(link) => {
                       if (certificadoAdjunto) {

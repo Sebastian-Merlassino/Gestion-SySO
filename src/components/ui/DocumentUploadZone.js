@@ -93,7 +93,7 @@ export default function DocumentUploadZone({
     }
   };
 
-  const handleFileChange = (selectedFile) => {
+  const handleFileChange = async (selectedFile) => {
     if (!selectedFile) return;
 
     // Validate accept types
@@ -122,7 +122,17 @@ export default function DocumentUploadZone({
       return;
     }
 
-    onFileChange(selectedFile);
+    setUploading(true);
+    try {
+      if (onFileChange) {
+        await onFileChange(selectedFile);
+      }
+    } catch (err) {
+      console.error('Error al subir documento:', err);
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = '';
+    }
   };
 
   const handleDriveImport = async () => {
@@ -166,7 +176,7 @@ export default function DocumentUploadZone({
             <button
               key={tab.id}
               type="button"
-              disabled={disabled}
+              disabled={disabled || uploading}
               onClick={() => setUploadType(tab.id)}
               className={`flex-1 py-2 transition-colors ${
                 uploadType === tab.id
@@ -187,20 +197,26 @@ export default function DocumentUploadZone({
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            onClick={() => !disabled && inputRef.current?.click()}
+            onClick={() => (!disabled && !uploading) && inputRef.current?.click()}
             className={`relative border-2 border-dashed rounded-xl p-4 text-center transition-all flex-1 flex flex-col items-center justify-center ${minHeightClass}
               ${isDragging ? 'border-[#468DFF] bg-blue-50' : 'border-slate-200 bg-white'}
-              ${disabled ? 'opacity-75 cursor-default' : 'hover:border-[#468DFF] hover:bg-blue-50/30 cursor-pointer'}`}
+              ${disabled || uploading ? 'opacity-75 cursor-default' : 'hover:border-[#468DFF] hover:bg-blue-50/30 cursor-pointer'}`}
           >
             <input
               ref={inputRef}
               type="file"
               accept={accept}
               className="hidden"
-              disabled={disabled}
+              disabled={disabled || uploading}
               onChange={(e) => handleFileChange(e.target.files?.[0])}
             />
-             {fileName ? (
+             {uploading ? (
+              <div className="my-auto flex flex-col items-center justify-center py-2">
+                <Loader2 className="h-6 w-6 text-[#468DFF] animate-spin mb-1.5" />
+                <p className="text-xs font-bold text-slate-700">Subiendo documento...</p>
+                <p className="text-[10px] text-slate-400 mt-0.5">Por favor aguarde unos instantes</p>
+              </div>
+            ) : fileName ? (
               <div className="flex items-center gap-2 justify-center text-sm text-slate-700 flex-wrap my-auto">
                 <FileText className="h-4 w-4 text-[#468DFF]" />
                 <span className="font-medium truncate max-w-[200px]">{fileName}</span>

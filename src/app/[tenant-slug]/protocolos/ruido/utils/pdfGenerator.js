@@ -1013,38 +1013,29 @@ export const generateNoiseProtocolPdf = async (
   doc.rect(tAX + colW, tAY + 6, colW, 8, 'FD');
 
   drawCellText(doc, 'Conclusiones.', tAX, tAY + 6, colW, 8, { fontStyle: 'bold', fontSize: 8.5, color: COLOR_NEGRO });
-  drawCellText(doc, 'Recomendaciones para adecuar el nivel de iluminación a la legislación vigente.', tAX + colW, tAY + 6, colW, 8, { fontStyle: 'bold', fontSize: 8.5, color: COLOR_NEGRO });
+  drawCellText(doc, 'Recomendaciones para adecuar el nivel de ruido a la legislación vigente.', tAX + colW, tAY + 6, colW, 8, { fontStyle: 'bold', fontSize: 8.5, color: COLOR_NEGRO });
 
   doc.rect(tAX, tAY + 14, colW, contentH, 'S');
   doc.rect(tAX + colW, tAY + 14, colW, contentH, 'S');
 
   // Conclusiones text
-  const concText = proto.conclusiones || "Indicar puntos que no cumplen valores mínimos de iluminación y puntos que no cumplen relación de uniformidad.";
+  const concText = proto.conclusiones || "Los valores obtenidos en todos los puntos de muestreo, Cumplen con lo establecido en el ANEXO V - CAPITULO 13 (Acústica), del Decreto Nº 351/79.";
   drawCellText(doc, concText, tAX, tAY + 14, colW, contentH, { fontSize: 8.5, valign: 'top', padding: 2 });
 
   // Recomendaciones text
-  const defaultRecom = [
-    "Limpiar y reparar luminarias defectuosas.",
-    "Implementar plan de mantenimiento preventivo.",
-    "Bajar la altura de luminarias instaladas si corresponde.",
-    "Incorporar nuevas luminarias.",
-    "Agregar iluminación localizada en puestos fijos si corresponde."
-  ];
+  const defaultRecomStr = `Cuando los niveles de exposición al ruido superen o se encuentren próximos a los valores establecidos en el Anexo V de la Resolución MTEySS N.º 295/03, se recomienda:\n\n• Implementar controles de ingeniería sobre las fuentes generadoras, mediante mantenimiento, reparación, aislamiento, encapsulamiento, instalación de barreras acústicas, silenciadores o elementos antivibratorios.\n• Evaluar la sustitución o modificación de máquinas, herramientas, equipos o procesos por alternativas de menor emisión sonora.\n• Delimitar y señalizar el sector, restringiendo el acceso al personal autorizado y estableciendo el uso obligatorio de protección auditiva cuando corresponda.\n• Proveer protectores auditivos adecuados, seleccionados según el nivel de exposición, la atenuación requerida y su compatibilidad con otros elementos de protección personal.\n• Capacitar al personal expuesto sobre los riesgos del ruido, las medidas preventivas y el uso, ajuste, conservación y reposición de los protectores auditivos.\n• Controlar los tiempos de exposición, mediante rotación de tareas, reducción de permanencia o reorganización de las actividades, cuando las medidas técnicas no resulten suficientes.`;
 
-  let recomItems = [];
-  if (proto.recomendaciones) {
-    recomItems = proto.recomendaciones.split('\n').filter(Boolean);
-  } else {
-    recomItems = defaultRecom;
-  }
+  const recomRaw = proto.recomendaciones || defaultRecomStr;
+  const recomLines = recomRaw.split('\n').map(l => l.trim()).filter(Boolean);
 
   let recY = tAY + 16;
-  recomItems.forEach(item => {
-    const cleanItem = item.replace(/^[•\-\*\s]+/, '');
-    const fullItem = `•  ${cleanItem}`;
-    const lines = doc.splitTextToSize(fullItem, colW - 4);
-    drawCellText(doc, fullItem, tAX + colW, recY, colW, (lines.length * 4), { fontSize: 8.5, valign: 'top' });
-    recY += (lines.length * 4) + 2;
+  recomLines.forEach(lineStr => {
+    const isHeader = lineStr.toLowerCase().startsWith('cuando los niveles');
+    const cleanItem = lineStr.replace(/^[•\-\*\s]+/, '');
+    const fullItem = isHeader ? cleanItem : `•  ${cleanItem}`;
+    const lines = doc.splitTextToSize(fullItem, colW - 5);
+    drawCellText(doc, fullItem, tAX + colW, recY, colW, (lines.length * 3.6), { fontSize: 7.5, valign: 'top' });
+    recY += (lines.length * 3.6) + (isHeader ? 2 : 1.5);
   });
 
   // Firma Profesional (Ubicada debajo del cuadro de análisis alineada a la derecha)
