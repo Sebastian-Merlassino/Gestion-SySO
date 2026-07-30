@@ -1514,7 +1514,7 @@ export default function ProtocoloForm({
       const payloadProto = {
         id: tempId,
         tenant_id: tenant.id,
-        user_id: user?.id || 'mock-user-id',
+        user_id: userId || 'mock-user-id',
         organization_id: tenant.id,
         razon_social_id: isValidUuid(empresaId) ? empresaId : null,
         establecimiento_id: isValidUuid(establecimientoId) ? establecimientoId : null,
