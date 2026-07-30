@@ -7,10 +7,13 @@
   - Se actualizaron los valores por defecto tanto en el formulario (`ProtocoloForm.js`) como en la generación del PDF (`pdfGenerator.js`) para el Protocolo de Ruido según las especificaciones normativas requeridas por el usuario:
   - **Conclusiones:** `"Los valores obtenidos en todos los puntos de muestreo, Cumplen con lo establecido en el ANEXO V - CAPITULO 13 (Acústica), del Decreto Nº 351/79."`
   - **Recomendaciones Preventivas:** `"Cuando los niveles de exposición al ruido superen o se encuentren próximos a los valores establecidos en el Anexo V de la Resolución MTEySS N.º 295/03, se recomienda:"` seguido de los 6 ítems normalizados de controles de ingeniería, sustitución de equipos, señalización/uso obligatorio de EPP auditivo, provención de protectores adecuados, capacitación del personal y control de tiempos de exposición por rotación.
-- **Contenedor "Información adicional" Debajo de Puntos de Muestreo (Protocolo de Ruido):**
-  - Se reubicó la tarjeta `<AppCard>` de **Información adicional** para ser presentada inmediatamente debajo del contenedor de **Puntos de Muestreo** en `ProtocoloForm.js`.
-  - Integra área de texto expandible `<AppTextarea>` y el componente de dictado por voz y refinamiento por IA `<AITextHelper />` (`SySO-AI-Voice-Helper`).
-  - Su contenido se imprime dinámicamente en el recuadro `Información adicional:` ubicado al pie de la tabla de datos en la Hoja 3 del reporte PDF (`pdfGenerator.js`).
+- **Eliminación de "Observaciones del Punto" en Puntos de Muestreo (Protocolo de Ruido):**
+  - Se eliminó la etiqueta y campo `<AppInput>` de **Observaciones del Punto** dentro de las tarjetas de cada punto de muestreo en `ProtocoloForm.js` de Ruido.
+- **Desvinculación de los Dos Contenedores de "Información adicional":**
+  - Se separaron los estados de React para los dos contenedores independientes de **Información adicional** en `ProtocoloForm.js` de Ruido:
+    1. Contenedor 1 (debajo de *Documentación que se Adjuntará*): Vinculado al nuevo campo de estado `informacionAdicionalDoc` y columna `informacion_adicional_doc` en Supabase.
+    2. Contenedor 2 (debajo de *Puntos de Muestreo*): Vinculado a `informacionAdicional` y columna `informacion_adicional`, proyectándose en el cuadro de la Hoja 3 del PDF.
+  - Se aplicó la migración SQL `20260816000000_add_informacion_adicional_doc_to_protocolo_ruido.sql` en Supabase para persistir ambos valores sin interferencia cruzada.
 - **Resolución Resiliente de Usuario Autenticado (`handleUploadFile` & `executeSave`):**
   - Se implementó un flujo de resolución en cascada (`profile?.id` $\rightarrow$ `supabase.auth.getUser()` $\rightarrow$ `supabase.auth.getSession()`) con bloques `try/catch` defensivos en las funciones de subida de archivos y guardado en la base de datos tanto de Ruido como de Iluminación.
   - Se corrigió el `ReferenceError: user is not defined` en `executeSave` mapeando la propiedad al identificador desinfectado `user_id: userId || 'mock-user-id'`.
