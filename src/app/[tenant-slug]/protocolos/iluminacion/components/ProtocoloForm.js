@@ -122,10 +122,14 @@ export default function ProtocoloForm({
 
   // Análisis
   const [conclusiones, setConclusiones] = useState('Los valores obtenidos en los puntos de muestreo, Cumplen con los valores de iluminación mínimos establecidos en el ANEXO IV - CAPITULO 12 (Iluminación y Color), del Decreto Nº 351/79.');
-  const [recomendaciones, setRecomendaciones] = useState(`En los sectores en los que el valor de la iluminancia obtenido sea menor a los rangos mínimos establecidos en el ANEXO IV - CAPITULO 12 (Iluminación y Color), del Decreto Nº 351/79, o que no se cumplan con la relación de la uniformidad de Iluminancia, el  es recomendable (según corresponda):
-• limpiar y reparar luminarias defectuosas (de ser posible, implementar un plan de mantenimiento preventivo), 
-• si es posible, bajar la altura de las luminarias instaladas, 
-• incorporar nuevas luminarias (en los puestos fijos puede incorporarce iluminación localizada).`);
+  const [recomendaciones, setRecomendaciones] = useState(`En los sectores donde los valores de iluminancia obtenidos sean inferiores a los mínimos establecidos en el Anexo IV, Capítulo 12 —Iluminación y Color— del Decreto N.º 351/79, o donde no se verifique la relación de uniformidad de iluminancia, se recomienda, según corresponda:
+
+Limpiar, reparar o reemplazar las luminarias defectuosas, verificando el estado de lámparas, difusores, reflectores, conexiones y sistemas de encendido.
+Implementar un programa de mantenimiento preventivo, que contemple la limpieza periódica, el control del funcionamiento y la reposición de los componentes deteriorados.
+Revisar la altura y ubicación de las luminarias, evaluando su descenso, redistribución o reorientación para mejorar los niveles de iluminación y reducir las zonas de sombra.
+Incorporar luminarias adicionales en aquellos sectores donde la iluminación general resulte insuficiente.
+Instalar iluminación localizada en puestos fijos, cuando las características de la tarea requieran mayores niveles de iluminancia, evitando deslumbramientos, sombras y contrastes excesivos.
+Mejorar la distribución de la iluminación, procurando alcanzar una adecuada uniformidad sobre toda la superficie o plano de trabajo evaluado.`);
   const [estado, setEstado] = useState('borrador'); // 'borrador' | 'completado' | 'anulado'
 
   // Sampling Points State
@@ -676,8 +680,13 @@ export default function ProtocoloForm({
         .from('protocolos_iluminacion')
         .select('*')
         .eq('id', editingId)
-        .single();
+        .maybeSingle();
       if (prErr) throw prErr;
+      if (!proto) {
+        globalToast.toast('El protocolo solicitado no existe o no se encuentra disponible.', 'error');
+        setLoading(false);
+        return;
+      }
 
       setEmpresaId(proto.razon_social_id || '');
       setEstablecimientoId(proto.establecimiento_id || '');
@@ -2632,12 +2641,12 @@ export default function ProtocoloForm({
 
             <div className="flex flex-col gap-1">
               <div className="flex items-center justify-between">
-                <AppLabel htmlFor="recomendaciones">Recomendaciones preventivas recomendadas</AppLabel>
+                <AppLabel htmlFor="recomendaciones">Recomendaciones para adecuar el nivel de iluminación</AppLabel>
                 <AITextHelper
                   disabled={!canEdit}
                   value={recomendaciones}
                   onChange={setRecommendations => setRecomendaciones(setRecommendations)}
-                  context="Recomendaciones preventivas recomendadas para adecuar los niveles de iluminación a la legislación vigente y mejorar la ergonomía visual"
+                  context="Recomendaciones para adecuar los niveles de iluminación a la legislación vigente y mejorar la ergonomía visual"
                 />
               </div>
               <AppTextarea

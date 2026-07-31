@@ -1,6 +1,7 @@
 import { PDFDocument, PDFName } from 'pdf-lib';
 import { formatDate } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
+import { TABLA_1_ILUMINACION, TABLA_2_ILUMINACION } from './tablasAnexoIV';
 
 // Helper to convert hex color string to RGB array [r, g, b]
 const hexToRgb = (hex) => {
@@ -596,7 +597,7 @@ export const generateLightingProtocolPdf = async (
   doc.text(companyName.toUpperCase(), 39, 246);
 
   // ==========================================
-  // PAGINA 2: INTRODUCCIÓN NORMATIVA (A4 Vertical)
+  // PAGINA 2 EN ADELANTE: INTRODUCCIÓN Y TABLAS NORMATIVAS ANEXO IV (A4 Vertical)
   // ==========================================
   doc.addPage('a4', 'portrait');
   pageCounter++;
@@ -612,69 +613,384 @@ export const generateLightingProtocolPdf = async (
   doc.setLineWidth(0.4);
   doc.line(15, 30, 195, 30);
 
-  // Body Text
-  const introParagraphs = [
-    {
-      text: "La intensidad mínima de iluminación, medida sobre el plano de trabajo, ya sea este horizontal, vertical u oblicuo, está establecida en la tabla 1, de acuerdo con la dificultad de la tarea visual y en la tabla 2, de acuerdo con el destino del local.",
-      style: 'normal'
-    },
-    {
-      text: "Los valores indicados en la tabla 1, se usarán para estimar los requeridos para tareas que no han sido incluidas en la tabla 2.",
-      style: 'normal'
-    },
-    {
-      text: "Con el objeto de evitar diferencias de iluminancias causantes de incomodidad visual o deslumbramiento, se deberán mantener las relaciones máximas indicadas en la tabla 3.",
-      style: 'normal'
-    },
-    {
-      text: "La tarea visual se sitúa en el centro del campo visual y abarca un cono cuyo ángulo de abertura es de un grado, estando el vértice del mismo en el ojo del trabajador.",
-      style: 'normal'
-    },
-    {
-      text: "Para asegurar una uniformidad razonable en la iluminancia de un local, se exigirá una relación no menor de 0,5 entre sus valores mínimo y medio.",
-      style: 'normal'
-    },
-    {
-      text: "E mínima >= E media / 2",
-      style: 'formula'
-    },
-    {
-      text: "* E = Exigencia",
-      style: 'legend'
-    },
-    {
-      text: "La iluminancia media se determinará efectuando la media aritmética de la iluminancia general considerada en todo el local, y la iluminancia mínima será el menor valor de iluminancia en las superficies de trabajo o en un plano horizontal a 0,80 m. del suelo. Este procedimiento no se aplicará a lugares de tránsito, de ingreso o egreso de personal o iluminación de emergencia",
-      style: 'normal'
-    },
-    {
-      text: "En los casos en que se ilumine en forma localizada uno o varios lugares de trabajo para completar la iluminación general, esta última no podrá tener una intensidad menor que la indicada en la tabla 4.",
-      style: 'normal'
-    }
-  ];
+  let currentY = 36;
 
-  let currentY = 43;
-  introParagraphs.forEach(p => {
-    if (p.style === 'formula') {
+  // Helper for checking vertical page bounds
+  const checkPageY = (neededH) => {
+    if (currentY + neededH > 275) {
+      doc.addPage('a4', 'portrait');
+      pageCounter++;
+      drawHeader(false);
+      currentY = 28;
+      return true;
+    }
+    return false;
+  };
+
+  const printParagraph = (pText, pStyle = 'normal') => {
+    if (pStyle === 'formula') {
+      checkPageY(10);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(9.5);
       setTextColor(doc, COLOR_NEGRO);
-      doc.text(p.text, 25, currentY);
+      doc.text(pText, 25, currentY);
       currentY += 6;
-    } else if (p.style === 'legend') {
+    } else if (pStyle === 'legend') {
+      checkPageY(8);
       doc.setFont('helvetica', 'italic');
       doc.setFontSize(8);
       setTextColor(doc, COLOR_SLATE_600);
-      doc.text(p.text, 25, currentY);
+      doc.text(pText, 25, currentY);
       currentY += 7;
     } else {
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
       setTextColor(doc, COLOR_SLATE_900);
-      const lines = doc.splitTextToSize(p.text, 180);
+      const lines = doc.splitTextToSize(pText, 180);
+      const blockH = (lines.length * 4.2) + 4.5;
+      checkPageY(blockH);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      setTextColor(doc, COLOR_SLATE_900);
       doc.text(lines, 15, currentY);
-      currentY += (lines.length * 4.2) + 4.5;
+      currentY += blockH;
     }
-  });
+  };
+
+  // Tabla 1 Renderer
+  const drawTabla1Normativa = () => {
+    const tX = 15;
+    const tW = 180;
+    
+    checkPageY(14);
+    setFillColor(doc, COLOR_AZUL_PRINCIPAL);
+    doc.rect(tX, currentY, tW, 6, 'F');
+    drawCellText(doc, 'TABLA 1: INTENSIDAD MEDIA DE ILUMINACIÓN PARA DIVERSAS CLASES DE TAREA VISUAL', tX, currentY, tW, 6, { align: 'center', fontStyle: 'bold', fontSize: 8, color: COLOR_BLANCO });
+    currentY += 6;
+
+    setFillColor(doc, COLOR_SLATE_200);
+    doc.rect(tX, currentY, 50, 6, 'FD');
+    doc.rect(tX + 50, currentY, 30, 6, 'FD');
+    doc.rect(tX + 80, currentY, 100, 6, 'FD');
+    drawCellText(doc, 'Clase de tarea visual / Dificultad', tX, currentY, 50, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+    drawCellText(doc, 'Iluminancia (Lux)', tX + 50, currentY, 30, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+    drawCellText(doc, 'Ejemplos de Tareas', tX + 80, currentY, 100, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+    currentY += 6;
+
+    TABLA_1_ILUMINACION.forEach(row => {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      const col1Lines = doc.splitTextToSize(row.clase, 46);
+      const col3Lines = doc.splitTextToSize(row.ejemplos, 96);
+      const rowH = Math.max(6, Math.max(col1Lines.length, col3Lines.length) * 3.5 + 2.5);
+
+      if (checkPageY(rowH)) {
+        setFillColor(doc, COLOR_SLATE_200);
+        doc.rect(tX, currentY, 50, 6, 'FD');
+        doc.rect(tX + 50, currentY, 30, 6, 'FD');
+        doc.rect(tX + 80, currentY, 100, 6, 'FD');
+        drawCellText(doc, 'Clase de tarea visual / Dificultad', tX, currentY, 50, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+        drawCellText(doc, 'Iluminancia (Lux)', tX + 50, currentY, 30, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+        drawCellText(doc, 'Ejemplos de Tareas', tX + 80, currentY, 100, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+        currentY += 6;
+      }
+
+      setDrawColor(doc, COLOR_SLATE_300);
+      doc.rect(tX, currentY, 50, rowH, 'S');
+      doc.rect(tX + 50, currentY, 30, rowH, 'S');
+      doc.rect(tX + 80, currentY, 100, rowH, 'S');
+
+      drawCellText(doc, row.clase, tX + 2, currentY + 1, 46, rowH - 2, { fontSize: 7.5, valign: 'middle' });
+      drawCellText(doc, row.luxTexto, tX + 50, currentY + 1, 30, rowH - 2, { align: 'center', fontStyle: 'bold', fontSize: 7.5, valign: 'middle' });
+      drawCellText(doc, row.ejemplos, tX + 82, currentY + 1, 96, rowH - 2, { fontSize: 7, color: COLOR_SLATE_700, valign: 'middle' });
+
+      currentY += rowH;
+    });
+
+    currentY += 5;
+  };
+
+  // Tabla 2 Renderer
+  const drawTabla2Normativa = () => {
+    const tX = 15;
+    const tW = 180;
+
+    checkPageY(14);
+    setFillColor(doc, COLOR_AZUL_PRINCIPAL);
+    doc.rect(tX, currentY, tW, 6, 'F');
+    drawCellText(doc, 'TABLA 2: INTENSIDAD MÍNIMA DE ILUMINACIÓN', tX, currentY, tW, 6, { align: 'center', fontStyle: 'bold', fontSize: 8, color: COLOR_BLANCO });
+    currentY += 6;
+
+    setFillColor(doc, COLOR_SLATE_200);
+    doc.rect(tX, currentY, 45, 6, 'FD');
+    doc.rect(tX + 45, currentY, 40, 6, 'FD');
+    doc.rect(tX + 85, currentY, 70, 6, 'FD');
+    doc.rect(tX + 155, currentY, 25, 6, 'FD');
+    drawCellText(doc, 'Grupo / Edificio', tX, currentY, 45, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+    drawCellText(doc, 'Subgrupo / Zona', tX + 45, currentY, 40, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+    drawCellText(doc, 'Tarea / Local', tX + 85, currentY, 70, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+    drawCellText(doc, 'Lux Mín.', tX + 155, currentY, 25, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+    currentY += 6;
+
+    TABLA_2_ILUMINACION.forEach(row => {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      const col1Lines = doc.splitTextToSize(row.grupo || '', 41);
+      const col2Lines = doc.splitTextToSize(row.subtitulo || '-', 36);
+      const col3Lines = doc.splitTextToSize(row.tarea || '', 66);
+      const rowH = Math.max(5.5, Math.max(col1Lines.length, Math.max(col2Lines.length, col3Lines.length)) * 3.2 + 2);
+
+      if (checkPageY(rowH)) {
+        setFillColor(doc, COLOR_SLATE_200);
+        doc.rect(tX, currentY, 45, 6, 'FD');
+        doc.rect(tX + 45, currentY, 40, 6, 'FD');
+        doc.rect(tX + 85, currentY, 70, 6, 'FD');
+        doc.rect(tX + 155, currentY, 25, 6, 'FD');
+        drawCellText(doc, 'Grupo / Edificio', tX, currentY, 45, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+        drawCellText(doc, 'Subgrupo / Zona', tX + 45, currentY, 40, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+        drawCellText(doc, 'Tarea / Local', tX + 85, currentY, 70, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+        drawCellText(doc, 'Lux Mín.', tX + 155, currentY, 25, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+        currentY += 6;
+      }
+
+      setDrawColor(doc, COLOR_SLATE_300);
+      doc.rect(tX, currentY, 45, rowH, 'S');
+      doc.rect(tX + 45, currentY, 40, rowH, 'S');
+      doc.rect(tX + 85, currentY, 70, rowH, 'S');
+      doc.rect(tX + 155, currentY, 25, rowH, 'S');
+
+      drawCellText(doc, row.grupo || '', tX + 2, currentY + 1, 41, rowH - 2, { fontSize: 7, fontStyle: 'bold', valign: 'middle' });
+      drawCellText(doc, row.subtitulo || '-', tX + 47, currentY + 1, 36, rowH - 2, { fontSize: 6.8, color: COLOR_SLATE_700, valign: 'middle' });
+      drawCellText(doc, row.tarea || '', tX + 87, currentY + 1, 66, rowH - 2, { fontSize: 6.8, color: COLOR_SLATE_900, valign: 'middle' });
+      drawCellText(doc, String(row.lux), tX + 155, currentY + 1, 25, rowH - 2, { align: 'center', fontStyle: 'bold', fontSize: 7.5, valign: 'middle' });
+
+      currentY += rowH;
+    });
+
+    currentY += 5;
+  };
+
+  // Tabla 3 Renderer
+  const drawTabla3Normativa = () => {
+    const tX = 15;
+    const tW = 180;
+
+    checkPageY(14);
+    setFillColor(doc, COLOR_AZUL_PRINCIPAL);
+    doc.rect(tX, currentY, tW, 6, 'F');
+    drawCellText(doc, 'TABLA 3: RELACIÓN DE MÁXIMAS LUMINANCIAS', tX, currentY, tW, 6, { align: 'center', fontStyle: 'bold', fontSize: 8, color: COLOR_BLANCO });
+    currentY += 6;
+
+    setFillColor(doc, COLOR_SLATE_200);
+    doc.rect(tX, currentY, 140, 6, 'FD');
+    doc.rect(tX + 140, currentY, 40, 6, 'FD');
+    drawCellText(doc, 'Ubicación / Relación de Iluminancias', tX, currentY, 140, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+    drawCellText(doc, 'Relación Máxima', tX + 140, currentY, 40, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+    currentY += 6;
+
+    const t3Rows = [
+      { desc: 'Entre la tarea visual y el entorno inmediato', rel: '3 : 1' },
+      { desc: 'Entre la tarea visual y las superficies más alejadas', rel: '10 : 1' },
+      { desc: 'Entre las fuentes luminosas y su fondo', rel: '20 : 1' },
+      { desc: 'En toda la zona de trabajo', rel: '40 : 1' }
+    ];
+
+    t3Rows.forEach(row => {
+      const rowH = 6.5;
+      if (checkPageY(rowH)) {
+        setFillColor(doc, COLOR_SLATE_200);
+        doc.rect(tX, currentY, 140, 6, 'FD');
+        doc.rect(tX + 140, currentY, 40, 6, 'FD');
+        drawCellText(doc, 'Ubicación / Relación de Iluminancias', tX, currentY, 140, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+        drawCellText(doc, 'Relación Máxima', tX + 140, currentY, 40, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+        currentY += 6;
+      }
+
+      setDrawColor(doc, COLOR_SLATE_300);
+      doc.rect(tX, currentY, 140, rowH, 'S');
+      doc.rect(tX + 140, currentY, 40, rowH, 'S');
+
+      drawCellText(doc, row.desc, tX + 3, currentY, 134, rowH, { fontSize: 7.5, valign: 'middle' });
+      drawCellText(doc, row.rel, tX + 140, currentY, 40, rowH, { align: 'center', fontStyle: 'bold', fontSize: 8, valign: 'middle' });
+
+      currentY += rowH;
+    });
+
+    currentY += 5;
+  };
+
+  // Tabla 4 Renderer
+  const drawTabla4Normativa = () => {
+    const tX = 15;
+    const tW = 180;
+
+    checkPageY(14);
+    setFillColor(doc, COLOR_AZUL_PRINCIPAL);
+    doc.rect(tX, currentY, tW, 6, 'F');
+    drawCellText(doc, 'TABLA 4: ILUMINACIÓN GENERAL MÍNIMA (EN FUNCIÓN DE LA ILUMINANCIA LOCALIZADA)', tX, currentY, tW, 6, { align: 'center', fontStyle: 'bold', fontSize: 8, color: COLOR_BLANCO });
+    currentY += 6;
+
+    setFillColor(doc, COLOR_SLATE_200);
+    doc.rect(tX, currentY, 90, 6, 'FD');
+    doc.rect(tX + 90, currentY, 90, 6, 'FD');
+    drawCellText(doc, 'Iluminancia Localizada (Lux)', tX, currentY, 90, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+    drawCellText(doc, 'Iluminancia General Mínima Requerida (Lux)', tX + 90, currentY, 90, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+    currentY += 6;
+
+    const t4Rows = [
+      { loc: '1.000 Lux', gen: '200 Lux' },
+      { loc: '2.000 Lux', gen: '300 Lux' },
+      { loc: '5.000 Lux', gen: '400 Lux' },
+      { loc: '10.000 Lux', gen: '500 Lux' }
+    ];
+
+    t4Rows.forEach(row => {
+      const rowH = 6.5;
+      if (checkPageY(rowH)) {
+        setFillColor(doc, COLOR_SLATE_200);
+        doc.rect(tX, currentY, 90, 6, 'FD');
+        doc.rect(tX + 90, currentY, 90, 6, 'FD');
+        drawCellText(doc, 'Iluminancia Localizada (Lux)', tX, currentY, 90, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+        drawCellText(doc, 'Iluminancia General Mínima Requerida (Lux)', tX + 90, currentY, 90, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+        currentY += 6;
+      }
+
+      setDrawColor(doc, COLOR_SLATE_300);
+      doc.rect(tX, currentY, 90, rowH, 'S');
+      doc.rect(tX + 90, currentY, 90, rowH, 'S');
+
+      drawCellText(doc, row.loc, tX, currentY, 90, rowH, { align: 'center', fontSize: 7.5, valign: 'middle' });
+      drawCellText(doc, row.gen, tX + 90, currentY, 90, rowH, { align: 'center', fontStyle: 'bold', fontSize: 8, valign: 'middle' });
+
+      currentY += rowH;
+    });
+
+    currentY += 5;
+  };
+
+  // Tabla de Colores IRAM-DEF D 10-54
+  const drawTablaColorNormativa = () => {
+    const tX = 15;
+    const tW = 180;
+
+    checkPageY(14);
+    setFillColor(doc, COLOR_AZUL_PRINCIPAL);
+    doc.rect(tX, currentY, tW, 6, 'F');
+    drawCellText(doc, 'CÓDIGO DE COLORES PARA LA IDENTIFICACIÓN DE LUGARES Y OBJETOS (IRAM-DEF D 10-54 / IRAM 10.005)', tX, currentY, tW, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5, color: COLOR_BLANCO });
+    currentY += 6;
+
+    setFillColor(doc, COLOR_SLATE_200);
+    doc.rect(tX, currentY, 35, 6, 'FD');
+    doc.rect(tX + 35, currentY, 75, 6, 'FD');
+    doc.rect(tX + 110, currentY, 70, 6, 'FD');
+    drawCellText(doc, 'Color de Seguridad', tX, currentY, 35, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+    drawCellText(doc, 'Significado / Aplicación', tX + 35, currentY, 75, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+    drawCellText(doc, 'Ejemplos de Indicación / Objetos', tX + 110, currentY, 70, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+    currentY += 6;
+
+    const colorRows = [
+      { color: 'ROJO', hex: '#EF4444', sig: 'Señal de parada, prohibición y elementos de lucha contra incendio.', ej: 'Botoneras de parada de emergencia, cañerías de agua de incendio, matafuegos.' },
+      { color: 'AMARILLO', hex: '#F59E0B', sig: 'Señal de precaución, advertencia de riesgos físicos y peligros.', ej: 'Desniveles, escalones, barreras, bordes de fosas, partes móviles de máquinas.' },
+      { color: 'VERDE', hex: '#10B981', sig: 'Señal de seguridad, condición segura y auxilio.', ej: 'Salidas de emergencia, rutas de escape, botiquines de primeros auxilios, duchas.' },
+      { color: 'AZUL', hex: '#3B82F6', sig: 'Señal de obligación e instrucción de seguridad.', ej: 'Obligación del uso de EPP (casco, antiparras, auditivos), cartelería preceptiva.' }
+    ];
+
+    colorRows.forEach(row => {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      const col2Lines = doc.splitTextToSize(row.sig, 71);
+      const col3Lines = doc.splitTextToSize(row.ej, 66);
+      const rowH = Math.max(7, Math.max(col2Lines.length, col3Lines.length) * 3.5 + 2.5);
+
+      if (checkPageY(rowH)) {
+        setFillColor(doc, COLOR_SLATE_200);
+        doc.rect(tX, currentY, 35, 6, 'FD');
+        doc.rect(tX + 35, currentY, 75, 6, 'FD');
+        doc.rect(tX + 110, currentY, 70, 6, 'FD');
+        drawCellText(doc, 'Color de Seguridad', tX, currentY, 35, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+        drawCellText(doc, 'Significado / Aplicación', tX + 35, currentY, 75, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+        drawCellText(doc, 'Ejemplos de Indicación / Objetos', tX + 110, currentY, 70, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+        currentY += 6;
+      }
+
+      setDrawColor(doc, COLOR_SLATE_300);
+      doc.rect(tX, currentY, 35, rowH, 'S');
+      doc.rect(tX + 35, currentY, 75, rowH, 'S');
+      doc.rect(tX + 110, currentY, 70, rowH, 'S');
+
+      // Color Badge
+      setFillColor(doc, row.hex);
+      doc.rect(tX + 3, currentY + (rowH - 4) / 2, 4, 4, 'F');
+      drawCellText(doc, row.color, tX + 9, currentY + 1, 24, rowH - 2, { fontStyle: 'bold', fontSize: 7.5, valign: 'middle' });
+
+      drawCellText(doc, row.sig, tX + 37, currentY + 1, 71, rowH - 2, { fontSize: 7.2, color: COLOR_SLATE_900, valign: 'middle' });
+      drawCellText(doc, row.ej, tX + 112, currentY + 1, 66, rowH - 2, { fontSize: 7, color: COLOR_SLATE_700, valign: 'middle' });
+
+      currentY += rowH;
+    });
+
+    currentY += 5;
+  };
+
+  // Subtítulo Iluminación
+  checkPageY(10);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  setTextColor(doc, COLOR_AZUL_PRINCIPAL);
+  doc.text('Iluminación', 15, currentY);
+  currentY += 6;
+
+  // Render all introductory paragraphs of Section "Iluminación" on Page 2 before Tabla 1:
+  // 1. Párrafo 1
+  printParagraph("La intensidad mínima de iluminación, medida sobre el plano de trabajo, ya sea éste horizontal, vertical u oblicuo, está establecida en la tabla 1, de acuerdo con la dificultad de la tarea visual y en la tabla 2, de acuerdo con el destino del local.");
+
+  // 2. Párrafo 2
+  printParagraph("Los valores indicados en la tabla 1, se usarán para estimar los requeridos para tareas que no han sido incluidas en la tabla 2.");
+
+  // 3. Párrafo 3
+  printParagraph("Con el objeto de evitar diferencias de iluminancias causantes de incomodidad visual o deslumbramiento, se deberán mantener las relaciones máximas indicadas en la tabla 3.");
+
+  // 4. Párrafo 4 (Cono visual)
+  printParagraph("La tarea visual se sitúa en el centro del campo visual y abarca un cono cuyo ángulo de abertura es de un grado, estando el vértice del mismo en el ojo del trabajador.");
+
+  // 5. Párrafo 5 (Uniformidad)
+  printParagraph("Para asegurar una uniformidad razonable en la iluminancia de un local, se exigirá una relación no menor de 0,5 entre sus valores mínimo y medio.");
+
+  // 6. Fórmula y Leyenda
+  printParagraph("E mínima >= E media / 2", "formula");
+  printParagraph("* E = Exigencia", "legend");
+
+  // 7. Párrafo 6 (Iluminancia media)
+  printParagraph("La iluminancia media se determinará efectuando la media aritmética de la iluminancia general considerada en todo el local, y la iluminancia mínima será el menor valor de iluminancia en las superficies de trabajo o en un plano horizontal a 0,80 m. del suelo. Este procedimiento no se aplicará a lugares de tránsito, de ingreso o egreso de personal o iluminación de emergencia.");
+
+  // 8. Párrafo 7 (Iluminación localizada)
+  printParagraph("En los casos en que se ilumine en forma localizada uno o varios lugares de trabajo para completar la iluminación general, esta última no podrá tener una intensidad menor que la indicada en la tabla 4.");
+
+  // LUEGO DE TODOS LOS PÁRRAFOS ANTERIORES, VAN LAS TABLAS EN ORDEN:
+  // 9. Tabla 1
+  drawTabla1Normativa();
+
+  // 10. Tabla 2
+  drawTabla2Normativa();
+
+  // 11. Tabla 3
+  drawTabla3Normativa();
+
+  // 12. Tabla 4
+  drawTabla4Normativa();
+
+  // 13. Sección Color
+  checkPageY(14);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  setTextColor(doc, COLOR_AZUL_PRINCIPAL);
+  doc.text('Color', 15, currentY);
+  currentY += 6;
+
+  printParagraph("Los valores a utilizar para la identificación de lugares y objetos serán los establecidos por las normas IRAM N. 10.005; 2507 e IRAM DEF D 10-54.");
+  printParagraph("Según la norma IRAM-DEF D 10-54 se utilizarán los siguientes colores:");
+
+  drawTablaColorNormativa();
 
   // ==========================================
   // PAGINA 3: DATOS DEL ESTABLECIMIENTO Y MEDICIÓN (A4 Vertical)

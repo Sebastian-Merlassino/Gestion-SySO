@@ -597,7 +597,255 @@ export const generateNoiseProtocolPdf = async (
   doc.text(companyName.toUpperCase(), 39, 246);
 
   // ==========================================
-  // PAGINA 2: HOJA 1 - FORMULARIO OFICIAL RUIDO (A4 Vertical - RES. SRT 85/12)
+  // HOJAS INFORMATIVAS: ACÚSTICA (ANEXO V - CAPÍTULO 13 - DEC. 351/79)
+  // ==========================================
+  doc.addPage('a4', 'portrait');
+  pageCounter++;
+  drawHeader(false);
+
+  // Section Title
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  setTextColor(doc, COLOR_NEGRO);
+  doc.text('Acústica (ANEXO V - Capítulo 13 – Dec. 351/79)', 15, 28);
+  setDrawColor(doc, COLOR_AZUL_PRINCIPAL);
+  doc.setLineWidth(0.4);
+  doc.line(15, 30, 195, 30);
+
+  let currentY = 36;
+
+  const checkPageY = (neededH) => {
+    if (currentY + neededH > 275) {
+      doc.addPage('a4', 'portrait');
+      pageCounter++;
+      drawHeader(false);
+      currentY = 28;
+      return true;
+    }
+    return false;
+  };
+
+  const printSectionHeader = (titleText) => {
+    checkPageY(10);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    setTextColor(doc, COLOR_AZUL_PRINCIPAL);
+    doc.text(titleText.toUpperCase(), 15, currentY);
+    currentY += 6;
+  };
+
+  const printParagraph = (pText, pStyle = 'normal') => {
+    if (pStyle === 'formula') {
+      checkPageY(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      setTextColor(doc, COLOR_NEGRO);
+      doc.text(pText, 25, currentY);
+      currentY += 7;
+    } else if (pStyle === 'legend') {
+      checkPageY(8);
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(8);
+      setTextColor(doc, COLOR_SLATE_600);
+      doc.text(pText, 15, currentY);
+      currentY += 6;
+    } else {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      setTextColor(doc, COLOR_SLATE_900);
+      const lines = doc.splitTextToSize(pText, 180);
+      const blockH = (lines.length * 4) + 3;
+      checkPageY(blockH);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      setTextColor(doc, COLOR_SLATE_900);
+      doc.text(lines, 15, currentY);
+      currentY += blockH;
+    }
+  };
+
+  // 1. Infrasonido y Sonido de Baja Frecuencia
+  printSectionHeader('Infrasonido y Sonido de Baja Frecuencia');
+  printParagraph('Estos límites representan las exposiciones al sonido a los que se cree que casi todos los trabajadores pueden estar expuestos repetidamente sin efectos adversos para la audición.');
+  printParagraph('• Frecuencias 1 Hz a 80 Hz (NPS): Excepto para el sonido de impulsos de banda de un tercio de octava (< 2 s), el Nivel de Presión Sonora (NPS) no debe exceder el valor techo de 145 dB.');
+  printParagraph('• NPS Global No Ponderado: El Nivel de Presión Sonora global no ponderado no debe exceder el valor techo de 150 dB.');
+  printParagraph('• Tiempo límite: No hay tiempo límite para estas exposiciones. Sin embargo, la aplicación de los valores límite para el ruido y el ultrasonido puede proporcionar un nivel reducido aceptable en el tiempo.');
+  printParagraph('• Alternativa no ponderada: El pico NPS medido con la escala de frecuencias del sonómetro en lineal o no ponderada no debe exceder de 145 dB para situaciones de sonido sin impulsos.');
+  printParagraph('• Resonancia torácica: La resonancia en el pecho de los sonidos de baja frecuencia (intervalo de 50 Hz a 60 Hz) puede causar vibración del cuerpo entero, generando molestias hasta hacerse necesario reducir el NPS a un nivel donde desaparezca el problema.');
+  currentY += 4;
+
+  // 2. Ruido Continuo o Intermitente
+  printSectionHeader('Ruido Continuo o Intermitente');
+  printParagraph('Cuando los trabajadores estén expuestos al ruido a niveles iguales o superiores a los valores límite, es necesario implementar un programa de conservación de la audición que incluya pruebas audiométricas periódicas.');
+  printParagraph('• Requisitos del instrumental: Filtro de ponderación frecuencial A, respuesta Lenta. Exposición combinada: se aplica la fórmula de adición de dosis de ruido cuando la jornada se compone de 2 o más períodos de distinta intensidad.');
+  printParagraph('• Criterios del dosímetro: Índice de conversión = 3 dB, Nivel criterio = 85 dBA, Tiempo criterio = 8 horas.');
+  
+  // Fórmula
+  printParagraph('Ecuación para Exposición Combinada a Ruido:', 'formula');
+  printParagraph('C1 / T1 + C2 / T2 + ... + Cn / Tn <= 1', 'formula');
+  printParagraph('Donde Ci es el tiempo total de exposición a un nivel determinado y Ti es el tiempo total permitido a ese nivel. Si la suma es mayor que 1 (unidad), la exposición sobrepasa el Valor Límite Umbral (se utilizan todas las exposiciones >= 80 dBA).');
+  currentY += 4;
+
+  // Tabla 1: Valores Límite para Ruido Continuo o Intermitente
+  const drawTabla1RuidoNormativa = () => {
+    const tX = 15;
+    const tW = 180;
+    
+    checkPageY(14);
+    setFillColor(doc, COLOR_AZUL_PRINCIPAL);
+    doc.rect(tX, currentY, tW, 6, 'F');
+    drawCellText(doc, 'TABLA 1: VALORES LÍMITE UMBRAL PARA RUIDO (Dec. 351/79 - ANEXO V)', tX, currentY, tW, 6, { align: 'center', fontStyle: 'bold', fontSize: 8, color: COLOR_BLANCO });
+    currentY += 6;
+
+    setFillColor(doc, COLOR_SLATE_200);
+    doc.rect(tX, currentY, 60, 6, 'FD');
+    doc.rect(tX + 60, currentY, 40, 6, 'FD');
+    doc.rect(tX + 100, currentY, 80, 6, 'FD');
+    drawCellText(doc, 'Duración por Día', tX, currentY, 60, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+    drawCellText(doc, 'Unidad', tX + 60, currentY, 40, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+    drawCellText(doc, 'Nivel de Presión Acústica (dBA)', tX + 100, currentY, 80, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+    currentY += 6;
+
+    const filasTabla1 = [
+      { dur: '24', uni: 'horas', dba: '80' },
+      { dur: '16', uni: 'horas', dba: '82' },
+      { dur: '8', uni: 'horas', dba: '85' },
+      { dur: '4', uni: 'horas', dba: '88' },
+      { dur: '2', uni: 'horas', dba: '91' },
+      { dur: '1', uni: 'hora', dba: '94' },
+      { dur: '30', uni: 'minutos', dba: '97' },
+      { dur: '15', uni: 'minutos', dba: '100' },
+      { dur: '7,50', uni: 'minutos', dba: '103' },
+      { dur: '3,75', uni: 'minutos', dba: '106' },
+      { dur: '1,88', uni: 'minutos', dba: '109' },
+      { dur: '0,94', uni: 'minutos', dba: '112' },
+      { dur: '28,12', uni: 'segundos', dba: '115' },
+      { dur: '14,06', uni: 'segundos', dba: '118' },
+      { dur: '7,03', uni: 'segundos', dba: '121' },
+      { dur: '3,52', uni: 'segundos', dba: '124' },
+      { dur: '1,76', uni: 'segundos', dba: '127' },
+      { dur: '0,88', uni: 'segundos', dba: '130' },
+      { dur: '0,44', uni: 'segundos', dba: '133' },
+      { dur: '0,22', uni: 'segundos', dba: '136' },
+      { dur: '0,11', uni: 'segundos', dba: '139' },
+    ];
+
+    filasTabla1.forEach(row => {
+      const rowH = 5;
+      if (checkPageY(rowH)) {
+        setFillColor(doc, COLOR_SLATE_200);
+        doc.rect(tX, currentY, 60, 6, 'FD');
+        doc.rect(tX + 60, currentY, 40, 6, 'FD');
+        doc.rect(tX + 100, currentY, 80, 6, 'FD');
+        drawCellText(doc, 'Duración por Día', tX, currentY, 60, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+        drawCellText(doc, 'Unidad', tX + 60, currentY, 40, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+        drawCellText(doc, 'Nivel de Presión Acústica (dBA)', tX + 100, currentY, 80, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+        currentY += 6;
+      }
+
+      setDrawColor(doc, COLOR_SLATE_300);
+      doc.rect(tX, currentY, 60, rowH, 'S');
+      doc.rect(tX + 60, currentY, 40, rowH, 'S');
+      doc.rect(tX + 100, currentY, 80, rowH, 'S');
+
+      drawCellText(doc, row.dur, tX + 2, currentY, 56, rowH, { fontSize: 7.5, valign: 'middle' });
+      drawCellText(doc, row.uni, tX + 62, currentY, 36, rowH, { align: 'center', fontSize: 7.5, valign: 'middle' });
+      drawCellText(doc, row.dba + ' dBA', tX + 102, currentY, 76, rowH, { align: 'center', fontStyle: 'bold', fontSize: 7.5, color: COLOR_AZUL_PRINCIPAL, valign: 'middle' });
+
+      currentY += rowH;
+    });
+
+    currentY += 2;
+    printParagraph('* No ha de haber exposiciones a ruido continuo, intermitente o de impacto por encima de un nivel pico C ponderado de 140 dB.', 'legend');
+    printParagraph('** El nivel se mide con sonómetro en ponderación A y respuesta lenta.', 'legend');
+    currentY += 4;
+  };
+
+  drawTabla1RuidoNormativa();
+
+  // 3. Ruido de Impulso o de Impacto
+  printSectionHeader('Ruido de Impulso o de Impacto');
+  printParagraph('La medida del ruido de impulso estará en el rango de 80 a 140 dBA (rango del pulso de al menos 63 dB). No se permitirán exposiciones sin protección auditiva por encima de un nivel pico C ponderado de 140 dB.');
+  currentY += 4;
+
+  // 4. Ultrasonido
+  printSectionHeader('Ultrasonido');
+  printParagraph('Valores límite para frecuencias de 10 kHz a 100 kHz para prevenir efectos subjetivos y deterioro auditivo en el ambiente de trabajo.');
+
+  const drawTablaUltrasonidoNormativa = () => {
+    const tX = 15;
+    const tW = 180;
+
+    checkPageY(14);
+    setFillColor(doc, COLOR_AZUL_PRINCIPAL);
+    doc.rect(tX, currentY, tW, 6, 'F');
+    drawCellText(doc, 'VALORES LÍMITE PARA ULTRASONIDO (Dec. 351/79 - ANEXO V)', tX, currentY, tW, 6, { align: 'center', fontStyle: 'bold', fontSize: 8, color: COLOR_BLANCO });
+    currentY += 6;
+
+    setFillColor(doc, COLOR_SLATE_200);
+    doc.rect(tX, currentY, 50, 6, 'FD');
+    doc.rect(tX + 50, currentY, 40, 6, 'FD');
+    doc.rect(tX + 90, currentY, 45, 6, 'FD');
+    doc.rect(tX + 135, currentY, 45, 6, 'FD');
+    drawCellText(doc, 'Frecuencia Central (kHz)', tX, currentY, 50, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+    drawCellText(doc, 'Techo Aire (dB)', tX + 50, currentY, 40, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+    drawCellText(doc, 'TWA 8h Aire (dB)', tX + 90, currentY, 45, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+    drawCellText(doc, 'Techo Agua (dB)', tX + 135, currentY, 45, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+    currentY += 6;
+
+    const filasUltrasonido = [
+      { f: '10', tAire: '105*', twa: '88*', tAgua: '167' },
+      { f: '12,5', tAire: '105*', twa: '89*', tAgua: '167' },
+      { f: '16', tAire: '105*', twa: '92*', tAgua: '167' },
+      { f: '20', tAire: '105*', twa: '94*', tAgua: '167' },
+      { f: '25', tAire: '110**', twa: '—', tAgua: '172' },
+      { f: '31,5', tAire: '115**', twa: '—', tAgua: '177' },
+      { f: '40', tAire: '115**', twa: '—', tAgua: '177' },
+      { f: '50', tAire: '115**', twa: '—', tAgua: '177' },
+      { f: '63', tAire: '115**', twa: '—', tAgua: '177' },
+      { f: '80', tAire: '115**', twa: '—', tAgua: '177' },
+      { f: '100', tAire: '115**', twa: '—', tAgua: '177' },
+    ];
+
+    filasUltrasonido.forEach(row => {
+      const rowH = 5;
+      if (checkPageY(rowH)) {
+        setFillColor(doc, COLOR_SLATE_200);
+        doc.rect(tX, currentY, 50, 6, 'FD');
+        doc.rect(tX + 50, currentY, 40, 6, 'FD');
+        doc.rect(tX + 90, currentY, 45, 6, 'FD');
+        doc.rect(tX + 135, currentY, 45, 6, 'FD');
+        drawCellText(doc, 'Frecuencia Central (kHz)', tX, currentY, 50, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+        drawCellText(doc, 'Techo Aire (dB)', tX + 50, currentY, 40, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+        drawCellText(doc, 'TWA 8h Aire (dB)', tX + 90, currentY, 45, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+        drawCellText(doc, 'Techo Agua (dB)', tX + 135, currentY, 45, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+        currentY += 6;
+      }
+
+      setDrawColor(doc, COLOR_SLATE_300);
+      doc.rect(tX, currentY, 50, rowH, 'S');
+      doc.rect(tX + 50, currentY, 40, rowH, 'S');
+      doc.rect(tX + 90, currentY, 45, rowH, 'S');
+      doc.rect(tX + 135, currentY, 45, rowH, 'S');
+
+      drawCellText(doc, row.f + ' kHz', tX + 2, currentY, 46, rowH, { fontStyle: 'bold', fontSize: 7.5, valign: 'middle' });
+      drawCellText(doc, row.tAire, tX + 52, currentY, 36, rowH, { align: 'center', fontSize: 7.5, valign: 'middle' });
+      drawCellText(doc, row.twa, tX + 92, currentY, 41, rowH, { align: 'center', fontSize: 7.5, valign: 'middle' });
+      drawCellText(doc, row.tAgua, tX + 137, currentY, 41, rowH, { align: 'center', fontSize: 7.5, valign: 'middle' });
+
+      currentY += rowH;
+    });
+
+    currentY += 2;
+    printParagraph('* Molestias subjetivas posibles entre 75 y 105 dB. Para sonidos tonales < 10 kHz se recomienda reducir a 80 dB.', 'legend');
+    printParagraph('** Asume acoplamiento con agua u otro medio. En ausencia de acoplamiento corporal directo, los valores umbrales pueden incrementarse en 30 dB.', 'legend');
+    currentY += 6;
+  };
+
+  drawTablaUltrasonidoNormativa();
+
+  // ==========================================
+  // HOJA 1: FORMULARIO OFICIAL RUIDO (A4 Vertical - RES. SRT 85/12)
   // ==========================================
   doc.addPage('a4', 'portrait');
   pageCounter++;

@@ -657,8 +657,13 @@ export default function ProtocoloForm({
         .from('protocolos_ruido')
         .select('*')
         .eq('id', editingId)
-        .single();
+        .maybeSingle();
       if (prErr) throw prErr;
+      if (!proto) {
+        globalToast.toast('El protocolo solicitado no existe o no se encuentra disponible.', 'error');
+        setLoading(false);
+        return;
+      }
 
       setEmpresaId(proto.razon_social_id || '');
       setEstablecimientoId(proto.establecimiento_id || '');

@@ -3,6 +3,10 @@
 ## [2026-07-30] Textos por Defecto en Conclusiones/Recomendaciones y Resiliencia en Carga de Archivos para Ruido e Iluminación
 
 ### Resumen de Cambios
+- **Incorporación de Hojas Informativas de Acústica en el PDF de Ruido (Dec. 351/79 - Anexo V):**
+  - Se agregaron hojas informativas inmediatamente después de la Portada en `pdfGenerator.js` del Protocolo de Ruido, replicando el estándar visual de Iluminación.
+  - Se estructuraron los 4 apartados normativos: **Infrasonido y Sonido de Baja Frecuencia**, **Ruido Continuo o Intermitente**, **Ruido de Impulso o de Impacto** y **Ultrasonido**.
+  - Incluye la fórmula de dosis / exposición combinada $\frac{C_1}{T_1} + \frac{C_2}{T_2} + \dots \le 1$, la **Tabla 1 de Valores Límite Umbral para Ruido Continuo o Intermitente** (con las 21 duraciones de 24h a 0.11s) y la **Tabla de Valores Límite para Ultrasonido** (10 kHz a 100 kHz).
 - **Textos por Defecto en Conclusiones y Recomendaciones Preventivas (Protocolo de Ruido):**
   - Se actualizaron los valores por defecto tanto en el formulario (`ProtocoloForm.js`) como en la generación del PDF (`pdfGenerator.js`) para el Protocolo de Ruido según las especificaciones normativas requeridas por el usuario:
   - **Conclusiones:** `"Los valores obtenidos en todos los puntos de muestreo, Cumplen con lo establecido en el ANEXO V - CAPITULO 13 (Acústica), del Decreto Nº 351/79."`
@@ -31,13 +35,16 @@
 - **Restricción de Columnas de Sonido Continuo al Tipo Seleccionado (Protocolo de Ruido PDF):**
   - Se actualizó `pdfGenerator.js` para que en la tabla de mediciones de la Hoja 3 del PDF únicamente se renderice el dato correspondiente a la sub-opción de sonido continuo activa (`pt.tipo_carga_continuo`: *Nivel Integrado* / *Suma de Fracciones* / *Dosis*).
   - Las columnas de las dos opciones no seleccionadas muestran explícitamente `'—'`, garantizando que no se dupliquen o arrastren valores de otros botones ni de registros anteriores.
-- **Incorporación del Contenedor "Describa las condiciones normales y/o habituales de trabajo":**
   - Se agregó en `ProtocoloForm.js` dentro del bloque *Datos de la Medición* el contenedor para el campo **Describa las condiciones normales y/o habituales de trabajo** (`condiciones_atmosfericas` / `condicionesAtmosfericas`), ubicado de forma ordenada entre *Horarios / Turnos Habituales de Trabajo* (`horarios_turnos_text`) y *Describa las condiciones de trabajo al momento de la medición.* (`observaciones`).
-  - Cada uno de los tres contenedores cuenta con su área de texto expandible `<AppTextarea>` y su correspondiente módulo `<AITextHelper />` (`SySO-AI-Voice-Helper`), garantizando un mapeo 1 a 1 perfecto con los tres recuadros de la Hoja 1 del PDF.
-- **Resolución Resiliente de Usuario Autenticado (`handleUploadFile` & `executeSave`):**
-  - Se implementó un flujo de resolución en cascada (`profile?.id` $\rightarrow$ `supabase.auth.getUser()` $\rightarrow$ `supabase.auth.getSession()`) con bloques `try/catch` defensivos en las funciones de subida de archivos y guardado en la base de datos tanto de Ruido como de Iluminación.
-  - Se corrigió el `ReferenceError: user is not defined` en `executeSave` mapeando la propiedad al identificador desinfectado `user_id: userId || 'mock-user-id'`.
-  - Esto evita excepciones por errores temporales de red/DNS (`ERR_NAME_NOT_RESOLVED`) y mensajes de `Usuario no autenticado` / `No autorizado` al cargar adjuntos o imágenes.
+- **Actualización de Título de Recomendaciones en Formulario (`ProtocoloForm.js` - Iluminación):**
+  - Se cambió la etiqueta del campo `<AppLabel>` a **`Recomendaciones para adecuar el nivel de iluminación`** (reemplazando a *Recomendaciones preventivas recomendadas*).
+  - Se actualizó el contexto del módulo de asistencia por voz e IA `<AITextHelper />` para reflejar la nueva terminología del campo.
+- **Ubicación de Párrafos Introductorios de Sección Iluminación en Hoja 2 (`pdfGenerator.js` - Iluminación):**
+  - Se configuró la Hoja 2 para renderizar íntegramente al inicio, bajo el subtítulo **Iluminación**, los 7 párrafos introductorios completos del Anexo IV (incluyendo el párrafo de estimación de tareas de Tabla 1 no incluidas en Tabla 2, cono visual de 1°, uniformidad $E_{mín} \ge E_{media} / 2$, media a 0,80 m y norma de iluminación localizada).
+  - Tras los bloques textuales, se despliegan secuencialmente la **Tabla 1**, **Tabla 2**, **Tabla 3** y **Tabla 4**, finalizando con la sección **Color** y su cuadro con la norma IRAM-DEF D 10-54.
+- **Manejo Resiliente de Registros Inexistentes o Eliminados (`ProtocoloForm.js` - Iluminación y Ruido):**
+  - Se reemplazó la invocación `.single()` por `.maybeSingle()` al consultar el protocolo por ID (`protocolos_iluminacion` / `protocolos_ruido`).
+  - Se eliminó el error HTTP 406 (`PGRST116 - The result contains 0 rows`) y la excepción en consola al intentar editar un protocolo inexistente, notificando limpiamente al usuario mediante `globalToast.toast('El protocolo solicitado no existe o no se encuentra disponible.', 'error')` y deteniendo el estado de carga (`setLoading(false)`).
 
 ---
 
