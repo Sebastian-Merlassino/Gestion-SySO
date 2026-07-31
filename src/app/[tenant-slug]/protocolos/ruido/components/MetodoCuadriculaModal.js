@@ -11,7 +11,7 @@ export default function MetodoCuadriculaModal({ isOpen, onClose }) {
       isOpen={isOpen}
       onClose={onClose}
       title="Decreto Nº 351/79 — ANEXO V"
-      subtitle="Especificaciones Técnicas de Higiene y Seguridad: Infrasonido, Ruido y Ultrasonido"
+      subtitle="Decreto Nº 351/79 - ANEXO V - CAPITULO 13 (Acústica)"
       icon={BookOpen}
       maxWidth="max-w-4xl"
       closeButtonText="Cerrar"

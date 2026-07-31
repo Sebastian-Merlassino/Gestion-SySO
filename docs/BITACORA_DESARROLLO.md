@@ -13,7 +13,7 @@
   - Se configuró la celda de la Tabla 3 en `pdfGenerator.js` para renderizar de manera limpia y directa el texto completo ingresado en el campo *Documentación que se adjuntará a la medición* (`proto.documentacion_adjunta`), sin agregar etiquetas fijas de `✓ Adjunto` ni estructuras rígidas.
 - **Actualización de Títulos y Leyendas Normativas a Decreto Nº 351/79 - ANEXO V:**
   - En `ProtocoloForm.js`, se actualizó el texto del botón superior de cabecera a **`Decreto Nº 351/79 - ANEXO V`**.
-  - En `MetodoCuadriculaModal.js` y `Tabla1RuidoModal.js`, se actualizó el título/subtítulo del modal a **`Decreto Nº 351/79 — ANEXO V`**.
+  - En `MetodoCuadriculaModal.js` y `Tabla1RuidoModal.js`, se actualizó el título/subtítulo del modal a **`Decreto Nº 351/79 - ANEXO V - CAPITULO 13 (Acústica)`**.
   - En `ProtocoloForm.js`, se cambió la leyenda del bloque de cálculo de cada punto de muestreo a **`Verificación de cumplimiento (Decreto Nº 351/79 - ANEXO V-CAPITULO 13-ACUSTICA):`**.
 - **Eliminación del Primer Contenedor de "Información adicional" y Columna en Supabase:**
   - Se eliminó del formulario `ProtocoloForm.js` el primer contenedor de **Información adicional** que se encontraba entre *Documentación que se Adjuntará* y *Puntos de Muestreo*.
