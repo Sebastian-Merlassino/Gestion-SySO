@@ -124,7 +124,7 @@ export default function ProtocoloForm({
 
   // Análisis
   const [conclusiones, setConclusiones] = useState('Los valores obtenidos en todos los puntos de muestreo, Cumplen con lo establecido en el ANEXO V - CAPITULO 13 (Acústica), del Decreto Nº 351/79.');
-  const [recomendaciones, setRecomendaciones] = useState(`Cuando los niveles de exposición al ruido superen o se encuentren próximos a los valores establecidos en el Anexo V de la Resolución MTEySS N.º 295/03, se recomienda:
+  const [recomendaciones, setRecomendaciones] = useState(`Cuando los niveles de exposición al ruido superen o se encuentren próximos a los valores establecidos en el ANEXO V - CAPITULO 13 (Acústica), del Decreto Nº 351/79, se recomienda:
 
 • Implementar controles de ingeniería sobre las fuentes generadoras, mediante mantenimiento, reparación, aislamiento, encapsulamiento, instalación de barreras acústicas, silenciadores o elementos antivibratorios.
 • Evaluar la sustitución o modificación de máquinas, herramientas, equipos o procesos por alternativas de menor emisión sonora.

@@ -6,7 +6,7 @@
 - **Textos por Defecto en Conclusiones y Recomendaciones Preventivas (Protocolo de Ruido):**
   - Se actualizaron los valores por defecto tanto en el formulario (`ProtocoloForm.js`) como en la generación del PDF (`pdfGenerator.js`) para el Protocolo de Ruido según las especificaciones normativas requeridas por el usuario:
   - **Conclusiones:** `"Los valores obtenidos en todos los puntos de muestreo, Cumplen con lo establecido en el ANEXO V - CAPITULO 13 (Acústica), del Decreto Nº 351/79."`
-  - **Recomendaciones Preventivas:** `"Cuando los niveles de exposición al ruido superen o se encuentren próximos a los valores establecidos en el Anexo V de la Resolución MTEySS N.º 295/03, se recomienda:"` seguido de los 6 ítems normalizados de controles de ingeniería, sustitución de equipos, señalización/uso obligatorio de EPP auditivo, provención de protectores adecuados, capacitación del personal y control de tiempos de exposición por rotación.
+  - **Recomendaciones Preventivas:** `"Cuando los niveles de exposición al ruido superen o se encuentren próximos a los valores establecidos en el ANEXO V - CAPITULO 13 (Acústica), del Decreto Nº 351/79, se recomienda:"` seguido de los 6 ítems normalizados de controles de ingeniería, sustitución de equipos, señalización/uso obligatorio de EPP auditivo, provensión de protectores adecuados, capacitación del personal y control de tiempos de exposición por rotación.
 - **Eliminación de "Observaciones del Punto" en Puntos de Muestreo (Protocolo de Ruido):**
   - Se eliminó la etiqueta y campo `<AppInput>` de **Observaciones del Punto** dentro de las tarjetas de cada punto de muestreo en `ProtocoloForm.js` de Ruido.
 - **Renderizado Fiel de Texto en "Documentación que se Adjuntará" (PDF):**
