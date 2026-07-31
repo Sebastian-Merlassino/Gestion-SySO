@@ -667,23 +667,23 @@ export const generateNoiseProtocolPdf = async (
   // 1. Infrasonido y Sonido de Baja Frecuencia
   printSectionHeader('Infrasonido y Sonido de Baja Frecuencia');
   printParagraph('Estos límites representan las exposiciones al sonido a los que se cree que casi todos los trabajadores pueden estar expuestos repetidamente sin efectos adversos para la audición.');
-  printParagraph('Frecuencias 1 Hz a 80 Hz (NPS): Excepto para el sonido de impulsos de banda de un tercio de octava (< 2 s), el Nivel de Presión Sonora (NPS) no debe exceder el valor techo de 145 dB.');
-  printParagraph('NPS Global No Ponderado: El Nivel de Presión Sonora global no ponderado no debe exceder el valor techo de 150 dB.');
-  printParagraph('Tiempo límite: No hay tiempo límite para estas exposiciones. Sin embargo, la aplicación de los valores límite para el ruido y el ultrasonido puede proporcionar un nivel reducido aceptable en el tiempo.');
-  printParagraph('Alternativa no ponderada: El pico NPS medido con la escala de frecuencias del sonómetro en lineal o no ponderada no debe exceder de 145 dB para situaciones de sonido sin impulsos.');
-  printParagraph('Resonancia torácica: La resonancia en el pecho de los sonidos de baja frecuencia (intervalo de 50 Hz a 60 Hz) puede causar vibración del cuerpo entero, generando molestias hasta hacerse necesario reducir el NPS a un nivel donde desaparezca el problema.');
+  printParagraph('Frecuencias 1 Hz a 80 Hz: Excepto para el sonido de impulsos de banda de un tercio de octava (< 2 s), los niveles de presión sonora no deben exceder el valor techo de 145 dB.');
+  printParagraph('Picos no ponderados: El Nivel de Presión Sonora global no ponderado no debe exceder el valor techo de 150 dB.');
+  printParagraph('Notas:');
+  printParagraph('1. No hay tiempo límite para estas exposiciones. Sin embargo, la aplicación de los valores límite para el ruido y el ultrasonido puede proporcionar un nivel reducido aceptable en el tiempo.');
+  printParagraph('2. Alternativamente, el pico NPS medido con la escala de frecuencias del sonómetro en lineal o no ponderada no debe exceder de 145 dB para situaciones de sonido sin impulsos.');
+  printParagraph('3. La resonancia en el pecho de los sonidos de baja frecuencia (intervalo aproximado de 50 Hz a 60 Hz) puede causar vibración del cuerpo entero, generando molestias hasta hacerse necesario reducir el NPS a un nivel donde desaparezca el problema.');
   currentY += 4;
 
   // 2. Ruido Continuo o Intermitente
   printSectionHeader('Ruido Continuo o Intermitente');
-  printParagraph('Cuando los trabajadores estén expuestos al ruido a niveles iguales o superiores a los valores límite, es necesario implementar un programa de conservación de la audición que incluya pruebas audiométricas periódicas.');
-  printParagraph('Requisitos del instrumental: Filtro de ponderación frecuencial A, respuesta Lenta. Exposición combinada: se aplica la fórmula de adición de dosis de ruido cuando la jornada se compone de 2 o más períodos de distinta intensidad.');
-  printParagraph('Criterios del dosímetro: Índice de conversión = 3 dB, Nivel criterio = 85 dBA, Tiempo criterio = 8 horas.');
-  
-  // Fórmula
+  printParagraph('Estos límites representan las condiciones en las que se cree que casi todos los trabajadores pueden estar expuestos repetidamente sin efectos adversos para la audición. Cuando los trabajadores estén expuestos al ruido a niveles iguales o superiores a los valores límite, es necesario un programa completo de conservación de la audición que incluya pruebas audiométricas.');
+  printParagraph('El valor límite para el ruido continuo o intermitente se determina mediante el Nivel de Presión Sonora Ponderado A medido en dB(A) con un sonómetro operando en la escala de respuesta lenta.');
+  printParagraph('Criterios de evaluación: Índice de conversión = 3 dB, Nivel Criterio = 85 dBA, Tiempo Criterio = 8 horas.');
+  printParagraph('Cuando la exposición diaria se compone de dos o más períodos de exposición a ruidos de diferentes niveles, se debe considerar su efecto combinado, en lugar de su efecto individual.');
   printParagraph('Ecuación para Exposición Combinada a Ruido:', 'formula');
-  printParagraph('C1 / T1 + C2 / T2 + ... + Cn / Tn <= 1', 'formula');
-  printParagraph('Donde Ci es el tiempo total de exposición a un nivel determinado y Ti es el tiempo total permitido a ese nivel. Si la suma es mayor que 1 (unidad), la exposición sobrepasa el Valor Límite Umbral (se utilizan todas las exposiciones >= 80 dBA).');
+  printParagraph('C1 / T1 + C2 / T2 + ... + Cn / Tn', 'formula');
+  printParagraph('Donde Ci indica el tiempo total de exposición a un nivel determinado de ruido, y Ti indica el tiempo total permitido a ese nivel. Si la suma de las fracciones es mayor que la unidad (1), la exposición combinada se debe considerar por encima del Valor Límite Umbral. Se deben incluir todas las exposiciones al ruido que alcancen o superen los 80 dBA.');
   currentY += 4;
 
   // Tabla 1: Valores Límite para Ruido Continuo o Intermitente
@@ -765,12 +765,13 @@ export const generateNoiseProtocolPdf = async (
 
   // 3. Ruido de Impulso o de Impacto
   printSectionHeader('Ruido de Impulso o de Impacto');
-  printParagraph('La medida del ruido de impulso estará en el rango de 80 a 140 dBA (rango del pulso de al menos 63 dB). No se permitirán exposiciones sin protección auditiva por encima de un nivel pico C ponderado de 140 dB.');
+  printParagraph('Se define el ruido de impulso o de impacto como una variación pico de la presión sonora seguida de un decaimiento rápido de la señal. La medida del ruido de impulso estará en el rango de 80 a 140 dBA (rango del pulso de al menos 63 dB). No se permitirán exposiciones sin protección auditiva por encima de un nivel pico C ponderado de 140 dB.');
   currentY += 4;
 
   // 4. Ultrasonido
   printSectionHeader('Ultrasonido');
-  printParagraph('Valores límite para frecuencias de 10 kHz a 100 kHz para prevenir efectos subjetivos y deterioro auditivo en el ambiente de trabajo.');
+  printParagraph('Estos límites representan las condiciones en las que se cree que casi todos los trabajadores pueden estar expuestos repetidamente sin efectos adversos para la audición. Dichos valores se aplican a exposiciones continuas por vía aérea y no se aplican si la fuente ultrasónica está en contacto directo con el cuerpo.');
+  printParagraph('Valores límite para frecuencias de 10 kHz a 100 kHz.');
 
   const drawTablaUltrasonidoNormativa = () => {
     const tX = 15;
