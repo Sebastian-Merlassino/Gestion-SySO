@@ -14,7 +14,7 @@
 - **Actualización de Títulos y Leyendas Normativas a Decreto Nº 351/79 - ANEXO V:**
   - En `ProtocoloForm.js`, se actualizó el texto del botón superior de cabecera a **`Decreto Nº 351/79 - ANEXO V`**.
   - En `MetodoCuadriculaModal.js` y `Tabla1RuidoModal.js`, se actualizó el título/subtítulo del modal a **`Decreto Nº 351/79 - ANEXO V - CAPITULO 13 (Acústica)`**.
-  - En `ProtocoloForm.js`, se cambió la leyenda del bloque de cálculo de cada punto de muestreo a **`Verificación de cumplimiento (Decreto Nº 351/79 - ANEXO V-CAPITULO 13-ACUSTICA):`**.
+  - En `ProtocoloForm.js`, se cambió la leyenda del bloque de cálculo de cada punto de muestreo a **`Verificación de cumplimiento (Decreto Nº 351/79 - ANEXO V - CAPITULO 13 (ACUSTICA)):`**.
 - **Eliminación del Primer Contenedor de "Información adicional" y Columna en Supabase:**
   - Se eliminó del formulario `ProtocoloForm.js` el primer contenedor de **Información adicional** que se encontraba entre *Documentación que se Adjuntará* y *Puntos de Muestreo*.
   - Se ejecutó la sentencia DDL `ALTER TABLE public.protocolos_ruido DROP COLUMN IF EXISTS informacion_adicional_doc;` y el refresco del esquema PostgREST (`NOTIFY pgrst, 'reload schema'`).
