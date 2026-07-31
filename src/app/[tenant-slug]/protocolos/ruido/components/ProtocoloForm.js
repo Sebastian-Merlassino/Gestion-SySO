@@ -2724,12 +2724,12 @@ export default function ProtocoloForm({
 
             <div className="flex flex-col gap-1">
               <div className="flex items-center justify-between">
-                <AppLabel htmlFor="recomendaciones">Recomendaciones preventivas recomendadas</AppLabel>
+                <AppLabel htmlFor="recomendaciones">Recomendaciones para adecuar el nivel de ruido</AppLabel>
                 <AITextHelper
                   disabled={!canEdit}
                   value={recomendaciones}
                   onChange={setRecommendations => setRecomendaciones(setRecommendations)}
-                  context="Recomendaciones preventivas recomendadas para adecuar los niveles de iluminación a la legislación vigente y mejorar la ergonomía visual"
+                  context="Recomendaciones para adecuar el nivel de ruido a la legislación vigente"
                 />
               </div>
               <AppTextarea

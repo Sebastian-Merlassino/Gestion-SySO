@@ -9,8 +9,11 @@
   - **Recomendaciones Preventivas:** `"Cuando los niveles de exposición al ruido superen o se encuentren próximos a los valores establecidos en el Anexo V de la Resolución MTEySS N.º 295/03, se recomienda:"` seguido de los 6 ítems normalizados de controles de ingeniería, sustitución de equipos, señalización/uso obligatorio de EPP auditivo, provención de protectores adecuados, capacitación del personal y control de tiempos de exposición por rotación.
 - **Eliminación de "Observaciones del Punto" en Puntos de Muestreo (Protocolo de Ruido):**
   - Se eliminó la etiqueta y campo `<AppInput>` de **Observaciones del Punto** dentro de las tarjetas de cada punto de muestreo en `ProtocoloForm.js` de Ruido.
-- **Renderizado Dinámico de "Documentación que se Adjuntará" en el PDF:**
-  - Se actualizó la Tabla 3 del PDF (`pdfGenerator.js`) para proyectar el texto editable del campo `documentacion_adjunta` proveniente del formulario en lugar de cadenas hardcodeadas. Se evalúa dinámicamente si los adjuntos correspondientes están presentes para marcar la etiqueta `✓ Adjunto` a la derecha.
+- **Renderizado Fiel de Texto en "Documentación que se Adjuntará" (PDF):**
+  - Se configuró la celda de la Tabla 3 en `pdfGenerator.js` para renderizar de manera limpia y directa el texto completo ingresado en el campo *Documentación que se adjuntará a la medición* (`proto.documentacion_adjunta`), sin agregar etiquetas fijas de `✓ Adjunto` ni estructuras rígidas.
+- **Actualización de Título de Etiqueta y Renderizado de Recomendaciones:**
+  - En `ProtocoloForm.js`, se cambió el título de la etiqueta del formulario de `Recomendaciones preventivas recomendadas` a **`Recomendaciones para adecuar el nivel de ruido`**.
+  - En `pdfGenerator.js`, se simplificó el renderizado de la columna de Recomendaciones en la Hoja de Análisis para proyectar directamente el texto completo ingresado en el formulario sin re-parseos ni alteraciones de viñetas.
 - **Eliminación del Primer Contenedor de "Información adicional" y Columna en Supabase:**
   - Se eliminó del formulario `ProtocoloForm.js` el primer contenedor de **Información adicional** que se encontraba entre *Documentación que se Adjuntará* y *Puntos de Muestreo*.
   - Se ejecutó la sentencia DDL `ALTER TABLE public.protocolos_ruido DROP COLUMN IF EXISTS informacion_adicional_doc;` y el refresco del esquema PostgREST (`NOTIFY pgrst, 'reload schema'`).

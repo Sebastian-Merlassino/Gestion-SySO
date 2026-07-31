@@ -729,29 +729,8 @@ export const generateNoiseProtocolPdf = async (
   doc.rect(t3X, t3Y, t3W, 6, 'FD');
   drawCellText(doc, 'Documentación que se adjuntará a la medición', t3X, t3Y, t3W, 6, { align: 'center', fontStyle: 'bold', fontSize: 9 });
 
-  const hasCert = (adjuntosList || []).some(a => a.tipo === 'Certificado de Calibración' || a.tipo === 'Certificado' || a.tipo === 'Certificado de Calibración del Instrumental');
-  const hasPlano = (adjuntosList || []).some(a => a.tipo === 'Evidencia Fotográfica Plano' || a.tipo === 'Foto Plano' || a.tipo === 'Plano' || a.tipo === 'Croquis');
-
   const docAdjText = proto.documentacion_adjunta || 'Certificado de Calibración.\nPlano o Croquis del establecimiento.';
-  const docLines = docAdjText.split('\n').map(l => l.trim()).filter(Boolean);
-
-  if (docLines.length > 0) {
-    docLines.forEach((lineText, idx) => {
-      if (idx >= 2) return;
-      const lineY = t3Y + 6.5 + (idx * 6);
-      drawCellText(doc, lineText, t3X + 3, lineY, 125, 5.5, { fontStyle: 'bold', fontSize: 8.5 });
-
-      const isCertLine = lineText.toLowerCase().includes('certificado');
-      const isPlanoLine = lineText.toLowerCase().includes('plano') || lineText.toLowerCase().includes('croquis');
-
-      const isAttached = (isCertLine && hasCert) || (isPlanoLine && hasPlano);
-      if (isAttached) {
-        drawCellText(doc, '✓ Adjunto', t3X + 130, lineY, 47, 5.5, { fontSize: 8.5, fontStyle: 'bold', color: COLOR_VERDE_CUMPLE, align: 'right' });
-      }
-    });
-  } else {
-    drawCellText(doc, docAdjText, t3X + 3, t3Y + 6.5, t3W - 6, 12, { fontSize: 8.5, valign: 'top' });
-  }
+  drawCellText(doc, docAdjText, t3X + 3, t3Y + 6.5, t3W - 6, 12, { fontSize: 8.5, valign: 'top' });
 
   // Firma Profesional (Alineada abajo a la derecha de la hoja 1)
   drawSignatureBlock(105, t3Y + t3H + 4, 90, 36);
@@ -1029,18 +1008,8 @@ export const generateNoiseProtocolPdf = async (
   // Recomendaciones text
   const defaultRecomStr = `Cuando los niveles de exposición al ruido superen o se encuentren próximos a los valores establecidos en el Anexo V de la Resolución MTEySS N.º 295/03, se recomienda:\n\n• Implementar controles de ingeniería sobre las fuentes generadoras, mediante mantenimiento, reparación, aislamiento, encapsulamiento, instalación de barreras acústicas, silenciadores o elementos antivibratorios.\n• Evaluar la sustitución o modificación de máquinas, herramientas, equipos o procesos por alternativas de menor emisión sonora.\n• Delimitar y señalizar el sector, restringiendo el acceso al personal autorizado y estableciendo el uso obligatorio de protección auditiva cuando corresponda.\n• Proveer protectores auditivos adecuados, seleccionados según el nivel de exposición, la atenuación requerida y su compatibilidad con otros elementos de protección personal.\n• Capacitar al personal expuesto sobre los riesgos del ruido, las medidas preventivas y el uso, ajuste, conservación y reposición de los protectores auditivos.\n• Controlar los tiempos de exposición, mediante rotación de tareas, reducción de permanencia o reorganización de las actividades, cuando las medidas técnicas no resulten suficientes.`;
 
-  const recomRaw = proto.recomendaciones || defaultRecomStr;
-  const recomLines = recomRaw.split('\n').map(l => l.trim()).filter(Boolean);
-
-  let recY = tAY + 16;
-  recomLines.forEach(lineStr => {
-    const isHeader = lineStr.toLowerCase().startsWith('cuando los niveles');
-    const cleanItem = lineStr.replace(/^[•\-\*\s]+/, '');
-    const fullItem = isHeader ? cleanItem : `•  ${cleanItem}`;
-    const lines = doc.splitTextToSize(fullItem, colW - 5);
-    drawCellText(doc, fullItem, tAX + colW, recY, colW, (lines.length * 3.6), { fontSize: 7.5, valign: 'top' });
-    recY += (lines.length * 3.6) + (isHeader ? 2 : 1.5);
-  });
+  const recomText = proto.recomendaciones || defaultRecomStr;
+  drawCellText(doc, recomText, tAX + colW, tAY + 14, colW, contentH, { fontSize: 7.5, valign: 'top', padding: 2 });
 
   // Firma Profesional (Ubicada debajo del cuadro de análisis alineada a la derecha)
   drawSignatureBlock(185, tAY + totalBoxH + 5, 95, 38);
