@@ -13,7 +13,9 @@
   - Se separaron los estados de React para los dos contenedores independientes de **Información adicional** en `ProtocoloForm.js` de Ruido:
     1. Contenedor 1 (debajo de *Documentación que se Adjuntará*): Vinculado al nuevo campo de estado `informacionAdicionalDoc` y columna `informacion_adicional_doc` en Supabase.
     2. Contenedor 2 (debajo de *Puntos de Muestreo*): Vinculado a `informacionAdicional` y columna `informacion_adicional`, proyectándose en el cuadro de la Hoja 3 del PDF.
-  - Se aplicó la migración SQL `20260816000000_add_informacion_adicional_doc_to_protocolo_ruido.sql` en Supabase para persistir ambos valores sin interferencia cruzada.
+- **Restricción de Columnas de Sonido Continuo al Tipo Seleccionado (Protocolo de Ruido PDF):**
+  - Se actualizó `pdfGenerator.js` para que en la tabla de mediciones de la Hoja 3 del PDF únicamente se renderice el dato correspondiente a la sub-opción de sonido continuo activa (`pt.tipo_carga_continuo`: *Nivel Integrado* / *Suma de Fracciones* / *Dosis*).
+  - Las columnas de las dos opciones no seleccionadas muestran explícitamente `'—'`, garantizando que no se dupliquen o arrastren valores de otros botones ni de registros anteriores.
 - **Resolución Resiliente de Usuario Autenticado (`handleUploadFile` & `executeSave`):**
   - Se implementó un flujo de resolución en cascada (`profile?.id` $\rightarrow$ `supabase.auth.getUser()` $\rightarrow$ `supabase.auth.getSession()`) con bloques `try/catch` defensivos en las funciones de subida de archivos y guardado en la base de datos tanto de Ruido como de Iluminación.
   - Se corrigió el `ReferenceError: user is not defined` en `executeSave` mapeando la propiedad al identificador desinfectado `user_id: userId || 'mock-user-id'`.

@@ -898,6 +898,7 @@ export const generateNoiseProtocolPdf = async (
       } else {
         const cal = getPuntoCalculos(pt);
         const isImpulso = pt.caracteristicas_ruido === 'impulso_impacto';
+        const tipoContinuo = pt.tipo_carga_continuo || 'laeq';
 
         const rowData = {
           punto: String(pt.punto_muestreo),
@@ -907,9 +908,9 @@ export const generateNoiseProtocolPdf = async (
           tiempo_integ: pt.tiempo_integracion || '15 min',
           caracteristica: isImpulso ? 'Impulso / Impacto' : 'Continuo / Intermitente',
           lc_pico: isImpulso ? (pt.nivel_pico_lc_pico_dbc ? `${pt.nivel_pico_lc_pico_dbc} dBC` : '—') : '—',
-          laeq_te: (!isImpulso && pt.nivel_laeq_te_dba) ? `${pt.nivel_laeq_te_dba} dBA` : '—',
-          suma_fracciones: (!isImpulso && pt.modo_suma_fracciones === 'desglose' && pt.resultado_suma_fracciones) ? String(pt.resultado_suma_fracciones) : '—',
-          dosis: (!isImpulso && pt.dosis_porcentaje) ? `${pt.dosis_porcentaje}%` : '—',
+          laeq_te: (!isImpulso && tipoContinuo === 'laeq' && pt.nivel_laeq_te_dba) ? `${pt.nivel_laeq_te_dba} dBA` : '—',
+          suma_fracciones: (!isImpulso && tipoContinuo === 'suma_fracciones' && pt.resultado_suma_fracciones) ? String(pt.resultado_suma_fracciones) : '—',
+          dosis: (!isImpulso && tipoContinuo === 'dosis' && pt.dosis_porcentaje) ? `${pt.dosis_porcentaje}%` : '—',
           cumple: cal.resultado_punto === 'Cumple' ? 'SI' : (cal.resultado_punto === 'No cumple' ? 'NO' : '—')
         };
 
