@@ -5,7 +5,7 @@
 ### Resumen de Cambios
 - **Incorporación de Hojas Informativas de Acústica en el PDF de Ruido (Dec. 351/79 - Anexo V):**
   - Se agregaron hojas informativas inmediatamente después de la Portada en `pdfGenerator.js` del Protocolo de Ruido, replicando el estándar visual de Iluminación.
-  - Se estructuraron los 4 apartados normativos: **Infrasonido y Sonido de Baja Frecuencia**, **Ruido Continuo o Intermitente**, **Ruido de Impulso o de Impacto** y **Ultrasonido**.
+  - Se estructuraron los 4 apartados normativos: **Infrasonido y Sonido de Baja Frecuencia**, **Ruido Continuo o Intermitente**, **Ruido de Impulso o de Impacto** y **Ultrasonido** (eliminando viñetas o puntos al inicio de cada párrafo para una lectura limpia).
   - Incluye la fórmula de dosis / exposición combinada $\frac{C_1}{T_1} + \frac{C_2}{T_2} + \dots \le 1$, la **Tabla 1 de Valores Límite Umbral para Ruido Continuo o Intermitente** (con las 21 duraciones de 24h a 0.11s) y la **Tabla de Valores Límite para Ultrasonido** (10 kHz a 100 kHz).
 - **Textos por Defecto en Conclusiones y Recomendaciones Preventivas (Protocolo de Ruido):**
   - Se actualizaron los valores por defecto tanto en el formulario (`ProtocoloForm.js`) como en la generación del PDF (`pdfGenerator.js`) para el Protocolo de Ruido según las especificaciones normativas requeridas por el usuario:

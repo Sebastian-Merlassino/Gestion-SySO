@@ -667,18 +667,18 @@ export const generateNoiseProtocolPdf = async (
   // 1. Infrasonido y Sonido de Baja Frecuencia
   printSectionHeader('Infrasonido y Sonido de Baja Frecuencia');
   printParagraph('Estos límites representan las exposiciones al sonido a los que se cree que casi todos los trabajadores pueden estar expuestos repetidamente sin efectos adversos para la audición.');
-  printParagraph('• Frecuencias 1 Hz a 80 Hz (NPS): Excepto para el sonido de impulsos de banda de un tercio de octava (< 2 s), el Nivel de Presión Sonora (NPS) no debe exceder el valor techo de 145 dB.');
-  printParagraph('• NPS Global No Ponderado: El Nivel de Presión Sonora global no ponderado no debe exceder el valor techo de 150 dB.');
-  printParagraph('• Tiempo límite: No hay tiempo límite para estas exposiciones. Sin embargo, la aplicación de los valores límite para el ruido y el ultrasonido puede proporcionar un nivel reducido aceptable en el tiempo.');
-  printParagraph('• Alternativa no ponderada: El pico NPS medido con la escala de frecuencias del sonómetro en lineal o no ponderada no debe exceder de 145 dB para situaciones de sonido sin impulsos.');
-  printParagraph('• Resonancia torácica: La resonancia en el pecho de los sonidos de baja frecuencia (intervalo de 50 Hz a 60 Hz) puede causar vibración del cuerpo entero, generando molestias hasta hacerse necesario reducir el NPS a un nivel donde desaparezca el problema.');
+  printParagraph('Frecuencias 1 Hz a 80 Hz (NPS): Excepto para el sonido de impulsos de banda de un tercio de octava (< 2 s), el Nivel de Presión Sonora (NPS) no debe exceder el valor techo de 145 dB.');
+  printParagraph('NPS Global No Ponderado: El Nivel de Presión Sonora global no ponderado no debe exceder el valor techo de 150 dB.');
+  printParagraph('Tiempo límite: No hay tiempo límite para estas exposiciones. Sin embargo, la aplicación de los valores límite para el ruido y el ultrasonido puede proporcionar un nivel reducido aceptable en el tiempo.');
+  printParagraph('Alternativa no ponderada: El pico NPS medido con la escala de frecuencias del sonómetro en lineal o no ponderada no debe exceder de 145 dB para situaciones de sonido sin impulsos.');
+  printParagraph('Resonancia torácica: La resonancia en el pecho de los sonidos de baja frecuencia (intervalo de 50 Hz a 60 Hz) puede causar vibración del cuerpo entero, generando molestias hasta hacerse necesario reducir el NPS a un nivel donde desaparezca el problema.');
   currentY += 4;
 
   // 2. Ruido Continuo o Intermitente
   printSectionHeader('Ruido Continuo o Intermitente');
   printParagraph('Cuando los trabajadores estén expuestos al ruido a niveles iguales o superiores a los valores límite, es necesario implementar un programa de conservación de la audición que incluya pruebas audiométricas periódicas.');
-  printParagraph('• Requisitos del instrumental: Filtro de ponderación frecuencial A, respuesta Lenta. Exposición combinada: se aplica la fórmula de adición de dosis de ruido cuando la jornada se compone de 2 o más períodos de distinta intensidad.');
-  printParagraph('• Criterios del dosímetro: Índice de conversión = 3 dB, Nivel criterio = 85 dBA, Tiempo criterio = 8 horas.');
+  printParagraph('Requisitos del instrumental: Filtro de ponderación frecuencial A, respuesta Lenta. Exposición combinada: se aplica la fórmula de adición de dosis de ruido cuando la jornada se compone de 2 o más períodos de distinta intensidad.');
+  printParagraph('Criterios del dosímetro: Índice de conversión = 3 dB, Nivel criterio = 85 dBA, Tiempo criterio = 8 horas.');
   
   // Fórmula
   printParagraph('Ecuación para Exposición Combinada a Ruido:', 'formula');
