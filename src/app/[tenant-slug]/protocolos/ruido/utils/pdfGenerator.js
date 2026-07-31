@@ -704,6 +704,7 @@ export const generateNoiseProtocolPdf = async (
     drawCellText(doc, 'TABLA 1: VALORES LÍMITE UMBRAL PARA RUIDO (Dec. 351/79 - ANEXO V)', tX, currentY, tW, 6, { align: 'center', fontStyle: 'bold', fontSize: 8, color: COLOR_BLANCO });
     currentY += 6;
 
+    setDrawColor(doc, COLOR_SLATE_300);
     setFillColor(doc, COLOR_SLATE_200);
     doc.rect(tX, currentY, 60, 6, 'FD');
     doc.rect(tX + 60, currentY, 40, 6, 'FD');
@@ -740,6 +741,7 @@ export const generateNoiseProtocolPdf = async (
     filasTabla1.forEach(row => {
       const rowH = 5;
       if (checkPageY(rowH)) {
+        setDrawColor(doc, COLOR_SLATE_300);
         setFillColor(doc, COLOR_SLATE_200);
         doc.rect(tX, currentY, 60, 6, 'FD');
         doc.rect(tX + 60, currentY, 40, 6, 'FD');
@@ -791,6 +793,7 @@ export const generateNoiseProtocolPdf = async (
     drawCellText(doc, 'VALORES LÍMITE PARA ULTRASONIDO (Dec. 351/79 - ANEXO V)', tX, currentY, tW, 6, { align: 'center', fontStyle: 'bold', fontSize: 8, color: COLOR_BLANCO });
     currentY += 6;
 
+    setDrawColor(doc, COLOR_SLATE_300);
     setFillColor(doc, COLOR_SLATE_200);
     doc.rect(tX, currentY, 50, 6, 'FD');
     doc.rect(tX + 50, currentY, 40, 6, 'FD');
@@ -819,6 +822,7 @@ export const generateNoiseProtocolPdf = async (
     filasUltrasonido.forEach(row => {
       const rowH = 5;
       if (checkPageY(rowH)) {
+        setDrawColor(doc, COLOR_SLATE_300);
         setFillColor(doc, COLOR_SLATE_200);
         doc.rect(tX, currentY, 50, 6, 'FD');
         doc.rect(tX + 50, currentY, 40, 6, 'FD');
