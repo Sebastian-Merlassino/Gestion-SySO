@@ -631,7 +631,7 @@ export const generateNoiseProtocolPdf = async (
     doc.setFontSize(10);
     setTextColor(doc, COLOR_AZUL_PRINCIPAL);
     doc.text(titleText.toUpperCase(), 15, currentY);
-    currentY += 6;
+    currentY += 5;
   };
 
   const printParagraph = (pText, pStyle = 'normal') => {
@@ -640,7 +640,7 @@ export const generateNoiseProtocolPdf = async (
 
     if (pStyle === 'formula') {
       const lines = doc.splitTextToSize(pText, maxWidth);
-      const blockH = (lines.length * 4.5) + 3;
+      const blockH = (lines.length * 3.8) + 0.2;
       checkPageY(blockH);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(9.5);
@@ -649,7 +649,7 @@ export const generateNoiseProtocolPdf = async (
       currentY += blockH;
     } else if (pStyle === 'legend') {
       const lines = doc.splitTextToSize(pText, maxWidth);
-      const blockH = (lines.length * 3.8) + 3;
+      const blockH = (lines.length * 3.25) + 0.2;
       checkPageY(blockH);
       doc.setFont('helvetica', 'italic');
       doc.setFontSize(8);
@@ -658,7 +658,7 @@ export const generateNoiseProtocolPdf = async (
       currentY += blockH;
     } else {
       const lines = doc.splitTextToSize(pText, maxWidth);
-      const blockH = (lines.length * 4) + 3;
+      const blockH = (lines.length * 3.45) + 0.2;
       checkPageY(blockH);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8.5);
@@ -678,7 +678,6 @@ export const generateNoiseProtocolPdf = async (
   printParagraph('Las mediciones de la exposición al ruido se deberán ajustar a las prescripciones establecidas por las normas nacionales e internacionales.');
   printParagraph('Estos valores límite se refieren a los niveles de presión acústica y duraciones de exposición que representan las condiciones en las que se cree que casi todos los trabajadores pueden estar expuestos repetidamente sin efectos adversos sobre su capacidad para oír y comprender una conversación normal.');
   printParagraph('Cuando los trabajadores estén expuestos al ruido a niveles iguales o superiores a los valores límite, es necesario un programa completo de conservación de la audición que incluya pruebas audiométricas.');
-  currentY += 2;
 
   // 2. Ruido continuo o intermitente
   printSectionHeader('Ruido continuo o intermitente');
