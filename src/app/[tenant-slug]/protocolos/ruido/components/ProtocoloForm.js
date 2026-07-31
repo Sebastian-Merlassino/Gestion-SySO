@@ -108,7 +108,7 @@ export default function ProtocoloForm({
   const [provinciaText, setProvinciaText] = useState('');
   const [localidadText, setLocalidadText] = useState('');
   const [cpText, setCpText] = useState('');
-  const [horariosTurnosText, setHorariosTurnosText] = useState('');
+  const [horariosTurnosText, setHorariosTurnosText] = useState('Lunes a viernes de 8:00 a 17:00 hs');
 
   // Medicion
   const [instrumento, setInstrumento] = useState('');
@@ -117,7 +117,7 @@ export default function ProtocoloForm({
   const [fechaMedicion, setFechaMedicion] = useState('');
   const [horaInicio, setHoraInicio] = useState('');
   const [horaFinalizacion, setHoraFinalizacion] = useState('');
-  const [condicionesAtmosfericas, setCondicionesAtmosfericas] = useState('Lunes a viernes de 8 a 17 hs');
+  const [condicionesAtmosfericas, setCondicionesAtmosfericas] = useState('Al momento de la medición, el establecimiento se encontraba funcionando en condiciones normales de producción.');
   const [documentacionAdjunta, setDocumentacionAdjunta] = useState('Certificado de Calibración.\nPlano o Croquis del establecimiento.');
   const [observacionesGenerales, setObservacionesGenerales] = useState('Al momento de la medición, el establecimiento se encontraba funcionando en condiciones normales.');
   const [informacionAdicional, setInformacionAdicional] = useState('');
@@ -676,7 +676,7 @@ export default function ProtocoloForm({
       setFechaMedicion(formatDate(proto.fecha_medicion) || '');
       setHoraInicio(proto.hora_inicio || '');
       setHoraFinalizacion(proto.hora_finalizacion || '');
-      setCondicionesAtmosfericas(proto.horarios_turnos_text || proto.condiciones_atmosfericas || '');
+      setCondicionesAtmosfericas(proto.condiciones_atmosfericas || '');
       setDocumentacionAdjunta(proto.documentacion_adjunta || '');
       setObservacionesGenerales(proto.observaciones || '');
       setInformacionAdicional(proto.informacion_adicional || '');
@@ -802,6 +802,7 @@ export default function ProtocoloForm({
       fechaMedicion,
       horaInicio,
       horaFinalizacion,
+      horariosTurnosText,
       condicionesAtmosfericas,
       documentacionAdjunta,
       observacionesGenerales,
@@ -1561,14 +1562,13 @@ export default function ProtocoloForm({
         provincia_text: provinciaText,
         localidad_text: localidadText,
         cp_text: cpText,
-        horarios_turnos_text: horariosTurnosText,
+        horarios_turnos_text: horariosTurnosText || null,
         instrumento_marca_modelo_serie: instrumento,
         fecha_calibracion: convertToDbDate(fechaCalibracion) || null,
         metodologia_utilizada: metodologia,
         fecha_medicion: convertToDbDate(fechaMedicion) || null,
         hora_inicio: horaInicio || null,
         hora_finalizacion: horaFinalizacion || null,
-        horarios_turnos_text: condicionesAtmosfericas || null,
         condiciones_atmosfericas: condicionesAtmosfericas || null,
         documentacion_adjunta: documentacionAdjunta,
         observaciones: observacionesGenerales || null,
@@ -2027,14 +2027,36 @@ export default function ProtocoloForm({
               </div>
             </div>
 
+            {/* Contenedor 1: Horarios / Turnos Habituales de Trabajo */}
             <div className="flex flex-col gap-1 col-span-full">
               <div className="flex items-center justify-between">
-                <AppLabel htmlFor="condicionesAtmosfericas">Horarios / Turnos Habituales de Trabajo</AppLabel>
+                <AppLabel htmlFor="horariosTurnosText">Horarios / Turnos Habituales de Trabajo</AppLabel>
+                <AITextHelper
+                  disabled={!canEdit}
+                  value={horariosTurnosText}
+                  onChange={setHorariosTurnosText}
+                  context="Horarios y turnos habituales de trabajo del establecimiento"
+                />
+              </div>
+              <AppTextarea
+                id="horariosTurnosText"
+                disabled={!canEdit}
+                rows={2}
+                value={horariosTurnosText}
+                onChange={(e) => setHorariosTurnosText(e.target.value)}
+                placeholder="Lunes a viernes de 8:00 a 17:00 hs"
+              />
+            </div>
+
+            {/* Contenedor 2: Describa las condiciones normales y/o habituales de trabajo */}
+            <div className="flex flex-col gap-1 col-span-full">
+              <div className="flex items-center justify-between">
+                <AppLabel htmlFor="condicionesAtmosfericas">Describa las condiciones normales y/o habituales de trabajo</AppLabel>
                 <AITextHelper
                   disabled={!canEdit}
                   value={condicionesAtmosfericas}
                   onChange={setCondicionesAtmosfericas}
-                  context="Horarios y turnos habituales de trabajo del establecimiento"
+                  context="Descripción de las condiciones normales y/o habituales de trabajo"
                 />
               </div>
               <AppTextarea
@@ -2043,10 +2065,11 @@ export default function ProtocoloForm({
                 rows={2}
                 value={condicionesAtmosfericas}
                 onChange={(e) => setCondicionesAtmosfericas(e.target.value)}
-                placeholder="Lunes a viernes de 8 a 17 hs"
+                placeholder="Al momento de la medición, el establecimiento se encontraba funcionando en condiciones normales de producción."
               />
             </div>
 
+            {/* Contenedor 3: Describa las condiciones de trabajo al momento de la medición */}
             <div className="flex flex-col gap-1 col-span-full">
               <div className="flex items-center justify-between">
                 <AppLabel htmlFor="observacionesGenerales">Describa las condiciones de trabajo al momento de la medición.</AppLabel>

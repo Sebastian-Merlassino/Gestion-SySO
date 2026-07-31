@@ -20,8 +20,9 @@
 - **Restricción de Columnas de Sonido Continuo al Tipo Seleccionado (Protocolo de Ruido PDF):**
   - Se actualizó `pdfGenerator.js` para que en la tabla de mediciones de la Hoja 3 del PDF únicamente se renderice el dato correspondiente a la sub-opción de sonido continuo activa (`pt.tipo_carga_continuo`: *Nivel Integrado* / *Suma de Fracciones* / *Dosis*).
   - Las columnas de las dos opciones no seleccionadas muestran explícitamente `'—'`, garantizando que no se dupliquen o arrastren valores de otros botones ni de registros anteriores.
-- **Mapeo Correcto de "Horarios/turnos habituales de trabajo" en el PDF:**
-  - Se corrigió el mapeo en `pdfGenerator.js` y `ProtocoloForm.js` para que el texto ingresado en el campo *Horarios / Turnos Habituales de Trabajo* del formulario se persista en ambos campos `horarios_turnos_text` y `condiciones_atmosfericas` y se renderice fielmente en la celda de *Horarios/turnos habituales de trabajo* de la Hoja 1 del PDF.
+- **Incorporación del Contenedor "Describa las condiciones normales y/o habituales de trabajo":**
+  - Se agregó en `ProtocoloForm.js` dentro del bloque *Datos de la Medición* el contenedor para el campo **Describa las condiciones normales y/o habituales de trabajo** (`condiciones_atmosfericas` / `condicionesAtmosfericas`), ubicado de forma ordenada entre *Horarios / Turnos Habituales de Trabajo* (`horarios_turnos_text`) y *Describa las condiciones de trabajo al momento de la medición.* (`observaciones`).
+  - Cada uno de los tres contenedores cuenta con su área de texto expandible `<AppTextarea>` y su correspondiente módulo `<AITextHelper />` (`SySO-AI-Voice-Helper`), garantizando un mapeo 1 a 1 perfecto con los tres recuadros de la Hoja 1 del PDF.
 - **Resolución Resiliente de Usuario Autenticado (`handleUploadFile` & `executeSave`):**
   - Se implementó un flujo de resolución en cascada (`profile?.id` $\rightarrow$ `supabase.auth.getUser()` $\rightarrow$ `supabase.auth.getSession()`) con bloques `try/catch` defensivos en las funciones de subida de archivos y guardado en la base de datos tanto de Ruido como de Iluminación.
   - Se corrigió el `ReferenceError: user is not defined` en `executeSave` mapeando la propiedad al identificador desinfectado `user_id: userId || 'mock-user-id'`.
