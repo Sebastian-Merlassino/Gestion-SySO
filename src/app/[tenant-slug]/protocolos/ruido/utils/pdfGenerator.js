@@ -635,28 +635,35 @@ export const generateNoiseProtocolPdf = async (
   };
 
   const printParagraph = (pText, pStyle = 'normal') => {
+    const maxWidth = pStyle === 'formula' ? 170 : 180;
+    const posX = pStyle === 'formula' ? 25 : 15;
+
     if (pStyle === 'formula') {
-      checkPageY(12);
+      const lines = doc.splitTextToSize(pText, maxWidth);
+      const blockH = (lines.length * 4.5) + 3;
+      checkPageY(blockH);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(9.5);
       setTextColor(doc, COLOR_NEGRO);
-      doc.text(pText, 25, currentY);
-      currentY += 7;
+      doc.text(lines, posX, currentY);
+      currentY += blockH;
     } else if (pStyle === 'legend') {
-      checkPageY(8);
+      const lines = doc.splitTextToSize(pText, maxWidth);
+      const blockH = (lines.length * 3.8) + 3;
+      checkPageY(blockH);
       doc.setFont('helvetica', 'italic');
       doc.setFontSize(8);
       setTextColor(doc, COLOR_SLATE_600);
-      doc.text(pText, 15, currentY, { align: 'justify', maxWidth: 180 });
-      currentY += 6;
+      doc.text(pText, posX, currentY, { align: 'justify', maxWidth });
+      currentY += blockH;
     } else {
-      const lines = doc.splitTextToSize(pText, 180);
+      const lines = doc.splitTextToSize(pText, maxWidth);
       const blockH = (lines.length * 4) + 3;
       checkPageY(blockH);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8.5);
       setTextColor(doc, COLOR_SLATE_900);
-      doc.text(pText, 15, currentY, { align: 'justify', maxWidth: 180 });
+      doc.text(pText, posX, currentY, { align: 'justify', maxWidth });
       currentY += blockH;
     }
   };
@@ -671,7 +678,7 @@ export const generateNoiseProtocolPdf = async (
   printParagraph('Las mediciones de la exposición al ruido se deberán ajustar a las prescripciones establecidas por las normas nacionales e internacionales.');
   printParagraph('Estos valores límite se refieren a los niveles de presión acústica y duraciones de exposición que representan las condiciones en las que se cree que casi todos los trabajadores pueden estar expuestos repetidamente sin efectos adversos sobre su capacidad para oír y comprender una conversación normal.');
   printParagraph('Cuando los trabajadores estén expuestos al ruido a niveles iguales o superiores a los valores límite, es necesario un programa completo de conservación de la audición que incluya pruebas audiométricas.');
-  currentY += 4;
+  currentY += 2;
 
   // 2. Ruido continuo o intermitente
   printSectionHeader('Ruido continuo o intermitente');
@@ -684,7 +691,7 @@ export const generateNoiseProtocolPdf = async (
   printParagraph('C1 / T1 + C2 / T2 + ... + Cn / Tn', 'formula');
   printParagraph('es mayor que la unidad, entonces se debe considerar que la exposición global sobrepasa el valor límite umbral. C1 indica la duración total de la exposición a un nivel específico de ruido y T1 indica la duración total de la exposición permitida a ese nivel. En los cálculos citados, se usarán todas las exposiciones al ruido en el lugar de trabajo que alcancen o sean superiores a los 80 dBA. Esta fórmula se debe aplicar cuando se utilicen los sonómetros para sonidos con niveles estables de por lo menos 3 segundos. Para sonidos que no cumplan esta condición, se debe utilizar un dosímetro o sonómetro de integración. El límite se excede cuando la dosis es mayor de 100%, medida en un dosímetro fijado para un índice de conversión de 3 dB y un nivel de 85 dBA como criterio para las 8 horas.');
   printParagraph('Utilizando el sonómetro de integración el valor límite se excede cuando el nivel medio de sonido supere los valores de la Tabla 1.');
-  currentY += 4;
+  currentY += 2;
 
   // Tabla 1: Valores Límite para Ruido Continuo o Intermitente
   const drawTabla1RuidoNormativa = () => {
