@@ -13,6 +13,7 @@
   - Se separaron los estados de React para los dos contenedores independientes de **Información adicional** en `ProtocoloForm.js` de Ruido:
     1. Contenedor 1 (debajo de *Documentación que se Adjuntará*): Vinculado al nuevo campo de estado `informacionAdicionalDoc` y columna `informacion_adicional_doc` en Supabase.
     2. Contenedor 2 (debajo de *Puntos de Muestreo*): Vinculado a `informacionAdicional` y columna `informacion_adicional`, proyectándose en el cuadro de la Hoja 3 del PDF.
+  - Se ejecutó el DDL en Supabase agregando las columnas `informacion_adicional_doc` e `informacion_adicional` y se notificó el refresco del esquema a PostgREST (`NOTIFY pgrst, 'reload schema'`), solucionando el error `PGRST204`.
 - **Restricción de Columnas de Sonido Continuo al Tipo Seleccionado (Protocolo de Ruido PDF):**
   - Se actualizó `pdfGenerator.js` para que en la tabla de mediciones de la Hoja 3 del PDF únicamente se renderice el dato correspondiente a la sub-opción de sonido continuo activa (`pt.tipo_carga_continuo`: *Nivel Integrado* / *Suma de Fracciones* / *Dosis*).
   - Las columnas de las dos opciones no seleccionadas muestran explícitamente `'—'`, garantizando que no se dupliquen o arrastren valores de otros botones ni de registros anteriores.
@@ -8642,7 +8643,8 @@
 
 ### Validaciones Ejecutadas
 - Compilación y optimización final de Next.js (`npm.cmd run build`) completada con éxito.
-- Ejecución completa del script de migración actualizando 185 registros de imágenes.
+- Ejecución completa del script de migración actualizando 185 registros.
+- Se aplicó la migración SQL `20260816000000_add_informacion_adicional_doc_to_protocolo_ruido.sql` en Supabase agregando las columnas `informacion_adicional` e `informacion_adicional_doc` a la tabla `public.protocolos_ruido` y se notificó la recarga del esquema a PostgREST (`NOTIFY pgrst, 'reload schema'`), resolviendo la excepción `PGRST204`.
 
 ---
 
