@@ -654,36 +654,34 @@ export const generateNoiseProtocolPdf = async (
       doc.setFontSize(8.5);
       setTextColor(doc, COLOR_SLATE_900);
       const lines = doc.splitTextToSize(pText, 180);
-      const blockH = (lines.length * 4) + 3;
-      checkPageY(blockH);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.5);
-      setTextColor(doc, COLOR_SLATE_900);
       doc.text(lines, 15, currentY);
       currentY += blockH;
     }
   };
 
-  // 1. Infrasonido y Sonido de Baja Frecuencia
-  printSectionHeader('Infrasonido y Sonido de Baja Frecuencia');
+  // 1. Infrasonido y sonido de baja frecuencia
+  printSectionHeader('Infrasonido y sonido de baja frecuencia');
   printParagraph('Estos límites representan las exposiciones al sonido a los que se cree que casi todos los trabajadores pueden estar expuestos repetidamente sin efectos adversos para la audición.');
-  printParagraph('Frecuencias 1 Hz a 80 Hz: Excepto para el sonido de impulsos de banda de un tercio de octava (< 2 s), los niveles de presión sonora no deben exceder el valor techo de 145 dB.');
-  printParagraph('Picos no ponderados: El Nivel de Presión Sonora global no ponderado no debe exceder el valor techo de 150 dB.');
-  printParagraph('Notas:');
-  printParagraph('1. No hay tiempo límite para estas exposiciones. Sin embargo, la aplicación de los valores límite para el ruido y el ultrasonido puede proporcionar un nivel reducido aceptable en el tiempo.');
-  printParagraph('2. Alternativamente, el pico NPS medido con la escala de frecuencias del sonómetro en lineal o no ponderada no debe exceder de 145 dB para situaciones de sonido sin impulsos.');
-  printParagraph('3. La resonancia en el pecho de los sonidos de baja frecuencia (intervalo aproximado de 50 Hz a 60 Hz) puede causar vibración del cuerpo entero, generando molestias hasta hacerse necesario reducir el NPS a un nivel donde desaparezca el problema.');
+  printParagraph('Excepto para el sonido de impulsos de banda de un tercio de octava, con duración inferior a 2 segundos, los niveles para frecuencias entre 1 y 80 Hz de nivel de presión sonoro (NPS), no deben exceder el valor techo de 145 dB. Además, el NPS global no ponderado no debe exceder el valor techo de 150 dB.');
+  printParagraph('No hay tiempo límite para estas exposiciones. Sin embargo, la aplicación de los valores límite para el Ruido y el Ultrasonido, recomendados para prevenir la pérdida de audición por el ruido, puede proporcionar un nivel reducido aceptable en el tiempo.');
+  printParagraph('Una alternativa que puede utilizarse, pero con un criterio ligeramente más restrictivo, es cuando el pico NPS medido con la escala de frecuencias, del sonómetro en lineal o no ponderada, no exceda de 145 dB para situaciones de sonido sin impulsos.');
+  printParagraph('La resonancia en el pecho de los sonidos de baja frecuencia en el intervalo aproximado de 50 Hz a 60 Hz puede causar vibración del cuerpo entero. Este efecto puede causar molestias e incomodidad, hasta hacerse necesario reducir el NPS de este sonido a un nivel al que desaparezca el problema.');
+  printParagraph('Las mediciones de la exposición al ruido se deberán ajustar a las prescripciones establecidas por las normas nacionales e internacionales.');
+  printParagraph('Estos valores límite se refieren a los niveles de presión acústica y duraciones de exposición que representan las condiciones en las que se cree que casi todos los trabajadores pueden estar expuestos repetidamente sin efectos adversos sobre su capacidad para oír y comprender una conversación normal.');
+  printParagraph('Cuando los trabajadores estén expuestos al ruido a niveles iguales o superiores a los valores límite, es necesario un programa completo de conservación de la audición que incluya pruebas audiométricas.');
   currentY += 4;
 
-  // 2. Ruido Continuo o Intermitente
-  printSectionHeader('Ruido Continuo o Intermitente');
-  printParagraph('Estos límites representan las condiciones en las que se cree que casi todos los trabajadores pueden estar expuestos repetidamente sin efectos adversos para la audición. Cuando los trabajadores estén expuestos al ruido a niveles iguales o superiores a los valores límite, es necesario un programa completo de conservación de la audición que incluya pruebas audiométricas.');
-  printParagraph('El valor límite para el ruido continuo o intermitente se determina mediante el Nivel de Presión Sonora Ponderado A medido en dB(A) con un sonómetro operando en la escala de respuesta lenta.');
-  printParagraph('Criterios de evaluación: Índice de conversión = 3 dB, Nivel Criterio = 85 dBA, Tiempo Criterio = 8 horas.');
-  printParagraph('Cuando la exposición diaria se compone de dos o más períodos de exposición a ruidos de diferentes niveles, se debe considerar su efecto combinado, en lugar de su efecto individual.');
+  // 2. Ruido continuo o intermitente
+  printSectionHeader('Ruido continuo o intermitente');
+  printParagraph('El nivel de presión acústica se debe determinar por medio de un sonómetro o dosímetro que se ajusten, como mínimo, a los requisitos de la especificación de las normas nacionales o internacionales. El sonómetro deberá disponer de filtro de ponderación frecuencial A y respuesta lenta. La duración de la exposición no deberá exceder de los valores que se dan en la Tabla 1.');
+  printParagraph('Estos valores son de aplicación a la duración total de la exposición por día de trabajo, con independencia de si se trata de una exposición continua o de varias exposiciones de corta duración.');
+  printParagraph('Cuando la exposición diaria al ruido se compone de dos o más períodos de exposición a distintos niveles de ruidos, se debe tomar en consideración el efecto global, en lugar del efecto individual de cada período. Si la suma de las fracciones siguientes:');
+  
+  // Fórmula
   printParagraph('Ecuación para Exposición Combinada a Ruido:', 'formula');
   printParagraph('C1 / T1 + C2 / T2 + ... + Cn / Tn', 'formula');
-  printParagraph('Donde Ci indica el tiempo total de exposición a un nivel determinado de ruido, y Ti indica el tiempo total permitido a ese nivel. Si la suma de las fracciones es mayor que la unidad (1), la exposición combinada se debe considerar por encima del Valor Límite Umbral. Se deben incluir todas las exposiciones al ruido que alcancen o superen los 80 dBA.');
+  printParagraph('es mayor que la unidad, entonces se debe considerar que la exposición global sobrepasa el valor límite umbral. C1 indica la duración total de la exposición a un nivel específico de ruido y T1 indica la duración total de la exposición permitida a ese nivel. En los cálculos citados, se usarán todas las exposiciones al ruido en el lugar de trabajo que alcancen o sean superiores a los 80 dBA. Esta fórmula se debe aplicar cuando se utilicen los sonómetros para sonidos con niveles estables de por lo menos 3 segundos. Para sonidos que no cumplan esta condición, se debe utilizar un dosímetro o sonómetro de integración. El límite se excede cuando la dosis es mayor de 100%, medida en un dosímetro fijado para un índice de conversión de 3 dB y un nivel de 85 dBA como criterio para las 8 horas.');
+  printParagraph('Utilizando el sonómetro de integración el valor límite se excede cuando el nivel medio de sonido supere los valores de la Tabla 1.');
   currentY += 4;
 
   // Tabla 1: Valores Límite para Ruido Continuo o Intermitente
@@ -763,15 +761,16 @@ export const generateNoiseProtocolPdf = async (
 
   drawTabla1RuidoNormativa();
 
-  // 3. Ruido de Impulso o de Impacto
-  printSectionHeader('Ruido de Impulso o de Impacto');
-  printParagraph('Se define el ruido de impulso o de impacto como una variación pico de la presión sonora seguida de un decaimiento rápido de la señal. La medida del ruido de impulso estará en el rango de 80 a 140 dBA (rango del pulso de al menos 63 dB). No se permitirán exposiciones sin protección auditiva por encima de un nivel pico C ponderado de 140 dB.');
+  // 3. Ruido de impulso o de impacto
+  printSectionHeader('Ruido de impulso o de impacto');
+  printParagraph('La medida del ruido de impulso o de impacto estará en el rango de 80 y 140 dBA y el rango del pulso debe ser por lo menos de 63 dB. No se permitirán exposiciones sin protección auditiva por encima de un nivel pico C ponderado de presión acústica de 140 dB.');
+  printParagraph('Si no se dispone de la instrumentación para medir un pico C ponderado, se puede utilizar la medida de un pico no ponderado por debajo de 140 dB para suponer que el pico C ponderado está por debajo de ese valor.');
   currentY += 4;
 
   // 4. Ultrasonido
   printSectionHeader('Ultrasonido');
-  printParagraph('Estos límites representan las condiciones en las que se cree que casi todos los trabajadores pueden estar expuestos repetidamente sin efectos adversos para la audición. Dichos valores se aplican a exposiciones continuas por vía aérea y no se aplican si la fuente ultrasónica está en contacto directo con el cuerpo.');
-  printParagraph('Valores límite para frecuencias de 10 kHz a 100 kHz.');
+  printParagraph('Estos valores límite representan las condiciones bajo las cuales se cree que casi todos los trabajadores pueden estar expuestos repetidamente sin deteriorarse su capacidad para oír y escuchar una conversación normal.');
+  printParagraph('Los valores límite establecidos para las frecuencias de 10 kilohercios (kHz) a 20 kHz, para prevenir los efectos subjetivos, se indican en la Tabla 1 con uno o dos asteriscos como notas de advertencia al pie de la tabla. Los valores sonoros de la media ponderada en el tiempo de 8 horas son una ampliación del valor límite para el ruido que es un media ponderada en el tiempo para 8 horas de 85 dBA.');
 
   const drawTablaUltrasonidoNormativa = () => {
     const tX = 15;
@@ -838,9 +837,6 @@ export const generateNoiseProtocolPdf = async (
     });
 
     currentY += 2;
-    printParagraph('* Molestias subjetivas posibles entre 75 y 105 dB. Para sonidos tonales < 10 kHz se recomienda reducir a 80 dB.', 'legend');
-    printParagraph('** Asume acoplamiento con agua u otro medio. En ausencia de acoplamiento corporal directo, los valores umbrales pueden incrementarse en 30 dB.', 'legend');
-    currentY += 6;
   };
 
   drawTablaUltrasonidoNormativa();
