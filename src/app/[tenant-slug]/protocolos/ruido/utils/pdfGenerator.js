@@ -518,7 +518,7 @@ export const generateNoiseProtocolPdf = async (
   const localidad = proto.localidad_text || est?.localidad || 'CABA';
   const provincia = proto.provincia_text || est?.provincia || 'BUENOS AIRES';
   const cp = proto.cp_text || est?.cp || '1061';
-  const horarios = proto.horarios_turnos_text || '24hs';
+  const horarios = proto.horarios_turnos_text || proto.condiciones_atmosfericas || 'Lunes a viernes de 8 a 17 hs';
   const marcaModeloNser = proto.instrumento_marca_modelo_serie || 'Sonómetro / Dosímetro marca Amprobe, modelo LM 100, N° de serie 12093081';
   const fechaCalib = proto.fecha_calibracion ? formatDate(proto.fecha_calibracion) : '';
   const metodologia = proto.metodologia_utilizada || 'Método de la Cuadrícula';
@@ -707,7 +707,7 @@ export const generateNoiseProtocolPdf = async (
   // Describa las condiciones normales y/o habituales de trabajo.
   doc.rect(t2X, rY, t2W, 41, 'S');
   drawCellText(doc, 'Describa las condiciones normales y/o habituales de trabajo.', t2X, rY, t2W, 5, { fontStyle: 'bold', fontSize: 8.5 });
-  const condHabitualesText = proto.documentacion_adjunta || 'Al momento de la medición, el establecimiento se encontraba funcionando en condiciones normales de producción.';
+  const condHabitualesText = proto.condiciones_atmosfericas || 'Al momento de la medición, el establecimiento se encontraba funcionando en condiciones normales de producción.';
   drawCellText(doc, condHabitualesText, t2X + 2, rY + 5, t2W - 4, 35, { fontSize: 8.5, valign: 'top' });
   rY += 41;
 

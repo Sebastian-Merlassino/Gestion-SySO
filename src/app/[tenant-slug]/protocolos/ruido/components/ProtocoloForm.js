@@ -676,7 +676,7 @@ export default function ProtocoloForm({
       setFechaMedicion(formatDate(proto.fecha_medicion) || '');
       setHoraInicio(proto.hora_inicio || '');
       setHoraFinalizacion(proto.hora_finalizacion || '');
-      setCondicionesAtmosfericas(proto.condiciones_atmosfericas || '');
+      setCondicionesAtmosfericas(proto.horarios_turnos_text || proto.condiciones_atmosfericas || '');
       setDocumentacionAdjunta(proto.documentacion_adjunta || '');
       setObservacionesGenerales(proto.observaciones || '');
       setInformacionAdicional(proto.informacion_adicional || '');
@@ -1568,7 +1568,8 @@ export default function ProtocoloForm({
         fecha_medicion: convertToDbDate(fechaMedicion) || null,
         hora_inicio: horaInicio || null,
         hora_finalizacion: horaFinalizacion || null,
-        condiciones_atmosfericas: condicionesAtmosfericas,
+        horarios_turnos_text: condicionesAtmosfericas || null,
+        condiciones_atmosfericas: condicionesAtmosfericas || null,
         documentacion_adjunta: documentacionAdjunta,
         observaciones: observacionesGenerales || null,
         informacion_adicional: informacionAdicional || null,
