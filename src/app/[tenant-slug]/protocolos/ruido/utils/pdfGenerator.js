@@ -631,39 +631,40 @@ export const generateNoiseProtocolPdf = async (
     doc.setFontSize(10);
     setTextColor(doc, COLOR_AZUL_PRINCIPAL);
     doc.text(titleText.toUpperCase(), 15, currentY);
-    currentY += 5;
+    currentY += 6;
   };
 
   const printParagraph = (pText, pStyle = 'normal') => {
-    const maxWidth = pStyle === 'formula' ? 170 : 180;
-    const posX = pStyle === 'formula' ? 25 : 15;
-
     if (pStyle === 'formula') {
-      const lines = doc.splitTextToSize(pText, maxWidth);
-      const blockH = (lines.length * 3.8) + 0.2;
-      checkPageY(blockH);
+      checkPageY(10);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(9.5);
       setTextColor(doc, COLOR_NEGRO);
-      doc.text(lines, posX, currentY);
-      currentY += blockH;
+      doc.text(pText, 25, currentY);
+      currentY += 6;
     } else if (pStyle === 'legend') {
-      const lines = doc.splitTextToSize(pText, maxWidth);
-      const blockH = (lines.length * 3.25) + 0.2;
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(8);
+      setTextColor(doc, COLOR_SLATE_600);
+      const lines = doc.splitTextToSize(pText, 180);
+      const blockH = (lines.length * 3.8) + 4.5;
       checkPageY(blockH);
       doc.setFont('helvetica', 'italic');
       doc.setFontSize(8);
       setTextColor(doc, COLOR_SLATE_600);
-      doc.text(pText, posX, currentY, { align: 'justify', maxWidth });
+      doc.text(pText, 15, currentY, { align: 'justify', maxWidth: 180 });
       currentY += blockH;
     } else {
-      const lines = doc.splitTextToSize(pText, maxWidth);
-      const blockH = (lines.length * 3.45) + 0.2;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      setTextColor(doc, COLOR_SLATE_900);
+      const lines = doc.splitTextToSize(pText, 180);
+      const blockH = (lines.length * 4.2) + 4.5;
       checkPageY(blockH);
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.5);
+      doc.setFontSize(9);
       setTextColor(doc, COLOR_SLATE_900);
-      doc.text(pText, posX, currentY, { align: 'justify', maxWidth });
+      doc.text(pText, 15, currentY, { align: 'justify', maxWidth: 180 });
       currentY += blockH;
     }
   };
