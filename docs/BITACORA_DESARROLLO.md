@@ -7,6 +7,7 @@
   - Se agregaron hojas informativas inmediatamente después de la Portada en `pdfGenerator.js` del Protocolo de Ruido, replicando el estándar visual de Iluminación.
   - Se realizó la transcripción literal idéntica y exacta de los textos y tablas provistos por el usuario para los 4 apartados del Anexo V (Capítulo 13 Acústica): **Infrasonido y sonido de baja frecuencia**, **Ruido continuo o intermitente**, **Ruido de impulso o de impacto** y **Ultrasonido** (sin paráfrasis ni modificaciones).
   - Incluye la fórmula de dosis / exposición combinada $\frac{C_1}{T_1} + \frac{C_2}{T_2} + \dots \le 1$, la **Tabla 1 de Valores Límite Umbral para Ruido Continuo o Intermitente** (con las 21 duraciones de 24h a 0.11s) y la **Tabla de Valores Límite para Ultrasonido** (10 kHz a 100 kHz).
+  - Se corrigió el `ReferenceError: blockH is not defined` en la función auxiliar `printParagraph` asegurando el cálculo de altura del bloque de texto y control de paginación automática (`checkPageY`).
 - **Textos por Defecto en Conclusiones y Recomendaciones Preventivas (Protocolo de Ruido):**
   - Se actualizaron los valores por defecto tanto en el formulario (`ProtocoloForm.js`) como en la generación del PDF (`pdfGenerator.js`) para el Protocolo de Ruido según las especificaciones normativas requeridas por el usuario:
   - **Conclusiones:** `"Los valores obtenidos en todos los puntos de muestreo, Cumplen con lo establecido en el ANEXO V - CAPITULO 13 (Acústica), del Decreto Nº 351/79."`

@@ -650,10 +650,12 @@ export const generateNoiseProtocolPdf = async (
       doc.text(pText, 15, currentY);
       currentY += 6;
     } else {
+      const lines = doc.splitTextToSize(pText, 180);
+      const blockH = (lines.length * 4) + 3;
+      checkPageY(blockH);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8.5);
       setTextColor(doc, COLOR_SLATE_900);
-      const lines = doc.splitTextToSize(pText, 180);
       doc.text(lines, 15, currentY);
       currentY += blockH;
     }
