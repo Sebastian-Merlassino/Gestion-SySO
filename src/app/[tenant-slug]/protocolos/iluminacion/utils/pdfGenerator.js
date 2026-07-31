@@ -640,7 +640,7 @@ export const generateLightingProtocolPdf = async (
       doc.setFont('helvetica', 'italic');
       doc.setFontSize(8);
       setTextColor(doc, COLOR_SLATE_600);
-      doc.text(pText, 25, currentY);
+      doc.text(pText, 25, currentY, { align: 'justify', maxWidth: 170 });
       currentY += 7;
     } else {
       doc.setFont('helvetica', 'normal');
@@ -652,7 +652,7 @@ export const generateLightingProtocolPdf = async (
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
       setTextColor(doc, COLOR_SLATE_900);
-      doc.text(lines, 15, currentY);
+      doc.text(pText, 15, currentY, { align: 'justify', maxWidth: 180 });
       currentY += blockH;
     }
   };

@@ -647,7 +647,7 @@ export const generateNoiseProtocolPdf = async (
       doc.setFont('helvetica', 'italic');
       doc.setFontSize(8);
       setTextColor(doc, COLOR_SLATE_600);
-      doc.text(pText, 15, currentY);
+      doc.text(pText, 15, currentY, { align: 'justify', maxWidth: 180 });
       currentY += 6;
     } else {
       const lines = doc.splitTextToSize(pText, 180);
@@ -656,7 +656,7 @@ export const generateNoiseProtocolPdf = async (
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8.5);
       setTextColor(doc, COLOR_SLATE_900);
-      doc.text(lines, 15, currentY);
+      doc.text(pText, 15, currentY, { align: 'justify', maxWidth: 180 });
       currentY += blockH;
     }
   };
