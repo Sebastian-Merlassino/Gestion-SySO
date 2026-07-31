@@ -120,7 +120,6 @@ export default function ProtocoloForm({
   const [condicionesAtmosfericas, setCondicionesAtmosfericas] = useState('Lunes a viernes de 8 a 17 hs');
   const [documentacionAdjunta, setDocumentacionAdjunta] = useState('Certificado de Calibración.\nPlano o Croquis del establecimiento.');
   const [observacionesGenerales, setObservacionesGenerales] = useState('Al momento de la medición, el establecimiento se encontraba funcionando en condiciones normales.');
-  const [informacionAdicionalDoc, setInformacionAdicionalDoc] = useState('');
   const [informacionAdicional, setInformacionAdicional] = useState('');
 
   // Análisis
@@ -680,7 +679,6 @@ export default function ProtocoloForm({
       setCondicionesAtmosfericas(proto.condiciones_atmosfericas || '');
       setDocumentacionAdjunta(proto.documentacion_adjunta || '');
       setObservacionesGenerales(proto.observaciones || '');
-      setInformacionAdicionalDoc(proto.informacion_adicional_doc || '');
       setInformacionAdicional(proto.informacion_adicional || '');
       setConclusiones(proto.conclusiones || '');
       setRecomendaciones(proto.recomendaciones || '');
@@ -807,7 +805,6 @@ export default function ProtocoloForm({
       condicionesAtmosfericas,
       documentacionAdjunta,
       observacionesGenerales,
-      informacionAdicionalDoc,
       informacionAdicional,
       conclusiones,
       recomendaciones,
@@ -1574,7 +1571,6 @@ export default function ProtocoloForm({
         condiciones_atmosfericas: condicionesAtmosfericas,
         documentacion_adjunta: documentacionAdjunta,
         observaciones: observacionesGenerales || null,
-        informacion_adicional_doc: informacionAdicionalDoc || null,
         informacion_adicional: informacionAdicional || null,
         conclusiones: conclusiones || null,
         recomendaciones: recomendaciones || null,
@@ -2095,33 +2091,6 @@ export default function ProtocoloForm({
               value={documentacionAdjunta}
               onChange={(e) => setDocumentacionAdjunta(e.target.value)}
               placeholder="Certificado de Calibración.&#10;Plano o Croquis del establecimiento."
-            />
-          </div>
-        </AppCard>
-
-        {/* CARD INFORMACIÓN ADICIONAL DE DOCUMENTACIÓN */}
-        <AppCard className="p-5 md:p-6 space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div className="flex items-center gap-2">
-              <Info className="h-5 w-5 text-[#468DFF]" />
-              <h2 className="font-outfit text-base font-extrabold text-slate-800">Información adicional</h2>
-            </div>
-            <AITextHelper
-              disabled={!canEdit}
-              value={informacionAdicionalDoc}
-              onChange={setInformacionAdicionalDoc}
-              context="Información adicional y aclaraciones complementarias respecto a la documentación del protocolo de ruido"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1 col-span-full">
-            <AppTextarea
-              id="informacionAdicionalDoc"
-              disabled={!canEdit}
-              rows={3}
-              value={informacionAdicionalDoc}
-              onChange={(e) => setInformacionAdicionalDoc(e.target.value)}
-              placeholder="Ingrese cualquier información adicional relevante respecto a la documentación..."
             />
           </div>
         </AppCard>

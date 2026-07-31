@@ -730,14 +730,28 @@ export const generateNoiseProtocolPdf = async (
   drawCellText(doc, 'Documentación que se adjuntará a la medición', t3X, t3Y, t3W, 6, { align: 'center', fontStyle: 'bold', fontSize: 9 });
 
   const hasCert = (adjuntosList || []).some(a => a.tipo === 'Certificado de Calibración' || a.tipo === 'Certificado' || a.tipo === 'Certificado de Calibración del Instrumental');
-  const hasPlano = (adjuntosList || []).some(a => a.tipo === 'Evidencia Fotográfica Plano' || a.tipo === 'Foto Plano' || a.tipo === 'Plano');
+  const hasPlano = (adjuntosList || []).some(a => a.tipo === 'Evidencia Fotográfica Plano' || a.tipo === 'Foto Plano' || a.tipo === 'Plano' || a.tipo === 'Croquis');
 
-  rY = t3Y + 6;
-  drawCellText(doc, 'Certificado de calibración.', t3X + 3, rY + 0.5, 120, 6, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, hasCert ? '✓ Adjunto' : '', t3X + 130, rY + 0.5, 47, 6, { fontSize: 8.5, fontStyle: hasCert ? 'bold' : 'normal', color: hasCert ? COLOR_VERDE_CUMPLE : COLOR_SLATE_500, align: 'right' });
+  const docAdjText = proto.documentacion_adjunta || 'Certificado de Calibración.\nPlano o Croquis del establecimiento.';
+  const docLines = docAdjText.split('\n').map(l => l.trim()).filter(Boolean);
 
-  drawCellText(doc, 'Plano o croquis.', t3X + 3, rY + 6.5, 120, 6, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, hasPlano ? '✓ Adjunto' : '', t3X + 130, rY + 6.5, 47, 6, { fontSize: 8.5, fontStyle: hasPlano ? 'bold' : 'normal', color: hasPlano ? COLOR_VERDE_CUMPLE : COLOR_SLATE_500, align: 'right' });
+  if (docLines.length > 0) {
+    docLines.forEach((lineText, idx) => {
+      if (idx >= 2) return;
+      const lineY = t3Y + 6.5 + (idx * 6);
+      drawCellText(doc, lineText, t3X + 3, lineY, 125, 5.5, { fontStyle: 'bold', fontSize: 8.5 });
+
+      const isCertLine = lineText.toLowerCase().includes('certificado');
+      const isPlanoLine = lineText.toLowerCase().includes('plano') || lineText.toLowerCase().includes('croquis');
+
+      const isAttached = (isCertLine && hasCert) || (isPlanoLine && hasPlano);
+      if (isAttached) {
+        drawCellText(doc, '✓ Adjunto', t3X + 130, lineY, 47, 5.5, { fontSize: 8.5, fontStyle: 'bold', color: COLOR_VERDE_CUMPLE, align: 'right' });
+      }
+    });
+  } else {
+    drawCellText(doc, docAdjText, t3X + 3, t3Y + 6.5, t3W - 6, 12, { fontSize: 8.5, valign: 'top' });
+  }
 
   // Firma Profesional (Alineada abajo a la derecha de la hoja 1)
   drawSignatureBlock(105, t3Y + t3H + 4, 90, 36);
@@ -789,24 +803,12 @@ export const generateNoiseProtocolPdf = async (
     drawCellText(doc, cp, eX + 200, eY + 7, 15, 7, { fontSize: 8 });
 
     doc.rect(eX + 215, eY + 7, 52, 7, 'S');
-    drawCellText(doc, 'Provincia:', eX + 215, eY + 7, 16, 7, { fontStyle: 'bold', fontSize: 8 });
-    drawCellText(doc, provincia, eX + 231, eY + 7, 36, 7, { fontSize: 8 });
+    drawCellText(doc, 'Provincia:', eX + 215, eY + 7, 18, 7, { fontStyle: 'bold', fontSize: 8 });
+    drawCellText(doc, provincia, eX + 233, eY + 7, 34, 7, { fontSize: 8 });
 
-    // Tabla de Datos Apaisada
-    const gX = 15;
-    const gY = 45;
-    const gW = 267;
-
-    // Title Header "DATOS DE LA MEDICIÓN"
-    setFillColor(doc, COLOR_SLATE_200);
-    doc.rect(gX, gY, gW, 6, 'FD');
-    drawCellText(doc, 'DATOS DE LA MEDICIÓN', gX, gY, gW, 6, { align: 'center', fontStyle: 'bold', fontSize: 9, color: COLOR_NEGRO });
-
-    const colY = gY + 6;
+    // Tabla 4: Puntos de Muestreo de Ruido (Encabezados estándar)
+    const colY = eY + 17;
     const colH = 20;
-
-    doc.setLineWidth(0.3);
-    setDrawColor(doc, COLOR_NEGRO);
 
     const drawHeaderBox = (x, y, w, h, text, opts = {}) => {
       setFillColor(doc, COLOR_SLATE_200);
@@ -820,7 +822,7 @@ export const generateNoiseProtocolPdf = async (
       });
     };
 
-    let xPos = gX;
+    let xPos = 15;
     
     // Col 1: Punto de medición (16mm)
     drawHeaderBox(xPos, colY, 16, colH, 'Punto de medición', { fontSize: 6.5, maxLines: 3 });
@@ -834,8 +836,8 @@ export const generateNoiseProtocolPdf = async (
     drawHeaderBox(xPos, colY, 38, colH, 'Puesto / Puesto tipo / Puesto móvil', { fontSize: 6.5, maxLines: 3 });
     xPos += 38;
 
-    // Col 4: Te (hs) (22mm)
-    drawHeaderBox(xPos, colY, 22, colH, 'Tiempo de exposición del trabajador (Te, en horas)', { fontSize: 6, maxLines: 5 });
+    // Col 4: Tiempo exposición (22mm)
+    drawHeaderBox(xPos, colY, 22, colH, 'Tiempo de exposición (Te en hs o min)', { fontSize: 6, maxLines: 5 });
     xPos += 22;
 
     // Col 5: Tiempo integración (22mm)
@@ -886,7 +888,7 @@ export const generateNoiseProtocolPdf = async (
     for (let r = 0; r < maxRowsPerPage; r++) {
       const rowY = rowStartY + (r * rowH);
       const pt = pagePuntos[r];
-      let currXPos = gX;
+      let currXPos = 15;
 
       if (!pt) {
         tableColsDef.forEach(c => {
@@ -936,12 +938,12 @@ export const generateNoiseProtocolPdf = async (
     const infoY = rowStartY + (maxRowsPerPage * rowH);
     const infoH = 20;
     doc.setLineWidth(0.45);
-    doc.rect(gX, infoY, gW, infoH, 'S');
+    doc.rect(15, infoY, 267, infoH, 'S');
     doc.setLineWidth(0.25);
 
-    drawCellText(doc, 'Información adicional:', gX, infoY, gW, 5, { fontStyle: 'bold', fontSize: 8, color: COLOR_NEGRO });
+    drawCellText(doc, 'Información adicional:', 15, infoY, 267, 5, { fontStyle: 'bold', fontSize: 8, color: COLOR_NEGRO });
     const addInfoText = proto.informacion_adicional || 'Sin información adicional registrada.';
-    drawCellText(doc, addInfoText, gX + 2, infoY + 5, gW - 4, 14, { fontSize: 8, valign: 'top', color: COLOR_NEGRO });
+    drawCellText(doc, addInfoText, 15 + 2, infoY + 5, 267 - 4, 14, { fontSize: 8, valign: 'top', color: COLOR_NEGRO });
 
     // Firma Profesional (Esquina inferior derecha)
     drawSignatureBlock(185, infoY + infoH + 3, 90, 32);
@@ -1013,14 +1015,15 @@ export const generateNoiseProtocolPdf = async (
   doc.rect(tAX, tAY + 6, colW, 8, 'FD');
   doc.rect(tAX + colW, tAY + 6, colW, 8, 'FD');
 
-  drawCellText(doc, 'Conclusiones.', tAX, tAY + 6, colW, 8, { fontStyle: 'bold', fontSize: 8.5, color: COLOR_NEGRO });
+  drawCellText(doc, 'Conclusiones', tAX, tAY + 6, colW, 8, { fontStyle: 'bold', fontSize: 8.5, color: COLOR_NEGRO });
   drawCellText(doc, 'Recomendaciones para adecuar el nivel de ruido a la legislación vigente.', tAX + colW, tAY + 6, colW, 8, { fontStyle: 'bold', fontSize: 8.5, color: COLOR_NEGRO });
 
   doc.rect(tAX, tAY + 14, colW, contentH, 'S');
   doc.rect(tAX + colW, tAY + 14, colW, contentH, 'S');
 
   // Conclusiones text
-  const concText = proto.conclusiones || "Los valores obtenidos en todos los puntos de muestreo, Cumplen con lo establecido en el ANEXO V - CAPITULO 13 (Acústica), del Decreto Nº 351/79.";
+  const rawConc = proto.conclusiones || "Los valores obtenidos en todos los puntos de muestreo, Cumplen con lo establecido en el ANEXO V - CAPITULO 13 (Acústica), del Decreto Nº 351/79.";
+  const concText = rawConc.trim().replace(/^[•\-\*\.\s]+/, '');
   drawCellText(doc, concText, tAX, tAY + 14, colW, contentH, { fontSize: 8.5, valign: 'top', padding: 2 });
 
   // Recomendaciones text

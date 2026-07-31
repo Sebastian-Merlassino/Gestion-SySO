@@ -9,11 +9,14 @@
   - **Recomendaciones Preventivas:** `"Cuando los niveles de exposición al ruido superen o se encuentren próximos a los valores establecidos en el Anexo V de la Resolución MTEySS N.º 295/03, se recomienda:"` seguido de los 6 ítems normalizados de controles de ingeniería, sustitución de equipos, señalización/uso obligatorio de EPP auditivo, provención de protectores adecuados, capacitación del personal y control de tiempos de exposición por rotación.
 - **Eliminación de "Observaciones del Punto" en Puntos de Muestreo (Protocolo de Ruido):**
   - Se eliminó la etiqueta y campo `<AppInput>` de **Observaciones del Punto** dentro de las tarjetas de cada punto de muestreo en `ProtocoloForm.js` de Ruido.
-- **Desvinculación de los Dos Contenedores de "Información adicional":**
-  - Se separaron los estados de React para los dos contenedores independientes de **Información adicional** en `ProtocoloForm.js` de Ruido:
-    1. Contenedor 1 (debajo de *Documentación que se Adjuntará*): Vinculado al nuevo campo de estado `informacionAdicionalDoc` y columna `informacion_adicional_doc` en Supabase.
-    2. Contenedor 2 (debajo de *Puntos de Muestreo*): Vinculado a `informacionAdicional` y columna `informacion_adicional`, proyectándose en el cuadro de la Hoja 3 del PDF.
-  - Se ejecutó el DDL en Supabase agregando las columnas `informacion_adicional_doc` e `informacion_adicional` y se notificó el refresco del esquema a PostgREST (`NOTIFY pgrst, 'reload schema'`), solucionando el error `PGRST204`.
+- **Renderizado Dinámico de "Documentación que se Adjuntará" en el PDF:**
+  - Se actualizó la Tabla 3 del PDF (`pdfGenerator.js`) para proyectar el texto editable del campo `documentacion_adjunta` proveniente del formulario en lugar de cadenas hardcodeadas. Se evalúa dinámicamente si los adjuntos correspondientes están presentes para marcar la etiqueta `✓ Adjunto` a la derecha.
+- **Eliminación del Primer Contenedor de "Información adicional" y Columna en Supabase:**
+  - Se eliminó del formulario `ProtocoloForm.js` el primer contenedor de **Información adicional** que se encontraba entre *Documentación que se Adjuntará* y *Puntos de Muestreo*.
+  - Se ejecutó la sentencia DDL `ALTER TABLE public.protocolos_ruido DROP COLUMN IF EXISTS informacion_adicional_doc;` y el refresco del esquema PostgREST (`NOTIFY pgrst, 'reload schema'`).
+  - Se conserva únicamente la tarjeta de **Información adicional** ubicada debajo de los *Puntos de Muestreo* (vinculada a la columna `informacion_adicional`).
+- **Limpieza de Caracteres Iniciales en Conclusiones:**
+  - Se sanitizó el texto renderizado en la sección de Conclusiones (`pdfGenerator.js`), eliminando automáticamente cualquier viñeta, punto o guión que pudiera anteceder al párrafo de conclusiones (`rawConc.replace(/^[•\-\*\.\s]+/, '')`).
 - **Restricción de Columnas de Sonido Continuo al Tipo Seleccionado (Protocolo de Ruido PDF):**
   - Se actualizó `pdfGenerator.js` para que en la tabla de mediciones de la Hoja 3 del PDF únicamente se renderice el dato correspondiente a la sub-opción de sonido continuo activa (`pt.tipo_carga_continuo`: *Nivel Integrado* / *Suma de Fracciones* / *Dosis*).
   - Las columnas de las dos opciones no seleccionadas muestran explícitamente `'—'`, garantizando que no se dupliquen o arrastren valores de otros botones ni de registros anteriores.
