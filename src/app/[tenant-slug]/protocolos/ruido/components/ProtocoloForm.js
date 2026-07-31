@@ -1806,11 +1806,11 @@ export default function ProtocoloForm({
             type="button"
             onClick={() => setIsMetodoCuadriculaOpen(true)}
             className="flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-[#468DFF] hover:bg-[#468DFF] hover:text-white border border-blue-200 rounded-lg text-xs font-bold transition-all active:scale-95 cursor-pointer ml-1.5"
-            title="Ver Resolución N° 295/2003 - ANEXO V"
+            title="Ver Decreto Nº 351/79 - ANEXO V"
           >
             <HelpCircle className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Resolución N° 295/2003 - ANEXO V</span>
-            <span className="sm:hidden text-[10px]">Res. 295/03 ANEXO V</span>
+            <span className="hidden sm:inline">Decreto Nº 351/79 - ANEXO V</span>
+            <span className="sm:hidden text-[10px]">Decreto Nº 351/79 - ANEXO V</span>
           </button>
         </div>
         <button type="button" onClick={handleExitAttempt} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200 cursor-pointer">
@@ -2647,7 +2647,7 @@ export default function ProtocoloForm({
                         </div>
 
                         <div className="border-t border-slate-200 pt-1.5 flex justify-between items-center text-slate-600">
-                          <div>Verificación de Cumplimiento (Res. 295/03 ANEXO V):</div>
+                          <div>Verificación de cumplimiento (Decreto Nº 351/79 - ANEXO V-CAPITULO 13-ACUSTICA):</div>
                           <span className={`font-extrabold text-xs px-2.5 py-0.5 rounded-full border ${
                             cal.resultado_punto === 'Cumple'
                               ? 'bg-emerald-50 text-emerald-600 border-emerald-200'

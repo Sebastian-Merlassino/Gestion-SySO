@@ -26,7 +26,7 @@ export default function Tabla1RuidoModal({ isOpen, onClose, onSelectHoras }) {
       isOpen={isOpen}
       onClose={onClose}
       title="Tabla 1 — Valores límite para ruido"
-      subtitle="Resolución MTEySS N° 295/2003 - ANEXO V (Infrasonido, Ruido y Ultrasonido)"
+      subtitle="Decreto Nº 351/79 - ANEXO V (Infrasonido, Ruido y Ultrasonido)"
       icon={Info}
       maxWidth="max-w-3xl"
       closeButtonText="Cerrar"

@@ -10,7 +10,7 @@ export default function MetodoCuadriculaModal({ isOpen, onClose }) {
     <AppInfoModal
       isOpen={isOpen}
       onClose={onClose}
-      title="Resolución N° 295/2003 — ANEXO V"
+      title="Decreto Nº 351/79 — ANEXO V"
       subtitle="Especificaciones Técnicas de Higiene y Seguridad: Infrasonido, Ruido y Ultrasonido"
       icon={BookOpen}
       maxWidth="max-w-4xl"
