@@ -10,6 +10,10 @@
 - **Corrección de Excepción al Duplicar Puntos de Muestreo (Protocolo de Ruido):**
   - Se corrigió `handleDuplicatePunto` en `ProtocoloForm.js` de Ruido, eliminando el acceso erróneo a la propiedad `p.mediciones` (propiedad de Iluminación) que provocaba `TypeError: Cannot read properties of undefined (reading 'map')`.
   - Ahora procesa correctamente el array `p.fracciones` asignando identificadores únicos y permitiendo duplicar puntos de muestreo de ruido de forma instantánea y sin errores.
+- **Sincronización Unificada de Sectores y Puestos en 1 Solo Clic (Ruido e Iluminación):**
+  - Se rediseñó la ventana emergente de sincronización con el Perfil de Establecimiento tanto en `ProtocoloForm.js` de Ruido como en `ProtocoloForm.js` de Iluminación.
+  - Se eliminó la secuencia repetitiva paso a paso (que obligaba a presionar el botón 14 veces para 14 sectores).
+  - Ahora el modal presenta un resumen completo desplazable de todos los elementos detectados y cuenta con el botón **`Guardar todos en el perfil (N)`**, permitiendo sincronizar la totalidad de sectores y puestos nuevos/modificados con el perfil del cliente en **un único clic**.
 - **Eliminación de "Observaciones del Punto" en Puntos de Muestreo (Protocolo de Ruido):**
   - Se eliminó la etiqueta y campo `<AppInput>` de **Observaciones del Punto** dentro de las tarjetas de cada punto de muestreo en `ProtocoloForm.js` de Ruido.
 - **Renderizado Fiel de Texto en "Documentación que se Adjuntará" (PDF):**

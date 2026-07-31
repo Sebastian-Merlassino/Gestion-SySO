@@ -1394,58 +1394,68 @@ export default function ProtocoloForm({
     }
   };
 
-  // Handle Wizard action buttons
+  // Handle Wizard action buttons (Sincronización en 1 solo clic)
   const handleSyncConfirm = async (action) => {
-    const currentItem = syncQueue[syncIndex];
     let updatedSectors = [...estSectoresLocal];
 
     if (action === 'save_profile') {
-      if (currentItem.type === 'new_sector') {
-        const newSec = {
-          id: 'sec-' + Date.now() + Math.random().toString(36).substr(2, 5),
-          denominacion: currentItem.sectorName,
-          descripcion: '',
-          largo: currentItem.largo || '',
-          ancho: currentItem.ancho || '',
-          altura: currentItem.altura || '',
-          puestos: currentItem.puestoName ? [{
-            id: 'pst-' + Date.now(),
-            denominacion: currentItem.puestoName,
-            descripcion: ''
-          }] : []
-        };
-        updatedSectors.push(newSec);
-      } else if (currentItem.type === 'modify_dimensions') {
-        updatedSectors[currentItem.sectorIndex] = {
-          ...updatedSectors[currentItem.sectorIndex],
-          largo: currentItem.largo,
-          ancho: currentItem.ancho,
-          altura: currentItem.altura
-        };
-      } else if (currentItem.type === 'new_puesto') {
-        const puestos = [...(updatedSectors[currentItem.sectorIndex].puestos || [])];
-        puestos.push({
-          id: 'pst-' + Date.now(),
-          denominacion: currentItem.puestoName,
-          descripcion: ''
-        });
-        updatedSectors[currentItem.sectorIndex] = {
-          ...updatedSectors[currentItem.sectorIndex],
-          puestos
-        };
+      for (const item of syncQueue) {
+        if (item.type === 'new_sector') {
+          const existingIdx = updatedSectors.findIndex(s => (s.denominacion || '').toLowerCase() === item.sectorName.toLowerCase());
+          if (existingIdx === -1) {
+            const newSec = {
+              id: 'sec-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+              denominacion: item.sectorName,
+              descripcion: '',
+              largo: item.largo || '',
+              ancho: item.ancho || '',
+              altura: item.altura || '',
+              puestos: item.puestoName ? [{
+                id: 'pst-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+                denominacion: item.puestoName,
+                descripcion: ''
+              }] : []
+            };
+            updatedSectors.push(newSec);
+          } else if (item.puestoName) {
+            const puestos = [...(updatedSectors[existingIdx].puestos || [])];
+            if (!puestos.some(pst => (pst.denominacion || '').toLowerCase() === item.puestoName.toLowerCase())) {
+              puestos.push({
+                id: 'pst-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+                denominacion: item.puestoName,
+                descripcion: ''
+              });
+              updatedSectors[existingIdx] = { ...updatedSectors[existingIdx], puestos };
+            }
+          }
+        } else if (item.type === 'modify_dimensions') {
+          if (updatedSectors[item.sectorIndex]) {
+            updatedSectors[item.sectorIndex] = {
+              ...updatedSectors[item.sectorIndex],
+              largo: item.largo,
+              ancho: item.ancho,
+              altura: item.altura
+            };
+          }
+        } else if (item.type === 'new_puesto') {
+          if (updatedSectors[item.sectorIndex]) {
+            const puestos = [...(updatedSectors[item.sectorIndex].puestos || [])];
+            if (!puestos.some(pst => (pst.denominacion || '').toLowerCase() === item.puestoName.toLowerCase())) {
+              puestos.push({
+                id: 'pst-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+                denominacion: item.puestoName,
+                descripcion: ''
+              });
+              updatedSectors[item.sectorIndex] = { ...updatedSectors[item.sectorIndex], puestos };
+            }
+          }
+        }
       }
       setEstSectoresLocal(updatedSectors);
     }
 
-    // Avanzar el wizard
-    const nextIdx = syncIndex + 1;
-    if (nextIdx < syncQueue.length) {
-      setSyncIndex(nextIdx);
-    } else {
-      // Fin del wizard, cerrar modal y proceder a guardar
-      setIsSyncOpen(false);
-      await executeSave(updatedSectors);
-    }
+    setIsSyncOpen(false);
+    await executeSave(action === 'save_profile' ? updatedSectors : estSectoresLocal);
   };
 
   // FINAL SAVE DATABASE WRITER
@@ -3126,13 +3136,23 @@ export default function ProtocoloForm({
                 Sincronización con Perfil de Establecimiento
               </h3>
               <p className="text-xs text-slate-500 font-semibold">
-                Paso {syncIndex + 1} de {syncQueue.length}
+                {syncQueue.length} {syncQueue.length === 1 ? 'elemento nuevo / modificado' : 'elementos nuevos / modificados'}
               </p>
             </div>
           </div>
 
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 leading-relaxed">
-            {syncQueue[syncIndex].message}
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-slate-600">
+              Se detectaron los siguientes datos no registrados en el perfil del establecimiento. ¿Desea guardarlos para futuras mediciones?
+            </p>
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 leading-relaxed max-h-48 overflow-y-auto space-y-1.5 font-medium">
+              {syncQueue.map((item, idx) => (
+                <div key={idx} className="flex items-start gap-2">
+                  <span className="text-[#468DFF] font-bold">•</span>
+                  <span>{item.message}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="flex flex-col sm:flex-row justify-end gap-2.5 pt-2">
@@ -3149,7 +3169,7 @@ export default function ProtocoloForm({
               onClick={() => handleSyncConfirm('save_profile')}
               className="px-4 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold rounded-xl shadow-md shadow-[#468DFF]/10 transition-all cursor-pointer text-center"
             >
-              Guardar y actualizar perfil
+              Guardar todos en el perfil ({syncQueue.length})
             </button>
           </div>
         </div>
