@@ -941,14 +941,18 @@ export default function ProtocoloForm({
   };
 
   const handleDuplicatePunto = (p) => {
-    const nextNum = puntos.length > 0 ? Math.max(...puntos.map(p => p.punto_muestreo)) + 1 : 1;
+    const nextNum = puntos.length > 0 ? Math.max(...puntos.map(pt => pt.punto_muestreo)) + 1 : 1;
+    const copiedFracciones = Array.isArray(p.fracciones)
+      ? p.fracciones.map((f, idx) => ({ ...f, id: 'f-' + Date.now() + '-' + idx }))
+      : [{ id: 'f-' + Date.now() + '-1', c_horas: '', t_horas: '' }];
+
     setPuntos([...puntos, {
       ...p,
       id: 'temp-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
       punto_muestreo: nextNum,
       orden: puntos.length + 1,
       isCollapsed: false,
-      mediciones: p.mediciones.map((m, idx) => ({ id: 'm-' + Date.now() + '-' + idx, valor_lux: m.valor_lux }))
+      fracciones: copiedFracciones
     }]);
     globalToast.toast(`Punto de Muestreo ${p.punto_muestreo} duplicado con éxito.`);
   };
