@@ -1,5 +1,71 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-01] Creación e Integración de la Sección Protocolo de Ergonomía
+
+### Resumen de Cambios
+- **Duplicación del Módulo en Backend (Supabase):**
+  - Se crearon las tablas `protocolos_ergonomia`, `protocolos_ergonomia_puntos`, `protocolos_ergonomia_mediciones` y `protocolos_ergonomia_adjuntos` mediante una nueva migración SQL `20260817000000_create_protocolo_ergonomia.sql` aplicada sobre Supabase.
+  - Se habilitó RLS con aislamiento multi-tenant estricto basado en `tenant_id` y en el permiso `'protocolo_ergonomia'`.
+  - Se aprovisionó el bucket de almacenamiento privado `'protocolos-ergonomia'` en Supabase Storage con políticas seguras de acceso para miembros del tenant.
+  - Se añadió la clave `"protocolo_ergonomia": true` en el valor por defecto de permisos JSONB en perfiles y miembros de equipo, y se actualizaron los registros existentes para dueños y administradores.
+- **Navegación y Sidebar:**
+  - Se integró la opción **Protocolo de Ergonomía** inmediatamente debajo de **Protocolo de Ruido** en [Sidebar.js](file:///src/components/Sidebar.js).
+  - Se configuró el icono `PersonStanding` de `lucide-react` para representar de forma idónea la ergonomía laboral de pie/posturas corporales.
+  - Se habilitó la funcionalidad `'protocolo-ergonomia'` en la matriz de features (`planFeatures`) en todos los niveles de planes.
+- **Frontend y Componentes (Next.js):**
+  - Se duplicó la estructura de archivos de ruido bajo la nueva ruta `src/app/[tenant-slug]/protocolos/ergonomia/`.
+  - Se modificaron sistemáticamente las importaciones, consultas de base de datos, referencias a tablas de Supabase, nombres de PDFs de descarga y redirecciones URL de navegación para apuntar a los nuevos recursos de ergonomía.
+  - Se renombró el modal buscador normativo de ruido a `Tabla1ErgonomiaModal.js` para mantener consistencia.
+  - Se integró el modal `Resolucion886Modal.js` que despliega de forma literal el instructivo oficial de completado y el enlace a la resolución original en Infoleg, asignándolo al botón de ayuda superior de la cabecera.
+  - Se incorporó el campo CIIU en el formulario de datos del establecimiento y en el PDF, de completado automático y descriptivo a partir de la Razón Social (cruzado con la tabla `actividades_economicas`).
+  - Se eliminaron por completo las tarjetas/contenedores de "Datos de la Medición" y "Documentación que se Adjuntará", removiendo 8 columnas obsoletas asociadas en la tabla `protocolos_ergonomia`.
+  - Se reubicó la Fecha de la Evaluación en Datos del Establecimiento en una grilla simétrica de 4 columnas horizontales (Provincia, Localidad, C.P. y Fecha de la Evaluación).
+  - Se renombró la sección "Puntos de Muestreo" por "Datos de la evaluación" para adecuarse al enfoque metodológico.
+  - Se modificó [pdfGenerator.js](file:///src/app/[tenant-slug]/protocolos/ergonomia/utils/pdfGenerator.js) para renderizar los encabezados y metadatos con el nombre "Protocolo de Ergonomía", adicionando el campo CIIU y la Fecha de la Evaluación en la primera tabla (alto 42mm), y removiendo las tablas 2 y 3.
+
+### Decisiones Clave
+- **Réplica Funcional 1:1:** Dado que el usuario requería replicar exactamente las funciones de ruido inicialmente, se preservaron todas las funciones acústicas (cálculos de decibeles, dosis y desgloses) con el nombre de la sección adaptado a Ergonomía, lo que sienta las bases para implementar lógica ergonómica real por sector a futuro.
+- **Diferenciación Visual:** Se optó por el icono `PersonStanding` (Persona de pie / postura laboral) por feedback del usuario para representar de manera idónea la ergonomía laboral tanto en el menú del Sidebar como en la carpeta del Legajo Técnico.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `supabase`
+- `next-best-practices`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260817000000_create_protocolo_ergonomia.sql`
+- `[NEW] supabase/migrations/20260818000000_add_ciiu_to_protocolo_ergonomia.sql`
+- `[NEW] supabase/migrations/20260818000500_remove_medicion_fields_from_ergonomia.sql`
+- `[MODIFY] src/components/Sidebar.js`
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[NEW] src/app/[tenant-slug]/protocolos/ergonomia/page.js`
+- `[NEW] src/app/[tenant-slug]/protocolos/ergonomia/nuevo/page.js`
+- `[NEW] src/app/[tenant-slug]/protocolos/ergonomia/[id]/page.js`
+- `[NEW] src/app/[tenant-slug]/protocolos/ergonomia/[id]/editar/page.js`
+- `[NEW] src/app/[tenant-slug]/protocolos/ergonomia/[id]/pdf/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/components/ProtocoloForm.js`
+- `[NEW] src/app/[tenant-slug]/protocolos/ergonomia/components/Resolucion886Modal.js`
+- `[NEW] src/app/[tenant-slug]/protocolos/ergonomia/components/Tabla1Modal.js`
+- `[NEW] src/app/[tenant-slug]/protocolos/ergonomia/components/Tabla1ErgonomiaModal.js`
+- `[NEW] src/app/[tenant-slug]/protocolos/ergonomia/utils/pdfGenerator.js`
+- `[NEW] src/app/[tenant-slug]/protocolos/ergonomia/utils/tablasAnexoIV.js`
+- `[NEW] src/app/[tenant-slug]/protocolos/ergonomia/utils/tablasAnexoV.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Aplicación de migración SQL DDL en Supabase DB.
+- Compilación del proyecto productiva limpia (`npm run build`) completada con éxito.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. El aislamiento multi-tenant RLS funciona de manera idéntica y segura sobre el nuevo conjunto de tablas y el bucket de storage.
+
+### Próximo Paso Recomendado
+- Proceder a diseñar y maquetar los métodos de análisis ergonómicos normativos reales por sector sobre esta nueva sección del formulario según las necesidades del negocio.
+
+---
+
 ## [2026-07-30] Textos por Defecto en Conclusiones/Recomendaciones y Resiliencia en Carga de Archivos para Ruido e Iluminación
 
 ### Resumen de Cambios

@@ -57,7 +57,7 @@ import {
   Flame,
   BookOpen,
   ClipboardList,
-  Accessibility,
+  PersonStanding,
   HeartHandshake,
   Scale,
   FolderLock,
@@ -158,7 +158,7 @@ const LEGAJO_FOLDERS = [
   {
     id: 'pei',
     name: 'Programa de ergonomía integrado (PEI)',
-    icon: 'Accessibility',
+    icon: 'PersonStanding',
     subfolders: [
       { id: 'factores_riesgo_ergonomico', name: 'Identificación y evaluación de los factores de riesgo ergonómico (Res. 886/15)', docTypes: ['Anexo 1 - Resolución 886/15 (Protocolo de Ergonomía)'] },
       { id: 'estudios_ergonomicos', name: 'Estudios ergonómicos', docTypes: ['Estudio Ergonómico'] }
@@ -261,7 +261,7 @@ const LEGAJO_FOLDERS = [
 const FolderIconHelper = ({ name, className }) => {
   const icons = {
     Shield, Activity, GraduationCap, ShieldAlert, Flame, BookOpen, ClipboardList,
-    Accessibility, HeartHandshake, Scale, FolderLock, FileSpreadsheet, Wrench, Gauge,
+    PersonStanding, HeartHandshake, Scale, FolderLock, FileSpreadsheet, Wrench, Gauge,
     FileText, Zap, Contact, Users, Bug, FileCheck
   };
   const Comp = icons[name] || Folder;
