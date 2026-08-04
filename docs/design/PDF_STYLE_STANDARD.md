@@ -182,9 +182,7 @@ Toda sección de firmas (Profesional, Trabajador, Responsable) debe maquetarse a
   - Relación de aspecto: Mantener `object-fit: contain` para no distorsionar las fotografías tomadas en campo.
   - Epígrafe / Pie de Foto: Texto explicativo a `7.5pt` debajo de cada imagen con el hallazgo o sector inspeccionado.
 
----
-
-## 9. Patron Estandarizado de Nombres de Archivo PDF
+## 9. Patrón Estandarizado de Nombres de Archivo PDF
 
 Todos los archivos generados deben descargarse utilizando estrictamente el siguiente patrón de nombrado sanitizado (sin espacios, caracteres especiales ni acentos):
 
@@ -196,31 +194,33 @@ Todos los archivos generados deben descargarse utilizando estrictamente el sigui
 
 * **Constancia de Visita**: `visita_empresa-acme_planta-1_2026-07-23_VIS-0042.pdf`
 * **Protocolo de Iluminación**: `protocolo-iluminacion_empresa-acme_planta-1_2026-07-23_ILU-0012.pdf`
+* **Protocolo de Ruido**: `protocolo-ruido_empresa-acme_planta-1_2026-07-23_RUI-0008.pdf`
+* **Protocolo de Ergonomía**: `protocolo-ergonomia_empresa-acme_planta-1_2026-07-23_ERG-0015.pdf`
 * **Aviso de Riesgo**: `aviso-riesgo_empresa-acme_deposito-central_2026-07-23_AR-0005.pdf`
 * **Control de Extintores**: `control-extintores_empresa-acme_planta-1_2026-07-23.pdf`
 * **Investigación de Accidente**: `investigacion-accidente_empresa-acme_sector-prensas_2026-07-23_INC-0003.pdf`
 
 ---
 
-## 10. Helpers PDF Recomendados para Normalización (Fase 3)
+## 10. Helpers PDF Consolidados (Disponibles en `src/lib/pdf/`)
 
-Para evitar duplicar código en las 12 vistas, se propone crear la biblioteca de helpers reutilizables en `src/lib/pdf/`:
+Para evitar duplicar la lógica de maquetación de jsPDF en los 14 archivos generadores del sistema, es **obligatorio** importar y reutilizar las utilidades unificadas de la carpeta `src/lib/pdf/`:
 
-1. `src/lib/pdf/pdfTheme.js`: Centraliza tokens de color RGB (`PRIMARY_RGB`, `SUCCESS_RGB`, `DESTRUCTIVE_RGB`), fuentes y convertidores `hexToRgb()`.
-2. `src/lib/pdf/pdfLayout.js`: Centraliza la inicialización de `jsPDF` con márgenes y orientación unificada.
-3. `src/lib/pdf/pdfHeader.js`: Función reutilizable `drawPdfHeader(doc, options)` para dibujar el logo, razón social y título.
-4. `src/lib/pdf/pdfFooter.js`: Función `drawPdfFooter(doc, options)` para renderizar la barra de acento, datos de contacto y `"Página X de Y"` con `putTotalPages()`.
-5. `src/lib/pdf/pdfTableStyles.js`: Define configuraciones preestablecidas de `autoTable` para listas simples, grillas densas y matrices.
-6. `src/lib/pdf/pdfFileName.js`: Helper `formatPdfFileName({ modulo, empresa, establecimiento, fecha, id })` para sanitizar cadenas.
-7. `src/lib/pdf/pdfImages.js`: Carga, compresión Base64 y cálculo de proporciones `aspectRatio` para evitar imágenes deformadas.
-8. `src/lib/pdf/pdfSignatures.js`: Dibuja bloques estandarizados de firma con aclaraciones y recuadros de fallback.
+1. `src/lib/pdf/pdfTheme.js`: Centraliza tokens de color RGB de marca (`PRIMARY_RGB`, `SUCCESS_RGB`, `DESTRUCTIVE_RGB`), fuentes y convertidores seguros `hexToRgb()` para evitar incompatibilidades de tipo.
+2. `src/lib/pdf/pdfLayout.js`: Centraliza la inicialización de `jsPDF` con márgenes y orientación (Portrait/Landscape) unificadas.
+3. `src/lib/pdf/pdfHeader.js`: Función reutilizable `drawPdfHeader(doc, options)` para renderizar el logo, razón social y título.
+4. `src/lib/pdf/pdfFooter.js`: Función `drawPdfFooter(doc, options)` para renderizar la línea azul divisoria, datos de contacto de Higiene y Seguridad, y la paginación dinámica `"Página X de Y"` con `putTotalPages()`.
+5. `src/lib/pdf/pdfTableStyles.js`: Define estilos y paddings de `autoTable` comunes para listas, matrices y celdas densas.
+6. `src/lib/pdf/pdfFileName.js`: Helper `formatPdfFileName({ modulo, empresa, establecimiento, fecha, id })` para sanitizar nombres antes de la descarga.
+7. `src/lib/pdf/pdfImages.js`: Carga remota, Base64 fallback, compresión JPEG y cálculo de `aspectRatio` para evitar imágenes distorsionadas.
+8. `src/lib/pdf/pdfSignatures.js`: Dibuja bloques de firma estandarizados con recuadros de fallback `(Sin firma registrada)`.
 
 ---
 
 ## 11. Plan de Normalización de PDFs por Fases
 
-* **Fase 1 — Helpers de Infraestructura PDF**: Crear el módulo `src/lib/pdf/` con los 8 helpers especificados.
-* **Fase 2 — Migración de Documentos Legales Críticos**: Migrar los generadores de `visitas`, `iluminacion`, `avisos` y `accidentes` a los helpers comunes.
-* **Fase 3 — Migración de Inspecciones y Controles**: Migrar `control-electrico`, `extintores`, `checklist-personalizados` y `capacitacion`.
-* **Fase 4 — Migración de Reportes Generales**: Migrar `programa`, `matriz-riesgos`, `correctivas` y `dashboard`.
-* **Fase 5 — Pruebas de Impresión y Compatibilidad**: Validar descargas en Chrome, Edge, Safari Móvil y visores PDF de Android/iOS.
+* **Fase 1 — Auditoría y Hardening de Helpers (1-2 días)**: Validar el correcto funcionamiento de los 9 helpers en `src/lib/pdf/` con saltos de página y compatibilidad A4 vertical/apaisada.
+* **Fase 2 — Migración Urgente de Protocolos (3-4 días)**: Migrar los generadores de `ruido`, `ergonomia` e `iluminacion` para importar obligatoriamente los helpers comunes, eliminando el boilerplate de dibujo local duplicado y garantizando consistencia estética.
+* **Fase 3 — Migración de Documentos Legales Críticos (3-4 días)**: Migrar `visitas`, `avisos` y `accidentes` a la biblioteca común.
+* **Fase 4 — Migración de Inspecciones y Reportes (4-5 días)**: Migrar `control-electrico`, `extintores`, `checklist-personalizados`, `capacitacion`, `programa`, `matriz-riesgos`, `correctivas` y `dashboard`.
+* **Fase 5 — Validación E2E (1-2 días)**: Probar descargas en Chrome, Edge, Safari Móvil, visores de Android/iOS y compatibilidad de fusión con `pdf-lib` de los certificados anexos.

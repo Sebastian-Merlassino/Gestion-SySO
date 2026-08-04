@@ -140,50 +140,53 @@ Las planillas y grillas de datos densos seguirán el siguiente esquema visual:
 *   **Accesibilidad (A11y)**:
     *   Uso de `Radix UI Dialog Portal` para captura de foco y cierre con `Esc`.
     *   Botón de cierre `X` en la parte superior derecha de tamaño mínimo `h-8 w-8`.
-    *   Títulos en `h4` o `Title` con tamaño `text-base font-extrabold text-slate-800`.
+    *   Títulos en `h4` o `Title` c---
 
----
+## 2. Catálogo de Componentes de la Biblioteca Unificada (Existentes en `src/components/ui/`)
 
-## 2. Catálogo de Componentes Recomendados
+Para asegurar la homogeneidad visual y evitar la repetición de markup inline en las 16 páginas del tenant y los módulos de protocolos, es **obligatorio** importar y consumir los componentes base unificados ya disponibles en la carpeta `src/components/ui/`. Queda estrictamente prohibido usar etiquetas HTML nativas con clases de Tailwind ad-hoc para estos elementos base.
 
-Para implementar el estándar visual sin repetir código en las 16 páginas, se propone crear o normalizar los siguientes componentes reutilizables:
-
-| Componente | Propósito | Props Mínimas | Variante / Estados | Prioridad |
-| :--- | :--- | :--- | :--- | :---: |
-| **`AppButton`** | Unificar todos los botones del sistema. | `variant`, `size`, `loading`, `disabled`, `onClick`, `children` | Primary, Secondary, Outline, Ghost, Destructive | **Alta** |
-| **`AppInput`** | Inputs de texto unificados con focus e invalidación. | `label`, `error`, `required`, `value`, `onChange`, `icon` | Default, Disabled, Error, ReadOnly | **Alta** |
-| **`AppSelect`** | Selector dropdown estandarizado con iconos. | `label`, `error`, `required`, `options`, `value`, `onChange` | Default, Disabled, Error | **Alta** |
-| **`AppTextarea`** | Campo de texto largo con dictado de voz Gemini integrado. | `label`, `error`, `required`, `value`, `onChange`, `voiceHelper` | Default, Disabled, Error (integra `AITextHelper`) | **Alta** |
-| **`AppLabel`** | Etiquetas de campos con asterisco de obligatorio. | `required`, `children` | Default, Error, Disabled | **Media** |
-| **`AppPageHeader`** | Barra superior unificada con título e indicadores de plan. | `title`, `icon`, `tenantName`, `planId`, `actions` | Desktop y Mobile responsivo (sustituye duplicación) | **Alta** |
-| **`AppEmptyState`** | Estado de listado vacío descriptivo con icono. | `title`, `description`, `icon`, `actionButton` | Centrado con paddings responsivos | **Media** |
-| **`AppConfirmDialog`** | Modales de confirmación con Radix UI. | `open`, `onOpenChange`, `title`, `description`, `type`, `onConfirm` | Info, Warning, Destructive | **Alta** (Sustituye modalAlert inline) |
-| **`AppCard`** | Contenedor estandarizado con sombras y bordes. | `children`, `className` | Default, Clickable, Hover-Active | **Baja** |
+| Componente | Archivo de Origen | Propósito | Estados / Variantes Soportadas |
+| :--- | :--- | :--- | :--- |
+| **`AppButton`** | `src/components/ui/AppButton.js` | Botones de acción del sistema con hover/focus unificados. | `primary`, `secondary`, `outline`, `ghost`, `destructive` |
+| **`AppInput`** | `src/components/ui/AppInput.js` | Inputs de texto con estilo de borde, focus ring y manejo de estados. | Default, Disabled, Error, ReadOnly |
+| **`AppSelect`** | `src/components/ui/AppSelect.js` | Selectores dropdown estandarizados con iconos. | Default, Disabled, Error |
+| **`AppTextarea`** | `src/components/ui/AppTextarea.js` | Campo de texto largo con dictado de voz Gemini integrado. | Default, Disabled, Error (integra automáticamente `AITextHelper`) |
+| **`AppLabel`** | `src/components/ui/AppLabel.js` | Etiquetas de campos que auto-generan el asterisco de requerido. | Default, required (`*` azul corporativo), Error |
+| **`AppPageHeader`** | `src/components/ui/AppPageHeader.js` | Cabecera superior unificada con título e indicador del Plan del tenant. | Desktop y Mobile responsivo (elimina duplicación de Navbar) |
+| **`AppEmptyState`** | `src/components/ui/AppEmptyState.js` | Estado vacío unificado para listas sin registros. | Centrado con icono, título, descripción y botón de acción |
+| **`AppConfirmDialog`** | `src/components/ui/AppConfirmDialog.js` | Modal de confirmación genérico utilizando Radix UI. | Info, Warning, Confirmación (sustituye alertas inline) |
+| **`AppDestructiveConfirmDialog`** | `src/components/ui/AppDestructiveConfirmDialog.js` | Modal unificado de confirmación destructiva (ej. eliminación física). | Destructive (con botón rojo safety y overlay desenfocado) |
+| **`AppUnsavedChangesDialog`** | `src/components/ui/AppUnsavedChangesDialog.js` | Modal de alerta ante cambios no guardados en formularios. | Warning (evita la pérdida accidental de datos) |
+| **`AppCard`** | `src/components/ui/AppCard.js` | Contenedor básico con bordes redondeados y sombra sutil. | Default, border-slate-200 |
+| **`DocumentUploadZone`** | `src/components/ui/DocumentUploadZone.js` | Zona estándar de arrastre y subida de archivos (local y Drive). | Active Dragover, File Preview, Local/Drive Tabs |
+| **`ImageUploadZone`** | `src/components/ui/ImageUploadZone.js` | Zona estándar de carga y previsualización de imágenes/evidencias. | Image Cropper, Aspect Ratio containment, Storage fallback |
 
 ---
 
 ## 3. Plan de Normalización Recomendado (Por Fases)
 
 ### Fase 1 — Ajustes de Variables y Estilo Global (1-2 días)
-1.  **Corrección de variables CSS**: Cambiar los colores de `:root` en `src/app/globals.css` a Light Mode para eliminar la colisión con los componentes de base Radix UI. Mapear los colores del Dark Mode al selector `.dark`.
-2.  **Mapeo de Tailwind**: Asegurar que `#468DFF` (primary), `#0511F2` (accent/primary-hover), `#22c55e` (success) y `#ef4444` (destructive) estén registrados formalmente como tokens en `tailwind.config.js`.
-3.  **Depuración masiva de clases rotas**: Reemplazar automáticamente `border-slate-150` por `border-slate-200` y `border-amber-250` por `border-amber-200` en los 12 archivos JS afectados.
+1. **Corrección de variables CSS**: Ajustar `:root` en `src/app/globals.css` a Light Mode por defecto. Mapear Dark Mode al selector `.dark`.
+2. **Mapeo de Tailwind**: Asegurar el registro de tokens de color de marca (`primary`, `primary-hover`/`accent`, `success`, `destructive`) en `tailwind.config.js`.
+3. **Depuración de clases rotas**: Reemplazar automáticamente `border-slate-150` por `border-slate-200` y `border-amber-250` por `border-amber-200` en los archivos JS de la aplicación, incluyendo las 5 referencias en `protocolos/ergonomia`.
 
-### Fase 2 — Creación de la Librería de Componentes Base (3-4 días)
-1.  **Crear componentes atómicos**: Construir `AppButton`, `AppInput`, `AppSelect`, `AppTextarea` y `AppLabel`.
-2.  **Refactorizar cabecera**: Crear `AppPageHeader` que encapsule el Navbar superior dinámico, el menú móvil y el badge del plan de suscripción actual.
-3.  **Unificar modales**: Validar que `@/components/ui/AppConfirmDialog` y `@/components/ui/AppDestructiveConfirmDialog` cumplan con la accesibilidad y colores, preparándolos para sustituir la maquetación inline de cada módulo.
+### Fase 2 — Hardening y Refinamiento de Componentes Base (2-3 días)
+1. **Revisar accesibilidad y foco**: Validar que `AppInput`, `AppSelect` y `AppTextarea` tengan focus rings correctos y cumplan contraste.
+2. **Documentar API de props**: Crear una pequeña guía rápida en la carpeta de componentes sobre el uso correcto de props en `AppButton` y `AppLabel`.
 
-### Fase 3 — Migración y Limpieza de Páginas Críticas (5-7 días)
-1.  **Dashboard**: Extraer el Navbar duplicado, normalizar los colores `#00b050` y `#fa050b` de las tarjetas e indicadores.
-2.  **Visitas / page.js**: Eliminar el modal local de confirmación (`modalAlert.show && ...`), el Navbar duplicado y los inputs crudos, reemplazando con la biblioteca base de la Fase 2.
-3.  **Programa Anual y Matriz de Riesgos**: Normalizar celdas, quitar arrow keys y reemplazarlas por Lucide Icons, limpiar inputs crudos e incorporar la directiva del required unificado.
+### Fase 3 — Migración de Módulos Críticos y Protocolos (5-7 días)
+1. **Dashboard y Visitas**: Extraer el Navbar/Sidebar local y moverlo a `/[tenant-slug]/layout.js`. Reemplazar diálogos inline por `AppConfirmDialog` y `AppDestructiveConfirmDialog`.
+2. **Protocolos (Iluminación, Ergonomía, Ruido)**: 
+   - Eliminar las constantes duplicadas de iluminación e imports residuales en los formularios de ruido y ergonomía.
+   - Normalizar la grilla de Planilla 2 de ergonomía para que los controles Sí/No se comporten como un subcomponente segmentado reutilizable y no repitan clases.
+   - Reemplazar inputs locales por `AppInput` y `AppTextarea` con `AITextHelper` incorporado.
+3. **Resto de formularios**: Reemplazar de forma progresiva las etiquetas HTML nativas por la biblioteca unificada.
 
-### Fase 4 — Ajustes de Responsividad y Accesibilidad (2-3 días)
-1.  **Validar anchos**: Asegurar que todos los modales tengan max-widths flexibles en móviles (`max-w-[90vw]`).
-2.  **Truncamiento de tablas**: Aplicar ocultamiento dinámico de columnas no esenciales en pantallas menores a 768px.
-3.  **Hardening de Contraste**: Ajustar clases de colores de textos secundarios en grises para superar el ratio `4.5:1` de WCAG.
+### Fase 4 — Ajustes de Responsividad y Accesibilidad (2 días)
+1. **Anchos flexibles**: Modales adaptables a `max-w-[90vw]` en móviles.
+2. **Ocultamiento de columnas**: Tablas con clases adaptativas (`hidden lg:table-cell`) para evitar el desborde horizontal excesivo en celulares.
 
-### Fase 5 — Creación de Guías de Estilo para Desarrolladores (1 día)
-1.  Crear `docs/design/UI_STYLE_GUIDE.md` y `docs/design/DESIGN_TOKENS.md` documentando las clases del estándar.
-2.  Registrar el cumplimiento en la Bitácora de Desarrollo.
+### Fase 5 — Documentación Operativa (1 día)
+1. Crear `docs/design/UI_STYLE_GUIDE.md` consolidando el estándar final.
+2. Registrar el cumplimiento en la Bitácora de Desarrollo.

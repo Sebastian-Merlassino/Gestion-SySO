@@ -42,26 +42,10 @@ import {
   PenTool
 } from 'lucide-react';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
-import { TABLA_2_ILUMINACION } from '../utils/tablasAnexoIV';
 import { getLimiteDbaForTe, getPuntoCalculos } from '../utils/tablasAnexoV';
 import Tabla1Modal from './Tabla1Modal';
 import Tabla1RuidoModal from './Tabla1RuidoModal';
 import MetodoCuadriculaModal from './MetodoCuadriculaModal';
-
-// Catálogo normativo según Anexo IV Dec. 351/79 y SRT
-export const ACTIVIDADES_ILUMINACION = [
-  { categoria: 'Oficinas', subcategoria: 'Trabajo General', tarea: 'Escritura, lectura, procesamiento de datos, archivo', lux: 500 },
-  { categoria: 'Oficinas', subcategoria: 'Trabajo de Precisión', tarea: 'Dibujo técnico, diseño por computadora', lux: 750 },
-  { categoria: 'Oficinas', subcategoria: 'Áreas de Tránsito', tarea: 'Pasillos, escaleras, vestíbulos', lux: 150 },
-  { categoria: 'Industria', subcategoria: 'Tareas Muy Sencillas', tarea: 'Almacenes, zonas de carga y descarga, pasillos', lux: 100 },
-  { categoria: 'Industria', subcategoria: 'Tareas Sencillas', tarea: 'Montaje basto, embalaje, inspección visual básica', lux: 200 },
-  { categoria: 'Industria', subcategoria: 'Tareas Medianas', tarea: 'Trabajos de taller mecánico ordinario, torneado, montaje', lux: 300 },
-  { categoria: 'Industria', subcategoria: 'Tareas Finas / Precisión', tarea: 'Montaje de precisión, ajuste fino, control de calidad detallado', lux: 500 },
-  { categoria: 'Industria', subcategoria: 'Tareas Muy Finas / Alta Precisión', tarea: 'Montaje electrónico de precisión, laboratorios químicos', lux: 1000 },
-  { categoria: 'Comercio', subcategoria: 'Salas de Venta', tarea: 'Área general de tiendas, supermercados, locales', lux: 300 },
-  { categoria: 'Sanidad', subcategoria: 'Salas de Consulta', tarea: 'Exámenes médicos, tratamientos, salas de espera', lux: 500 },
-  { categoria: 'Educación', subcategoria: 'Aulas', tarea: 'Clases generales, laboratorios, bibliotecas', lux: 300 }
-];
 
 const isValidUuid = (val) => {
   if (!val || typeof val !== 'string') return false;
@@ -1811,36 +1795,37 @@ export default function ProtocoloForm({
 
   return (
     <>
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in w-full">
+      <div className="bg-white md:rounded-2xl md:border md:border-slate-200 md:shadow-sm overflow-hidden flex flex-col h-full min-h-[calc(100vh-64px)] md:max-h-[85vh] animate-fade-in w-full">
       {/* Cabecera del Formulario */}
-      <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-3">
-          <button type="button" onClick={handleExitAttempt} className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 cursor-pointer">
+      <div className="h-16 px-2 sm:px-4 md:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
+          <button type="button" onClick={handleExitAttempt} className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 cursor-pointer shrink-0">
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <span className="font-outfit text-base font-bold text-slate-900">
-            {mode === 'create' ? 'Nuevo Protocolo de Ruido' : mode === 'edit' ? 'Editar Protocolo de Ruido' : 'Detalle de Protocolo de Ruido'}
+          <span className="font-outfit text-sm sm:text-base font-bold text-slate-900 truncate max-w-[120px] xs:max-w-[170px] sm:max-w-none shrink-0" title={mode === 'create' ? 'Nuevo Protocolo de Ruido' : mode === 'edit' ? 'Editar Protocolo de Ruido' : 'Detalle de Protocolo de Ruido'}>
+            {mode === 'create' ? 'Nuevo Protocolo' : mode === 'edit' ? 'Editar Protocolo' : 'Detalle Protocolo'}
           </span>
           <button
             type="button"
             onClick={() => setIsMetodoCuadriculaOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-[#468DFF] hover:bg-[#468DFF] hover:text-white border border-blue-200 rounded-lg text-xs font-bold transition-all active:scale-95 cursor-pointer ml-1.5"
+            className="flex items-center gap-1 px-2 py-0.5 sm:px-3 sm:py-1 bg-blue-50 text-[#468DFF] hover:bg-[#468DFF] hover:text-white border border-blue-200 rounded-lg text-[10px] sm:text-xs font-bold transition-all active:scale-95 cursor-pointer ml-1 sm:ml-1.5 shrink-0"
             title="Ver Decreto Nº 351/79 - ANEXO V"
           >
             <HelpCircle className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Decreto Nº 351/79 - ANEXO V</span>
-            <span className="sm:hidden text-[10px]">Decreto Nº 351/79 - ANEXO V</span>
+            <span className="hidden md:inline">Decreto Nº 351/79 - ANEXO V</span>
+            <span className="hidden sm:inline md:hidden">Anexo V</span>
+            <span className="sm:hidden">Anexo V</span>
           </button>
         </div>
-        <button type="button" onClick={handleExitAttempt} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200 cursor-pointer">
+        <button type="button" onClick={handleExitAttempt} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200 cursor-pointer shrink-0">
           <X className="h-5 w-5" />
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-6 overflow-y-auto flex-1 scrollbar-thin select-none">
+      <form onSubmit={handleSubmit} className="p-3.5 sm:p-6 md:p-8 space-y-4 sm:space-y-6 overflow-y-auto flex-1 scrollbar-thin select-none">
         
         {/* CARD ESTABLECIMIENTO */}
-        <AppCard className="p-5 md:p-6 space-y-4">
+        <AppCard className="p-3.5 sm:p-5 md:p-6 space-y-3 sm:space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
             <Building className="h-5 w-5 text-[#468DFF]" />
             <h2 className="font-outfit text-base font-extrabold text-slate-800">Datos del Establecimiento</h2>

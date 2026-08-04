@@ -1224,11 +1224,11 @@ export default function LegajoPage({ params }) {
             </div>
           </div>
         ) : (
-          <div className="max-w-[95%] mx-auto w-full py-8 px-4 md:px-0 flex-1 flex flex-col min-h-0">
+          <div className="w-full flex-grow flex flex-col min-h-0 p-0 lg:py-8 lg:max-w-[95%] lg:mx-auto lg:px-0">
 
             {isFormOpen ? (
               // FORMULARIO DE CARGA/EDICIÓN INLINE
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
+              <div className="bg-white lg:rounded-2xl lg:border lg:border-slate-200 lg:shadow-sm overflow-hidden flex flex-col h-full min-h-[calc(100vh-64px)] lg:max-h-[85vh] animate-fade-in w-full">
                 <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
                     <button
@@ -1247,8 +1247,8 @@ export default function LegajoPage({ params }) {
                   </button>
                 </div>
 
-                <form onSubmit={handleSave} className="p-6 space-y-6 overflow-y-auto flex-1 scrollbar-thin">
-                  <fieldset disabled={!canEdit} className="space-y-6">
+                <form onSubmit={handleSave} className="p-3.5 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto flex-1 scrollbar-thin">
+                  <fieldset disabled={!canEdit} className="space-y-4 sm:space-y-6">
 
                     {/* Ubicación de Carpeta Destino */}
                     <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center gap-2 text-xs font-bold text-slate-600">
@@ -1534,14 +1534,14 @@ export default function LegajoPage({ params }) {
                 {/* 1. VISTA DE RAÍZ: MUESTRA LAS CARPETAS PRINCIPALES */}
                 {!currentFolder && (
                   <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-0 lg:gap-4">
                       {LEGAJO_FOLDERS.map((folder) => {
                         const fileCount = getFileCountForFolder(folder);
                         return (
                           <div
                             key={folder.id}
                             onClick={() => navigateToFolder(folder)}
-                            className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md hover:border-[#468DFF]/40 cursor-pointer transition-all flex flex-col justify-between group"
+                            className="bg-white border-b border-slate-200 lg:border lg:border-slate-200 lg:rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-[#468DFF]/40 cursor-pointer transition-all flex flex-col justify-between group"
                           >
                             <div className="flex items-center gap-4">
                               <div className="p-3.5 rounded-xl bg-slate-100 text-[#468DFF] group-hover:bg-[#468DFF]/10 transition-colors shrink-0">
@@ -1586,14 +1586,14 @@ export default function LegajoPage({ params }) {
                       </h2>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-0 lg:gap-4">
                       {currentFolder.subfolders.map((sub) => {
                         const fileCount = getFileCountForSubfolder(currentFolder, sub);
                         return (
                           <div
                             key={sub.id}
                             onClick={() => setCurrentSubfolder(sub)}
-                            className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md hover:border-[#468DFF]/40 cursor-pointer transition-all flex flex-col justify-between group"
+                            className="bg-white border-b border-slate-200 lg:border lg:border-slate-200 lg:rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-[#468DFF]/40 cursor-pointer transition-all flex flex-col justify-between group"
                           >
                             <div className="flex items-center gap-4">
                               <div className="p-3.5 rounded-xl bg-slate-100 text-[#468DFF] group-hover:bg-[#468DFF]/10 transition-colors shrink-0">
@@ -1621,10 +1621,10 @@ export default function LegajoPage({ params }) {
 
                 {/* 3. VISTA DE ARCHIVOS (TABLA DE REGISTROS) */}
                 {currentFolder && (!currentFolder.subfolders || currentSubfolder) && (
-                  <div className="space-y-4 flex-1 flex flex-col min-h-0">
+                  <div className="space-y-0 lg:space-y-4 flex-1 flex flex-col min-h-0">
 
                     {/* Herramientas, Búsqueda y Filtros */}
-                    <div className="bg-white rounded-2xl border border-slate-200 p-3 shadow-sm space-y-3 shrink-0">
+                    <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl p-3.5 sm:p-5 md:p-6 shadow-sm space-y-3 shrink-0">
 
                       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
 
@@ -1795,7 +1795,7 @@ export default function LegajoPage({ params }) {
                     </div>
 
                     {/* Tabla de Documentos */}
-                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col transition-all duration-300 ease-in-out" style={{ height: showFilters ? 'calc(100vh - 370px)' : 'calc(100vh - 300px)' }}>
+                    <div className={`bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl shadow-sm overflow-hidden flex flex-col flex-grow min-h-0 lg:flex-initial transition-all duration-300 ease-in-out ${showFilters ? 'lg:h-[calc(100vh-370px)]' : 'lg:h-[calc(100vh-300px)]'}`}>
                       {sortedDocuments.length === 0 ? (
                         <AppEmptyState
                           title={activeFolderDocs.length === 0 ? "No hay documentos registrados" : "No se encontraron documentos"}

@@ -41,6 +41,9 @@ La siguiente tabla evalúa la salud visual de las secciones clave analizadas:
 | **Legajo Técnico**| `/[tenant-slug]/legajo` | Regular | Aceptable | Inconsistente (`slate-150`) | Inline custom | Inline custom | Arrow indicators | Medio |
 | **Nómina** | `/[tenant-slug]/nomina` | Regular | Inconsistente | Inconsistente (`red-50`) | Inline custom | Inline custom | Estilo custom | Medio |
 | **Perfil** | `/[tenant-slug]/profile` | Regular | Bueno (Estandarizado) | Bueno (Usa marca) | Reusable (Button jsx) | Inline custom | N/A | Bajo |
+| **Prot. Iluminación** | `/[tenant-slug]/protocolos/iluminacion` | Regular | Aceptable | Bueno | Reutiliza AppButton | Reutiliza AppInput/Select | Estilo custom con modal | Medio |
+| **Prot. Ergonomía** | `/[tenant-slug]/protocolos/ergonomia` | Crítico | Inconsistente | Inconsistente (`slate-150` local) | Reutiliza AppButton | Reutiliza AppInput/Select/Textarea | Estilo custom con inputs de escala Borg | Alto |
+| **Prot. Ruido** | `/[tenant-slug]/protocolos/ruido` | Regular | Aceptable | Inconsistente (`COLOR_NEGRO` local) | Reutiliza AppButton | Reutiliza AppInput/Select | Estilo custom con modal cuadrícula | Medio |
 
 ---
 
@@ -72,7 +75,7 @@ Se relevaron los colores aplicados directamente en el código de forma inline:
 | **`#0511F2`** (Azul acento)| Hover de botones, foco | Todos los módulos | **Sí** (Highlight) | Hardcodeado inline (`bg-[#0511F2]`, `text-[#0511F2]`). | Mapear al token `primary-hover` o acento. |
 | **`#00b050` / `#00B050`** | Estados exitosos (Vigente, Completado, Cerrado) | `dashboard`, `matriz-riesgos`, `correctivas`, `visitas`, `ToastProvider` | **No** (Marca usa `#22c55e`) | Hardcodeado directamente en **26 archivos** en lugar de usar Tailwind. Rompe el verde de seguridad estándar. | Estandarizar bajo el token de color `success` en Tailwind y usar el verde institucional `#22c55e`. |
 | **`#fa050b`** (Rojo) | Indicadores de alerta, atrasos | `programa`, `dashboard` | **No** (Marca usa `#ef4444`) | Color rojo eléctrico no coincidente con el rojo de alerta corporativo. | Reemplazar por el token `error` / `destructive` (Safety Red `#ef4444`). |
-| **`border-slate-150`** | Bordes de tarjetas y tablas | Todos los módulos (318 referencias) | **No** (No existe en Tailwind) | Clase inexistente en Tailwind CSS. Causa que el color de borde dependa del fallback por defecto. | Reemplazar en bloque por `border-slate-200` o mapear a un token de borde unificado en CSS variables. |
+| **`border-slate-150`** | Bordes de tarjetas y tablas | `protocolos/ergonomia` (5 referencias remanentes) | **No** (Inexistente en Tailwind) | Clase inexistente. Se corrigió mayormente en la app pero persiste en ergonomía. | Reemplazar en bloque por `border-slate-200` o mapear a un token de borde unificado en CSS variables. |
 | **`border-amber-250`** | Bordes en panel de advertencia | `empresas/page.js` | **No** (No existe) | Clase inexistente en Tailwind CSS. | Reemplazar por `border-amber-200`. |
 | **`bg-red-55`** | Fondos de alerta / botones | `matriz-riesgos`, `empresas` | **No** (Inexistente) | Clase inexistente en Tailwind CSS. | Reemplazar por `bg-red-50`. |
 
@@ -89,7 +92,8 @@ Variantes de botones encontradas y su consistencia:
 | **Acción Editar (Tabla)**| `p-1.5 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100` | `visitas`, `correctivas`, `legajo`, `equipo` | Algunos módulos usan hover de fondo distinto. | Estandarizar bajo `<AppButton variant="edit-table" size="icon" />`. |
 | **Acción Eliminar (Tabla)**| `p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100` / `bg-red-500/10 text-red-400 hover:bg-red-650` | `visitas`, `nomina`, `legajo`, `accidentes` | Diferentes intensidades de rojo e iconos según el listado. | Estandarizar bajo `<AppButton variant="delete-table" size="icon" />`. |
 | **Acción Documento** | `p-1.5 rounded-lg bg-[#EFF6FF] text-[#468DFF] hover:bg-[#DBEAFE] hover:text-[#0511F2]` | `visitas`, `programa`, `legajo` | Cumple visualmente con las directrices de marca, pero sufre de duplicación inline. | Centralizar variante como `variant="document-table"`. |
-| **Selectores de Opciones (Sí/No)** | `flex-1 py-1.5 rounded-xl text-xs font-bold border transition-all bg-[#468DFF] text-white border-[#468DFF]` | `visitas`, `extintores`, `checklist-personalizados` | Estos no actúan como botones de acción, sino como inputs. Deberían comportarse de manera unificada. | Crear un componente reutilizable `<AppButtonGroupSelector />` para inputs de opción única. |
+| **Selectores de Opciones (Sí/No)** | `flex-1 py-1.5 rounded-xl text-xs font-bold border transition-all bg-[#468DFF] text-white border-[#468DFF]` | `visitas`, `extintores`, `checklist-personalizados`, `protocolos/ergonomia` | Estos no actúan como botones de acción, sino como inputs. Deberían comportarse de manera unificada. En ergonomía actúan en Planilla 2. | Crear un componente reutilizable `<AppButtonGroupSelector />` para inputs de opción única. |
+| **Ver Escala Borg (Acción Local)** | `px-3 py-1.5 bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5` | `protocolos/ergonomia` | Botón interactivo de escala local no unificado con las variantes primarias estándar. | Normalizar como botón auxiliar outline o inline. |
 
 ---
 
@@ -174,9 +178,10 @@ Mapeo de la adaptabilidad móvil de los componentes:
 
 | ID | Hallazgo | Evidencia | Impacto | Recomendación | Archivo |
 | :--- | :--- | :--- | :---: | :--- | :--- |
-| **HC-01** | Uso de clase inexistente `border-slate-150` | `border-slate-150` repetido 318 veces | Alto | Reemplazar masivamente por `border-slate-200`. | 12 archivos bajo `src/app/` |
+| **HC-01** | Uso de clase inexistente `border-slate-150` | `border-slate-150` repetido en maquetación vieja | Alto | Reemplazar masivamente por `border-slate-200`. | 12 archivos bajo `src/app/` |
 | **HC-02** | Contradicción de CSS variables `:root` | `:root` tiene HSL oscuros (Dark Mode) pero las páginas usan Tailwind light. | Alto | Estandarizar `:root` para Light Mode y mapear Dark Mode en la clase `.dark`. | `src/app/globals.css` |
 | **HC-03** | Modales de Confirmación duplicados inline | Cada página implementa su markup y estado local para confirmar borrados. | Alto | Migrar al uso del hook o componente unificado `@/components/ui/AppConfirmDialog`. | 13 páginas bajo `[tenant-slug]` |
+| **HC-04** | Persistencia de `border-slate-150` en ergonomía | El formulario de ergonomía define 5 bordes de forma manual con la clase obsoleta. | Alto | Reemplazar en bloque por la clase estándar `border-slate-200`. | `protocolos/ergonomia/components/ProtocoloForm.js` |
 
 ---
 
@@ -187,6 +192,8 @@ Mapeo de la adaptabilidad móvil de los componentes:
 | **HA-01** | Color verde de éxito no institucional | Hardcodeo de `#00b050` / `#00B050` | Medio | Reemplazar por el color institucional `#22c55e` (Safety Green) mapeado a `success`. | 26 archivos bajo `src/` |
 | **HA-02** | Color rojo de alerta no institucional | Hardcodeo de `#fa050b` | Medio | Reemplazar por el rojo corporativo `#ef4444` (Safety Red) mapeado a `destructive`. | `programa/page.js`, `dashboard/page.js` |
 | **HA-03** | Duplicación masiva de Sidebar y Layout | `<Sidebar ... />` instanciado y controlado localmente en cada página. | Medio | Mover el Sidebar al layout global de Next.js (`/[tenant-slug]/layout.js`). | 16 páginas de tenant |
+| **HA-04** | Código muerto e imports de iluminación en protocolos | Presencia de constantes como `ACTIVIDADES_ILUMINACION` y `TABLA_2_ILUMINACION` y sus imports residuales en los módulos de ruido y ergonomía. | Medio | Limpiar constantes no utilizadas e imports residuales del código. | `protocolos/ruido`, `protocolos/ergonomia` |
+| **HA-05** | Duplicación de boilerplate de dibujo de PDF | Las funciones `pdfGenerator` de ruido, ergonomía e iluminación duplican funciones locales auxiliares. | Medio | Importar y consumir los helpers unificados en `src/lib/pdf/`. | `protocolos/ruido/utils`, `protocolos/ergonomia/utils`, `protocolos/iluminacion/utils` |
 
 ---
 

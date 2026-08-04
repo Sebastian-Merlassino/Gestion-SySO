@@ -1230,12 +1230,12 @@ const [partidosList, setPartidosList] = useState([]);
             </div>
           </div>
         ) : (
-          <div className="py-6 px-4 md:px-0 space-y-6 max-w-[95%] mx-auto w-full z-10">
+          <div className="py-0 md:py-6 px-0 md:px-0 space-y-4 md:space-y-6 md:max-w-[95%] md:mx-auto w-full z-10">
         
         <form onSubmit={handleSaveChanges} className="space-y-6">
           
           {/* SECCIÓN 1: INFORMACIÓN DEL USUARIO */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 md:p-6 shadow-sm space-y-5">
+          <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl p-3.5 sm:p-5 md:p-6 shadow-sm space-y-5">
             <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 flex items-center gap-2 uppercase tracking-wider">
               <User className="text-[#468DFF] h-4 w-4" />
               Información del usuario
@@ -1581,7 +1581,7 @@ const [partidosList, setPartidosList] = useState([]);
           </div>
 
           {/* SECCIÓN: SEGURIDAD (CAMBIAR CONTRASEÑA) */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 md:p-6 shadow-sm space-y-5">
+          <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl p-3.5 sm:p-5 md:p-6 shadow-sm space-y-5">
             <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 flex items-center gap-2 uppercase tracking-wider">
               <Lock className="text-[#468DFF] h-4 w-4" />
               Seguridad (Cambiar Contraseña)
@@ -1684,7 +1684,7 @@ const [partidosList, setPartidosList] = useState([]);
           {profileData?.role === 'admin' && (
             <>
               {/* SECCIÓN 2: IDENTIDAD DE LA EMPRESA */}
-              <div className="bg-white border border-slate-200 rounded-2xl p-5 md:p-6 shadow-sm space-y-5">
+              <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl p-3.5 sm:p-5 md:p-6 shadow-sm space-y-5">
             <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 flex items-center gap-2 uppercase tracking-wider">
               <Building className="text-[#468DFF] h-4 w-4" />
               Identidad de la empresa
@@ -2027,7 +2027,7 @@ const [partidosList, setPartidosList] = useState([]);
           </div>
 
           {/* SECCIÓN 3: PLAN */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 md:p-6 shadow-sm space-y-5">
+          <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl p-3.5 sm:p-5 md:p-6 shadow-sm space-y-5">
             <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 flex items-center gap-2 uppercase tracking-wider">
               <Award className="text-[#468DFF] h-4 w-4" />
               Plan Suscrito

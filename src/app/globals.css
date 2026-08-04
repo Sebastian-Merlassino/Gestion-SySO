@@ -180,7 +180,7 @@
 }
 
 /* Estandarización de cabeceras fijas en móviles para evitar scroll */
-@media (max-w: 767px) {
+@media (max-w: 1023px) {
   main:not(.overflow-hidden) {
     position: relative !important;
     padding-top: 4rem !important; /* Altura de la cabecera */
@@ -195,4 +195,89 @@
     z-index: 30 !important;
     width: 100% !important;
   }
+
+  /* Quitar márgenes, anchos máximos y paddings del Content Body en móviles/tablets */
+  main > div.w-full.flex-grow.flex.flex-col {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: calc(100vh - 4rem) !important; /* 100vh menos cabecera */
+    flex-grow: 1 !important;
+    overflow-y: auto !important; /* Permitir scroll vertical en la página en el dashboard/legajo */
+  }
+
+  /* Si el main tiene la clase overflow-hidden, el Content Body de adentro no debe tener scroll */
+  main.overflow-hidden > div.w-full.flex-grow.flex.flex-col {
+    overflow: hidden !important;
+  }
+
+  /* Hacer que las tarjetas de filtros y de tablas vayan de borde a borde y sin rounded en móviles/tablets */
+  main > div.w-full.flex-grow.flex.flex-col div.space-y-6 > div,
+  main > div.w-full.flex-grow.flex.flex-col div.space-y-4 > div,
+  main > div.w-full.flex-grow.flex.flex-col div.space-y-0 > div {
+    border-left: 0 !important;
+    border-right: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Pegar elementos en space-y-0 y anular el borde superior doble entre filtros y tabla */
+  main > div.w-full.flex-grow.flex.flex-col div.space-y-0 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 0px !important;
+    border-top-width: 0px !important;
+  }
+
+  /* Juntar grillas y tarjetas en Dashboard y Legajo Técnico (remover gaps y bordes redondeados) */
+  main div.grid[class*="gap-4"],
+  main div.grid[class*="gap-6"],
+  main div.grid[class*="gap-3"] {
+    gap: 0px !important;
+    row-gap: 0px !important;
+    column-gap: 0px !important;
+  }
+
+  /* Modificar tarjetas dentro de grillas para ser continuas y separarse por borde inferior */
+  main div.grid[class*="gap-4"] > div,
+  main div.grid[class*="gap-6"] > div,
+  main div.grid[class*="gap-3"] > div {
+    border-left-width: 0px !important;
+    border-right-width: 0px !important;
+    border-top-width: 0px !important;
+    border-bottom-width: 1px !important;
+    border-bottom-style: solid !important;
+    border-color: hsl(var(--border)) !important;
+    border-radius: 0px !important;
+    box-shadow: none !important;
+  }
+
+  /* Alto completo para tablas y listados (evita fondo gris por debajo) */
+  div[style*="calc(100vh"],
+  div[class*="lg:h-[calc(100vh"] {
+    height: auto !important;
+    flex-grow: 1 !important;
+    flex-shrink: 1 !important;
+    flex-basis: 0% !important;
+    min-height: 0px !important;
+  }
+
+  /* Desactivar scroll del main en móviles/tablets y forzar flex vertical */
+
+  main {
+    height: 100vh !important;
+    max-height: 100vh !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  /* Reducir espacio entre filtros y tabla */
+  .space-y-6.flex-grow,
+  .space-y-6.flex-1 {
+    margin-top: 0px !important;
+    margin-bottom: 0px !important;
+    gap: 0.75rem !important;
+  }
 }
+
+
+

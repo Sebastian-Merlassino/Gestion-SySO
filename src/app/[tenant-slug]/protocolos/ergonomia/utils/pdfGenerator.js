@@ -1,59 +1,9 @@
 import { PDFDocument, PDFName } from 'pdf-lib';
 import { formatDate } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
+import { setFillColor, setDrawColor, setTextColor, hexToRgb, PDF_THEME } from '@/lib/pdf/pdfTheme';
 
-// Helper to convert hex color string to RGB array [r, g, b]
-const hexToRgb = (hex) => {
-  if (!hex || typeof hex !== 'string') return [0, 0, 0];
-  let c = hex.replace('#', '').trim();
-  if (c.length === 3) c = c.split('').map(x => x + x).join('');
-  const num = parseInt(c, 16);
-  if (isNaN(num)) return [0, 0, 0];
-  return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
-};
-
-// Safe color setter helpers for jsPDF (guarantees RGB integers, preventing black solid fills)
-const setFillColor = (docInst, hex) => {
-  const [r, g, b] = hexToRgb(hex);
-  docInst.setFillColor(r, g, b);
-};
-
-const setDrawColor = (docInst, hex) => {
-  const [r, g, b] = hexToRgb(hex);
-  docInst.setDrawColor(r, g, b);
-};
-
-const setTextColor = (docInst, hex) => {
-  const [r, g, b] = hexToRgb(hex);
-  docInst.setTextColor(r, g, b);
-};
-
-// Helper to convert image URL to base64
-const getBase64ImageFromUrl = async (imageUrl) => {
-  if (!imageUrl) return '';
-  if (imageUrl.startsWith('data:')) return imageUrl;
-  try {
-    const res = await fetch(imageUrl);
-    if (!res.ok) {
-      console.warn(`[getBase64ImageFromUrl] No se pudo descargar la imagen (${res.status}): ${imageUrl}`);
-      return '';
-    }
-    const blob = await res.blob();
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.addEventListener("load", () => {
-        resolve(reader.result);
-      }, false);
-      reader.addEventListener("error", () => {
-        resolve('');
-      }, false);
-      reader.readAsDataURL(blob);
-    });
-  } catch (e) {
-    console.error('Error fetching image to base64:', e);
-    return '';
-  }
-};
+import { getBase64ImageFromUrl } from '@/lib/pdf/pdfImages';
 
 // Robust Base64 getter for attachments from Supabase storage / URLs
 const getAdjuntoBase64 = async (adj) => {

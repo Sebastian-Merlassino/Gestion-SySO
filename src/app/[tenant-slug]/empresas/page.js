@@ -1725,7 +1725,7 @@ export default function EmpresasClientes({ params }) {
           setIsMobileMenuOpen={setIsMobileMenuOpen}
         />
 
-        <div className="max-w-[95%] mx-auto w-full py-8 px-4 md:px-0 flex-1 flex flex-col min-h-0">
+        <div className="w-full flex-grow flex flex-col min-h-0 p-0 md:py-8 md:max-w-[95%] md:mx-auto md:px-0">
           
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 space-y-4">
@@ -1740,7 +1740,7 @@ export default function EmpresasClientes({ params }) {
             <div className="space-y-6 flex-1 flex flex-col min-h-0">
               
               {/* Toolbar y Filtros Unificados */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-3 shadow-sm space-y-3">
+              <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl p-3.5 sm:p-5 md:p-6 shadow-sm space-y-3">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                   {/* Espaciador para empujar el buscador a la derecha en desktop */}
                   <div className="hidden md:block flex-1"></div>
@@ -1823,7 +1823,7 @@ export default function EmpresasClientes({ params }) {
                   </div>
  
                   {/* Tabla */}
-                  <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex-1 flex flex-col min-h-0 transition-all duration-300 ease-in-out">
+                  <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl shadow-sm overflow-hidden flex-1 flex flex-col min-h-0 transition-all duration-300 ease-in-out">
                     {empresas.length === 0 ? (
                       <AppEmptyState
                         title="No hay clientes registrados"
@@ -1954,7 +1954,7 @@ export default function EmpresasClientes({ params }) {
             // ==========================================
             // VISTA: FORMULARIO DE CARGA / EDICIÓN (TABS)
             // ==========================================
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
+            <div className="bg-white md:rounded-2xl md:border md:border-slate-200 md:shadow-sm overflow-hidden flex flex-col h-full min-h-[calc(100vh-64px)] md:max-h-[85vh] animate-fade-in w-full">
               <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
                   <button 
@@ -1977,7 +1977,7 @@ export default function EmpresasClientes({ params }) {
                 </button>
               </div>
 
-              <form onSubmit={handleSaveAll} className="p-6 md:p-8 space-y-6 overflow-y-auto flex-1 scrollbar-thin">
+              <form onSubmit={handleSaveAll} className="p-3.5 sm:p-6 md:p-8 space-y-4 sm:space-y-6 overflow-y-auto flex-1 scrollbar-thin">
 
               {/* Encabezado Ficha */}
               <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">

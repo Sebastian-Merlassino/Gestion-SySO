@@ -42,23 +42,7 @@ import {
   PenTool
 } from 'lucide-react';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
-import { TABLA_2_ILUMINACION } from '../utils/tablasAnexoIV';
 import Resolucion886Modal from './Resolucion886Modal';
-
-// Catálogo normativo según Anexo IV Dec. 351/79 y SRT
-export const ACTIVIDADES_ILUMINACION = [
-  { categoria: 'Oficinas', subcategoria: 'Trabajo General', tarea: 'Escritura, lectura, procesamiento de datos, archivo', lux: 500 },
-  { categoria: 'Oficinas', subcategoria: 'Trabajo de Precisión', tarea: 'Dibujo técnico, diseño por computadora', lux: 750 },
-  { categoria: 'Oficinas', subcategoria: 'Áreas de Tránsito', tarea: 'Pasillos, escaleras, vestíbulos', lux: 150 },
-  { categoria: 'Industria', subcategoria: 'Tareas Muy Sencillas', tarea: 'Almacenes, zonas de carga y descarga, pasillos', lux: 100 },
-  { categoria: 'Industria', subcategoria: 'Tareas Sencillas', tarea: 'Montaje basto, embalaje, inspección visual básica', lux: 200 },
-  { categoria: 'Industria', subcategoria: 'Tareas Medianas', tarea: 'Trabajos de taller mecánico ordinario, torneado, montaje', lux: 300 },
-  { categoria: 'Industria', subcategoria: 'Tareas Finas / Precisión', tarea: 'Montaje de precisión, ajuste fino, control de calidad detallado', lux: 500 },
-  { categoria: 'Industria', subcategoria: 'Tareas Muy Finas / Alta Precisión', tarea: 'Montaje electrónico de precisión, laboratorios químicos', lux: 1000 },
-  { categoria: 'Comercio', subcategoria: 'Salas de Venta', tarea: 'Área general de tiendas, supermercados, locales', lux: 300 },
-  { categoria: 'Sanidad', subcategoria: 'Salas de Consulta', tarea: 'Exámenes médicos, tratamientos, salas de espera', lux: 500 },
-  { categoria: 'Educación', subcategoria: 'Aulas', tarea: 'Clases generales, laboratorios, bibliotecas', lux: 300 }
-];
 
 export const CUESTIONARIOS_PLANILLA2 = {
   levantamiento: {
@@ -1879,36 +1863,37 @@ export default function ProtocoloForm({
 
   return (
     <>
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in w-full">
+      <div className="bg-white md:rounded-2xl md:border md:border-slate-200 md:shadow-sm overflow-hidden flex flex-col h-full min-h-[calc(100vh-64px)] md:max-h-[85vh] animate-fade-in w-full">
       {/* Cabecera del Formulario */}
-      <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-3">
-          <button type="button" onClick={handleExitAttempt} className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 cursor-pointer">
+      <div className="h-16 px-2 sm:px-4 md:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
+          <button type="button" onClick={handleExitAttempt} className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 cursor-pointer shrink-0">
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <span className="font-outfit text-base font-bold text-slate-900">
-            {mode === 'create' ? 'Nuevo Protocolo de Ergonomía' : mode === 'edit' ? 'Editar Protocolo de Ergonomía' : 'Detalle de Protocolo de Ergonomía'}
+          <span className="font-outfit text-sm sm:text-base font-bold text-slate-900 truncate max-w-[120px] xs:max-w-[170px] sm:max-w-none shrink-0" title={mode === 'create' ? 'Nuevo Protocolo de Ergonomía' : mode === 'edit' ? 'Editar Protocolo de Ergonomía' : 'Detalle de Protocolo de Ergonomía'}>
+            {mode === 'create' ? 'Nuevo Protocolo' : mode === 'edit' ? 'Editar Protocolo' : 'Detalle Protocolo'}
           </span>
           <button
             type="button"
             onClick={() => setIsResolucionModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-[#468DFF] hover:bg-[#468DFF] hover:text-white border border-blue-200 rounded-lg text-xs font-bold transition-all active:scale-95 cursor-pointer ml-1.5"
+            className="flex items-center gap-1 px-2 py-0.5 sm:px-3 sm:py-1 bg-blue-50 text-[#468DFF] hover:bg-[#468DFF] hover:text-white border border-blue-200 rounded-lg text-[10px] sm:text-xs font-bold transition-all active:scale-95 cursor-pointer ml-1 sm:ml-1.5 shrink-0"
             title="Ver Instructivo de Completado (Resolución SRT N° 886/15)"
           >
             <HelpCircle className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Resolución SRT N° 886/15</span>
-            <span className="sm:hidden text-[10px]">Resolución SRT N° 886/15</span>
+            <span className="hidden md:inline">Resolución SRT N° 886/15</span>
+            <span className="hidden sm:inline md:hidden">Res. 886/15</span>
+            <span className="sm:hidden">Guía 886</span>
           </button>
         </div>
-        <button type="button" onClick={handleExitAttempt} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200 cursor-pointer">
+        <button type="button" onClick={handleExitAttempt} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200 cursor-pointer shrink-0">
           <X className="h-5 w-5" />
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-6 overflow-y-auto flex-1 scrollbar-thin select-none">
+      <form onSubmit={handleSubmit} className="p-3.5 sm:p-6 md:p-8 space-y-4 sm:space-y-6 overflow-y-auto flex-1 scrollbar-thin select-none">
         
         {/* CARD ESTABLECIMIENTO */}
-        <AppCard className="p-5 md:p-6 space-y-4">
+        <AppCard className="p-3.5 sm:p-5 md:p-6 space-y-3 sm:space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
             <Building className="h-5 w-5 text-[#468DFF]" />
             <h2 className="font-outfit text-base font-extrabold text-slate-800">Datos del Establecimiento</h2>
@@ -2069,22 +2054,60 @@ export default function ProtocoloForm({
                 <div key={p.id} className="border border-slate-200 rounded-xl bg-slate-50/40 p-4 space-y-4 transition-all">
                   
                   {/* Cabecera del Punto */}
-                  <div className="flex justify-between items-center border-b border-slate-200/80 pb-2.5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold text-slate-700 bg-slate-200/80 px-2 py-0.5 rounded-lg border border-slate-300/40 uppercase">
-                        Puesto #{p.punto_muestreo}
-                      </span>
-                      {p.sector_text && (
-                        <span className="text-xs font-bold text-slate-800 max-w-[200px] truncate">
-                          - {p.sector_text} {p.puesto_text ? `(${p.puesto_text})` : ''}
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 border-b border-slate-200/80 pb-2.5">
+                    <div className="flex items-center gap-1.5 justify-between sm:justify-start w-full sm:w-auto">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="text-[10px] font-bold text-slate-700 bg-slate-200/80 px-2 py-0.5 rounded-lg border border-slate-300/40 uppercase whitespace-nowrap shrink-0">
+                          Puesto #{p.punto_muestreo}
                         </span>
-                      )}
-                      <span className={`ml-2 px-2.5 py-1 rounded-full text-[10px] font-extrabold border uppercase ${badgeColor}`}>
-                        {cal.resultado_punto}
-                      </span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border uppercase ${badgeColor} whitespace-nowrap shrink-0`}>
+                          {cal.resultado_punto}
+                        </span>
+                      </div>
+                      
+                      {/* Botones de control para móvil */}
+                      <div className="flex sm:hidden items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                        <span
+                          role="button"
+                          onClick={() => handleToggleCollapsePunto(p.id)}
+                          className="text-[9px] text-slate-600 hover:text-slate-800 bg-white hover:bg-slate-100 font-bold px-2 py-1 rounded-md border border-slate-200 transition-all cursor-pointer flex items-center justify-center h-7 shadow-sm shrink-0"
+                          title={p.isCollapsed ? "Expandir punto" : "Contraer punto"}
+                        >
+                          {p.isCollapsed ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />}
+                        </span>
+                        {canEdit && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleDuplicatePunto(p)}
+                              className="p-1 text-slate-650 bg-white hover:bg-slate-100 border border-slate-200 rounded transition-colors flex items-center justify-center cursor-pointer h-7 w-7 shrink-0"
+                              title="Duplicar punto"
+                            >
+                              <Copy className="h-3.5 w-3.5" />
+                            </button>
+                            {puntos.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemovePunto(p.id)}
+                                className="p-1 text-red-500 bg-white hover:bg-red-50 border border-red-200 rounded transition-colors flex items-center justify-center cursor-pointer h-7 w-7 shrink-0"
+                                title="Eliminar punto"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                    {p.sector_text && (
+                      <span className="text-xs font-bold text-slate-500 sm:text-slate-800 max-w-full sm:max-w-[200px] truncate sm:ml-2 text-left w-full sm:w-auto">
+                        {p.sector_text} {p.puesto_text ? `(${p.puesto_text})` : ''}
+                      </span>
+                    )}
+
+                    {/* Botones de control para escritorio */}
+                    <div className="hidden sm:flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                       <span
                         role="button"
                         onClick={() => handleToggleCollapsePunto(p.id)}
@@ -2113,14 +2136,16 @@ export default function ProtocoloForm({
                           >
                             <Copy className="h-3.5 w-3.5" />
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => handleRemovePunto(p.id)}
-                            className="p-1 text-red-500 hover:bg-red-50 rounded transition-colors border border-red-200 flex items-center justify-center cursor-pointer"
-                            title="Eliminar punto"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
+                          {puntos.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemovePunto(p.id)}
+                              className="p-1 text-red-500 hover:bg-red-50 rounded transition-colors border border-red-200 flex items-center justify-center cursor-pointer"
+                              title="Eliminar punto"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          )}
                         </>
                       )}
                     </div>
@@ -2296,16 +2321,16 @@ export default function ProtocoloForm({
 
                       {/* Contenedor de Tareas Habituales */}
                       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
-                        <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+                        <div className="flex flex-col xs:flex-row xs:justify-between xs:items-center gap-2 border-b border-slate-200 pb-2.5">
                           <h4 className="font-extrabold text-slate-800 font-outfit uppercase tracking-wider text-xs">
-                            Tareas Habituales del Puesto de Trabajo
+                            Tareas Habituales del Puesto
                           </h4>
                           {canEdit && (
                             <AppButton
                               type="button"
                               variant="secondary"
                               size="sm"
-                              className="text-[10.5px] px-2.5 py-1 h-7"
+                              className="text-[10.5px] px-2.5 py-1 h-7 shrink-0 w-full xs:w-auto"
                               onClick={() => {
                                 const newTarea = createNewTareaHabitual(p.tareas.length + 1);
                                 setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: [...x.tareas, newTarea] } : x));
@@ -2320,16 +2345,68 @@ export default function ProtocoloForm({
                           {p.tareas?.map((t, tIdx) => {
                             const isCollapsed = !!collapsedTareas[t.id];
                             return (
-                              <div key={t.id} className="border border-slate-150 rounded-lg p-3 bg-slate-50/50 space-y-3">
-                                <div className="flex justify-between items-center gap-4">
-                                  <div className="flex-1 flex items-center gap-2">
+                              <div key={t.id} className="border border-slate-200 rounded-lg p-2.5 sm:p-3 bg-slate-50/50 space-y-3">
+                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-4 border-b border-slate-200/50 pb-2.5 sm:pb-0 sm:border-b-0">
+                                  <div className="flex items-center gap-2 justify-between sm:justify-start w-full sm:w-auto">
                                     <span className="text-[11px] font-bold text-slate-650 bg-slate-200/80 px-3 py-1 rounded uppercase tracking-wider whitespace-nowrap">
                                       Tarea #{tIdx + 1}
                                     </span>
+                                    {/* Botones de control en móviles */}
+                                    <div className="flex items-center gap-1.5 sm:hidden shrink-0">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setCollapsedTareas(prev => ({
+                                            ...prev,
+                                            [t.id]: !prev[t.id]
+                                          }));
+                                        }}
+                                        className="p-1 bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 rounded transition-colors cursor-pointer inline-flex items-center justify-center h-7 w-7"
+                                        title={isCollapsed ? "Expandir tarea" : "Contraer tarea"}
+                                      >
+                                        {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+                                      </button>
+
+                                      {canEdit && (
+                                        <>
+                                          <button
+                                            type="button"
+                                            title="Duplicar tarea"
+                                            onClick={() => {
+                                              const dupTarea = {
+                                                ...t,
+                                                id: 't-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+                                                orden: p.tareas.length + 1,
+                                                nombre: t.nombre + ' (Copia)'
+                                              };
+                                              setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: [...x.tareas, dupTarea] } : x));
+                                            }}
+                                            className="p-1 bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 rounded transition-colors cursor-pointer inline-flex items-center justify-center h-7 w-7"
+                                          >
+                                            <Copy className="h-3.5 w-3.5" />
+                                          </button>
+                                          {p.tareas.length > 1 && (
+                                            <button
+                                              type="button"
+                                              title="Eliminar tarea"
+                                              onClick={() => {
+                                                const filteredTareas = p.tareas.filter(x => x.id !== t.id).map((x, idx) => ({ ...x, orden: idx + 1 }));
+                                                setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: filteredTareas } : x));
+                                              }}
+                                              className="p-1 bg-white hover:bg-red-50 border border-red-200 text-red-500 rounded transition-colors cursor-pointer inline-flex items-center justify-center h-7 w-7"
+                                            >
+                                              <Trash2 className="h-3.5 w-3.5" />
+                                            </button>
+                                          )}
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex-grow w-full">
                                     <AppInput
                                       disabled={!canEdit}
                                       placeholder="Ej: Embalar pedidos, Cargar pallets..."
-                                      className="h-8 text-xs bg-white flex-1 w-full"
+                                      className="h-8 text-xs bg-white w-full"
                                       value={t.nombre || ''}
                                       onChange={(e) => {
                                         const updatedTareas = p.tareas.map(x => x.id === t.id ? { ...x, nombre: e.target.value } : x);
@@ -2337,7 +2414,8 @@ export default function ProtocoloForm({
                                       }}
                                     />
                                   </div>
-                                  <div className="flex items-center gap-1.5">
+                                  {/* Botones de control en escritorio */}
+                                  <div className="hidden sm:flex items-center gap-1.5 shrink-0">
                                     <button
                                       type="button"
                                       onClick={() => {
@@ -2389,9 +2467,9 @@ export default function ProtocoloForm({
                                 </div>
 
                                 {!isCollapsed && (
-                                  <div className="overflow-x-auto bg-white rounded-lg border border-slate-150">
-                                  <table className="w-full text-xs text-left border-collapse">
-                                    <thead>
+                                  <div className="overflow-x-auto bg-white rounded-lg border border-slate-200">
+                                  <table className="w-full text-xs text-left border-collapse block md:table">
+                                    <thead className="hidden md:table-header-group">
                                       <tr className="border-b border-slate-200 bg-slate-50 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                                         <th className="p-2">Identificación de Factores de Riesgo</th>
                                         <th className="p-2 text-center w-24">¿Presente?</th>
@@ -2399,7 +2477,7 @@ export default function ProtocoloForm({
                                         <th className="p-2 text-center w-36">Nivel de Riesgo</th>
                                       </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-100">
+                                    <tbody className="divide-y divide-slate-100 block md:table-row-group">
                                       {[
                                         { key: 'levantamiento', label: 'A. Levantamiento y descenso' },
                                         { key: 'empuje_arrastre', label: 'B. Empuje / Arrastre' },
@@ -2419,38 +2497,41 @@ export default function ProtocoloForm({
                                         const isFactorCollapsed = !!collapsedFactores[factorCollapsedKey];
                                         return (
                                           <React.Fragment key={f.key}>
-                                            <tr className="hover:bg-slate-50/50">
-                                              <td className="p-2 font-medium text-slate-750">
-                                                <div className="flex items-center gap-1.5">
+                                            <tr className="hover:bg-slate-50/50 flex flex-col md:table-row p-3 md:p-0 border-b border-slate-100 md:border-b-0 w-full">
+                                              <td className="p-2 font-medium text-slate-750 block md:table-cell w-full">
+                                                <div className="flex items-center gap-1.5 justify-between md:justify-start">
                                                   <span>{f.label}</span>
-                                                  {isPresent && (
-                                                    <span className="text-[9px] font-bold bg-[#468DFF]/10 text-[#468DFF] border border-[#468DFF]/25 px-1.5 py-0.2 rounded-full uppercase">
-                                                      Planilla 2
-                                                    </span>
-                                                  )}
-                                                  {isPresent && (
-                                                    <button
-                                                      type="button"
-                                                      onClick={() => {
-                                                        setCollapsedFactores(prev => ({
-                                                          ...prev,
-                                                          [factorCollapsedKey]: !prev[factorCollapsedKey]
-                                                        }));
-                                                      }}
-                                                      className="p-1 hover:bg-slate-200 text-slate-500 rounded transition-colors cursor-pointer inline-flex items-center"
-                                                      title={isFactorCollapsed ? "Expandir evaluación" : "Colapsar evaluación"}
-                                                    >
-                                                      {isFactorCollapsed ? (
-                                                        <ChevronDown className="h-3 w-3" />
-                                                      ) : (
-                                                        <ChevronUp className="h-3 w-3" />
-                                                      )}
-                                                    </button>
-                                                  )}
+                                                  <div className="flex items-center gap-1">
+                                                    {isPresent && (
+                                                      <span className="text-[9px] font-bold bg-[#468DFF]/10 text-[#468DFF] border border-[#468DFF]/25 px-1.5 py-0.2 rounded-full uppercase">
+                                                        Planilla 2
+                                                      </span>
+                                                    )}
+                                                    {isPresent && (
+                                                      <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                          setCollapsedFactores(prev => ({
+                                                            ...prev,
+                                                            [factorCollapsedKey]: !prev[factorCollapsedKey]
+                                                          }));
+                                                        }}
+                                                        className="p-1 hover:bg-slate-200 text-slate-500 rounded transition-colors cursor-pointer inline-flex items-center"
+                                                        title={isFactorCollapsed ? "Expandir evaluación" : "Colapsar evaluación"}
+                                                      >
+                                                        {isFactorCollapsed ? (
+                                                          <ChevronDown className="h-3 w-3" />
+                                                        ) : (
+                                                          <ChevronUp className="h-3 w-3" />
+                                                        )}
+                                                      </button>
+                                                    )}
+                                                  </div>
                                                 </div>
                                               </td>
-                                              <td className="p-2 text-center">
-                                                <div className="inline-flex rounded-md shadow-sm border border-slate-300 overflow-hidden bg-white">
+                                              <td className="p-1.5 sm:p-2 block md:table-cell flex items-center justify-between md:justify-center gap-2 flex-nowrap w-full">
+                                                <span className="md:hidden text-[10px] font-bold text-slate-400 uppercase w-20 shrink-0 text-left">¿Presente?:</span>
+                                                <div className="inline-flex rounded-md shadow-sm border border-slate-300 overflow-hidden bg-white shrink-0 flex-nowrap">
                                                   <button
                                                     type="button"
                                                     disabled={!canEdit}
@@ -2467,7 +2548,7 @@ export default function ProtocoloForm({
                                                       });
                                                       setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: updatedTareas } : x));
                                                     }}
-                                                    className={`px-3 py-1 text-xs font-bold transition-all cursor-pointer ${
+                                                    className={`px-3 py-1 text-xs font-bold transition-all cursor-pointer shrink-0 ${
                                                       isPresent
                                                         ? 'bg-[#468DFF] text-white shadow-inner'
                                                         : 'text-slate-650 hover:bg-slate-50 hover:text-slate-900 bg-white'
@@ -2491,7 +2572,7 @@ export default function ProtocoloForm({
                                                       });
                                                       setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: updatedTareas } : x));
                                                     }}
-                                                    className={`px-3 py-1 text-xs font-bold border-l border-slate-200 transition-all cursor-pointer ${
+                                                    className={`px-3 py-1 text-xs font-bold border-l border-slate-200 transition-all cursor-pointer shrink-0 ${
                                                       !isPresent
                                                         ? 'bg-slate-500 text-white shadow-inner'
                                                         : 'text-slate-650 hover:bg-slate-50 hover:text-slate-900 bg-white'
@@ -2501,11 +2582,12 @@ export default function ProtocoloForm({
                                                   </button>
                                                 </div>
                                               </td>
-                                              <td className="p-2 text-center">
+                                              <td className="p-1.5 sm:p-2 block md:table-cell flex items-center justify-between md:justify-center gap-2 flex-nowrap w-full">
+                                                <span className="md:hidden text-[10px] font-bold text-slate-400 uppercase w-20 shrink-0 text-left">Tiempo Exp.:</span>
                                                 <AppInput
                                                   disabled={!canEdit || !isPresent}
-                                                  placeholder="Ej: 60 min, 3 hs..."
-                                                  className="h-8 text-xs bg-white text-center"
+                                                  placeholder="Ej: 60 min..."
+                                                  className="h-8 text-xs bg-white text-center w-24 xs:w-28 sm:w-32 md:w-full shrink-0"
                                                   value={t[`f_${f.key}_tiempo`] || ''}
                                                   onChange={(e) => {
                                                     const val = e.target.value;
@@ -2514,11 +2596,12 @@ export default function ProtocoloForm({
                                                   }}
                                                 />
                                               </td>
-                                              <td className="p-2 text-center whitespace-nowrap">
+                                              <td className="p-1.5 sm:p-2 block md:table-cell flex items-center justify-between md:justify-center gap-2 whitespace-nowrap flex-nowrap w-full">
+                                                <span className="md:hidden text-[10px] font-bold text-slate-400 uppercase w-20 shrink-0 text-left">Riesgo:</span>
                                                 {(() => {
                                                   if (!isPresent) {
                                                     return (
-                                                      <span className="inline-block px-2.5 py-1 rounded text-xs font-bold bg-slate-100 text-slate-500 border border-slate-200 uppercase tracking-wide">
+                                                      <span className="inline-block px-2.5 py-1 rounded text-xs font-bold bg-slate-100 text-slate-500 border border-slate-200 uppercase tracking-wide shrink-0">
                                                         No Evaluado
                                                       </span>
                                                     );
@@ -2527,29 +2610,29 @@ export default function ProtocoloForm({
                                                   const rskVal = t[rskKey] || '1';
                                                   if (rskVal === '3') {
                                                     return (
-                                                      <span className="inline-block px-2.5 py-1 rounded text-xs font-bold bg-red-50 text-red-600 border border-red-200 uppercase tracking-wide">
-                                                        Nivel 3 - Crítico
+                                                      <span className="inline-block px-2.5 py-1 rounded text-xs font-bold bg-red-50 text-red-600 border border-red-200 uppercase tracking-wide shrink-0">
+                                                        Nivel 3
                                                       </span>
                                                     );
                                                   }
                                                   if (rskVal === '2') {
                                                     return (
-                                                      <span className="inline-block px-2.5 py-1 rounded text-xs font-bold bg-amber-50 text-amber-600 border border-amber-200 uppercase tracking-wide">
-                                                        Nivel 2 - Moderado
+                                                      <span className="inline-block px-2.5 py-1 rounded text-xs font-bold bg-amber-50 text-amber-600 border border-amber-200 uppercase tracking-wide shrink-0">
+                                                        Nivel 2
                                                       </span>
                                                     );
                                                   }
                                                   return (
-                                                    <span className="inline-block px-2.5 py-1 rounded text-xs font-bold bg-[#00B050]/10 text-[#00B050] border border-[#00B050]/20 uppercase tracking-wide">
-                                                      Nivel 1 - Tolerable
+                                                    <span className="inline-block px-2.5 py-1 rounded text-xs font-bold bg-[#00B050]/10 text-[#00B050] border border-[#00B050]/20 uppercase tracking-wide shrink-0">
+                                                      Nivel 1
                                                     </span>
                                                   );
                                                 })()}
                                               </td>
                                             </tr>
                                             {isPresent && !isFactorCollapsed && (
-                                              <tr className="bg-[#468DFF]/5">
-                                                <td colSpan={4} className="p-3 border-b border-slate-200">
+                                              <tr className="bg-[#468DFF]/5 flex flex-col md:table-row w-full">
+                                                <td colSpan={4} className="p-3 border-b border-slate-200 block md:table-cell w-full">
                                                   <div className="space-y-2 text-xs">
                                                     <div className="flex items-center justify-between border-b border-slate-200/60 pb-1.5">
                                                       <span className="font-extrabold text-slate-700 uppercase tracking-wider text-[10px]">
@@ -2564,7 +2647,7 @@ export default function ProtocoloForm({
                                                     {CUESTIONARIOS_PLANILLA2[f.key]?.isTwoStep ? (
                                                       <div className="space-y-4">
                                                         {/* Paso 1 */}
-                                                        <div className="space-y-2 bg-white p-2.5 rounded-lg border border-slate-150 shadow-inner">
+                                                        <div className="space-y-2 bg-white p-2.5 rounded-lg border border-slate-200 shadow-inner">
                                                           <h5 className="font-bold text-slate-800 border-b border-slate-100 pb-1 uppercase text-[9px] tracking-wider text-slate-500">
                                                             Paso 1: Identificar si la tarea del puesto de trabajo implica:
                                                           </h5>
@@ -2572,9 +2655,9 @@ export default function ProtocoloForm({
                                                             const currentRespuestas = t[`f_${f.key}_respuestas`] || {};
                                                             const ansValue = currentRespuestas[q.id] || 'no';
                                                             return (
-                                                              <div key={q.id} className="flex justify-between items-center gap-4 py-1 border-b border-slate-100 last:border-0">
+                                                              <div key={q.id} className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 sm:gap-4 py-2 sm:py-1 border-b border-slate-100 last:border-0">
                                                                 <span className="text-slate-650 font-medium text-left">{q.text}</span>
-                                                                <div className="inline-flex rounded-md shadow-sm border border-slate-300 overflow-hidden bg-white shrink-0">
+                                                                <div className="flex w-full sm:w-auto rounded-md shadow-sm border border-slate-300 overflow-hidden bg-white shrink-0 flex-nowrap">
                                                                    <button
                                                                      type="button"
                                                                      disabled={!canEdit}
@@ -2603,7 +2686,7 @@ export default function ProtocoloForm({
                                                                        });
                                                                        setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: updatedTareas } : x));
                                                                      }}
-                                                                     className={`px-3 py-1 text-xs font-bold transition-all cursor-pointer ${
+                                                                     className={`flex-1 sm:flex-initial text-center px-3 py-1.5 text-xs font-bold transition-all cursor-pointer inline-flex items-center justify-center shrink-0 ${
                                                                        ansValue === 'si'
                                                                          ? 'bg-[#468DFF] text-white shadow-inner'
                                                                          : 'text-slate-650 hover:bg-slate-50 hover:text-slate-900 bg-white'
@@ -2639,7 +2722,7 @@ export default function ProtocoloForm({
                                                                       });
                                                                       setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: updatedTareas } : x));
                                                                     }}
-                                                                    className={`px-3 py-1 text-xs font-bold border-l border-slate-200 transition-all cursor-pointer ${
+                                                                    className={`flex-1 sm:flex-initial text-center px-3 py-1.5 text-xs font-bold border-l border-slate-200 transition-all cursor-pointer inline-flex items-center justify-center shrink-0 ${
                                                                       ansValue === 'no'
                                                                         ? 'bg-slate-500 text-white shadow-inner'
                                                                         : 'text-slate-650 hover:bg-slate-50 hover:text-slate-900 bg-white'
@@ -2660,7 +2743,7 @@ export default function ProtocoloForm({
                                                           if (!showPaso2) return null;
 
                                                           return (
-                                                            <div className="space-y-2 bg-white p-2.5 rounded-lg border border-slate-150 shadow-inner">
+                                                            <div className="space-y-2 bg-white p-2.5 rounded-lg border border-slate-200 shadow-inner">
                                                               <div className="flex justify-between items-center border-b border-slate-100 pb-1 mb-2">
                                                                 <h5 className="font-bold text-slate-800 uppercase text-[9px] tracking-wider text-slate-500">
                                                                   Paso 2: Determinar el nivel de riesgo
@@ -2707,9 +2790,9 @@ export default function ProtocoloForm({
                                                               {CUESTIONARIOS_PLANILLA2[f.key].paso2.map((q) => {
                                                                 const ansValue = currentRespuestas[q.id] || 'no';
                                                                 return (
-                                                                  <div key={q.id} className="flex justify-between items-center gap-4 py-1 border-b border-slate-100 last:border-0">
+                                                                  <div key={q.id} className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 sm:gap-4 py-2 sm:py-1 border-b border-slate-100 last:border-0">
                                                                     <span className="text-slate-650 font-medium text-left">{q.text}</span>
-                                                                    <div className="inline-flex rounded-md shadow-sm border border-slate-300 overflow-hidden bg-white shrink-0">
+                                                                    <div className="flex w-full sm:w-auto rounded-md shadow-sm border border-slate-300 overflow-hidden bg-white shrink-0 flex-nowrap">
                                                                       <button
                                                                         type="button"
                                                                         disabled={!canEdit}
@@ -2738,7 +2821,7 @@ export default function ProtocoloForm({
                                                                           });
                                                                           setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: updatedTareas } : x));
                                                                         }}
-                                                                        className={`px-3 py-1 text-xs font-bold transition-all cursor-pointer ${
+                                                                        className={`flex-1 sm:flex-initial text-center px-3 py-1.5 text-xs font-bold transition-all cursor-pointer inline-flex items-center justify-center shrink-0 ${
                                                                           ansValue === 'si'
                                                                             ? 'bg-[#468DFF] text-white shadow-inner'
                                                                             : 'text-slate-650 hover:bg-slate-50 hover:text-slate-900 bg-white'
@@ -2774,7 +2857,7 @@ export default function ProtocoloForm({
                                                                           });
                                                                           setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: updatedTareas } : x));
                                                                         }}
-                                                                        className={`px-3 py-1 text-xs font-bold border-l border-slate-200 transition-all cursor-pointer ${
+                                                                        className={`flex-1 sm:flex-initial text-center px-3 py-1.5 text-xs font-bold border-l border-slate-200 transition-all cursor-pointer inline-flex items-center justify-center shrink-0 ${
                                                                           ansValue === 'no'
                                                                             ? 'bg-slate-500 text-white shadow-inner'
                                                                             : 'text-slate-650 hover:bg-slate-50 hover:text-slate-900 bg-white'
@@ -2794,14 +2877,14 @@ export default function ProtocoloForm({
                                                     ) : (
                                                       // Cuestionario plano estándar para otros factores
                                                       <>
-                                                        <div className="space-y-2 bg-white p-2.5 rounded-lg border border-slate-150 shadow-inner">
+                                                        <div className="space-y-2 bg-white p-2.5 rounded-lg border border-slate-200 shadow-inner">
                                                           {(CUESTIONARIOS_PLANILLA2[f.key] || []).map((q) => {
                                                             const currentRespuestas = t[`f_${f.key}_respuestas`] || {};
                                                             const ansValue = currentRespuestas[q.id] || 'no';
                                                             return (
-                                                              <div key={q.id} className="flex justify-between items-center gap-4 py-1 border-b border-slate-100 last:border-0">
+                                                              <div key={q.id} className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 sm:gap-4 py-2 sm:py-1 border-b border-slate-100 last:border-0">
                                                                 <span className="text-slate-650 font-medium text-left">{q.text}</span>
-                                                                <div className="inline-flex rounded-md shadow-sm border border-slate-300 overflow-hidden bg-white shrink-0">
+                                                                <div className="flex w-full sm:w-auto rounded-md shadow-sm border border-slate-300 overflow-hidden bg-white shrink-0 flex-nowrap">
                                                                   <button
                                                                     type="button"
                                                                     disabled={!canEdit}

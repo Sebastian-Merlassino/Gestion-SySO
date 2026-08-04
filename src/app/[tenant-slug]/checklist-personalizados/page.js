@@ -1826,11 +1826,11 @@ export default function ChecklistPersonalizadosPage({ params }) {
             </div>
           </div>
         ) : (
-          <div className="max-w-[95%] mx-auto w-full py-8 px-4 md:px-0 flex-1 flex flex-col min-h-0">
+          <div className="w-full flex-grow flex flex-col min-h-0 p-0 md:py-8 md:max-w-[95%] md:mx-auto md:px-0">
             
             {/* TABS Y FILTROS COMPACTOS (Solo si no está abierto ningún formulario) */}
             {!isFormOpen && (
-              <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm shrink-0 flex flex-col gap-3 mb-4 transition-all">
+              <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl p-3.5 sm:p-5 md:p-6 shadow-sm shrink-0 flex flex-col gap-3 mb-0 lg:mb-4 transition-all">
                 {/* Fila superior: Tabs y Buscador */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 select-none">
                   <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 gap-1 flex-shrink-0 items-center">
@@ -1967,8 +1967,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
             {/* TAB 1: LISTADO DE INSPECCIONES */}
             {activeTab === 'inspecciones' && !isFormOpen && (
               <div 
-                className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col flex-grow min-h-[300px] transition-all duration-300 ease-in-out"
-                style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}
+                className={`bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl shadow-sm overflow-hidden flex flex-col flex-grow min-h-0 lg:flex-initial transition-all duration-300 ease-in-out ${showFilters ? 'lg:h-[calc(100vh-310px)]' : 'lg:h-[calc(100vh-240px)]'}`}
               >
                 {sortedInspecciones.length === 0 ? (
                   <AppEmptyState
@@ -2086,7 +2085,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
 
             {/* TAB 2: LISTADO DE PLANTILLAS */}
             {activeTab === 'plantillas' && !isFormOpen && (
-              <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col flex-grow min-h-[300px] transition-all">
+              <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl shadow-sm overflow-hidden flex flex-col flex-grow min-h-0 lg:flex-initial transition-all">
                 {templates.length === 0 ? (
                   <AppEmptyState
                     title="No hay plantillas de checklist"
@@ -2165,7 +2164,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
                 FORMULARIO: DISEÑADOR DE PLANTILLAS (LEVEL 1)
                 ========================================== */}
             {activeTab === 'plantillas' && isTemplateFormOpen && (
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
+              <div className="bg-white md:rounded-2xl md:border md:border-slate-200 md:shadow-sm overflow-hidden flex flex-col h-full min-h-[calc(100vh-64px)] md:max-h-[85vh] animate-fade-in w-full">
                 {/* Cabecera del formulario */}
                 <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
@@ -2189,7 +2188,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
                 </div>
 
                 {/* Formulario */}
-                <form onSubmit={handleSaveTemplate} className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto flex-grow flex-1 scrollbar-thin">
+                <form onSubmit={handleSaveTemplate} className="p-3.5 sm:p-6 space-y-3.5 sm:space-y-6 overflow-y-auto flex-grow flex-1 scrollbar-thin">
                   {/* Nombre del Checklist */}
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-bold text-slate-600">Nombre del Checklist <span className="text-red-500">*</span></label>
@@ -2446,7 +2445,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
                 FORMULARIO: EJECUCIÓN / EDICIÓN DE INSPECCIÓN (LEVEL 2)
                 ========================================== */}
             {isInspeccionFormOpen && (
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
+              <div className="bg-white md:rounded-2xl md:border md:border-slate-200 md:shadow-sm overflow-hidden flex flex-col h-full min-h-[calc(100vh-64px)] md:max-h-[85vh] animate-fade-in w-full">
                 {/* Cabecera del formulario */}
                 <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">

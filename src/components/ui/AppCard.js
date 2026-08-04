@@ -10,7 +10,7 @@ export default function AppCard({
   return (
     <div
       className={cn(
-        'bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col',
+        'bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl shadow-sm overflow-hidden flex flex-col',
         className
       )}
       {...props}

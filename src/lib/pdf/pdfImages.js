@@ -4,6 +4,8 @@
  */
 
 export async function getBase64ImageFromUrl(url) {
+  if (!url) return null;
+  if (url.startsWith('data:')) return url;
   try {
     const res = await fetch(url);
     const blob = await res.blob();

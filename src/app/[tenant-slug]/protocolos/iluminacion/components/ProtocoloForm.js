@@ -1781,36 +1781,37 @@ Mejorar la distribución de la iluminación, procurando alcanzar una adecuada un
 
   return (
     <>
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in w-full">
+      <div className="bg-white md:rounded-2xl md:border md:border-slate-200 md:shadow-sm overflow-hidden flex flex-col h-full min-h-[calc(100vh-64px)] md:max-h-[85vh] animate-fade-in w-full">
       {/* Cabecera del Formulario */}
-      <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-3">
-          <button type="button" onClick={handleExitAttempt} className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 cursor-pointer">
+      <div className="h-16 px-2 sm:px-4 md:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
+          <button type="button" onClick={handleExitAttempt} className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 cursor-pointer shrink-0">
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <span className="font-outfit text-base font-bold text-slate-900">
-            {mode === 'create' ? 'Nuevo Protocolo de Iluminación' : mode === 'edit' ? 'Editar Protocolo de Iluminación' : 'Detalle de Protocolo de Iluminación'}
+          <span className="font-outfit text-sm sm:text-base font-bold text-slate-900 truncate max-w-[120px] xs:max-w-[170px] sm:max-w-none shrink-0" title={mode === 'create' ? 'Nuevo Protocolo de Iluminación' : mode === 'edit' ? 'Editar Protocolo de Iluminación' : 'Detalle de Protocolo de Iluminación'}>
+            {mode === 'create' ? 'Nuevo Protocolo' : mode === 'edit' ? 'Editar Protocolo' : 'Detalle Protocolo'}
           </span>
           <button
             type="button"
             onClick={() => setIsMetodoCuadriculaOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-[#468DFF] hover:bg-[#468DFF] hover:text-white border border-blue-200 rounded-lg text-xs font-bold transition-all active:scale-95 cursor-pointer ml-1.5"
+            className="flex items-center gap-1 px-2 py-0.5 sm:px-3 sm:py-1 bg-blue-50 text-[#468DFF] hover:bg-[#468DFF] hover:text-white border border-blue-200 rounded-lg text-[10px] sm:text-xs font-bold transition-all active:scale-95 cursor-pointer ml-1 sm:ml-1.5 shrink-0"
             title="Ver explicativo del Método de la Cuadrícula (Res. SRT 84/12 & Dec. 351/79)"
           >
             <HelpCircle className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Método de Cuadrícula (Res. 84/12)</span>
-            <span className="sm:hidden text-[10px]">Método Cuadrícula</span>
+            <span className="hidden md:inline">Método de Cuadrícula (Res. 84/12)</span>
+            <span className="hidden sm:inline md:hidden">Res. 84/12</span>
+            <span className="sm:hidden">Res. 84/12</span>
           </button>
         </div>
-        <button type="button" onClick={handleExitAttempt} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200 cursor-pointer">
+        <button type="button" onClick={handleExitAttempt} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200 cursor-pointer shrink-0">
           <X className="h-5 w-5" />
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-6 overflow-y-auto flex-1 scrollbar-thin select-none">
+      <form onSubmit={handleSubmit} className="p-3.5 sm:p-6 md:p-8 space-y-4 sm:space-y-6 overflow-y-auto flex-1 scrollbar-thin select-none">
         
         {/* CARD ESTABLECIMIENTO */}
-        <AppCard className="p-5 md:p-6 space-y-4">
+        <AppCard className="p-3.5 sm:p-5 md:p-6 space-y-3 sm:space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
             <Building className="h-5 w-5 text-[#468DFF]" />
             <h2 className="font-outfit text-base font-extrabold text-slate-800">Datos del Establecimiento</h2>

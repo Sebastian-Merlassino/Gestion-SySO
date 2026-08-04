@@ -1306,7 +1306,7 @@ export default function EquipoPage({ params }) {
           setIsMobileMenuOpen={setIsMobileMenuOpen}
         />
 
-        <div className="max-w-[95%] mx-auto w-full py-8 px-4 md:px-0 flex-1 flex flex-col min-h-0">
+        <div className="w-full flex-grow flex flex-col min-h-0 p-0 md:py-8 md:max-w-[95%] md:mx-auto md:px-0">
           
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 space-y-4">
@@ -1321,7 +1321,7 @@ export default function EquipoPage({ params }) {
             <div className="space-y-6 flex-1 flex flex-col min-h-0">
               
               {/* Panel de Filtros y Búsqueda */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-3 shadow-sm">
+              <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl p-3.5 sm:p-5 md:p-6 shadow-sm">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                   {/* Espaciador para empujar el buscador y botón a la derecha en desktop */}
                   <div className="hidden md:block flex-1"></div>
@@ -1363,7 +1363,7 @@ export default function EquipoPage({ params }) {
               </div>
 
               {/* Members Grid/List */}
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex-1 flex flex-col min-h-0 transition-all duration-300 ease-in-out">
+              <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl shadow-sm overflow-hidden flex-1 flex flex-col min-h-0 transition-all duration-300 ease-in-out">
                 {miembros.length === 0 ? (
                   <AppEmptyState
                     title="No hay miembros de equipo registrados"
@@ -1492,7 +1492,7 @@ export default function EquipoPage({ params }) {
             // ==========================================
             // VIEW: CREATE / EDIT FORM
             // ==========================================
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
+            <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl shadow-sm overflow-hidden flex flex-col h-full min-h-[calc(100vh-64px)] md:max-h-[85vh] animate-fade-in w-full">
               <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
                   <button 

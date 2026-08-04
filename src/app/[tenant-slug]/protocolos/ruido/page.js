@@ -731,7 +731,7 @@ export default function ProtocolosRuidoPage({ params }) {
           setIsMobileMenuOpen={setIsMobileMenuOpen}
         />
 
-        <div className="max-w-[95%] mx-auto w-full py-8 px-4 md:px-0 flex-grow flex flex-col min-h-0">
+        <div className="w-full flex-grow flex flex-col min-h-0 p-0 md:py-8 md:max-w-[95%] md:mx-auto md:px-0">
           {formMode !== 'list' ? (
             <ProtocoloForm
               tenantSlug={tenantSlug}
@@ -764,10 +764,10 @@ export default function ProtocolosRuidoPage({ params }) {
               }}
             />
           ) : (
-            <div className="space-y-6 flex-grow flex flex-col min-h-0">
+            <div className="space-y-0 lg:space-y-6 flex-grow flex flex-col min-h-0">
 
             {/* CONTENEDOR 1: BUSCADOR Y BOTÓN ACCIÓN (SySO Compact Layout) */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm space-y-3 shrink-0">
+            <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl p-3.5 sm:p-5 md:p-6 shadow-sm space-y-3 shrink-0">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
                 <div className="hidden md:block flex-1"></div>
 
@@ -886,8 +886,7 @@ export default function ProtocolosRuidoPage({ params }) {
 
             {/* LISTADO DE PROTOCOLOS (SySO Compact Layout) */}
             <div 
-              className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col flex-1 min-h-0 transition-all duration-300 ease-in-out"
-              style={{ height: showFilters ? 'calc(100vh - 280px)' : 'calc(100vh - 240px)' }}
+              className={`bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl shadow-sm overflow-hidden flex flex-col flex-grow min-h-0 lg:flex-initial transition-all duration-300 ease-in-out ${showFilters ? 'lg:h-[calc(100vh-280px)]' : 'lg:h-[calc(100vh-240px)]'}`}
             >
           {sortedProtocolos.length === 0 ? (
             <AppEmptyState

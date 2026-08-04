@@ -4,7 +4,7 @@
 
 Se realizó un relevamiento exhaustivo de todos los componentes, funciones y rutas dentro del SaaS **Gestión SySO** que generan documentos PDF descargables, imprimibles o de previsualización.
 
-* **Cantidad de PDFs detectados**: Se identificaron 12 documentos PDF operativos generados a través de las distintas secciones del sistema.
+* **Cantidad de PDFs detectados**: Se identificaron 14 documentos PDF operativos generados a través de las distintas secciones del sistema.
 * **Módulos que generan PDFs**:
   1. `visitas` — Constancia de Visita Técnica de Seguridad e Higiene.
   2. `protocolos/iluminacion` — Protocolo de Medición de Iluminación (Res. SRT 84/2012 / Dec. 351/79).
@@ -18,8 +18,10 @@ Se realizó un relevamiento exhaustivo de todos los componentes, funciones y rut
   10. `capacitacion` — Constancia y Registro de Capacitación de Personal.
   11. `avisos` — Avisos de Riesgo y Notificaciones Preventivas.
   12. `accidentes` — Informe de Investigación de Accidentes e Incidentes (con Análisis de 5 Porqués).
-* **Librerías utilizadas**: `jsPDF` y `jspdf-autotable` (ambas importadas dinámicamente mediante `await import()` client-side).
-* **Estado general de consistencia documental**: Heterogéneo y atomizado. Si bien los documentos más recientes (como el Protocolo de Iluminación y la Constancia de Visita) cuentan con maquetaciones avanzadas, el resto de los módulos duplica la lógica de dibujo, usa diferentes sistemas de unidades (`pt` vs `mm`), paletas de color dispares, headers no normalizados y sistemas de paginación inconsistentes.
+  13. `protocolos/ruido` — Protocolo de Medición de Ruido (Res. SRT 85/2012 / Dec. 351/79).
+  14. `protocolos/ergonomia` — Protocolo de Ergonomía (Res. SRT 886/15).
+* **Librerías utilizadas**: `jsPDF`, `jspdf-autotable` (ambas importadas dinámicamente client-side) y `pdf-lib` para merge de certificados de calibración adjuntos en protocolos.
+* **Estado general de consistencia documental**: Heterogéneo y atomizado. Si bien los documentos más recientes (como el Protocolo de Iluminación y la Constancia de Visita) cuentan con maquetaciones avanzadas, el resto de los módulos duplica la lógica de dibujo, usa diferentes sistemas de unidades (`pt` vs `mm`), paletas de color dispares, headers no normalizados y sistemas de paginación inconsistentes. Los protocolos de ruido y ergonomía heredan maquetación robusta pero persisten en la duplicación de funciones de dibujo y helpers locales.
 * **Principales problemas visuales**:
   - Incompatibilidad nativa en `jsPDF` al pasar cadenas hexadecimales a `setFillColor(hexString)` (pueden renderizar rellenos negros por error de tipo si no se convierten a enteros RGB `(r, g, b)`).
   - Títulos e imágenes desbordadas por falta de envoltorio y truncamiento matemático uniforme.
@@ -27,15 +29,18 @@ Se realizó un relevamiento exhaustivo de todos los componentes, funciones y rut
 * **Principales problemas técnicos**:
   - Paginación trunca: varios PDFs usan `Página ${i}` sin el total de páginas `Y` (`Página X de Y`) por falta de invocación de `doc.putTotalPages()`.
   - Duplicación de lógica de firma y descarga en más de 10 archivos de vista (`page.js`).
+  - Duplicación de boilerplate de dibujo local en los tres módulos de protocolos.
 * **Principales riesgos de impresión**:
   - Tablas con columnas que se cortan en margen derecho en A4 vertical.
   - Firmas o bloques de observaciones huérfanos al final de hoja sin salto de página inteligente (`pageBreak: 'auto'`).
 * **Documentos críticos a normalizar primero**:
   1. Constancia de Visita Técnica (`visitas`)
   2. Protocolo de Iluminación (`protocolos/iluminacion`)
-  3. Avisos de Riesgo (`avisos`)
-  4. Investigación de Accidentes (`accidentes`)
-  5. Control de Instalaciones Eléctricas (`control-electrico`)
+  3. Protocolo de Ergonomía (`protocolos/ergonomia`)
+  4. Protocolo de Ruido (`protocolos/ruido`)
+  5. Avisos de Riesgo (`avisos`)
+  6. Investigación de Accidentes (`accidentes`)
+  7. Control de Instalaciones Eléctricas (`control-electrico`)
 
 ---
 
@@ -44,7 +49,7 @@ Se realizó un relevamiento exhaustivo de todos los componentes, funciones y rut
 | ID | Documento | Módulo | Archivo Origen | Función Generadora | Librería | Estado | Riesgo |
 |---|---|---|---|---|---|---|---|
 | **PDF-01** | Constancia de Visita Técnica | Visitas | `src/app/[tenant-slug]/visitas/page.js` | `handleGeneratePdf` / `handlePreviewPdf` | jsPDF + autoTable | Bueno | Medio |
-| **PDF-02** | Protocolo de Medición de Iluminación | Iluminación | `src/app/[tenant-slug]/protocolos/iluminacion/utils/pdfGenerator.js` | `generateLightingProtocolPdf` | jsPDF + autoTable | Excelente | Bajo |
+| **PDF-02** | Protocolo de Medición de Iluminación | Iluminación | `src/app/[tenant-slug]/protocolos/iluminacion/utils/pdfGenerator.js` | `generateLightingProtocolPdf` | jsPDF + autoTable + pdf-lib | Excelente | Bajo |
 | **PDF-03** | Reporte Programa Anual | Programa Anual | `src/app/[tenant-slug]/programa/page.js` | `handleGeneratePdf` | jsPDF + autoTable | Regular | Medio |
 | **PDF-04** | Matriz de Riesgos IPER | Matriz Riesgos | `src/app/[tenant-slug]/matriz-riesgos/page.js` | `handleGeneratePdf` | jsPDF + autoTable | Regular | Alto |
 | **PDF-05** | Control Periódico de Extintores | Extintores | `src/app/[tenant-slug]/extintores/page.js` | `handleGeneratePdf` | jsPDF + autoTable | Regular | Medio |
@@ -55,6 +60,8 @@ Se realizó un relevamiento exhaustivo de todos los componentes, funciones y rut
 | **PDF-10** | Constancia de Capacitación | Capacitación | `src/app/[tenant-slug]/capacitacion/page.js` | `handleGeneratePdf` | jsPDF + autoTable | Bueno | Medio |
 | **PDF-11** | Aviso de Riesgo y Notificación | Avisos | `src/app/[tenant-slug]/avisos/page.js` | `generateAvisoPdf` | jsPDF + autoTable | Bueno | Medio |
 | **PDF-12** | Informe Investigación de Accidente | Accidentes | `src/app/[tenant-slug]/accidentes/page.js` | `handleGeneratePdf` | jsPDF + autoTable | Bueno | Alto |
+| **PDF-13** | Protocolo de Medición de Ruido | Ruido | `src/app/[tenant-slug]/protocolos/ruido/utils/pdfGenerator.js` | `generateNoiseProtocolPdf` | jsPDF + autoTable + pdf-lib | Bueno | Medio |
+| **PDF-14** | Protocolo de Ergonomía (SRT 886/15) | Ergonomía | `src/app/[tenant-slug]/protocolos/ergonomia/utils/pdfGenerator.js` | `generateErgonomyProtocolPdf` | jsPDF + autoTable + pdf-lib | Bueno | Alto |
 
 ---
 
@@ -146,6 +153,8 @@ Se realizó un relevamiento exhaustivo de todos los componentes, funciones y rut
 | **Avisos** | `Aviso_Riesgo_${id}.pdf` | Omite la empresa y la fecha en el nombre descargado. | `aviso-riesgo_${empresa}_${establecimiento}_${fecha}_${id}.pdf` |
 | **Extintores** | `Reporte_Extintores.pdf` | Nombre genérico estático sin fecha ni empresa. | `control-extintores_${empresa}_${establecimiento}_${fecha}.pdf` |
 | **Accidentes** | `Investigacion_Accidente_${id}.pdf` | Omite la fecha e información del establecimiento. | `investigacion-accidente_${empresa}_${establecimiento}_${fecha}_${id}.pdf` |
+| **Ruido** | `Protocolo_Ruido_${estName}_${fecha}.pdf` | Falta ID o folio único del protocolo. | `protocolo-ruido_${empresa}_${establecimiento}_${fecha}_${id}.pdf` |
+| **Ergonomía** | `Protocolo_Ergonomia.pdf` | Nombre estático genérico. Omite ID, empresa y establecimiento. | `protocolo-ergonomia_${empresa}_${establecimiento}_${fecha}_${id}.pdf` |
 
 ---
 
@@ -156,6 +165,7 @@ Se realizó un relevamiento exhaustivo de todos los componentes, funciones y rut
 | **HCP-01** | Incompatibilidad de Hex en `jsPDF` | Invocación de `doc.setFillColor('#D9D9D9')` en jsPDF puede pintar rellenos negros. | Crítico | Implementar convertidor hexadecimal a RGB `(r, g, b)` en un helper `pdfTheme.js`. | Todos los generadores PDF |
 | **HCP-02** | Nombres de archivo con caracteres especiales | Razones sociales con espacios, acentos o `/` rompen descargas en móviles/Safari. | Crítico | Sanitizar nombres con helper `formatPdfFileName()`. | 10 páginas de tenant |
 | **HCP-03** | Fórmulas y tablas IPER desbordadas | Matriz de riesgos en A4 vertical corta columnas en el margen derecho. | Crítico | Configurar orientación horizontal (`landscape`) para la Matriz IPER. | `matriz-riesgos/page.js` |
+| **HCP-04** | Duplicación de boilerplates e inconsistencia de layout | Los generadores de ruido, ergonomía e iluminación declaran de forma dura funciones auxiliares de dibujo en lugar de consumir los helpers de `src/lib/pdf/`. | Crítico | Migrar la generación de PDF en los tres protocolos para usar e importar obligatoriamente los helpers unificados. | `ruido/utils/pdfGenerator.js`, `ergonomia/utils/pdfGenerator.js`, `iluminacion/utils/pdfGenerator.js` |
 
 ---
 

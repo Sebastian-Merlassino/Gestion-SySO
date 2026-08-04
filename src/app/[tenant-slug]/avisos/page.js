@@ -2097,11 +2097,11 @@ export default function AvisosRiesgoPage({ params }) {
             </div>
           </div>
         ) : (
-          <div className="max-w-[95%] mx-auto w-full py-8 px-4 md:px-0 flex-1 flex flex-col min-h-0">
+          <div className="w-full flex-grow flex flex-col min-h-0 p-0 md:py-8 md:max-w-[95%] md:mx-auto md:px-0">
             
             {view === 'form' ? (
               // FORMULARIO DE ALTA Y EDICIÓN INLINE
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col max-h-[85vh] animate-fade-in">
+              <div className="bg-white md:rounded-2xl md:border md:border-slate-200 md:shadow-sm overflow-hidden flex flex-col h-full min-h-[calc(100vh-64px)] md:max-h-[85vh] animate-fade-in w-full">
                 <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
                     <button type="button" onClick={handleExitForm} className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 cursor-pointer">
@@ -2116,8 +2116,8 @@ export default function AvisosRiesgoPage({ params }) {
                   </button>
                 </div>
 
-                <form onSubmit={handleSave} className="p-6 space-y-6 overflow-y-auto flex-1 scrollbar-thin">
-                  <fieldset disabled={isFormDisabled} className="space-y-6">
+                <form onSubmit={handleSave} className="p-3.5 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto flex-1 scrollbar-thin">
+                  <fieldset disabled={isFormDisabled} className="space-y-4 sm:space-y-6">
                     
                     {/* Fila 1: Número, Cliente, Establecimiento, Fecha */}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -2485,8 +2485,8 @@ export default function AvisosRiesgoPage({ params }) {
               </div>
             ) : (
               // VISTA: TABLA Y BUSCADOR
-              <div className="space-y-6 flex-1 flex flex-col min-h-0">
-                <div className="bg-white rounded-2xl border border-slate-200 p-3 shadow-sm space-y-3 shrink-0">
+              <div className="space-y-0 lg:space-y-6 flex-1 flex flex-col min-h-0">
+                <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl p-3.5 sm:p-5 md:p-6 shadow-sm space-y-3 shrink-0">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
                     {/* Espaciador para empujar el buscador a la derecha en desktop */}
                     <div className="hidden md:block flex-1"></div>
@@ -2633,7 +2633,7 @@ export default function AvisosRiesgoPage({ params }) {
                 </div>
 
                 {/* Tabla de Avisos */}
-                <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col transition-all duration-300 ease-in-out" style={{ height: showFilters ? 'calc(100vh - 310px)' : 'calc(100vh - 240px)' }}>
+                <div className={`bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl shadow-sm overflow-hidden flex flex-col flex-grow min-h-0 lg:flex-initial transition-all duration-300 ease-in-out ${showFilters ? 'lg:h-[calc(100vh-310px)]' : 'lg:h-[calc(100vh-240px)]'}`}>
                   {sortedAvisos.length === 0 ? (
                     <div className="flex-grow flex flex-col items-center justify-center p-8 text-center gap-3 h-full">
                       <AlertCircle className="h-10 w-10 text-slate-300" />

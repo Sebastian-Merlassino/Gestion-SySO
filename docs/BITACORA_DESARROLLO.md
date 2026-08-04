@@ -1,5 +1,113 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-04] Optimización Responsiva Masiva, Integración de Pantalla Completa, Reducción de Paddings y Rediseño de Tablas de Datos y Listados de Borde a Borde en todo el SaaS
+
+### Resumen de Cambios
+- **Alto Completo de Tablas en Celulares (Remoción de Brechas Grises)**:
+  - Se implementaron reglas responsivas en `src/app/globals.css` para anular las alturas fijas inline (`calc(100vh - ...)`) en dispositivos móviles, reemplazándolas por flexbox flexible (`flex-grow: 1`).
+  - Se configuró el elemento `<main>` y el contenedor del Content Body en móviles con `overflow: hidden` y altura dinámica para forzar a que la tarjeta de la tabla ocupe exactamente el 100% del espacio vertical disponible en el viewport, erradicando por completo los fondos grises huérfanos por encima de los filtros y por debajo de las tablas.
+- **Refactorización del Dashboard y Equipo de Trabajo**:
+  - Se modificaron los contenedores de página y tarjetas en **Dashboard** (`src/app/[tenant-slug]/dashboard/page.js`) y **Equipo de Trabajo** (`src/app/[tenant-slug]/equipo/page.js`) para comportarse de forma elástica a pantalla completa en móviles (`p-0 border-y border-x-0`).
+- **Rediseño de Tablas de Datos y Listados a Pantalla Completa (Borde a Borde)**:
+  - Se modificaron los contenedores de las tablas de datos y paneles de filtros en **todas las vistas de listados de la plataforma** para remover los redondeados y bordes laterales en teléfonos celulares (`border-y border-x-0 md:border md:rounded-2xl`).
+  - Los listados ahora se expanden al **100% de la pantalla útil en móviles**, ganando entre 24px y 32px de ancho horizontal real para visualización de columnas y legibilidad de textos largos de clientes/puestos, logrando una estética moderna y limpia de aplicación nativa.
+  - Se eliminó la clase condicional del padding en el Content Body de los archivos `page.js` de los módulos para usar siempre la clase unificada responsiva `p-0 md:py-8 md:max-w-[95%] md:mx-auto md:px-0`.
+- **Expansión a Pantalla Completa en Celulares (Eliminación de Recuadros Grises en Formularios)**:
+  - Se modificaron las páginas contenedoras (`page.js`) y los formularios de **todos los módulos de carga de información de la aplicación** para remover los márgenes, paddings laterales, bordes redondeados y sombras en dispositivos móviles angostos.
+  - Módulos optimizados en tablas, listados y formularios: **Visitas**, **Clientes/Empresas**, **Perfil de Usuario**, **Accidentes**, **Acciones Correctivas**, **Avisos de Riesgo**, **Checklists Personalizados**, **Extintores**, **Control Eléctrico**, **Matriz de Riesgos IPER**, **Programa Anual SySO**, **Programa de Capacitación**, **Legajo Personal** y **Nómina**.
+
+### Decisiones Clave
+- **Solución Centralizada de Alturas**: En lugar de modificar los cálculos inline JS de forma individual por módulo, la introducción de la regla selectiva responsiva `div[style*="calc(100vh"]` en `globals.css` garantizó un comportamiento flexible de alto completo en móviles para toda la app con un impacto mínimo y nulo riesgo de regresiones en escritorio.
+
+### Archivos Modificados
+- `[MODIFY] src/app/globals.css`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/components/ui/AppCard.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] src/app/[tenant-slug]/matriz-riesgos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/nomina/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+
+## [2026-08-04] Limpieza de Estilos Obsoletos, Remoción de Código Residual y Refactorización de Generadores PDF de Protocolos
+
+### Resumen de Cambios
+- **Limpieza de Estilos y Clases Obsoletas**:
+  - Se eliminaron las 5 referencias a la clase inexistente `border-slate-150` en `ProtocoloForm.js` de ergonomía, reemplazándolas por `border-slate-200` para unificar el estilo de bordes.
+- **Remoción de Código Residual de Iluminación**:
+  - Se eliminó la constante redundante `ACTIVIDADES_ILUMINACION` y el import de `TABLA_2_ILUMINACION` en `ProtocoloForm.js` de ruido y ergonomía.
+- **Refactorización de Generadores PDF de Protocolos**:
+  - Se eliminó el boilerplate duplicado de dibujo de PDF local (`hexToRgb`, `setFillColor`, `setDrawColor`, `setTextColor`) en los archivos `pdfGenerator.js` de ruido, ergonomía e iluminación.
+  - Se reemplazó el boilerplate local por importaciones unificadas desde `@/lib/pdf/pdfTheme`.
+  - Se eliminó la función redundante `getBase64ImageFromUrl` local en los 3 generadores de PDF de protocolos, importándola en su lugar desde `@/lib/pdf/pdfImages`.
+  - Se corrigió el helper unificado `getBase64ImageFromUrl` en `src/lib/pdf/pdfImages.js` para retornar directamente la URL si ya es una imagen en formato `data:image/png;base64` (como las firmas a mano alzada), previniendo violaciones de la directiva `connect-src` de CSP en el navegador (TypeError: Failed to fetch).
+
+### Decisiones Clave
+- **Unificación y Consistencia**: Se eliminó la duplicidad de funciones auxiliares que presentaban un riesgo de divergencia de comportamiento de renderizado (ej. problemas de dibujo negro sólido).
+- **Hardening de Seguridad y CSP**: Se adaptaron los helpers reutilizables para contemplar la carga de imágenes data-uri de firmas sin disparar restricciones de red por CSP.
+
+### Archivos Modificados
+- `[MODIFY] src/lib/pdf/pdfImages.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/utils/pdfGenerator.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/utils/pdfGenerator.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/utils/pdfGenerator.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-04] Auditoría Integral de Diseño UI, Consistencia Visual y Documentos PDF
+
+### Resumen de Cambios
+- **Auditoría UI/UX y Estándar de Frontend**: 
+  - Se completó la revisión de los módulos de la aplicación, incluyendo las incorporaciones de **Protocolo de Iluminación**, **Protocolo de Ergonomía** y **Protocolo de Ruido**.
+  - Se actualizó el informe `docs/design/UI_DESIGN_AUDIT.md` para integrar estos tres nuevos módulos de protocolos en el mapa de salud visual por sección.
+  - Se registró el hallazgo crítico **HC-04** debido a la persistencia de la clase de bordes obsoleta `border-slate-150` (5 referencias) en el componente `ProtocoloForm.js` de ergonomía.
+  - Se registró el hallazgo alto **HA-04** sobre código muerto e imports redundantes de iluminación copiado en los módulos de ruido y ergonomía (`ACTIVIDADES_ILUMINACION`, `TABLA_2_ILUMINACION`).
+  - Se propuso consolidar el uso obligatorio de los componentes unificados en `src/components/ui/` (ej. `AppButton`, `AppInput`, `AppSelect`, `AppTextarea`, etc.) que ya se encuentran creados e integrados en el código.
+- **Auditoría de Diseño Documental y Estándar PDF**:
+  - Se relevó un total de **14 documentos PDF** generados (añadiendo Ruido `PDF-13` y Ergonomía `PDF-14`).
+  - Se actualizó el informe `docs/design/PDF_DESIGN_AUDIT.md` para integrar el inventario, desvíos y detalles de estos dos nuevos PDFs de protocolos.
+  - Se registró el hallazgo crítico **HCP-04** sobre la duplicación de boilerplate local de dibujo de PDF (`hexToRgb`, `setFillColor`, etc.) en los generadores de ruido, ergonomía e iluminación en lugar de consumir los helpers comunes de `src/lib/pdf/`.
+  - Se actualizó `docs/design/PDF_STYLE_STANDARD.md` para recomendar formalmente y establecer la prioridad de migración de los generadores de PDF a los 9 helpers consolidados ya disponibles en `src/lib/pdf/`.
+
+### Decisiones Clave
+- **Sin Impacto de Código**: Se respetó de forma estricta la directiva de no realizar cambios de código funcional, refactorización o alteración de base de datos en esta fase inicial de diagnóstico y estandarización.
+- **Alineación con Helpers Existentes**: Se ajustaron las propuestas para referenciar que los componentes unificados de UI y los helpers unificados de PDF ya existen en el repositorio, por lo que la siguiente fase de desarrollo será puramente de migración y hardening.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `gestion-syso-multitenant-security`
+
+### Archivos Modificados
+- `[MODIFY] docs/design/UI_DESIGN_AUDIT.md`
+- `[MODIFY] docs/design/UI_STYLE_STANDARD_PROPOSAL.md`
+- `[MODIFY] docs/design/PDF_DESIGN_AUDIT.md`
+- `[MODIFY] docs/design/PDF_STYLE_STANDARD.md`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
 ## [2026-08-04] Unificación de Controles de Planilla 2, Nivel de Riesgo Automático, Colapsado de Factores e Integración de Empuje / Arrastre (Planilla 2.B), Transporte (Planilla 2.C), Bipedestación (Planilla 2.D), Movimientos Repetitivos (Planilla 2.E), Posturas Forzadas (Planilla 2.F), Vibraciones Mano-Brazo / Cuerpo Entero (Planilla 2.G), Confort Térmico (Planilla 2.H) y Estrés de Contacto (Planilla 2.I) en Ergonomía
 
 ### Resumen de Cambios
