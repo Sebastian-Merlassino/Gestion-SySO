@@ -122,7 +122,7 @@ export default function ProtocolosErgonomiaPage({ params }) {
     if (!userProfile) return { cargar: true, editar: true, eliminar: true };
     if (userProfile.role === 'cliente') return { cargar: false, editar: false, eliminar: false };
     if (userProfile.role === 'admin') return { cargar: true, editar: true, eliminar: true };
-    const perm = userProfile.permisos?.[sectionName] || userProfile.permisos?.['protocolo_iluminacion'];
+    const perm = userProfile.permisos?.[sectionName] || userProfile.permisos?.['protocolo_ergonomia'];
     if (perm === true || perm === undefined) return { cargar: true, editar: true, eliminar: true };
     if (perm === false) return { cargar: false, editar: false, eliminar: false };
     return {
@@ -265,19 +265,18 @@ export default function ProtocolosErgonomiaPage({ params }) {
           provincia_text: proto.provincia_text,
           localidad_text: proto.localidad_text,
           cp_text: proto.cp_text,
-          horarios_turnos_text: proto.horarios_turnos_text,
-          instrumento_marca_modelo_serie: proto.instrumento_marca_modelo_serie,
-          fecha_calibracion: proto.fecha_calibracion,
-          metodologia_utilizada: proto.metodologia_utilizada,
-          fecha_medicion: proto.fecha_medicion,
-          hora_inicio: proto.hora_inicio,
-          hora_finalizacion: proto.hora_finalizacion,
-          condiciones_atmosfericas: proto.condiciones_atmosfericas,
-          documentacion_adjunta: proto.documentacion_adjunta,
+          ciiu_text: proto.ciiu_text,
           observaciones: proto.observaciones,
-          conclusiones: proto.conclusiones,
-          recomendaciones: proto.recomendaciones,
           resultado_general: proto.resultado_general,
+          profesional_nombre: proto.profesional_nombre,
+          profesional_matricula: proto.profesional_matricula,
+          firma_tipo: proto.firma_tipo,
+          firma_profesional: proto.firma_profesional,
+          firma_empleador: proto.firma_empleador,
+          empleador_nombre: proto.empleador_nombre,
+          firma_medicina: proto.firma_medicina,
+          medicina_nombre: proto.medicina_nombre,
+          medicina_matricula: proto.medicina_matricula,
           estado: 'borrador',
           created_by: user?.id,
           created_at: new Date().toISOString()
@@ -287,14 +286,14 @@ export default function ProtocolosErgonomiaPage({ params }) {
 
       if (insErr) throw insErr;
 
-      // Duplicate Points and measurements
+      // Duplicate Points (Ergonomía specific fields)
       const { data: origPoints } = await supabase
         .from('protocolos_ergonomia_puntos')
-        .select('*, mediciones:protocolos_ergonomia_mediciones(*)')
+        .select('*')
         .eq('protocolo_id', proto.id);
 
       for (const pt of (origPoints || [])) {
-        const { data: newPt } = await supabase
+        await supabase
           .from('protocolos_ergonomia_puntos')
           .insert({
             protocolo_id: newProto.id,
@@ -302,43 +301,37 @@ export default function ProtocolosErgonomiaPage({ params }) {
             punto_muestreo: pt.punto_muestreo,
             sector_id: pt.sector_id,
             sector_text: pt.sector_text,
-            largo_m: pt.largo_m,
-            ancho_m: pt.ancho_m,
-            altura_m: pt.altura_m,
             puesto_id: pt.puesto_id,
             puesto_text: pt.puesto_text,
-            tipo_iluminacion: pt.tipo_iluminacion,
-            tipo_fuente_luminica: pt.tipo_fuente_luminica,
-            iluminacion: pt.iluminacion,
-            indice_local: pt.indice_local,
-            indice_local_corregido: pt.indice_local_corregido,
-            numero_minimo_puntos_medicion: pt.numero_minimo_puntos_medicion,
-            cantidad_mediciones_cargadas: pt.cantidad_mediciones_cargadas,
-            iluminancia_media: pt.iluminancia_media,
-            iluminancia_minima: pt.iluminancia_minima,
-            uniformidad_requerida: pt.uniformidad_requerida,
-            valor_uniformidad_iluminancia: pt.valor_uniformidad_iluminancia,
-            valor_medido_lux: pt.valor_medido_lux,
-            valor_requerido_legal_lux: pt.valor_requerido_legal_lux,
-            verificacion_uniformidad: pt.verificacion_uniformidad,
-            verificacion_legal: pt.verificacion_legal,
+            cantidad_expuestos: pt.cantidad_expuestos,
+            tarea_desempenada: pt.tarea_desempenada,
+            procedimiento_escrito: pt.procedimiento_escrito,
+            capacitacion: pt.capacitacion,
+            nombres_trabajadores: pt.nombres_trabajadores,
+            manifestacion_temprana: pt.manifestacion_temprana,
+            ubicacion_sintoma: pt.ubicacion_sintoma,
+            tareas: pt.tareas,
+            tiempos_exposicion: pt.tiempos_exposicion,
+            f_levantamiento_identificado: pt.f_levantamiento_identificado,
+            f_levantamiento_requiere_eval: pt.f_levantamiento_requiere_eval,
+            f_empuje_arrastre_identificado: pt.f_empuje_arrastre_identificado,
+            f_empuje_arrastre_requiere_eval: pt.f_empuje_arrastre_requiere_eval,
+            f_transporte_identificado: pt.f_transporte_identificado,
+            f_transporte_requiere_eval: pt.f_transporte_requiere_eval,
+            f_bipedestacion_identificado: pt.f_bipedestacion_identificado,
+            f_bipedestacion_requiere_eval: pt.f_bipedestacion_requiere_eval,
+            f_mov_repetitivos_identificado: pt.f_mov_repetitivos_identificado,
+            f_mov_repetitivos_requiere_eval: pt.f_mov_repetitivos_requiere_eval,
+            f_posturas_forzadas_identificado: pt.f_posturas_forzadas_identificado,
+            f_posturas_forzadas_requiere_eval: pt.f_posturas_forzadas_requiere_eval,
+            f_vibraciones_identificado: pt.f_vibraciones_identificado,
+            f_vibraciones_requiere_eval: pt.f_vibraciones_requiere_eval,
+            f_confort_termico_identificado: pt.f_confort_termico_identificado,
+            f_confort_termico_requiere_eval: pt.f_confort_termico_requiere_eval,
+            nivel_de_riesgo: pt.nivel_de_riesgo,
             resultado_punto: pt.resultado_punto,
             observaciones_punto: pt.observaciones_punto
-          })
-          .select('id')
-          .single();
-
-        const medsPayload = (pt.mediciones || []).map(m => ({
-          punto_id: newPt.id,
-          orden: m.orden,
-          valor_lux: m.valor_lux
-        }));
-
-        if (medsPayload.length > 0) {
-          await supabase
-            .from('protocolos_ergonomia_mediciones')
-            .insert(medsPayload);
-        }
+          });
       }
 
       // Clone attachments references

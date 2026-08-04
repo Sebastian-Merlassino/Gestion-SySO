@@ -1,5 +1,237 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-04] Unificación de Controles de Planilla 2, Nivel de Riesgo Automático, Colapsado de Factores e Integración de Empuje / Arrastre (Planilla 2.B), Transporte (Planilla 2.C), Bipedestación (Planilla 2.D), Movimientos Repetitivos (Planilla 2.E), Posturas Forzadas (Planilla 2.F), Vibraciones Mano-Brazo / Cuerpo Entero (Planilla 2.G) y Confort Térmico (Planilla 2.H) en Ergonomía
+
+### Resumen de Cambios
+- **Integración de Cuestionario de Confort Térmico (Planilla 2.H) y Curva Fanger:**
+  - Se reestructuró la Planilla 2 de Confort Térmico en `CUESTIONARIOS_PLANILLA2` (`ProtocoloForm.js`) y `CUESTIONARIOS_PLANILLA2_LOCAL` (`pdfGenerator.js`) para ser de dos pasos (`isTwoStep: true`).
+  - Se incorporaron la pregunta oficial del Paso 1 ("temperaturas no confortables") y la pregunta oficial del Paso 2 ("curva de confort de Fanger").
+  - Se implementó un botón interactivo **"📈 Ver Curva Fanger"** en la cabecera del Paso 2 que permite desplegar/ocultar inline la imagen de referencia reglamentaria (`public/assets/curva-fanger.png`).
+- **División e Integración de Cuestionarios de Vibraciones (Planilla 2.G):**
+  - Se dividió el factor general de Vibraciones en dos factores diferenciados y normativos: **G. Vibraciones Mano - Brazo (5 a 1500 Hz)** y **G2. Vibraciones Cuerpo Entero (1 a 80 Hz)** en `ProtocoloForm.js` y `pdfGenerator.js`.
+  - Ambos cuestionarios se implementaron con la estructura de dos pasos (`isTwoStep: true`) respetando verbatim las preguntas y opciones oficiales de Paso 1 y Paso 2 de la SRT.
+  - Se vinculó la persistencia y lectura en la base de datos (Supabase) mapeando de forma combinada los campos legacy (`f_vibraciones_identificado`, `f_vibraciones_requiere_eval`) con la presencia lógica de cualquiera de las dos sub-dimensiones para mantener 100% de compatibilidad.
+- **Integración de Cuestionario de Posturas Forzadas (Planilla 2.F):**
+  - Se reestructuró la Planilla 2 de Posturas Forzadas en `CUESTIONARIOS_PLANILLA2` (`ProtocoloForm.js`) y `CUESTIONARIOS_PLANILLA2_LOCAL` (`pdfGenerator.js`) para ser de dos pasos (`isTwoStep: true`).
+  - Se incorporaron la pregunta oficial del Paso 1 y las 6 preguntas oficiales de nivel de riesgo en el Paso 2, respetando verbatim el texto reglamentario.
+  - Se adaptó el cálculo automático de riesgo: el factor no tiene disparadores directos de Nivel 3. El riesgo resultante es Nivel 1 si Paso 1 es "No", y Nivel 2 si alguna de Paso 2 es "Sí" (con Paso 1 en "Sí"), de lo contrario Nivel 1.
+- **Remoción de leyendas de diagnóstico/nivel de riesgo:**
+  - Se eliminaron por completo las leyendas informativas de colores (rojo, amarillo, verde) que se renderizaban al pie de los cuestionarios tanto de tipo 2 pasos (`isTwoStep`) como cuestionarios estándar planos.
+- **Integración de Cuestionario de Movimientos Repetitivos (Planilla 2.E):**
+  - Se reestructuró la Planilla 2 de Movimientos Repetitivos en `CUESTIONARIOS_PLANILLA2` (`ProtocoloForm.js`) y `CUESTIONARIOS_PLANILLA2_LOCAL` (`pdfGenerator.js`) para ser de dos pasos (`isTwoStep: true`).
+  - Se incorporaron la pregunta de Paso 1 y las 4 preguntas del Paso 2 de la normativa oficial.
+  - Se implementó la lógica de cálculo automático regulatoria: si la pregunta 2.3 de Paso 2 ("esfuerzo superior a 7 según escala de Borg") es "Sí", se sugiere de inmediato el **Nivel 3 - Crítico** con el diagnóstico respectivo de Borg.
+  - Se añadió la escala de Borg como referencia visual: se copió la imagen provista a `public/assets/escala-borg.png` y se añadió un botón dinámico "Ver Escala Borg" que despliega la tabla comparativa inline de forma fluida.
+- **Integración de Cuestionario de Bipedestación (Planilla 2.D):**
+  - Se reestructuró la Planilla 2 de Bipedestación para ser de dos pasos (`isTwoStep: true`).
+  - Se incorporó la pregunta del Paso 1 y las 4 preguntas del Paso 2.
+- **Integración de Cuestionario de Transporte Manual de Cargas (Planilla 2.C):**
+  - Se reestructuró la Planilla 2 de Transporte Manual de Cargas para ser de dos pasos (`isTwoStep: true`).
+  - Se incorporaron las 5 preguntas del Paso 1 y las 4 preguntas del Paso 2.
+- **Integración de Cuestionario de Empuje / Arrastre (Planilla 2.B):**
+  - Se reestructuró la Planilla 2 de Empuje / Arrastre para ser de dos pasos (`isTwoStep: true`).
+  - Se incorporaron las 3 preguntas del Paso 1 y las 7 preguntas del Paso 2.
+- **Controles Segmentados Sí/No en Cuestionarios:**
+  - Se reemplazaron todos los selectores desplegables de preguntas por botones interactivos de tipo segmented control **Sí / No**.
+- **Nivel de Riesgo Automático y Unificación de Colores:**
+  - Se reemplazó el selector de nivel de riesgo en la grilla principal por un tag estático automático y coloreado según el riesgo resultante de la planilla.
+- **Botón de Colapsar por Factor:**
+  - Se implementó un botón con icono Chevron junto a cada factor presente, permitiendo comprimir/expandir dinámicamente la grilla de la Planilla 2.
+- **Validación de Compilación:**
+  - Se ejecutó `npm run build` confirmando la correcta compilación del proyecto.
+
+---
+
+## [2026-08-03] Integración de Planilla 2 (Evaluación Inicial) y Tiempos de Exposición en Línea en Ergonomía (SRT 886/15)
+
+### Resumen de Cambios
+- **Cuestionario de Dos Pasos para Levantamiento y Descenso (Planilla 2.A):**
+  - Se incorporó la estructura oficial del Anexo I - Planilla 2.A de la Resolución SRT 886/15, dividida en Paso 1 (3 preguntas de identificación de límites) y Paso 2 (6 preguntas de condiciones operativas y síntomas).
+  - Se implementó la lógica de cálculo automático regulatoria según respuestas:
+    - Si todas las respuestas del Paso 1 son "No", el riesgo se considera tolerable (Nivel 1).
+    - Si la pregunta 1.3 (peso > 25 kg) es "Sí", se clasifica inmediatamente como No Tolerable (Nivel 3).
+    - Si alguna de las preguntas 1.1 o 1.2 es "Sí", se habilita el Paso 2; si alguna de Paso 2 es "Sí", el riesgo se clasifica como No Tolerable (Nivel 3), de lo contrario se presume tolerable (Nivel 1).
+- **Cuestionarios de Evaluación Inicial (Planilla 2.B a 2.I):**
+  - Se definieron los 8 cuestionarios estándar restantes del Anexo I - Planilla 2 de la Resolución SRT 886/15 para realizar la evaluación inicial en el frontend (`CUESTIONARIOS_PLANILLA2` en `ProtocoloForm.js` y `CUESTIONARIOS_PLANILLA2_LOCAL` en `pdfGenerator.js`).
+- **Formulario de Ergonomía (`ProtocoloForm.js`):**
+  - **Tiempos en Línea:** Se movió el input del *Tiempo de exposición* directamente a la grilla de factores de riesgo de cada tarea, permitiendo asignarlos por factor en la jornada habitual. Se eliminó la sección duplicada a nivel de puesto.
+  - **Planilla 2 Desplegable:** Al marcar un factor como Presente ("Sí"), se habilita automáticamente una sección desplegable con las preguntas tipo Sí/No de la Planilla 2 correspondiente.
+- **Reporte PDF (`pdfGenerator.js`):**
+  - Se adaptó la columna de *Tiempo Total de Exposición* para recuperar y formatear los tiempos asignados en línea para cada tarea.
+  - Se integró la **impresión oficial de la Planilla 2** para cada Puesto de Trabajo: si hay factores identificados, se genera una página apaisada adicional listando de forma detallada el checklist de preguntas respondidas, sus respuestas, y el diagnóstico resultante de tolerabilidad.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/utils/pdfGenerator.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-03] Reestructuración Integral de Puestos, Tareas y Factores de Riesgo (Planilla 1 - SRT 886/15) en Ergonomía
+
+### Resumen de Cambios
+- **Ampliación del Schema (Base de Datos):**
+  - Se agregaron las columnas `procedimiento_escrito`, `capacitacion`, `nombres_trabajadores`, `manifestacion_temprana`, `ubicacion_sintoma`, `tareas` (JSONB) y `tiempos_exposicion` (JSONB) a la tabla `protocolos_ergonomia_puntos` mediante migración de Supabase.
+- **Rediseño del Formulario de Puestos (`ProtocoloForm.js`):**
+  - Se renombró visualmente "PUNTO #" a "PUESTO #".
+  - Se integraron los campos generales de puesto: *Número de trabajadores en el puesto*, *Nombre del trabajador/es*, *Procedimiento de trabajo escrito* (Si/No), *Capacitación* (Si/No), *Manifestación Temprana* (Si/No) y *Ubicación del síntoma* (habilitado condicionalmente).
+  - Se implementó un contenedor dinámico y duplicable de **Tareas Habituales** dentro de cada puesto, permitiendo a los usuarios cargar múltiples tareas individuales por puesto de trabajo.
+  - Se integró la matriz de **Identificación de Factores de Riesgo** (9 factores normativos: Levantamiento y descenso, Empuje/Arrastre, Transporte, Bipedestación, Movimientos Repetitivos de MMSS, Posturas Forzadas, Vibraciones, Confort Térmico, Estrés de Contacto) dentro de cada tarea.
+  - Se agregaron inputs numéricos/textuales de **Tiempos de Exposición Diario** por factor a nivel de puesto.
+  - Se limpió el código removiendo llamadas y validaciones heredadas obsoletas de luxes/mediciones.
+- **Duplicación de Protocolos (`page.js`):**
+  - Se adaptó la función `handleDuplicate` para clonar correctamente todos los nuevos campos estructurales de puestos, tareas y tiempos en el backend.
+- **Reporte PDF (`pdfGenerator.js`):**
+  - Se reestructuró la sección de puestos evaluados para generar **una página dedicada por cada Puesto de Trabajo** (Hoja apaisada A4).
+  - Cada página de puesto maqueta e imprime de manera idéntica al formato oficial de la SRT la **Planilla 1 - Identificación de Factores de Riesgo**, presentando una cuadrícula con hasta 3 tareas habituales evaluadas en paralelo, sus correspondientes tiempos de exposición diario y niveles de riesgo de cada factor.
+
+### Decisiones Clave
+- Modelar de manera robusta el array dinámico de tareas y su matriz de factores utilizando una estructura JSONB en PostgreSQL, logrando flexibilidad de edición, carga asíncrona óptima y compatibilidad completa con los esquemas heredados.
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260818004000_add_ergonomics_planilla1_fields.sql`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/utils/pdfGenerator.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-03] Depuración Completa de Campos de Ruido e Integración de Factores de Riesgo en el Protocolo de Ergonomía
+
+### Resumen de Cambios
+- **Remoción de Campos y Contenedores Acústicos (Base de Datos):**
+  - Se eliminaron las columnas específicas de ruido de la tabla `protocolos_ergonomia_puntos` (`tiempo_exposicion_hs`, `tiempo_integracion`, `caracteristicas_ruido`, `nivel_pico_lc_pico_dbc`, `tipo_carga_continuo`, `nivel_laeq_te_dba`, `modo_suma_fracciones`, `fracciones`, `resultado_suma_fracciones` y `dosis_porcentaje`) mediante una migración SQL en Supabase.
+  - Se eliminó completamente la tabla de mediciones de lux y ruido `protocolos_ergonomia_mediciones` por redundancia.
+- **Rediseño del Formulario de Puntos de Ergonomía (`ProtocoloForm.js`):**
+  - Se eliminaron los 4 contenedores acústicos: *Tiempo de exposición*, *Características generales del ruido a medir*, *Sonido continuo o intermitente* y *Cálculos e indicadores técnicos*.
+  - Se incorporaron los campos específicos de la Resolución SRT 886/15: **Tarea desempeñada** (cuadro descriptivo largo) y **Cantidad de trabajadores expuestos**.
+  - Se maquetó y renderizó la tabla interactiva de **Factores de Riesgo** que permite evaluar los 8 riesgos normativos de ergonomía (Levantamiento manual, Empuje y arrastre, Transporte manual, Bipedestación, Movimientos repetitivos, Posturas forzadas, Vibraciones, Confort térmico), seleccionando en cada uno si fue *Identificado* (Sí/No) y si *Requiere Evaluación Adicional* (Sí/No).
+  - Se agregaron los selectores de **Nivel de Riesgo Global** (Bajo, Medio, Alto), **Verificación de Cumplimiento / Resultado** (Cumple, No cumple, Parcial) y el área de texto para **Observaciones / Medidas correctivas propuestas**.
+  - Se actualizaron el estado inicial de creación (`createNewPunto`), la carga de edición (`loadExistingRecord`) y el payload de persistencia en base de datos (`executeSave`) para mapear de manera nativa los factores ergonómicos.
+  - Se removieron los modales y scripts obsoletos (`Tabla1Modal.js`, `Tabla1ErgonomiaModal.js`, `tablasAnexoV.js`).
+- **Actualización de la Tabla del Reporte PDF (`pdfGenerator.js`):**
+  - Se adaptó la tabla apaisada (Páginas 4/5) de puntos evaluados para mostrar las columnas específicas de ergonomía: *Punto*, *Sector / Área*, *Puesto de Trabajo*, *Tarea Desempeñada*, *Trabajadores Expuestos*, *Factores de Riesgo Identificados*, *Requiere Evaluación Adicional*, *Nivel de Riesgo Global* y *¿Cumple con la Normativa?*.
+  - Se implementó la lógica de agregación en cadenas de texto para listar los factores de riesgo identificados y los que requieren evaluación adicional por cada fila en el PDF.
+
+### Decisiones Clave
+- Depurar completamente cualquier lógica residual heredada del módulo de ruido y unificar la base de datos y la interfaz de usuario de ergonomía bajo los lineamientos y especificaciones de la Resolución SRT N° 886/15.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `supabase`
+- `next-best-practices`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260818003000_remove_noise_fields_from_ergonomia.sql`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/utils/pdfGenerator.js`
+- `[DELETE] src/app/[tenant-slug]/protocolos/ergonomia/components/Tabla1Modal.js`
+- `[DELETE] src/app/[tenant-slug]/protocolos/ergonomia/components/Tabla1ErgonomiaModal.js`
+- `[DELETE] src/app/[tenant-slug]/protocolos/ergonomia/utils/tablasAnexoV.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-03] Modificación de Firmas, Reubicación de Fecha de Evaluación y Remoción de Análisis en el Protocolo de Ergonomía
+
+### Resumen de Cambios
+- **Reubicación de la Fecha de la Evaluación:**
+  - Se movió el campo "Fecha de la Evaluación" (`fechaMedicion`) del contenedor de Datos del Establecimiento al contenedor de **"Datos de la Evaluación"**.
+  - Se rediseñó el grid de Datos del Establecimiento a 3 columnas simétricas (Provincia, Localidad, C.P.).
+- **Remoción de la sección de Análisis de los Datos:**
+  - Se eliminó el contenedor/tarjeta "Análisis de los Datos y Mejoras a Realizar" del formulario de Ergonomía (`ProtocoloForm.js`).
+  - Se removieron los campos de `conclusiones` y `recomendaciones` del objeto payload enviado a Supabase en el formulario (`ProtocoloForm.js`) y en la duplicación de protocolos (`page.js`) para alinearse con la base de datos que ya no posee estas columnas.
+  - Se eliminó la validación de estos campos en la función `checkIsProtocoloCompleto`.
+- **Resolución de Error de Referencia (`setHorariosTurnosText is not defined`):**
+  - Se eliminaron las referencias al método inexistente `setHorariosTurnosText` dentro de la función de callback `handleEstablecimientoChange` en `ProtocoloForm.js`.
+- **Integración de las firmas de Empleador y Medicina del Trabajo:**
+  - Se agregaron las columnas `firma_empleador`, `empleador_nombre`, `firma_medicina`, `medicina_nombre` y `medicina_matricula` en Supabase mediante una nueva migración SQL.
+  - Se maquetaron e incorporaron dos nuevas tarjetas de firma en el formulario (`ProtocoloForm.js`):
+    - **Firma del Empleador o Representante Legal**: ubicado por encima de la firma del Profesional de Higiene y Seguridad.
+    - **Firma del Responsable del Servicio de Medicina del Trabajo**: ubicado por debajo de la firma del Profesional de Higiene y Seguridad.
+  - Cada contenedor incluye su campo de aclaración correspondiente y su zona de firma interactiva basada en Canvas.
+  - Se actualizaron la carga de datos de edición y el payload de guardado para contemplar estas nuevas firmas.
+- **Reestructuración del Reporte PDF:**
+  - Se refactorizó la función `drawSignatureBlock` en [pdfGenerator.js](file:///src/app/[tenant-slug]/protocolos/ergonomia/utils/pdfGenerator.js) para permitir dibujar cualquiera de las firmas de forma parametrizada.
+  - Se eliminó la sección de Análisis de la Página 6 del PDF.
+  - Se reestructuró la Página 6 bajo el título **"Conformidad del Protocolo de Ergonomía (Resolución SRT 886/15)"**, posicionando verticalmente los tres bloques de firmas correspondientes a los firmantes legales (Empleador, Profesional e Higiene, y Medicina del Trabajo).
+- **Corrección de Duplicación en Ergonomía:**
+  - Se limpió el método `handleDuplicate` en [page.js](file:///src/app/[tenant-slug]/protocolos/ergonomia/page.js) para remover campos obsoletos arrastrados de otros protocolos (como iluminación) que provocaban errores de base de datos.
+  - Se añadió la clonación correcta de los campos de firma del Empleador y Medicina del Trabajo, así como todas las columnas relativas a los puntos de ergonomía.
+
+### Decisiones Clave
+- Seguir estrictamente los requerimientos de la Resolución SRT 886/15, garantizando la presencia de los tres firmantes obligatorios y removiendo los cuadros analíticos redundantes en esta sección del reporte.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `next-best-practices`
+- `supabase`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260818002000_add_signatures_to_ergonomia.sql`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/utils/pdfGenerator.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-03] Corrección de Apertura de Imágenes de Evidencia en Programa de Gestión Anual
+
+### Resumen de Cambios
+- **Corrección de Comportamiento en Tabla de Datos (`doc` / Pictograma de Imagen):**
+  - Se corrigió el evento `onClick` del botón con el icono de imagen (`Image`) en la columna `Doc` de la tabla de Programa de Gestión Anual (`src/app/[tenant-slug]/programa/page.js`).
+  - Anteriormente, al presionar el pictograma de imagen se invocaba `handleEdit(act)` con `isReadOnlyView(true)`, lo que abría el formulario lateral en modo solo lectura ("vista de datos").
+  - Se implementaron las funciones `handleViewImage` y `handleViewImages` para que al hacer clic en el pictograma se abran directamente las imágenes de evidencia almacenadas en Supabase Storage (o enlaces directos/data URLs) en una nueva pestaña del navegador mediante URLs firmadas seguras, manteniendo la misma experiencia que los archivos PDF.
+
+### Decisiones Clave
+- Asegurar consistencia en la columna `Doc` de las tablas de datos: los iconos de documentos (PDF, Imágenes) deben visualizar o descargar el archivo adjunto al hacer clic, dejando la apertura del formulario de datos/detalles reservada para el clic en la fila o los botones de acciones (`Editar` / `Ver Detalle`).
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+- `supabase`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-03] Corrección de ReferenceError en Protocolo de Ergonomía (Conclusiones / Recomendaciones)
+
+### Resumen de Cambios
+- **Corrección de Excepciones de Runtime (`ReferenceError: conclusiones / adjuntos is not defined`):**
+  - Se definieron los estados `conclusiones`, `recomendaciones` y `adjuntos` en `ProtocoloForm.js` de la sección Protocolo de Ergonomía.
+  - Se incorporó la recuperación de `proto.conclusiones` y `proto.recomendaciones` dentro de la función de carga `loadExistingRecord`.
+  - Se añadieron `conclusiones` y `recomendaciones` a la función `getFormSnapshot` y al objeto `payloadProto` en `executeSave` para persistirlos adecuadamente en la base de datos de Supabase.
+  - Se agregaron las variables sanitizadas `concStr` y `recStr` en `handleSubmit` para validar que cuando el resultado del protocolo sea "No cumple", ambos campos sean obligatorios.
+- **Integración de UI y Voice/AI Helper:**
+  - Se renderizó la tarjeta (card) **Análisis de los Datos y Mejoras a Realizar** con sus campos de área de texto (`AppTextarea`) y sus respectivos botones de dictado y pulido de IA (`AITextHelper`), cumpliendo con la regla obligatoria de marca y la skill `SySO-AI-Voice-Helper`.
+- **Corrección de Redirecciones y Permisos en Ergonomía:**
+  - Se corrigió la redirección al presionar "Editar" en `ProtocoloForm.js` para que apunte a `/${tenantSlug}/protocolos/ergonomia/${editingId}/editar` en lugar de la ruta de iluminación.
+  - Se ajustó el fallback de verificación de permisos en `page.js` para consultar la clave `'protocolo_ergonomia'`.
+
+### Decisiones Clave
+- Preservar la consistencia estructural con los formularios de los demás protocolos (Ruido e Iluminación), asegurando que las conclusiones y recomendaciones puedan editarse libremente con soporte de IA y se guarden tanto en Supabase como en los reportes PDF.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `SySO-AI-Voice-Helper`
+- `next-best-practices`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
 ## [2026-08-01] Creación e Integración de la Sección Protocolo de Ergonomía
 
 ### Resumen de Cambios

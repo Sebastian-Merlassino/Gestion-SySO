@@ -1510,6 +1510,68 @@ export default function ProgramaGestion({ params }) {
     }
   };
 
+  const handleViewImage = async (pathOrUrl) => {
+    if (!pathOrUrl || pathOrUrl === 'N/A') return;
+    if (isDevMode || pathOrUrl === 'mock-image-path') {
+      if (pathOrUrl.startsWith('data:')) {
+        const newTab = window.open();
+        if (newTab) {
+          newTab.document.body.style.margin = '0';
+          newTab.document.body.style.background = '#0e1117';
+          newTab.document.body.style.display = 'flex';
+          newTab.document.body.style.alignItems = 'center';
+          newTab.document.body.style.justifyContent = 'center';
+          newTab.document.body.style.height = '100vh';
+          const img = newTab.document.createElement('img');
+          img.src = pathOrUrl;
+          img.style.maxWidth = '100%';
+          img.style.maxHeight = '100%';
+          img.style.objectFit = 'contain';
+          newTab.document.body.appendChild(img);
+          newTab.document.title = 'Visualizar Evidencia';
+        }
+        return;
+      }
+      triggerToast('Simulación: Abriendo imagen de evidencia en nueva pestaña.', 'info');
+      return;
+    }
+
+    if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://') || pathOrUrl.startsWith('data:')) {
+      window.open(pathOrUrl, '_blank');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.storage
+        .from('documents')
+        .createSignedUrl(pathOrUrl, 3600);
+
+      if (error) throw error;
+      if (!data?.signedUrl) {
+        triggerToast('No se pudo obtener el enlace de la imagen.', 'error');
+        return;
+      }
+
+      window.open(data.signedUrl, '_blank');
+    } catch (err) {
+      console.error('Error al abrir la imagen:', err);
+      triggerToast('Error al abrir la imagen de evidencia.', 'error');
+    }
+  };
+
+  const handleViewImages = (act) => {
+    const urls = act.fotos_urls && act.fotos_urls.length > 0 ? act.fotos_urls : [];
+    const paths = act.fotos_paths && act.fotos_paths.length > 0 ? act.fotos_paths : [];
+
+    if (urls.length > 0) {
+      urls.forEach(url => handleViewImage(url));
+    } else if (paths.length > 0) {
+      paths.forEach(path => handleViewImage(path));
+    } else {
+      triggerToast('No hay imágenes registradas.', 'info');
+    }
+  };
+
 
 
 
@@ -2347,7 +2409,7 @@ export default function ProgramaGestion({ params }) {
                                       ) : null}
                                       {act.fotos_paths && act.fotos_paths.length > 0 ? (
                                         <button
-                                          onClick={(e) => { e.stopPropagation(); setIsReadOnlyView(true); handleEdit(act); }}
+                                          onClick={(e) => { e.stopPropagation(); handleViewImages(act); }}
                                           className="p-1.5 rounded-lg bg-[#EFF6FF] text-[#468DFF] hover:bg-[#DBEAFE] hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                                           title={`Visualizar Evidencia (${act.fotos_paths.length} ${act.fotos_paths.length === 1 ? 'imagen' : 'imágenes'})`}
                                         >

@@ -43,9 +43,6 @@ import {
 } from 'lucide-react';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import { TABLA_2_ILUMINACION } from '../utils/tablasAnexoIV';
-import { getLimiteDbaForTe, getPuntoCalculos } from '../utils/tablasAnexoV';
-import Tabla1Modal from './Tabla1Modal';
-import Tabla1ErgonomiaModal from './Tabla1ErgonomiaModal';
 import Resolucion886Modal from './Resolucion886Modal';
 
 // Catálogo normativo según Anexo IV Dec. 351/79 y SRT
@@ -62,6 +59,134 @@ export const ACTIVIDADES_ILUMINACION = [
   { categoria: 'Sanidad', subcategoria: 'Salas de Consulta', tarea: 'Exámenes médicos, tratamientos, salas de espera', lux: 500 },
   { categoria: 'Educación', subcategoria: 'Aulas', tarea: 'Clases generales, laboratorios, bibliotecas', lux: 300 }
 ];
+
+export const CUESTIONARIOS_PLANILLA2 = {
+  levantamiento: {
+    isTwoStep: true,
+    paso1: [
+      { id: 'p1_1', text: 'Levantar y/o bajar manualmente cargas de peso superior a 2 kg. y hasta 25 kg.' },
+      { id: 'p1_2', text: 'Realizar diariamente y en forma cíclica operaciones de levantamiento / descenso con una frecuencia > 1 por hora o < 360 (si se realiza en forma esporádica consignar NO)' },
+      { id: 'p1_3', text: 'Levantar y/o bajar manualmente cargas de peso superior a 25 kg.' }
+    ],
+    paso2: [
+      { id: 'p2_1', text: 'El trabajador levanta, sostiene y deposita la carga sobrepasando con sus manos 30 cm sobre la altura del hombro' },
+      { id: 'p2_2', text: 'El trabajador levanta, sostiene y deposita la carga sobrepasando con sus manos una distancia horizontal mayor a 80 cm desde el punto medio entre los tobillos' },
+      { id: 'p2_3', text: 'Entre la toma y el deposito de la carga, el trabajador gira o inclina la cintura mas de 30° a uno u otro (o a ambos) considerados desde el plano sagital' },
+      { id: 'p2_4', text: 'Las cargas poseen formas irregulares, son difíciles de asir, se deforman o hay movimiento en su interior' },
+      { id: 'p2_5', text: 'El trabajador levanta, sostiene y deposita la carga con un solo brazo' },
+      { id: 'p2_6', text: 'El trabajador presenta alguna manifestación temprana de las enfermedades mencionadas en el ART 1 de la presente Resolución' }
+    ]
+  },
+  empuje_arrastre: {
+    isTwoStep: true,
+    paso1: [
+      { id: 'p1_1', text: 'Se realizan diariamente tareas cíclicas con una frecuencia >1 movimientos por jornada (si son esporádicas consignar NO)' },
+      { id: 'p1_2', text: 'El trabajador se desplaza empujando y/o arrastrando manualmente un objeto recorriendo una distancia mayor a 60 mts.' },
+      { id: 'p1_3', text: 'En el puesto de trabajo se empujan o arrastran cíclicamente objetos (bolsones, cajas, muebles, maquinas etc.) cuyo esfuerzo medido con dinamómetro superior a 34 kgf' }
+    ],
+    paso2: [
+      { id: 'p2_1', text: 'Para empujar el objeto rodante se requiere un esfuerzo inicial medido con dinamómetro > 12 kgf para hombres o 10 kgf para mujeres' },
+      { id: 'p2_2', text: 'Para arrastrar el objeto rodante se requiere un esfuerzo inicial medido con dinamómetro > 10 kgf para hombres o mujeres' },
+      { id: 'p2_3', text: 'El objeto rodante es empujado y/o arrastrado con dificultad (la superficie de deslizamiento es despareja, hay rampas que subir o bajar, hay roturas u obstáculos en el recorrido, ruedas en mal estado, mal diseño del asa etc.)' },
+      { id: 'p2_4', text: 'El objeto rodante no puede ser empujado y/o arrastrado con ambas manos, y en caso de que lo permita, el apoyo de las manos se encuentra a una altura incomoda (por encima del pecho o por debajo de la cintura)' },
+      { id: 'p2_5', text: 'En el movimiento de empujar y/o arrastrar, el esfuerzo inicial requerido se mantiene significativamente una vez puesto en movimiento el objeto (se produce atascamiento de las ruedas, tirones o falta de deslizamiento uniforme)' },
+      { id: 'p2_6', text: 'El trabajador empuja o arrastra el objeto rodante asiéndolo con una sola mano' },
+      { id: 'p2_7', text: 'El trabajador presenta alguna manifestación temprana de las enfermedades mencionadas en el artículo 1 de la presente resolución' }
+    ]
+  },
+  transporte: {
+    isTwoStep: true,
+    paso1: [
+      { id: 'p1_1', text: 'Transporta manualmente carga superiores a 2 kg. Hasta 25 kg.' },
+      { id: 'p1_2', text: 'El trabajador se desplaza sosteniendo manualmente la carga recorriendo una distancia mayor a 1 metro' },
+      { id: 'p1_3', text: 'Realiza diariamente en forma cíclica (si es esporádica consignar NO)' },
+      { id: 'p1_4', text: 'Se transporta manualmente cargas a una distancia superior a 20 mts.' },
+      { id: 'p1_5', text: 'Se transporta manualmente cargas superiores a 25 kg.' }
+    ],
+    paso2: [
+      { id: 'p2_1', text: 'En condiciones habituales de levantamiento el trabajador transporta la carga entre 1 y 10 metros con una masa acumulada (el producto de la masa por frecuencia) mayor que 10.000 kg durante la jornada habitual' },
+      { id: 'p2_2', text: 'En condiciones habituales de levantamiento el trabajador transporta la carga entre 10 y 20 metros con una masa acumulada (el producto de la masa por la frecuencia) mayor a 6.000 kg durante la jornada habitual' },
+      { id: 'p2_3', text: 'Las cargas poseen formas irregulares, son difíciles de asir, se deforman o hay movimientos en su interior' },
+      { id: 'p2_4', text: 'El trabajador presenta alguna manifestación temprana de las enfermedades mencionadas en el artículo 1 de la presente Resolución' }
+    ]
+  },
+  bipedestacion: {
+    isTwoStep: true,
+    paso1: [
+      { id: 'p1_1', text: 'El puesto de trabajo se desarrolla en posición de pie, sin posibilidad de sentarse durante 2 horas seguidas o mas' }
+    ],
+    paso2: [
+      { id: 'p2_1', text: 'En el puesto se realizan tareas donde se permanece de pie durante 3 horas seguidas o más, sin posibilidades de sentarse con escasa deambulación (caminando no más de 100 mts. Por hora).' },
+      { id: 'p2_2', text: 'En el puesto se realizan tareas donde se permanece de pie durante 2 horas seguidas o más, sin posibilidades de sentarse o con escasa deambulación levantando y transportando cargas > 2 kg.' },
+      { id: 'p2_3', text: 'Trabajos efectuados con bipedestación prolongada en ambientes donde la temperatura y humedad del aire sobrepasan los limites legalmente admisibles y que demanden actividad física.' },
+      { id: 'p2_4', text: 'El trabajador presenta alguna manifestación temprana de enfermedades mencionadas en el artículo 1° de la presente Resolución.' }
+    ]
+  },
+  mov_repetitivos: {
+    isTwoStep: true,
+    paso1: [
+      { id: 'p1_1', text: 'Realizar diariamente una o más tareas donde se utilizan las extremidades superiores, durante 4 o más horas en la jornada habitual de trabajo en forma cíclica (en forma continuada o alternada)' }
+    ],
+    paso2: [
+      { id: 'p2_1', text: 'Las extremidades superiores están activas por más del 40% del tiempo total del ciclo de trabajo' },
+      { id: 'p2_2', text: 'En el ciclo de trabajo se realiza un esfuerzo superior a moderado a 3 según la escala de Borg, durante más de 6 segundos y más de una vez por minuto.' },
+      { id: 'p2_3', text: 'Se realiza un esfuerzo superior a 7 según la escala de Borg.' },
+      { id: 'p2_4', text: 'El trabajador presenta alguna manifestación temprana de las enfermedades mencionadas en el artículo 1º de la presente resolución' }
+    ]
+  },
+  posturas_forzadas: {
+    isTwoStep: true,
+    paso1: [
+      { id: 'p1_1', text: 'Adoptar posturas forzadas en forma habitual durante la jornada de trabajo, con o sin aplicación de fuerza. (No se deben considerar si las posturas son ocasionales)' }
+    ],
+    paso2: [
+      { id: 'p2_1', text: 'Cuello en extensión, flexión, lateralización y/o rotación' },
+      { id: 'p2_2', text: 'Brazos por encima de los hombros o con movimientos de supinación, pronación o rotación' },
+      { id: 'p2_3', text: 'Muñecas y manos en flexión, extensión desviación cubital o radial' },
+      { id: 'p2_4', text: 'Cintura en flexión, extensión, lateralización y/o rotación' },
+      { id: 'p2_5', text: 'Miembros inferiores: trabajo en posición de rodillas o cuclillas' },
+      { id: 'p2_6', text: 'El trabajador presenta alguna manifestación temprana de las enfermedades mencionadas en el Artículo 1º de la presente resolución' }
+    ]
+  },
+  vibraciones_mano_brazo: {
+    isTwoStep: true,
+    paso1: [
+      { id: 'p1_1', text: 'Trabajar con herramientas que producen vibraciones (martillo neumático, perforadora, destornilladores, pulidoras, esmeriladoras, otros).' },
+      { id: 'p1_2', text: 'Sujetar piezas con las manos mientras estas son mecanizadas' },
+      { id: 'p1_3', text: 'Sujetar palancas, volantes, etc. Que transmiten vibraciones' }
+    ],
+    paso2: [
+      { id: 'p2_1', text: 'El valor de las vibraciones supera los límites establecidos en la Tabla I, de la parte correspondiente a Vibración (segmental) mano-brazo, del Anexo V, Resolución MTEySS Nº 295/03' },
+      { id: 'p2_2', text: 'El trabajador presenta una manifestación temprana de las enfermedades mencionadas en el Artículo 1º de la presente Resolución' }
+    ]
+  },
+  vibraciones_cuerpo_entero: {
+    isTwoStep: true,
+    paso1: [
+      { id: 'p1_1', text: 'Conducir vehículos industriales, camiones, maquinas agrícolas, transporte público y otros.' },
+      { id: 'p1_2', text: 'Trabajar próximo a máximas generadoras de impacto' }
+    ],
+    paso2: [
+      { id: 'p2_1', text: 'El valor de las vibraciones supera los límites establecidos en la parte correspondiente a Vibración Cuerpo entero, del Anexo V. Resolución MTEySS Nº 295/03' },
+      { id: 'p2_2', text: 'El trabajador presenta una manifestación temprana de las enfermedades mencionadas en el Artículo 1º de la presente Resolución' }
+    ]
+  },
+  confort_termico: {
+    isTwoStep: true,
+    paso1: [
+      { id: 'p1_1', text: 'En el puesto de trabajo se perciben temperaturas no confortables para la realización de tareas' }
+    ],
+    paso2: [
+      { id: 'p2_1', text: 'Resultado del uso de la curva de Confort de Fanger, se encuentra por fuera de la zona de confort' }
+    ]
+  },
+  estres_contacto: [
+    { id: 'q1', text: '¿Se presionan partes del cuerpo (manos, rodillas, muslos) contra bordes filosos o superficies duras?' },
+    { id: 'q2', text: '¿Se utilizan las manos o muñecas como herramientas de impacto (martillear con la mano)?' },
+    { id: 'q3', text: '¿El agarre de las herramientas genera presión concentrada y dolorosa en la palma de la mano?' },
+    { id: 'q4', text: '¿El trabajador debe permanecer arrodillado apoyando las rodillas directamente en suelo duro?' }
+  ]
+};
 
 const isValidUuid = (val) => {
   if (!val || typeof val !== 'string') return false;
@@ -121,11 +246,16 @@ export default function ProtocoloForm({
   const [cpText, setCpText] = useState('');
   const [fechaMedicion, setFechaMedicion] = useState('');
   const [observacionesGenerales, setObservacionesGenerales] = useState('');
+  
   const [estado, setEstado] = useState('borrador'); // 'borrador' | 'completado' | 'anulado'
   const [isTabla1RuidoOpen, setIsTabla1RuidoOpen] = useState(false);
 
-  // Sampling Points State
   const [puntos, setPuntos] = useState([]);
+  const [collapsedTareas, setCollapsedTareas] = useState({});
+  const [collapsedFactores, setCollapsedFactores] = useState({});
+  const [mostrarBorg, setMostrarBorg] = useState(false);
+  const [mostrarFanger, setMostrarFanger] = useState(false);
+  const [adjuntos, setAdjuntos] = useState([]);
   
   // Professional & Signature State
   const [miembrosList, setMiembrosList] = useState([]);
@@ -138,6 +268,19 @@ export default function ProtocoloForm({
   const [firmaProfSavedUrl, setFirmaProfSavedUrl] = useState('');
   const [hasSignedProf, setHasSignedProf] = useState(false);
   const firmaProfCanvasRef = useRef(null);
+
+  // Employer Signature State
+  const [empleadorNombre, setEmpleadorNombre] = useState('');
+  const [firmaEmpleadorSavedUrl, setFirmaEmpleadorSavedUrl] = useState('');
+  const [hasSignedEmpleador, setHasSignedEmpleador] = useState(false);
+  const firmaEmpleadorCanvasRef = useRef(null);
+
+  // Occupational Medicine Responsible Signature State
+  const [medicinaNombre, setMedicinaNombre] = useState('');
+  const [medicinaMatricula, setMedicinaMatricula] = useState('');
+  const [firmaMedicinaSavedUrl, setFirmaMedicinaSavedUrl] = useState('');
+  const [hasSignedMedicina, setHasSignedMedicina] = useState(false);
+  const firmaMedicinaCanvasRef = useRef(null);
 
   // Profile Syncing Dialog State
   const [syncQueue, setSyncQueue] = useState([]);
@@ -346,63 +489,62 @@ export default function ProtocoloForm({
     setFirmaProfSavedUrl('');
   };
 
-  // Calculations helper for noise points
-  const getPuntoCalculos = useCallback((p) => {
-    let resultado = 'Pendiente';
-    let valorMedidoText = '-';
-    let limiteLegalText = '-';
-
-    if (p.caracteristicas_ruido === 'impulso_impacto') {
-      const valPico = parseFloat(p.nivel_pico_lc_pico_dbc);
-      limiteLegalText = '140 dBC (Techo)';
-      if (!isNaN(valPico)) {
-        valorMedidoText = `${valPico} dBC`;
-        resultado = valPico <= 140 ? 'Cumple' : 'No cumple';
-      }
+  const firmaEmpleadorRefCallback = useCallback((node) => {
+    if (node) {
+      firmaEmpleadorCanvasRef.current = node;
+      setupCanvas(node, setHasSignedEmpleador);
     } else {
-      // continuo_intermitente
-      if (p.tipo_carga_continuo === 'laeq') {
-        const valLaeq = parseFloat(p.nivel_laeq_te_dba);
-        const teHs = parseFloat(p.tiempo_exposicion_hs);
-        const limiteDba = getLimiteDbaForTe(teHs);
-        const labelTe = (!isNaN(teHs) && teHs > 0) ? `${teHs} hs` : '8 hs';
-        limiteLegalText = `${limiteDba} dBA (${labelTe})`;
-        if (!isNaN(valLaeq)) {
-          valorMedidoText = `${valLaeq} dBA`;
-          resultado = valLaeq <= limiteDba ? 'Cumple' : 'No cumple';
-        }
-      } else if (p.tipo_carga_continuo === 'suma_fracciones') {
-        const valSuma = parseFloat(p.resultado_suma_fracciones);
-        limiteLegalText = '1.00';
-        if (!isNaN(valSuma)) {
-          valorMedidoText = `${valSuma}`;
-          resultado = valSuma <= 1.0 ? 'Cumple' : 'No cumple';
-        }
-      } else if (p.tipo_carga_continuo === 'dosis') {
-        const valDosis = parseFloat(p.dosis_porcentaje);
-        limiteLegalText = '100 %';
-        if (!isNaN(valDosis)) {
-          valorMedidoText = `${valDosis} %`;
-          resultado = valDosis <= 100 ? 'Cumple' : 'No cumple';
-        }
+      if (firmaEmpleadorCanvasRef.current && firmaEmpleadorCanvasRef.current._cleanup) {
+        firmaEmpleadorCanvasRef.current._cleanup();
       }
+      firmaEmpleadorCanvasRef.current = null;
     }
+  }, [setupCanvas]);
 
+  const handleClearEmpleadorCanvas = () => {
+    if (firmaEmpleadorCanvasRef.current) {
+      const ctx = firmaEmpleadorCanvasRef.current.getContext('2d');
+      ctx.clearRect(0, 0, firmaEmpleadorCanvasRef.current.width, firmaEmpleadorCanvasRef.current.height);
+    }
+    setHasSignedEmpleador(false);
+    setFirmaEmpleadorSavedUrl('');
+  };
+
+  const firmaMedicinaRefCallback = useCallback((node) => {
+    if (node) {
+      firmaMedicinaCanvasRef.current = node;
+      setupCanvas(node, setHasSignedMedicina);
+    } else {
+      if (firmaMedicinaCanvasRef.current && firmaMedicinaCanvasRef.current._cleanup) {
+        firmaMedicinaCanvasRef.current._cleanup();
+      }
+      firmaMedicinaCanvasRef.current = null;
+    }
+  }, [setupCanvas]);
+
+  const handleClearMedicinaCanvas = () => {
+    if (firmaMedicinaCanvasRef.current) {
+      const ctx = firmaMedicinaCanvasRef.current.getContext('2d');
+      ctx.clearRect(0, 0, firmaMedicinaCanvasRef.current.width, firmaMedicinaCanvasRef.current.height);
+    }
+    setHasSignedMedicina(false);
+    setFirmaMedicinaSavedUrl('');
+  };
+
+  // Calculations helper for ergonomics points
+  const getPuntoCalculos = useCallback((p) => {
     return {
-      resultado_punto: resultado,
-      valorMedidoText,
-      limiteLegalText
+      resultado_punto: p.resultado_punto || 'Cumple',
+      nivel_de_riesgo: p.nivel_de_riesgo || 'Bajo'
     };
   }, []);
 
   // Calculate Overall Protocol Result
   const getResultadoGeneral = useCallback(() => {
     if (!puntos || puntos.length === 0) return 'Sin evaluar';
-    const calculados = puntos.map(p => getPuntoCalculos(p));
-    if (calculados.some(c => c.resultado_punto === 'No cumple')) return 'No cumple';
-    if (calculados.some(c => c.resultado_punto === 'Pendiente')) return 'Borrador';
+    if (puntos.some(p => p.resultado_punto === 'No cumple')) return 'No cumple';
     return 'Cumple';
-  }, [puntos, getPuntoCalculos]);
+  }, [puntos]);
 
   // Check if protocol has all required technical and regulatory fields to be marked as 'completado'
   const checkIsProtocoloCompleto = useCallback(() => {
@@ -416,13 +558,8 @@ export default function ProtocoloForm({
       if (cal.resultado_punto === 'Pendiente') return false;
     }
 
-    const generalRes = getResultadoGeneral();
-    if (generalRes === 'No cumple' && (!conclusiones || !conclusiones.trim() || !recomendaciones || !recomendaciones.trim())) {
-      return false;
-    }
-
     return true;
-  }, [empresaId, establecimientoId, fechaMedicion, puntos, conclusiones, recomendaciones, getPuntoCalculos, getResultadoGeneral]);
+  }, [empresaId, establecimientoId, fechaMedicion, puntos, getPuntoCalculos, getResultadoGeneral]);
 
   // Load companies & establishments lookups
   useEffect(() => {
@@ -677,6 +814,12 @@ export default function ProtocoloForm({
       setProfesionalMatricula(proto.profesional_matricula || '');
       setFirmaTipo(proto.firma_tipo || 'perfil');
       
+      setEmpleadorNombre(proto.empleador_nombre || '');
+      setFirmaEmpleadorSavedUrl(proto.firma_empleador || '');
+      setMedicinaNombre(proto.medicina_nombre || '');
+      setMedicinaMatricula(proto.medicina_matricula || '');
+      setFirmaMedicinaSavedUrl(proto.firma_medicina || '');
+      
       // Buscar coincidencia en la nómina para pre-seleccionar profesionalId
       const matchingMem = memsList.find(
         m => m.nombre === proto.profesional_nombre && 
@@ -712,29 +855,125 @@ export default function ProtocoloForm({
         .order('orden');
       if (ptsErr) throw ptsErr;
 
-      const loadedPuntos = (ptsData || []).map(p => ({
-        id: p.id,
-        orden: p.orden,
-        punto_muestreo: p.punto_muestreo,
-        sector_id: p.sector_id || '',
-        sector_text: p.sector_text || '',
-        puesto_id: p.puesto_id || '',
-        puesto_text: p.puesto_text || '',
-        tiempo_exposicion_hs: p.tiempo_exposicion_hs !== null ? String(p.tiempo_exposicion_hs) : '8',
-        tiempo_integracion: p.tiempo_integracion || '15 min',
-        caracteristicas_ruido: p.caracteristicas_ruido || 'continuo_intermitente',
-        nivel_pico_lc_pico_dbc: p.nivel_pico_lc_pico_dbc !== null ? String(p.nivel_pico_lc_pico_dbc) : '',
-        tipo_carga_continuo: p.tipo_carga_continuo || 'laeq',
-        nivel_laeq_te_dba: p.nivel_laeq_te_dba !== null ? String(p.nivel_laeq_te_dba) : '',
-        modo_suma_fracciones: p.modo_suma_fracciones || 'directo',
-        fracciones: (Array.isArray(p.fracciones) && p.fracciones.length > 0)
-          ? p.fracciones
-          : [{ id: 'f-' + p.id + '-1', c_horas: '', t_horas: '' }],
-        resultado_suma_fracciones: p.resultado_suma_fracciones !== null ? String(p.resultado_suma_fracciones) : '',
-        dosis_porcentaje: p.dosis_porcentaje !== null ? String(p.dosis_porcentaje) : '',
-        observaciones_punto: p.observaciones_punto || '',
-        isCollapsed: true
-      }));
+      const loadedPuntos = (ptsData || []).map(p => {
+        let mappedTareas = [];
+        if (Array.isArray(p.tareas) && p.tareas.length > 0) {
+          mappedTareas = p.tareas.map(t => ({
+            ...t,
+            f_levantamiento_tiempo: t.f_levantamiento_tiempo || '',
+            f_levantamiento_respuestas: t.f_levantamiento_respuestas || {},
+            f_empuje_arrastre_tiempo: t.f_empuje_arrastre_tiempo || '',
+            f_empuje_arrastre_respuestas: t.f_empuje_arrastre_respuestas || {},
+            f_transporte_tiempo: t.f_transporte_tiempo || '',
+            f_transporte_respuestas: t.f_transporte_respuestas || {},
+            f_bipedestacion_tiempo: t.f_bipedestacion_tiempo || '',
+            f_bipedestacion_respuestas: t.f_bipedestacion_respuestas || {},
+            f_mov_repetitivos_tiempo: t.f_mov_repetitivos_tiempo || '',
+            f_mov_repetitivos_respuestas: t.f_mov_repetitivos_respuestas || {},
+            f_posturas_forzadas_tiempo: t.f_posturas_forzadas_tiempo || '',
+            f_posturas_forzadas_respuestas: t.f_posturas_forzadas_respuestas || {},
+            f_vibraciones_mano_brazo_identificado: t.f_vibraciones_mano_brazo_identificado || 'no',
+            f_vibraciones_mano_brazo_tiempo: t.f_vibraciones_mano_brazo_tiempo || '',
+            f_vibraciones_mano_brazo_riesgo: t.f_vibraciones_mano_brazo_riesgo || '',
+            f_vibraciones_mano_brazo_respuestas: t.f_vibraciones_mano_brazo_respuestas || {},
+            f_vibraciones_cuerpo_entero_identificado: t.f_vibraciones_cuerpo_entero_identificado || 'no',
+            f_vibraciones_cuerpo_entero_tiempo: t.f_vibraciones_cuerpo_entero_tiempo || '',
+            f_vibraciones_cuerpo_entero_riesgo: t.f_vibraciones_cuerpo_entero_riesgo || '',
+            f_vibraciones_cuerpo_entero_respuestas: t.f_vibraciones_cuerpo_entero_respuestas || {},
+            f_vibraciones_tiempo: t.f_vibraciones_tiempo || '',
+            f_vibraciones_respuestas: t.f_vibraciones_respuestas || {},
+            f_confort_termico_tiempo: t.f_confort_termico_tiempo || '',
+            f_confort_termico_respuestas: t.f_confort_termico_respuestas || {},
+            f_estres_contacto_tiempo: t.f_estres_contacto_tiempo || '',
+            f_estres_contacto_respuestas: t.f_estres_contacto_respuestas || {}
+          }));
+        } else {
+          // Si no tiene tareas guardadas (registro viejo), migrar los datos viejos a la primera tarea
+          mappedTareas = [{
+            id: 't-legacy-' + p.id,
+            orden: 1,
+            nombre: p.tarea_desempenada || 'Tarea habitual 1',
+            f_levantamiento_identificado: p.f_levantamiento_identificado || 'no',
+            f_levantamiento_tiempo: '',
+            f_levantamiento_riesgo: p.f_levantamiento_requiere_eval === 'si' ? '2' : '',
+            f_levantamiento_respuestas: {},
+            f_empuje_arrastre_identificado: p.f_empuje_arrastre_identificado || 'no',
+            f_empuje_arrastre_tiempo: '',
+            f_empuje_arrastre_riesgo: p.f_empuje_arrastre_requiere_eval === 'si' ? '2' : '',
+            f_empuje_arrastre_respuestas: {},
+            f_transporte_identificado: p.f_transporte_identificado || 'no',
+            f_transporte_tiempo: '',
+            f_transporte_riesgo: p.f_transporte_requiere_eval === 'si' ? '2' : '',
+            f_transporte_respuestas: {},
+            f_bipedestacion_identificado: p.f_bipedestacion_identificado || 'no',
+            f_bipedestacion_tiempo: '',
+            f_bipedestacion_riesgo: p.f_bipedestacion_requiere_eval === 'si' ? '2' : '',
+            f_bipedestacion_respuestas: {},
+            f_mov_repetitivos_identificado: p.f_mov_repetitivos_identificado || 'no',
+            f_mov_repetitivos_tiempo: '',
+            f_mov_repetitivos_riesgo: p.f_mov_repetitivos_requiere_eval === 'si' ? '2' : '',
+            f_mov_repetitivos_respuestas: {},
+            f_posturas_forzadas_identificado: p.f_posturas_forzadas_identificado || 'no',
+            f_posturas_forzadas_tiempo: '',
+            f_posturas_forzadas_riesgo: p.f_posturas_forzadas_requiere_eval === 'si' ? '2' : '',
+            f_posturas_forzadas_respuestas: {},
+            f_vibraciones_mano_brazo_identificado: p.f_vibraciones_identificado || 'no',
+            f_vibraciones_mano_brazo_tiempo: '',
+            f_vibraciones_mano_brazo_riesgo: p.f_vibraciones_requiere_eval === 'si' ? '2' : '',
+            f_vibraciones_mano_brazo_respuestas: {},
+            f_vibraciones_cuerpo_entero_identificado: 'no',
+            f_vibraciones_cuerpo_entero_tiempo: '',
+            f_vibraciones_cuerpo_entero_riesgo: '',
+            f_vibraciones_cuerpo_entero_respuestas: {},
+            f_vibraciones_identificado: p.f_vibraciones_identificado || 'no',
+            f_vibraciones_tiempo: '',
+            f_vibraciones_riesgo: p.f_vibraciones_requiere_eval === 'si' ? '2' : '',
+            f_vibraciones_respuestas: {},
+            f_confort_termico_identificado: p.f_confort_termico_identificado || 'no',
+            f_confort_termico_tiempo: '',
+            f_confort_termico_riesgo: p.f_confort_termico_requiere_eval === 'si' ? '2' : '',
+            f_confort_termico_respuestas: {},
+            f_estres_contacto_identificado: 'no',
+            f_estres_contacto_tiempo: '',
+            f_estres_contacto_riesgo: '',
+            f_estres_contacto_respuestas: {}
+          }];
+        }
+
+        const defaultTiempos = {
+          levantamiento: '',
+          empuje_arrastre: '',
+          transporte: '',
+          bipedestacion: '',
+          mov_repetitivos: '',
+          posturas_forzadas: '',
+          vibraciones: '',
+          confort_termico: '',
+          estres_contacto: ''
+        };
+
+        return {
+          id: p.id,
+          orden: p.orden,
+          punto_muestreo: p.punto_muestreo,
+          sector_id: p.sector_id || '',
+          sector_text: p.sector_text || '',
+          puesto_id: p.puesto_id || '',
+          puesto_text: p.puesto_text || '',
+          cantidad_expuestos: p.cantidad_expuestos !== null ? String(p.cantidad_expuestos) : '1',
+          procedimiento_escrito: p.procedimiento_escrito || 'no',
+          capacitacion: p.capacitacion || 'no',
+          nombres_trabajadores: p.nombres_trabajadores || '',
+          manifestacion_temprana: p.manifestacion_temprana || 'no',
+          ubicacion_sintoma: p.ubicacion_sintoma || '',
+          tareas: mappedTareas,
+          tiempos_exposicion: { ...defaultTiempos, ...(p.tiempos_exposicion || {}) },
+          nivel_de_riesgo: p.nivel_de_riesgo || 'Bajo',
+          resultado_punto: p.resultado_punto || 'Cumple',
+          observaciones_punto: p.observaciones_punto || '',
+          isCollapsed: true
+        };
+      });
 
       setPuntos(loadedPuntos.length > 0 ? loadedPuntos : [createNewPunto(1)]);
 
@@ -789,6 +1028,9 @@ export default function ProtocoloForm({
       ciiuText,
       fechaMedicion,
       observacionesGenerales,
+      empleadorNombre,
+      medicinaNombre,
+      medicinaMatricula,
       estado,
       profesionalId,
       profesionalNombre,
@@ -814,8 +1056,9 @@ export default function ProtocoloForm({
     establecimientoId,
     fechaMedicion,
     observacionesGenerales,
-    conclusiones,
-    recomendaciones,
+    empleadorNombre,
+    medicinaNombre,
+    medicinaMatricula,
     estado,
     profesionalId,
     profesionalNombre,
@@ -839,6 +1082,57 @@ export default function ProtocoloForm({
     }
   };
 
+  const createNewTareaHabitual = (num) => ({
+    id: 't-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+    orden: num,
+    nombre: `Tarea habitual ${num}`,
+    // Los 9 factores
+    f_levantamiento_identificado: 'no',
+    f_levantamiento_tiempo: '',
+    f_levantamiento_riesgo: '',
+    f_levantamiento_respuestas: {},
+    f_empuje_arrastre_identificado: 'no',
+    f_empuje_arrastre_tiempo: '',
+    f_empuje_arrastre_riesgo: '',
+    f_empuje_arrastre_respuestas: {},
+    f_transporte_identificado: 'no',
+    f_transporte_tiempo: '',
+    f_transporte_riesgo: '',
+    f_transporte_respuestas: {},
+    f_bipedestacion_identificado: 'no',
+    f_bipedestacion_tiempo: '',
+    f_bipedestacion_riesgo: '',
+    f_bipedestacion_respuestas: {},
+    f_mov_repetitivos_identificado: 'no',
+    f_mov_repetitivos_tiempo: '',
+    f_mov_repetitivos_riesgo: '',
+    f_mov_repetitivos_respuestas: {},
+    f_posturas_forzadas_identificado: 'no',
+    f_posturas_forzadas_tiempo: '',
+    f_posturas_forzadas_riesgo: '',
+    f_posturas_forzadas_respuestas: {},
+    f_vibraciones_mano_brazo_identificado: 'no',
+    f_vibraciones_mano_brazo_tiempo: '',
+    f_vibraciones_mano_brazo_riesgo: '',
+    f_vibraciones_mano_brazo_respuestas: {},
+    f_vibraciones_cuerpo_entero_identificado: 'no',
+    f_vibraciones_cuerpo_entero_tiempo: '',
+    f_vibraciones_cuerpo_entero_riesgo: '',
+    f_vibraciones_cuerpo_entero_respuestas: {},
+    f_vibraciones_identificado: 'no',
+    f_vibraciones_tiempo: '',
+    f_vibraciones_riesgo: '',
+    f_vibraciones_respuestas: {},
+    f_confort_termico_identificado: 'no',
+    f_confort_termico_tiempo: '',
+    f_confort_termico_riesgo: '',
+    f_confort_termico_respuestas: {},
+    f_estres_contacto_identificado: 'no',
+    f_estres_contacto_tiempo: '',
+    f_estres_contacto_riesgo: '',
+    f_estres_contacto_respuestas: {}
+  });
+
   const createNewPunto = (num) => ({
     id: 'temp-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
     orden: num,
@@ -847,16 +1141,26 @@ export default function ProtocoloForm({
     sector_text: '',
     puesto_id: '',
     puesto_text: '',
-    tiempo_exposicion_hs: '8',
-    tiempo_integracion: '15 min',
-    caracteristicas_ruido: 'continuo_intermitente',
-    nivel_pico_lc_pico_dbc: '',
-    tipo_carga_continuo: 'laeq',
-    nivel_laeq_te_dba: '',
-    modo_suma_fracciones: 'directo',
-    fracciones: [{ id: 'f-' + Date.now() + '-1', c_horas: '', t_horas: '' }],
-    resultado_suma_fracciones: '',
-    dosis_porcentaje: '',
+    cantidad_expuestos: '1',
+    procedimiento_escrito: 'no',
+    capacitacion: 'no',
+    nombres_trabajadores: '',
+    manifestacion_temprana: 'no',
+    ubicacion_sintoma: '',
+    tareas: [createNewTareaHabitual(1)],
+    tiempos_exposicion: {
+      levantamiento: '',
+      empuje_arrastre: '',
+      transporte: '',
+      bipedestacion: '',
+      mov_repetitivos: '',
+      posturas_forzadas: '',
+      vibraciones: '',
+      confort_termico: '',
+      estres_contacto: ''
+    },
+    nivel_de_riesgo: 'Bajo',
+    resultado_punto: 'Cumple',
     observaciones_punto: '',
     isCollapsed: false
   });
@@ -894,7 +1198,6 @@ export default function ProtocoloForm({
       setProvinciaText(est.provincia || '');
       setLocalidadText(est.localidad_barrio || '');
       setCpText(est.cp || '');
-      setHorariosTurnosText(est.horario_funcionamiento || '');
       setEstSectoresLocal(est.sectores || []);
     } else {
       setEstablecimientoText('');
@@ -902,7 +1205,6 @@ export default function ProtocoloForm({
       setProvinciaText('');
       setLocalidadText('');
       setCpText('');
-      setHorariosTurnosText('');
       setEstSectoresLocal([]);
     }
   };
@@ -1091,51 +1393,6 @@ export default function ProtocoloForm({
     }));
   };
 
-  // Add/remove measurement to point
-  const handleAddMedicion = (puntoId) => {
-    setPuntos(puntos.map(p => {
-      if (p.id === puntoId) {
-        return {
-          ...p,
-          mediciones: [...p.mediciones, { id: 'm-' + Date.now() + '-' + p.mediciones.length, valor_lux: '' }]
-        };
-      }
-      return p;
-    }));
-  };
-
-  const handleRemoveMedicion = (puntoId, medId) => {
-    setPuntos(puntos.map(p => {
-      if (p.id === puntoId) {
-        if (p.mediciones.length <= 1) {
-          globalToast.toast('El punto debe tener al menos una medición lux.', 'warning');
-          return p;
-        }
-        return {
-          ...p,
-          mediciones: p.mediciones.filter(m => m.id !== medId)
-        };
-      }
-      return p;
-    }));
-  };
-
-  const handleMedicionValueChange = (puntoId, medId, val) => {
-    // Keep positive numeric values
-    const cleanVal = val.replace(/[^0-9]/g, '');
-    setPuntos(puntos.map(p => {
-      if (p.id === puntoId) {
-        return {
-          ...p,
-          mediciones: p.mediciones.map(m => m.id === medId ? { ...m, valor_lux: cleanVal } : m)
-        };
-      }
-      return p;
-    }));
-  };
-
-
-
   // SUBMIT FLOW - PROFILE SYNC WIZARD
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -1149,36 +1406,22 @@ export default function ProtocoloForm({
 
       // Validaciones para guardado como COMPLETADO
       if (estado === 'completado') {
-
         if (puntos.length === 0) {
-          globalToast.toast('Debe cargar al menos un punto de muestreo.', 'error');
+          globalToast.toast('Debe cargar al menos un puesto de trabajo.', 'error');
           return;
         }
 
         for (let i = 0; i < puntos.length; i++) {
           const p = puntos[i];
           const secStr = (p.sector_text || '').trim();
+          const pstStr = (p.puesto_text || '').trim();
 
           if (!secStr) {
-            globalToast.toast(`Falta definir el sector en el punto #${i + 1}.`, 'error');
+            globalToast.toast(`Falta definir el sector en el puesto #${i + 1}.`, 'error');
             return;
           }
-
-          const cal = getPuntoCalculos(p);
-          if (cal.cantidad_mediciones_cargadas === 0) {
-            globalToast.toast(`Debe cargar al menos una medición lux en el punto #${i + 1}.`, 'error');
-            return;
-          }
-
-          if (isNaN(parseFloat(p.valor_requerido_legal_lux)) || parseFloat(p.valor_requerido_legal_lux) <= 0) {
-            globalToast.toast(`Debe definir el valor legal requerido en el punto #${i + 1}.`, 'error');
-            return;
-          }
-
-          // Si el resultado general es No cumple, debe requerir conclusiones y recomendaciones
-          const generalRes = getResultadoGeneral();
-          if (generalRes === 'No cumple' && (!concStr || !recStr)) {
-            globalToast.toast('Al detectarse puntos que NO CUMPLEN, es obligatorio completar las Conclusiones y Recomendaciones.', 'error');
+          if (!pstStr) {
+            globalToast.toast(`Falta definir el puesto en el puesto #${i + 1}.`, 'error');
             return;
           }
         }
@@ -1391,6 +1634,16 @@ export default function ProtocoloForm({
         finalFirmaProf = firmaProfCanvasRef.current.toDataURL('image/png');
       }
 
+      let finalFirmaEmpleador = firmaEmpleadorSavedUrl;
+      if (firmaEmpleadorCanvasRef.current && hasSignedEmpleador) {
+        finalFirmaEmpleador = firmaEmpleadorCanvasRef.current.toDataURL('image/png');
+      }
+
+      let finalFirmaMedicina = firmaMedicinaSavedUrl;
+      if (firmaMedicinaCanvasRef.current && hasSignedMedicina) {
+        finalFirmaMedicina = firmaMedicinaCanvasRef.current.toDataURL('image/png');
+      }
+
       const payloadProto = {
         id: tempId,
         tenant_id: tenant.id,
@@ -1413,6 +1666,11 @@ export default function ProtocoloForm({
         profesional_matricula: profesionalMatricula || null,
         firma_tipo: firmaTipo,
         firma_profesional: finalFirmaProf || null,
+        empleador_nombre: empleadorNombre || null,
+        firma_empleador: finalFirmaEmpleador || null,
+        medicina_nombre: medicinaNombre || null,
+        medicina_matricula: medicinaMatricula || null,
+        firma_medicina: finalFirmaMedicina || null,
         estado: estado,
         updated_at: new Date().toISOString()
       };
@@ -1455,7 +1713,7 @@ export default function ProtocoloForm({
       }
 
       const pointsPayload = puntos.map((p, idx) => {
-        const cal = getPuntoCalculos(p);
+        const firstTask = (Array.isArray(p.tareas) && p.tareas.length > 0) ? p.tareas[0] : {};
         return {
           protocolo_id: tempId,
           orden: idx + 1,
@@ -1464,18 +1722,35 @@ export default function ProtocoloForm({
           sector_text: p.sector_text || null,
           puesto_id: isValidUuid(p.puesto_id) ? p.puesto_id : null,
           puesto_text: p.puesto_text || null,
-          tiempo_exposicion_hs: parseFloat(p.tiempo_exposicion_hs) || null,
-          tiempo_integracion: p.tiempo_integracion || null,
-          caracteristicas_ruido: p.caracteristicas_ruido || 'continuo_intermitente',
-          nivel_pico_lc_pico_dbc: parseFloat(p.nivel_pico_lc_pico_dbc) || null,
-          tipo_carga_continuo: p.tipo_carga_continuo || 'laeq',
-          nivel_laeq_te_dba: parseFloat(p.nivel_laeq_te_dba) || null,
-          modo_suma_fracciones: p.modo_suma_fracciones || 'directo',
-          fracciones: p.fracciones || null,
-          resultado_suma_fracciones: parseFloat(p.resultado_suma_fracciones) || null,
-          dosis_porcentaje: parseFloat(p.dosis_porcentaje) || null,
-          resultado_punto: cal.resultado_punto,
-          observaciones_punto: p.observaciones_punto || null
+          cantidad_expuestos: parseInt(p.cantidad_expuestos) || 1,
+          procedimiento_escrito: p.procedimiento_escrito || 'no',
+          capacitacion: p.capacitacion || 'no',
+          nombres_trabajadores: p.nombres_trabajadores || '',
+          manifestacion_temprana: p.manifestacion_temprana || 'no',
+          ubicacion_sintoma: p.ubicacion_sintoma || '',
+          tareas: p.tareas || [],
+          tiempos_exposicion: p.tiempos_exposicion || {},
+          nivel_de_riesgo: p.nivel_de_riesgo || 'Bajo',
+          resultado_punto: p.resultado_punto || 'Cumple',
+          observaciones_punto: p.observaciones_punto || null,
+          // Rellenar columnas legacy para compatibilidad básica desde la primera tarea
+          tarea_desempenada: firstTask.nombre || null,
+          f_levantamiento_identificado: firstTask.f_levantamiento_identificado || 'no',
+          f_levantamiento_requiere_eval: firstTask.f_levantamiento_riesgo ? 'si' : 'no',
+          f_empuje_arrastre_identificado: firstTask.f_empuje_arrastre_identificado || 'no',
+          f_empuje_arrastre_requiere_eval: firstTask.f_empuje_arrastre_riesgo ? 'si' : 'no',
+          f_transporte_identificado: firstTask.f_transporte_identificado || 'no',
+          f_transporte_requiere_eval: firstTask.f_transporte_riesgo ? 'si' : 'no',
+          f_bipedestacion_identificado: firstTask.f_bipedestacion_identificado || 'no',
+          f_bipedestacion_requiere_eval: firstTask.f_bipedestacion_riesgo ? 'si' : 'no',
+          f_mov_repetitivos_identificado: firstTask.f_mov_repetitivos_identificado || 'no',
+          f_mov_repetitivos_requiere_eval: firstTask.f_mov_repetitivos_riesgo ? 'si' : 'no',
+          f_posturas_forzadas_identificado: firstTask.f_posturas_forzadas_identificado || 'no',
+          f_posturas_forzadas_requiere_eval: firstTask.f_posturas_forzadas_riesgo ? 'si' : 'no',
+          f_vibraciones_identificado: (firstTask.f_vibraciones_mano_brazo_identificado === 'si' || firstTask.f_vibraciones_cuerpo_entero_identificado === 'si') ? 'si' : 'no',
+          f_vibraciones_requiere_eval: (firstTask.f_vibraciones_mano_brazo_riesgo || firstTask.f_vibraciones_cuerpo_entero_riesgo) ? 'si' : 'no',
+          f_confort_termico_identificado: firstTask.f_confort_termico_identificado || 'no',
+          f_confort_termico_requiere_eval: firstTask.f_confort_termico_riesgo ? 'si' : 'no'
         };
       });
 
@@ -1484,33 +1759,6 @@ export default function ProtocoloForm({
         .insert(pointsPayload)
         .select();
       if (ptsErr) throw ptsErr;
-
-      // 3. Guardar Mediciones (si aplican)
-      const medicionesPayload = [];
-      if (Array.isArray(insertedPoints)) {
-        insertedPoints.forEach(dbPunto => {
-          const localP = puntos.find(lp => lp.punto_muestreo === dbPunto.punto_muestreo);
-          if (localP && Array.isArray(localP.mediciones)) {
-            localP.mediciones.forEach((m, mIdx) => {
-              const val = parseFloat(m.valor_lux);
-              if (!isNaN(val)) {
-                medicionesPayload.push({
-                  punto_id: dbPunto.id,
-                  orden: mIdx + 1,
-                  valor_lux: val
-                });
-              }
-            });
-          }
-        });
-      }
-
-      if (medicionesPayload.length > 0) {
-        const { error: medErr } = await supabase
-          .from('protocolos_ergonomia_mediciones')
-          .insert(medicionesPayload);
-        if (medErr) throw medErr;
-      }
 
       // 4. Guardar Adjuntos
       setSaveLoading(true);
@@ -1716,7 +1964,7 @@ export default function ProtocoloForm({
               <AppInput id="direccionText" disabled value={direccionText} />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 col-span-full">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 col-span-full">
               <div className="flex flex-col gap-1 md:col-span-1">
                 <AppLabel htmlFor="provinciaText">Provincia</AppLabel>
                 <AppInput id="provinciaText" disabled value={provinciaText} />
@@ -1740,41 +1988,6 @@ export default function ProtocoloForm({
                   onChange={(e) => setCpText(e.target.value)}
                   placeholder="C.P."
                 />
-              </div>
-              <div className="flex flex-col gap-1 md:col-span-1">
-                <AppLabel htmlFor="fechaMedicion" required>Fecha de la Evaluación</AppLabel>
-                <div className="relative">
-                  <AppInput
-                    id="fechaMedicion"
-                    disabled={!canEdit}
-                    placeholder="DD/MM/AAAA"
-                    value={fechaMedicion}
-                    onChange={(e) => setFechaMedicion(formatAsDateInput(e.target.value))}
-                  />
-                  {canEdit && (
-                    <div className="absolute right-3.5 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
-                      <Calendar className="h-4 w-4" />
-                      <input
-                        type="date"
-                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (val) {
-                            const parts = val.split('-');
-                            if (parts.length === 3) {
-                              setFechaMedicion(`${parts[2]}/${parts[1]}/${parts[0]}`);
-                            }
-                          } else {
-                            setFechaMedicion('');
-                          }
-                        }}
-                      />
-                    </div>
-                  )}
-                  {!canEdit && (
-                    <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                  )}
-                </div>
               </div>
             </div>
           </div>
@@ -1800,6 +2013,43 @@ export default function ProtocoloForm({
           </div>
 
           <div className="space-y-4">
+            <div className="flex flex-col gap-1 max-w-[240px]">
+              <AppLabel htmlFor="fechaMedicion" required>Fecha de la Evaluación</AppLabel>
+              <div className="relative">
+                <AppInput
+                  id="fechaMedicion"
+                  disabled={!canEdit}
+                  placeholder="DD/MM/AAAA"
+                  value={fechaMedicion}
+                  onChange={(e) => setFechaMedicion(formatAsDateInput(e.target.value))}
+                />
+                {canEdit && (
+                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
+                    <Calendar className="h-4 w-4" />
+                    <input
+                      type="date"
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val) {
+                          const parts = val.split('-');
+                          if (parts.length === 3) {
+                            setFechaMedicion(`${parts[2]}/${parts[1]}/${parts[0]}`);
+                          }
+                        } else {
+                          setFechaMedicion('');
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+                {!canEdit && (
+                  <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                )}
+              </div>
+            </div>
+
+            <div className="border-t border-slate-100 my-2" />
             {puntos.map((p, idx) => {
               const cal = getPuntoCalculos(p);
 
@@ -1816,7 +2066,7 @@ export default function ProtocoloForm({
                   <div className="flex justify-between items-center border-b border-slate-200/80 pb-2.5">
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-bold text-slate-700 bg-slate-200/80 px-2 py-0.5 rounded-lg border border-slate-300/40 uppercase">
-                        Punto #{p.punto_muestreo}
+                        Puesto #{p.punto_muestreo}
                       </span>
                       {p.sector_text && (
                         <span className="text-xs font-bold text-slate-800 max-w-[200px] truncate">
@@ -1949,376 +2199,729 @@ export default function ProtocoloForm({
                         </div>
                       </div>
 
-                      {/* Fila 2: Tiempos de Exposición e Integración */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+                      {/* Fila 2: Datos generales del puesto */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                         <div className="flex flex-col gap-1">
-                          <AppLabel htmlFor={`tiempo-exp-${p.id}`} required={estado === 'completado'}>
-                            Tiempo de exposición del trabajador (Te, en horas)
+                          <AppLabel htmlFor={`expuestos-${p.id}`} required={estado === 'completado'}>
+                            Número de trabajadores en el puesto
                           </AppLabel>
                           <AppInput
-                            id={`tiempo-exp-${p.id}`}
+                            id={`expuestos-${p.id}`}
                             disabled={!canEdit}
                             type="number"
-                            step="0.1"
-                            min="0"
-                            placeholder="Ej: 8"
-                            value={p.tiempo_exposicion_hs}
-                            onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, tiempo_exposicion_hs: e.target.value } : x))}
+                            min="1"
+                            value={p.cantidad_expuestos || '1'}
+                            onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, cantidad_expuestos: e.target.value } : x))}
                           />
                         </div>
-
                         <div className="flex flex-col gap-1">
-                          <AppLabel htmlFor={`tiempo-integ-${p.id}`}>
-                            Tiempo de integración (tiempo de medición)
+                          <AppLabel htmlFor={`nombres-trabajadores-${p.id}`}>
+                            Nombre del trabajador/es
                           </AppLabel>
                           <AppInput
-                            id={`tiempo-integ-${p.id}`}
+                            id={`nombres-trabajadores-${p.id}`}
                             disabled={!canEdit}
-                            placeholder="Ej: 15 min / 1 hs"
-                            value={p.tiempo_integracion}
-                            onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, tiempo_integracion: e.target.value } : x))}
+                            placeholder="Aclaración de nombres..."
+                            value={p.nombres_trabajadores || ''}
+                            onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, nombres_trabajadores: e.target.value } : x))}
                           />
                         </div>
                       </div>
 
-                      {/* Fila 3: Características generales del ruido a medir */}
-                      <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-3">
-                        <div className="flex items-center justify-between gap-2 flex-wrap">
-                          <AppLabel htmlFor={`carac-ruido-${p.id}`}>
-                            Características generales del ruido a medir
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                        <div className="flex flex-col gap-1">
+                          <AppLabel htmlFor={`procedimiento-${p.id}`}>
+                            Procedimiento de trabajo escrito
                           </AppLabel>
-                          <button
-                            type="button"
-                            onClick={() => setIsTabla1RuidoOpen(true)}
-                            className="text-[#468DFF] hover:text-[#0511F2] transition-colors p-1 rounded-full hover:bg-blue-50 flex items-center gap-1 font-bold text-xs cursor-pointer"
-                            title="Ver Tabla 1 — Valores límite para ruido"
+                          <AppSelect
+                            id={`procedimiento-${p.id}`}
+                            disabled={!canEdit}
+                            value={p.procedimiento_escrito || 'no'}
+                            onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, procedimiento_escrito: e.target.value } : x))}
                           >
-                            <HelpCircle className="h-4 w-4" />
-                            <span className="underline text-[11px]">Ver Tabla 1</span>
-                          </button>
+                            <option value="si">Sí</option>
+                            <option value="no">No</option>
+                          </AppSelect>
                         </div>
-
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            type="button"
+                        <div className="flex flex-col gap-1">
+                          <AppLabel htmlFor={`capacitacion-${p.id}`}>
+                            Capacitación
+                          </AppLabel>
+                          <AppSelect
+                            id={`capacitacion-${p.id}`}
                             disabled={!canEdit}
-                            onClick={() => setPuntos(puntos.map(x => x.id === p.id ? { ...x, caracteristicas_ruido: 'continuo_intermitente' } : x))}
-                            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
-                              p.caracteristicas_ruido === 'continuo_intermitente'
-                                ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-sm'
-                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                            }`}
+                            value={p.capacitacion || 'no'}
+                            onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, capacitacion: e.target.value } : x))}
                           >
-                            Continuo / Intermitente
-                          </button>
-                          <button
-                            type="button"
-                            disabled={!canEdit}
-                            onClick={() => setPuntos(puntos.map(x => x.id === p.id ? { ...x, caracteristicas_ruido: 'impulso_impacto' } : x))}
-                            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
-                              p.caracteristicas_ruido === 'impulso_impacto'
-                                ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-sm'
-                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                            }`}
-                          >
-                            De impulso o de impacto
-                          </button>
+                            <option value="si">Sí</option>
+                            <option value="no">No</option>
+                          </AppSelect>
                         </div>
                       </div>
 
-                      {/* CONDICIONAL: Impulso o Impacto */}
-                      {p.caracteristicas_ruido === 'impulso_impacto' && (
-                        <div className="bg-amber-50/60 p-4 rounded-xl border border-amber-200/80 space-y-2 animate-scale-up">
-                          <AppLabel htmlFor={`pico-dbc-${p.id}`} className="font-extrabold text-amber-900 text-xs">
-                            RUIDO DE IMPULSO O DE IMPACTO - Nivel pico de presión acústica ponderado C (LCpico, en dBC)
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                        <div className="flex flex-col gap-1">
+                          <AppLabel htmlFor={`manifestacion-${p.id}`}>
+                            Manifestación Temprana
+                          </AppLabel>
+                          <AppSelect
+                            id={`manifestacion-${p.id}`}
+                            disabled={!canEdit}
+                            value={p.manifestacion_temprana || 'no'}
+                            onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, manifestacion_temprana: e.target.value } : x))}
+                          >
+                            <option value="si">Sí</option>
+                            <option value="no">No</option>
+                          </AppSelect>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <AppLabel htmlFor={`sintoma-${p.id}`}>
+                            Ubicación del síntoma
                           </AppLabel>
                           <AppInput
-                            id={`pico-dbc-${p.id}`}
-                            disabled={!canEdit}
-                            type="number"
-                            step="0.1"
-                            placeholder="Ej: 135.0"
-                            className="bg-white border-amber-300 focus:border-[#468DFF]"
-                            value={p.nivel_pico_lc_pico_dbc}
-                            onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, nivel_pico_lc_pico_dbc: e.target.value } : x))}
+                            id={`sintoma-${p.id}`}
+                            disabled={!canEdit || p.manifestacion_temprana !== 'si'}
+                            placeholder={p.manifestacion_temprana === 'si' ? "Ej: hombro derecho, lumbar..." : "No aplica"}
+                            value={p.ubicacion_sintoma || ''}
+                            onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, ubicacion_sintoma: e.target.value } : x))}
                           />
-                          <p className="text-[10px] text-amber-700 font-medium">
-                            *Límite legal techo según Res. 295/03 ANEXO V: Nivel pico ponderado C no debe exceder 140 dBC.
-                          </p>
                         </div>
-                      )}
+                      </div>
 
-                      {/* CONDICIONAL: Sonido Continuo o Intermitente */}
-                      {p.caracteristicas_ruido === 'continuo_intermitente' && (
-                        <div className="bg-slate-100/80 p-4 rounded-xl border border-slate-200 space-y-3.5 animate-scale-up">
-                          <h4 className="font-extrabold text-slate-800 font-outfit uppercase tracking-wider text-xs flex items-center gap-2 border-b border-slate-200 pb-2">
-                            SONIDO CONTINUO o INTERMITENTE
+                      {/* Contenedor de Tareas Habituales */}
+                      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                        <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+                          <h4 className="font-extrabold text-slate-800 font-outfit uppercase tracking-wider text-xs">
+                            Tareas Habituales del Puesto de Trabajo
                           </h4>
-
-                          {/* Pestañas de selección de modalidad de carga */}
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                            <button
+                          {canEdit && (
+                            <AppButton
                               type="button"
-                              disabled={!canEdit}
-                              onClick={() => setPuntos(puntos.map(x => x.id === p.id ? { ...x, tipo_carga_continuo: 'laeq' } : x))}
-                              className={`p-2.5 rounded-lg text-[11px] font-bold text-center border transition-all cursor-pointer ${
-                                p.tipo_carga_continuo === 'laeq'
-                                  ? 'bg-white text-[#468DFF] border-[#468DFF] shadow-sm'
-                                  : 'bg-slate-200/60 text-slate-600 border-slate-300/40 hover:bg-slate-200'
-                              }`}
+                              variant="secondary"
+                              size="sm"
+                              className="text-[10.5px] px-2.5 py-1 h-7"
+                              onClick={() => {
+                                const newTarea = createNewTareaHabitual(p.tareas.length + 1);
+                                setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: [...x.tareas, newTarea] } : x));
+                              }}
                             >
-                              Nivel Integrado (LAeq,Te en dBA)
-                            </button>
-                            <button
-                              type="button"
-                              disabled={!canEdit}
-                              onClick={() => setPuntos(puntos.map(x => x.id === p.id ? { ...x, tipo_carga_continuo: 'suma_fracciones' } : x))}
-                              className={`p-2.5 rounded-lg text-[11px] font-bold text-center border transition-all cursor-pointer ${
-                                p.tipo_carga_continuo === 'suma_fracciones'
-                                  ? 'bg-white text-[#468DFF] border-[#468DFF] shadow-sm'
-                                  : 'bg-slate-200/60 text-slate-600 border-slate-300/40 hover:bg-slate-200'
-                              }`}
-                            >
-                              Suma de las Fracciones (Σ Ci/Ti)
-                            </button>
-                            <button
-                              type="button"
-                              disabled={!canEdit}
-                              onClick={() => setPuntos(puntos.map(x => x.id === p.id ? { ...x, tipo_carga_continuo: 'dosis' } : x))}
-                              className={`p-2.5 rounded-lg text-[11px] font-bold text-center border transition-all cursor-pointer ${
-                                p.tipo_carga_continuo === 'dosis'
-                                  ? 'bg-white text-[#468DFF] border-[#468DFF] shadow-sm'
-                                  : 'bg-slate-200/60 text-slate-600 border-slate-300/40 hover:bg-slate-200'
-                              }`}
-                            >
-                              Dosis (en porcentaje %)
-                            </button>
-                          </div>
+                              + Agregar Tarea
+                            </AppButton>
+                          )}
+                        </div>
 
-                          {/* Inputs según modalidad de carga */}
-                          <div className="bg-white p-3 rounded-xl border border-slate-200">
-                            {p.tipo_carga_continuo === 'laeq' && (
-                              <div className="flex flex-col gap-1">
-                                <AppLabel htmlFor={`laeq-${p.id}`} className="text-xs font-semibold">
-                                  Nivel de presión acústica integrado (LAeq,Te en dBA)
-                                </AppLabel>
-                                <AppInput
-                                  id={`laeq-${p.id}`}
-                                  disabled={!canEdit}
-                                  type="number"
-                                  step="0.1"
-                                  placeholder="Ej: 82.5"
-                                  value={p.nivel_laeq_te_dba}
-                                  onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, nivel_laeq_te_dba: e.target.value } : x))}
-                                />
-                              </div>
-                            )}
-
-                            {p.tipo_carga_continuo === 'suma_fracciones' && (
-                              <div className="space-y-3">
-                                {/* Selector de modalidad para Suma de Fracciones */}
-                                <div className="flex items-center justify-between gap-2 flex-wrap bg-slate-50 p-2.5 rounded-lg border border-slate-200">
-                                  <span className="text-xs font-bold text-slate-700">
-                                    Modalidad de carga para Suma de Fracciones:
-                                  </span>
+                        <div className="space-y-4">
+                          {p.tareas?.map((t, tIdx) => {
+                            const isCollapsed = !!collapsedTareas[t.id];
+                            return (
+                              <div key={t.id} className="border border-slate-150 rounded-lg p-3 bg-slate-50/50 space-y-3">
+                                <div className="flex justify-between items-center gap-4">
+                                  <div className="flex-1 flex items-center gap-2">
+                                    <span className="text-[11px] font-bold text-slate-650 bg-slate-200/80 px-3 py-1 rounded uppercase tracking-wider whitespace-nowrap">
+                                      Tarea #{tIdx + 1}
+                                    </span>
+                                    <AppInput
+                                      disabled={!canEdit}
+                                      placeholder="Ej: Embalar pedidos, Cargar pallets..."
+                                      className="h-8 text-xs bg-white flex-1 w-full"
+                                      value={t.nombre || ''}
+                                      onChange={(e) => {
+                                        const updatedTareas = p.tareas.map(x => x.id === t.id ? { ...x, nombre: e.target.value } : x);
+                                        setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: updatedTareas } : x));
+                                      }}
+                                    />
+                                  </div>
                                   <div className="flex items-center gap-1.5">
                                     <button
                                       type="button"
-                                      disabled={!canEdit}
-                                      onClick={() => setPuntos(puntos.map(x => x.id === p.id ? { ...x, modo_suma_fracciones: 'directo' } : x))}
-                                      className={`px-3 py-1 rounded-md text-[11px] font-bold border transition-all cursor-pointer ${
-                                        (p.modo_suma_fracciones || 'directo') === 'directo'
-                                          ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-sm'
-                                          : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
-                                      }`}
+                                      onClick={() => {
+                                        setCollapsedTareas(prev => ({
+                                          ...prev,
+                                          [t.id]: !prev[t.id]
+                                        }));
+                                      }}
+                                      className="p-1 bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 rounded transition-colors cursor-pointer"
+                                      title={isCollapsed ? "Expandir tarea" : "Contraer tarea"}
                                     >
-                                      Resultado Directo
+                                      {isCollapsed ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}
                                     </button>
-                                    <button
-                                      type="button"
-                                      disabled={!canEdit}
-                                      onClick={() => setPuntos(puntos.map(x => x.id === p.id ? { ...x, modo_suma_fracciones: 'desglose' } : x))}
-                                      className={`px-3 py-1 rounded-md text-[11px] font-bold border transition-all cursor-pointer ${
-                                        p.modo_suma_fracciones === 'desglose'
-                                          ? 'bg-[#468DFF] text-white border-[#468DFF] shadow-sm'
-                                          : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
-                                      }`}
-                                    >
-                                      Desglose de Fracciones (C1/T1 + C2/T2 + ...)
-                                    </button>
+
+                                    {canEdit && (
+                                      <>
+                                        <button
+                                          type="button"
+                                          title="Duplicar tarea"
+                                          onClick={() => {
+                                            const dupTarea = {
+                                              ...t,
+                                              id: 't-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+                                              orden: p.tareas.length + 1,
+                                              nombre: t.nombre + ' (Copia)'
+                                            };
+                                            setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: [...x.tareas, dupTarea] } : x));
+                                          }}
+                                          className="p-1 bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 rounded transition-colors cursor-pointer"
+                                        >
+                                          <Copy className="h-3 w-3" />
+                                        </button>
+                                        {p.tareas.length > 1 && (
+                                          <button
+                                            type="button"
+                                            title="Eliminar tarea"
+                                            onClick={() => {
+                                              const filteredTareas = p.tareas.filter(x => x.id !== t.id).map((x, idx) => ({ ...x, orden: idx + 1 }));
+                                              setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: filteredTareas } : x));
+                                            }}
+                                            className="p-1 bg-white hover:bg-red-50 border border-red-200 text-red-500 rounded transition-colors cursor-pointer"
+                                          >
+                                            <Trash2 className="h-3 w-3" />
+                                          </button>
+                                        )}
+                                      </>
+                                    )}
                                   </div>
                                 </div>
 
-                                {/* MODALIDAD 1: RESULTADO DIRECTO */}
-                                {(p.modo_suma_fracciones || 'directo') === 'directo' && (
-                                  <div className="flex flex-col gap-1">
-                                    <AppLabel htmlFor={`suma-${p.id}`} className="text-xs font-semibold">
-                                      Resultado final de la suma de fracciones (Σ C1/T1 + C2/T2 + ...)
-                                    </AppLabel>
-                                    <AppInput
-                                      id={`suma-${p.id}`}
-                                      disabled={!canEdit}
-                                      type="number"
-                                      step="0.01"
-                                      placeholder="Ej: 0.85"
-                                      value={p.resultado_suma_fracciones}
-                                      onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, resultado_suma_fracciones: e.target.value } : x))}
-                                    />
-                                    <span className="text-[10px] text-slate-400 font-medium mt-0.5">
-                                      *Límite legal según Anexo V Res. 295/03: La suma acumulada no debe exceder de 1.00.
-                                    </span>
-                                  </div>
-                                )}
-
-                                {/* MODALIDAD 2: DESGLOSE DE FRACCIONES */}
-                                {p.modo_suma_fracciones === 'desglose' && (
-                                  <div className="space-y-2.5 bg-slate-50/80 p-3 rounded-xl border border-slate-200">
-                                    <div className="flex items-center justify-between flex-wrap gap-2 border-b border-slate-200 pb-2">
-                                      <div className="flex items-center gap-2 flex-wrap">
-                                        <span className="text-xs font-bold text-slate-800 uppercase tracking-wider text-[11px]">
-                                          Desglose de Fracciones (Res. 295/03 ANEXO V)
-                                        </span>
-                                        <button
-                                          type="button"
-                                          onClick={() => setIsTabla1RuidoOpen(true)}
-                                          className="text-[#468DFF] hover:text-[#0511F2] transition-colors p-1 rounded-full hover:bg-blue-50 flex items-center gap-1 font-bold text-xs cursor-pointer"
-                                          title="Ver Tabla 1 — Valores límite para ruido"
-                                        >
-                                          <HelpCircle className="h-4 w-4" />
-                                          <span className="underline text-[11px]">Ver Tabla 1</span>
-                                        </button>
-                                      </div>
-                                      {canEdit && (
-                                        <button
-                                          type="button"
-                                          onClick={() => handleAddFraccion(p.id)}
-                                          className="text-[11px] text-[#468DFF] hover:underline font-bold flex items-center gap-1 cursor-pointer"
-                                        >
-                                          <Plus className="h-3.5 w-3.5" /> Agregar Fracción (Cn/Tn)
-                                        </button>
-                                      )}
-                                    </div>
-
-                                    {/* Lista de filas de fracciones */}
-                                    <div className="space-y-2">
-                                      {((p.fracciones && p.fracciones.length > 0) ? p.fracciones : [{ id: 'f-' + p.id + '-1', c_horas: '', t_horas: '' }]).map((f, fIdx) => {
-                                        const cVal = parseFloat(f.c_horas);
-                                        const tVal = parseFloat(f.t_horas);
-                                        const fracRes = (!isNaN(cVal) && !isNaN(tVal) && tVal > 0) ? (cVal / tVal).toFixed(3) : '-';
-
+                                {!isCollapsed && (
+                                  <div className="overflow-x-auto bg-white rounded-lg border border-slate-150">
+                                  <table className="w-full text-xs text-left border-collapse">
+                                    <thead>
+                                      <tr className="border-b border-slate-200 bg-slate-50 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                                        <th className="p-2">Identificación de Factores de Riesgo</th>
+                                        <th className="p-2 text-center w-24">¿Presente?</th>
+                                        <th className="p-2 text-center w-32">Tiempo Exp.</th>
+                                        <th className="p-2 text-center w-36">Nivel de Riesgo</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                      {[
+                                        { key: 'levantamiento', label: 'A. Levantamiento y descenso' },
+                                        { key: 'empuje_arrastre', label: 'B. Empuje / Arrastre' },
+                                        { key: 'transporte', label: 'C. Transporte' },
+                                        { key: 'bipedestacion', label: 'D. Bipedestación' },
+                                        { key: 'mov_repetitivos', label: 'E. Movimientos Repetitivos de MMSS' },
+                                        { key: 'posturas_forzadas', label: 'F. Posturas Forzadas' },
+                                        { key: 'vibraciones_mano_brazo', label: 'G. Vibraciones Mano - Brazo (5 a 1500 Hz)' },
+                                        { key: 'vibraciones_cuerpo_entero', label: 'G2. Vibraciones Cuerpo Entero (1 a 80 Hz)' },
+                                        { key: 'confort_termico', label: 'H. Confort Térmico' },
+                                        { key: 'estres_contacto', label: 'I. Estrés de Contacto' }
+                                      ].map((f) => {
+                                        const idKey = `f_${f.key}_identificado`;
+                                        const rskKey = `f_${f.key}_riesgo`;
+                                        const isPresent = t[idKey] === 'si';
+                                        const factorCollapsedKey = `${t.id}_${f.key}`;
+                                        const isFactorCollapsed = !!collapsedFactores[factorCollapsedKey];
                                         return (
-                                          <div key={f.id || `f-${fIdx}`} className="grid grid-cols-12 gap-2 items-center bg-white p-2.5 rounded-lg border border-slate-200 shadow-sm">
-                                            <div className="col-span-12 sm:col-span-1 text-center font-extrabold text-xs text-slate-500">
-                                              #{fIdx + 1}
-                                            </div>
-                                            <div className="col-span-12 sm:col-span-4 flex flex-col gap-0.5">
-                                              <span className="text-[10px] text-slate-500 font-semibold">Ci (Exposición en hs)</span>
-                                              <AppInput
-                                                type="number"
-                                                step="0.1"
-                                                min="0"
-                                                placeholder="Ej: 4"
-                                                disabled={!canEdit}
-                                                className="h-8 text-xs"
-                                                value={f.c_horas || ''}
-                                                onChange={(e) => handleFraccionChange(p.id, f.id || ('f-' + p.id + '-1'), 'c_horas', e.target.value)}
-                                              />
-                                            </div>
-                                            <div className="col-span-12 sm:col-span-4 flex flex-col gap-0.5">
-                                              <span className="text-[10px] text-slate-500 font-semibold">Ti (Máximo permitido en hs)</span>
-                                              <AppInput
-                                                type="number"
-                                                step="0.1"
-                                                min="0.1"
-                                                placeholder="Ej: 8"
-                                                disabled={!canEdit}
-                                                className="h-8 text-xs"
-                                                value={f.t_horas || ''}
-                                                onChange={(e) => handleFraccionChange(p.id, f.id || ('f-' + p.id + '-1'), 't_horas', e.target.value)}
-                                              />
-                                            </div>
-                                            <div className="col-span-10 sm:col-span-2 text-center bg-blue-50/60 py-1 px-2 rounded-md font-bold text-xs text-[#468DFF] border border-blue-100">
-                                              C/T = {fracRes}
-                                            </div>
-                                            <div className="col-span-2 sm:col-span-1 flex justify-center">
-                                              {canEdit && (p.fracciones && p.fracciones.length > 1) && (
-                                                <button
-                                                  type="button"
-                                                  onClick={() => handleRemoveFraccion(p.id, f.id)}
-                                                  className="text-slate-400 hover:text-red-500 p-1 cursor-pointer transition-colors"
-                                                  title="Eliminar fracción"
-                                                >
-                                                  <Trash2 className="h-4 w-4" />
-                                                </button>
-                                              )}
-                                            </div>
-                                          </div>
+                                          <React.Fragment key={f.key}>
+                                            <tr className="hover:bg-slate-50/50">
+                                              <td className="p-2 font-medium text-slate-750">
+                                                <div className="flex items-center gap-1.5">
+                                                  <span>{f.label}</span>
+                                                  {isPresent && (
+                                                    <span className="text-[9px] font-bold bg-[#468DFF]/10 text-[#468DFF] border border-[#468DFF]/25 px-1.5 py-0.2 rounded-full uppercase">
+                                                      Planilla 2
+                                                    </span>
+                                                  )}
+                                                  {isPresent && (
+                                                    <button
+                                                      type="button"
+                                                      onClick={() => {
+                                                        setCollapsedFactores(prev => ({
+                                                          ...prev,
+                                                          [factorCollapsedKey]: !prev[factorCollapsedKey]
+                                                        }));
+                                                      }}
+                                                      className="p-1 hover:bg-slate-200 text-slate-500 rounded transition-colors cursor-pointer inline-flex items-center"
+                                                      title={isFactorCollapsed ? "Expandir evaluación" : "Colapsar evaluación"}
+                                                    >
+                                                      {isFactorCollapsed ? (
+                                                        <ChevronDown className="h-3 w-3" />
+                                                      ) : (
+                                                        <ChevronUp className="h-3 w-3" />
+                                                      )}
+                                                    </button>
+                                                  )}
+                                                </div>
+                                              </td>
+                                              <td className="p-2 text-center">
+                                                <div className="inline-flex rounded-md shadow-sm border border-slate-300 overflow-hidden bg-white">
+                                                  <button
+                                                    type="button"
+                                                    disabled={!canEdit}
+                                                    onClick={() => {
+                                                      const updatedTareas = p.tareas.map(x => {
+                                                        if (x.id === t.id) {
+                                                          return { 
+                                                            ...x, 
+                                                            [idKey]: 'si', 
+                                                            [rskKey]: x[rskKey] || '1' 
+                                                          };
+                                                        }
+                                                        return x;
+                                                      });
+                                                      setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: updatedTareas } : x));
+                                                    }}
+                                                    className={`px-3 py-1 text-xs font-bold transition-all cursor-pointer ${
+                                                      isPresent
+                                                        ? 'bg-[#468DFF] text-white shadow-inner'
+                                                        : 'text-slate-650 hover:bg-slate-50 hover:text-slate-900 bg-white'
+                                                    }`}
+                                                  >
+                                                    Sí
+                                                  </button>
+                                                  <button
+                                                    type="button"
+                                                    disabled={!canEdit}
+                                                    onClick={() => {
+                                                      const updatedTareas = p.tareas.map(x => {
+                                                        if (x.id === t.id) {
+                                                          return { 
+                                                            ...x, 
+                                                            [idKey]: 'no', 
+                                                            [rskKey]: '' 
+                                                          };
+                                                        }
+                                                        return x;
+                                                      });
+                                                      setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: updatedTareas } : x));
+                                                    }}
+                                                    className={`px-3 py-1 text-xs font-bold border-l border-slate-200 transition-all cursor-pointer ${
+                                                      !isPresent
+                                                        ? 'bg-slate-500 text-white shadow-inner'
+                                                        : 'text-slate-650 hover:bg-slate-50 hover:text-slate-900 bg-white'
+                                                    }`}
+                                                  >
+                                                    No
+                                                  </button>
+                                                </div>
+                                              </td>
+                                              <td className="p-2 text-center">
+                                                <AppInput
+                                                  disabled={!canEdit || !isPresent}
+                                                  placeholder="Ej: 60 min, 3 hs..."
+                                                  className="h-8 text-xs bg-white text-center"
+                                                  value={t[`f_${f.key}_tiempo`] || ''}
+                                                  onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    const updatedTareas = p.tareas.map(x => x.id === t.id ? { ...x, [`f_${f.key}_tiempo`]: val } : x);
+                                                    setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: updatedTareas } : x));
+                                                  }}
+                                                />
+                                              </td>
+                                              <td className="p-2 text-center whitespace-nowrap">
+                                                {(() => {
+                                                  if (!isPresent) {
+                                                    return (
+                                                      <span className="inline-block px-2.5 py-1 rounded text-xs font-bold bg-slate-100 text-slate-500 border border-slate-200 uppercase tracking-wide">
+                                                        No Evaluado
+                                                      </span>
+                                                    );
+                                                  }
+                                                  
+                                                  const rskVal = t[rskKey] || '1';
+                                                  if (rskVal === '3') {
+                                                    return (
+                                                      <span className="inline-block px-2.5 py-1 rounded text-xs font-bold bg-red-50 text-red-600 border border-red-200 uppercase tracking-wide">
+                                                        Nivel 3 - Crítico
+                                                      </span>
+                                                    );
+                                                  }
+                                                  if (rskVal === '2') {
+                                                    return (
+                                                      <span className="inline-block px-2.5 py-1 rounded text-xs font-bold bg-amber-50 text-amber-600 border border-amber-200 uppercase tracking-wide">
+                                                        Nivel 2 - Moderado
+                                                      </span>
+                                                    );
+                                                  }
+                                                  return (
+                                                    <span className="inline-block px-2.5 py-1 rounded text-xs font-bold bg-[#00B050]/10 text-[#00B050] border border-[#00B050]/20 uppercase tracking-wide">
+                                                      Nivel 1 - Tolerable
+                                                    </span>
+                                                  );
+                                                })()}
+                                              </td>
+                                            </tr>
+                                            {isPresent && !isFactorCollapsed && (
+                                              <tr className="bg-[#468DFF]/5">
+                                                <td colSpan={4} className="p-3 border-b border-slate-200">
+                                                  <div className="space-y-2 text-xs">
+                                                    <div className="flex items-center justify-between border-b border-slate-200/60 pb-1.5">
+                                                      <span className="font-extrabold text-slate-700 uppercase tracking-wider text-[10px]">
+                                                        Evaluación Inicial (Anexo I - Planilla 2) — {f.label}
+                                                      </span>
+                                                      <span className="text-[10px] text-slate-500 italic">
+                                                        Responda Sí/No para evaluar el nivel de riesgo
+                                                      </span>
+                                                    </div>
+
+                                                    {/* Renderizado condicional para estructuración de dos pasos */}
+                                                    {CUESTIONARIOS_PLANILLA2[f.key]?.isTwoStep ? (
+                                                      <div className="space-y-4">
+                                                        {/* Paso 1 */}
+                                                        <div className="space-y-2 bg-white p-2.5 rounded-lg border border-slate-150 shadow-inner">
+                                                          <h5 className="font-bold text-slate-800 border-b border-slate-100 pb-1 uppercase text-[9px] tracking-wider text-slate-500">
+                                                            Paso 1: Identificar si la tarea del puesto de trabajo implica:
+                                                          </h5>
+                                                          {CUESTIONARIOS_PLANILLA2[f.key].paso1.map((q) => {
+                                                            const currentRespuestas = t[`f_${f.key}_respuestas`] || {};
+                                                            const ansValue = currentRespuestas[q.id] || 'no';
+                                                            return (
+                                                              <div key={q.id} className="flex justify-between items-center gap-4 py-1 border-b border-slate-100 last:border-0">
+                                                                <span className="text-slate-650 font-medium text-left">{q.text}</span>
+                                                                <div className="inline-flex rounded-md shadow-sm border border-slate-300 overflow-hidden bg-white shrink-0">
+                                                                   <button
+                                                                     type="button"
+                                                                     disabled={!canEdit}
+                                                                     onClick={() => {
+                                                                       const newRespuestas = { ...currentRespuestas, [q.id]: 'si' };
+                                                                       let autoSuggestedRisk = '1';
+                                                                       const triggerNivel3 = f.key === 'transporte' ? (newRespuestas['p1_5'] === 'si') : f.key === 'mov_repetitivos' ? (newRespuestas['p2_3'] === 'si') : (f.key === 'bipedestacion' || f.key === 'posturas_forzadas' || f.key === 'vibraciones_mano_brazo' || f.key === 'vibraciones_cuerpo_entero' || f.key === 'confort_termico') ? false : (newRespuestas['p1_3'] === 'si');
+                                                                       if (triggerNivel3) {
+                                                                         autoSuggestedRisk = '3';
+                                                                       } else {
+                                                                         const hasAnyP1Si = Object.keys(newRespuestas).some(k => k.startsWith('p1_') && newRespuestas[k] === 'si');
+                                                                         if (hasAnyP1Si) {
+                                                                           const anyP2Si = Object.keys(newRespuestas).some(k => k.startsWith('p2_') && newRespuestas[k] === 'si');
+                                                                           autoSuggestedRisk = anyP2Si ? '2' : '1';
+                                                                         }
+                                                                       }
+                                                                       const updatedTareas = p.tareas.map(x => {
+                                                                         if (x.id === t.id) {
+                                                                           return { 
+                                                                             ...x, 
+                                                                             [`f_${f.key}_respuestas`]: newRespuestas,
+                                                                             [rskKey]: autoSuggestedRisk
+                                                                           };
+                                                                         }
+                                                                         return x;
+                                                                       });
+                                                                       setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: updatedTareas } : x));
+                                                                     }}
+                                                                     className={`px-3 py-1 text-xs font-bold transition-all cursor-pointer ${
+                                                                       ansValue === 'si'
+                                                                         ? 'bg-[#468DFF] text-white shadow-inner'
+                                                                         : 'text-slate-650 hover:bg-slate-50 hover:text-slate-900 bg-white'
+                                                                     }`}
+                                                                   >
+                                                                     Sí
+                                                                   </button>
+                                                                  <button
+                                                                    type="button"
+                                                                    disabled={!canEdit}
+                                                                    onClick={() => {
+                                                                      const newRespuestas = { ...currentRespuestas, [q.id]: 'no' };
+                                                                      let autoSuggestedRisk = '1';
+                                                                      const triggerNivel3 = f.key === 'transporte' ? (newRespuestas['p1_5'] === 'si') : f.key === 'mov_repetitivos' ? (newRespuestas['p2_3'] === 'si') : (f.key === 'bipedestacion' || f.key === 'posturas_forzadas' || f.key === 'vibraciones_mano_brazo' || f.key === 'vibraciones_cuerpo_entero' || f.key === 'confort_termico') ? false : (newRespuestas['p1_3'] === 'si');
+                                                                      if (triggerNivel3) {
+                                                                        autoSuggestedRisk = '3';
+                                                                      } else {
+                                                                        const hasAnyP1Si = Object.keys(newRespuestas).some(k => k.startsWith('p1_') && newRespuestas[k] === 'si');
+                                                                        if (hasAnyP1Si) {
+                                                                          const anyP2Si = Object.keys(newRespuestas).some(k => k.startsWith('p2_') && newRespuestas[k] === 'si');
+                                                                          autoSuggestedRisk = anyP2Si ? '2' : '1';
+                                                                        }
+                                                                      }
+                                                                      const updatedTareas = p.tareas.map(x => {
+                                                                        if (x.id === t.id) {
+                                                                          return { 
+                                                                            ...x, 
+                                                                            [`f_${f.key}_respuestas`]: newRespuestas,
+                                                                            [rskKey]: autoSuggestedRisk
+                                                                          };
+                                                                        }
+                                                                        return x;
+                                                                      });
+                                                                      setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: updatedTareas } : x));
+                                                                    }}
+                                                                    className={`px-3 py-1 text-xs font-bold border-l border-slate-200 transition-all cursor-pointer ${
+                                                                      ansValue === 'no'
+                                                                        ? 'bg-slate-500 text-white shadow-inner'
+                                                                        : 'text-slate-650 hover:bg-slate-50 hover:text-slate-900 bg-white'
+                                                                    }`}
+                                                                  >
+                                                                    No
+                                                                  </button>
+                                                                </div>
+                                                              </div>
+                                                            );
+                                                          })}
+                                                        </div>
+
+                                                        {/* Paso 2 (Solo visible si alguna de paso 1 es 'si') */}
+                                                         {(() => {
+                                                          const currentRespuestas = t[`f_${f.key}_respuestas`] || {};
+                                                          const showPaso2 = Object.keys(currentRespuestas).some(k => k.startsWith('p1_') && currentRespuestas[k] === 'si');
+                                                          if (!showPaso2) return null;
+
+                                                          return (
+                                                            <div className="space-y-2 bg-white p-2.5 rounded-lg border border-slate-150 shadow-inner">
+                                                              <div className="flex justify-between items-center border-b border-slate-100 pb-1 mb-2">
+                                                                <h5 className="font-bold text-slate-800 uppercase text-[9px] tracking-wider text-slate-500">
+                                                                  Paso 2: Determinar el nivel de riesgo
+                                                                </h5>
+                                                                {f.key === 'mov_repetitivos' && (
+                                                                  <button
+                                                                    type="button"
+                                                                    onClick={() => setMostrarBorg(!mostrarBorg)}
+                                                                    className="text-[10px] font-bold text-[#468DFF] hover:text-[#0511F2] transition-colors uppercase border border-[#468DFF]/25 px-1.5 py-0.5 rounded bg-blue-50/50"
+                                                                  >
+                                                                    {mostrarBorg ? '✕ Ocultar Escala Borg' : '📋 Ver Escala Borg'}
+                                                                  </button>
+                                                                )}
+                                                                {f.key === 'confort_termico' && (
+                                                                  <button
+                                                                    type="button"
+                                                                    onClick={() => setMostrarFanger(!mostrarFanger)}
+                                                                    className="text-[10px] font-bold text-[#468DFF] hover:text-[#0511F2] transition-colors uppercase border border-[#468DFF]/25 px-1.5 py-0.5 rounded bg-blue-50/50"
+                                                                  >
+                                                                    {mostrarFanger ? '✕ Ocultar Curva Fanger' : '📈 Ver Curva Fanger'}
+                                                                  </button>
+                                                                )}
+                                                              </div>
+                                                              {f.key === 'mov_repetitivos' && mostrarBorg && (
+                                                                <div className="bg-slate-50 p-2 rounded border border-slate-200 mb-3 transition-all animate-fadeIn">
+                                                                  <p className="text-[10px] text-slate-500 font-semibold mb-1.5 uppercase">Referencia: Criterio del esfuerzo percibido (Escala de Borg)</p>
+                                                                  <img 
+                                                                    src="/assets/escala-borg.png" 
+                                                                    alt="Escala de Borg" 
+                                                                    className="max-h-[160px] mx-auto rounded border border-slate-200 shadow-sm object-contain"
+                                                                  />
+                                                                </div>
+                                                              )}
+                                                              {f.key === 'confort_termico' && mostrarFanger && (
+                                                                <div className="bg-slate-50 p-2 rounded border border-slate-200 mb-3 transition-all animate-fadeIn">
+                                                                  <p className="text-[10px] text-slate-500 font-semibold mb-1.5 uppercase">Referencia: Curva de Confort (P.O. Fanger)</p>
+                                                                  <img 
+                                                                    src="/assets/curva-fanger.png" 
+                                                                    alt="Curva de Confort Fanger" 
+                                                                    className="max-h-[220px] mx-auto rounded border border-slate-200 shadow-sm object-contain"
+                                                                  />
+                                                                </div>
+                                                              )}
+                                                              {CUESTIONARIOS_PLANILLA2[f.key].paso2.map((q) => {
+                                                                const ansValue = currentRespuestas[q.id] || 'no';
+                                                                return (
+                                                                  <div key={q.id} className="flex justify-between items-center gap-4 py-1 border-b border-slate-100 last:border-0">
+                                                                    <span className="text-slate-650 font-medium text-left">{q.text}</span>
+                                                                    <div className="inline-flex rounded-md shadow-sm border border-slate-300 overflow-hidden bg-white shrink-0">
+                                                                      <button
+                                                                        type="button"
+                                                                        disabled={!canEdit}
+                                                                        onClick={() => {
+                                                                          const newRespuestas = { ...currentRespuestas, [q.id]: 'si' };
+                                                                          let autoSuggestedRisk = '1';
+                                                                          const triggerNivel3 = f.key === 'transporte' ? (newRespuestas['p1_5'] === 'si') : f.key === 'mov_repetitivos' ? (newRespuestas['p2_3'] === 'si') : (f.key === 'bipedestacion' || f.key === 'posturas_forzadas' || f.key === 'vibraciones_mano_brazo' || f.key === 'vibraciones_cuerpo_entero' || f.key === 'confort_termico') ? false : (newRespuestas['p1_3'] === 'si');
+                                                                          if (triggerNivel3) {
+                                                                            autoSuggestedRisk = '3';
+                                                                          } else {
+                                                                            const hasAnyP1Si = Object.keys(newRespuestas).some(k => k.startsWith('p1_') && newRespuestas[k] === 'si');
+                                                                            if (hasAnyP1Si) {
+                                                                              const anyP2Si = Object.keys(newRespuestas).some(k => k.startsWith('p2_') && newRespuestas[k] === 'si');
+                                                                              autoSuggestedRisk = anyP2Si ? '2' : '1';
+                                                                            }
+                                                                          }
+                                                                          const updatedTareas = p.tareas.map(x => {
+                                                                            if (x.id === t.id) {
+                                                                              return { 
+                                                                                ...x, 
+                                                                                [`f_${f.key}_respuestas`]: newRespuestas,
+                                                                                [rskKey]: autoSuggestedRisk
+                                                                              };
+                                                                            }
+                                                                            return x;
+                                                                          });
+                                                                          setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: updatedTareas } : x));
+                                                                        }}
+                                                                        className={`px-3 py-1 text-xs font-bold transition-all cursor-pointer ${
+                                                                          ansValue === 'si'
+                                                                            ? 'bg-[#468DFF] text-white shadow-inner'
+                                                                            : 'text-slate-650 hover:bg-slate-50 hover:text-slate-900 bg-white'
+                                                                        }`}
+                                                                      >
+                                                                        Sí
+                                                                      </button>
+                                                                      <button
+                                                                        type="button"
+                                                                        disabled={!canEdit}
+                                                                        onClick={() => {
+                                                                          const newRespuestas = { ...currentRespuestas, [q.id]: 'no' };
+                                                                          let autoSuggestedRisk = '1';
+                                                                          const triggerNivel3 = f.key === 'transporte' ? (newRespuestas['p1_5'] === 'si') : f.key === 'mov_repetitivos' ? (newRespuestas['p2_3'] === 'si') : (f.key === 'bipedestacion' || f.key === 'posturas_forzadas' || f.key === 'vibraciones_mano_brazo' || f.key === 'vibraciones_cuerpo_entero' || f.key === 'confort_termico') ? false : (newRespuestas['p1_3'] === 'si');
+                                                                          if (triggerNivel3) {
+                                                                            autoSuggestedRisk = '3';
+                                                                          } else {
+                                                                            const hasAnyP1Si = Object.keys(newRespuestas).some(k => k.startsWith('p1_') && newRespuestas[k] === 'si');
+                                                                            if (hasAnyP1Si) {
+                                                                              const anyP2Si = Object.keys(newRespuestas).some(k => k.startsWith('p2_') && newRespuestas[k] === 'si');
+                                                                              autoSuggestedRisk = anyP2Si ? '2' : '1';
+                                                                            }
+                                                                          }
+                                                                          const updatedTareas = p.tareas.map(x => {
+                                                                            if (x.id === t.id) {
+                                                                              return { 
+                                                                                ...x, 
+                                                                                [`f_${f.key}_respuestas`]: newRespuestas,
+                                                                                [rskKey]: autoSuggestedRisk
+                                                                              };
+                                                                            }
+                                                                            return x;
+                                                                          });
+                                                                          setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: updatedTareas } : x));
+                                                                        }}
+                                                                        className={`px-3 py-1 text-xs font-bold border-l border-slate-200 transition-all cursor-pointer ${
+                                                                          ansValue === 'no'
+                                                                            ? 'bg-slate-500 text-white shadow-inner'
+                                                                            : 'text-slate-650 hover:bg-slate-50 hover:text-slate-900 bg-white'
+                                                                        }`}
+                                                                      >
+                                                                        No
+                                                                      </button>
+                                                                    </div>
+                                                                  </div>
+                                                                );
+                                                              })}
+                                                            </div>
+                                                          );
+                                                        })()}
+
+                                                      </div>
+                                                    ) : (
+                                                      // Cuestionario plano estándar para otros factores
+                                                      <>
+                                                        <div className="space-y-2 bg-white p-2.5 rounded-lg border border-slate-150 shadow-inner">
+                                                          {(CUESTIONARIOS_PLANILLA2[f.key] || []).map((q) => {
+                                                            const currentRespuestas = t[`f_${f.key}_respuestas`] || {};
+                                                            const ansValue = currentRespuestas[q.id] || 'no';
+                                                            return (
+                                                              <div key={q.id} className="flex justify-between items-center gap-4 py-1 border-b border-slate-100 last:border-0">
+                                                                <span className="text-slate-650 font-medium text-left">{q.text}</span>
+                                                                <div className="inline-flex rounded-md shadow-sm border border-slate-300 overflow-hidden bg-white shrink-0">
+                                                                  <button
+                                                                    type="button"
+                                                                    disabled={!canEdit}
+                                                                    onClick={() => {
+                                                                      const newRespuestas = { ...currentRespuestas, [q.id]: 'si' };
+                                                                      const hasAnySi = Object.values(newRespuestas).some(ans => ans === 'si');
+                                                                      const autoSuggestedRisk = hasAnySi ? '2' : '1';
+                                                                      const updatedTareas = p.tareas.map(x => {
+                                                                        if (x.id === t.id) {
+                                                                          return { 
+                                                                            ...x, 
+                                                                            [`f_${f.key}_respuestas`]: newRespuestas,
+                                                                            [rskKey]: autoSuggestedRisk
+                                                                          };
+                                                                        }
+                                                                        return x;
+                                                                      });
+                                                                      setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: updatedTareas } : x));
+                                                                    }}
+                                                                    className={`px-3 py-1 text-xs font-bold transition-all cursor-pointer ${
+                                                                      ansValue === 'si'
+                                                                        ? 'bg-[#468DFF] text-white shadow-inner'
+                                                                        : 'text-slate-650 hover:bg-slate-50 hover:text-slate-900 bg-white'
+                                                                    }`}
+                                                                  >
+                                                                    Sí
+                                                                  </button>
+                                                                  <button
+                                                                    type="button"
+                                                                    disabled={!canEdit}
+                                                                    onClick={() => {
+                                                                      const newRespuestas = { ...currentRespuestas, [q.id]: 'no' };
+                                                                      const hasAnySi = Object.values(newRespuestas).some(ans => ans === 'si');
+                                                                      const autoSuggestedRisk = hasAnySi ? '2' : '1';
+                                                                      const updatedTareas = p.tareas.map(x => {
+                                                                        if (x.id === t.id) {
+                                                                          return { 
+                                                                            ...x, 
+                                                                            [`f_${f.key}_respuestas`]: newRespuestas,
+                                                                            [rskKey]: autoSuggestedRisk
+                                                                          };
+                                                                        }
+                                                                        return x;
+                                                                      });
+                                                                      setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: updatedTareas } : x));
+                                                                    }}
+                                                                    className={`px-3 py-1 text-xs font-bold border-l border-slate-200 transition-all cursor-pointer ${
+                                                                      ansValue === 'no'
+                                                                        ? 'bg-slate-500 text-white shadow-inner'
+                                                                        : 'text-slate-650 hover:bg-slate-50 hover:text-slate-900 bg-white'
+                                                                    }`}
+                                                                  >
+                                                                    No
+                                                                  </button>
+                                                                </div>
+                                                              </div>
+                                                            );
+                                                          })}
+                                                        </div>
+                                                      </>
+                                                    )}
+                                                  </div>
+                                                </td>
+                                              </tr>
+                                            )}
+                                          </React.Fragment>
                                         );
                                       })}
-                                    </div>
-
-                                    {/* Resumen Total Calculado de la Suma de Fracciones */}
-                                    <div className="flex items-center justify-between bg-white p-2.5 rounded-lg border border-slate-200 text-xs mt-2">
-                                      <span className="font-semibold text-slate-600">Suma Total Acumulada Calculada:</span>
-                                      <span className={`font-extrabold text-sm ${parseFloat(p.resultado_suma_fracciones) > 1.0 ? 'text-rose-600' : 'text-emerald-600'}`}>
-                                        Σ (Ci / Ti) = {p.resultado_suma_fracciones || '0.00'}
-                                      </span>
-                                    </div>
-
-                                    <p className="text-[10px] text-slate-400 font-medium">
-                                      *Donde Ci = Tiempo total de exposición a un nivel determinado (hs) y Ti = Tiempo total permitido a ese nivel según Res. 295/03 ANEXO V (hs). Límite legal = 1.00.
-                                    </p>
+                                    </tbody>
+                                  </table>
                                   </div>
                                 )}
                               </div>
-                            )}
-
-                            {p.tipo_carga_continuo === 'dosis' && (
-                              <div className="flex flex-col gap-1">
-                                <AppLabel htmlFor={`dosis-${p.id}`} className="text-xs font-semibold">
-                                  Dosis de ruido diaria acumulada (Dosis %)
-                                </AppLabel>
-                                <AppInput
-                                  id={`dosis-${p.id}`}
-                                  disabled={!canEdit}
-                                  type="number"
-                                  step="0.1"
-                                  placeholder="Ej: 75.0"
-                                  value={p.dosis_porcentaje}
-                                  onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, dosis_porcentaje: e.target.value } : x))}
-                                />
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[10px] text-slate-500 font-medium mt-0.5">
-                                  <span>*Límite legal: Dosis máxima diaria permitida = 100 %.</span>
-                                  <span className="text-amber-700 font-semibold">NOTA: Completar este campo sólo cuando la medición se realice con un dosímetro</span>
-                                </div>
-                              </div>
-                            )}
-                          </div>
+                            );
+                          })}
                         </div>
-                      )}
+                      </div>
 
-                      {/* RESULTADOS Y EVALUACIÓN TÉCNICA */}
-                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs space-y-2">
-                        <h4 className="font-extrabold text-slate-700 font-outfit uppercase tracking-wider text-[10px]">Cálculos e Indicadores Técnicos</h4>
-                        
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 text-slate-500">
-                          <div>Característica de ruido: <span className="font-bold text-slate-800 capitalize">{p.caracteristicas_ruido === 'impulso_impacto' ? 'Impulso / Impacto' : 'Continuo / Intermitente'}</span></div>
-                          <div>Parámetro medido: <span className="font-bold text-slate-800">{cal.valorMedidoText}</span></div>
-                          <div>Límite normativo: <span className="font-bold text-slate-800">{cal.limiteLegalText}</span></div>
+                      {/* Resultados del Puesto */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                        <div className="flex flex-col gap-1">
+                          <AppLabel htmlFor={`riesgo-${p.id}`} required={estado === 'completado'}>
+                            Nivel de Riesgo Global
+                          </AppLabel>
+                          <AppSelect
+                            id={`riesgo-${p.id}`}
+                            disabled={!canEdit}
+                            value={p.nivel_de_riesgo || 'Bajo'}
+                            onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, nivel_de_riesgo: e.target.value } : x))}
+                          >
+                            <option value="Bajo">Nivel 1 - Riesgo Tolerable (Bajo)</option>
+                            <option value="Medio">Nivel 2 - Riesgo Moderado (Medio)</option>
+                            <option value="Alto">Nivel 3 - Riesgo Crítico (Alto)</option>
+                          </AppSelect>
                         </div>
 
-                        <div className="border-t border-slate-200 pt-1.5 flex justify-between items-center text-slate-600">
-                          <div>Verificación de cumplimiento (Decreto Nº 351/79 - ANEXO V - CAPITULO 13 (ACUSTICA)):</div>
-                          <span className={`font-extrabold text-xs px-2.5 py-0.5 rounded-full border ${
-                            cal.resultado_punto === 'Cumple'
-                              ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
-                              : cal.resultado_punto === 'No cumple'
-                              ? 'bg-rose-50 text-rose-600 border-rose-200'
-                              : 'bg-slate-100 text-slate-500 border-slate-200'
-                          }`}>
-                            {cal.resultado_punto}
-                          </span>
+                        <div className="flex flex-col gap-1">
+                          <AppLabel htmlFor={`resultado-${p.id}`} required={estado === 'completado'}>
+                            Verificación de Cumplimiento (Resultado)
+                          </AppLabel>
+                          <AppSelect
+                            id={`resultado-${p.id}`}
+                            disabled={!canEdit}
+                            value={p.resultado_punto || 'Cumple'}
+                            onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, resultado_punto: e.target.value } : x))}
+                          >
+                            <option value="Cumple">Cumple</option>
+                            <option value="No cumple">No cumple</option>
+                            <option value="Parcial">Cumple Parcialmente</option>
+                          </AppSelect>
                         </div>
+                      </div>
+
+                      {/* Observaciones del Punto */}
+                      <div className="flex flex-col gap-1 bg-white p-4 rounded-xl border border-slate-200 shadow-sm font-medium text-slate-700">
+                        <AppLabel htmlFor={`obs-punto-${p.id}`}>
+                          Observaciones / Medidas correctivas propuestas para este puesto
+                        </AppLabel>
+                        <AppTextarea
+                          id={`obs-punto-${p.id}`}
+                          disabled={!canEdit}
+                          rows={2}
+                          value={p.observaciones_punto || ''}
+                          onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, observaciones_punto: e.target.value } : x))}
+                          placeholder="Ingresa observaciones, desvíos o recomendaciones específicas..."
+                        />
                       </div>
                     </div>
                   )}
@@ -2328,7 +2931,69 @@ export default function ProtocoloForm({
           </div>
         </AppCard>
 
-        {/* CARD INFORMACIÓN ADICIONAL */}
+        {/* CARD FIRMA DEL EMPLEADOR */}
+        <AppCard className="p-5 md:p-6 space-y-5">
+          <div className="flex items-center gap-2.5 border-b border-slate-200 pb-3">
+            <PenTool className="h-5 w-5 text-[#468DFF]" />
+            <h2 className="font-outfit text-base font-extrabold text-slate-800">
+              Firma del Empleador o Representante Legal
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Datos del Empleador */}
+            <div className="space-y-4">
+              <div>
+                <AppLabel htmlFor="empleador-nombre">
+                  Nombre y Apellido del Empleador / Representante Legal *
+                </AppLabel>
+                <AppInput
+                  id="empleador-nombre"
+                  type="text"
+                  disabled={!canEdit}
+                  value={empleadorNombre}
+                  onChange={(e) => setEmpleadorNombre(e.target.value)}
+                  placeholder="Aclaración del firmante"
+                />
+              </div>
+            </div>
+
+            {/* Configuración de Firma */}
+            <div className="flex flex-col gap-1.5 justify-end">
+              <AppLabel>Firma del Empleador</AppLabel>
+              
+              <div className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm flex flex-col min-h-[220px]">
+                <div className="p-4 bg-slate-50/50 flex-1 flex flex-col justify-center relative">
+                  <div className="bg-white border-2 border-dashed border-slate-200 rounded-xl aspect-[2/1] relative overflow-hidden flex items-center justify-center min-h-[140px] shadow-sm">
+                    {firmaEmpleadorSavedUrl && !hasSignedEmpleador ? (
+                      <img src={firmaEmpleadorSavedUrl} alt="Firma Empleador" className="w-full h-full object-contain p-2" />
+                    ) : (
+                      <canvas
+                        ref={firmaEmpleadorRefCallback}
+                        width={400}
+                        height={200}
+                        className={`w-full h-full bg-white block ${canEdit ? 'cursor-crosshair' : 'cursor-default'}`}
+                      />
+                    )}
+                    {!hasSignedEmpleador && !firmaEmpleadorSavedUrl && canEdit && (
+                      <span className="absolute pointer-events-none text-[10px] text-slate-400 font-bold uppercase tracking-wider">Dibuje la firma aquí</span>
+                    )}
+                    {canEdit && (hasSignedEmpleador || firmaEmpleadorSavedUrl) && (
+                      <button
+                        type="button"
+                        onClick={handleClearEmpleadorCanvas}
+                        className="absolute top-2.5 right-2.5 text-[10px] font-bold px-2 py-1 bg-red-50 text-red-500 hover:bg-red-100 rounded-md transition-colors cursor-pointer border border-red-200/50"
+                      >
+                        Limpiar Firma
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </AppCard>
+
         {/* CARD FIRMA DEL PROFESIONAL */}
         <AppCard className="p-5 md:p-6 space-y-5">
           <div className="flex items-center gap-2.5 border-b border-slate-200 pb-3">
@@ -2507,6 +3172,83 @@ export default function ProtocoloForm({
           </div>
         </AppCard>
 
+        {/* CARD FIRMA DEL RESPONSABLE DE MEDICINA DEL TRABAJO */}
+        <AppCard className="p-5 md:p-6 space-y-5">
+          <div className="flex items-center gap-2.5 border-b border-slate-200 pb-3">
+            <PenTool className="h-5 w-5 text-[#468DFF]" />
+            <h2 className="font-outfit text-base font-extrabold text-slate-800">
+              Firma del Responsable del Servicio de Medicina del Trabajo
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Datos del Responsable */}
+            <div className="space-y-4">
+              <div>
+                <AppLabel htmlFor="medicina-nombre">
+                  Nombre y Apellido del Responsable *
+                </AppLabel>
+                <AppInput
+                  id="medicina-nombre"
+                  type="text"
+                  disabled={!canEdit}
+                  value={medicinaNombre}
+                  onChange={(e) => setMedicinaNombre(e.target.value)}
+                  placeholder="Aclaración del responsable de medicina"
+                />
+              </div>
+
+              <div>
+                <AppLabel htmlFor="medicina-matricula">
+                  Matrícula Profesional / Registro *
+                </AppLabel>
+                <AppInput
+                  id="medicina-matricula"
+                  type="text"
+                  disabled={!canEdit}
+                  value={medicinaMatricula}
+                  onChange={(e) => setMedicinaMatricula(e.target.value)}
+                  placeholder="Ej: MN 54321 / MP 98765"
+                />
+              </div>
+            </div>
+
+            {/* Configuración de Firma */}
+            <div className="flex flex-col gap-1.5 justify-end">
+              <AppLabel>Firma del Responsable Médico</AppLabel>
+              
+              <div className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm flex flex-col min-h-[220px]">
+                <div className="p-4 bg-slate-50/50 flex-1 flex flex-col justify-center relative">
+                  <div className="bg-white border-2 border-dashed border-slate-200 rounded-xl aspect-[2/1] relative overflow-hidden flex items-center justify-center min-h-[140px] shadow-sm">
+                    {firmaMedicinaSavedUrl && !hasSignedMedicina ? (
+                      <img src={firmaMedicinaSavedUrl} alt="Firma Responsable Médico" className="w-full h-full object-contain p-2" />
+                    ) : (
+                      <canvas
+                        ref={firmaMedicinaRefCallback}
+                        width={400}
+                        height={200}
+                        className={`w-full h-full bg-white block ${canEdit ? 'cursor-crosshair' : 'cursor-default'}`}
+                      />
+                    )}
+                    {!hasSignedMedicina && !firmaMedicinaSavedUrl && canEdit && (
+                      <span className="absolute pointer-events-none text-[10px] text-slate-400 font-bold uppercase tracking-wider">Dibuje la firma aquí</span>
+                    )}
+                    {canEdit && (hasSignedMedicina || firmaMedicinaSavedUrl) && (
+                      <button
+                        type="button"
+                        onClick={handleClearMedicinaCanvas}
+                        className="absolute top-2.5 right-2.5 text-[10px] font-bold px-2 py-1 bg-red-50 text-red-500 hover:bg-red-100 rounded-md transition-colors cursor-pointer border border-red-200/50"
+                      >
+                        Limpiar Firma
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </AppCard>
+
         {/* Pie de Página del Formulario */}
         <div className="flex justify-between items-center pt-6 border-t border-slate-100 shrink-0 flex-wrap gap-4">
           <div className="flex items-center gap-3">
@@ -2581,7 +3323,7 @@ export default function ProtocoloForm({
                     if (onEdit) {
                       onEdit();
                     } else {
-                      router.push(`/${tenantSlug}/protocolos/iluminacion/${editingId}/editar`);
+                      router.push(`/${tenantSlug}/protocolos/ergonomia/${editingId}/editar`);
                     }
                   }}
                   className="bg-amber-500 hover:bg-amber-600 border-amber-500 hover:border-amber-600 text-white shadow-lg shadow-amber-500/10 text-center"
@@ -2744,21 +3486,6 @@ export default function ProtocoloForm({
       onClose={() => setIsResolucionModalOpen(false)}
     />
 
-    {/* MODAL ANEXO IV DEC 351/79 TABLA 1 (Buscador y Selección de Lux) */}
-    <Tabla1Modal
-      isOpen={isTabla1Open}
-      onClose={() => {
-        setIsTabla1Open(false);
-        setTargetPuntoIdForTabla1(null);
-      }}
-      onSelectLux={handleSelectLuxFromTabla1}
-    />
-
-    {/* MODAL TABLA 1 VALORES LIMITE RUIDO (RES. 295/03 ANEXO V) */}
-    <Tabla1ErgonomiaModal
-      isOpen={isTabla1RuidoOpen}
-      onClose={() => setIsTabla1RuidoOpen(false)}
-    />
   </>
   );
 }
