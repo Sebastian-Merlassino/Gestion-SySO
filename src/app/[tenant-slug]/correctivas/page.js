@@ -1953,7 +1953,7 @@ export default function AccionesCorrectivasPage({ params }) {
               </div>
             ) : (
               // TABLA DE HALLAZGOS Y FILTROS
-              <div className="space-y-0 lg:space-y-6 flex-1 flex flex-col min-h-0">
+              <div className="space-y-0 md:space-y-6 flex-1 flex flex-col min-h-0">
                 
                 {/* Panel de Filtros y Búsqueda */}
                 <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl p-3.5 sm:p-5 md:p-6 shadow-sm space-y-3 shrink-0">
@@ -2136,7 +2136,7 @@ export default function AccionesCorrectivasPage({ params }) {
                 </div>
 
                 {/* Listado / Tabla */}
-                <div className={`bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl shadow-sm overflow-hidden flex flex-col flex-1 min-h-0 lg:flex-initial transition-all duration-300 ease-in-out ${showFilters ? 'lg:h-[calc(100vh-310px)]' : 'lg:h-[calc(100vh-240px)]'}`}>
+                <div className={`bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl shadow-sm overflow-hidden flex flex-col flex-1 min-h-0 md:flex-initial transition-all duration-300 ease-in-out ${showFilters ? 'md:h-[calc(100vh-310px)]' : 'md:h-[calc(100vh-240px)]'}`}>
                   {sortedAcciones.length === 0 ? (
                     <div className="flex-grow flex flex-col items-center justify-center p-8 text-center gap-3 h-full">
                       <AlertCircle className="h-10 w-10 text-slate-300" />

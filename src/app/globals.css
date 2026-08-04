@@ -179,8 +179,8 @@
   scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
 }
 
-/* Estandarización de cabeceras fijas en móviles para evitar scroll */
-@media (max-w: 1023px) {
+/* Estandarización de cabeceras fijas y visualización a pantalla completa exclusivamente en móviles (< 768px) */
+@media (max-width: 767px) {
   main:not(.overflow-hidden) {
     position: relative !important;
     padding-top: 4rem !important; /* Altura de la cabecera */

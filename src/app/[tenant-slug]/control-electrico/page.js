@@ -2322,7 +2322,7 @@ export default function ControlElectricoPage({ params }) {
               </div>
             ) : (
               /* SI NO ESTÁ ABIERTO EL FORMULARIO - MOSTRAR TABLA DE CONTENIDOS Y FILTROS */
-              <div className="space-y-0 lg:space-y-6 flex-grow flex flex-col min-h-0">
+              <div className="space-y-0 md:space-y-6 flex-grow flex flex-col min-h-0">
                 
                 {/* PANEL DE FILTROS (SySO Compact Layout) */}
                 <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl p-3.5 sm:p-5 md:p-6 shadow-sm space-y-3 shrink-0">
@@ -2429,7 +2429,7 @@ export default function ControlElectricoPage({ params }) {
 
                 {/* CONTENEDOR DE TABLA (SySO Compact Layout) */}
                 <div 
-                  className={`bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl shadow-sm overflow-hidden flex flex-col flex-grow min-h-0 lg:flex-initial transition-all duration-300 ease-in-out ${showFilters ? 'lg:h-[calc(100vh-310px)]' : 'lg:h-[calc(100vh-240px)]'}`}
+                  className={`bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl shadow-sm overflow-hidden flex flex-col flex-grow min-h-0 md:flex-initial transition-all duration-300 ease-in-out ${showFilters ? 'md:h-[calc(100vh-310px)]' : 'md:h-[calc(100vh-240px)]'}`}
                 >
                   <div className="overflow-auto flex-grow scrollbar-thin">
                     {sortedControles.length === 0 ? (

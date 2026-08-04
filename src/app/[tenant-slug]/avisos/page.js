@@ -2485,7 +2485,7 @@ export default function AvisosRiesgoPage({ params }) {
               </div>
             ) : (
               // VISTA: TABLA Y BUSCADOR
-              <div className="space-y-0 lg:space-y-6 flex-1 flex flex-col min-h-0">
+              <div className="space-y-0 md:space-y-6 flex-1 flex flex-col min-h-0">
                 <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl p-3.5 sm:p-5 md:p-6 shadow-sm space-y-3 shrink-0">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
                     {/* Espaciador para empujar el buscador a la derecha en desktop */}
@@ -2633,7 +2633,7 @@ export default function AvisosRiesgoPage({ params }) {
                 </div>
 
                 {/* Tabla de Avisos */}
-                <div className={`bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl shadow-sm overflow-hidden flex flex-col flex-grow min-h-0 lg:flex-initial transition-all duration-300 ease-in-out ${showFilters ? 'lg:h-[calc(100vh-310px)]' : 'lg:h-[calc(100vh-240px)]'}`}>
+                <div className={`bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl shadow-sm overflow-hidden flex flex-col flex-grow min-h-0 md:flex-initial transition-all duration-300 ease-in-out ${showFilters ? 'md:h-[calc(100vh-310px)]' : 'md:h-[calc(100vh-240px)]'}`}>
                   {sortedAvisos.length === 0 ? (
                     <div className="flex-grow flex flex-col items-center justify-center p-8 text-center gap-3 h-full">
                       <AlertCircle className="h-10 w-10 text-slate-300" />

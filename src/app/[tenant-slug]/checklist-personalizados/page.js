@@ -1830,7 +1830,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
             
             {/* TABS Y FILTROS COMPACTOS (Solo si no está abierto ningún formulario) */}
             {!isFormOpen && (
-              <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl p-3.5 sm:p-5 md:p-6 shadow-sm shrink-0 flex flex-col gap-3 mb-0 lg:mb-4 transition-all">
+              <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl p-3.5 sm:p-5 md:p-6 shadow-sm shrink-0 flex flex-col gap-3 mb-0 md:mb-4 transition-all">
                 {/* Fila superior: Tabs y Buscador */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 select-none">
                   <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 gap-1 flex-shrink-0 items-center">
@@ -1967,7 +1967,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
             {/* TAB 1: LISTADO DE INSPECCIONES */}
             {activeTab === 'inspecciones' && !isFormOpen && (
               <div 
-                className={`bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl shadow-sm overflow-hidden flex flex-col flex-grow min-h-0 lg:flex-initial transition-all duration-300 ease-in-out ${showFilters ? 'lg:h-[calc(100vh-310px)]' : 'lg:h-[calc(100vh-240px)]'}`}
+                className={`bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl shadow-sm overflow-hidden flex flex-col flex-grow min-h-0 md:flex-initial transition-all duration-300 ease-in-out ${showFilters ? 'md:h-[calc(100vh-310px)]' : 'md:h-[calc(100vh-240px)]'}`}
               >
                 {sortedInspecciones.length === 0 ? (
                   <AppEmptyState
@@ -2085,7 +2085,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
 
             {/* TAB 2: LISTADO DE PLANTILLAS */}
             {activeTab === 'plantillas' && !isFormOpen && (
-              <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl shadow-sm overflow-hidden flex flex-col flex-grow min-h-0 lg:flex-initial transition-all">
+              <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl shadow-sm overflow-hidden flex flex-col flex-grow min-h-0 md:flex-initial transition-all">
                 {templates.length === 0 ? (
                   <AppEmptyState
                     title="No hay plantillas de checklist"

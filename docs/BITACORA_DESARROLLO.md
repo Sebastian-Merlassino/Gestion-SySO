@@ -1,5 +1,37 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-04] Restricción de Visualización a Pantalla Completa Exclusivamente a Móviles (<768px) y Conservación de Márgenes, Paddings y Fondo Gris en Tablets (>=768px)
+
+### Resumen de Cambios
+- **Ajuste de Media Queries Responsivas (`globals.css`)**:
+  - Se modificó la regla media query principal en `src/app/globals.css` cambiando `@media (max-w: 1023px)` a `@media (max-width: 767px)`.
+  - Esta corrección garantiza que las reglas de estirado borde a borde, remoción de márgenes/paddings, remoción de redondeados y unión continua de tarjetas apliquen **única y exclusivamente en pantallas de teléfonos celulares (< 768px)**.
+- **Restauración de Breakpoints de Interfaz (`md:`, >= 768px)**:
+  - En todas las vistas de la plataforma (Dashboard, Legajo Técnico, Ergonomía, Ruido, Iluminación, Visitas, Accidentes, Avisos de Riesgo, Checklists, Extintores, Control Eléctrico, Matriz IPER, Programa Anual, Capacitación y Nómina), se restauraron los breakpoints a `md:` (768px) en lugar de `lg:`.
+  - *Comportamiento en Tabletas (≥ 768px)*: La interfaz recupera su diseño estructurado flotante, manteniendo los márgenes exteriores, los paddings de página (`md:py-8 md:max-w-[95%] md:mx-auto md:px-0`), las tarjetas flotantes redondeadas con sombras (`md:rounded-2xl md:border md:shadow-sm`), los espaciados verticales entre filtros/tablas (`md:space-y-6`) y el fondo gris característico del SaaS.
+
+### Archivos Modificados
+- `[MODIFY] src/app/globals.css`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] src/app/[tenant-slug]/matriz-riesgos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/nomina/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
 ## [2026-08-04] Optimización Responsiva Masiva, Integración de Pantalla Completa, Reducción de Paddings y Rediseño de Tablas de Datos y Listados de Borde a Borde en todo el SaaS
 
 ### Resumen de Cambios
