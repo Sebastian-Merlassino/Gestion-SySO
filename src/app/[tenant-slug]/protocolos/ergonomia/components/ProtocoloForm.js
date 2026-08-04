@@ -2692,7 +2692,7 @@ export default function ProtocoloForm({
                                                                 <div className="bg-slate-50 p-2 rounded border border-slate-200 mb-3 transition-all animate-fadeIn">
                                                                   <p className="text-[10px] text-slate-500 font-semibold mb-1.5 uppercase">Referencia: Curva de Confort (P.O. Fanger)</p>
                                                                   <img 
-                                                                    src="/assets/curva-fanger.png" 
+                                                                    src="/assets/curva-fanger.jpg" 
                                                                     alt="Curva de Confort Fanger" 
                                                                     className="max-h-[220px] mx-auto rounded border border-slate-200 shadow-sm object-contain"
                                                                   />
