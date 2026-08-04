@@ -1,8 +1,12 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-04] Unificación de Controles de Planilla 2, Nivel de Riesgo Automático, Colapsado de Factores e Integración de Empuje / Arrastre (Planilla 2.B), Transporte (Planilla 2.C), Bipedestación (Planilla 2.D), Movimientos Repetitivos (Planilla 2.E), Posturas Forzadas (Planilla 2.F), Vibraciones Mano-Brazo / Cuerpo Entero (Planilla 2.G) y Confort Térmico (Planilla 2.H) en Ergonomía
+## [2026-08-04] Unificación de Controles de Planilla 2, Nivel de Riesgo Automático, Colapsado de Factores e Integración de Empuje / Arrastre (Planilla 2.B), Transporte (Planilla 2.C), Bipedestación (Planilla 2.D), Movimientos Repetitivos (Planilla 2.E), Posturas Forzadas (Planilla 2.F), Vibraciones Mano-Brazo / Cuerpo Entero (Planilla 2.G), Confort Térmico (Planilla 2.H) y Estrés de Contacto (Planilla 2.I) en Ergonomía
 
 ### Resumen de Cambios
+- **Integración de Cuestionario de Estrés de Contacto (Planilla 2.I):**
+  - Se reestructuró la Planilla 2 de Estrés de Contacto en `CUESTIONARIOS_PLANILLA2` (`ProtocoloForm.js`) y `CUESTIONARIOS_PLANILLA2_LOCAL` (`pdfGenerator.js`) para ser de dos pasos (`isTwoStep: true`).
+  - Se incorporaron la pregunta oficial del Paso 1 ("apoyar cuerpo ejerciendo presión") y las 4 preguntas oficiales del Paso 2.
+  - Se adaptó el cálculo automático de riesgo sugerido: sin disparadores de Nivel 3. El riesgo es Nivel 1 si Paso 1 es "No", y Nivel 2 si alguna de Paso 2 es "Sí" (con Paso 1 en "Sí"), de lo contrario Nivel 1.
 - **Integración de Cuestionario de Confort Térmico (Planilla 2.H) y Curva Fanger:**
   - Se reestructuró la Planilla 2 de Confort Térmico en `CUESTIONARIOS_PLANILLA2` (`ProtocoloForm.js`) y `CUESTIONARIOS_PLANILLA2_LOCAL` (`pdfGenerator.js`) para ser de dos pasos (`isTwoStep: true`).
   - Se incorporaron la pregunta oficial del Paso 1 ("temperaturas no confortables") y la pregunta oficial del Paso 2 ("curva de confort de Fanger").

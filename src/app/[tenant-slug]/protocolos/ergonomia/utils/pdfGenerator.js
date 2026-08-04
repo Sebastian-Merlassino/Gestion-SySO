@@ -1286,12 +1286,18 @@ export const generateErgonomyProtocolPdf = async (
             { id: 'p2_1', text: 'Resultado del uso de la curva de Confort de Fanger, se encuentra por fuera de la zona de confort' }
           ]
         },
-        estres_contacto: [
-          { id: 'q1', text: '¿Se presionan partes del cuerpo (manos, rodillas, muslos) contra bordes filosos o superficies duras?' },
-          { id: 'q2', text: '¿Se utilizan las manos o muñecas como herramientas de impacto (martillear con la mano)?' },
-          { id: 'q3', text: '¿El agarre de las herramientas genera presión concentrada y dolorosa en la palma de la mano?' },
-          { id: 'q4', text: '¿El trabajador debe permanecer arrodillado apoyando las rodillas directamente en suelo duro?' }
-        ]
+        estres_contacto: {
+          isTwoStep: true,
+          paso1: [
+            { id: 'p1_1', text: 'Mantener apoyada alguna parte del cuerpo ejerciendo una presión, contra una herramienta, plano de trabajo, máquina herramienta o partes y materiales' }
+          ],
+          paso2: [
+            { id: 'p2_1', text: 'El trabajador mantiene apoyada la muñeca, antebrazo, axila o muslo u otro segmento corporal sobre una superficie aguda o con canto' },
+            { id: 'p2_2', text: 'El trabajador utiliza herramientas de mano o manipula piezas que presionan sobre sus dedos y/o palma de la mano hábil' },
+            { id: 'p2_3', text: 'El trabajador realiza movimientos de percusión sobre partes o herramientas' },
+            { id: 'p2_4', text: 'El trabajador presenta alguna manifestación temprana de las enfermedades mencionadas en el Artículo 1º de la presente resolución' }
+          ]
+        }
       };
 
       let currentY = 38;
