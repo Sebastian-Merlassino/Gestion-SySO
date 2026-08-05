@@ -1,8 +1,14 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-05] Botones de Switch para Procedimiento, Capacitación y Manifestación Temprana en Ergonomía
+## [2026-08-05] Selector Híbrido y Suma Automática de Tiempo de Exposición en Tareas de Ergonomía
 
 ### Resumen de Cambios
+- **Selector Híbrido de Tiempo de Exposición:**
+  - Se implementó un selector amigable e interactivo para la columna `"Tiempo Exp."` de la tabla de factores de riesgo (`ProtocoloForm.js`).
+  - Consta de un input de texto para el valor numérico y un botón switch integrado (`min` / `hs`) que sirve de toggle rápido.
+  - Al cambiar de unidad o valor, se actualiza automáticamente el campo unificado con formato `"X min"` o `"X hs"` garantizando compatibilidad 100% retroactiva con la base de datos y la exportación de PDFs.
+- **Suma Automática Acumulada de Tarea:**
+  - Se agregó una fila de pie de tabla (`<tfoot>`) que calcula y expone dinámicamente la suma total de los tiempos de todos los factores activos en cada tarea en un formato dual inteligible, por ejemplo: `1 hs 30 min (1,5 hs)`.
 - **Reemplazo de Select por Botones de Switch:**
   - Se modificaron los campos `"Procedimiento de trabajo escrito"`, `"Capacitación"` y `"Manifestación Temprana"` en la sección de tareas del formulario de Ergonomía (`ProtocoloForm.js`).
   - Se sustituyeron los desplegables (`AppSelect`) por grupos de botones segmentados interactivos (`Sí` / `No`) utilizando estilos unificados del design system del proyecto (azul `#468DFF` para selección de Sí y gris `#64748B` o `slate-500` para No).

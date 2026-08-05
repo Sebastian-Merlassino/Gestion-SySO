@@ -183,6 +183,73 @@ const isValidUuid = (val) => {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val);
 };
 
+const parseTiempo = (tiempoStr) => {
+  if (!tiempoStr) return { valor: '', unidad: 'min' };
+  const str = String(tiempoStr).trim();
+  const matches = str.match(/^([\d.,]+)\s*(min|hs|horas|m|h|hora|minutos)?$/i);
+  if (!matches) {
+    const num = parseFloat(str.replace(',', '.'));
+    return {
+      valor: isNaN(num) ? str : String(num),
+      unidad: str.toLowerCase().includes('h') ? 'hs' : 'min'
+    };
+  }
+  const valor = matches[1];
+  const unitText = (matches[2] || '').toLowerCase();
+  const unidad = (unitText.startsWith('h')) ? 'hs' : 'min';
+  return { valor, unidad };
+};
+
+const sumarTiemposTarea = (t) => {
+  let totalMinutos = 0;
+  const factorKeys = [
+    'levantamiento', 'empuje_arrastre', 'transporte', 'bipedestacion',
+    'mov_repetitivos', 'posturas_forzadas', 'vibraciones_mano_brazo',
+    'vibraciones_cuerpo_entero', 'confort_termico', 'estres_contacto'
+  ];
+  
+  factorKeys.forEach(key => {
+    // Solo sumamos si el factor está identificado como presente ('si')
+    if (t[`f_${key}_identificado`] === 'si') {
+      const tiempoRaw = t[`f_${key}_tiempo`] || '';
+      const { valor, unidad } = parseTiempo(tiempoRaw);
+      const num = parseFloat(String(valor).replace(',', '.'));
+      if (!isNaN(num) && num > 0) {
+        if (unidad === 'hs') {
+          totalMinutos += num * 60;
+        } else {
+          totalMinutos += num;
+        }
+      }
+    }
+  });
+
+  if (totalMinutos === 0) return null;
+  
+  const horas = Math.floor(totalMinutos / 60);
+  const mins = Math.round(totalMinutos % 60);
+  
+  let formatted = '';
+  if (horas > 0) {
+    formatted += `${horas} hs`;
+  }
+  if (mins > 0) {
+    formatted += `${formatted ? ' ' : ''}${mins} min`;
+  }
+  
+  const totalHorasVal = (totalMinutos / 60).toFixed(2);
+  const totalHorasStr = totalHorasVal.endsWith('.00') 
+    ? totalHorasVal.slice(0, -3) + ' hs' 
+    : totalHorasVal.replace('.', ',') + ' hs';
+
+  return {
+    formatted,
+    totalMinutos,
+    totalHoras: totalHorasStr
+  };
+};
+
+
 export default function ProtocoloForm({
   tenantSlug,
   profile,
@@ -2635,17 +2702,47 @@ export default function ProtocoloForm({
                                               </td>
                                               <td className="p-1.5 sm:p-2 block md:table-cell flex items-center justify-between md:justify-center gap-2 flex-nowrap w-full">
                                                 <span className="md:hidden text-[10px] font-bold text-slate-400 uppercase w-20 shrink-0 text-left">Tiempo Exp.:</span>
-                                                <AppInput
-                                                  disabled={!canEdit || !isPresent}
-                                                  placeholder="Ej: 60 min..."
-                                                  className="h-8 text-xs bg-white text-center w-24 xs:w-28 sm:w-32 md:w-full shrink-0"
-                                                  value={t[`f_${f.key}_tiempo`] || ''}
-                                                  onChange={(e) => {
-                                                    const val = e.target.value;
-                                                    const updatedTareas = p.tareas.map(x => x.id === t.id ? { ...x, [`f_${f.key}_tiempo`]: val } : x);
-                                                    setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: updatedTareas } : x));
-                                                  }}
-                                                />
+                                                {(() => {
+                                                  const tiempoRaw = t[`f_${f.key}_tiempo`] || '';
+                                                  const { valor, unidad } = parseTiempo(tiempoRaw);
+                                                  return (
+                                                    <div className="flex items-center border border-slate-200 rounded-md overflow-hidden bg-white shrink-0 w-24 xs:w-28 sm:w-32 md:w-full max-w-[120px] mx-auto h-8 shadow-sm">
+                                                      <input
+                                                        type="text"
+                                                        disabled={!canEdit || !isPresent}
+                                                        placeholder="Ej: 60"
+                                                        value={valor}
+                                                        onChange={(e) => {
+                                                          const newValor = e.target.value;
+                                                          const newVal = newValor ? `${newValor} ${unidad}` : '';
+                                                          const updatedTareas = p.tareas.map(x => x.id === t.id ? { ...x, [`f_${f.key}_tiempo`]: newVal } : x);
+                                                          setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: updatedTareas } : x));
+                                                        }}
+                                                        className="w-0 flex-grow text-center text-xs h-full border-0 focus:ring-0 focus:outline-none font-semibold text-slate-800 bg-transparent px-1 min-w-0"
+                                                      />
+                                                      <div className="h-4 w-[1px] bg-slate-200 shrink-0" />
+                                                      <button
+                                                        type="button"
+                                                        disabled={!canEdit || !isPresent}
+                                                        onClick={() => {
+                                                          const nextUnit = unidad === 'min' ? 'hs' : 'min';
+                                                          const newVal = valor ? `${valor} ${nextUnit}` : '';
+                                                          const updatedTareas = p.tareas.map(x => x.id === t.id ? { ...x, [`f_${f.key}_tiempo`]: newVal } : x);
+                                                          setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: updatedTareas } : x));
+                                                        }}
+                                                        className={`px-2 h-full text-[10px] font-extrabold uppercase transition-all cursor-pointer select-none shrink-0 ${
+                                                          !isPresent
+                                                            ? 'text-slate-400 bg-slate-50'
+                                                            : unidad === 'min'
+                                                            ? 'bg-blue-50 text-[#468DFF] hover:bg-blue-100/70'
+                                                            : 'bg-amber-50 text-amber-600 hover:bg-amber-100/70'
+                                                        }`}
+                                                      >
+                                                        {unidad}
+                                                      </button>
+                                                    </div>
+                                                  );
+                                                })()}
                                               </td>
                                               <td className="p-1.5 sm:p-2 block md:table-cell flex items-center justify-between md:justify-center gap-2 whitespace-nowrap flex-nowrap w-full">
                                                 <span className="md:hidden text-[10px] font-bold text-slate-400 uppercase w-20 shrink-0 text-left">Riesgo:</span>
@@ -3005,6 +3102,26 @@ export default function ProtocoloForm({
                                         );
                                       })}
                                     </tbody>
+                                    {(() => {
+                                      const sumResult = sumarTiemposTarea(t);
+                                      if (!sumResult) return null;
+                                      return (
+                                        <tfoot className="bg-slate-50/40 border-t border-slate-100 block md:table-footer-group">
+                                          <tr className="flex flex-col md:table-row w-full font-bold text-slate-700">
+                                            <td colSpan={2} className="p-2.5 text-left md:text-right uppercase tracking-wider text-[9px] text-slate-500 block md:table-cell">
+                                              Tiempo de Exposición Total:
+                                            </td>
+                                            <td className="p-2.5 text-center flex items-center justify-between md:justify-center gap-2 block md:table-cell">
+                                              <span className="md:hidden text-[10px] font-bold text-slate-400 uppercase w-20 shrink-0 text-left">Total Tarea:</span>
+                                              <span className="inline-flex px-2.5 py-1 rounded-md bg-blue-50 text-[#468DFF] text-xs font-extrabold border border-blue-100/50 shadow-sm">
+                                                {sumResult.formatted} ({sumResult.totalHoras})
+                                              </span>
+                                            </td>
+                                            <td className="hidden md:table-cell p-2.5"></td>
+                                          </tr>
+                                        </tfoot>
+                                      );
+                                    })()}
                                   </table>
                                   </div>
                                 )}
