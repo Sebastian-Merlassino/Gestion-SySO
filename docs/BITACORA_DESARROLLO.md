@@ -1,5 +1,117 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-05] Estandarización de Espaciado Inferior en Formularios (SySO Compact Layout)
+
+### Resumen de Cambios
+- **Ajuste Exacto de Tarjeta Flotante (SySO Compact Layout 128px):**
+  - Se calibró la altura flotante de los contenedores de formularios en **las 17 secciones de la aplicación**: `bg-white md:rounded-2xl md:border md:border-slate-200 md:shadow-sm overflow-hidden flex flex-col h-full md:h-[calc(100vh-128px)] animate-fade-in w-full`.
+  - Con esta calibración, el margen inferior del contenedor flotante en la vista de PC es de exactamente **32px**, perfectamente simétrico con el margen superior de 32px respecto al navbar y los márgenes laterales, logrando 100% de coincidencia visual con la imagen de referencia provista por el usuario.
+  - Se mantuvo intacto el comportamiento responsivo en teléfonos móviles (`h-full` sin bordes estáticos en `< md`).
+  - Se conservó la cabecera fija estática (`h-16 shrink-0 border-b border-slate-200`) y el scroll interno en el cuerpo del formulario (`overflow-y-auto flex-1 scrollbar-thin`).
+- **Verificación:**
+  - Compilación de producción verificada con `npm run build` (`✓ Compiled successfully`).
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/matriz-riesgos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/nomina/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/components/ProtocoloForm.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-05] Reestructuración Visual de Planilla 1 e Integración de Planilla 4 en Protocolo de Ergonomía
+
+### Resumen de Cambios
+- **Encabezado Normativo de Planilla 1 (`ProtocoloForm.js`):**
+  - Se incorporó la insignia **ANEXO I - PLANILLA 1** y el título descriptivo **IDENTIFICACIÓN DE FACTORES DE RIESGO (TAREAS HABITUALES DEL PUESTO)** inmediatamente por encima del contenedor de tareas habituales de cada puesto de trabajo.
+- **Depuración de Contenedores Redundantes por Puesto (`ProtocoloForm.js`):**
+  - Se eliminó el contenedor redundante de `Nivel de Riesgo Global` y `Verificación de Cumplimiento (Resultado)`.
+  - Se eliminó el contenedor de `Observaciones / Medidas correctivas propuestas para este puesto`, concentrando las observaciones y medidas específicas en la Planilla 3 y Planilla 4.
+- **Actualización de Títulos Normativos en Planilla 2 (`ProtocoloForm.js` y `pdfGenerator.js`):**
+  - Se estandarizó el título del encabezado desplegable de la evaluación inicial en la **Planilla 2** para mostrar la nomenclatura normativa completa (ej: `ANEXO I - PLANILLA 2: EVALUACIÓN INICIAL DE FACTORES DE RIESGO — A. LEVANTAMIENTO Y/O DESCENSO MANUAL DE CARGA SIN TRANSPORTE`).
+- **Resolución de Error de Hoisting / Declaración en Runtime (`ProtocoloForm.js`):**
+  - Se colocó la función creadora `getDefaultPlanilla4()` en el ámbito superior del archivo antes de la exportación predeterminada del componente React (`ProtocoloForm`), eliminando la excepción de consola `ReferenceError: getDefaultPlanilla4 is not defined`.
+- **Reinstalación Integral de Planilla 3 por Tarea (`ProtocoloForm.js`):**
+  - Se reincorporó la estructura completa de **ANEXO I - PLANILLA 3: IDENTIFICACIÓN DE MEDIDAS CORRECTIVAS Y PREVENTIVAS** por cada tarea cargada en el puesto.
+  - Incluye Medidas Preventivas Generales (1-3 con date picker estándar `DD/MM/AAAA` e icono interactivo), Medidas Específicas (1-15 precargadas) y campo de observaciones generales integrando obligatoriamente el estándar `SySO-AI-Voice-Helper` (`<AITextHelper />`).
+- **Verificación:**
+  - Compilación de producción verificada con `npm run build` (`✓ Compiled successfully`).
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/components/ProtocoloForm.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-05] Incorporación de ANEXO I - PLANILLA 4 (Matriz de Seguimiento Medidas Correctivas y Preventivas) Global por Protocolo de Ergonomía
+
+### Resumen de Cambios
+- **Migración en Base de Datos (`supabase/migrations/20260818005000_add_planilla4_medidas_to_protocolo_ergonomia.sql`):**
+  - Se creó la migración SQL para añadir la columna `planilla4_medidas JSONB NULL` en la tabla `public.protocolos_ergonomia`.
+- **Integración en Formulario UI (`ProtocoloForm.js`):**
+  - Se incorporó la tarjeta **ANEXO I - PLANILLA 4: MATRIZ DE SEGUIMIENTO MEDIDAS CORRECTIVAS Y PREVENTIVAS** con alcance global a nivel protocolo.
+  - Precarga de ítems normativos 1, 2 y 3 (*"Realizar evaluación de los factores de riesgo ergonómico del puesto de trabajo (Levantamiento y descenso / Transporte / Posturas forzadas)"*) más filas editables y botón `+ Agregar Medida a Matriz`.
+  - Integración de los 4 selectores de fecha (`Fecha de Evaluación`, `Fecha Impl. Admin.`, `Fecha Impl. Ing.`, `Fecha de Cierre`) con el estándar de la app (`DD/MM/AAAA`, `<Calendar />` Lucide con hover e input nativo emergente superpuesto).
+- **Generación en Reporte PDF (`pdfGenerator.js`):**
+  - Renderización de la Planilla 4 en una página dedicada en formato A4 Apaisado (Landscape) con cabecera en azul institucional (`#468DFF`), 8 columnas diagramadas con ajuste de texto y resaltado por nivel de riesgo (Verde, Ámbar, Rojo).
+- **Verificación:**
+  - Compilación de producción verificada con `npm run build` (`✓ Compiled successfully`).
+
+### Archivos Modificados
+- `[NEW] supabase/migrations/20260818005000_add_planilla4_medidas_to_protocolo_ergonomia.sql`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/utils/pdfGenerator.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-05] Incorporación de ANEXO I - PLANILLA 3 (Medidas Correctivas y Preventivas) por Tarea en Protocolo de Ergonomía
+
+### Resumen de Cambios
+- **Integración de Planilla 3 en Formulario UI (`ProtocoloForm.js`):**
+  - Se incorporó la sección **ANEXO I - PLANILLA 3: IDENTIFICACIÓN DE MEDIDAS CORRECTIVAS Y PREVENTIVAS (M.C.P.)** debajo de cada tarea habitual configurada en el puesto de trabajo.
+  - **Medidas Preventivas Generales:** Tabla adaptativa con 3 medidas generales predeterminadas normativas, incluyendo selectores con botones segmentados interactivos (`Sí` / `No`), selector de `Fecha` estandarizado de la aplicación (`DD/MM/AAAA`, pictograma Lucide `<Calendar />` con hover `#468DFF`, máscara automática `formatAsDateInput` y selector nativo emergente superpuesto) y campo de `Observaciones`.
+  - **Medidas Correctivas y Preventivas Específicas:** Grilla numerada de 15 ítems con la primera medida precargada (*"Realizar evaluación de los factores de riesgo ergonómico del puesto de trabajo..."*) e ítems 2 al 15 editables para medidas administrativas y de ingeniería.
+  - **Observaciones con Dictado e IA:** Integración del estándar `SySO-AI-Voice-Helper` importando `<AITextHelper />` para habilitar dictado por voz y refinamiento asistido por IA (Gemini 2.5 Flash) en el área de texto de observaciones de Planilla 3.
+  - **Corrección y Verificación de Estructura JSX:** Se resolvió el descalce de etiquetas HTML/JSX dentro del iterador de tareas en `ProtocoloForm.js` envolviendo los elementos condicionales de la Planilla 3 dentro de `<React.Fragment>`, verificando la compilación con `npm run build` (`✓ Compiled successfully`).
+- **Generación en Reporte PDF (`pdfGenerator.js`):**
+  - Se agregó la renderización en A4 Apaisado de la **Planilla 3** por cada tarea de cada puesto de trabajo, incluyendo cabeceras estilizadas en azul institucional (`#468DFF`), tablas normativas de medidas generales y específicas, cuadro de observaciones e bloque de firma profesional.
+- **Compatibilidad Retroactiva:**
+  - Se definieron valores predeterminados de inicialización y migración en `createNewTareaHabitual` y `mappedTareas` para que protocolos y tareas previas sin estos atributos carguen e impriman sin inconvenientes.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/utils/pdfGenerator.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-05] Actualización de Nomenclatura en Factor Vibraciones Cuerpo Entero (PDF Ergonomía)
+
+### Resumen de Cambios
+- **Ajuste de Etiqueta en PDF de Protocolo de Ergonomía:**
+  - Se modificó la denominación del factor de riesgo `vibraciones_cuerpo_entero` en `pdfGenerator.js`, cambiando el prefijo `'G2.'` por `'G.'` (`'G. Vibraciones Cuerpo Entero (1 a 80 Hz)'`) para mantener plena coherencia con la interfaz de usuario (`ProtocoloForm.js`).
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/utils/pdfGenerator.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
 ## [2026-08-05] Selector Híbrido y Suma Automática de Tiempo de Exposición en Tareas de Ergonomía
 
 ### Resumen de Cambios

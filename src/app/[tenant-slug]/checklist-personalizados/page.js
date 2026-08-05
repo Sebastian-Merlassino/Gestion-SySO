@@ -2164,7 +2164,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
                 FORMULARIO: DISEÑADOR DE PLANTILLAS (LEVEL 1)
                 ========================================== */}
             {activeTab === 'plantillas' && isTemplateFormOpen && (
-              <div className="bg-white md:rounded-2xl md:border md:border-slate-200 md:shadow-sm overflow-hidden flex flex-col h-full min-h-[calc(100vh-64px)] md:max-h-[85vh] animate-fade-in w-full">
+              <div className="bg-white md:rounded-2xl md:border md:border-slate-200 md:shadow-sm overflow-hidden flex flex-col h-full md:h-[calc(100vh-128px)] animate-fade-in w-full">
                 {/* Cabecera del formulario */}
                 <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
@@ -2445,7 +2445,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
                 FORMULARIO: EJECUCIÓN / EDICIÓN DE INSPECCIÓN (LEVEL 2)
                 ========================================== */}
             {isInspeccionFormOpen && (
-              <div className="bg-white md:rounded-2xl md:border md:border-slate-200 md:shadow-sm overflow-hidden flex flex-col h-full min-h-[calc(100vh-64px)] md:max-h-[85vh] animate-fade-in w-full">
+              <div className="bg-white md:rounded-2xl md:border md:border-slate-200 md:shadow-sm overflow-hidden flex flex-col h-full md:h-[calc(100vh-128px)] animate-fade-in w-full">
                 {/* Cabecera del formulario */}
                 <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">

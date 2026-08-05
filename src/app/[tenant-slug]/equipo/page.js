@@ -1492,7 +1492,7 @@ export default function EquipoPage({ params }) {
             // ==========================================
             // VIEW: CREATE / EDIT FORM
             // ==========================================
-            <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl shadow-sm overflow-hidden flex flex-col h-full min-h-[calc(100vh-64px)] md:max-h-[85vh] animate-fade-in w-full">
+            <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl shadow-sm overflow-hidden flex flex-col h-full md:h-[calc(100vh-128px)] animate-fade-in w-full">
               <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
                   <button 
@@ -1515,7 +1515,7 @@ export default function EquipoPage({ params }) {
                 </button>
               </div>
 
-              <form onSubmit={handleSave} className="p-6 md:p-8 space-y-8 overflow-y-auto flex-1 scrollbar-thin">
+              <form onSubmit={handleSave} className="p-6 md:p-8 space-y-8">
                 <fieldset disabled={!canEdit} className="space-y-8">
                   {/* 1. INFORMACIÓN PERSONAL */}
                   <div className="bg-white rounded-2xl border border-slate-200 p-6 md:p-8 shadow-sm space-y-6">

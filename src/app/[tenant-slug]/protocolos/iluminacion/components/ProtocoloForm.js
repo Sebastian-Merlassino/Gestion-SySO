@@ -1781,7 +1781,7 @@ Mejorar la distribución de la iluminación, procurando alcanzar una adecuada un
 
   return (
     <>
-      <div className="bg-white md:rounded-2xl md:border md:border-slate-200 md:shadow-sm overflow-hidden flex flex-col h-full min-h-[calc(100vh-64px)] md:max-h-[85vh] animate-fade-in w-full">
+      <div className="bg-white md:rounded-2xl md:border md:border-slate-200 md:shadow-sm overflow-hidden flex flex-col h-full md:h-[calc(100vh-128px)] animate-fade-in w-full">
       {/* Cabecera del Formulario */}
       <div className="h-16 px-2 sm:px-4 md:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
@@ -1808,7 +1808,7 @@ Mejorar la distribución de la iluminación, procurando alcanzar una adecuada un
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="p-3.5 sm:p-6 md:p-8 space-y-4 sm:space-y-6 overflow-y-auto flex-1 scrollbar-thin select-none">
+      <form onSubmit={handleSubmit} className="p-3.5 sm:p-6 md:p-8 space-y-4 sm:space-y-6 select-none overflow-y-auto flex-1 scrollbar-thin">
         
         {/* CARD ESTABLECIMIENTO */}
         <AppCard className="p-3.5 sm:p-5 md:p-6 space-y-3 sm:space-y-4">
