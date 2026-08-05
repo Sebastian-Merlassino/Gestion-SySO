@@ -1486,7 +1486,7 @@ export default function TenantDashboard({ params }) {
 
   const renderSiniestralidadPanel = () => {
     return (
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
+      <div className="bg-white border-b border-slate-200 md:border md:rounded-2xl p-6 shadow-sm space-y-6">
         {/* Cabecera del contenedor con el título y modal clickeable de ayuda */}
         <div className="flex flex-col gap-4 border-b border-slate-200 pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
@@ -1698,7 +1698,7 @@ export default function TenantDashboard({ params }) {
           </div>
 
           {/* Gráfico propiamente dicho */}
-          <div className="bg-slate-50/40 border border-slate-200 rounded-2xl p-6 shadow-inner space-y-4 overflow-x-auto scrollbar-thin select-none">
+          <div className="bg-slate-50/40 border-b border-slate-200 md:border md:rounded-2xl p-6 shadow-inner space-y-4 overflow-x-auto scrollbar-thin select-none">
             <div className="flex items-end justify-between gap-2 md:gap-4 h-64 border-b border-slate-200 pb-3 pt-6 px-2 min-w-[650px]">
 
               {/* Barra Año Anterior */}
@@ -1939,8 +1939,8 @@ export default function TenantDashboard({ params }) {
             {profile && profile.role === 'cliente' ? (
               renderSiniestralidadPanel()
             ) : (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-0 md:space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:gap-6">
 
                   {/* Contenedor Unificado: Vencimientos o Calendario */}
                   <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col justify-between h-[460px] overflow-hidden">
@@ -2384,7 +2384,7 @@ export default function TenantDashboard({ params }) {
 
             {/* Secciones de Trabajo y Acciones Rápidas */}
             {profile && profile.role === 'cliente' ? (
-              <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-6 shadow-sm">
+              <div className="bg-white border-b border-slate-200 md:border md:rounded-2xl p-6 space-y-6 shadow-sm">
                 <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                   <h3 className="font-outfit text-base font-extrabold text-slate-900 flex items-center gap-2">
                     <ClipboardList className="h-5 w-5 text-[#468DFF]" />
@@ -2567,7 +2567,7 @@ export default function TenantDashboard({ params }) {
               </div>
             )}
             {/* Non-collapsible block spacer to guarantee standard 32px bottom spacing on scroll overflow */}
-            <div className="h-8 shrink-0 w-full block" />
+            <div className="h-8 shrink-0 w-full hidden md:block" />
           </div>
         )}
 

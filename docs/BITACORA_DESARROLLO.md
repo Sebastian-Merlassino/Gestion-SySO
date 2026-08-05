@@ -1,5 +1,83 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-05] Botones de Switch para Procedimiento, Capacitación y Manifestación Temprana en Ergonomía
+
+### Resumen de Cambios
+- **Reemplazo de Select por Botones de Switch:**
+  - Se modificaron los campos `"Procedimiento de trabajo escrito"`, `"Capacitación"` y `"Manifestación Temprana"` en la sección de tareas del formulario de Ergonomía (`ProtocoloForm.js`).
+  - Se sustituyeron los desplegables (`AppSelect`) por grupos de botones segmentados interactivos (`Sí` / `No`) utilizando estilos unificados del design system del proyecto (azul `#468DFF` para selección de Sí y gris `#64748B` o `slate-500` para No).
+  - Se mantuvo la funcionalidad de deshabilitar/habilitar el campo `"Ubicación del síntoma"` vinculada al valor del switch de `"Manifestación Temprana"`.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/components/ProtocoloForm.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-05] Auditoría Integral de Diseño UI, Consistencia Visual y Documentos PDF — Gestión SySO
+
+### Resumen de Cambios
+- **Auditoría Integral de Interfaz Web y PDFs**:
+  - Se completó la revisión técnica y documental de todos los módulos web, componentes UI y generadores de reportes PDF (`jsPDF` + `jspdf-autotable`) en el SaaS **Gestión SySO**.
+  - Se generaron 4 documentos normativos en `docs/design/` sin modificar código de aplicación ni alterar la lógica funcional en esta primera etapa.
+- **Entregables de Estandarización Creados**:
+  - `[NEW] docs/design/UI_DESIGN_AUDIT.md`: Informe completo de inventario tipográfico, mapa de colores, botones, formularios, tablas web, casing y evaluación responsiva/a11y.
+  - `[NEW] docs/design/UI_STYLE_STANDARD_PROPOSAL.md`: Propuesta de estándar unificado de tokens CSS, escala tipográfica, variantes de `AppButton`, `AppInput`, `AppSelect`, `AppCard` y reglas de maquetación responsiva.
+  - `[NEW] docs/design/PDF_DESIGN_AUDIT.md`: Inventario exhaustivo de todos los generadores PDF del proyecto (Visitas, Ruido, Iluminación, Ergonomía, Accidentes, Avisos, Programa), análisis de layout A4, firmas e imágenes.
+  - `[NEW] docs/design/PDF_STYLE_STANDARD.md`: Estándar normativo para encabezados, pies de página, tablas autotable, cuadros de firma y patrón de nombrado de archivos (`pdfFileName.js`).
+
+### Archivos Creados / Modificados
+- `[NEW] docs/design/UI_DESIGN_AUDIT.md`
+- `[NEW] docs/design/UI_STYLE_STANDARD_PROPOSAL.md`
+- `[NEW] docs/design/PDF_DESIGN_AUDIT.md`
+- `[NEW] docs/design/PDF_STYLE_STANDARD.md`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-05] Integración de la Skill UI/UX Pro Max en la Configuración de Agentes
+
+### Resumen de Cambios
+- **Integración de Skill UI/UX Pro Max**:
+  - Se clonó el repositorio de la skill `ui-ux-pro-max-skill` (versión 2.11.0) en `.agents/skills/ui-ux-pro-max/`.
+  - Se ubicó `SKILL.md` en el nivel raíz de la skill (`.agents/skills/ui-ux-pro-max/SKILL.md`) con la taxonomía de YAML frontmatter para su descubrimiento automático por el sistema de agentes.
+  - Se actualizó `.agents/agents.md` agregando `.agents/skills/ui-ux-pro-max/SKILL.md` a la lista de skills del **Agente — Frontend, UI y Design System para Gestión SySO**.
+  - La skill aporta 84 estilos de UI, 192 paletas de color, 74 combinaciones tipográficas, heurísticas de usabilidad, accesibilidad (WCAG) y patrones de animación/interacción, operando como capa de refinamiento sobre la identidad corporativa de Gestión SySO.
+
+### Archivos Modificados
+- `[NEW] .agents/skills/ui-ux-pro-max/SKILL.md`
+- `[MODIFY] .agents/agents.md`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-05] Ajustes de Fondo Gris Superior e Inferior en Legajo Técnico, Reubicación de Scroll y Refuerzo Visual
+
+### Resumen de Cambios
+- **Unificación Continua entre Vencimientos y Tareas Pendientes en Dashboard (Mobile)**:
+  - Se modificó la grilla principal de Vencimientos y Tareas Pendientes en `src/app/[tenant-slug]/dashboard/page.js` usando `gap-0 lg:gap-6` y `space-y-0 md:space-y-6`.
+  - Con este ajuste se eliminó la franja gris intermedia entre el contenedor de Vencimientos y el contenedor de Tareas Pendientes en teléfonos móviles, logrando un bloque continuo separado únicamente por la línea divisoria horizontal de 1px.
+- **Ajustes de Integración Continua en Legajo Técnico (Mobile)**:
+  - Se cambió la clase del explorador en `src/app/[tenant-slug]/legajo/page.js` a `space-y-0 md:space-y-4` y la barra de migas de pan a `border-b border-slate-200 md:border md:rounded-xl`.
+  - Con esta modificación se eliminó por completo el espacio/franja gris intermedia entre la barra de *"Legajo Técnico"* y la primera carpeta (*ART*).
+- **Reubicación del Scroll al Contenedor Principal del Modal (Res. SRT Nº 886/15)**:
+  - Se eliminó la caja interna con scroll secundario en `Resolucion886Modal.js` para trasladar el scroll al cuerpo principal de la ventana emergente (`AppInfoModal`).
+- **Eliminación del Botón con Enlace a Infoleg**:
+  - Se removió el botón con el enlace externo a Infoleg en `Resolucion886Modal.js`.
+- **Eliminación de Subrayados en Labels de Formularios de Carga**:
+  - Se restringieron las reglas de bordes en `globals.css` utilizando `:not(:has(input, select, textarea, label)):not(form)`.
+- **Refuerzo Global del Delineado y Contraste de Bordes**:
+  - Se actualizaron las variables CSS `--border` e `--input` a `215 20% 82%` (`#cbd5e1` / **slate-300**).
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/components/Resolucion886Modal.js`
+- `[MODIFY] src/app/globals.css`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
 ## [2026-08-04] Restricción de Visualización a Pantalla Completa Exclusivamente a Móviles (<768px) y Conservación de Márgenes, Paddings y Fondo Gris en Tablets (>=768px)
 
 ### Resumen de Cambios

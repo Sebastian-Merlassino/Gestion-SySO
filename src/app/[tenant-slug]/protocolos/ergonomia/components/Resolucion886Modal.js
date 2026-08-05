@@ -2,9 +2,8 @@
 'use client';
 
 import React from 'react';
-import { Info, ExternalLink } from 'lucide-react';
+import { Info } from 'lucide-react';
 import AppInfoModal from '@/components/ui/AppInfoModal';
-import AppButton from '@/components/ui/AppButton';
 
 export default function Resolucion886Modal({ isOpen, onClose }) {
   return (
@@ -18,20 +17,8 @@ export default function Resolucion886Modal({ isOpen, onClose }) {
       closeButtonText="Cerrar"
     >
       <div className="space-y-4">
-        {/* Botón de Enlace Externo */}
-        <div className="flex justify-end">
-          <AppButton
-            variant="secondary"
-            onClick={() => window.open('https://servicios.infoleg.gob.ar/infolegInternet/anexos/245000-249999/246272/norma.htm', '_blank')}
-            className="text-xs font-bold gap-1.5"
-          >
-            <ExternalLink className="h-3.5 w-3.5" />
-            Ver Resolución Completa (Infoleg)
-          </AppButton>
-        </div>
-
         {/* Texto del Instructivo */}
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 text-xs text-slate-700 leading-relaxed font-sans max-h-[60vh] overflow-y-auto space-y-4 shadow-inner">
+        <div className="space-y-6 text-xs text-slate-700 leading-relaxed font-sans">
           <div>
             <h4 className="font-extrabold text-slate-900 text-sm uppercase mb-2 border-b border-slate-200 pb-1">
               1. PLANILLA N° 1: IDENTIFICACIÓN DE FACTORES DE RIESGO

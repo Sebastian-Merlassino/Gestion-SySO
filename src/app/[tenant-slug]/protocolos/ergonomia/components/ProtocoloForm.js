@@ -2260,50 +2260,101 @@ export default function ProtocoloForm({
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                        <div className="flex flex-col gap-1">
-                          <AppLabel htmlFor={`procedimiento-${p.id}`}>
+                        <div className="flex flex-col gap-1.5">
+                          <AppLabel>
                             Procedimiento de trabajo escrito
                           </AppLabel>
-                          <AppSelect
-                            id={`procedimiento-${p.id}`}
-                            disabled={!canEdit}
-                            value={p.procedimiento_escrito || 'no'}
-                            onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, procedimiento_escrito: e.target.value } : x))}
-                          >
-                            <option value="si">Sí</option>
-                            <option value="no">No</option>
-                          </AppSelect>
+                          <div className="inline-flex rounded-lg border border-slate-200 overflow-hidden bg-slate-50 p-1 w-full max-w-[200px] shrink-0">
+                            <button
+                              type="button"
+                              disabled={!canEdit}
+                              onClick={() => setPuntos(puntos.map(x => x.id === p.id ? { ...x, procedimiento_escrito: 'si' } : x))}
+                              className={`flex-1 py-1.5 text-xs font-bold transition-all rounded-md text-center cursor-pointer ${
+                                p.procedimiento_escrito === 'si'
+                                  ? 'bg-[#468DFF] text-white shadow-sm'
+                                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
+                              }`}
+                            >
+                              Sí
+                            </button>
+                            <button
+                              type="button"
+                              disabled={!canEdit}
+                              onClick={() => setPuntos(puntos.map(x => x.id === p.id ? { ...x, procedimiento_escrito: 'no' } : x))}
+                              className={`flex-1 py-1.5 text-xs font-bold transition-all rounded-md text-center cursor-pointer ${
+                                (p.procedimiento_escrito || 'no') === 'no'
+                                  ? 'bg-slate-500 text-white shadow-sm'
+                                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
+                              }`}
+                            >
+                              No
+                            </button>
+                          </div>
                         </div>
-                        <div className="flex flex-col gap-1">
-                          <AppLabel htmlFor={`capacitacion-${p.id}`}>
+                        <div className="flex flex-col gap-1.5">
+                          <AppLabel>
                             Capacitación
                           </AppLabel>
-                          <AppSelect
-                            id={`capacitacion-${p.id}`}
-                            disabled={!canEdit}
-                            value={p.capacitacion || 'no'}
-                            onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, capacitacion: e.target.value } : x))}
-                          >
-                            <option value="si">Sí</option>
-                            <option value="no">No</option>
-                          </AppSelect>
+                          <div className="inline-flex rounded-lg border border-slate-200 overflow-hidden bg-slate-50 p-1 w-full max-w-[200px] shrink-0">
+                            <button
+                              type="button"
+                              disabled={!canEdit}
+                              onClick={() => setPuntos(puntos.map(x => x.id === p.id ? { ...x, capacitacion: 'si' } : x))}
+                              className={`flex-1 py-1.5 text-xs font-bold transition-all rounded-md text-center cursor-pointer ${
+                                p.capacitacion === 'si'
+                                  ? 'bg-[#468DFF] text-white shadow-sm'
+                                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
+                              }`}
+                            >
+                              Sí
+                            </button>
+                            <button
+                              type="button"
+                              disabled={!canEdit}
+                              onClick={() => setPuntos(puntos.map(x => x.id === p.id ? { ...x, capacitacion: 'no' } : x))}
+                              className={`flex-1 py-1.5 text-xs font-bold transition-all rounded-md text-center cursor-pointer ${
+                                (p.capacitacion || 'no') === 'no'
+                                  ? 'bg-slate-500 text-white shadow-sm'
+                                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
+                              }`}
+                            >
+                              No
+                            </button>
+                          </div>
                         </div>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                        <div className="flex flex-col gap-1">
-                          <AppLabel htmlFor={`manifestacion-${p.id}`}>
+                        <div className="flex flex-col gap-1.5">
+                          <AppLabel>
                             Manifestación Temprana
                           </AppLabel>
-                          <AppSelect
-                            id={`manifestacion-${p.id}`}
-                            disabled={!canEdit}
-                            value={p.manifestacion_temprana || 'no'}
-                            onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, manifestacion_temprana: e.target.value } : x))}
-                          >
-                            <option value="si">Sí</option>
-                            <option value="no">No</option>
-                          </AppSelect>
+                          <div className="inline-flex rounded-lg border border-slate-200 overflow-hidden bg-slate-50 p-1 w-full max-w-[200px] shrink-0">
+                            <button
+                              type="button"
+                              disabled={!canEdit}
+                              onClick={() => setPuntos(puntos.map(x => x.id === p.id ? { ...x, manifestacion_temprana: 'si' } : x))}
+                              className={`flex-1 py-1.5 text-xs font-bold transition-all rounded-md text-center cursor-pointer ${
+                                p.manifestacion_temprana === 'si'
+                                  ? 'bg-[#468DFF] text-white shadow-sm'
+                                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
+                              }`}
+                            >
+                              Sí
+                            </button>
+                            <button
+                              type="button"
+                              disabled={!canEdit}
+                              onClick={() => setPuntos(puntos.map(x => x.id === p.id ? { ...x, manifestacion_temprana: 'no' } : x))}
+                              className={`flex-1 py-1.5 text-xs font-bold transition-all rounded-md text-center cursor-pointer ${
+                                (p.manifestacion_temprana || 'no') === 'no'
+                                  ? 'bg-slate-500 text-white shadow-sm'
+                                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
+                              }`}
+                            >
+                              No
+                            </button>
+                          </div>
                         </div>
                         <div className="flex flex-col gap-1">
                           <AppLabel htmlFor={`sintoma-${p.id}`}>

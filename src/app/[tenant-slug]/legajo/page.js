@@ -1489,10 +1489,10 @@ export default function LegajoPage({ params }) {
               </div>
             ) : (
               // VISTA DEL EXPLORADOR
-              <div className="space-y-4 flex-1 flex flex-col min-h-0">
+              <div className="space-y-0 md:space-y-4 flex-1 flex flex-col min-h-0">
 
                 {/* Navegación Breadcrumbs (Migas de Pan) */}
-                <div className="bg-white rounded-xl border border-slate-200 p-3.5 shadow-sm flex items-center gap-2 text-xs font-semibold text-slate-500 select-none">
+                <div className="bg-white border-b border-slate-200 md:border md:border-slate-200 md:rounded-xl p-3.5 shadow-sm flex items-center gap-2 text-xs font-semibold text-slate-500 select-none">
                   <button
                     onClick={navigateToRoot}
                     className="hover:text-[#468DFF] cursor-pointer flex items-center gap-1 transition-colors"
@@ -1566,14 +1566,14 @@ export default function LegajoPage({ params }) {
                         );
                       })}
                     </div>
-                    <div className="h-8 w-full shrink-0" />
+                    <div className="h-8 w-full shrink-0 hidden md:block" />
                   </>
                 )}
 
                 {/* 2. VISTA DE CARPETA CON SUBCARPETAS */}
                 {currentFolder && currentFolder.subfolders && !currentSubfolder && (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2">
+                  <div className="space-y-0 md:space-y-4">
+                    <div className="flex items-center gap-2 p-3.5 sm:p-0 bg-white border-b border-slate-200 md:border-none">
                       <button
                         onClick={navigateToRoot}
                         className="px-3 py-1.5 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 text-xs font-bold transition-all cursor-pointer text-slate-600 flex items-center gap-1 shrink-0"
@@ -1615,7 +1615,7 @@ export default function LegajoPage({ params }) {
                         );
                       })}
                     </div>
-                    <div className="h-8 w-full shrink-0" />
+                    <div className="h-8 w-full shrink-0 hidden md:block" />
                   </div>
                 )}
 

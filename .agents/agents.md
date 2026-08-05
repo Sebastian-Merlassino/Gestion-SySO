@@ -318,6 +318,7 @@ Leé primero estos archivos si existen:
 
 - `.agents/skills/shadcn/SKILL.md`
 - `.agents/skills/gestion-syso-brand-guidelines/SKILL.md`
+- `.agents/skills/ui-ux-pro-max/SKILL.md`
 - `.agents/skills/next-best-practices/SKILL.md`
 - `.agents/skills/vercel-react-best-practices/SKILL.md`
 - `.agents/skills/gestion-syso-bitacora/SKILL.md`

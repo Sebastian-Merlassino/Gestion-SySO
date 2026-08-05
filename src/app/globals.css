@@ -51,8 +51,8 @@
     --destructive: 0 84.2% 60.2%; /* #ef4444 (Safety Red) */
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%; /* #e2e8f0 (slate-200) */
-    --input: 214.3 31.8% 91.4%;
+    --border: 215 20% 82%; /* #cbd5e1 (slate-300: gris nítido y definido) */
+    --input: 215 20% 82%;
     --ring: 217 100% 63.7%;
 
     --radius: 0.75rem; /* rounded-xl */
@@ -102,6 +102,13 @@
 @layer base {
   * {
     border-color: hsl(var(--border));
+  }
+  /* Refuerzo visual de delineado nítido para todos los contenedores y formularios de carga (Mobile, Tablet y PC) */
+  .border-slate-200,
+  input,
+  select,
+  textarea {
+    border-color: #cbd5e1; /* slate-300: bordes nítidos y visibles */
   }
   body {
     background-color: hsl(var(--background));
@@ -227,25 +234,33 @@
     border-top-width: 0px !important;
   }
 
-  /* Juntar grillas y tarjetas en Dashboard y Legajo Técnico (remover gaps y bordes redondeados) */
-  main div.grid[class*="gap-4"],
-  main div.grid[class*="gap-6"],
-  main div.grid[class*="gap-3"] {
+  /* Garantizar que las etiquetas y campos de formularios de carga jamás tengan subrayados ni bordes inferiores */
+  label,
+  .form-label {
+    border-bottom: none !important;
+    border-bottom-width: 0px !important;
+    text-decoration: none !important;
+  }
+
+  /* Juntar grillas y tarjetas en Dashboard y Legajo Técnico (EXCLUYENDO formularios de carga con inputs/selects) */
+  main div.grid[class*="gap-4"]:not(:has(input, select, textarea, label)):not(form),
+  main div.grid[class*="gap-6"]:not(:has(input, select, textarea, label)):not(form),
+  main div.grid[class*="gap-3"]:not(:has(input, select, textarea, label)):not(form) {
     gap: 0px !important;
     row-gap: 0px !important;
     column-gap: 0px !important;
   }
 
-  /* Modificar tarjetas dentro de grillas para ser continuas y separarse por borde inferior */
-  main div.grid[class*="gap-4"] > div,
-  main div.grid[class*="gap-6"] > div,
-  main div.grid[class*="gap-3"] > div {
+  /* Modificar tarjetas dentro de grillas para ser continuas (EXCLUYENDO campos de formularios) */
+  main div.grid[class*="gap-4"]:not(:has(input, select, textarea, label)):not(form) > div,
+  main div.grid[class*="gap-6"]:not(:has(input, select, textarea, label)):not(form) > div,
+  main div.grid[class*="gap-3"]:not(:has(input, select, textarea, label)):not(form) > div {
     border-left-width: 0px !important;
     border-right-width: 0px !important;
     border-top-width: 0px !important;
     border-bottom-width: 1px !important;
     border-bottom-style: solid !important;
-    border-color: hsl(var(--border)) !important;
+    border-color: #cbd5e1 !important;
     border-radius: 0px !important;
     box-shadow: none !important;
   }
