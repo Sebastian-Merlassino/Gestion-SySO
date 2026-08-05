@@ -2706,7 +2706,7 @@ export default function ProtocoloForm({
                                                   const tiempoRaw = t[`f_${f.key}_tiempo`] || '';
                                                   const { valor, unidad } = parseTiempo(tiempoRaw);
                                                   return (
-                                                    <div className="flex items-center border border-slate-200 rounded-md overflow-hidden bg-white shrink-0 w-24 xs:w-28 sm:w-32 md:w-full max-w-[120px] mx-auto h-8 shadow-sm">
+                                                    <div className="flex items-center border border-slate-200 rounded-md overflow-hidden bg-white shrink-0 w-24 xs:w-28 sm:w-32 md:w-28 mx-auto h-8 shadow-sm">
                                                       <input
                                                         type="text"
                                                         disabled={!canEdit || !isPresent}
@@ -2718,7 +2718,7 @@ export default function ProtocoloForm({
                                                           const updatedTareas = p.tareas.map(x => x.id === t.id ? { ...x, [`f_${f.key}_tiempo`]: newVal } : x);
                                                           setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: updatedTareas } : x));
                                                         }}
-                                                        className="w-0 flex-grow text-center text-xs h-full border-0 focus:ring-0 focus:outline-none font-semibold text-slate-800 bg-transparent px-1 min-w-0"
+                                                        className="w-full min-w-0 text-center text-xs h-full border-0 focus:ring-0 focus:outline-none font-semibold text-slate-800 bg-transparent px-1"
                                                       />
                                                       <div className="h-4 w-[1px] bg-slate-200 shrink-0" />
                                                       <button
@@ -2730,7 +2730,7 @@ export default function ProtocoloForm({
                                                           const updatedTareas = p.tareas.map(x => x.id === t.id ? { ...x, [`f_${f.key}_tiempo`]: newVal } : x);
                                                           setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: updatedTareas } : x));
                                                         }}
-                                                        className={`px-2 h-full text-[10px] font-extrabold uppercase transition-all cursor-pointer select-none shrink-0 ${
+                                                        className={`w-10 shrink-0 flex items-center justify-center h-full text-[10px] font-extrabold uppercase transition-all cursor-pointer select-none ${
                                                           !isPresent
                                                             ? 'text-slate-400 bg-slate-50'
                                                             : unidad === 'min'
