@@ -1030,8 +1030,9 @@ export const generateErgonomyProtocolPdf = async (
 
       // Col 3: Exposure time
       const timesList = tList.map((t, idx) => {
-        const tVal = t[`f_${f.key}_tiempo`]?.trim();
-        return tVal ? `T${idx+1}: ${tVal}` : '';
+        const tVal = (t[`f_${f.key}_tiempo`] || '').trim();
+        const hasNumber = tVal.match(/^([\d.,]+)/);
+        return hasNumber ? `T${idx+1}: ${tVal}` : '';
       }).filter(Boolean);
       const expTime = timesList.join(', ') || '-';
       doc.rect(tblX + 165, rowY, 40, rowH, 'S');

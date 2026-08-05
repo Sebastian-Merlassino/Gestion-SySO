@@ -186,15 +186,19 @@ const isValidUuid = (val) => {
 const parseTiempo = (tiempoStr) => {
   if (!tiempoStr) return { valor: '', unidad: 'min' };
   const str = String(tiempoStr).trim();
-  const matches = str.match(/^([\d.,]+)\s*(min|hs|horas|m|h|hora|minutos)?$/i);
+  
+  if (str.toLowerCase() === 'min') return { valor: '', unidad: 'min' };
+  if (str.toLowerCase() === 'hs') return { valor: '', unidad: 'hs' };
+
+  const matches = str.match(/^([\d.,]+)?\s*(min|hs|horas|m|h|hora|minutos)?$/i);
   if (!matches) {
     const num = parseFloat(str.replace(',', '.'));
     return {
-      valor: isNaN(num) ? str : String(num),
+      valor: isNaN(num) ? '' : String(num),
       unidad: str.toLowerCase().includes('h') ? 'hs' : 'min'
     };
   }
-  const valor = matches[1];
+  const valor = matches[1] || '';
   const unitText = (matches[2] || '').toLowerCase();
   const unidad = (unitText.startsWith('h')) ? 'hs' : 'min';
   return { valor, unidad };
@@ -2714,7 +2718,7 @@ export default function ProtocoloForm({
                                                         value={valor}
                                                         onChange={(e) => {
                                                           const newValor = e.target.value;
-                                                          const newVal = newValor ? `${newValor} ${unidad}` : '';
+                                                          const newVal = newValor ? `${newValor} ${unidad}` : unidad;
                                                           const updatedTareas = p.tareas.map(x => x.id === t.id ? { ...x, [`f_${f.key}_tiempo`]: newVal } : x);
                                                           setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: updatedTareas } : x));
                                                         }}
@@ -2726,7 +2730,7 @@ export default function ProtocoloForm({
                                                         disabled={!canEdit || !isPresent}
                                                         onClick={() => {
                                                           const nextUnit = unidad === 'min' ? 'hs' : 'min';
-                                                          const newVal = valor ? `${valor} ${nextUnit}` : '';
+                                                          const newVal = valor ? `${valor} ${nextUnit}` : nextUnit;
                                                           const updatedTareas = p.tareas.map(x => x.id === t.id ? { ...x, [`f_${f.key}_tiempo`]: newVal } : x);
                                                           setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: updatedTareas } : x));
                                                         }}
