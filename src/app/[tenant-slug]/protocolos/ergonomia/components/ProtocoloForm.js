@@ -178,6 +178,48 @@ export const CUESTIONARIOS_PLANILLA2 = {
   }
 };
 
+export const getDefaultPlanilla3Generales = (fechaDefault = '') => [
+  {
+    num: 1,
+    medida: 'Se ha informado al trabajador/es, supervisores, ingenieros, directivos relacionados con el puesto de trabajo, sobre el riesgo que tiene la tarea de desarrollar TME',
+    fecha: fechaDefault,
+    aplica: 'si',
+    observaciones: '-'
+  },
+  {
+    num: 2,
+    medida: 'Se ha capacitado al trabajador/es y supervisor/es relacionados con el puesto de trabajo, sobre la identificación de síntomas relacionados con el desarrollo de TME',
+    fecha: fechaDefault,
+    aplica: 'si',
+    observaciones: '-'
+  },
+  {
+    num: 3,
+    medida: 'Se ha capacitado al trabajador/es y supervisor/es relacionados con el puesto de trabajo, sobre las medidas y/o procedimientos para prevenir el desarrollo de TME',
+    fecha: fechaDefault,
+    aplica: 'si',
+    observaciones: '-'
+  }
+];
+
+export const getDefaultPlanilla3Especificas = () => [
+  { num: 1, medida: 'Realizar evaluación de los factores de riesgo ergonómico del puesto de trabajo (Levantamiento y descenso, Transporte y posturas forzadas)', observaciones: '-' },
+  { num: 2, medida: '', observaciones: '' },
+  { num: 3, medida: '', observaciones: '' },
+  { num: 4, medida: '', observaciones: '' },
+  { num: 5, medida: '', observaciones: '' },
+  { num: 6, medida: '', observaciones: '' },
+  { num: 7, medida: '', observaciones: '' },
+  { num: 8, medida: '', observaciones: '' },
+  { num: 9, medida: '', observaciones: '' },
+  { num: 10, medida: '', observaciones: '' },
+  { num: 11, medida: '', observaciones: '' },
+  { num: 12, medida: '', observaciones: '' },
+  { num: 13, medida: '', observaciones: '' },
+  { num: 14, medida: '', observaciones: '' },
+  { num: 15, medida: '', observaciones: '' }
+];
+
 const isValidUuid = (val) => {
   if (!val || typeof val !== 'string') return false;
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val);
@@ -946,7 +988,14 @@ export default function ProtocoloForm({
             f_confort_termico_tiempo: t.f_confort_termico_tiempo || '',
             f_confort_termico_respuestas: t.f_confort_termico_respuestas || {},
             f_estres_contacto_tiempo: t.f_estres_contacto_tiempo || '',
-            f_estres_contacto_respuestas: t.f_estres_contacto_respuestas || {}
+            f_estres_contacto_respuestas: t.f_estres_contacto_respuestas || {},
+            p3_medidas_generales: Array.isArray(t.p3_medidas_generales) && t.p3_medidas_generales.length === 3
+              ? t.p3_medidas_generales
+              : getDefaultPlanilla3Generales(p.fecha_medicion ? formatDate(p.fecha_medicion) : ''),
+            p3_medidas_especificas: Array.isArray(t.p3_medidas_especificas) && t.p3_medidas_especificas.length === 15
+              ? t.p3_medidas_especificas
+              : getDefaultPlanilla3Especificas(),
+            p3_observaciones: t.p3_observaciones || ''
           }));
         } else {
           // Si no tiene tareas guardadas (registro viejo), migrar los datos viejos a la primera tarea
@@ -1191,7 +1240,10 @@ export default function ProtocoloForm({
     f_estres_contacto_identificado: 'no',
     f_estres_contacto_tiempo: '',
     f_estres_contacto_riesgo: '',
-    f_estres_contacto_respuestas: {}
+    f_estres_contacto_respuestas: {},
+    p3_medidas_generales: getDefaultPlanilla3Generales(fechaMedicion ? formatAsDateInput(fechaMedicion) : ''),
+    p3_medidas_especificas: getDefaultPlanilla3Especificas(),
+    p3_observaciones: ''
   });
 
   const createNewPunto = (num) => ({
@@ -2589,8 +2641,9 @@ export default function ProtocoloForm({
                                 </div>
 
                                 {!isCollapsed && (
-                                  <div className="overflow-x-auto bg-white rounded-lg border border-slate-200">
-                                  <table className="w-full text-xs text-left border-collapse block md:table">
+                                  <div className="space-y-4 pt-1">
+                                    <div className="overflow-x-auto bg-white rounded-lg border border-slate-200">
+                                    <table className="w-full text-xs text-left border-collapse block md:table">
                                     <thead className="hidden md:table-header-group">
                                       <tr className="border-b border-slate-200 bg-slate-50 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                                         <th className="p-2">Identificación de Factores de Riesgo</th>
@@ -3128,62 +3181,243 @@ export default function ProtocoloForm({
                                     })()}
                                   </table>
                                   </div>
-                                )}
-                              </div>
-                            );
-                          })}
+
+                                  {/* ANEXO I - PLANILLA 3: IDENTIFICACION DE MEDIDAS CORRECTIVAS Y PREVENTIVAS */}
+                                  <div className="mt-5 pt-4 border-t border-slate-200 space-y-4">
+                                    <div className="bg-blue-50/60 p-3 rounded-lg border border-blue-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                      <div className="flex items-center gap-2">
+                                        <ShieldCheck className="h-5 w-5 text-[#468DFF] shrink-0" />
+                                        <div>
+                                          <h5 className="font-extrabold text-slate-800 font-outfit uppercase tracking-wider text-xs">
+                                            ANEXO I- PLANILLA 3: IDENTIFICACION DE MEDIDAS CORRECTIVAS Y PREVENTIVAS
+                                          </h5>
+                                          <p className="text-[11px] font-bold text-[#468DFF] uppercase tracking-wide mt-0.5">
+                                            Medidas Correctivas y Preventivas (M.C.P.)
+                                          </p>
+                                        </div>
+                                      </div>
+                                      <div className="bg-white/80 border border-slate-200/80 px-3 py-1 rounded-md shadow-sm shrink-0 self-start sm:self-auto">
+                                        <p className="text-xs font-bold text-slate-700">
+                                          Tarea {tIdx + 1}: <span className="text-slate-900 font-extrabold">{t.nombre || `Tarea habitual ${tIdx + 1}`}</span>
+                                        </p>
+                                      </div>
+                                    </div>
+
+                                    {/* 1. Medidas Preventivas Generales */}
+                                    <div className="space-y-2">
+                                      <h6 className="font-bold text-slate-700 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                                        Medidas Preventivas Generales
+                                      </h6>
+                                      <div className="overflow-x-auto bg-white rounded-lg border border-slate-200 shadow-sm">
+                                        <table className="w-full text-xs text-left border-collapse">
+                                          <thead>
+                                            <tr className="border-b border-slate-200 bg-slate-50 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                                              <th className="p-2 text-center w-10">Nº</th>
+                                              <th className="p-2">Medidas Preventivas Generales</th>
+                                              <th className="p-2 text-center w-36">Fecha:</th>
+                                              <th className="p-2 text-center w-28">SI / NO</th>
+                                              <th className="p-2 w-48">Observaciones</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody className="divide-y divide-slate-100">
+                                            {(t.p3_medidas_generales || getDefaultPlanilla3Generales()).map((mg, mgIdx) => (
+                                              <tr key={mg.num} className="hover:bg-slate-50/50">
+                                                <td className="p-2 text-center font-bold text-slate-600 bg-slate-50/50">{mg.num}</td>
+                                                <td className="p-2 font-medium text-slate-750 text-[11.5px]">{mg.medida}</td>
+                                                <td className="p-2 text-center">
+                                                  <div className="relative flex items-center justify-center">
+                                                    <AppInput
+                                                      type="text"
+                                                      disabled={!canEdit}
+                                                      placeholder="DD/MM/AAAA"
+                                                      className="h-7 text-xs text-center pr-7 w-32 bg-white"
+                                                      value={mg.fecha || ''}
+                                                      onChange={(e) => {
+                                                        const formatted = formatAsDateInput(e.target.value);
+                                                        const updatedGen = (t.p3_medidas_generales || getDefaultPlanilla3Generales()).map((item, idx) =>
+                                                          idx === mgIdx ? { ...item, fecha: formatted } : item
+                                                        );
+                                                        const updatedTareas = p.tareas.map(x => x.id === t.id ? { ...x, p3_medidas_generales: updatedGen } : x);
+                                                        setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: updatedTareas } : x));
+                                                      }}
+                                                    />
+                                                    {canEdit && (
+                                                      <div className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
+                                                        <Calendar className="h-3.5 w-3.5" />
+                                                        <input
+                                                          type="date"
+                                                          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                                          onChange={(e) => {
+                                                            if (e.target.value) {
+                                                              const [yyyy, mm, dd] = e.target.value.split('-');
+                                                              const formatted = `${dd}/${mm}/${yyyy}`;
+                                                              const updatedGen = (t.p3_medidas_generales || getDefaultPlanilla3Generales()).map((item, idx) =>
+                                                                idx === mgIdx ? { ...item, fecha: formatted } : item
+                                                              );
+                                                              const updatedTareas = p.tareas.map(x => x.id === t.id ? { ...x, p3_medidas_generales: updatedGen } : x);
+                                                              setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: updatedTareas } : x));
+                                                            }
+                                                          }}
+                                                        />
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                </td>
+                                                <td className="p-2 text-center">
+                                                  <div className="inline-flex rounded-md shadow-sm border border-slate-300 overflow-hidden bg-white shrink-0">
+                                                    <button
+                                                      type="button"
+                                                      disabled={!canEdit}
+                                                      onClick={() => {
+                                                        const updatedGen = (t.p3_medidas_generales || getDefaultPlanilla3Generales()).map((item, idx) =>
+                                                          idx === mgIdx ? { ...item, aplica: 'si' } : item
+                                                        );
+                                                        const updatedTareas = p.tareas.map(x => x.id === t.id ? { ...x, p3_medidas_generales: updatedGen } : x);
+                                                        setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: updatedTareas } : x));
+                                                      }}
+                                                      className={`px-2.5 py-0.5 text-xs font-bold transition-all cursor-pointer ${
+                                                        mg.aplica === 'si'
+                                                          ? 'bg-[#468DFF] text-white shadow-inner'
+                                                          : 'text-slate-650 hover:bg-slate-50 hover:text-slate-900 bg-white'
+                                                      }`}
+                                                    >
+                                                      Si
+                                                    </button>
+                                                    <button
+                                                      type="button"
+                                                      disabled={!canEdit}
+                                                      onClick={() => {
+                                                        const updatedGen = (t.p3_medidas_generales || getDefaultPlanilla3Generales()).map((item, idx) =>
+                                                          idx === mgIdx ? { ...item, aplica: 'no' } : item
+                                                        );
+                                                        const updatedTareas = p.tareas.map(x => x.id === t.id ? { ...x, p3_medidas_generales: updatedGen } : x);
+                                                        setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: updatedTareas } : x));
+                                                      }}
+                                                      className={`px-2.5 py-0.5 text-xs font-bold border-l border-slate-200 transition-all cursor-pointer ${
+                                                        mg.aplica === 'no'
+                                                          ? 'bg-slate-500 text-white shadow-inner'
+                                                          : 'text-slate-650 hover:bg-slate-50 hover:text-slate-900 bg-white'
+                                                      }`}
+                                                    >
+                                                      No
+                                                    </button>
+                                                  </div>
+                                                </td>
+                                                <td className="p-2">
+                                                  <AppInput
+                                                    disabled={!canEdit}
+                                                    placeholder="-"
+                                                    className="h-7 text-xs bg-white"
+                                                    value={mg.observaciones || ''}
+                                                    onChange={(e) => {
+                                                      const updatedGen = (t.p3_medidas_generales || getDefaultPlanilla3Generales()).map((item, idx) =>
+                                                        idx === mgIdx ? { ...item, observaciones: e.target.value } : item
+                                                      );
+                                                      const updatedTareas = p.tareas.map(x => x.id === t.id ? { ...x, p3_medidas_generales: updatedGen } : x);
+                                                      setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: updatedTareas } : x));
+                                                    }}
+                                                  />
+                                                </td>
+                                              </tr>
+                                            ))}
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    </div>
+
+                                    {/* 2. Medidas Correctivas y Preventivas Especificas (Administrativas y de Ingeniería) */}
+                                    <div className="space-y-2">
+                                      <h6 className="font-bold text-slate-700 uppercase tracking-wider text-[11px]">
+                                        Medidas Correctivas y Preventivas Especificas (Administrativas y de Ingeniería)
+                                      </h6>
+                                      <div className="overflow-x-auto bg-white rounded-lg border border-slate-200 shadow-sm max-h-[360px] overflow-y-auto scrollbar-thin">
+                                        <table className="w-full text-xs text-left border-collapse">
+                                          <thead className="sticky top-0 bg-slate-50 z-10 shadow-sm">
+                                            <tr className="border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                                              <th className="p-2 text-center w-10">Nº</th>
+                                              <th className="p-2">Medidas Correctivas y Preventivas Especificas (Administrativas y de Ingeniería)</th>
+                                              <th className="p-2 w-56">Observaciones</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody className="divide-y divide-slate-100">
+                                            {(t.p3_medidas_especificas || getDefaultPlanilla3Especificas()).map((me, meIdx) => (
+                                              <tr key={me.num} className="hover:bg-slate-50/50">
+                                                <td className="p-2 text-center font-bold text-slate-600 bg-slate-50/50">{me.num}</td>
+                                                <td className="p-1.5">
+                                                  <AppInput
+                                                    disabled={!canEdit}
+                                                    placeholder="Ingrese medida específica (administrativa o ingeniería)..."
+                                                    className="h-7 text-xs bg-white"
+                                                    value={me.medida || ''}
+                                                    onChange={(e) => {
+                                                      const updatedEsp = (t.p3_medidas_especificas || getDefaultPlanilla3Especificas()).map((item, idx) =>
+                                                        idx === meIdx ? { ...item, medida: e.target.value } : item
+                                                      );
+                                                      const updatedTareas = p.tareas.map(x => x.id === t.id ? { ...x, p3_medidas_especificas: updatedEsp } : x);
+                                                      setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: updatedTareas } : x));
+                                                    }}
+                                                  />
+                                                </td>
+                                                <td className="p-1.5">
+                                                  <AppInput
+                                                    disabled={!canEdit}
+                                                    placeholder="Observaciones..."
+                                                    className="h-7 text-xs bg-white"
+                                                    value={me.observaciones || ''}
+                                                    onChange={(e) => {
+                                                      const updatedEsp = (t.p3_medidas_especificas || getDefaultPlanilla3Especificas()).map((item, idx) =>
+                                                        idx === meIdx ? { ...item, observaciones: e.target.value } : item
+                                                      );
+                                                      const updatedTareas = p.tareas.map(x => x.id === t.id ? { ...x, p3_medidas_especificas: updatedEsp } : x);
+                                                      setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: updatedTareas } : x));
+                                                    }}
+                                                  />
+                                                </td>
+                                              </tr>
+                                            ))}
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    </div>
+
+                                    {/* Observaciones generales Planilla 3 con SySO-AI-Voice-Helper */}
+                                    <div className="space-y-1.5 pt-1">
+                                      <div className="flex items-center justify-between gap-2 min-h-[28px]">
+                                        <AppLabel htmlFor={`p3-obs-${t.id}`} className="font-bold text-slate-700">
+                                          Observaciones
+                                        </AppLabel>
+                                        {canEdit && (
+                                          <AITextHelper
+                                            value={t.p3_observaciones || ''}
+                                            onChange={(newVal) => {
+                                              const updatedTareas = p.tareas.map(x => x.id === t.id ? { ...x, p3_observaciones: newVal } : x);
+                                              setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: updatedTareas } : x));
+                                            }}
+                                          />
+                                        )}
+                                      </div>
+                                      <AppTextarea
+                                        id={`p3-obs-${t.id}`}
+                                        disabled={!canEdit}
+                                        rows={2}
+                                        placeholder="Observaciones generales sobre la Planilla 3 (Medidas Correctivas y Preventivas)..."
+                                        value={t.p3_observaciones || ''}
+                                        onChange={(e) => {
+                                          const updatedTareas = p.tareas.map(x => x.id === t.id ? { ...x, p3_observaciones: e.target.value } : x);
+                                          setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: updatedTareas } : x));
+                                        }}
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                         </div>
                       </div>
 
-                      {/* Resultados del Puesto */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                        <div className="flex flex-col gap-1">
-                          <AppLabel htmlFor={`riesgo-${p.id}`} required={estado === 'completado'}>
-                            Nivel de Riesgo Global
-                          </AppLabel>
-                          <AppSelect
-                            id={`riesgo-${p.id}`}
-                            disabled={!canEdit}
-                            value={p.nivel_de_riesgo || 'Bajo'}
-                            onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, nivel_de_riesgo: e.target.value } : x))}
-                          >
-                            <option value="Bajo">Nivel 1 - Riesgo Tolerable (Bajo)</option>
-                            <option value="Medio">Nivel 2 - Riesgo Moderado (Medio)</option>
-                            <option value="Alto">Nivel 3 - Riesgo Crítico (Alto)</option>
-                          </AppSelect>
-                        </div>
 
-                        <div className="flex flex-col gap-1">
-                          <AppLabel htmlFor={`resultado-${p.id}`} required={estado === 'completado'}>
-                            Verificación de Cumplimiento (Resultado)
-                          </AppLabel>
-                          <AppSelect
-                            id={`resultado-${p.id}`}
-                            disabled={!canEdit}
-                            value={p.resultado_punto || 'Cumple'}
-                            onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, resultado_punto: e.target.value } : x))}
-                          >
-                            <option value="Cumple">Cumple</option>
-                            <option value="No cumple">No cumple</option>
-                            <option value="Parcial">Cumple Parcialmente</option>
-                          </AppSelect>
-                        </div>
-                      </div>
-
-                      {/* Observaciones del Punto */}
-                      <div className="flex flex-col gap-1 bg-white p-4 rounded-xl border border-slate-200 shadow-sm font-medium text-slate-700">
-                        <AppLabel htmlFor={`obs-punto-${p.id}`}>
-                          Observaciones / Medidas correctivas propuestas para este puesto
-                        </AppLabel>
-                        <AppTextarea
-                          id={`obs-punto-${p.id}`}
-                          disabled={!canEdit}
-                          rows={2}
-                          value={p.observaciones_punto || ''}
-                          onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, observaciones_punto: e.target.value } : x))}
-                          placeholder="Ingresa observaciones, desvíos o recomendaciones específicas..."
-                        />
-                      </div>
                     </div>
                   )}
                 </div>

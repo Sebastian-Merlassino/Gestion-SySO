@@ -1,5 +1,26 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-05] Incorporación de ANEXO I - PLANILLA 3 por Tarea en Protocolo de Ergonomía
+
+### Resumen de Cambios
+- **Integración de ANEXO I - PLANILLA 3 por Tarea (`ProtocoloForm.js`):**
+  - Se incorporó la sección **ANEXO I- PLANILLA 3: IDENTIFICACION DE MEDIDAS CORRECTIVAS Y PREVENTIVAS** debajo de la tabla de identificación de factores de riesgo de cada tarea del puesto de trabajo, disponiendo el título `ANEXO I - PLANILLA 3` y `Medidas Correctivas y Preventivas (M.C.P.)` a la izquierda y el indicador de `Tarea N°: [Nombre]` en una tarjeta destacada a la derecha del contenedor.
+  - **Medidas Preventivas Generales:** Tabla con las 3 medidas generales predeterminadas normativas de TME (`Informado`, `Capacitado en síntomas`, `Capacitado en medidas/procedimientos`), incluyendo fecha con selector de fecha `DD/MM/AAAA` e icono interactivo de calendario `<Calendar />`, selectores segmentados (`SI` / `NO`, precargados en `SI`) y observaciones (`-`).
+  - **Medidas Correctivas y Preventivas Específicas (Administrativas y de Ingeniería):** Tabla con 15 ítems numerados. Fila 1 precargada normativamente (*"Realizar evaluación de los factores de riesgo ergonómico del puesto de trabajo (Levantamiento y descenso, Transporte y posturas forzadas)"*) con edición habilitada para modificaciones personalizadas, y filas 2 a 15 editables para medidas específicas de administración e ingeniería.
+  - **Eliminación de Contenedores Redundantes:** Se eliminaron los contenedores inferiores del puesto de trabajo (*Nivel de Riesgo Global / Verificación de Cumplimiento* y *Observaciones / Medidas correctivas propuestas para este puesto*) concentrando toda la información en las Planillas 1, 2, 3 y 4 de la Resolución 886/15.
+  - **Observaciones con Dictado por Voz e IA:** Campo de observaciones de Planilla 3 integrando obligatoriamente el estándar `SySO-AI-Voice-Helper` importando `<AITextHelper />` para habilitar dictado por voz y refinamiento asistido por IA (Gemini).
+- **Generación en Reporte PDF (`pdfGenerator.js`):**
+  - Se agregó la renderización de la **Planilla 3** en páginas A4 Apaisado (Landscape) por cada tarea de cada puesto de trabajo, incluyendo cabeceras en azul institucional (`#468DFF`), las tablas normativas de medidas generales y específicas, cuadro de observaciones y bloque de firma profesional.
+- **Verificación:**
+  - Compilación de producción verificada con `npm run build` (`✓ Compiled successfully`).
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/utils/pdfGenerator.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
 ## [2026-08-05] Estandarización de Espaciado Inferior en Formularios (SySO Compact Layout)
 
 ### Resumen de Cambios

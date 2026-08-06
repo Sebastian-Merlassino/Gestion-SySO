@@ -1379,6 +1379,138 @@ export const generateErgonomyProtocolPdf = async (
 
       drawSignatureBlock(185, 175, 90, 22, signatureBase64, profNombre, profMatricula, 'Firma, Aclaración y Registro del Profesional Interviniente');
     }
+
+    // ==========================================
+    // ANEXO I - PLANILLA 3: MEDIDAS CORRECTIVAS Y PREVENTIVAS POR TAREA
+    // ==========================================
+    (pt.tareas || []).forEach((t, tIdx) => {
+      doc.addPage('a4', 'landscape');
+      pageCounter++;
+
+      drawHeader(true);
+      drawProtocolTitleBar(true, { x: 15, y: 22, w: 267, h: 5.5 });
+
+      // Header Bar
+      const p3X = 15;
+      const p3Y = 29;
+      const p3W = 267;
+
+      setFillColor(doc, '#468DFF');
+      doc.rect(p3X, p3Y, p3W, 7, 'F');
+      drawCellText(doc, `PUESTO: ${(pt.puesto_text || pt.puesto || '-').toUpperCase()} — TAREA ${tIdx + 1}: ${(t.nombre || '-').toUpperCase()} — ANEXO I - PLANILLA 3: MEDIDAS CORRECTIVAS Y PREVENTIVAS`, p3X, p3Y, p3W, 7, {
+        align: 'center',
+        fontStyle: 'bold',
+        fontSize: 8.5,
+        color: '#FFFFFF'
+      });
+
+      // 1. Tabla Medidas Preventivas Generales
+      let curY = p3Y + 9;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      setTextColor(doc, COLOR_NEGRO);
+      doc.text('Medidas Preventivas Generales', p3X, curY);
+
+      curY += 2;
+      const genH = 5;
+      // Header row
+      setFillColor(doc, COLOR_SLATE_200);
+      doc.rect(p3X, curY, 12, genH, 'FD');
+      drawCellText(doc, 'Nº', p3X, curY, 12, genH, { align: 'center', fontStyle: 'bold', fontSize: 6.5 });
+
+      doc.rect(p3X + 12, curY, 140, genH, 'FD');
+      drawCellText(doc, 'Medidas Preventivas Generales', p3X + 12, curY, 140, genH, { align: 'center', fontStyle: 'bold', fontSize: 6.5 });
+
+      doc.rect(p3X + 152, curY, 30, genH, 'FD');
+      drawCellText(doc, 'Fecha:', p3X + 152, curY, 30, genH, { align: 'center', fontStyle: 'bold', fontSize: 6.5 });
+
+      doc.rect(p3X + 182, curY, 25, genH, 'FD');
+      drawCellText(doc, 'SI / NO', p3X + 182, curY, 25, genH, { align: 'center', fontStyle: 'bold', fontSize: 6.5 });
+
+      doc.rect(p3X + 207, curY, 60, genH, 'FD');
+      drawCellText(doc, 'Observaciones', p3X + 207, curY, 60, genH, { align: 'center', fontStyle: 'bold', fontSize: 6.5 });
+
+      curY += genH;
+      const genRows = Array.isArray(t.p3_medidas_generales) && t.p3_medidas_generales.length === 3
+        ? t.p3_medidas_generales
+        : [
+            { num: 1, medida: 'Se ha informado al trabajador/es, supervisores, ingenieros, directivos relacionados con el puesto de trabajo, sobre el riesgo que tiene la tarea de desarrollar TME', fecha: '', aplica: 'si', observaciones: '-' },
+            { num: 2, medida: 'Se ha capacitado al trabajador/es y supervisor/es relacionados con el puesto de trabajo, sobre la identificación de síntomas relacionados con el desarrollo de TME', fecha: '', aplica: 'si', observaciones: '-' },
+            { num: 3, medida: 'Se ha capacitado al trabajador/es y supervisor/es relacionados con el puesto de trabajo, sobre las medidas y/o procedimientos para prevenir el desarrollo de TME', fecha: '', aplica: 'si', observaciones: '-' }
+          ];
+
+      genRows.forEach((g) => {
+        const rowH = 6;
+        doc.rect(p3X, curY, 12, rowH, 'S');
+        drawCellText(doc, String(g.num), p3X, curY, 12, rowH, { align: 'center', fontSize: 7, fontStyle: 'bold' });
+
+        doc.rect(p3X + 12, curY, 140, rowH, 'S');
+        drawCellText(doc, g.medida, p3X + 14, curY, 136, rowH, { align: 'left', fontSize: 6, maxLines: 2 });
+
+        doc.rect(p3X + 152, curY, 30, rowH, 'S');
+        drawCellText(doc, g.fecha || '-', p3X + 152, curY, 30, rowH, { align: 'center', fontSize: 6.5 });
+
+        doc.rect(p3X + 182, curY, 25, rowH, 'S');
+        drawCellText(doc, (g.aplica || 'si').toUpperCase(), p3X + 182, curY, 25, rowH, { align: 'center', fontSize: 7, fontStyle: 'bold' });
+
+        doc.rect(p3X + 207, curY, 60, rowH, 'S');
+        drawCellText(doc, g.observaciones || '-', p3X + 209, curY, 56, rowH, { align: 'left', fontSize: 6 });
+
+        curY += rowH;
+      });
+
+      // 2. Tabla Medidas Especificas
+      curY += 4;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      setTextColor(doc, COLOR_NEGRO);
+      doc.text('Medidas Correctivas y Preventivas Especificas (Administrativas y de Ingeniería)', p3X, curY);
+
+      curY += 2;
+      const espH = 4.5;
+      setFillColor(doc, COLOR_SLATE_200);
+      doc.rect(p3X, curY, 12, espH, 'FD');
+      drawCellText(doc, 'Nº', p3X, curY, 12, espH, { align: 'center', fontStyle: 'bold', fontSize: 6 });
+
+      doc.rect(p3X + 12, curY, 195, espH, 'FD');
+      drawCellText(doc, 'Medidas Correctivas y Preventivas Especificas (Administrativas y de Ingeniería)', p3X + 12, curY, 195, espH, { align: 'center', fontStyle: 'bold', fontSize: 6 });
+
+      doc.rect(p3X + 207, curY, 60, espH, 'FD');
+      drawCellText(doc, 'Observaciones', p3X + 207, curY, 60, espH, { align: 'center', fontStyle: 'bold', fontSize: 6 });
+
+      curY += espH;
+      const defaultEsp1 = 'Realizar evaluación de los factores de riesgo ergonómico del puesto de trabajo (Levantamiento y descenso, Transporte y posturas forzadas)';
+      const espRows = Array.isArray(t.p3_medidas_especificas) && t.p3_medidas_especificas.length === 15
+        ? t.p3_medidas_especificas
+        : Array.from({ length: 15 }, (_, i) => ({
+            num: i + 1,
+            medida: i === 0 ? defaultEsp1 : '',
+            observaciones: i === 0 ? '-' : ''
+          }));
+
+      espRows.forEach((m) => {
+        const rowH = 4.3;
+        doc.rect(p3X, curY, 12, rowH, 'S');
+        drawCellText(doc, String(m.num), p3X, curY, 12, rowH, { align: 'center', fontSize: 6, fontStyle: 'bold' });
+
+        doc.rect(p3X + 12, curY, 195, rowH, 'S');
+        drawCellText(doc, m.medida || '', p3X + 14, curY, 191, rowH, { align: 'left', fontSize: 5.5 });
+
+        doc.rect(p3X + 207, curY, 60, rowH, 'S');
+        drawCellText(doc, m.observaciones || '', p3X + 209, curY, 56, rowH, { align: 'left', fontSize: 5.5 });
+
+        curY += rowH;
+      });
+
+      // 3. Observaciones Box
+      curY += 3;
+      doc.rect(p3X, curY, p3W, 14, 'S');
+      drawCellText(doc, 'Observaciones:', p3X + 2, curY + 1, 263, 4, { fontStyle: 'bold', fontSize: 7 });
+      drawCellText(doc, t.p3_observaciones || 'Sin observaciones.', p3X + 2, curY + 4.5, 263, 9, { fontSize: 6.5, valign: 'top' });
+
+      // Firma Profesional
+      drawSignatureBlock(185, 175, 90, 22, signatureBase64, profNombre, profMatricula, 'Firma, Aclaración y Registro del Profesional Interviniente');
+    });
   });
 
   // ==========================================
