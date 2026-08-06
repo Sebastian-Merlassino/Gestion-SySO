@@ -220,6 +220,47 @@ export const getDefaultPlanilla3Especificas = () => [
   { num: 15, medida: '', observaciones: '' }
 ];
 
+export const getDefaultPlanilla4 = (puestoNombre = '', fechaEval = '') => [
+  {
+    num: 1,
+    mcp: 'Realizar evaluación de los factores de riesgo ergonómico del puesto de trabajo (Levantamiento y descenso)',
+    puesto_nombre: puestoNombre,
+    fecha_evaluacion: fechaEval,
+    nivel_riesgo: '',
+    fecha_impl_admin: '',
+    fecha_impl_ing: '',
+    fecha_cierre: ''
+  },
+  {
+    num: 2,
+    mcp: 'Realizar evaluación de los factores de riesgo ergonómico del puesto de trabajo (Transporte)',
+    puesto_nombre: puestoNombre,
+    fecha_evaluacion: fechaEval,
+    nivel_riesgo: '',
+    fecha_impl_admin: '',
+    fecha_impl_ing: '',
+    fecha_cierre: ''
+  },
+  {
+    num: 3,
+    mcp: 'Realizar evaluación de los factores de riesgo ergonómico del puesto de trabajo (Posturas forzadas)',
+    puesto_nombre: puestoNombre,
+    fecha_evaluacion: fechaEval,
+    nivel_riesgo: '',
+    fecha_impl_admin: '',
+    fecha_impl_ing: '',
+    fecha_cierre: ''
+  },
+  { num: 4, mcp: '', puesto_nombre: puestoNombre, fecha_evaluacion: fechaEval, nivel_riesgo: '', fecha_impl_admin: '', fecha_impl_ing: '', fecha_cierre: '' },
+  { num: 5, mcp: '', puesto_nombre: puestoNombre, fecha_evaluacion: fechaEval, nivel_riesgo: '', fecha_impl_admin: '', fecha_impl_ing: '', fecha_cierre: '' },
+  { num: 6, mcp: '', puesto_nombre: puestoNombre, fecha_evaluacion: fechaEval, nivel_riesgo: '', fecha_impl_admin: '', fecha_impl_ing: '', fecha_cierre: '' },
+  { num: 7, mcp: '', puesto_nombre: puestoNombre, fecha_evaluacion: fechaEval, nivel_riesgo: '', fecha_impl_admin: '', fecha_impl_ing: '', fecha_cierre: '' },
+  { num: 8, mcp: '', puesto_nombre: puestoNombre, fecha_evaluacion: fechaEval, nivel_riesgo: '', fecha_impl_admin: '', fecha_impl_ing: '', fecha_cierre: '' },
+  { num: 9, mcp: '', puesto_nombre: puestoNombre, fecha_evaluacion: fechaEval, nivel_riesgo: '', fecha_impl_admin: '', fecha_impl_ing: '', fecha_cierre: '' },
+  { num: 10, mcp: '', puesto_nombre: puestoNombre, fecha_evaluacion: fechaEval, nivel_riesgo: '', fecha_impl_admin: '', fecha_impl_ing: '', fecha_cierre: '' }
+];
+
+
 const isValidUuid = (val) => {
   if (!val || typeof val !== 'string') return false;
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val);
@@ -1078,6 +1119,9 @@ export default function ProtocoloForm({
           ubicacion_sintoma: p.ubicacion_sintoma || '',
           tareas: mappedTareas,
           tiempos_exposicion: { ...defaultTiempos, ...(p.tiempos_exposicion || {}) },
+          p4_medidas: Array.isArray(p.p4_medidas) && p.p4_medidas.length >= 1
+            ? p.p4_medidas
+            : getDefaultPlanilla4(p.puesto_text || '', proto.fecha_medicion ? formatDate(proto.fecha_medicion) : ''),
           nivel_de_riesgo: p.nivel_de_riesgo || 'Bajo',
           resultado_punto: p.resultado_punto || 'Cumple',
           observaciones_punto: p.observaciones_punto || '',
@@ -1272,6 +1316,7 @@ export default function ProtocoloForm({
       confort_termico: '',
       estres_contacto: ''
     },
+    p4_medidas: getDefaultPlanilla4('', fechaMedicion ? formatAsDateInput(fechaMedicion) : ''),
     nivel_de_riesgo: 'Bajo',
     resultado_punto: 'Cumple',
     observaciones_punto: '',
@@ -1843,35 +1888,47 @@ export default function ProtocoloForm({
           ubicacion_sintoma: p.ubicacion_sintoma || '',
           tareas: p.tareas || [],
           tiempos_exposicion: p.tiempos_exposicion || {},
-          nivel_de_riesgo: p.nivel_de_riesgo || 'Bajo',
+          p4_medidas: p.p4_medidas || [],
+          nivel_de_riesgo: typeof p.nivel_de_riesgo === 'number' ? p.nivel_de_riesgo : (parseInt(p.nivel_de_riesgo) || (p.nivel_de_riesgo === 'Alto' ? 3 : p.nivel_de_riesgo === 'Medio' ? 2 : 1)),
           resultado_punto: p.resultado_punto || 'Cumple',
           observaciones_punto: p.observaciones_punto || null,
-          // Rellenar columnas legacy para compatibilidad básica desde la primera tarea
+          // Rellenar columnas legacy para compatibilidad básica desde la primera tarea (booleans para Postgres)
           tarea_desempenada: firstTask.nombre || null,
-          f_levantamiento_identificado: firstTask.f_levantamiento_identificado || 'no',
-          f_levantamiento_requiere_eval: firstTask.f_levantamiento_riesgo ? 'si' : 'no',
-          f_empuje_arrastre_identificado: firstTask.f_empuje_arrastre_identificado || 'no',
-          f_empuje_arrastre_requiere_eval: firstTask.f_empuje_arrastre_riesgo ? 'si' : 'no',
-          f_transporte_identificado: firstTask.f_transporte_identificado || 'no',
-          f_transporte_requiere_eval: firstTask.f_transporte_riesgo ? 'si' : 'no',
-          f_bipedestacion_identificado: firstTask.f_bipedestacion_identificado || 'no',
-          f_bipedestacion_requiere_eval: firstTask.f_bipedestacion_riesgo ? 'si' : 'no',
-          f_mov_repetitivos_identificado: firstTask.f_mov_repetitivos_identificado || 'no',
-          f_mov_repetitivos_requiere_eval: firstTask.f_mov_repetitivos_riesgo ? 'si' : 'no',
-          f_posturas_forzadas_identificado: firstTask.f_posturas_forzadas_identificado || 'no',
-          f_posturas_forzadas_requiere_eval: firstTask.f_posturas_forzadas_riesgo ? 'si' : 'no',
-          f_vibraciones_identificado: (firstTask.f_vibraciones_mano_brazo_identificado === 'si' || firstTask.f_vibraciones_cuerpo_entero_identificado === 'si') ? 'si' : 'no',
-          f_vibraciones_requiere_eval: (firstTask.f_vibraciones_mano_brazo_riesgo || firstTask.f_vibraciones_cuerpo_entero_riesgo) ? 'si' : 'no',
-          f_confort_termico_identificado: firstTask.f_confort_termico_identificado || 'no',
-          f_confort_termico_requiere_eval: firstTask.f_confort_termico_riesgo ? 'si' : 'no'
+          f_levantamiento_identificado: firstTask.f_levantamiento_identificado === 'si',
+          f_levantamiento_requiere_eval: !!firstTask.f_levantamiento_riesgo,
+          f_empuje_arrastre_identificado: firstTask.f_empuje_arrastre_identificado === 'si',
+          f_empuje_arrastre_requiere_eval: !!firstTask.f_empuje_arrastre_riesgo,
+          f_transporte_identificado: firstTask.f_transporte_identificado === 'si',
+          f_transporte_requiere_eval: !!firstTask.f_transporte_riesgo,
+          f_bipedestacion_identificado: firstTask.f_bipedestacion_identificado === 'si',
+          f_bipedestacion_requiere_eval: !!firstTask.f_bipedestacion_riesgo,
+          f_mov_repetitivos_identificado: firstTask.f_mov_repetitivos_identificado === 'si',
+          f_mov_repetitivos_requiere_eval: !!firstTask.f_mov_repetitivos_riesgo,
+          f_posturas_forzadas_identificado: firstTask.f_posturas_forzadas_identificado === 'si',
+          f_posturas_forzadas_requiere_eval: !!firstTask.f_posturas_forzadas_riesgo,
+          f_vibraciones_identificado: (firstTask.f_vibraciones_mano_brazo_identificado === 'si' || firstTask.f_vibraciones_cuerpo_entero_identificado === 'si'),
+          f_vibraciones_requiere_eval: !!(firstTask.f_vibraciones_mano_brazo_riesgo || firstTask.f_vibraciones_cuerpo_entero_riesgo),
+          f_confort_termico_identificado: firstTask.f_confort_termico_identificado === 'si',
+          f_confort_termico_requiere_eval: !!firstTask.f_confort_termico_riesgo
         };
       });
 
-      const { data: insertedPoints, error: ptsErr } = await supabase
+      let { data: insertedPoints, error: ptsErr } = await supabase
         .from('protocolos_ergonomia_puntos')
         .insert(pointsPayload)
         .select();
-      if (ptsErr) throw ptsErr;
+
+      if (ptsErr && (ptsErr.code === 'PGRST204' || ptsErr.message?.includes('p4_medidas'))) {
+        const fallbackPayload = pointsPayload.map(({ p4_medidas, ...rest }) => rest);
+        const { data: retryData, error: retryErr } = await supabase
+          .from('protocolos_ergonomia_puntos')
+          .insert(fallbackPayload)
+          .select();
+        if (retryErr) throw retryErr;
+        insertedPoints = retryData;
+      } else if (ptsErr) {
+        throw ptsErr;
+      }
 
       // 4. Guardar Adjuntos
       setSaveLoading(true);
@@ -2015,8 +2072,28 @@ export default function ProtocoloForm({
 
       <form onSubmit={handleSubmit} className="p-3.5 sm:p-6 md:p-8 space-y-4 sm:space-y-6 select-none overflow-y-auto flex-1 scrollbar-thin">
         
-        {/* CARD ESTABLECIMIENTO */}
-        <AppCard className="p-3.5 sm:p-5 md:p-6 space-y-3 sm:space-y-4">
+        {/* CARD ESTABLECIMIENTO Y PLANILLA 1 */}
+        <AppCard className="p-3.5 sm:p-5 md:p-6 space-y-4">
+          {/* BANNER ANEXO I - PLANILLA 1 */}
+          <div className="bg-blue-50/60 p-3 rounded-lg border border-blue-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-[#468DFF] shrink-0" />
+              <div>
+                <h5 className="font-extrabold text-slate-800 font-outfit uppercase tracking-wider text-xs">
+                  ANEXO I- PLANILLA 1: IDENTIFICACION DE FACTORES DE RIESGO
+                </h5>
+                <p className="text-[11px] font-bold text-[#468DFF] uppercase tracking-wide mt-0.5">
+                  Identificación de Factores de Riesgo
+                </p>
+              </div>
+            </div>
+            <div className="bg-white/80 border border-slate-200/80 px-3 py-1 rounded-md shadow-sm shrink-0 self-start sm:self-auto">
+              <p className="text-xs font-bold text-slate-700">
+                Resolución SRT <span className="text-slate-900 font-extrabold">N° 886/15</span>
+              </p>
+            </div>
+          </div>
+
           <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
             <Building className="h-5 w-5 text-[#468DFF]" />
             <h2 className="font-outfit text-base font-extrabold text-slate-800">Datos del Establecimiento</h2>
@@ -2105,181 +2182,63 @@ export default function ProtocoloForm({
               </div>
             </div>
           </div>
-        </AppCard>
 
-        {/* CARD DATOS DE LA EVALUACIÓN */}
-        <AppCard className="p-5 md:p-6 space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-            <h3 className="font-outfit text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-              <FileText className="h-4 w-4 text-[#468DFF]" />
-              Datos de la evaluación ({puntos.length})
-            </h3>
-            {canEdit && (
-              <button
-                type="button"
-                onClick={handleAddPunto}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold transition-all cursor-pointer"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Agregar Área y sector de estudio
-              </button>
-            )}
-          </div>
+          {/* SEPARADOR DE SECCIÓN */}
+          <div className="border-t border-slate-200 my-4" />
 
+          {/* SECCIÓN DATOS DE LA EVALUACIÓN */}
           <div className="space-y-4">
-            <div className="flex flex-col gap-1 max-w-[240px]">
-              <AppLabel htmlFor="fechaMedicion" required>Fecha de la Evaluación</AppLabel>
-              <div className="relative">
-                <AppInput
-                  id="fechaMedicion"
-                  disabled={!canEdit}
-                  placeholder="DD/MM/AAAA"
-                  value={fechaMedicion}
-                  onChange={(e) => setFechaMedicion(formatAsDateInput(e.target.value))}
-                />
-                {canEdit && (
-                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
-                    <Calendar className="h-4 w-4" />
-                    <input
-                      type="date"
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val) {
-                          const parts = val.split('-');
-                          if (parts.length === 3) {
-                            setFechaMedicion(`${parts[2]}/${parts[1]}/${parts[0]}`);
-                          }
-                        } else {
-                          setFechaMedicion('');
-                        }
-                      }}
-                    />
-                  </div>
-                )}
-                {!canEdit && (
-                  <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                )}
-              </div>
+            <div className="border-b border-slate-200 pb-2">
+              <h3 className="font-outfit text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                <FileText className="h-4 w-4 text-[#468DFF]" />
+                Datos de la evaluación
+              </h3>
             </div>
 
-            <div className="border-t border-slate-100 my-2" />
-            {puntos.map((p, idx) => {
-              const cal = getPuntoCalculos(p);
-
-              // Colors based on point result
-              let badgeColor = 'bg-slate-100 text-slate-600 border-slate-200';
-              if (cal.resultado_punto === 'Cumple') badgeColor = 'bg-[#00B050]/15 text-[#00B050] border-[#00B050]/30';
-              if (cal.resultado_punto === 'No cumple') badgeColor = 'bg-[#FF0000]/15 text-[#FF0000] border-[#FF0000]/30';
-              if (cal.resultado_punto === 'Parcial') badgeColor = 'bg-[#FF9900]/15 text-[#FF9900] border-[#FF9900]/30';
-
-              return (
-                <div key={p.id} className="border border-slate-200 rounded-xl bg-slate-50/40 p-4 space-y-4 transition-all">
-                  
-                  {/* Cabecera del Punto */}
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 border-b border-slate-200/80 pb-2.5">
-                    <div className="flex items-center gap-1.5 justify-between sm:justify-start w-full sm:w-auto">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="text-[10px] font-bold text-slate-700 bg-slate-200/80 px-2 py-0.5 rounded-lg border border-slate-300/40 uppercase whitespace-nowrap shrink-0">
-                          Puesto #{p.punto_muestreo}
-                        </span>
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border uppercase ${badgeColor} whitespace-nowrap shrink-0`}>
-                          {cal.resultado_punto}
-                        </span>
-                      </div>
-                      
-                      {/* Botones de control para móvil */}
-                      <div className="flex sm:hidden items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
-                        <span
-                          role="button"
-                          onClick={() => handleToggleCollapsePunto(p.id)}
-                          className="text-[9px] text-slate-600 hover:text-slate-800 bg-white hover:bg-slate-100 font-bold px-2 py-1 rounded-md border border-slate-200 transition-all cursor-pointer flex items-center justify-center h-7 shadow-sm shrink-0"
-                          title={p.isCollapsed ? "Expandir punto" : "Contraer punto"}
-                        >
-                          {p.isCollapsed ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />}
-                        </span>
-                        {canEdit && (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => handleDuplicatePunto(p)}
-                              className="p-1 text-slate-650 bg-white hover:bg-slate-100 border border-slate-200 rounded transition-colors flex items-center justify-center cursor-pointer h-7 w-7 shrink-0"
-                              title="Duplicar punto"
-                            >
-                              <Copy className="h-3.5 w-3.5" />
-                            </button>
-                            {puntos.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => handleRemovePunto(p.id)}
-                                className="p-1 text-red-500 bg-white hover:bg-red-50 border border-red-200 rounded transition-colors flex items-center justify-center cursor-pointer h-7 w-7 shrink-0"
-                                title="Eliminar punto"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </button>
-                            )}
-                          </>
-                        )}
-                      </div>
+            <div className="space-y-4">
+              <div className="flex flex-col gap-1 max-w-[240px]">
+                <AppLabel htmlFor="fechaMedicion" required>Fecha de la Evaluación</AppLabel>
+                <div className="relative">
+                  <AppInput
+                    id="fechaMedicion"
+                    disabled={!canEdit}
+                    placeholder="DD/MM/AAAA"
+                    value={fechaMedicion}
+                    onChange={(e) => setFechaMedicion(formatAsDateInput(e.target.value))}
+                  />
+                  {canEdit && (
+                    <div className="absolute right-3.5 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
+                      <Calendar className="h-4 w-4" />
+                      <input
+                        type="date"
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val) {
+                            const parts = val.split('-');
+                            if (parts.length === 3) {
+                              setFechaMedicion(`${parts[2]}/${parts[1]}/${parts[0]}`);
+                            }
+                          } else {
+                            setFechaMedicion('');
+                          }
+                        }}
+                      />
                     </div>
+                  )}
+                  {!canEdit && (
+                    <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                  )}
+                </div>
+              </div>
 
-                    {p.sector_text && (
-                      <span className="text-xs font-bold text-slate-500 sm:text-slate-800 max-w-full sm:max-w-[200px] truncate sm:ml-2 text-left w-full sm:w-auto">
-                        {p.sector_text} {p.puesto_text ? `(${p.puesto_text})` : ''}
-                      </span>
-                    )}
+              {puntos.map((p, idx) => {
+                const cal = getPuntoCalculos(p);
 
-                    {/* Botones de control para escritorio */}
-                    <div className="hidden sm:flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                      <span
-                        role="button"
-                        onClick={() => handleToggleCollapsePunto(p.id)}
-                        className="text-[9px] text-slate-600 hover:text-slate-800 bg-white hover:bg-slate-100 font-bold px-2 py-0.5 rounded-md border border-slate-200 transition-all cursor-pointer flex items-center gap-0.5 shadow-sm"
-                        title={p.isCollapsed ? "Expandir punto" : "Contraer punto"}
-                      >
-                        {p.isCollapsed ? (
-                          <>
-                            <ChevronDown className="h-2.5 w-2.5" />
-                            Ver más
-                          </>
-                        ) : (
-                          <>
-                            <ChevronUp className="h-2.5 w-2.5" />
-                            Ver menos
-                          </>
-                        )}
-                      </span>
-                      {canEdit && (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => handleDuplicatePunto(p)}
-                            className="p-1 text-slate-650 hover:bg-slate-100 rounded transition-colors border border-slate-200 flex items-center justify-center cursor-pointer"
-                            title="Duplicar punto"
-                          >
-                            <Copy className="h-3.5 w-3.5" />
-                          </button>
-                          {puntos.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() => handleRemovePunto(p.id)}
-                              className="p-1 text-red-500 hover:bg-red-50 rounded transition-colors border border-red-200 flex items-center justify-center cursor-pointer"
-                              title="Eliminar punto"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Contenido del Punto */}
-                  {!p.isCollapsed && (
-                    <div className="space-y-4 pt-1 animate-scale-up">
-                      
-                      {/* Fila 1: Sector y Puesto */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                return (
+                  <div key={p.id} className="space-y-4 pt-2">
+                    {/* Datos generales del puesto sin tarjeta interna */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="flex flex-col gap-1">
                           <AppLabel htmlFor={`sector-sel-${p.id}`} required={estado === 'completado'}>Área y sector de estudio</AppLabel>
                           {isReadOnly ? (
@@ -2351,10 +2310,7 @@ export default function ProtocoloForm({
                             />
                           )}
                         </div>
-                      </div>
 
-                      {/* Fila 2: Datos generales del puesto */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                         <div className="flex flex-col gap-1">
                           <AppLabel htmlFor={`expuestos-${p.id}`} required={estado === 'completado'}>
                             Número de trabajadores en el puesto
@@ -2380,9 +2336,7 @@ export default function ProtocoloForm({
                             onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, nombres_trabajadores: e.target.value } : x))}
                           />
                         </div>
-                      </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                         <div className="flex flex-col gap-1.5">
                           <AppLabel>
                             Procedimiento de trabajo escrito
@@ -2445,9 +2399,7 @@ export default function ProtocoloForm({
                             </button>
                           </div>
                         </div>
-                      </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                         <div className="flex flex-col gap-1.5">
                           <AppLabel>
                             Manifestación Temprana
@@ -2495,7 +2447,7 @@ export default function ProtocoloForm({
 
                       {/* Contenedor de Tareas Habituales */}
                       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
-                        <div className="flex flex-col xs:flex-row xs:justify-between xs:items-center gap-2 border-b border-slate-200 pb-2.5">
+                        <div className="flex items-center justify-between gap-2 border-b border-slate-200 pb-2.5">
                           <h4 className="font-extrabold text-slate-800 font-outfit uppercase tracking-wider text-xs">
                             Tareas Habituales del Puesto
                           </h4>
@@ -2504,7 +2456,7 @@ export default function ProtocoloForm({
                               type="button"
                               variant="secondary"
                               size="sm"
-                              className="text-[10.5px] px-2.5 py-1 h-7 shrink-0 w-full xs:w-auto"
+                              className="text-xs font-bold px-3 py-1 h-7 shrink-0 w-auto"
                               onClick={() => {
                                 const newTarea = createNewTareaHabitual(p.tareas.length + 1);
                                 setPuntos(puntos.map(x => x.id === p.id ? { ...x, tareas: [...x.tareas, newTarea] } : x));
@@ -2514,6 +2466,10 @@ export default function ProtocoloForm({
                             </AppButton>
                           )}
                         </div>
+
+                        <p className="text-xs font-medium text-slate-600 leading-relaxed">
+                          <span className="font-bold text-slate-800">Paso 1:</span> Identificar para el puesto de trabajo, las tareas y los factores de riesgo que se presentan de forma habitual en cada una de ellas.
+                        </p>
 
                         <div className="space-y-4">
                           {p.tareas?.map((t, tIdx) => {
@@ -2807,7 +2763,7 @@ export default function ProtocoloForm({
                                                   if (!isPresent) {
                                                     return (
                                                       <span className="inline-block px-2.5 py-1 rounded text-xs font-bold bg-slate-100 text-slate-500 border border-slate-200 uppercase tracking-wide shrink-0">
-                                                        No Evaluado
+                                                        Sin Evaluar
                                                       </span>
                                                     );
                                                   }
@@ -2841,7 +2797,7 @@ export default function ProtocoloForm({
                                                   <div className="space-y-2 text-xs">
                                                     <div className="flex items-center justify-between border-b border-slate-200/60 pb-1.5">
                                                       <span className="font-extrabold text-slate-700 uppercase tracking-wider text-[10px]">
-                                                        Evaluación Inicial (Anexo I - Planilla 2) — {f.label}
+                                                        ANEXO I- PLANILLA 2: EVALUACION INICIAL DE FACTORES DE RIESGO — {f.label}
                                                       </span>
                                                       <span className="text-[10px] text-slate-500 italic">
                                                         Responda Sí/No para evaluar el nivel de riesgo
@@ -3182,6 +3138,11 @@ export default function ProtocoloForm({
                                   </table>
                                   </div>
 
+                                  {/* Texto aclaratorio para el paso a Planilla 2 */}
+                                  <p className="text-xs text-slate-600 font-medium italic mt-2 px-1">
+                                    Si alguno de los factores de riesgo se encuentra presente, continuar con la Evaluación Inicial de Factores de Riesgo que se identifican, completando la planilla 2.
+                                  </p>
+
                                   {/* ANEXO I - PLANILLA 3: IDENTIFICACION DE MEDIDAS CORRECTIVAS Y PREVENTIVAS */}
                                   <div className="mt-5 pt-4 border-t border-slate-200 space-y-4">
                                     <div className="bg-blue-50/60 p-3 rounded-lg border border-blue-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -3330,9 +3291,9 @@ export default function ProtocoloForm({
                                       <h6 className="font-bold text-slate-700 uppercase tracking-wider text-[11px]">
                                         Medidas Correctivas y Preventivas Especificas (Administrativas y de Ingeniería)
                                       </h6>
-                                      <div className="overflow-x-auto bg-white rounded-lg border border-slate-200 shadow-sm max-h-[360px] overflow-y-auto scrollbar-thin">
+                                      <div className="overflow-x-auto bg-white rounded-lg border border-slate-200 shadow-sm">
                                         <table className="w-full text-xs text-left border-collapse">
-                                          <thead className="sticky top-0 bg-slate-50 z-10 shadow-sm">
+                                          <thead className="bg-slate-50">
                                             <tr className="border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                                               <th className="p-2 text-center w-10">Nº</th>
                                               <th className="p-2">Medidas Correctivas y Preventivas Especificas (Administrativas y de Ingeniería)</th>
@@ -3417,14 +3378,285 @@ export default function ProtocoloForm({
                         </div>
                       </div>
 
+                      {/* ANEXO I - PLANILLA 4: MATRIZ DE SEGUIMIENTO MEDIDAS CORRECTIVAS Y PREVENTIVAS POR PUESTO */}
+                      <div className="mt-5 pt-4 border-t border-slate-200 space-y-4">
+                        <div className="bg-blue-50/60 p-3 rounded-lg border border-blue-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <ShieldCheck className="h-5 w-5 text-[#468DFF] shrink-0" />
+                            <div>
+                              <h5 className="font-extrabold text-slate-800 font-outfit uppercase tracking-wider text-xs">
+                                ANEXO I- PLANILLA 4: MATRIZ DE SEGUIMIENTO MEDIDAS CORRECTIVAS Y PREVENTIVAS
+                              </h5>
+                              <p className="text-[11px] font-bold text-[#468DFF] uppercase tracking-wide mt-0.5">
+                                Matriz de Seguimiento Medidas Correctivas y Preventivas (M.C.P.)
+                              </p>
+                            </div>
+                          </div>
+                          <div className="bg-white/80 border border-slate-200/80 px-3 py-1 rounded-md shadow-sm shrink-0 self-start sm:self-auto">
+                            <p className="text-xs font-bold text-slate-700">
+                              Puesto: <span className="text-slate-900 font-extrabold">{p.puesto_text || `Puesto #${p.punto_muestreo || idx + 1}`}</span>
+                            </p>
+                          </div>
+                        </div>
 
-                    </div>
-                  )}
+                        <div className="overflow-x-auto bg-white rounded-lg border border-slate-200 shadow-sm">
+                          <table className="w-full text-xs text-left border-collapse">
+                            <thead className="bg-slate-50">
+                              <tr className="border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                                <th className="p-2 text-center w-8">Nº</th>
+                                <th className="p-2 min-w-[150px]">M.C.P.</th>
+                                <th className="p-2 w-36">Nombre del Puesto</th>
+                                <th className="p-2 text-center w-32">Fecha de Evaluación</th>
+                                <th className="p-2 text-center w-28">Nivel de riesgo</th>
+                                <th className="p-2 text-center w-32">Fecha impl. medida Admin.</th>
+                                <th className="p-2 text-center w-32">Fecha impl. medida Ing.</th>
+                                <th className="p-2 text-center w-32">Fecha de Cierre</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                              {(p.p4_medidas || getDefaultPlanilla4(p.puesto_text || '', fechaMedicion ? formatAsDateInput(fechaMedicion) : '')).map((m4, m4Idx) => (
+                                <tr key={m4.num || m4Idx} className="hover:bg-slate-50/50">
+                                  <td className="p-2 text-center font-bold text-slate-600 bg-slate-50/50">{m4.num || m4Idx + 1}</td>
+                                  <td className="p-1.5">
+                                    <AppInput
+                                      disabled={!canEdit}
+                                      placeholder="Descripción de la medida (M.C.P.)..."
+                                      className="h-7 text-xs bg-white"
+                                      value={m4.mcp || ''}
+                                      onChange={(e) => {
+                                        const updatedP4 = (p.p4_medidas || getDefaultPlanilla4(p.puesto_text || '', fechaMedicion ? formatAsDateInput(fechaMedicion) : '')).map((item, idx) =>
+                                          idx === m4Idx ? { ...item, mcp: e.target.value } : item
+                                        );
+                                        setPuntos(puntos.map(x => x.id === p.id ? { ...x, p4_medidas: updatedP4 } : x));
+                                      }}
+                                    />
+                                  </td>
+                                  <td className="p-1.5">
+                                    <AppInput
+                                      disabled={!canEdit}
+                                      placeholder="Nombre del puesto..."
+                                      className="h-7 text-xs bg-white"
+                                      value={m4.puesto_nombre !== undefined ? m4.puesto_nombre : (p.puesto_text || '')}
+                                      onChange={(e) => {
+                                        const updatedP4 = (p.p4_medidas || getDefaultPlanilla4(p.puesto_text || '', fechaMedicion ? formatAsDateInput(fechaMedicion) : '')).map((item, idx) =>
+                                          idx === m4Idx ? { ...item, puesto_nombre: e.target.value } : item
+                                        );
+                                        setPuntos(puntos.map(x => x.id === p.id ? { ...x, p4_medidas: updatedP4 } : x));
+                                      }}
+                                    />
+                                  </td>
+                                  {/* Fecha de Evaluación */}
+                                  <td className="p-1.5 text-center">
+                                    <div className="relative flex items-center justify-center">
+                                      <AppInput
+                                        type="text"
+                                        disabled={!canEdit}
+                                        placeholder="DD/MM/AAAA"
+                                        className="h-7 text-xs text-center pr-7 w-32 bg-white"
+                                        value={m4.fecha_evaluacion || ''}
+                                        onChange={(e) => {
+                                          const formatted = formatAsDateInput(e.target.value);
+                                          const updatedP4 = (p.p4_medidas || getDefaultPlanilla4(p.puesto_text || '', fechaMedicion ? formatAsDateInput(fechaMedicion) : '')).map((item, idx) =>
+                                            idx === m4Idx ? { ...item, fecha_evaluacion: formatted } : item
+                                          );
+                                          setPuntos(puntos.map(x => x.id === p.id ? { ...x, p4_medidas: updatedP4 } : x));
+                                        }}
+                                      />
+                                      {canEdit && (
+                                        <div className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
+                                          <Calendar className="h-3.5 w-3.5" />
+                                          <input
+                                            type="date"
+                                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                            onChange={(e) => {
+                                              if (e.target.value) {
+                                                const [yyyy, mm, dd] = e.target.value.split('-');
+                                                const formatted = `${dd}/${mm}/${yyyy}`;
+                                                const updatedP4 = (p.p4_medidas || getDefaultPlanilla4(p.puesto_text || '', fechaMedicion ? formatAsDateInput(fechaMedicion) : '')).map((item, idx) =>
+                                                  idx === m4Idx ? { ...item, fecha_evaluacion: formatted } : item
+                                                );
+                                                setPuntos(puntos.map(x => x.id === p.id ? { ...x, p4_medidas: updatedP4 } : x));
+                                              }
+                                            }}
+                                          />
+                                        </div>
+                                      )}
+                                    </div>
+                                  </td>
+                                  {/* Nivel de Riesgo */}
+                                  <td className="p-1.5 text-center">
+                                    <AppSelect
+                                      disabled={!canEdit}
+                                      className="h-7 text-xs bg-white py-0 px-2"
+                                      value={m4.nivel_riesgo || ''}
+                                      onChange={(e) => {
+                                        const updatedP4 = (p.p4_medidas || getDefaultPlanilla4(p.puesto_text || '', fechaMedicion ? formatAsDateInput(fechaMedicion) : '')).map((item, idx) =>
+                                          idx === m4Idx ? { ...item, nivel_riesgo: e.target.value } : item
+                                        );
+                                        setPuntos(puntos.map(x => x.id === p.id ? { ...x, p4_medidas: updatedP4 } : x));
+                                      }}
+                                    >
+                                      <option value="">- Seleccionar -</option>
+                                      <option value="Nivel 1">Nivel 1 (Tolerable)</option>
+                                      <option value="Nivel 2">Nivel 2 (Moderado)</option>
+                                      <option value="Nivel 3">Nivel 3 (Crítico)</option>
+                                    </AppSelect>
+                                  </td>
+                                  {/* Fecha Impl Admin */}
+                                  <td className="p-1.5 text-center">
+                                    <div className="relative flex items-center justify-center">
+                                      <AppInput
+                                        type="text"
+                                        disabled={!canEdit}
+                                        placeholder="DD/MM/AAAA"
+                                        className="h-7 text-xs text-center pr-7 w-32 bg-white"
+                                        value={m4.fecha_impl_admin || ''}
+                                        onChange={(e) => {
+                                          const formatted = formatAsDateInput(e.target.value);
+                                          const updatedP4 = (p.p4_medidas || getDefaultPlanilla4(p.puesto_text || '', fechaMedicion ? formatAsDateInput(fechaMedicion) : '')).map((item, idx) =>
+                                            idx === m4Idx ? { ...item, fecha_impl_admin: formatted } : item
+                                          );
+                                          setPuntos(puntos.map(x => x.id === p.id ? { ...x, p4_medidas: updatedP4 } : x));
+                                        }}
+                                      />
+                                      {canEdit && (
+                                        <div className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
+                                          <Calendar className="h-3.5 w-3.5" />
+                                          <input
+                                            type="date"
+                                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                            onChange={(e) => {
+                                              if (e.target.value) {
+                                                const [yyyy, mm, dd] = e.target.value.split('-');
+                                                const formatted = `${dd}/${mm}/${yyyy}`;
+                                                const updatedP4 = (p.p4_medidas || getDefaultPlanilla4(p.puesto_text || '', fechaMedicion ? formatAsDateInput(fechaMedicion) : '')).map((item, idx) =>
+                                                  idx === m4Idx ? { ...item, fecha_impl_admin: formatted } : item
+                                                );
+                                                setPuntos(puntos.map(x => x.id === p.id ? { ...x, p4_medidas: updatedP4 } : x));
+                                              }
+                                            }}
+                                          />
+                                        </div>
+                                      )}
+                                    </div>
+                                  </td>
+                                  {/* Fecha Impl Ing */}
+                                  <td className="p-1.5 text-center">
+                                    <div className="relative flex items-center justify-center">
+                                      <AppInput
+                                        type="text"
+                                        disabled={!canEdit}
+                                        placeholder="DD/MM/AAAA"
+                                        className="h-7 text-xs text-center pr-7 w-32 bg-white"
+                                        value={m4.fecha_impl_ing || ''}
+                                        onChange={(e) => {
+                                          const formatted = formatAsDateInput(e.target.value);
+                                          const updatedP4 = (p.p4_medidas || getDefaultPlanilla4(p.puesto_text || '', fechaMedicion ? formatAsDateInput(fechaMedicion) : '')).map((item, idx) =>
+                                            idx === m4Idx ? { ...item, fecha_impl_ing: formatted } : item
+                                          );
+                                          setPuntos(puntos.map(x => x.id === p.id ? { ...x, p4_medidas: updatedP4 } : x));
+                                        }}
+                                      />
+                                      {canEdit && (
+                                        <div className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
+                                          <Calendar className="h-3.5 w-3.5" />
+                                          <input
+                                            type="date"
+                                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                            onChange={(e) => {
+                                              if (e.target.value) {
+                                                const [yyyy, mm, dd] = e.target.value.split('-');
+                                                const formatted = `${dd}/${mm}/${yyyy}`;
+                                                const updatedP4 = (p.p4_medidas || getDefaultPlanilla4(p.puesto_text || '', fechaMedicion ? formatAsDateInput(fechaMedicion) : '')).map((item, idx) =>
+                                                  idx === m4Idx ? { ...item, fecha_impl_ing: formatted } : item
+                                                );
+                                                setPuntos(puntos.map(x => x.id === p.id ? { ...x, p4_medidas: updatedP4 } : x));
+                                              }
+                                            }}
+                                          />
+                                        </div>
+                                      )}
+                                    </div>
+                                  </td>
+                                  {/* Fecha de Cierre */}
+                                  <td className="p-1.5 text-center">
+                                    <div className="relative flex items-center justify-center">
+                                      <AppInput
+                                        type="text"
+                                        disabled={!canEdit}
+                                        placeholder="DD/MM/AAAA"
+                                        className="h-7 text-xs text-center pr-7 w-32 bg-white"
+                                        value={m4.fecha_cierre || ''}
+                                        onChange={(e) => {
+                                          const formatted = formatAsDateInput(e.target.value);
+                                          const updatedP4 = (p.p4_medidas || getDefaultPlanilla4(p.puesto_text || '', fechaMedicion ? formatAsDateInput(fechaMedicion) : '')).map((item, idx) =>
+                                            idx === m4Idx ? { ...item, fecha_cierre: formatted } : item
+                                          );
+                                          setPuntos(puntos.map(x => x.id === p.id ? { ...x, p4_medidas: updatedP4 } : x));
+                                        }}
+                                      />
+                                      {canEdit && (
+                                        <div className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
+                                          <Calendar className="h-3.5 w-3.5" />
+                                          <input
+                                            type="date"
+                                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                            onChange={(e) => {
+                                              if (e.target.value) {
+                                                const [yyyy, mm, dd] = e.target.value.split('-');
+                                                const formatted = `${dd}/${mm}/${yyyy}`;
+                                                const updatedP4 = (p.p4_medidas || getDefaultPlanilla4(p.puesto_text || '', fechaMedicion ? formatAsDateInput(fechaMedicion) : '')).map((item, idx) =>
+                                                  idx === m4Idx ? { ...item, fecha_cierre: formatted } : item
+                                                );
+                                                setPuntos(puntos.map(x => x.id === p.id ? { ...x, p4_medidas: updatedP4 } : x));
+                                              }
+                                            }}
+                                          />
+                                        </div>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        {canEdit && (
+                          <div className="flex justify-end pt-1">
+                            <AppButton
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => {
+                                const currentP4 = p.p4_medidas || getDefaultPlanilla4(p.puesto_text || '', fechaMedicion ? formatAsDateInput(fechaMedicion) : '');
+                                const nextNum = currentP4.length + 1;
+                                const newRow = {
+                                  num: nextNum,
+                                  mcp: '',
+                                  puesto_nombre: p.puesto_text || '',
+                                  fecha_evaluacion: fechaMedicion ? formatAsDateInput(fechaMedicion) : '',
+                                  nivel_riesgo: '',
+                                  fecha_impl_admin: '',
+                                  fecha_impl_ing: '',
+                                  fecha_cierre: ''
+                                };
+                                setPuntos(puntos.map(x => x.id === p.id ? { ...x, p4_medidas: [...currentP4, newRow] } : x));
+                              }}
+                              className="text-xs h-7 gap-1"
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                              Agregar Medida a Matriz
+                            </AppButton>
+                          </div>
+                        )}
+                      </div>
                 </div>
               );
             })}
           </div>
-        </AppCard>
+        </div>
+      </AppCard>
 
         {/* CARD FIRMA DEL EMPLEADOR */}
         <AppCard className="p-5 md:p-6 space-y-5">

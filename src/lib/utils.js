@@ -18,8 +18,18 @@ export function cn(...inputs) {
  */
 export function formatDate(dateStr) {
   if (!dateStr) return '';
+  if (typeof dateStr !== 'string') {
+    if (dateStr instanceof Date) {
+      const d = dateStr.getDate().toString().padStart(2, '0');
+      const m = (dateStr.getMonth() + 1).toString().padStart(2, '0');
+      const y = dateStr.getFullYear();
+      return `${d}/${m}/${y}`;
+    }
+    dateStr = String(dateStr);
+  }
   if (dateStr.includes('/')) return dateStr;
-  const parts = dateStr.split('-');
+  const cleanStr = dateStr.split('T')[0];
+  const parts = cleanStr.split('-');
   if (parts.length !== 3) return dateStr;
   return `${parts[2]}/${parts[1]}/${parts[0]}`;
 }

@@ -1,22 +1,19 @@
-import { PDFDocument, PDFName } from 'pdf-lib';
+import jsPDF from 'jspdf';
 import { formatDate } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 import { setFillColor, setDrawColor, setTextColor, hexToRgb, PDF_THEME } from '@/lib/pdf/pdfTheme';
-
 import { getBase64ImageFromUrl } from '@/lib/pdf/pdfImages';
+import { FANGER_CHART_BASE64 } from './fangerChartBase64';
 
-// Robust Base64 getter for attachments from Supabase storage / URLs
+// Helper Base64 getter for signature/logo images
 const getAdjuntoBase64 = async (adj) => {
   if (!adj) return '';
-
-  // 1. Check direct base64 data URLs
   if (adj.preview && adj.preview.startsWith('data:image/')) return adj.preview;
   if (adj.public_url && adj.public_url.startsWith('data:image/')) return adj.public_url;
 
   const path = adj.storage_path || adj.original_path || adj.public_url || adj.url || adj.archivo_url;
   if (!path) return '';
 
-  // 2. Direct download from Supabase Storage bucket for relative paths
   if (!path.startsWith('http') && !path.startsWith('data:')) {
     try {
       const { data: blob, error } = await supabase.storage
@@ -32,11 +29,10 @@ const getAdjuntoBase64 = async (adj) => {
         });
       }
     } catch (err) {
-      console.warn('[getAdjuntoBase64] Direct Supabase storage download warning:', err);
+      console.warn('[getAdjuntoBase64] Supabase storage download warning:', err);
     }
   }
 
-  // 3. If HTTP URL or fallback: fetch signed/public URL
   let targetUrl = path;
   if (!targetUrl.startsWith('http') && !targetUrl.startsWith('data:')) {
     try {
@@ -55,43 +51,7 @@ const getAdjuntoBase64 = async (adj) => {
   return await getBase64ImageFromUrl(targetUrl);
 };
 
-// Resize image for PDF
-const resizeImageForPdf = (base64Str, maxWidth = 400, maxHeight = 400) => {
-  return new Promise((resolve) => {
-    if (!base64Str || !base64Str.startsWith('data:image/')) {
-      resolve('');
-      return;
-    }
-    const img = new Image();
-    img.src = base64Str;
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      let width = img.width;
-      let height = img.height;
-      if (width > height) {
-        if (width > maxWidth) {
-          height = Math.round((height * maxWidth) / width);
-          width = maxWidth;
-        }
-      } else {
-        if (height > maxHeight) {
-          width = Math.round((width * maxHeight) / height);
-          height = maxHeight;
-        }
-      }
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, width, height);
-      resolve(canvas.toDataURL('image/png'));
-    };
-    img.onerror = () => {
-      resolve(base64Str);
-    };
-  });
-};
-
-// Get original dimensions of base64 image
+// Dimensions getter for Base64 image
 const getImgDimensions = (base64Str) => {
   return new Promise((resolve) => {
     if (!base64Str || !base64Str.startsWith('data:image/')) {
@@ -100,147 +60,359 @@ const getImgDimensions = (base64Str) => {
     }
     const img = new Image();
     img.src = base64Str;
-    img.onload = () => {
-      resolve({ width: img.width, height: img.height });
-    };
-    img.onerror = () => {
-      resolve({ width: 120, height: 50 });
-    };
+    img.onload = () => resolve({ width: img.width, height: img.height });
+    img.onerror = () => resolve({ width: 120, height: 50 });
   });
 };
 
-export const generateErgonomyProtocolPdf = async (
-  proto,
-  tenant,
-  empresas,
-  allEstablecimientos,
-  puntosList,
-  adjuntosList,
-  isDevMode = false,
-  userProfile = null
-) => {
-  const { jsPDF } = await import('jspdf');
+// Helper to fetch signature Base64 defensively from URL or Supabase storage path
+const fetchSignatureImage = async (urlOrPath) => {
+  if (!urlOrPath) return '';
+  if (typeof urlOrPath === 'string' && urlOrPath.startsWith('data:image/')) return urlOrPath;
 
-  // A4 size in mm: 210 x 297 (Portrait) / 297 x 210 (Landscape)
+  // Direct HTTP fetch
+  try {
+    const b64 = await getBase64ImageFromUrl(urlOrPath);
+    if (b64 && b64.startsWith('data:image/')) return b64;
+  } catch (e) {}
+
+  // Supabase Storage fetch if relative path
+  if (typeof urlOrPath === 'string' && !urlOrPath.startsWith('http')) {
+    const buckets = ['protocolos-ergonomia', 'signatures', 'avatars', 'public'];
+    for (const bucket of buckets) {
+      try {
+        const { data: blob, error } = await supabase.storage.from(bucket).download(urlOrPath);
+        if (!error && blob) {
+          return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result || '');
+            reader.onerror = () => resolve('');
+            reader.readAsDataURL(blob);
+          });
+        }
+      } catch (err) {}
+      try {
+        const { data: pData } = supabase.storage.from(bucket).getPublicUrl(urlOrPath);
+        if (pData?.publicUrl) {
+          const b64 = await getBase64ImageFromUrl(pData.publicUrl);
+          if (b64 && b64.startsWith('data:image/')) return b64;
+        }
+      } catch (e) {}
+    }
+  }
+
+  return '';
+};
+
+// Cuestionarios Oficiales Res. SRT 886/15
+const CUESTIONARIOS_PLANILLA2 = {
+  levantamiento: {
+    code: '2.A',
+    title: '2.A: LEVANTAMIENTO Y/O DESCENSO MANUAL DE CARGA SIN TRANSPORTE',
+    paso1: [
+      { id: 'p1_1', text: 'Levantar y/o bajar manualmente cargas de peso superior a 2 kg. y hasta 25 kg.' },
+      { id: 'p1_2', text: 'Realizar diariamente y en forma cíclica operaciones de levantamiento / descenso con una frecuencia > 1 por hora o < 360 (si se realiza en forma esporádica consignar NO)' },
+      { id: 'p1_3', text: 'Levantar y/o bajar manualmente cargas de peso superior a 25 kg.' }
+    ],
+    paso2: [
+      { id: 'p2_1', text: 'El trabajador levanta, sostiene y deposita la carga sobrepasando con sus manos 30 cm sobre la altura del hombro' },
+      { id: 'p2_2', text: 'El trabajador levanta, sostiene y deposita la carga sobrepasando con sus manos una distancia horizontal mayor a 80 cm desde el punto medio entre los tobillos sobre la altura del hombro' },
+      { id: 'p2_3', text: 'Entre la toma y el depósito de la carga, el trabajador gira o inclina la cintura más de 30° a uno u otro (o a ambos) considerados desde el plano sagital' },
+      { id: 'p2_4', text: 'Las cargas poseen formas irregulares, son difíciles de asir, se deforman o hay movimiento en su interior' },
+      { id: 'p2_5', text: 'El trabajador levanta, sostiene y deposita la carga con un solo brazo' },
+      { id: 'p2_6', text: 'El trabajador presenta alguna manifestación temprana de las enfermedades mencionadas en el ART 1 de la presente Resolución' }
+    ]
+  },
+  empuje_arrastre: {
+    code: '2.B',
+    title: '2.B: EMPUJE Y ARRASTRE MANUAL DE CARGAS',
+    paso1: [
+      { id: 'p1_1', text: 'Se realizan diariamente tareas cíclicas con una frecuencia >= 1 movimientos por jornada (si son esporádicas consignar NO)' },
+      { id: 'p1_2', text: 'El trabajador se desplaza empujando y/o arrastrando manualmente un objeto recorriendo una distancia mayor a 60 mts.' },
+      { id: 'p1_3', text: 'En el puesto de trabajo se empujan o arrastran cíclicamente objetos (bolsones, cajas, muebles, maquinas etc.) cuyo esfuerzo medido con dinamómetro superior a 34 kgf' }
+    ],
+    paso2: [
+      { id: 'p2_1', text: 'Para empujar el objeto rodante se requiere un esfuerzo inicial medido con dinamómetro >= 12 kgf para hombres o 10 kgf para mujeres' },
+      { id: 'p2_2', text: 'Para arrastrar el objeto rodante se requiere un esfuerzo inicial medido con dinamómetro >= 10 kgf para hombres o mujeres' },
+      { id: 'p2_3', text: 'El objeto rodante es empujado y/o arrastrado con dificultad (la superficie de deslizamiento es despareja, hay rampas que subir o bajar, hay roturas u obstáculos en el recorrido, ruedas en mal estado, mal diseño del asa etc.)' },
+      { id: 'p2_4', text: 'El objeto rodante no puede ser empujado y/o arrastrado con ambas manos, y en caso de que lo permita, el apoyo de las manos se encuentra a una altura incomoda (por encima del pecho o por debajo de la cintura)' },
+      { id: 'p2_5', text: 'En el movimiento de empujar y/o arrastrar, el esfuerzo inicial requerido se mantiene significativamente una vez puesto en movimiento el objeto (se produce atascamiento de las ruedas, tirones o falta de deslizamiento uniforme)' },
+      { id: 'p2_6', text: 'El trabajador empuja o arrastra el objeto rodante asiéndolo con una sola mano' },
+      { id: 'p2_7', text: 'El trabajador presenta alguna manifestación temprana de las enfermedades mencionadas en el artículo 1 de la presente resolución' }
+    ]
+  },
+  transporte: {
+    code: '2.C',
+    title: '2.C: TRANSPORTE MANUAL DE CARGAS',
+    paso1: [
+      { id: 'p1_1', text: 'Transporta manualmente carga superiores a 2 kg. Hasta 25 kg.' },
+      { id: 'p1_2', text: 'El trabajador se desplaza sosteniendo manualmente la carga recorriendo una distancia mayor a 1 metro' },
+      { id: 'p1_3', text: 'Realiza diariamente en forma cíclica (si es esporádica consignar NO)' },
+      { id: 'p1_4', text: 'Se transporta manualmente cargas a una distancia superior a 20 mts.' },
+      { id: 'p1_5', text: 'Se transporta manualmente cargas superiores a 25 kg.' }
+    ],
+    paso2: [
+      { id: 'p2_1', text: 'En condiciones habituales de levantamiento el trabajador transporta la carga entre 1 y 10 metros con una masa acumulada (el producto de la masa por frecuencia) mayor que 10.000 kg durante la jornada habitual' },
+      { id: 'p2_2', text: 'En condiciones habituales de levantamiento el trabajador transporta la carga entre 10 y 20 metros con una masa acumulada (el producto de la masa por la frecuencia) mayor a 6.000 kg durante la jornada habitual' },
+      { id: 'p2_3', text: 'Las cargas poseen formas irregulares, son difíciles de asir, se deforman o hay movimientos en su interior' },
+      { id: 'p2_4', text: 'El trabajador presenta alguna manifestación temprana de las enfermedades mencionadas en el artículo 1 de la presente Resolución' }
+    ]
+  },
+  bipedestacion: {
+    code: '2.D',
+    title: '2.D: BIPEDESTACION',
+    paso1: [
+      { id: 'p1_1', text: 'El puesto de trabajo se desarrolla en posición de pie, sin posibilidad de sentarse durante 2 horas seguidas o mas' }
+    ],
+    paso2: [
+      { id: 'p2_1', text: 'En el puesto se realizan tareas donde se permanece de pie durante 3 horas seguidas o más, sin posibilidades de sentarse con escasa deambulación (caminando no más de 100 mts. Por hora).' },
+      { id: 'p2_2', text: 'En el puesto se realizan tareas donde se permanece de pie durante 2 horas seguidas o más, sin posibilidades de sentarse o con escasa deambulación levantando y transportando cargas > 2 kg.' },
+      { id: 'p2_3', text: 'Trabajos efectuados con bipedestación prolongada en ambientes donde la temperatura y humedad del aire sobrepasan los limites legalmente admisibles y que demanden actividad física.' },
+      { id: 'p2_4', text: 'El trabajador presenta alguna manifestación temprana de enfermedades mencionadas en el artículo 1° de la presente Resolución.' }
+    ]
+  },
+  mov_repetitivos: {
+    code: '2.E',
+    title: '2.E: MOVIMIENTOS REPETITIVOS DE MIEMBROS SUPERIORES',
+    paso1: [
+      { id: 'p1_1', text: 'Realizar diariamente una o más tareas donde se utilizan las extremidades superiores, durante 4 o más horas en la jornada habitual de trabajo en forma cíclica (en forma continuada o alternada)' }
+    ],
+    paso2: [
+      { id: 'p2_1', text: 'Las extremidades superiores están activas por más del 40% del tiempo total del ciclo de trabajo' },
+      { id: 'p2_2', text: 'En el ciclo de trabajo se realiza un esfuerzo superior a moderado a 3 según la escala de Borg, durante más de 6 segundos y más de una vez por minuto.' },
+      { id: 'p2_3', text: 'Se realiza un esfuerzo superior a 7 según la escala de Borg.' },
+      { id: 'p2_4', text: 'El trabajador presenta alguna manifestación temprana de las enfermedades mencionadas en el artículo 1º de la presente resolución' }
+    ]
+  },
+  posturas_forzadas: {
+    code: '2.F',
+    title: '2.F: POSTURAS FORZADAS',
+    paso1: [
+      { id: 'p1_1', text: 'Adoptar posturas forzadas en forma habitual durante la jornada de trabajo, con o sin aplicación de fuerza. (No se deben considerar si las posturas son ocasionales)' }
+    ],
+    paso2: [
+      { id: 'p2_1', text: 'Cuello en extensión, flexión, lateralización y/o rotación' },
+      { id: 'p2_2', text: 'Brazos por encima de los hombros o con movimientos de supinación, pronación o rotación' },
+      { id: 'p2_3', text: 'Muñecas y manos en flexión, extensión desviación cubital o radial' },
+      { id: 'p2_4', text: 'Cintura en flexión, extensión, lateralización y/o rotación' },
+      { id: 'p2_5', text: 'Miembros inferiores: trabajo en posición de rodillas o cuclillas' },
+      { id: 'p2_6', text: 'El trabajador presenta alguna manifestación temprana de las enfermedades mencionadas en el Artículo 1º de la presente resolución' }
+    ]
+  },
+  vibraciones_mano_brazo: {
+    code: '2.G',
+    title: '2.G: VIBRACIONES MANO - BRAZO (entre 5 y 1500 hz)',
+    paso1: [
+      { id: 'p1_1', text: 'Trabajar con herramientas que producen vibraciones (martillo neumático, perforadora, destornilladores, pulidoras, esmeriladoras, otros).' },
+      { id: 'p1_2', text: 'Sujetar piezas con las manos mientras estas son mecanizadas' },
+      { id: 'p1_3', text: 'Sujetar palancas, volantes, etc. Que transmiten vibraciones' }
+    ],
+    paso2: [
+      { id: 'p2_1', text: 'El valor de las vibraciones supera los límites establecidos en la Tabla I, de la parte correspondiente a Vibración (segmental) mano-brazo, del Anexo V, Resolución MTEySS Nº 295/03' },
+      { id: 'p2_2', text: 'El trabajador presenta una manifestación temprana de las enfermedades mencionadas en el Artículo 1º de la presente Resolución' }
+    ]
+  },
+  vibraciones_cuerpo_entero: {
+    code: '2.G2',
+    title: '2.G: VIBRACIONES CUERPO ENTERO (entre 1 y 80 hz)',
+    paso1: [
+      { id: 'p1_1', text: 'Conducir vehículos industriales, camiones, maquinas agrícolas, transporte público y otros.' },
+      { id: 'p1_2', text: 'Trabajar próximo a máximas generadoras de impacto' }
+    ],
+    paso2: [
+      { id: 'p2_1', text: 'El valor de las vibraciones supera los límites establecidos en la parte correspondiente a Vibración Cuerpo entero, del Anexo V. Resolución MTEySS Nº 295/03' },
+      { id: 'p2_2', text: 'El trabajador presenta una manifestación temprana de las enfermedades mencionadas en el Artículo 1º de la presente Resolución' }
+    ]
+  },
+  confort_termico: {
+    code: '2.H',
+    title: '2.H: CONFORT TERMICO',
+    paso1: [
+      { id: 'p1_1', text: 'En el puesto de trabajo se perciben temperaturas no confortables para la realización de tareas' }
+    ],
+    paso2: [
+      { id: 'p2_1', text: 'Resultado del uso de la curva de Confort de Fanger, se encuentra por fuera de la zona de confort' }
+    ]
+  },
+  estres_contacto: {
+    code: '2.I',
+    title: '2.I: ESTRÉS DE CONTACTO',
+    paso1: [
+      { id: 'p1_1', text: 'Mantener apoyada alguna parte del cuerpo ejerciendo una presión, contra una herramienta, plano de trabajo, máquina herramienta o partes y materiales' }
+    ],
+    paso2: [
+      { id: 'p2_1', text: 'El trabajador mantiene apoyada la muñeca, antebrazo, axila o muslo u otro segmento corporal sobre una superficie aguda o con canto' },
+      { id: 'p2_2', text: 'El trabajador utiliza herramientas de mano o manipula piezas que presionan sobre sus dedos y/o palma de la mano hábil' },
+      { id: 'p2_3', text: 'El trabajador realiza movimientos de percusión sobre partes o herramientas' },
+      { id: 'p2_4', text: 'El trabajador presenta alguna manifestación temprana de las enfermedades mencionadas en el Artículo 1º de la presente resolución' }
+    ]
+  }
+};
+
+export const generateProtocoloErgonomiaPdf = async (arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) => {
+  let protocolo, empresa, establecimiento, userProfile, puntos, adjuntos;
+
+  if (arg1 && typeof arg1 === 'object' && ('protocolo' in arg1 || 'puntos' in arg1 || 'userProfile' in arg1)) {
+    protocolo = arg1.protocolo || {};
+    empresa = arg1.empresa || {};
+    establecimiento = arg1.establecimiento || {};
+    userProfile = arg1.userProfile || {};
+    puntos = arg1.puntos || [];
+    adjuntos = arg1.adjuntos || [];
+  } else {
+    protocolo = arg1 || {};
+    const empList = Array.isArray(arg3) ? arg3 : [];
+    empresa = empList.find(e => e.id === protocolo.empresa_id) || empList[0] || {};
+    const estList = Array.isArray(arg4) ? arg4 : [];
+    establecimiento = estList.find(e => e.id === protocolo.establecimiento_id) || estList[0] || {};
+    puntos = Array.isArray(arg5) ? arg5 : [];
+    adjuntos = Array.isArray(arg6) ? arg6 : [];
+    userProfile = arg8 || {};
+  }
+
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
-    format: 'a4',
-    compress: true
+    format: 'a4'
   });
 
-  const emp = empresas.find(e => e.id === proto.razon_social_id);
-  const est = allEstablecimientos.find(e => e.id === proto.establecimiento_id);
+  const COLOR_AZUL_PRINCIPAL = PDF_THEME.primary; // [70, 141, 255]
+  const COLOR_SLATE_900 = PDF_THEME.textDark; // [13, 13, 13]
+  const COLOR_SLATE_700 = [51, 65, 85];
+  const COLOR_SLATE_600 = [71, 85, 105];
+  const COLOR_SLATE_300 = [203, 213, 225];
+  const COLOR_SLATE_200 = [226, 232, 240];
+  const COLOR_NEGRO = [0, 0, 0];
+  const COLOR_BLANCO = [255, 255, 255];
 
-  // Download Header Logo (Tenant, User Profile Admin or Default)
+  const proto = protocolo || {};
+  const emp = empresa || {};
+  const est = establecimiento || {};
+  const companyName = userProfile?.company_name || 'GESTIÓN SYSO';
+  const phoneVal = userProfile?.phone || empresa?.telefono || '-';
+  const emailVal = userProfile?.email || empresa?.email || '-';
+
+  const tenantObj = (typeof arg2 === 'object' && !Array.isArray(arg2)) ? arg2 : {};
+
+  // Safe logo fetch (Prioritize Admin/Owner Profile & Tenant Primary Logo)
   let logoBase64 = '';
-  try {
-    const logoUrl = tenant?.logo_1_url || userProfile?.logo_1_url || userProfile?.logo_url;
-    if (logoUrl) {
-      logoBase64 = await getBase64ImageFromUrl(logoUrl);
+  let logoUrl = tenantObj?.logo_1_url || tenantObj?.logo_url || userProfile?.logo_1_url || userProfile?.logo_url;
+
+  if (!logoUrl && (proto.tenant_id || tenantObj?.id)) {
+    try {
+      const targetTenantId = proto.tenant_id || tenantObj?.id;
+      const { data: adminProf } = await supabase
+        .from('profiles')
+        .select('logo_1_url, logo_url')
+        .eq('tenant_id', targetTenantId)
+        .in('role', ['admin', 'owner'])
+        .not('logo_url', 'is', null)
+        .limit(1)
+        .maybeSingle();
+
+      if (adminProf) {
+        logoUrl = adminProf.logo_1_url || adminProf.logo_url;
+      }
+    } catch (err) {
+      console.warn('Warning fetching admin profile logo:', err);
     }
-  } catch (logoErr) {
-    console.error('Error al descargar logo para PDF:', logoErr);
   }
-  if (!logoBase64) {
+
+  if (logoUrl) {
+    try {
+      const rawLogo = await getBase64ImageFromUrl(logoUrl);
+      if (rawLogo && rawLogo.startsWith('data:image/')) {
+        logoBase64 = rawLogo;
+      }
+    } catch (err) {
+      console.warn('Warning loading primary logo URL:', err);
+    }
+  }
+
+  if (!logoBase64 || !logoBase64.startsWith('data:image/')) {
     logoBase64 = await getBase64ImageFromUrl('/brand/logo-primary.png');
   }
-  if (logoBase64) {
-    logoBase64 = await resizeImageForPdf(logoBase64, 400, 400);
+  if (!logoBase64 || !logoBase64.startsWith('data:image/')) {
+    logoBase64 = '';
+  }
+  const logoDims = logoBase64 ? await getImgDimensions(logoBase64) : { width: 120, height: 50 };
+
+  // Fetch signature Base64 for all 3 signees (H&S, Empleador, Medicina Laboral)
+  const firmaProfTarget = proto.firma_profesional || userProfile?.signature_url || '';
+  const firmaProfBase64 = await fetchSignatureImage(firmaProfTarget);
+  const firmaProfDims = firmaProfBase64 ? await getImgDimensions(firmaProfBase64) : { width: 120, height: 50 };
+
+  const firmaEmpleadorTarget = proto.firma_empleador || '';
+  const firmaEmpleadorBase64 = await fetchSignatureImage(firmaEmpleadorTarget);
+  const firmaEmpleadorDims = firmaEmpleadorBase64 ? await getImgDimensions(firmaEmpleadorBase64) : { width: 120, height: 50 };
+
+  const firmaMedicinaTarget = proto.firma_medicina || '';
+  const firmaMedicinaBase64 = await fetchSignatureImage(firmaMedicinaTarget);
+  const firmaMedicinaDims = firmaMedicinaBase64 ? await getImgDimensions(firmaMedicinaBase64) : { width: 120, height: 50 };
+
+  // Data Getters for Signees Names & Licenses
+  const profNombre = proto.profesional_nombre || userProfile?.full_name || '';
+  let profMatricula = proto.profesional_matricula || '';
+  if (!profMatricula && userProfile) {
+    if (userProfile.matricula_institucion && userProfile.matricula_numero) {
+      profMatricula = `${userProfile.matricula_institucion} N° ${userProfile.matricula_numero}`;
+    } else if (userProfile.matricula_numero) {
+      profMatricula = `Mat. N° ${userProfile.matricula_numero}`;
+    }
   }
 
-  // Calculate logo dimensions preserving exact aspect ratio
-  let logoDims = { width: 120, height: 50 };
-  if (logoBase64) {
-    logoDims = await getImgDimensions(logoBase64);
-  }
+  const empleadorNombre = proto.empleador_nombre || proto.responsable_empresa_nombre || proto.responsable_empresa || '';
+  const medicinaNombre = proto.medicina_nombre || proto.medico_nombre || proto.responsable_medicina_nombre || '';
+  const medicinaMatricula = proto.medicina_matricula || proto.medico_matricula || '';
 
-  // Helper to download signature base64 if present (regenerate signed URL if expired)
-  const resolveSignatureImage = async (signatureField) => {
-    if (!signatureField) return '';
+  // Helper: Draw Aspect-Ratio Preserved Signature (No Stretching)
+  const drawAspectSignature = (base64, dims, colCenterX, lineY, maxW = 42, maxH = 22) => {
+    if (!base64 || !base64.startsWith('data:image/')) return;
     try {
-      let sigUrl = signatureField;
-      if (sigUrl && !sigUrl.startsWith('data:')) {
-        let relativePath = sigUrl;
-        let bucketName = 'signatures';
-
-        if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
-          try {
-            const urlObj = new URL(relativePath);
-            const pathParts = urlObj.pathname.split('/');
-            const bIdx = pathParts.findIndex(p => p === 'signatures' || p === 'documents' || p === 'avatars');
-            if (bIdx !== -1 && bIdx < pathParts.length - 1) {
-              bucketName = pathParts[bIdx];
-              relativePath = pathParts.slice(bIdx + 1).join('/');
-            }
-          } catch (urlErr) {
-            console.error('Error parseando URL de firma:', urlErr);
-          }
-        }
-
-        if (relativePath && !relativePath.startsWith('http')) {
-          try {
-            const { data: sData, error: sErr } = await supabase.storage
-              .from(bucketName)
-              .createSignedUrl(relativePath, 3600);
-            if (!sErr && sData?.signedUrl) {
-              sigUrl = sData.signedUrl;
-            }
-          } catch (sErr) {
-            console.error('Error generando URL firmada para la firma:', sErr);
-          }
-        }
+      const ratio = (dims?.width && dims?.height) ? (dims.width / dims.height) : 2.2;
+      let renderW = maxW;
+      let renderH = maxW / ratio;
+      if (renderH > maxH) {
+        renderH = maxH;
+        renderW = maxH * ratio;
       }
+      const renderX = colCenterX - (renderW / 2);
+      const renderY = lineY - (renderH * 0.78);
 
-      let base64 = await getBase64ImageFromUrl(sigUrl);
-      if (base64) {
-        base64 = await resizeImageForPdf(base64, 450, 450);
-      }
-      return base64;
+      doc.addImage(base64, 'PNG', renderX, renderY, renderW, renderH, undefined, 'FAST');
     } catch (e) {
-      console.error('Error fetching signature:', e);
-      return '';
+      console.warn('Error drawing signature image:', e);
     }
   };
 
-  const signatureBase64 = await resolveSignatureImage(proto.firma_profesional);
-  const firmaEmpleadorBase64 = await resolveSignatureImage(proto.firma_empleador);
-  const firmaMedicinaBase64 = await resolveSignatureImage(proto.firma_medicina);
-  let signatureDims = { width: 150, height: 60 };
-  if (signatureBase64) {
-    try {
-      signatureDims = await getImgDimensions(signatureBase64);
-    } catch (e) {
-      console.error('Error getting signature dimensions:', e);
-    }
-  }
+  // Calculate total pages for footer (Cover + Intro + Diagrama + Datos + Planilla1 + Planilla2 pages + Planilla3 pages + Planilla4)
+  const ALL_FACTOR_KEYS = [
+    'levantamiento', 'empuje_arrastre', 'transporte', 'bipedestacion',
+    'mov_repetitivos', 'posturas_forzadas', 'vibraciones_mano_brazo',
+    'vibraciones_cuerpo_entero', 'confort_termico', 'estres_contacto'
+  ];
 
-  // Color Tokens (Gestión SySO Brand & PDF standard)
-  const COLOR_AZUL_PRINCIPAL = '#468DFF';
-  const COLOR_AZUL_SECUNDARIO = '#4F81BD';
-  const COLOR_SLATE_900 = '#0F172A';
-  const COLOR_SLATE_700 = '#334155';
-  const COLOR_SLATE_600 = '#475569';
-  const COLOR_SLATE_500 = '#64748B';
-  const COLOR_SLATE_300 = '#CBD5E1';
-  const COLOR_SLATE_200 = '#D9D9D9'; // Neutral header gray #D9D9D9
-  const COLOR_SLATE_50 = '#F2F2F2';  // Empty cells soft gray #F2F2F2
-  const COLOR_NEGRO = '#000000';
-  const COLOR_BLANCO = '#FFFFFF';
-  const COLOR_VERDE_CUMPLE = '#00B050'; // Green
-  const COLOR_ROJO_NO_CUMPLE = '#FF0000'; // Red
+  const puntosList = puntos.length > 0 ? puntos : [{}];
+  let totalPagesCount = 3; // Cover, Intro, Diagrama
 
-  // Contact Info for Footer
-  const companyName = tenant?.name || tenant?.razon_social || userProfile?.empresa || userProfile?.consultora || 'Gestión SySO';
-  const emailVal = userProfile?.email || tenant?.email || tenant?.correo || '—';
-  const phoneVal = userProfile?.phone || userProfile?.telefono || tenant?.phone || tenant?.telefono || '—';
+  puntosList.forEach(pt => {
+    totalPagesCount++; // Planilla 1
+    const tList = pt.tareas || [];
+    tList.forEach(t => {
+      ALL_FACTOR_KEYS.forEach(fKey => {
+        if (t[`f_${fKey}_identificado`] === 'si') totalPagesCount++; // Planilla 2
+      });
+      totalPagesCount++; // Planilla 3
+    });
+    totalPagesCount++; // Planilla 4
+  });
 
-  // Helper: Draw cell text perfectly constrained within width & height without overflow
+  // Helper text renderer with auto-sanitization for unicode width issues
   const drawCellText = (docInst, text, x, y, w, h, options = {}) => {
     const {
       align = 'left',
       valign = 'middle',
-      fontSize = 8,
+      fontSize = 7.5,
       fontStyle = 'normal',
       color = COLOR_NEGRO,
       padding = 1.2,
@@ -251,8 +423,12 @@ export const generateErgonomyProtocolPdf = async (
     docInst.setFontSize(fontSize);
     setTextColor(docInst, color);
 
+    let cleanText = String(text !== null && text !== undefined ? text : '')
+      .replace(/≥/g, '>=')
+      .replace(/≤/g, '<=');
+
     const availableW = Math.max(2, w - (padding * 2));
-    let lines = docInst.splitTextToSize(String(text !== null && text !== undefined ? text : ''), availableW);
+    let lines = docInst.splitTextToSize(cleanText, availableW);
 
     if (maxLines > 0 && lines.length > maxLines) {
       lines = lines.slice(0, maxLines);
@@ -261,7 +437,7 @@ export const generateErgonomyProtocolPdf = async (
       }
     }
 
-    const lineHeight = fontSize * 0.3527 * 1.15; // pt to mm conversion factor
+    const lineHeight = fontSize * 0.3527 * 1.15;
     const totalTextH = lines.length * lineHeight;
 
     let startY = y + padding + (lineHeight * 0.75);
@@ -280,12 +456,27 @@ export const generateErgonomyProtocolPdf = async (
     });
   };
 
-  // Helper: Draw Header Logo maintaining aspect ratio
-  const drawHeaderLogo = (isLandscape = false) => {
-    if (!logoBase64) return;
-    const maxW = 38;
-    const maxH = 15;
-    const ratio = logoDims.width / logoDims.height;
+  // Helper: Header Box (always sets fill and draw color explicitly before drawing rect)
+  const drawHeaderBox = (x, y, w, h, text, opts = {}) => {
+    setFillColor(doc, COLOR_SLATE_200);
+    setDrawColor(doc, COLOR_NEGRO);
+    doc.setLineWidth(0.25);
+    doc.rect(x, y, w, h, 'FD');
+    drawCellText(doc, text, x, y, w, h, {
+      align: 'center',
+      fontStyle: 'bold',
+      fontSize: 6.5,
+      color: COLOR_NEGRO,
+      ...opts
+    });
+  };
+
+  // Helper: Header Logo (Top Left)
+  const drawHeaderLogo = () => {
+    if (!logoBase64 || !logoBase64.startsWith('data:image/')) return;
+    const maxW = 42;
+    const maxH = 16;
+    const ratio = (logoDims?.width && logoDims?.height) ? (logoDims.width / logoDims.height) : 2.5;
 
     let renderW = maxW;
     let renderH = maxW / ratio;
@@ -294,44 +485,38 @@ export const generateErgonomyProtocolPdf = async (
       renderW = maxH * ratio;
     }
 
-    const x = isLandscape ? 17 : 15;
-    const y = 6 + (maxH - renderH) / 2;
+    const x = 15;
+    const y = 8 + (maxH - renderH) / 2;
 
     try {
       doc.addImage(logoBase64, 'PNG', x, y, renderW, renderH, undefined, 'FAST');
     } catch (err) {
-      console.error('Error drawing header logo:', err);
+      console.warn('Warning drawing header logo:', err);
     }
   };
 
-  // Helper: Header across all inner pages
-  const drawHeader = (isLandscape = false) => {
-    // Logo únicamente (se elimina texto del anexo, cliente y línea divisoria superior)
-    drawHeaderLogo(isLandscape);
-  };
+  const fechaEval = proto.fecha_medicion || proto.fecha_estudio || proto.fecha_evaluacion || proto.fecha || proto.created_at;
+  const fechaFormatted = fechaEval ? formatDate(fechaEval) : '';
 
-  // Helper: Footer across all inner pages
-  const drawFooter = (isLandscape = false, pageNum = 1, totalPages = 1) => {
-    const startX = isLandscape ? 15 : 15;
-    const endX = isLandscape ? 282 : 195;
-    const barY = isLandscape ? 196 : 281;
-    const textY = isLandscape ? 200.5 : 285.5;
-    const subFooterY = isLandscape ? 204.5 : 289.5;
+  // Helper: Inner Page Footer (Matching Ruido and Iluminacion standard)
+  const drawFooter = (pageNum = 1, totalPages = 1) => {
+    const startX = 15;
+    const endX = 195;
+    const barY = 281;
+    const textY = 285.5;
+    const subFooterY = 289.5;
     const totalW = endX - startX;
 
-    // Accent Blue Bar (espesor 0.35 mm o ~1 pt)
     setDrawColor(doc, COLOR_AZUL_PRINCIPAL);
     doc.setLineWidth(0.35);
     doc.line(startX, barY, endX, barY);
 
-    // Contact Info Line Centered
     const boldText = companyName;
     const normalText = `  •  Tel: ${phoneVal}  •  Email: ${emailVal}`;
 
     doc.setFontSize(7.5);
     setTextColor(doc, COLOR_SLATE_700);
 
-    // Medir anchos de los segmentos según su estilo
     doc.setFont('helvetica', 'bold');
     const boldWidth = doc.getTextWidth(boldText);
 
@@ -341,173 +526,90 @@ export const generateErgonomyProtocolPdf = async (
     const totalTextWidth = boldWidth + normalWidth;
     const lineStartX = startX + (totalW / 2) - (totalTextWidth / 2);
 
-    // Dibujar secuencialmente
     doc.setFont('helvetica', 'bold');
     doc.text(boldText, lineStartX, textY);
 
     doc.setFont('helvetica', 'normal');
     doc.text(normalText, lineStartX + boldWidth, textY);
 
-    // Sub-footer: Page count right
-    doc.setFont('helvetica', 'bold');
+    // Fecha de evaluación (a partir de la Hoja 4) encima del número de página
     doc.setFontSize(7.5);
     setTextColor(doc, COLOR_SLATE_600);
+    if (pageNum >= 4 && fechaFormatted) {
+      doc.setFont('helvetica', 'normal');
+      doc.text(fechaFormatted, endX, textY, { align: 'right' });
+    }
+
+    doc.setFont('helvetica', 'bold');
     doc.text(`Página ${pageNum} de ${totalPages}`, endX, subFooterY, { align: 'right' });
   };
 
-  // Helper: Protocol Bar Title
-  const drawProtocolTitleBar = (isLandscape = false, customPos = null) => {
-    const pos = customPos || (isLandscape ? { x: 17, y: 22, w: 263, h: 5.5 } : { x: 15, y: 22, w: 180, h: 5.5 });
-    setFillColor(doc, COLOR_AZUL_PRINCIPAL);
-    doc.rect(pos.x, pos.y, pos.w, pos.h, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9.5);
-    setTextColor(doc, COLOR_BLANCO);
-    const textY = pos.y + (pos.h / 2) + 1.1;
-    doc.text('PROTOCOLO PARA MEDICIÓN DE RUIDO EN EL AMBIENTE LABORAL', pos.x + (pos.w / 2), textY, { align: 'center' });
-  };
-
-  // Helper: Signature Block
-  const drawSignatureBlock = (x, y, w, h, signatureImg, name, credential, label) => {
-    const imgMaxW = w;
-    const imgMaxH = Math.max(28, h - 8);
-
-    // 1. Signature image
-    if (signatureImg) {
-      try {
-        const ratio = 2.5; // default ratio
-        let renderW = imgMaxW;
-        let renderH = imgMaxW / ratio;
-        if (renderH > imgMaxH) {
-          renderH = imgMaxH;
-          renderW = imgMaxH * ratio;
-        }
-
-        const renderX = x + (w - renderW) / 2;
-        const lineY = y + 24;
-        const renderY = lineY - (renderH * 0.72);
-
-        doc.addImage(signatureImg, 'PNG', renderX, renderY, renderW, renderH, undefined, 'FAST');
-      } catch (e) {
-        console.error('Error drawing signature image:', e);
-      }
-    }
-
-    // 2. Dotted line
-    const lineY = y + 24;
+  // Helper: Triple Signatures Block (with dotted lines, enlarged aspect-ratio-scaled signature images, names & matrículas for all 3 roles)
+  const drawTripleSignatureBlock = (y = 248) => {
     setDrawColor(doc, COLOR_NEGRO);
     doc.setLineWidth(0.25);
-    const startX = x + 2;
-    const endX = x + w - 2;
-    let currX = startX;
-    while (currX < endX) {
-      doc.line(currX, lineY, Math.min(currX + 1.5, endX), lineY);
+
+    // ==================== COL 1: EMPLEADOR (15 to 65, center = 40) ====================
+    drawAspectSignature(firmaEmpleadorBase64, firmaEmpleadorDims, 40, y, 42, 22);
+    let currX = 15;
+    while (currX < 65) {
+      doc.line(currX, y, Math.min(currX + 1.5, 65), y);
       currX += 2.5;
     }
-
-    // 3. Label below line
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.5);
-    setTextColor(doc, COLOR_NEGRO);
-    doc.text(label, x + (w / 2), lineY + 3.5, { align: 'center' });
-
-    // 4. Nombre y Aclaración
-    let currentTextY = lineY + 7.5;
-    if (name) {
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8);
-      setTextColor(doc, COLOR_SLATE_900);
-      doc.text(name, x + (w / 2), currentTextY, { align: 'center' });
-      currentTextY += 3.8;
+    drawCellText(doc, 'Firma del empleador', 15, y + 1.5, 50, 4, { align: 'center', fontSize: 6.5, fontStyle: 'bold' });
+    if (empleadorNombre) {
+      drawCellText(doc, empleadorNombre, 15, y + 7.5, 50, 4, { align: 'center', fontSize: 6.5, fontStyle: 'bold' });
     }
 
-    // 5. Credential (matricula)
-    if (credential) {
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7.5);
-      setTextColor(doc, COLOR_SLATE_600);
-      doc.text(credential, x + (w / 2), currentTextY, { align: 'center' });
+    // ==================== COL 2: HIGIENE Y SEGURIDAD (75 to 135, center = 105) ====================
+    drawAspectSignature(firmaProfBase64, firmaProfDims, 105, y, 46, 24);
+    currX = 75;
+    while (currX < 135) {
+      doc.line(currX, y, Math.min(currX + 1.5, 135), y);
+      currX += 2.5;
+    }
+    drawCellText(doc, 'Firma del responsable del servicio de\nhigiene y seguridad', 75, y + 1.5, 60, 6, { align: 'center', fontSize: 6.5, fontStyle: 'bold' });
+    if (profNombre) {
+      drawCellText(doc, profNombre, 75, y + 8, 60, 4, { align: 'center', fontSize: 6.5, fontStyle: 'bold' });
+    }
+    if (profMatricula) {
+      drawCellText(doc, profMatricula, 75, y + 12, 60, 4, { align: 'center', fontSize: 5.5, fontStyle: 'normal' });
+    }
+
+    // ==================== COL 3: MEDICINA LABORAL (145 to 195, center = 170) ====================
+    drawAspectSignature(firmaMedicinaBase64, firmaMedicinaDims, 170, y, 42, 22);
+    currX = 145;
+    while (currX < 195) {
+      doc.line(currX, y, Math.min(currX + 1.5, 195), y);
+      currX += 2.5;
+    }
+    drawCellText(doc, 'Firma del responsable del servicio\nde medicina del trabajo', 145, y + 1.5, 50, 6, { align: 'center', fontSize: 6.5, fontStyle: 'bold' });
+    if (medicinaNombre) {
+      drawCellText(doc, medicinaNombre, 145, y + 8, 50, 4, { align: 'center', fontSize: 6.5, fontStyle: 'bold' });
+    }
+    if (medicinaMatricula) {
+      drawCellText(doc, medicinaMatricula, 145, y + 12, 50, 4, { align: 'center', fontSize: 5.5, fontStyle: 'normal' });
     }
   };
 
-  // Helper: Draw math fraction
-  const drawFraction = (topText, bottomText, x, y, width, height) => {
-    doc.setFontSize(8);
-    setTextColor(doc, COLOR_NEGRO);
-    const midX = x + (width / 2);
-    const topStr = String(topText);
-
-    // Numerator
-    if (topStr.includes('Σ')) {
-      const restText = topStr.replace('Σ', '').trim();
-      doc.setFont('symbol', 'normal');
-      doc.setFontSize(8);
-      const sigWidth = doc.getTextWidth('S');
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      const restWidth = doc.getTextWidth(' ' + restText);
-      const totalW = sigWidth + restWidth;
-      const startX = midX - (totalW / 2);
-
-      doc.setFont('symbol', 'normal');
-      doc.text('S', startX, y + (height * 0.38));
-      doc.setFont('helvetica', 'normal');
-      doc.text(' ' + restText, startX + sigWidth, y + (height * 0.38));
-    } else {
-      doc.setFont('helvetica', 'normal');
-      doc.text(topStr, midX, y + (height * 0.38), { align: 'center' });
-    }
-
-    // Line
-    setDrawColor(doc, COLOR_NEGRO);
-    doc.setLineWidth(0.25);
-    doc.line(x + 2, y + (height * 0.52), x + width - 2, y + (height * 0.52));
-
-    // Denominator
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.text(String(bottomText), midX, y + (height * 0.88), { align: 'center' });
-  };
-
-  // Safe data getters
-  const razonSocial = proto.razon_social_text || emp?.razon_social || 'SUPEH TURISMO-HOTEL 8 DE OCTUBRE';
-  const cuit = proto.cuit_text || emp?.cuit || '30-68308043-4';
-  const ciiu = proto.ciiu_text || (emp?.actividades_ciiu || []).join(', ') || '—';
-  const direccion = proto.direccion_text || est?.direccion || 'PARAGUAY N°1420';
-  const localidad = proto.localidad_text || est?.localidad || 'CABA';
-  const provincia = proto.provincia_text || est?.provincia || 'BUENOS AIRES';
-  const cp = proto.cp_text || est?.cp || '1061';
-  const horarios = proto.horarios_turnos_text || 'Lunes a viernes de 8:00 a 17:00 hs';
-  const marcaModeloNser = proto.instrumento_marca_modelo_serie || 'Sonómetro / Dosímetro marca Amprobe, modelo LM 100, N° de serie 12093081';
-  const fechaCalib = proto.fecha_calibracion ? formatDate(proto.fecha_calibracion) : '';
-  const metodologia = proto.metodologia_utilizada || 'Método de la Cuadrícula';
-  const fechaMedicion = proto.fecha_medicion ? formatDate(proto.fecha_medicion) : '17/07/26';
-  const horaInicio = proto.hora_inicio || '13:30';
-  const horaFin = proto.hora_finalizacion || '';
-  const condAtmos = proto.condiciones_atmosfericas || 'Parcialmente nublado\nTemperatura: 8 °C\nNubosidad: 80%\nHumedad: 96 %\nVisibilidad: 10 Km';
-
-  const profNombre = proto.profesional_nombre || userProfile?.full_name || '';
-  let profMatricula = proto.profesional_matricula || '';
-  if (!profMatricula && userProfile) {
-    if (userProfile.matricula_institucion && userProfile.matricula_numero) {
-      profMatricula = `${userProfile.matricula_institucion} N° ${userProfile.matricula_numero}`;
-    } else if (userProfile.matricula_numero) {
-      profMatricula = `Mat. N° ${userProfile.matricula_numero}`;
-    }
-  }
-
-  let pageCounter = 1;
+  // Data Getters for establishment
+  const razonSocial = proto.razon_social_text || emp?.razon_social || '-';
+  const cuit = proto.cuit_text || emp?.cuit || '-';
+  const ciiu = proto.ciiu_text || (emp?.actividades_ciiu || []).join(', ') || '-';
+  const direccion = proto.direccion_text || est?.direccion || '-';
+  const localidad = proto.localidad_text || est?.localidad || '-';
+  const provincia = proto.provincia_text || est?.provincia || '-';
+  const cp = proto.cp_text || est?.cp || '-';
 
   // ==========================================
-  // PAGINA 1: PORTADA (A4 Vertical)
+  // HOJA 1: CARÁTULA / PORTADA (A4 Vertical)
   // ==========================================
-  // Outer Border (A4: 210 x 297 mm, 10mm margin from all paper edges)
   setDrawColor(doc, COLOR_AZUL_PRINCIPAL);
   doc.setLineWidth(0.4);
   doc.rect(10, 10, 190, 277, 'S');
 
   // Year Rectangle
-  const currentYear = proto.fecha_medicion ? new Date(proto.fecha_medicion).getFullYear() : 2026;
+  const currentYear = proto.fecha_medicion ? new Date(proto.fecha_medicion).getFullYear() : new Date().getFullYear();
   setFillColor(doc, COLOR_AZUL_PRINCIPAL);
   doc.rect(168, 15, 20, 28, 'F');
   doc.setFont('helvetica', 'bold');
@@ -515,11 +617,11 @@ export const generateErgonomyProtocolPdf = async (
   setTextColor(doc, COLOR_BLANCO);
   doc.text(String(currentYear), 178, 32, { align: 'center' });
 
-  // Main Cover Logo
-  if (logoBase64) {
+  // Main Cover Logo (Admin Profile Logo)
+  if (logoBase64 && logoBase64.startsWith('data:image/')) {
     const maxCoverW = 85;
     const maxCoverH = 45;
-    const ratio = logoDims.width / logoDims.height;
+    const ratio = (logoDims?.width && logoDims?.height) ? (logoDims.width / logoDims.height) : 2.5;
     let coverW = maxCoverW;
     let coverH = maxCoverW / ratio;
     if (coverH > maxCoverH) {
@@ -539,15 +641,15 @@ export const generateErgonomyProtocolPdf = async (
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(30);
   setTextColor(doc, COLOR_AZUL_PRINCIPAL);
-  const titleLines = doc.splitTextToSize('Protocolo para la Medición del nivel de Ergonomía en el Ambiente Laboral', 145);
+  const titleLines = doc.splitTextToSize('Protocolo de Ergonomía', 145);
   doc.text(titleLines, 39, 172);
 
   // Normative reference
   doc.setFontSize(10.5);
   doc.setFont('helvetica', 'normal');
   setTextColor(doc, COLOR_SLATE_600);
-  doc.text('LEY Nº 19.587 - DECRETO Nº 351/79, ANEXO V, CAPITULO 13 - ACUSTICA', 39, 222);
-  doc.text('ANEXO - RESOLUCIÓN SRT 85 / 2012 (PROTOCOLO DE MEDICIÓN DE RUIDO)', 39, 228);
+  doc.text('ANEXO I - RESOLUCIÓN 295 / 2003', 39, 222);
+  doc.text('ANEXO I - RESOLUCIÓN SRT 886 / 2015 (PROTOCOLO DE ERGONOMÍA)', 39, 228);
 
   // Brand / Consultora
   doc.setFont('helvetica', 'bold');
@@ -555,882 +657,727 @@ export const generateErgonomyProtocolPdf = async (
   setTextColor(doc, COLOR_SLATE_900);
   doc.text(companyName.toUpperCase(), 39, 246);
 
+  let pageCounter = 1;
+
   // ==========================================
-  // HOJAS INFORMATIVAS: ACÚSTICA (ANEXO V - CAPÍTULO 13 - DEC. 351/79)
+  // HOJA 2: INTRODUCCIÓN
   // ==========================================
   doc.addPage('a4', 'portrait');
   pageCounter++;
-  drawHeader(false);
 
-  // Section Title
+  drawHeaderLogo();
+
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   setTextColor(doc, COLOR_NEGRO);
-  doc.text('Acústica (ANEXO V - Capítulo 13 – Dec. 351/79)', 15, 28);
+  doc.text('Introducción', 15, 28);
   setDrawColor(doc, COLOR_AZUL_PRINCIPAL);
   doc.setLineWidth(0.4);
   doc.line(15, 30, 195, 30);
 
-  let currentY = 36;
+  let currentY = 38;
 
-  const checkPageY = (neededH) => {
-    if (currentY + neededH > 275) {
-      doc.addPage('a4', 'portrait');
-      pageCounter++;
-      drawHeader(false);
-      currentY = 28;
-      return true;
-    }
-    return false;
+  const printParagraph = (pText, isBold = false) => {
+    doc.setFont('helvetica', isBold ? 'bold' : 'normal');
+    doc.setFontSize(9);
+    setTextColor(doc, COLOR_NEGRO);
+    const lines = doc.splitTextToSize(pText, 180);
+    doc.text(lines, 15, currentY);
+    currentY += (lines.length * 4.2) + 3;
   };
 
-  const printSectionHeader = (titleText) => {
-    checkPageY(10);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    setTextColor(doc, COLOR_AZUL_PRINCIPAL);
-    doc.text(titleText.toUpperCase(), 15, currentY);
-    currentY += 6;
+  const printBullet = (bText) => {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    setTextColor(doc, COLOR_NEGRO);
+    doc.text('•  ' + bText, 19, currentY);
+    currentY += 4.5;
   };
 
-  const printParagraph = (pText, pStyle = 'normal') => {
-    if (pStyle === 'formula') {
-      checkPageY(10);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9.5);
-      setTextColor(doc, COLOR_NEGRO);
-      doc.text(pText, 25, currentY);
-      currentY += 6;
-    } else if (pStyle === 'legend') {
-      doc.setFont('helvetica', 'italic');
-      doc.setFontSize(8);
-      setTextColor(doc, COLOR_SLATE_600);
-      const lines = doc.splitTextToSize(pText, 180);
-      const blockH = (lines.length * 3.8) + 4.5;
-      checkPageY(blockH);
-      doc.setFont('helvetica', 'italic');
-      doc.setFontSize(8);
-      setTextColor(doc, COLOR_SLATE_600);
-      doc.text(pText, 15, currentY, { align: 'justify', maxWidth: 180 });
-      currentY += blockH;
-    } else {
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      setTextColor(doc, COLOR_SLATE_900);
-      const lines = doc.splitTextToSize(pText, 180);
-      const blockH = (lines.length * 4.2) + 4.5;
-      checkPageY(blockH);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      setTextColor(doc, COLOR_SLATE_900);
-      doc.text(pText, 15, currentY, { align: 'justify', maxWidth: 180 });
-      currentY += blockH;
-    }
-  };
+  printParagraph('La palabra “Ergonomía” tiene su origen en la expresión griega ergos (trabajo) y nomos (ley, regla), es la disciplina que estudia las condiciones en que se realiza el trabajo humano y la persona que lo ejecuta.');
+  printParagraph('El objetivo de la ergonomía es mejorar la calidad de las condiciones, los entornos y los instrumentos de trabajo con el fin de optimizar la eficacia y eficiencia de las personas. Se basa en conocimientos y experiencias derivadas tanto de estudios experimentales como de estudios sobre terreno (en el puesto de trabajo). Como tal, es un instrumento integrador, orientado a incrementar la seguridad, la salud y el bienestar de los trabajadores.');
 
-  // 1. Infrasonido y sonido de baja frecuencia
-  printSectionHeader('Infrasonido y sonido de baja frecuencia');
-  printParagraph('Estos límites representan las exposiciones al sonido a los que se cree que casi todos los trabajadores pueden estar expuestos repetidamente sin efectos adversos para la audición.');
-  printParagraph('Excepto para el sonido de impulsos de banda de un tercio de octava, con duración inferior a 2 segundos, los niveles para frecuencias entre 1 y 80 Hz de nivel de presión sonoro (NPS), no deben exceder el valor techo de 145 dB. Además, el NPS global no ponderado no debe exceder el valor techo de 150 dB.');
-  printParagraph('No hay tiempo límite para estas exposiciones. Sin embargo, la aplicación de los valores límite para el Ruido y el Ultrasonido, recomendados para prevenir la pérdida de audición por el ruido, puede proporcionar un nivel reducido aceptable en el tiempo.');
-  printParagraph('Una alternativa que puede utilizarse, pero con un criterio ligeramente más restrictivo, es cuando el pico NPS medido con la escala de frecuencias, del sonómetro en lineal o no ponderada, no exceda de 145 dB para situaciones de sonido sin impulsos.');
-  printParagraph('La resonancia en el pecho de los sonidos de baja frecuencia en el intervalo aproximado de 50 Hz a 60 Hz puede causar vibración del cuerpo entero. Este efecto puede causar molestias e incomodidad, hasta hacerse necesario reducir el NPS de este sonido a un nivel al que desaparezca el problema.');
-  printParagraph('Las mediciones de la exposición al ruido se deberán ajustar a las prescripciones establecidas por las normas nacionales e internacionales.');
-  printParagraph('Estos valores límite se refieren a los niveles de presión acústica y duraciones de exposición que representan las condiciones en las que se cree que casi todos los trabajadores pueden estar expuestos repetidamente sin efectos adversos sobre su capacidad para oír y comprender una conversación normal.');
-  printParagraph('Cuando los trabajadores estén expuestos al ruido a niveles iguales o superiores a los valores límite, es necesario un programa completo de conservación de la audición que incluya pruebas audiométricas.');
-
-  // 2. Ruido continuo o intermitente
-  printSectionHeader('Ruido continuo o intermitente');
-  printParagraph('El nivel de presión acústica se debe determinar por medio de un sonómetro o dosímetro que se ajusten, como mínimo, a los requisitos de la especificación de las normas nacionales o internacionales. El sonómetro deberá disponer de filtro de ponderación frecuencial A y respuesta lenta. La duración de la exposición no deberá exceder de los valores que se dan en la Tabla 1.');
-  printParagraph('Estos valores son de aplicación a la duración total de la exposición por día de trabajo, con independencia de si se trata de una exposición continua o de varias exposiciones de corta duración.');
-  printParagraph('Cuando la exposición diaria al ruido se compone de dos o más períodos de exposición a distintos niveles de ruidos, se debe tomar en consideración el efecto global, en lugar del efecto individual de cada período. Si la suma de las fracciones siguientes:');
-  
-  // Fórmula
-  printParagraph('Ecuación para Exposición Combinada a Ruido:', 'formula');
-  printParagraph('C1 / T1 + C2 / T2 + ... + Cn / Tn', 'formula');
-  printParagraph('es mayor que la unidad, entonces se debe considerar que la exposición global sobrepasa el valor límite umbral. C1 indica la duración total de la exposición a un nivel específico de ruido y T1 indica la duración total de la exposición permitida a ese nivel. En los cálculos citados, se usarán todas las exposiciones al ruido en el lugar de trabajo que alcancen o sean superiores a los 80 dBA. Esta fórmula se debe aplicar cuando se utilicen los sonómetros para sonidos con niveles estables de por lo menos 3 segundos. Para sonidos que no cumplan esta condición, se debe utilizar un dosímetro o sonómetro de integración. El límite se excede cuando la dosis es mayor de 100%, medida en un dosímetro fijado para un índice de conversión de 3 dB y un nivel de 85 dBA como criterio para las 8 horas.');
-  printParagraph('Utilizando el sonómetro de integración el valor límite se excede cuando el nivel medio de sonido supere los valores de la Tabla 1.');
   currentY += 2;
+  printParagraph('Resolución MTESS Nº 295 / 2003 - Anexo I', true);
+  printParagraph('La Resolución MTESS Nº 295 / 2003, incorpora a la normativa vigente (Ley 19587 – Higiene y Seguridad en el trabajo) lineamientos específicos sobre ergonomía.');
+  printParagraph('En las “Especificaciones Técnicas de Ergonomía”, menciona los causales a considerar para prevenir el daño al trabajador por los factores de riesgo que se pueden presentar en las tareas del puesto de trabajo. Entre ellos:');
 
-  // Tabla 1: Valores Límite para Ruido Continuo o Intermitente
-  const drawTabla1RuidoNormativa = () => {
-    const tX = 15;
-    const tW = 180;
-    
-    checkPageY(14);
-    setFillColor(doc, COLOR_AZUL_PRINCIPAL);
-    doc.rect(tX, currentY, tW, 6, 'F');
-    drawCellText(doc, 'TABLA 1: VALORES LÍMITE UMBRAL PARA RUIDO (Dec. 351/79 - ANEXO V)', tX, currentY, tW, 6, { align: 'center', fontStyle: 'bold', fontSize: 8, color: COLOR_BLANCO });
-    currentY += 6;
+  printBullet('Levantamiento manual de cargas');
+  printBullet('Transporte manual de cargas');
+  printBullet('Empuje y/o arrastre manual de cargas');
+  printBullet('Trabajos repetitivos');
+  printBullet('Posturas extremas (estáticas o dinámicas)');
+  printBullet('Vibraciones (mano brazo; cuerpo entero)');
+  printBullet('Estrés de contacto');
+  printBullet('Estrés por el calor o frío');
+  printBullet('Duración del trabajo');
 
-    setDrawColor(doc, COLOR_SLATE_300);
-    setFillColor(doc, COLOR_SLATE_200);
-    doc.rect(tX, currentY, 60, 6, 'FD');
-    doc.rect(tX + 60, currentY, 40, 6, 'FD');
-    doc.rect(tX + 100, currentY, 80, 6, 'FD');
-    drawCellText(doc, 'Duración por Día', tX, currentY, 60, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
-    drawCellText(doc, 'Unidad', tX + 60, currentY, 40, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
-    drawCellText(doc, 'Nivel de Presión Acústica (dBA)', tX + 100, currentY, 80, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
-    currentY += 6;
+  currentY += 2;
+  printParagraph('Resolución SRT Nº 886 / 2015', true);
+  printParagraph('La Resolución SRT Nº 886 / 2015 unifica los criterios para la prevención de las enfermedades profesionales relacionadas con los trastornos musculoesqueléticos, hernias inguinales directas, mixtas y crurales, hernia discal lumbosacra con o sin compromiso radicular que afecte a un solo segmento columnario y várices primitivas bilaterales desde una metodología de abordaje de origen multicausal.');
+  printParagraph('En este sentido, incorpora el uso de un protocolo estandarizado, para facilitar la evaluación de los factores de riesgo, el estudio ergonómico y la identificación de las medidas correctivas y preventivas.');
+  printParagraph('El mismo está conformado por cuatro planillas que se utilizan para:');
 
-    const filasTabla1 = [
-      { dur: '24', uni: 'horas', dba: '80' },
-      { dur: '16', uni: 'horas', dba: '82' },
-      { dur: '8', uni: 'horas', dba: '85' },
-      { dur: '4', uni: 'horas', dba: '88' },
-      { dur: '2', uni: 'horas', dba: '91' },
-      { dur: '1', uni: 'hora', dba: '94' },
-      { dur: '30', uni: 'minutos', dba: '97' },
-      { dur: '15', uni: 'minutos', dba: '100' },
-      { dur: '7,50', uni: 'minutos', dba: '103' },
-      { dur: '3,75', uni: 'minutos', dba: '106' },
-      { dur: '1,88', uni: 'minutos', dba: '109' },
-      { dur: '0,94', uni: 'minutos', dba: '112' },
-      { dur: '28,12', uni: 'segundos', dba: '115' },
-      { dur: '14,06', uni: 'segundos', dba: '118' },
-      { dur: '7,03', uni: 'segundos', dba: '121' },
-      { dur: '3,52', uni: 'segundos', dba: '124' },
-      { dur: '1,76', uni: 'segundos', dba: '127' },
-      { dur: '0,88', uni: 'segundos', dba: '130' },
-      { dur: '0,44', uni: 'segundos', dba: '133' },
-      { dur: '0,22', uni: 'segundos', dba: '136' },
-      { dur: '0,11', uni: 'segundos', dba: '139' },
-    ];
+  printBullet('Identificación de Factores de Riesgo');
+  printBullet('Evaluación Inicial de Factores de Riesgo');
+  printBullet('Identificación de Medidas Preventivas Generales y Específicas');
+  printBullet('Seguimiento de Medidas Correctivas y Preventivas');
 
-    filasTabla1.forEach(row => {
-      const rowH = 5;
-      if (checkPageY(rowH)) {
-        setDrawColor(doc, COLOR_SLATE_300);
-        setFillColor(doc, COLOR_SLATE_200);
-        doc.rect(tX, currentY, 60, 6, 'FD');
-        doc.rect(tX + 60, currentY, 40, 6, 'FD');
-        doc.rect(tX + 100, currentY, 80, 6, 'FD');
-        drawCellText(doc, 'Duración por Día', tX, currentY, 60, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
-        drawCellText(doc, 'Unidad', tX + 60, currentY, 40, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
-        drawCellText(doc, 'Nivel de Presión Acústica (dBA)', tX + 100, currentY, 80, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
-        currentY += 6;
-      }
+  currentY += 2;
+  printParagraph('Su objetivo práctico es identificar los factores de riesgos presentes en las tareas del puesto de trabajo, los cuales resultan fácilmente observables a partir de la aplicación de criterios técnicos, y verificar si una tarea comporta un nivel de riesgo Tolerable o No Tolerable.');
 
-      setDrawColor(doc, COLOR_SLATE_300);
-      doc.rect(tX, currentY, 60, rowH, 'S');
-      doc.rect(tX + 60, currentY, 40, rowH, 'S');
-      doc.rect(tX + 100, currentY, 80, rowH, 'S');
-
-      drawCellText(doc, row.dur, tX + 2, currentY, 56, rowH, { fontSize: 7.5, valign: 'middle' });
-      drawCellText(doc, row.uni, tX + 62, currentY, 36, rowH, { align: 'center', fontSize: 7.5, valign: 'middle' });
-      drawCellText(doc, row.dba + ' dBA', tX + 102, currentY, 76, rowH, { align: 'center', fontStyle: 'bold', fontSize: 7.5, color: COLOR_AZUL_PRINCIPAL, valign: 'middle' });
-
-      currentY += rowH;
-    });
-
-    currentY += 2;
-    printParagraph('* No ha de haber exposiciones a ruido continuo, intermitente o de impacto por encima de un nivel pico C ponderado de 140 dB.', 'legend');
-    printParagraph('** El nivel se mide con sonómetro en ponderación A y respuesta lenta.', 'legend');
-    currentY += 4;
-  };
-
-  drawTabla1RuidoNormativa();
-
-  // 3. Ruido de impulso o de impacto
-  printSectionHeader('Ruido de impulso o de impacto');
-  printParagraph('La medida del ruido de impulso o de impacto estará en el rango de 80 y 140 dBA y el rango del pulso debe ser por lo menos de 63 dB. No se permitirán exposiciones sin protección auditiva por encima de un nivel pico C ponderado de presión acústica de 140 dB.');
-  printParagraph('Si no se dispone de la instrumentación para medir un pico C ponderado, se puede utilizar la medida de un pico no ponderado por debajo de 140 dB para suponer que el pico C ponderado está por debajo de ese valor.');
-  currentY += 4;
-
-  // 4. Ultrasonido
-  printSectionHeader('Ultrasonido');
-  printParagraph('Estos valores límite representan las condiciones bajo las cuales se cree que casi todos los trabajadores pueden estar expuestos repetidamente sin deteriorarse su capacidad para oír y escuchar una conversación normal.');
-  printParagraph('Los valores límite establecidos para las frecuencias de 10 kilohercios (kHz) a 20 kHz, para prevenir los efectos subjetivos, se indican en la Tabla 1 con uno o dos asteriscos como notas de advertencia al pie de la tabla. Los valores sonoros de la media ponderada en el tiempo de 8 horas son una ampliación del valor límite para el ruido que es un media ponderada en el tiempo para 8 horas de 85 dBA.');
-
-  const drawTablaUltrasonidoNormativa = () => {
-    const tX = 15;
-    const tW = 180;
-
-    checkPageY(14);
-    setFillColor(doc, COLOR_AZUL_PRINCIPAL);
-    doc.rect(tX, currentY, tW, 6, 'F');
-    drawCellText(doc, 'VALORES LÍMITE PARA ULTRASONIDO (Dec. 351/79 - ANEXO V)', tX, currentY, tW, 6, { align: 'center', fontStyle: 'bold', fontSize: 8, color: COLOR_BLANCO });
-    currentY += 6;
-
-    setDrawColor(doc, COLOR_SLATE_300);
-    setFillColor(doc, COLOR_SLATE_200);
-    doc.rect(tX, currentY, 50, 6, 'FD');
-    doc.rect(tX + 50, currentY, 40, 6, 'FD');
-    doc.rect(tX + 90, currentY, 45, 6, 'FD');
-    doc.rect(tX + 135, currentY, 45, 6, 'FD');
-    drawCellText(doc, 'Frecuencia Central (kHz)', tX, currentY, 50, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
-    drawCellText(doc, 'Techo Aire (dB)', tX + 50, currentY, 40, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
-    drawCellText(doc, 'TWA 8h Aire (dB)', tX + 90, currentY, 45, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
-    drawCellText(doc, 'Techo Agua (dB)', tX + 135, currentY, 45, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
-    currentY += 6;
-
-    const filasUltrasonido = [
-      { f: '10', tAire: '105*', twa: '88*', tAgua: '167' },
-      { f: '12,5', tAire: '105*', twa: '89*', tAgua: '167' },
-      { f: '16', tAire: '105*', twa: '92*', tAgua: '167' },
-      { f: '20', tAire: '105*', twa: '94*', tAgua: '167' },
-      { f: '25', tAire: '110**', twa: '—', tAgua: '172' },
-      { f: '31,5', tAire: '115**', twa: '—', tAgua: '177' },
-      { f: '40', tAire: '115**', twa: '—', tAgua: '177' },
-      { f: '50', tAire: '115**', twa: '—', tAgua: '177' },
-      { f: '63', tAire: '115**', twa: '—', tAgua: '177' },
-      { f: '80', tAire: '115**', twa: '—', tAgua: '177' },
-      { f: '100', tAire: '115**', twa: '—', tAgua: '177' },
-    ];
-
-    filasUltrasonido.forEach(row => {
-      const rowH = 5;
-      if (checkPageY(rowH)) {
-        setDrawColor(doc, COLOR_SLATE_300);
-        setFillColor(doc, COLOR_SLATE_200);
-        doc.rect(tX, currentY, 50, 6, 'FD');
-        doc.rect(tX + 50, currentY, 40, 6, 'FD');
-        doc.rect(tX + 90, currentY, 45, 6, 'FD');
-        doc.rect(tX + 135, currentY, 45, 6, 'FD');
-        drawCellText(doc, 'Frecuencia Central (kHz)', tX, currentY, 50, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
-        drawCellText(doc, 'Techo Aire (dB)', tX + 50, currentY, 40, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
-        drawCellText(doc, 'TWA 8h Aire (dB)', tX + 90, currentY, 45, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
-        drawCellText(doc, 'Techo Agua (dB)', tX + 135, currentY, 45, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
-        currentY += 6;
-      }
-
-      setDrawColor(doc, COLOR_SLATE_300);
-      doc.rect(tX, currentY, 50, rowH, 'S');
-      doc.rect(tX + 50, currentY, 40, rowH, 'S');
-      doc.rect(tX + 90, currentY, 45, rowH, 'S');
-      doc.rect(tX + 135, currentY, 45, rowH, 'S');
-
-      drawCellText(doc, row.f + ' kHz', tX + 2, currentY, 46, rowH, { fontStyle: 'bold', fontSize: 7.5, valign: 'middle' });
-      drawCellText(doc, row.tAire, tX + 52, currentY, 36, rowH, { align: 'center', fontSize: 7.5, valign: 'middle' });
-      drawCellText(doc, row.twa, tX + 92, currentY, 41, rowH, { align: 'center', fontSize: 7.5, valign: 'middle' });
-      drawCellText(doc, row.tAgua, tX + 137, currentY, 41, rowH, { align: 'center', fontSize: 7.5, valign: 'middle' });
-
-      currentY += rowH;
-    });
-
-    currentY += 2;
-  };
-
-  drawTablaUltrasonidoNormativa();
-
-  printParagraph('* Pueden darse molestias y malestar subjetivos en algunos individuos a niveles entre 75 y 105 dB para las frecuencias desde 10 kHz, especialmente si son de naturaleza tonal. Para prevenir los efectos subjetivos puede ser necesaria la protección auditiva o reducir a 80 dB los sonidos tonales de frecuencias por debajo de 10 kHZ.', 'legend');
-  printParagraph('** En estos valores se asume que existe acoplamiento humano con el agua u otro sustrato. Cuando no hay posibilidad de que el ultrasonido pueda acoplarse con el cuerpo en contacto con el agua o algún otro medio, estos valores umbrales pueden aumentarse en 30 dB. (Los valores de esta tabla no se aplican cuando la fuente de ultrasonido está en contacto directo con el cuerpo. Se debe utilizar el nivel de vibración en el hueso mastoideo).', 'legend');
-  printParagraph('Se deben evitar los valores de la aceleración de 15 dB por encima de la referencia de 1 g.v.c.m., reduciendo la exposición o aislando el cuerpo de la fuente de acoplamiento (g = aceleración debida a la fuerza de la gravedad, 9,80665 m/s; v.c.m.= valor cuadrático medio).');
+  drawFooter(pageCounter, totalPagesCount);
 
   // ==========================================
-  // HOJA 1: FORMULARIO OFICIAL RUIDO (A4 Vertical - RES. SRT 85/12)
+  // HOJA 3: DIAGRAMA DE FLUJO (Diseño Profesional Estandarizado)
   // ==========================================
   doc.addPage('a4', 'portrait');
   pageCounter++;
 
-  drawHeader(false);
-  drawProtocolTitleBar(false, { x: 15, y: 22, w: 180, h: 6 });
+  drawHeaderLogo();
 
-  // Tabla 1: Datos del Establecimiento
-  const t1X = 15;
-  const t1Y = 29;
-  const t1W = 180;
-  const t1H = 42;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  setTextColor(doc, COLOR_NEGRO);
+  doc.text('DIAGRAMA DE FLUJO - RES. S.R.T. 886/15', 15, 28);
+  setDrawColor(doc, COLOR_AZUL_PRINCIPAL);
+  doc.setLineWidth(0.4);
+  doc.line(15, 30, 195, 30);
 
-  setDrawColor(doc, COLOR_NEGRO);
-  doc.setLineWidth(0.45);
-  doc.rect(t1X, t1Y, t1W, t1H, 'S');
+  // Flowchart Vector Drawing Helpers
+  const drawFlowArrow = (x1, y1, x2, y2, opts = {}) => {
+    const { color = COLOR_SLATE_700, thickness = 0.35, arrowSize = 2.2 } = opts;
+    setDrawColor(doc, color);
+    setFillColor(doc, color);
+    doc.setLineWidth(thickness);
 
-  // Title: Datos del establecimiento
+    doc.line(x1, y1, x2, y2);
+
+    const angle = Math.atan2(y2 - y1, x2 - x1);
+    const p1x = x2;
+    const p1y = y2;
+    const p2x = x2 - arrowSize * Math.cos(angle - Math.PI / 6);
+    const p2y = y2 - arrowSize * Math.sin(angle - Math.PI / 6);
+    const p3x = x2 - arrowSize * Math.cos(angle + Math.PI / 6);
+    const p3y = y2 - arrowSize * Math.sin(angle + Math.PI / 6);
+
+    doc.triangle(p1x, p1y, p2x, p2y, p3x, p3y, 'F');
+  };
+
+  const drawProcessBox = (x, y, w, h, title, subtitle, opts = {}) => {
+    const {
+      bgColor = COLOR_BLANCO,
+      borderColor = COLOR_AZUL_PRINCIPAL,
+      titleColor = COLOR_SLATE_900,
+      subColor = COLOR_AZUL_PRINCIPAL,
+      barColor = COLOR_AZUL_PRINCIPAL
+    } = opts;
+
+    setFillColor(doc, bgColor);
+    setDrawColor(doc, borderColor);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(x, y, w, h, 3, 3, 'FD');
+
+    // Left accent vertical bar
+    setFillColor(doc, barColor);
+    doc.roundedRect(x, y, 3.5, h, 1.5, 1.5, 'F');
+
+    // Title text
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    setTextColor(doc, titleColor);
+    doc.text(title, x + 7, y + (subtitle ? 6.5 : 10.5));
+
+    // Subtitle text
+    if (subtitle) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      setTextColor(doc, subColor);
+      doc.text(subtitle, x + 7, y + 12.5);
+    }
+  };
+
+  const drawPillBadge = (cx, cy, text, opts = {}) => {
+    const {
+      bgColor = COLOR_BLANCO,
+      borderColor = COLOR_SLATE_300,
+      textColor = COLOR_SLATE_700,
+      fontSize = 6.5
+    } = opts;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(fontSize);
+    const txtW = doc.getTextWidth(text);
+    const padX = 3.5;
+    const badgeW = txtW + (padX * 2);
+    const badgeH = 5.5;
+
+    const startX = cx - (badgeW / 2);
+    const startY = cy - (badgeH / 2);
+
+    setFillColor(doc, bgColor);
+    setDrawColor(doc, borderColor);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(startX, startY, badgeW, badgeH, 2, 2, 'FD');
+
+    setTextColor(doc, textColor);
+    doc.text(text, cx, cy + 1, { align: 'center' });
+  };
+
+  // Dimensions & Positions for Process Boxes
+  const boxX = 22;
+  const boxW = 92;
+  const boxH = 16;
+  const colCenterX = boxX + (boxW / 2); // 68
+
+  // Box 1: Planilla 1
+  const b1Y = 42;
+  drawProcessBox(boxX, b1Y, boxW, boxH, '1. Identificación de Factores de Riesgo', '(ANEXO I - PLANILLA 1)', {
+    borderColor: COLOR_AZUL_PRINCIPAL,
+    barColor: COLOR_AZUL_PRINCIPAL
+  });
+
+  // Box 2: Planilla 2
+  const b2Y = 82;
+  drawProcessBox(boxX, b2Y, boxW, boxH, '2. Evaluación Inicial de Factores de Riesgo', '(ANEXO I - PLANILLA 2)', {
+    borderColor: COLOR_AZUL_PRINCIPAL,
+    barColor: COLOR_AZUL_PRINCIPAL
+  });
+
+  // Box 3: Evaluación de Riesgos
+  const b3Y = 122;
+  drawProcessBox(boxX, b3Y, boxW, boxH, '3. Evaluación de Riesgos', '(Especialista en Ergonomía / Ergónomo)', {
+    borderColor: COLOR_SLATE_700,
+    barColor: COLOR_SLATE_700,
+    subColor: COLOR_SLATE_600
+  });
+
+  // Box 4: Planilla 3
+  const b4Y = 162;
+  drawProcessBox(boxX, b4Y, boxW, boxH, '4. Identificación de Medidas Correctivas y Preventivas', '(ANEXO I - PLANILLA 3)', {
+    borderColor: COLOR_AZUL_PRINCIPAL,
+    barColor: COLOR_AZUL_PRINCIPAL
+  });
+
+  // Box 5: Planilla 4
+  const b5Y = 202;
+  drawProcessBox(boxX, b5Y, boxW, boxH, '5. Seguimiento de Medidas Preventivas', '(ANEXO I - PLANILLA 4)', {
+    borderColor: COLOR_AZUL_PRINCIPAL,
+    barColor: COLOR_AZUL_PRINCIPAL
+  });
+
+  // Main Downward Vertical Arrows & Badges
+  // Arrow Box 1 -> Box 2
+  drawFlowArrow(colCenterX, b1Y + boxH, colCenterX, b2Y, { color: COLOR_SLATE_700, thickness: 0.4 });
+  drawPillBadge(colCenterX, b1Y + boxH + 12, 'Si se identificaron F. de R.');
+
+  // Arrow Box 2 -> Box 3
+  drawFlowArrow(colCenterX, b2Y + boxH, colCenterX, b3Y, { color: COLOR_SLATE_700, thickness: 0.4 });
+  drawPillBadge(colCenterX, b2Y + boxH + 12, 'Si el riesgo es NO tolerable');
+
+  // Arrow Box 3 -> Box 4
+  drawFlowArrow(colCenterX, b3Y + boxH, colCenterX, b4Y, { color: COLOR_SLATE_700, thickness: 0.4 });
+  drawPillBadge(colCenterX, b3Y + boxH + 12, 'Si el riesgo es NO tolerable');
+
+  // Arrow Box 4 -> Box 5
+  drawFlowArrow(colCenterX, b4Y + boxH, colCenterX, b5Y, { color: COLOR_SLATE_700, thickness: 0.4 });
+
+  // Right Return Rail (Loopback System)
+  const railX = 132;
+
+  // Connection 1: Box 1 -> Return Rail (Si NO se identificaron F. de R.)
+  setDrawColor(doc, COLOR_SLATE_600);
+  doc.setLineWidth(0.35);
+  doc.line(boxX + boxW, b1Y + 8, railX, b1Y + 8);
+  drawPillBadge(boxX + boxW + 10, b1Y + 8, 'Si NO se identificaron F. de R. *', { fontSize: 6 });
+
+  // Connection 2: Box 2 -> Return Rail (Si el riesgo es tolerable)
+  doc.line(boxX + boxW, b2Y + 8, railX, b2Y + 8);
+  drawPillBadge(boxX + boxW + 10, b2Y + 8, 'Si el riesgo es tolerable *', { fontSize: 6 });
+
+  // Connection 3: Box 5 -> Bottom Loop -> Return Rail -> Box 3 (Colocar resultado en Planilla 1)
+  const b5BottomY = b5Y + (boxH / 2); // 210
+  doc.line(boxX + boxW, b5BottomY, railX, b5BottomY);
+  drawPillBadge(boxX + boxW + 10, b5BottomY, 'Colocar resultado en Planilla 1', { fontSize: 6 });
+
+  // Vertical Return Rail Line
+  doc.line(railX, b1Y + 8, railX, b5BottomY);
+
+  // Return Arrow from Rail into Box 3 (Planilla 1 entry)
+  drawFlowArrow(railX, b3Y + 8, boxX + boxW, b3Y + 8, { color: COLOR_SLATE_600, thickness: 0.4 });
+
+  // Return Arrow pointing up into Box 1 top rail
+  drawFlowArrow(railX, b1Y + 12, railX, b1Y + 8, { color: COLOR_SLATE_600, thickness: 0.4 });
+
+  // Side Note Card (Bottom Right)
+  const noteX = 124;
+  const noteY = 122;
+  const noteW = 71;
+  const noteH = 75;
+
+  setFillColor(doc, [248, 250, 252]); // Slate-50 soft bg
+  setDrawColor(doc, COLOR_SLATE_300);
+  doc.setLineWidth(0.35);
+  doc.roundedRect(noteX, noteY, noteW, noteH, 3.5, 3.5, 'FD');
+
+  // Note Card Header Bar
   setFillColor(doc, COLOR_SLATE_200);
-  doc.rect(t1X, t1Y, t1W, 6, 'FD');
-  drawCellText(doc, 'Datos del establecimiento', t1X, t1Y, t1W, 6, { align: 'center', fontStyle: 'bold', fontSize: 9 });
+  doc.roundedRect(noteX, noteY, noteW, 8, 3.5, 3.5, 'F');
+  doc.rect(noteX, noteY + 4, noteW, 4, 'F'); // Square bottom corners of header bar
 
-  let rY = t1Y + 6;
-  doc.setLineWidth(0.25);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  setTextColor(doc, COLOR_AZUL_PRINCIPAL);
+  doc.text('* NOTA NORMATIVA (Res. SRT 886/15)', noteX + 4, noteY + 5.5);
 
-  // Row: Razón Social
-  doc.rect(t1X, rY, t1W, 6, 'S');
-  drawCellText(doc, 'Razón Social:', t1X, rY, 30, 6, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, razonSocial, t1X + 30, rY, 150, 6, { fontSize: 8.5 });
-  rY += 6;
+  const noteParagraph = 'Si el riesgo es tolerable, realizar una nueva identificación de Factores de Riesgo a los DOCE (12) meses o al momento siguiente de presentarse alguna manifestación temprana de enfermedad de las mencionadas en el artículo 1° de la Resolución, un accidente de trabajo o cambios de ingeniería o proceso.';
 
-  // Row: Dirección
-  doc.rect(t1X, rY, t1W, 6, 'S');
-  drawCellText(doc, 'Dirección:', t1X, rY, 30, 6, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, direccion, t1X + 30, rY, 150, 6, { fontSize: 8.5 });
-  rY += 6;
+  drawCellText(doc, noteParagraph, noteX + 2, noteY + 10, noteW - 4, noteH - 12, {
+    align: 'left',
+    valign: 'top',
+    fontSize: 6.8,
+    color: COLOR_SLATE_700
+  });
 
-  // Row: Localidad
-  doc.rect(t1X, rY, t1W, 6, 'S');
-  drawCellText(doc, 'Localidad:', t1X, rY, 30, 6, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, localidad, t1X + 30, rY, 150, 6, { fontSize: 8.5 });
-  rY += 6;
-
-  // Row: Provincia
-  doc.rect(t1X, rY, t1W, 6, 'S');
-  drawCellText(doc, 'Provincia:', t1X, rY, 30, 6, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, provincia, t1X + 30, rY, 150, 6, { fontSize: 8.5 });
-  rY += 6;
-
-  // Row: CP, CUIT y CIIU
-  doc.rect(t1X, rY, 30, 6, 'S');
-  doc.rect(t1X + 30, rY, 75, 6, 'S');
-  doc.rect(t1X + 105, rY, 75, 6, 'S');
-  drawCellText(doc, 'C.P.:', t1X, rY, 12, 6, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, cp, t1X + 12, rY, 18, 6, { fontSize: 8.5 });
-  drawCellText(doc, 'C.U.I.T.:', t1X + 30, rY, 18, 6, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, cuit, t1X + 48, rY, 57, 6, { fontSize: 8.5 });
-  drawCellText(doc, 'CIIU:', t1X + 105, rY, 12, 6, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, ciiu, t1X + 117, rY, 63, 6, { fontSize: 8.5 });
-  rY += 6;
-
-  // Row: Fecha de la Evaluación
-  doc.rect(t1X, rY, t1W, 6, 'S');
-  drawCellText(doc, 'Fecha de la Evaluación:', t1X, rY, 40, 6, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, fechaMedicion, t1X + 40, rY, 140, 6, { fontSize: 8.5 });
-
-  // Firma Profesional (Alineada abajo a la derecha, debajo de la Tabla 1)
-  drawSignatureBlock(105, t1Y + t1H + 6, 90, 36, signatureBase64, profNombre, profMatricula, 'Firma, Aclaración y Registro del Profesional Interviniente');
+  drawFooter(pageCounter, totalPagesCount);
 
   // ==========================================
-  // PAGINAS 3 Y SIGUIENTES: TABLA GENERAL DE MEDICIÓN RUIDO (A4 Apaisado - RES. SRT 85/12)
-  // ==========================================
-  // ==========================================
-  // PAGINAS 3 Y SIGUIENTES: PLANILLA 1 (ANEXO I) POR PUESTO DE TRABAJO (A4 Apaisado - RES. SRT 886/15)
+  // HOJAS 4+: PLANILLA 1 POR PUESTO DE TRABAJO (A4 Vertical)
   // ==========================================
   puntosList.forEach((pt, ptIdx) => {
-    doc.addPage('a4', 'landscape');
+    doc.addPage('a4', 'portrait');
     pageCounter++;
 
-    drawHeader(true);
-    drawProtocolTitleBar(true, { x: 15, y: 22, w: 267, h: 5.5 });
+    drawHeaderLogo();
 
-    // 1. Datos Generales del Puesto de Trabajo
-    const dX = 15;
-    const dY = 29;
-    const dW = 267;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    setTextColor(doc, COLOR_NEGRO);
+    doc.text('RESOLUCIÓN S.R.T. 886/15', 15, 28);
+    doc.text('ANEXO I- PLANILLA 1: IDENTIFICACION DE FACTORES DE RIESGO', 15, 33);
+    setDrawColor(doc, COLOR_SLATE_300);
+    doc.setLineWidth(0.25);
+    doc.line(15, 35, 195, 35);
 
-    doc.setLineWidth(0.45);
+    let p1Y = 40;
+
+    // Official Res. SRT 886/15 Planilla 1 Header Table (Datos del establecimiento y puesto)
+    const hdrX = 15;
+    let hdrY = p1Y;
+    const hdrW = 180;
+    const rH = 5.5;
+
     setDrawColor(doc, COLOR_NEGRO);
-    // Draw outer box for puesto info
-    doc.rect(dX, dY, dW, 25, 'S');
     doc.setLineWidth(0.25);
 
-    // Fila 1: Área/Sector (100mm) | Puesto (100mm) | Número de trabajadores (67mm)
-    doc.rect(dX, dY, 100, 6, 'S');
-    drawCellText(doc, 'Área y sector de estudio:', dX, dY, 40, 6, { fontStyle: 'bold', fontSize: 7.5 });
-    drawCellText(doc, pt.sector_text || pt.sector || '-', dX + 40, dY, 60, 6, { fontSize: 7.5 });
+    // Helper for key-value cell inside header table
+    const drawHdrCell = (xPos, yPos, wLen, hLen, keyText, valText) => {
+      doc.rect(xPos, yPos, wLen, hLen, 'S');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(6.5);
+      setTextColor(doc, COLOR_NEGRO);
+      const kStr = keyText + ': ';
+      const kW = doc.getTextWidth(kStr);
+      doc.text(kStr, xPos + 1.5, yPos + 3.8);
 
-    doc.rect(dX + 100, dY, 100, 6, 'S');
-    drawCellText(doc, 'Puesto / Sección:', dX + 100, dY, 35, 6, { fontStyle: 'bold', fontSize: 7.5 });
-    drawCellText(doc, pt.puesto_text || pt.puesto || '-', dX + 135, dY, 65, 6, { fontSize: 7.5 });
-
-    doc.rect(dX + 200, dY, 67, 6, 'S');
-    drawCellText(doc, 'Trabajadores en puesto:', dX + 200, dY, 38, 6, { fontStyle: 'bold', fontSize: 7.5 });
-    drawCellText(doc, String(pt.cantidad_expuestos || 1), dX + 238, dY, 29, 6, { fontSize: 7.5 });
-
-    // Fila 2: Procedimiento (60mm) | Capacitación (60mm) | Manifestación (60mm) | Ubicación (67mm)
-    doc.rect(dX, dY + 6, 60, 6, 'S');
-    drawCellText(doc, 'Procedimiento escrito:', dX, dY + 6, 35, 6, { fontStyle: 'bold', fontSize: 7.5 });
-    drawCellText(doc, (pt.procedimiento_escrito || 'no').toUpperCase(), dX + 35, dY + 6, 25, 6, { fontSize: 7.5 });
-
-    doc.rect(dX + 60, dY + 6, 60, 6, 'S');
-    drawCellText(doc, 'Capacitación:', dX + 60, dY + 6, 25, 6, { fontStyle: 'bold', fontSize: 7.5 });
-    drawCellText(doc, (pt.capacitacion || 'no').toUpperCase(), dX + 85, dY + 6, 35, 6, { fontSize: 7.5 });
-
-    doc.rect(dX + 120, dY + 6, 60, 6, 'S');
-    drawCellText(doc, 'Manifestación Temprana:', dX + 120, dY + 6, 38, 6, { fontStyle: 'bold', fontSize: 7.5 });
-    drawCellText(doc, (pt.manifestacion_temprana || 'no').toUpperCase(), dX + 158, dY + 6, 22, 6, { fontSize: 7.5 });
-
-    doc.rect(dX + 180, dY + 6, 87, 6, 'S');
-    drawCellText(doc, 'Ubicación síntoma:', dX + 180, dY + 6, 30, 6, { fontStyle: 'bold', fontSize: 7.5 });
-    drawCellText(doc, pt.ubicacion_sintoma || '-', dX + 210, dY + 6, 57, 6, { fontSize: 7.5 });
-
-    // Fila 3: Nombre del trabajador/es (267mm)
-    doc.rect(dX, dY + 12, 267, 13, 'S');
-    drawCellText(doc, 'Nombre del trabajador/es:', dX, dY + 12, 267, 4, { fontStyle: 'bold', fontSize: 7.5 });
-    drawCellText(doc, pt.nombres_trabajadores || '-', dX + 2, dY + 16, 263, 8, { fontSize: 7.5, valign: 'top' });
-
-    // 2. Tabla Matricial Planilla 1
-    const colY = dY + 28;
-    const colH = 15;
-
-    const drawHeaderBox = (x, y, w, h, text, opts = {}) => {
-      setFillColor(doc, COLOR_SLATE_200);
-      doc.rect(x, y, w, h, 'FD');
-      drawCellText(doc, text, x, y, w, h, {
-        align: 'center',
-        fontStyle: 'bold',
-        fontSize: 6.5,
-        color: COLOR_NEGRO,
-        ...opts
-      });
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.5);
+      const vStr = String(valText !== null && valText !== undefined && valText !== '' ? valText : '-');
+      const maxVW = Math.max(5, wLen - kW - 3);
+      const lines = doc.splitTextToSize(vStr, maxVW);
+      doc.text(lines[0] || '-', xPos + 1.5 + kW, yPos + 3.8);
     };
 
-    const tblX = 16;
-    
-    // Tareas del puesto de trabajo
+    // Row 1: Razón Social / C.U.I.T. (50% / 50%)
+    drawHdrCell(hdrX, hdrY, 90, rH, 'Razón Social', razonSocial);
+    drawHdrCell(hdrX + 90, hdrY, 90, rH, 'C.U.I.T.', cuit);
+    hdrY += rH;
+
+    // Row 2: CIIU (100%)
+    drawHdrCell(hdrX, hdrY, 180, rH, 'CIIU', ciiu);
+    hdrY += rH;
+
+    // Row 3: Dirección del establecimiento / Provincia (50% / 50%)
+    const dirFull = direccion + (localidad && localidad !== '-' ? `, ${localidad}` : '');
+    drawHdrCell(hdrX, hdrY, 90, rH, 'Dirección del establecimiento', dirFull);
+    drawHdrCell(hdrX + 90, hdrY, 90, rH, 'Provincia', provincia + (cp && cp !== '-' ? ` (CP ${cp})` : ''));
+    hdrY += rH;
+
+    // Row 4: Área y Sector en estudio / N° de trabajadores (50% / 50%)
+    drawHdrCell(hdrX, hdrY, 90, rH, 'Área y Sector en estudio', pt.sector_text || pt.sector || '-');
+    drawHdrCell(hdrX + 90, hdrY, 90, rH, 'N° de trabajadores', String(pt.cantidad_expuestos || 1));
+    hdrY += rH;
+
+    // Row 5: Puesto de trabajo / Capacitación (50% / 50%)
+    drawHdrCell(hdrX, hdrY, 90, rH, 'Puesto de trabajo', pt.puesto_text || pt.puesto || '-');
+    drawHdrCell(hdrX + 90, hdrY, 90, rH, 'Capacitación', (pt.capacitacion || 'no') === 'si' ? 'SI' : 'NO');
+    hdrY += rH;
+
+    // Row 6: Procedimiento escrito / Nombre del trabajador/es (50% / 50%)
+    drawHdrCell(hdrX, hdrY, 90, rH, 'Procedimiento escrito', (pt.procedimiento_escrito || 'no') === 'si' ? 'SI' : 'NO');
+    drawHdrCell(hdrX + 90, hdrY, 90, rH, 'Nombre del trabajador/es', pt.nombres_trabajadores || '-');
+    hdrY += rH;
+
+    // Row 7: Manifestación temprana / Ubicación del síntoma (50% / 50%)
+    drawHdrCell(hdrX, hdrY, 90, rH, 'Manifestación temprana', (pt.manifestacion_temprana || 'no') === 'si' ? 'SI' : 'NO');
+    drawHdrCell(hdrX + 90, hdrY, 90, rH, 'Ubicación del síntoma', pt.ubicacion_sintoma || '-');
+    hdrY += rH;
+
+    p1Y = hdrY + 6;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    setTextColor(doc, COLOR_NEGRO);
+    const step1Lines = doc.splitTextToSize('Paso 1: Identificar para el puesto de trabajo, las tareas y los factores de riesgo que se presentan de forma habitual en cada una de ellas.', 180);
+    doc.text(step1Lines, 15, p1Y);
+    p1Y += (step1Lines.length * 3.8) + 4;
+
+    // Tabla Matricial Planilla 1
+    const tblX = 15;
+    const colY = p1Y;
+
     const tList = pt.tareas || [];
     const t1 = tList[0] || { nombre: 'Tarea 1' };
     const t2 = tList[1] || { nombre: 'Tarea 2' };
     const t3 = tList[2] || { nombre: 'Tarea 3' };
 
-    // Draw main headers
-    // Col 1: Factor (90mm)
-    drawHeaderBox(tblX, colY, 90, colH, 'Factor de riesgo de la jornada habitual de trabajo', { fontSize: 7.5, maxLines: 2 });
-    
-    // Col 2: Tareas Habituales (75mm total: 25mm each)
-    drawHeaderBox(tblX + 90, colY, 75, 6, 'Tareas habituales del Puesto de Trabajo', { fontSize: 7 });
-    drawHeaderBox(tblX + 90, colY + 6, 25, 9, `Tarea 1:\n${t1.nombre || '-'}`, { fontSize: 5.5, maxLines: 2 });
-    drawHeaderBox(tblX + 115, colY + 6, 25, 9, `Tarea 2:\n${t2.nombre || '-'}`, { fontSize: 5.5, maxLines: 2 });
-    drawHeaderBox(tblX + 140, colY + 6, 25, 9, `Tarea 3:\n${t3.nombre || '-'}`, { fontSize: 5.5, maxLines: 2 });
+    // Col 1: Factor de riesgo (60mm)
+    drawHeaderBox(tblX, colY, 60, 16, 'Factor de riesgo de la\njornada habitual de trabajo', { fontSize: 7, maxLines: 2 });
 
-    // Col 3: Tiempo total (40mm)
-    drawHeaderBox(tblX + 165, colY, 40, colH, 'Tiempo Total de exposición al\nfactor de riesgo', { fontSize: 7, maxLines: 2 });
+    // Col 2: Tareas Habituales (60mm total: 20mm each)
+    drawHeaderBox(tblX + 60, colY, 60, 6, 'Tareas habituales del Puesto de Trabajo', { fontSize: 6.5 });
+    drawHeaderBox(tblX + 60, colY + 6, 20, 10, `Tarea 1:\n${t1.nombre || '-'}`, { fontSize: 5.5, maxLines: 2 });
+    drawHeaderBox(tblX + 80, colY + 6, 20, 10, `Tarea 2:\n${t2.nombre || '-'}`, { fontSize: 5.5, maxLines: 2 });
+    drawHeaderBox(tblX + 100, colY + 6, 20, 10, `Tarea 3:\n${t3.nombre || '-'}`, { fontSize: 5.5, maxLines: 2 });
 
-    // Col 4: Nivel de riesgo (60mm total: 20mm each)
-    drawHeaderBox(tblX + 205, colY, 60, 6, 'Nivel de riesgo', { fontSize: 7 });
-    drawHeaderBox(tblX + 205, colY + 6, 20, 9, 'Tarea 1', { fontSize: 6.5 });
-    drawHeaderBox(tblX + 225, colY + 6, 20, 9, 'Tarea 2', { fontSize: 6.5 });
-    drawHeaderBox(tblX + 245, colY + 6, 20, 9, 'Tarea 3', { fontSize: 6.5 });
+    // Col 3: Tiempo Total (30mm)
+    drawHeaderBox(tblX + 120, colY, 30, 16, 'Tiempo Total\nde exposición al\nfactor de riesgo', { fontSize: 6, maxLines: 3 });
 
-    // Rows def
-    const rowStartY = colY + colH;
-    const rowH = 6.2;
-    
+    // Col 4: Nivel de Riesgo (30mm total: 10mm each)
+    drawHeaderBox(tblX + 150, colY, 30, 6, 'Nivel de riesgo', { fontSize: 6.5 });
+    drawHeaderBox(tblX + 150, colY + 6, 10, 10, 'Tarea\n1', { fontSize: 5.5 });
+    drawHeaderBox(tblX + 160, colY + 6, 10, 10, 'Tarea\n2', { fontSize: 5.5 });
+    drawHeaderBox(tblX + 170, colY + 6, 10, 10, 'Tarea\n3', { fontSize: 5.5 });
+
+    const rowStartY = colY + 16;
+    const rowH = 7.5;
+
     const factorsDef = [
-      { key: 'levantamiento', label: 'A. Levantamiento y descenso' },
-      { key: 'empuje_arrastre', label: 'B. Empuje / Arrastre' },
-      { key: 'transporte', label: 'C. Transporte' },
-      { key: 'bipedestacion', label: 'D. Bipedestación' },
-      { key: 'mov_repetitivos', label: 'E. Movimientos Repetitivos de MMSS' },
-      { key: 'posturas_forzadas', label: 'F. Posturas Forzadas' },
-      { key: 'vibraciones_mano_brazo', label: 'G. Vibraciones Mano - Brazo (5 a 1500 Hz)' },
-      { key: 'vibraciones_cuerpo_entero', label: 'G2. Vibraciones Cuerpo Entero (1 a 80 Hz)' },
-      { key: 'confort_termico', label: 'H. Confort Térmico' },
-      { key: 'estres_contacto', label: 'I. Estrés de Contacto' }
+      { key: 'levantamiento', code: 'A', label: 'Levantamiento y descenso' },
+      { key: 'empuje_arrastre', code: 'B', label: 'Empuje / Arrastre' },
+      { key: 'transporte', code: 'C', label: 'Transporte' },
+      { key: 'bipedestacion', code: 'D', label: 'Bipedestación' },
+      { key: 'mov_repetitivos', code: 'E', label: 'Movimientos Repetitivos de MMSS' },
+      { key: 'posturas_forzadas', code: 'F', label: 'Posturas Forzadas' },
+      { key: 'vibraciones_mano_brazo', code: 'G', label: 'Vibraciones' },
+      { key: 'confort_termico', code: 'H', label: 'Confort Térmico' },
+      { key: 'estres_contacto', code: 'I', label: 'Estrés de Contacto' }
     ];
+
+    setDrawColor(doc, COLOR_NEGRO);
+    doc.setLineWidth(0.25);
 
     factorsDef.forEach((f, rIdx) => {
       const rowY = rowStartY + (rIdx * rowH);
 
-      // Col 1: Factor label
-      doc.rect(tblX, rowY, 90, rowH, 'S');
-      drawCellText(doc, f.label, tblX + 2, rowY, 88, rowH, { align: 'left', fontSize: 7.5 });
+      // Col Code (8mm)
+      doc.rect(tblX, rowY, 8, rowH, 'S');
+      drawCellText(doc, f.code, tblX, rowY, 8, rowH, { align: 'center', fontStyle: 'bold', fontSize: 7 });
+
+      // Col Factor label (52mm)
+      doc.rect(tblX + 8, rowY, 52, rowH, 'S');
+      drawCellText(doc, f.label, tblX + 9, rowY, 50, rowH, { align: 'center', fontSize: 6.5, maxLines: 2 });
 
       // Col 2: Presence check (X or -)
       const hasT1 = tList[0] && tList[0][`f_${f.key}_identificado`] === 'si';
       const hasT2 = tList[1] && tList[1][`f_${f.key}_identificado`] === 'si';
       const hasT3 = tList[2] && tList[2][`f_${f.key}_identificado`] === 'si';
 
-      doc.rect(tblX + 90, rowY, 25, rowH, 'S');
-      drawCellText(doc, tList[0] ? (hasT1 ? 'X' : '-') : '', tblX + 90, rowY, 25, rowH, { align: 'center', fontSize: 8 });
+      doc.rect(tblX + 60, rowY, 20, rowH, 'S');
+      drawCellText(doc, tList[0] ? (hasT1 ? 'X' : '-') : '-', tblX + 60, rowY, 20, rowH, { align: 'center', fontSize: 7.5 });
 
-      doc.rect(tblX + 115, rowY, 25, rowH, 'S');
-      drawCellText(doc, tList[1] ? (hasT2 ? 'X' : '-') : '', tblX + 115, rowY, 25, rowH, { align: 'center', fontSize: 8 });
+      doc.rect(tblX + 80, rowY, 20, rowH, 'S');
+      drawCellText(doc, tList[1] ? (hasT2 ? 'X' : '-') : '-', tblX + 80, rowY, 20, rowH, { align: 'center', fontSize: 7.5 });
 
-      doc.rect(tblX + 140, rowY, 25, rowH, 'S');
-      drawCellText(doc, tList[2] ? (hasT3 ? 'X' : '-') : '', tblX + 140, rowY, 25, rowH, { align: 'center', fontSize: 8 });
+      doc.rect(tblX + 100, rowY, 20, rowH, 'S');
+      drawCellText(doc, tList[2] ? (hasT3 ? 'X' : '-') : '-', tblX + 100, rowY, 20, rowH, { align: 'center', fontSize: 7.5 });
 
       // Col 3: Exposure time
-      const timesList = tList.map((t, idx) => {
-        const tVal = (t[`f_${f.key}_tiempo`] || '').trim();
-        const hasNumber = tVal.match(/^([\d.,]+)/);
-        return hasNumber ? `T${idx+1}: ${tVal}` : '';
-      }).filter(Boolean);
+      const timesList = tList.map((t) => (t[`f_${f.key}_tiempo`] || '').trim()).filter(Boolean);
       const expTime = timesList.join(', ') || '-';
-      doc.rect(tblX + 165, rowY, 40, rowH, 'S');
-      drawCellText(doc, expTime, tblX + 165, rowY, 40, rowH, { align: 'center', fontSize: 6.5, maxLines: 2 });
+      doc.rect(tblX + 120, rowY, 30, rowH, 'S');
+      drawCellText(doc, expTime, tblX + 120, rowY, 30, rowH, { align: 'center', fontSize: 6.5, maxLines: 2 });
 
       // Col 4: Risk levels (1, 2, 3 or -)
       const rskT1 = tList[0] && hasT1 ? (tList[0][`f_${f.key}_riesgo`] || '-') : '-';
       const rskT2 = tList[1] && hasT2 ? (tList[1][`f_${f.key}_riesgo`] || '-') : '-';
       const rskT3 = tList[2] && hasT3 ? (tList[2][`f_${f.key}_riesgo`] || '-') : '-';
 
-      doc.rect(tblX + 205, rowY, 20, rowH, 'S');
-      drawCellText(doc, tList[0] ? String(rskT1) : '', tblX + 205, rowY, 20, rowH, { align: 'center', fontSize: 8 });
+      doc.rect(tblX + 150, rowY, 10, rowH, 'S');
+      drawCellText(doc, tList[0] ? String(rskT1) : '-', tblX + 150, rowY, 10, rowH, { align: 'center', fontSize: 7.5 });
 
-      doc.rect(tblX + 225, rowY, 20, rowH, 'S');
-      drawCellText(doc, tList[1] ? String(rskT2) : '', tblX + 225, rowY, 20, rowH, { align: 'center', fontSize: 8 });
+      doc.rect(tblX + 160, rowY, 10, rowH, 'S');
+      drawCellText(doc, tList[1] ? String(rskT2) : '-', tblX + 160, rowY, 10, rowH, { align: 'center', fontSize: 7.5 });
 
-      doc.rect(tblX + 245, rowY, 20, rowH, 'S');
-      drawCellText(doc, tList[2] ? String(rskT3) : '', tblX + 245, rowY, 20, rowH, { align: 'center', fontSize: 8 });
+      doc.rect(tblX + 170, rowY, 10, rowH, 'S');
+      drawCellText(doc, tList[2] ? String(rskT3) : '-', tblX + 170, rowY, 10, rowH, { align: 'center', fontSize: 7.5 });
     });
 
-    // 3. Resultado del Puesto, Nivel de Riesgo y Observaciones
-    const resY = rowStartY + (factorsDef.length * rowH) + 4;
-    const resH = 20;
+    let botY = rowStartY + (factorsDef.length * rowH) + 4;
 
-    doc.setLineWidth(0.45);
-    doc.rect(15, resY, 267, resH, 'S');
-    doc.setLineWidth(0.25);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    setTextColor(doc, COLOR_NEGRO);
+    doc.text('S/E Sin Evaluar', 15, botY);
+    botY += 4;
 
-    // Col 1: Riesgo Global & Verificación (100mm)
-    doc.rect(15, resY, 100, 10, 'S');
-    drawCellText(doc, 'Nivel de Riesgo Global:', 15, resY, 40, 10, { fontStyle: 'bold', fontSize: 7.5 });
-    drawCellText(doc, `Nivel ${pt.nivel_de_riesgo === 'Bajo' ? '1' : (pt.nivel_de_riesgo === 'Medio' ? '2' : '3')} - ${pt.nivel_de_riesgo || 'Bajo'}`, 55, resY, 60, 10, { fontSize: 7.5 });
+    const noteLines = doc.splitTextToSize('Si alguno de los factores de riesgo se encuentra presente, continuar con la Evaluación Inicial de Factores de Riesgo que se identifican, completando la planilla 2', 180);
+    doc.text(noteLines, 15, botY);
 
-    doc.rect(15, resY + 10, 100, 10, 'S');
-    drawCellText(doc, 'Resultado de Cumplimiento:', 15, resY + 10, 40, 10, { fontStyle: 'bold', fontSize: 7.5 });
-    const isPass = pt.resultado_punto === 'Cumple';
-    const isFail = pt.resultado_punto === 'No cumple';
-    drawCellText(doc, (pt.resultado_punto || 'Cumple').toUpperCase(), 55, resY + 10, 60, 10, {
-      fontStyle: 'bold',
-      fontSize: 7.5,
-      color: isFail ? COLOR_ROJO_NO_CUMPLE : (isPass ? COLOR_VERDE_CUMPLE : COLOR_NEGRO)
-    });
+    // Signatures
+    drawTripleSignatureBlock(248);
+    drawFooter(pageCounter, totalPagesCount);
 
-    // Col 2: Observaciones (167mm)
-    doc.rect(115, resY, 167, 20, 'S');
-    drawCellText(doc, 'Observaciones / Medidas correctivas propuestas:', 115, resY, 167, 5, { fontStyle: 'bold', fontSize: 7.5 });
-    drawCellText(doc, pt.observaciones_punto || 'Sin observaciones.', 117, resY + 5, 163, 14, { fontSize: 7.5, valign: 'top' });
-
-    // Firma Profesional (Esquina inferior derecha de cada hoja de puesto)
-    drawSignatureBlock(185, resY + resH + 3, 90, 22, signatureBase64, profNombre, profMatricula, 'Firma, Aclaración y Registro del Profesional Interviniente');
-
-    // Check if we need to print a Planilla 2 page for this puesto
-    const presentFactors = [];
+    // ==========================================
+    // HOJAS 6+: PLANILLA 2 POR FACTOR Y TAREA (A4 Vertical)
+    // ==========================================
     tList.forEach((t, tIdx) => {
       factorsDef.forEach(f => {
         if (t[`f_${f.key}_identificado`] === 'si') {
-          presentFactors.push({
-            factorKey: f.key,
-            factorLabel: f.label,
-            taskName: t.nombre || `Tarea habitual ${tIdx + 1}`,
-            taskIdx: tIdx + 1,
-            respuestas: t[`f_${f.key}_respuestas`] || {},
-            riesgo: t[`f_${f.key}_riesgo`] || '1'
+          const qDef = CUESTIONARIOS_PLANILLA2[f.key];
+          if (!qDef) return;
+
+          doc.addPage('a4', 'portrait');
+          pageCounter++;
+
+          drawHeaderLogo();
+
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(10);
+          setTextColor(doc, COLOR_NEGRO);
+          doc.text('ANEXO I- PLANILLA 2: EVALUACION INICIAL DE FACTORES DE RIESGO', 15, 28);
+          doc.setFontSize(9);
+          doc.text(qDef.title, 15, 34);
+          setDrawColor(doc, COLOR_SLATE_300);
+          doc.setLineWidth(0.25);
+          doc.line(15, 36, 195, 36);
+
+          let p2Y = 44;
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(9);
+          setTextColor(doc, COLOR_NEGRO);
+          doc.text(`Tarea ${tIdx + 1}`, 15, p2Y);
+          p2Y += 6;
+
+          // Paso 1
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
+          doc.text('Paso 1: Identificar si la tarea del puesto de trabajo implica:', 15, p2Y);
+          p2Y += 4;
+
+          // Table Paso 1 Headers using drawHeaderBox
+          const p1X = 15;
+          const pH = 5;
+
+          drawHeaderBox(p1X, p2Y, 12, pH, 'N°', { fontSize: 7 });
+          drawHeaderBox(p1X + 12, p2Y, 143, pH, 'DESCRIPCION', { fontSize: 7 });
+          drawHeaderBox(p1X + 155, p2Y, 25, pH, 'SI / NO', { fontSize: 7 });
+
+          p2Y += pH;
+
+          const respObj = t[`f_${f.key}_respuestas`] || {};
+
+          setDrawColor(doc, COLOR_NEGRO);
+          doc.setLineWidth(0.25);
+
+          qDef.paso1.forEach((q, qIdx) => {
+            const cleanQText = q.text.replace(/≥/g, '>=').replace(/≤/g, '<=');
+            const qLines = doc.splitTextToSize(cleanQText, 139);
+            const rH = Math.max(5, (qLines.length * 3.5) + 2);
+
+            doc.rect(p1X, p2Y, 12, rH, 'S');
+            drawCellText(doc, String(qIdx + 1), p1X, p2Y, 12, rH, { align: 'center', fontSize: 7 });
+
+            doc.rect(p1X + 12, p2Y, 143, rH, 'S');
+            drawCellText(doc, cleanQText, p1X + 14, p2Y, 139, rH, { align: 'left', fontSize: 6.5 });
+
+            const ans = (respObj[q.id] || 'no').toUpperCase();
+            doc.rect(p1X + 155, p2Y, 25, rH, 'S');
+            drawCellText(doc, ans, p1X + 155, p2Y, 25, rH, { align: 'center', fontSize: 7, fontStyle: 'bold' });
+
+            p2Y += rH;
           });
+
+          p2Y += 3;
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(7.5);
+          doc.text('Si todas las respuestas son NO, se considera que el riesgo es tolerable', 15, p2Y);
+          p2Y += 3.8;
+          doc.text('Si alguna respuesta 1 a 3 es SI, continuar con el paso 2', 15, p2Y);
+          p2Y += 3.8;
+          doc.text('Si la respuesta 3 es SI considera que el riesgo de la tarea es NO tolerable, debiendo solicitarse mejoras en tiempo prudencial', 15, p2Y);
+          p2Y += 6;
+
+          // Paso 2
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
+          doc.text('Paso 2: Determinar el nivel de riesgo', 15, p2Y);
+          p2Y += 4;
+
+          drawHeaderBox(p1X, p2Y, 12, pH, 'N°', { fontSize: 7 });
+          drawHeaderBox(p1X + 12, p2Y, 143, pH, 'DESCRIPCION', { fontSize: 7 });
+          drawHeaderBox(p1X + 155, p2Y, 25, pH, 'SI / NO', { fontSize: 7 });
+
+          p2Y += pH;
+
+          setDrawColor(doc, COLOR_NEGRO);
+          doc.setLineWidth(0.25);
+
+          qDef.paso2.forEach((q, qIdx) => {
+            const cleanQText = q.text.replace(/≥/g, '>=').replace(/≤/g, '<=');
+            const qLines = doc.splitTextToSize(cleanQText, 139);
+            const rH = Math.max(5, (qLines.length * 3.5) + 2);
+
+            doc.rect(p1X, p2Y, 12, rH, 'S');
+            drawCellText(doc, String(qIdx + 1), p1X, p2Y, 12, rH, { align: 'center', fontSize: 7 });
+
+            doc.rect(p1X + 12, p2Y, 143, rH, 'S');
+            drawCellText(doc, cleanQText, p1X + 14, p2Y, 139, rH, { align: 'left', fontSize: 6.5 });
+
+            const ans = (respObj[q.id] || 'no').toUpperCase();
+            doc.rect(p1X + 155, p2Y, 25, rH, 'S');
+            drawCellText(doc, ans, p1X + 155, p2Y, 25, rH, { align: 'center', fontSize: 7, fontStyle: 'bold' });
+
+            p2Y += rH;
+          });
+
+          p2Y += 3;
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(7.5);
+          doc.text('Si todas las respuestas son NO se presume que el nivel de riesgo es tolerable', 15, p2Y);
+          p2Y += 3.8;
+          doc.text('Si alguna respuesta es SI, el empleador no puede presumir que el riesgo sea tolerable. Por lo tanto, se debe realizar una Evaluación de Riesgos.', 15, p2Y);
+
+          // Escala de Borg para factor 2.E (Movimientos Repetitivos de Miembros Superiores)
+          if (f.key === 'mov_repetitivos') {
+            p2Y += 5;
+            const borgX = 15;
+            const borgRows = [
+              { text: '•  Ausencia de esfuerzo', val: '0' },
+              { text: '•  Esfuerzo muy bajo, apenas perceptible', val: '0,5' },
+              { text: '•  Esfuerzo muy débil', val: '1' },
+              { text: '•  Esfuerzo débil / ligero', val: '2' },
+              { text: '•  Esfuerzo moderado / regular', val: '3' },
+              { text: '•  Esfuerzo algo fuerte', val: '4' },
+              { text: '•  Esfuerzo fuerte', val: '5 y 6' },
+              { text: '•  Esfuerzo muy fuerte', val: '7, 8 y 9' },
+              { text: '•  Esfuerzo extremadamente fuerte (máximo que una persona puede aguantar)', val: '10' }
+            ];
+
+            const rH = 4.2;
+            const totalBorgH = borgRows.length * rH;
+
+            // Col 1: Escala de Borg (Columna unificada con fondo gris)
+            setFillColor(doc, COLOR_SLATE_200);
+            setDrawColor(doc, COLOR_NEGRO);
+            doc.setLineWidth(0.25);
+            doc.rect(borgX, p2Y, 38, totalBorgH, 'FD');
+            drawCellText(doc, 'Escala de Borg', borgX, p2Y, 38, totalBorgH, {
+              align: 'center',
+              valign: 'middle',
+              fontSize: 8,
+              fontStyle: 'bold',
+              color: COLOR_NEGRO
+            });
+
+            // Col 2 y 3: Descripciones y Valores
+            borgRows.forEach((bRow, bIdx) => {
+              const rowY = p2Y + (bIdx * rH);
+
+              // Col 2: Descripción
+              doc.rect(borgX + 38, rowY, 122, rH, 'S');
+              drawCellText(doc, bRow.text, borgX + 41, rowY, 118, rH, {
+                align: 'left',
+                valign: 'middle',
+                fontSize: 6.5,
+                fontStyle: 'normal'
+              });
+
+              // Col 3: Valor
+              doc.rect(borgX + 160, rowY, 20, rH, 'S');
+              drawCellText(doc, bRow.val, borgX + 160, rowY, 20, rH, {
+                align: 'center',
+                valign: 'middle',
+                fontSize: 7,
+                fontStyle: 'bold'
+              });
+            });
+
+            p2Y += totalBorgH + 4;
+          }
+
+          // Curva de Confort de Fanger para factor 2.H (Confort Térmico)
+          if (f.key === 'confort_termico') {
+            p2Y += 4;
+            const chartW = 95;
+            const chartH = 68;
+            const chartX = 15 + (180 - chartW) / 2; // 57.5mm (centrado)
+
+            try {
+              doc.addImage(FANGER_CHART_BASE64, 'PNG', chartX, p2Y, chartW, chartH, undefined, 'FAST');
+              setDrawColor(doc, COLOR_SLATE_300);
+              doc.setLineWidth(0.25);
+              doc.rect(chartX, p2Y, chartW, chartH, 'S');
+            } catch (err) {
+              console.warn('Warning adding Fanger Comfort Chart:', err);
+            }
+
+            p2Y += chartH + 4;
+          }
+
+          drawTripleSignatureBlock(248);
+          drawFooter(pageCounter, totalPagesCount);
         }
       });
     });
 
-    if (presentFactors.length > 0) {
-      doc.addPage('a4', 'landscape');
-      pageCounter++;
-      drawHeader(true);
-      drawProtocolTitleBar(true, { x: 15, y: 22, w: 267, h: 5.5 });
-
-      // Title
-      setFillColor(doc, '#468DFF');
-      doc.rect(15, 29, 267, 7, 'F');
-      drawCellText(doc, `PUESTO: ${(pt.puesto_text || pt.puesto || '-').toUpperCase()} — EVALUACIÓN INICIAL DE FACTORES DE RIESGO (PLANILLA 2)`, 15, 29, 267, 7, {
-        align: 'center',
-        fontStyle: 'bold',
-        fontSize: 8.5,
-        color: '#FFFFFF'
-      });
-
-      const CUESTIONARIOS_PLANILLA2_LOCAL = {
-        levantamiento: {
-          isTwoStep: true,
-          paso1: [
-            { id: 'p1_1', text: 'Levantar y/o bajar manualmente cargas de peso superior a 2 kg. y hasta 25 kg.' },
-            { id: 'p1_2', text: 'Realizar diariamente y en forma cíclica operaciones de levantamiento / descenso con una frecuencia > 1 por hora o < 360 (si se realiza en forma esporádica consignar NO)' },
-            { id: 'p1_3', text: 'Levantar y/o bajar manualmente cargas de peso superior a 25 kg.' }
-          ],
-          paso2: [
-            { id: 'p2_1', text: 'El trabajador levanta, sostiene y deposita la carga sobrepasando con sus manos 30 cm sobre la altura del hombro' },
-            { id: 'p2_2', text: 'El trabajador levanta, sostiene y deposita la carga sobrepasando con sus manos una distancia horizontal mayor a 80 cm desde el punto medio entre los tobillos' },
-            { id: 'p2_3', text: 'Entre la toma y el deposito de la carga, el trabajador gira o inclina la cintura mas de 30° a uno u otro (o a ambos) considerados desde el plano sagital' },
-            { id: 'p2_4', text: 'Las cargas poseen formas irregulares, son difíciles de asir, se deforman o hay movimiento en su interior' },
-            { id: 'p2_5', text: 'El trabajador levanta, sostiene y deposita la carga con un solo brazo' },
-            { id: 'p2_6', text: 'El trabajador presenta alguna manifestación temprana de las enfermedades mencionadas en el ART 1 de la presente Resolución' }
-          ]
-        },
-        empuje_arrastre: {
-          isTwoStep: true,
-          paso1: [
-            { id: 'p1_1', text: 'Se realizan diariamente tareas cíclicas con una frecuencia >1 movimientos por jornada (si son esporádicas consignar NO)' },
-            { id: 'p1_2', text: 'El trabajador se desplaza empujando y/o arrastrando manualmente un objeto recorriendo una distancia mayor a 60 mts.' },
-            { id: 'p1_3', text: 'En el puesto de trabajo se empujan o arrastran cíclicamente objetos (bolsones, cajas, muebles, maquinas etc.) cuyo esfuerzo medido con dinamómetro superior a 34 kgf' }
-          ],
-          paso2: [
-            { id: 'p2_1', text: 'Para empujar el objeto rodante se requiere un esfuerzo inicial medido con dinamómetro > 12 kgf para hombres o 10 kgf para mujeres' },
-            { id: 'p2_2', text: 'Para arrastrar el objeto rodante se requiere un esfuerzo inicial medido con dinamómetro > 10 kgf para hombres o mujeres' },
-            { id: 'p2_3', text: 'El objeto rodante es empujado y/o arrastrado con dificultad (la superficie de deslizamiento es despareja, hay rampas que subir o bajar, hay roturas u obstáculos en el recorrido, ruedas en mal estado, mal diseño del asa etc.)' },
-            { id: 'p2_4', text: 'El objeto rodante no puede ser empujado y/o arrastrado con ambas manos, y en caso de que lo permita, el apoyo de las manos se encuentra a una altura incomoda (por encima del pecho o por debajo de la cintura)' },
-            { id: 'p2_5', text: 'En el movimiento de empujar y/o arrastrar, el esfuerzo inicial requerido se mantiene significativamente una vez puesto en movimiento el objeto (se produce atascamiento de las ruedas, tirones o falta de deslizamiento uniforme)' },
-            { id: 'p2_6', text: 'El trabajador empuja o arrastra el objeto rodante asiéndolo con una sola mano' },
-            { id: 'p2_7', text: 'El trabajador presenta alguna manifestación temprana de las enfermedades mencionadas en el artículo 1 de la presente resolución' }
-          ]
-        },
-        transporte: {
-          isTwoStep: true,
-          paso1: [
-            { id: 'p1_1', text: 'Transporta manualmente carga superiores a 2 kg. Hasta 25 kg.' },
-            { id: 'p1_2', text: 'El trabajador se desplaza sosteniendo manualmente la carga recorriendo una distancia mayor a 1 metro' },
-            { id: 'p1_3', text: 'Realiza diariamente en forma cíclica (si es esporádica consignar NO)' },
-            { id: 'p1_4', text: 'Se transporta manualmente cargas a una distancia superior a 20 mts.' },
-            { id: 'p1_5', text: 'Se transporta manualmente cargas superiores a 25 kg.' }
-          ],
-          paso2: [
-            { id: 'p2_1', text: 'En condiciones habituales de levantamiento el trabajador transporta la carga entre 1 y 10 metros con una masa acumulada (el producto de la masa por frecuencia) mayor que 10.000 kg durante la jornada habitual' },
-            { id: 'p2_2', text: 'En condiciones habituales de levantamiento el trabajador transporta la carga entre 10 y 20 metros con una masa acumulada (el producto de la masa por la frecuencia) mayor a 6.000 kg durante la jornada habitual' },
-            { id: 'p2_3', text: 'Las cargas poseen formas irregulares, son difíciles de asir, se deforman o hay movimientos en su interior' },
-            { id: 'p2_4', text: 'El trabajador presenta alguna manifestación temprana de las enfermedades mencionadas en el artículo 1 de la presente Resolución' }
-          ]
-        },
-        bipedestacion: {
-          isTwoStep: true,
-          paso1: [
-            { id: 'p1_1', text: 'El puesto de trabajo se desarrolla en posición de pie, sin posibilidad de sentarse durante 2 horas seguidas o mas' }
-          ],
-          paso2: [
-            { id: 'p2_1', text: 'En el puesto se realizan tareas donde se permanece de pie durante 3 horas seguidas o más, sin posibilidades de sentarse con escasa deambulación (caminando no más de 100 mts. Por hora).' },
-            { id: 'p2_2', text: 'En el puesto se realizan tareas donde se permanece de pie durante 2 horas seguidas o más, sin posibilidades de sentarse o con escasa deambulación levantando y transportando cargas > 2 kg.' },
-            { id: 'p2_3', text: 'Trabajos efectuados con bipedestación prolongada en ambientes donde la temperatura y humedad del aire sobrepasan los limites legalmente admisibles y que demanden actividad física.' },
-            { id: 'p2_4', text: 'El trabajador presenta alguna manifestación temprana de enfermedades mencionadas en el artículo 1° de la presente Resolución.' }
-          ]
-        },
-        mov_repetitivos: {
-          isTwoStep: true,
-          paso1: [
-            { id: 'p1_1', text: 'Realizar diariamente una o más tareas donde se utilizan las extremidades superiores, durante 4 o más horas en la jornada habitual de trabajo en forma cíclica (en forma continuada o alternada)' }
-          ],
-          paso2: [
-            { id: 'p2_1', text: 'Las extremidades superiores están activas por más del 40% del tiempo total del ciclo de trabajo' },
-            { id: 'p2_2', text: 'En el ciclo de trabajo se realiza un esfuerzo superior a moderado a 3 según la escala de Borg, durante más de 6 segundos y más de una vez por minuto.' },
-            { id: 'p2_3', text: 'Se realiza un esfuerzo superior a 7 según la escala de Borg.' },
-            { id: 'p2_4', text: 'El trabajador presenta alguna manifestación temprana de las enfermedades mencionadas en el artículo 1º de la presente resolución' }
-          ]
-        },
-        posturas_forzadas: {
-          isTwoStep: true,
-          paso1: [
-            { id: 'p1_1', text: 'Adoptar posturas forzadas en forma habitual durante la jornada de trabajo, con o sin aplicación de fuerza. (No se deben considerar si las posturas son ocasionales)' }
-          ],
-          paso2: [
-            { id: 'p2_1', text: 'Cuello en extensión, flexión, lateralización y/o rotación' },
-            { id: 'p2_2', text: 'Brazos por encima de los hombros o con movimientos de supinación, pronación o rotación' },
-            { id: 'p2_3', text: 'Muñecas y manos en flexión, extensión desviación cubital o radial' },
-            { id: 'p2_4', text: 'Cintura en flexión, extensión, lateralización y/o rotación' },
-            { id: 'p2_5', text: 'Miembros inferiores: trabajo en posición de rodillas o cuclillas' },
-            { id: 'p2_6', text: 'El trabajador presenta alguna manifestación temprana de las enfermedades mencionadas en el Artículo 1º de la presente resolución' }
-          ]
-        },
-        vibraciones_mano_brazo: {
-          isTwoStep: true,
-          paso1: [
-            { id: 'p1_1', text: 'Trabajar con herramientas que producen vibraciones (martillo neumático, perforadora, destornilladores, pulidoras, esmeriladoras, otros).' },
-            { id: 'p1_2', text: 'Sujetar piezas con las manos mientras estas son mecanizadas' },
-            { id: 'p1_3', text: 'Sujetar palancas, volantes, etc. Que transmiten vibraciones' }
-          ],
-          paso2: [
-            { id: 'p2_1', text: 'El valor de las vibraciones supera los límites establecidos en la Tabla I, de la parte correspondiente a Vibración (segmental) mano-brazo, del Anexo V, Resolución MTEySS Nº 295/03' },
-            { id: 'p2_2', text: 'El trabajador presenta una manifestación temprana de las enfermedades mencionadas en el Artículo 1º de la presente Resolución' }
-          ]
-        },
-        vibraciones_cuerpo_entero: {
-          isTwoStep: true,
-          paso1: [
-            { id: 'p1_1', text: 'Conducir vehículos industriales, camiones, maquinas agrícolas, transporte público y otros.' },
-            { id: 'p1_2', text: 'Trabajar próximo a máximas generadoras de impacto' }
-          ],
-          paso2: [
-            { id: 'p2_1', text: 'El valor de las vibraciones supera los límites establecidos en la parte correspondiente a Vibración Cuerpo entero, del Anexo V. Resolución MTEySS Nº 295/03' },
-            { id: 'p2_2', text: 'El trabajador presenta una manifestación temprana de las enfermedades mencionadas en el Artículo 1º de la presente Resolución' }
-          ]
-        },
-        confort_termico: {
-          isTwoStep: true,
-          paso1: [
-            { id: 'p1_1', text: 'En el puesto de trabajo se perciben temperaturas no confortables para la realización de tareas' }
-          ],
-          paso2: [
-            { id: 'p2_1', text: 'Resultado del uso de la curva de Confort de Fanger, se encuentra por fuera de la zona de confort' }
-          ]
-        },
-        estres_contacto: {
-          isTwoStep: true,
-          paso1: [
-            { id: 'p1_1', text: 'Mantener apoyada alguna parte del cuerpo ejerciendo una presión, contra una herramienta, plano de trabajo, máquina herramienta o partes y materiales' }
-          ],
-          paso2: [
-            { id: 'p2_1', text: 'El trabajador mantiene apoyada la muñeca, antebrazo, axila o muslo u otro segmento corporal sobre una superficie aguda o con canto' },
-            { id: 'p2_2', text: 'El trabajador utiliza herramientas de mano o manipula piezas que presionan sobre sus dedos y/o palma de la mano hábil' },
-            { id: 'p2_3', text: 'El trabajador realiza movimientos de percusión sobre partes o herramientas' },
-            { id: 'p2_4', text: 'El trabajador presenta alguna manifestación temprana de las enfermedades mencionadas en el Artículo 1º de la presente resolución' }
-          ]
-        }
-      };
-
-      let currentY = 38;
-
-      presentFactors.forEach((pf) => {
-        const qDef = CUESTIONARIOS_PLANILLA2_LOCAL[pf.factorKey];
-        let flatQuestions = [];
-        
-        if (qDef && qDef.isTwoStep) {
-          flatQuestions.push({ id: 'header_p1', isHeader: true, text: 'Paso 1: Identificar si la tarea del puesto de trabajo implica:' });
-          qDef.paso1.forEach(q => flatQuestions.push(q));
-          
-          const showP2 = Object.keys(pf.respuestas).some(k => k.startsWith('p1_') && pf.respuestas[k] === 'si');
-          if (showP2) {
-            flatQuestions.push({ id: 'header_p2', isHeader: true, text: 'Paso 2: Determinar el nivel de riesgo' });
-            qDef.paso2.forEach(q => flatQuestions.push(q));
-          }
-        } else if (Array.isArray(qDef)) {
-          flatQuestions = qDef;
-        }
-
-        const totalLines = flatQuestions.length;
-        const cardH = 15 + (totalLines * 6) + 6;
-
-        if (currentY + cardH > 170) {
-          drawSignatureBlock(185, 175, 90, 22, signatureBase64, profNombre, profMatricula, 'Firma, Aclaración y Registro del Profesional Interviniente');
-          
-          doc.addPage('a4', 'landscape');
-          pageCounter++;
-          drawHeader(true);
-          drawProtocolTitleBar(true, { x: 15, y: 22, w: 267, h: 5.5 });
-          
-          setFillColor(doc, '#468DFF');
-          doc.rect(15, 29, 267, 7, 'F');
-          drawCellText(doc, `PUESTO: ${(pt.puesto_text || pt.puesto || '-').toUpperCase()} — EVALUACIÓN INICIAL (PLANILLA 2) - CONTINUACIÓN`, 15, 29, 267, 7, {
-            align: 'center',
-            fontStyle: 'bold',
-            fontSize: 8.5,
-            color: '#FFFFFF'
-          });
-          currentY = 38;
-        }
-
-        setFillColor(doc, '#F8FAFC');
-        doc.rect(15, currentY, 267, 7, 'FD');
-        setDrawColor(doc, '#CBD5E1');
-        doc.rect(15, currentY, 267, cardH, 'S');
-
-        drawCellText(doc, `Tarea #${pf.taskIdx} (${pf.taskName}) — ${pf.factorLabel}`, 17, currentY, 200, 7, {
-          align: 'left',
-          fontStyle: 'bold',
-          fontSize: 7.5,
-          color: COLOR_NEGRO
-        });
-
-        const isRskHigh = pf.riesgo === '3';
-        const isRskMed = pf.riesgo === '2';
-        const rskText = `Nivel de Riesgo: Nivel ${pf.riesgo} - ${pf.riesgo === '3' ? 'Crítico (Alto)' : (pf.riesgo === '2' ? 'Moderado (Medio)' : 'Tolerable (Bajo)')}`;
-        drawCellText(doc, rskText, 210, currentY, 70, 7, {
-          align: 'right',
-          fontStyle: 'bold',
-          fontSize: 7,
-          color: isRskHigh ? '#DC2626' : (isRskMed ? '#D97706' : '#00B050')
-        });
-
-        let qY = currentY + 7;
-        doc.line(15, qY, 282, qY);
-        drawCellText(doc, 'Pregunta / Condición Evaluada (Checklist Inicial)', 17, qY, 210, 6, { fontStyle: 'bold', fontSize: 6.5, color: '#475569' });
-        drawCellText(doc, 'Respuesta', 230, qY, 20, 6, { fontStyle: 'bold', fontSize: 6.5, color: '#475569', align: 'center' });
-        drawCellText(doc, 'Resultado', 255, qY, 25, 6, { fontStyle: 'bold', fontSize: 6.5, color: '#475569', align: 'center' });
-        
-        qY += 6;
-        doc.line(15, qY, 282, qY);
-
-        let hasAnySi = false;
-
-        flatQuestions.forEach((q) => {
-          if (q.isHeader) {
-            setFillColor(doc, '#F1F5F9');
-            doc.rect(15, qY, 267, 6, 'FD');
-            drawCellText(doc, q.text, 17, qY, 260, 6, { align: 'left', fontStyle: 'bold', fontSize: 6.5, color: '#334155' });
-            qY += 6;
-            doc.line(15, qY, 282, qY);
-            return;
-          }
-
-          const ans = pf.respuestas[q.id] || 'no';
-          if (ans === 'si') hasAnySi = true;
-          
-          drawCellText(doc, q.text, 17, qY, 210, 6, { align: 'left', fontSize: 6.5 });
-          drawCellText(doc, ans.toUpperCase(), 230, qY, 20, 6, { align: 'center', fontSize: 6.5, fontStyle: 'bold', color: ans === 'si' ? '#DC2626' : '#00B050' });
-          drawCellText(doc, ans === 'si' ? 'Riesgo' : 'Tolerable', 255, qY, 25, 6, { align: 'center', fontSize: 6.5, fontStyle: 'bold', color: ans === 'si' ? '#DC2626' : '#00B050' });
-          
-          qY += 6;
-          doc.line(15, qY, 282, qY);
-        });
-
-        let diagText = '';
-        if (qDef && qDef.isTwoStep) {
-          const isP1_3 = pf.respuestas['p1_3'] === 'si';
-          const hasP1Si = pf.respuestas['p1_1'] === 'si' || pf.respuestas['p1_2'] === 'si' || pf.respuestas['p1_3'] === 'si';
-          const hasP2Si = Object.keys(pf.respuestas).some(k => k.startsWith('p2_') && pf.respuestas[k] === 'si');
-
-          if (isP1_3) {
-            diagText = 'Diagnóstico: Riesgo NO tolerable (Nivel 3). La carga supera los 25 kg. Se debe solicitar mejoras en tiempo prudencial.';
-          } else if (!hasP1Si) {
-            diagText = 'Diagnóstico: Riesgo Tolerable (Nivel 1). Todas las respuestas del Paso 1 son "No".';
-          } else if (hasP2Si) {
-            diagText = 'Diagnóstico: Alguna respuesta del Paso 2 es "Sí". No se puede presumir tolerable. Por lo tanto, se debe realizar una Evaluación de Riesgos (Nivel 2).';
-          } else {
-            diagText = 'Diagnóstico: Todas las respuestas del Paso 2 son "No". Se presume riesgo tolerable (Nivel 1).';
-          }
-        } else {
-          diagText = hasAnySi 
-            ? 'Diagnóstico: Se identificaron condiciones de riesgo. Se aconseja Nivel de Riesgo 2 o 3 y medidas correctivas/preventivas en Planilla 3.'
-            : 'Diagnóstico: No se identificaron condiciones de riesgo adicionales. Riesgo considerado Tolerable.';
-        }
-        
-        drawCellText(doc, diagText, 17, qY, 260, 6, {
-          align: 'left',
-          fontSize: 6.5,
-          fontStyle: 'bold',
-          color: (qDef?.isTwoStep ? (pf.riesgo === '3' ? '#DC2626' : (pf.riesgo === '2' ? '#D97706' : '#00B050')) : (hasAnySi ? '#D97706' : '#00B050'))
-        });
-
-        currentY += cardH + 4;
-      });
-
-      drawSignatureBlock(185, 175, 90, 22, signatureBase64, profNombre, profMatricula, 'Firma, Aclaración y Registro del Profesional Interviniente');
-    }
-
     // ==========================================
-    // ANEXO I - PLANILLA 3: MEDIDAS CORRECTIVAS Y PREVENTIVAS POR TAREA
+    // HOJAS 36+: PLANILLA 3 POR TAREA (A4 Vertical)
     // ==========================================
-    (pt.tareas || []).forEach((t, tIdx) => {
-      doc.addPage('a4', 'landscape');
+    tList.forEach((t, tIdx) => {
+      doc.addPage('a4', 'portrait');
       pageCounter++;
 
-      drawHeader(true);
-      drawProtocolTitleBar(true, { x: 15, y: 22, w: 267, h: 5.5 });
+      drawHeaderLogo();
 
-      // Header Bar
-      const p3X = 15;
-      const p3Y = 29;
-      const p3W = 267;
-
-      setFillColor(doc, '#468DFF');
-      doc.rect(p3X, p3Y, p3W, 7, 'F');
-      drawCellText(doc, `PUESTO: ${(pt.puesto_text || pt.puesto || '-').toUpperCase()} — TAREA ${tIdx + 1}: ${(t.nombre || '-').toUpperCase()} — ANEXO I - PLANILLA 3: MEDIDAS CORRECTIVAS Y PREVENTIVAS`, p3X, p3Y, p3W, 7, {
-        align: 'center',
-        fontStyle: 'bold',
-        fontSize: 8.5,
-        color: '#FFFFFF'
-      });
-
-      // 1. Tabla Medidas Preventivas Generales
-      let curY = p3Y + 9;
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8);
+      doc.setFontSize(10);
       setTextColor(doc, COLOR_NEGRO);
-      doc.text('Medidas Preventivas Generales', p3X, curY);
+      doc.text('ANEXO I- PLANILLA 3: IDENTIFICACION DE MEDIDAS CORRECTIVAS Y PREVENTIVAS', 15, 28);
+      doc.setFontSize(9);
+      doc.text(`Tarea ${tIdx + 1}: ${t.nombre || `Tarea habitual ${tIdx + 1}`}`, 15, 34);
+      setDrawColor(doc, COLOR_SLATE_300);
+      doc.setLineWidth(0.25);
+      doc.line(15, 36, 195, 36);
 
-      curY += 2;
-      const genH = 5;
-      // Header row
-      setFillColor(doc, COLOR_SLATE_200);
-      doc.rect(p3X, curY, 12, genH, 'FD');
-      drawCellText(doc, 'Nº', p3X, curY, 12, genH, { align: 'center', fontStyle: 'bold', fontSize: 6.5 });
+      let p3Y = 42;
+      const p3X = 15;
+      const pH = 5;
 
-      doc.rect(p3X + 12, curY, 140, genH, 'FD');
-      drawCellText(doc, 'Medidas Preventivas Generales', p3X + 12, curY, 140, genH, { align: 'center', fontStyle: 'bold', fontSize: 6.5 });
+      // Table Title Box
+      drawHeaderBox(p3X, p3Y, 180, pH, 'Medidas Correctivas y Preventivas (M.C.P.)', { fontSize: 7.5 });
 
-      doc.rect(p3X + 152, curY, 30, genH, 'FD');
-      drawCellText(doc, 'Fecha:', p3X + 152, curY, 30, genH, { align: 'center', fontStyle: 'bold', fontSize: 6.5 });
+      p3Y += pH;
 
-      doc.rect(p3X + 182, curY, 25, genH, 'FD');
-      drawCellText(doc, 'SI / NO', p3X + 182, curY, 25, genH, { align: 'center', fontStyle: 'bold', fontSize: 6.5 });
+      // Header row Generales
+      drawHeaderBox(p3X, p3Y, 8, pH, 'Nº', { fontSize: 6 });
+      drawHeaderBox(p3X + 8, p3Y, 92, pH, 'Medidas Preventivas Generales', { fontSize: 6 });
+      drawHeaderBox(p3X + 100, p3Y, 25, pH, 'Fecha:', { fontSize: 6 });
+      drawHeaderBox(p3X + 125, p3Y, 15, pH, 'SI / NO', { fontSize: 6 });
+      drawHeaderBox(p3X + 140, p3Y, 40, pH, 'Observaciones', { fontSize: 6 });
 
-      doc.rect(p3X + 207, curY, 60, genH, 'FD');
-      drawCellText(doc, 'Observaciones', p3X + 207, curY, 60, genH, { align: 'center', fontStyle: 'bold', fontSize: 6.5 });
+      p3Y += pH;
 
-      curY += genH;
       const genRows = Array.isArray(t.p3_medidas_generales) && t.p3_medidas_generales.length === 3
         ? t.p3_medidas_generales
         : [
@@ -1439,46 +1386,38 @@ export const generateErgonomyProtocolPdf = async (
             { num: 3, medida: 'Se ha capacitado al trabajador/es y supervisor/es relacionados con el puesto de trabajo, sobre las medidas y/o procedimientos para prevenir el desarrollo de TME', fecha: '', aplica: 'si', observaciones: '-' }
           ];
 
+      setDrawColor(doc, COLOR_NEGRO);
+      doc.setLineWidth(0.25);
+
       genRows.forEach((g) => {
-        const rowH = 6;
-        doc.rect(p3X, curY, 12, rowH, 'S');
-        drawCellText(doc, String(g.num), p3X, curY, 12, rowH, { align: 'center', fontSize: 7, fontStyle: 'bold' });
+        const rLines = doc.splitTextToSize(g.medida, 90);
+        const rH = Math.max(5, (rLines.length * 3.2) + 2);
 
-        doc.rect(p3X + 12, curY, 140, rowH, 'S');
-        drawCellText(doc, g.medida, p3X + 14, curY, 136, rowH, { align: 'left', fontSize: 6, maxLines: 2 });
+        doc.rect(p3X, p3Y, 8, rH, 'S');
+        drawCellText(doc, String(g.num), p3X, p3Y, 8, rH, { align: 'center', fontSize: 6.5, fontStyle: 'bold' });
 
-        doc.rect(p3X + 152, curY, 30, rowH, 'S');
-        drawCellText(doc, g.fecha || '-', p3X + 152, curY, 30, rowH, { align: 'center', fontSize: 6.5 });
+        doc.rect(p3X + 8, p3Y, 92, rH, 'S');
+        drawCellText(doc, g.medida, p3X + 10, p3Y, 88, rH, { align: 'left', fontSize: 5.5 });
 
-        doc.rect(p3X + 182, curY, 25, rowH, 'S');
-        drawCellText(doc, (g.aplica || 'si').toUpperCase(), p3X + 182, curY, 25, rowH, { align: 'center', fontSize: 7, fontStyle: 'bold' });
+        doc.rect(p3X + 100, p3Y, 25, rH, 'S');
+        drawCellText(doc, g.fecha || '-', p3X + 100, p3Y, 25, rH, { align: 'center', fontSize: 6 });
 
-        doc.rect(p3X + 207, curY, 60, rowH, 'S');
-        drawCellText(doc, g.observaciones || '-', p3X + 209, curY, 56, rowH, { align: 'left', fontSize: 6 });
+        doc.rect(p3X + 125, p3Y, 15, rH, 'S');
+        drawCellText(doc, (g.aplica || 'si').toUpperCase(), p3X + 125, p3Y, 15, rH, { align: 'center', fontSize: 6.5, fontStyle: 'bold' });
 
-        curY += rowH;
+        doc.rect(p3X + 140, p3Y, 40, rH, 'S');
+        drawCellText(doc, g.observaciones || '-', p3X + 142, p3Y, 36, rH, { align: 'left', fontSize: 5.5 });
+
+        p3Y += rH;
       });
 
-      // 2. Tabla Medidas Especificas
-      curY += 4;
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8);
-      setTextColor(doc, COLOR_NEGRO);
-      doc.text('Medidas Correctivas y Preventivas Especificas (Administrativas y de Ingeniería)', p3X, curY);
+      // Header row Específicas
+      drawHeaderBox(p3X, p3Y, 8, pH, 'Nº', { fontSize: 6 });
+      drawHeaderBox(p3X + 8, p3Y, 132, pH, 'Medidas Correctivas y Preventivas Especificas (Administrativas y de Ingeniería)', { fontSize: 6 });
+      drawHeaderBox(p3X + 140, p3Y, 40, pH, 'Observaciones', { fontSize: 6 });
 
-      curY += 2;
-      const espH = 4.5;
-      setFillColor(doc, COLOR_SLATE_200);
-      doc.rect(p3X, curY, 12, espH, 'FD');
-      drawCellText(doc, 'Nº', p3X, curY, 12, espH, { align: 'center', fontStyle: 'bold', fontSize: 6 });
+      p3Y += pH;
 
-      doc.rect(p3X + 12, curY, 195, espH, 'FD');
-      drawCellText(doc, 'Medidas Correctivas y Preventivas Especificas (Administrativas y de Ingeniería)', p3X + 12, curY, 195, espH, { align: 'center', fontStyle: 'bold', fontSize: 6 });
-
-      doc.rect(p3X + 207, curY, 60, espH, 'FD');
-      drawCellText(doc, 'Observaciones', p3X + 207, curY, 60, espH, { align: 'center', fontStyle: 'bold', fontSize: 6 });
-
-      curY += espH;
       const defaultEsp1 = 'Realizar evaluación de los factores de riesgo ergonómico del puesto de trabajo (Levantamiento y descenso, Transporte y posturas forzadas)';
       const espRows = Array.isArray(t.p3_medidas_especificas) && t.p3_medidas_especificas.length === 15
         ? t.p3_medidas_especificas
@@ -1488,337 +1427,107 @@ export const generateErgonomyProtocolPdf = async (
             observaciones: i === 0 ? '-' : ''
           }));
 
+      setDrawColor(doc, COLOR_NEGRO);
+      doc.setLineWidth(0.25);
+
       espRows.forEach((m) => {
-        const rowH = 4.3;
-        doc.rect(p3X, curY, 12, rowH, 'S');
-        drawCellText(doc, String(m.num), p3X, curY, 12, rowH, { align: 'center', fontSize: 6, fontStyle: 'bold' });
+        const rH = 4.2;
+        doc.rect(p3X, p3Y, 8, rH, 'S');
+        drawCellText(doc, String(m.num), p3X, p3Y, 8, rH, { align: 'center', fontSize: 6, fontStyle: 'bold' });
 
-        doc.rect(p3X + 12, curY, 195, rowH, 'S');
-        drawCellText(doc, m.medida || '', p3X + 14, curY, 191, rowH, { align: 'left', fontSize: 5.5 });
+        doc.rect(p3X + 8, p3Y, 132, rH, 'S');
+        drawCellText(doc, m.medida || '', p3X + 10, p3Y, 128, rH, { align: 'left', fontSize: 5.5 });
 
-        doc.rect(p3X + 207, curY, 60, rowH, 'S');
-        drawCellText(doc, m.observaciones || '', p3X + 209, curY, 56, rowH, { align: 'left', fontSize: 5.5 });
+        doc.rect(p3X + 140, p3Y, 40, rH, 'S');
+        drawCellText(doc, m.observaciones || '', p3X + 142, p3Y, 36, rH, { align: 'left', fontSize: 5.5 });
 
-        curY += rowH;
+        p3Y += rH;
       });
 
-      // 3. Observaciones Box
-      curY += 3;
-      doc.rect(p3X, curY, p3W, 14, 'S');
-      drawCellText(doc, 'Observaciones:', p3X + 2, curY + 1, 263, 4, { fontStyle: 'bold', fontSize: 7 });
-      drawCellText(doc, t.p3_observaciones || 'Sin observaciones.', p3X + 2, curY + 4.5, 263, 9, { fontSize: 6.5, valign: 'top' });
-
-      // Firma Profesional
-      drawSignatureBlock(185, 175, 90, 22, signatureBase64, profNombre, profMatricula, 'Firma, Aclaración y Registro del Profesional Interviniente');
+      drawTripleSignatureBlock(248);
+      drawFooter(pageCounter, totalPagesCount);
     });
-  });
 
-  // ==========================================
-  // PAGINA 6: ANÁLISIS Y MEJORAS (A4 Apaisado)
-  // ==========================================
-  doc.addPage('a4', 'landscape');
-  pageCounter++;
-
-  drawHeader(true);
-  drawProtocolTitleBar(true, { x: 18, y: 22, w: 263, h: 5.5 });
-
-  // Encabezado Establecimiento
-  const aX = 18;
-  const aY = 29;
-  const aW = 263;
-
-  doc.setLineWidth(0.45);
-  setDrawColor(doc, COLOR_NEGRO);
-  doc.rect(aX, aY, aW, 14, 'S');
-  doc.setLineWidth(0.25);
-
-  // Fila 1: Razón Social (160mm) | C.U.I.T. (63mm) | CIIU (40mm)
-  doc.rect(aX, aY, 160, 7, 'S');
-  drawCellText(doc, 'Razón Social:', aX, aY, 22, 7, { fontStyle: 'bold', fontSize: 8 });
-  drawCellText(doc, razonSocial, aX + 22, aY, 138, 7, { fontSize: 8 });
-
-  doc.rect(aX + 160, aY, 63, 7, 'S');
-  drawCellText(doc, 'C.U.I.T.:', aX + 160, aY, 15, 7, { fontStyle: 'bold', fontSize: 8 });
-  drawCellText(doc, cuit, aX + 175, aY, 48, 7, { fontSize: 8 });
-
-  doc.rect(aX + 223, aY, 40, 7, 'S');
-  drawCellText(doc, 'CIIU:', aX + 223, aY, 10, 7, { fontStyle: 'bold', fontSize: 8 });
-  drawCellText(doc, ciiu, aX + 233, aY, 30, 7, { fontSize: 8 });
-
-  // Fila 2: Dirección (135mm) | Localidad (55mm) | C.P. (25mm) | Provincia (48mm)
-  doc.rect(aX, aY + 7, 135, 7, 'S');
-  drawCellText(doc, 'Dirección:', aX, aY + 7, 18, 7, { fontStyle: 'bold', fontSize: 8 });
-  drawCellText(doc, direccion, aX + 18, aY + 7, 117, 7, { fontSize: 8 });
-
-  doc.rect(aX + 135, aY + 7, 55, 7, 'S');
-  drawCellText(doc, 'Localidad:', aX + 135, aY + 7, 18, 7, { fontStyle: 'bold', fontSize: 8 });
-  drawCellText(doc, localidad, aX + 153, aY + 7, 37, 7, { fontSize: 8 });
-
-  doc.rect(aX + 190, aY + 7, 25, 7, 'S');
-  drawCellText(doc, 'C.P.:', aX + 190, aY + 7, 10, 7, { fontStyle: 'bold', fontSize: 8 });
-  drawCellText(doc, cp, aX + 200, aY + 7, 15, 7, { fontSize: 8 });
-
-  doc.rect(aX + 215, aY + 7, 48, 7, 'S');
-  drawCellText(doc, 'Provincia:', aX + 215, aY + 7, 16, 7, { fontStyle: 'bold', fontSize: 8 });
-  drawCellText(doc, provincia, aX + 231, aY + 7, 32, 7, { fontSize: 8 });
-
-  // Título de Conformidad del Protocolo
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  setTextColor(doc, COLOR_NEGRO);
-  doc.text('CONFORMIDAD DEL PROTOCOLO DE ERGONOMÍA (RESOLUCIÓN SRT 886/15)', 297 / 2, 47, { align: 'center' });
-
-  // 1. Firma del Empleador (Por encima del Profesional)
-  drawSignatureBlock(
-    101, 
-    52, 
-    95, 
-    32, 
-    firmaEmpleadorBase64, 
-    proto.empleador_nombre, 
-    '', 
-    'Firma y Aclaración del Empleador Responsable'
-  );
-
-  // 2. Firma del Profesional de Higiene y Seguridad
-  drawSignatureBlock(
-    101, 
-    95, 
-    95, 
-    32, 
-    signatureBase64, 
-    profNombre, 
-    profMatricula, 
-    'Firma, Aclaración y Reg. de Higiene y Seguridad'
-  );
-
-  // 3. Firma del Responsable del Servicio de Medicina del Trabajo (Por debajo del Profesional)
-  drawSignatureBlock(
-    101, 
-    138, 
-    95, 
-    32, 
-    firmaMedicinaBase64, 
-    proto.medicina_nombre, 
-    proto.medicina_matricula, 
-    'Firma, Aclaración y Reg. del Servicio de Medicina del Trabajo'
-  );
-
-  // ==========================================
-  // PLANOS Y CROQUIS DEL ESTABLECIMIENTO (Tantas páginas como planos adjuntos cargados)
-  // ==========================================
-  const planoAdjuntos = (adjuntosList || []).filter(adj => 
-    adj.tipo === 'Evidencia Fotográfica Plano' ||
-    adj.tipo === 'Foto Plano' ||
-    adj.tipo === 'Plano' ||
-    adj.tipo === 'Croquis' ||
-    (adj.tipo !== 'Certificado de Calibración' && adj.tipo !== 'Certificado' && adj.tipo !== 'Certificado de Calibración del Instrumental')
-  );
-
-  for (let cIdx = 0; cIdx < planoAdjuntos.length; cIdx++) {
-    const rawAdj = planoAdjuntos[cIdx];
-
-    doc.addPage('a4', 'landscape');
+    // ==========================================
+    // HOJA 39: PLANILLA 4 POR PUESTO (A4 Vertical)
+    // ==========================================
+    doc.addPage('a4', 'portrait');
     pageCounter++;
 
-    drawHeader(true);
-    drawProtocolTitleBar(true, { x: 15, y: 22, w: 267, h: 5.5 });
+    drawHeaderLogo();
 
-    const kX = 15;
-    const kY = 29;
-    const kW = 267;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    setTextColor(doc, COLOR_NEGRO);
+    doc.text('ANEXO I- PLANILLA 4: MATRIZ DE SEGUIMIENTO MEDIDAS CORRECTIVAS Y PREVENTIVAS', 15, 28);
+    setDrawColor(doc, COLOR_SLATE_300);
+    doc.setLineWidth(0.25);
+    doc.line(15, 35, 195, 35);
 
-    doc.setLineWidth(0.45);
+    let p4Y = 42;
+    const p4X = 15;
+    const hH = 9;
+
+    drawHeaderBox(p4X, p4Y, 10, hH, 'Nº\nM.C.P.', { fontSize: 5.5 });
+    drawHeaderBox(p4X + 10, p4Y, 45, hH, 'Nombre del Puesto', { fontSize: 6.5 });
+    drawHeaderBox(p4X + 55, p4Y, 22, hH, 'Fecha de\nEvaluación', { fontSize: 6 });
+    drawHeaderBox(p4X + 77, p4Y, 18, hH, 'Nivel de\nriesgo', { fontSize: 6 });
+    drawHeaderBox(p4X + 95, p4Y, 28, hH, 'Fecha de\nimplementación\nde la medida\nAdministrativa', { fontSize: 5 });
+    drawHeaderBox(p4X + 123, p4Y, 28, hH, 'Fecha de\nimplementación\nde la medida de\ningeniería', { fontSize: 5 });
+    drawHeaderBox(p4X + 151, p4Y, 29, hH, 'Fecha de\nCierre', { fontSize: 6 });
+
+    p4Y += hH;
+    const defaultP4Rows = [
+      { num: 1, mcp: 'Realizar evaluación de los factores de riesgo ergonómico del puesto de trabajo (Levantamiento y descenso)', puesto_nombre: pt.puesto_text || '', fecha_evaluacion: formatDate(proto.fecha_medicion), nivel_riesgo: '', fecha_impl_admin: '', fecha_impl_ing: '', fecha_cierre: '' },
+      { num: 2, mcp: 'Realizar evaluación de los factores de riesgo ergonómico del puesto de trabajo (Transporte)', puesto_nombre: pt.puesto_text || '', fecha_evaluacion: formatDate(proto.fecha_medicion), nivel_riesgo: '', fecha_impl_admin: '', fecha_impl_ing: '', fecha_cierre: '' },
+      { num: 3, mcp: 'Realizar evaluación de los factores de riesgo ergonómico del puesto de trabajo (Posturas forzadas)', puesto_nombre: pt.puesto_text || '', fecha_evaluacion: formatDate(proto.fecha_medicion), nivel_riesgo: '', fecha_impl_admin: '', fecha_impl_ing: '', fecha_cierre: '' },
+      { num: 4, mcp: '', puesto_nombre: pt.puesto_text || '', fecha_evaluacion: formatDate(proto.fecha_medicion), nivel_riesgo: '', fecha_impl_admin: '', fecha_impl_ing: '', fecha_cierre: '' },
+      { num: 5, mcp: '', puesto_nombre: pt.puesto_text || '', fecha_evaluacion: formatDate(proto.fecha_medicion), nivel_riesgo: '', fecha_impl_admin: '', fecha_impl_ing: '', fecha_cierre: '' },
+      { num: 6, mcp: '', puesto_nombre: pt.puesto_text || '', fecha_evaluacion: formatDate(proto.fecha_medicion), nivel_riesgo: '', fecha_impl_admin: '', fecha_impl_ing: '', fecha_cierre: '' },
+      { num: 7, mcp: '', puesto_nombre: pt.puesto_text || '', fecha_evaluacion: formatDate(proto.fecha_medicion), nivel_riesgo: '', fecha_impl_admin: '', fecha_impl_ing: '', fecha_cierre: '' },
+      { num: 8, mcp: '', puesto_nombre: pt.puesto_text || '', fecha_evaluacion: formatDate(proto.fecha_medicion), nivel_riesgo: '', fecha_impl_admin: '', fecha_impl_ing: '', fecha_cierre: '' },
+      { num: 9, mcp: '', puesto_nombre: pt.puesto_text || '', fecha_evaluacion: formatDate(proto.fecha_medicion), nivel_riesgo: '', fecha_impl_admin: '', fecha_impl_ing: '', fecha_cierre: '' },
+      { num: 10, mcp: '', puesto_nombre: pt.puesto_text || '', fecha_evaluacion: formatDate(proto.fecha_medicion), nivel_riesgo: '', fecha_impl_admin: '', fecha_impl_ing: '', fecha_cierre: '' }
+    ];
+
+    const p4Rows = Array.isArray(pt.p4_medidas) && pt.p4_medidas.length >= 1
+      ? pt.p4_medidas
+      : defaultP4Rows;
+
     setDrawColor(doc, COLOR_NEGRO);
-    doc.rect(kX, kY, kW, 6, 'S');
-    setFillColor(doc, COLOR_SLATE_200);
-    doc.rect(kX, kY, kW, 6, 'FD');
-    
-    const planoTitle = rawAdj.descripcion || rawAdj.nombre_archivo || rawAdj.nombre || `PLANO O CROQUIS DE MEDICIÓN (${cIdx + 1} de ${planoAdjuntos.length})`;
-    drawCellText(doc, planoTitle.toUpperCase(), kX, kY, kW, 6, { fontStyle: 'bold', fontSize: 9, align: 'center', color: COLOR_NEGRO });
+    doc.setLineWidth(0.25);
 
-    const mY = 37;
-    const mH = 150;
-    doc.rect(kX, mY, kW, mH, 'S');
+    p4Rows.forEach((m) => {
+      const rowH = 7;
+      doc.rect(p4X, p4Y, 10, rowH, 'S');
+      drawCellText(doc, String(m.num || ''), p4X, p4Y, 10, rowH, { align: 'center', fontSize: 6.5, fontStyle: 'bold' });
 
-    let finalBase64 = '';
-    if (rawAdj) {
-      try {
-        const rawBase64 = await getAdjuntoBase64(rawAdj);
-        if (rawBase64) {
-          const resized = await resizeImageForPdf(rawBase64, 1200, 1200);
-          finalBase64 = resized || rawBase64;
-        }
-      } catch (err) {
-        console.error('Error al procesar base64 de croquis:', err);
-      }
-    }
+      doc.rect(p4X + 10, p4Y, 45, rowH, 'S');
+      drawCellText(doc, m.puesto_nombre !== undefined ? m.puesto_nombre : (pt.puesto_text || ''), p4X + 11, p4Y, 43, rowH, { align: 'left', fontSize: 6 });
 
-    if (finalBase64 && finalBase64.startsWith('data:image/')) {
-      try {
-        const dims = await getImgDimensions(finalBase64);
-        const maxW = kW - 10;
-        const maxH = mH - 8;
-        const ratio = (dims.width && dims.height) ? (dims.width / dims.height) : 1.5;
+      doc.rect(p4X + 55, p4Y, 22, rowH, 'S');
+      drawCellText(doc, m.fecha_evaluacion || '-', p4X + 55, p4Y, 22, rowH, { align: 'center', fontSize: 6 });
 
-        let renderW = maxW;
-        let renderH = maxW / ratio;
-        if (renderH > maxH) {
-          renderH = maxH;
-          renderW = maxH * ratio;
-        }
+      doc.rect(p4X + 77, p4Y, 18, rowH, 'S');
+      drawCellText(doc, m.nivel_riesgo || '-', p4X + 77, p4Y, 18, rowH, { align: 'center', fontSize: 6, fontStyle: 'bold' });
 
-        const imgX = kX + (kW - renderW) / 2;
-        const imgY = mY + 4 + (maxH - renderH) / 2;
+      doc.rect(p4X + 95, p4Y, 28, rowH, 'S');
+      drawCellText(doc, m.fecha_impl_admin || '-', p4X + 95, p4Y, 28, rowH, { align: 'center', fontSize: 6 });
 
-        doc.addImage(finalBase64, 'PNG', imgX, imgY, renderW, renderH, undefined, 'FAST');
-      } catch (err) {
-        console.error('Error al insertar imagen de croquis en PDF:', err);
-        setDrawColor(doc, COLOR_SLATE_300);
-        doc.setLineWidth(0.3);
-        doc.rect(kX + 10, mY + 14, kW - 20, mH - 20, 'S');
-        drawCellText(doc, `[ PLANO O CROQUIS DEL ESTABLECIMIENTO ]`, kX + 10, mY + 14, kW - 20, mH - 20, { align: 'center', fontStyle: 'bold', fontSize: 11, color: COLOR_SLATE_500 });
-      }
-    } else {
-      setDrawColor(doc, COLOR_SLATE_300);
-      doc.setLineWidth(0.3);
-      doc.rect(kX + 10, mY + 14, kW - 20, mH - 20, 'S');
-      drawCellText(doc, `[ PLANO O CROQUIS DEL ESTABLECIMIENTO ]`, kX + 10, mY + 14, kW - 20, mH - 20, { align: 'center', fontStyle: 'bold', fontSize: 11, color: COLOR_SLATE_500 });
-    }
-  }
+      doc.rect(p4X + 123, p4Y, 28, rowH, 'S');
+      drawCellText(doc, m.fecha_impl_ing || '-', p4X + 123, p4Y, 28, rowH, { align: 'center', fontSize: 6 });
 
-  // ==========================================
-  // PAGINAS FINALES: ANEXO CERTIFICADO DE CALIBRACIÓN
-  // ==========================================
-  const certAdjunto = (adjuntosList || []).filter(adj => 
-    adj.tipo === 'Certificado de Calibración' || adj.tipo === 'Certificado' || adj.tipo === 'Certificado de Calibración del Instrumental'
-  )[0];
+      doc.rect(p4X + 151, p4Y, 29, rowH, 'S');
+      drawCellText(doc, m.fecha_cierre || '-', p4X + 151, p4Y, 29, rowH, { align: 'center', fontSize: 6 });
 
-  let certPdfArrayBuffer = null;
+      p4Y += rowH;
+    });
 
-  if (certAdjunto) {
-    try {
-      const path = certAdjunto.storage_path || certAdjunto.original_path || certAdjunto.public_url || certAdjunto.url || certAdjunto.archivo_url;
-      const fileName = certAdjunto.nombre_archivo || certAdjunto.name || '';
-      const isPdfFile = fileName.toLowerCase().endsWith('.pdf') || (path && path.toLowerCase().endsWith('.pdf')) || (certAdjunto.preview && certAdjunto.preview.startsWith('data:application/pdf'));
-
-      if (isPdfFile) {
-        if (certAdjunto.preview && certAdjunto.preview.startsWith('data:application/pdf')) {
-          const res = await fetch(certAdjunto.preview);
-          certPdfArrayBuffer = await res.arrayBuffer();
-        } else if (path) {
-          if (!path.startsWith('http') && !path.startsWith('data:')) {
-            const { data: blob } = await supabase.storage.from('protocolos-ergonomia').download(path);
-            if (blob) {
-              certPdfArrayBuffer = await blob.arrayBuffer();
-            }
-          } else {
-            const res = await fetch(path);
-            if (res.ok) {
-              const blob = await res.blob();
-              certPdfArrayBuffer = await blob.arrayBuffer();
-            }
-          }
-        }
-      } else {
-        const certBase64 = await getAdjuntoBase64(certAdjunto);
-        if (certBase64 && certBase64.startsWith('data:image/')) {
-          doc.addPage('a4', 'portrait');
-          pageCounter++;
-
-          drawHeader(false);
-          drawProtocolTitleBar(false, { x: 15, y: 22, w: 180, h: 5.5 });
-
-          const cX = 15;
-          const cY = 29;
-          const cW = 180;
-          const cH = 238;
-
-          doc.setLineWidth(0.45);
-          setDrawColor(doc, COLOR_NEGRO);
-          doc.rect(cX, cY, cW, 6, 'S');
-          drawCellText(doc, 'ANEXO: CERTIFICADO DE CALIBRACIÓN DEL INSTRUMENTAL', cX, cY, cW, 6, { fontStyle: 'bold', fontSize: 9, align: 'center' });
-
-          const imgY = 37;
-          const imgH = 228;
-          doc.rect(cX, imgY, cW, imgH, 'S');
-
-          const dims = await getImgDimensions(certBase64);
-          const maxW = cW - 10;
-          const maxH = imgH - 10;
-          const ratio = (dims.width && dims.height) ? (dims.width / dims.height) : 0.75;
-
-          let renderW = maxW;
-          let renderH = maxW / ratio;
-          if (renderH > maxH) {
-            renderH = maxH;
-            renderW = maxH * ratio;
-          }
-
-          const imgX = cX + (cW - renderW) / 2;
-          const posX = imgY + (imgH - renderH) / 2;
-
-          doc.addImage(certBase64, 'PNG', imgX, posX, renderW, renderH, undefined, 'FAST');
-        }
-      }
-    } catch (e) {
-      console.error('Error procesando certificado de calibración en PDF:', e);
-    }
-  }
-
-  // Draw headers and footers across all pages with total page count
-  const totalPagesCount = doc.internal.getNumberOfPages();
-  for (let i = 1; i <= totalPagesCount; i++) {
-    doc.setPage(i);
-    if (i > 1) {
-      const pageInfo = doc.internal.pageSize;
-      const isLand = pageInfo.width > pageInfo.height;
-      drawFooter(isLand, i, totalPagesCount);
-    }
-  }
-
-  // If a PDF certificate document was uploaded, merge pages using pdf-lib
-  if (certPdfArrayBuffer) {
-    try {
-      const mainPdfBytes = doc.output('arraybuffer');
-      const finalPdfDoc = await PDFDocument.load(mainPdfBytes);
-      const certDoc = await PDFDocument.load(certPdfArrayBuffer);
-      const certPages = await finalPdfDoc.copyPages(certDoc, certDoc.getPageIndices());
-      certPages.forEach(p => finalPdfDoc.addPage(p));
-
-      // Preserve / Inject OpenAction Print catalog entry so browser auto-opens print dialog
-      const catalog = finalPdfDoc.catalog;
-      const openAction = finalPdfDoc.context.obj({
-        S: PDFName.of('Named'),
-        N: PDFName.of('Print'),
-      });
-      catalog.set(PDFName.of('OpenAction'), openAction);
-
-      const mergedPdfBytes = await finalPdfDoc.save();
-      const mergedBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
-
-      // Override doc output & save methods to return merged PDF
-      const origOutput = doc.output.bind(doc);
-      doc.output = (type, ...args) => {
-        if (type === 'blob') return mergedBlob;
-        if (type === 'arraybuffer') return mergedPdfBytes.buffer;
-        if (type === 'bloburl' || type === 'bloburi') return URL.createObjectURL(mergedBlob);
-        if (type === 'datauristring' || type === 'dataurlstring') {
-          return 'data:application/pdf;base64,' + Buffer.from(mergedPdfBytes).toString('base64');
-        }
-        return origOutput(type, ...args);
-      };
-
-      doc.save = (filename) => {
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(mergedBlob);
-        link.download = filename || 'Protocolo_Ergonomia.pdf';
-        link.click();
-      };
-    } catch (mergeErr) {
-      console.error('Error al fusionar certificado PDF con pdf-lib:', mergeErr);
-    }
-  }
+    drawTripleSignatureBlock(248);
+    drawFooter(pageCounter, totalPagesCount);
+  });
 
   return doc;
 };
+
+export const generateErgonomyProtocolPdf = generateProtocoloErgonomiaPdf;

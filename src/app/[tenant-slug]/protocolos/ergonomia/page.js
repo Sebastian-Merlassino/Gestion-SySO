@@ -416,7 +416,7 @@ export default function ProtocolosErgonomiaPage({ params }) {
       globalToast.toast('Generando reporte PDF...', 'info');
       const { data: pts } = await supabase
         .from('protocolos_ergonomia_puntos')
-        .select('*, mediciones:protocolos_ergonomia_mediciones(*)')
+        .select('*')
         .eq('protocolo_id', protoItem.id)
         .order('orden');
 
@@ -437,14 +437,18 @@ export default function ProtocolosErgonomiaPage({ params }) {
           printWindow.location.href = blobUrl;
         } else {
           const win = window.open(blobUrl, '_blank');
+          const safeName = (protoItem.razon_social_text || 'Ergonomia').replace(/\s+/g, '_');
+          const safeDate = protoItem.fecha_medicion || 'reciente';
           if (!win) {
-            doc.save(`Protocolo_Ergonomia_${protoItem.razon_social_text.replace(/\s+/g, '_')}_${protoItem.fecha_medicion}.pdf`);
+            doc.save(`Protocolo_Ergonomia_${safeName}_${safeDate}.pdf`);
             globalToast.toast('Se descargó el PDF directamente.', 'warning');
           }
         }
         globalToast.toast('Ventana de impresión abierta.', 'success');
       } else {
-        doc.save(`Protocolo_Ergonomia_${protoItem.razon_social_text.replace(/\s+/g, '_')}_${protoItem.fecha_medicion}.pdf`);
+        const safeName = (protoItem.razon_social_text || 'Ergonomia').replace(/\s+/g, '_');
+        const safeDate = protoItem.fecha_medicion || 'reciente';
+        doc.save(`Protocolo_Ergonomia_${safeName}_${safeDate}.pdf`);
         globalToast.toast('PDF descargado con éxito.', 'success');
       }
     } catch (err) {
