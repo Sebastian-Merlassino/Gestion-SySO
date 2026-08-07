@@ -457,12 +457,26 @@ export const generateProtocoloErgonomiaPdf = async (arg1, arg2, arg3, arg4, arg5
     'vibraciones_cuerpo_entero', 'confort_termico', 'estres_contacto'
   ];
 
+  const factorsDef = [
+    { key: 'levantamiento', code: 'A', label: 'Levantamiento y descenso' },
+    { key: 'empuje_arrastre', code: 'B', label: 'Empuje / Arrastre' },
+    { key: 'transporte', code: 'C', label: 'Transporte' },
+    { key: 'bipedestacion', code: 'D', label: 'Bipedestación' },
+    { key: 'mov_repetitivos', code: 'E', label: 'Movimientos Repetitivos de MMSS' },
+    { key: 'posturas_forzadas', code: 'F', label: 'Posturas Forzadas' },
+    { key: 'vibraciones_mano_brazo', code: 'G', label: 'Vibraciones' },
+    { key: 'confort_termico', code: 'H', label: 'Confort Térmico' },
+    { key: 'estres_contacto', code: 'I', label: 'Estrés de Contacto' }
+  ];
+
   const puntosList = puntos.length > 0 ? puntos : [{}];
   let totalPagesCount = 3; // Cover, Intro, Diagrama
 
   puntosList.forEach(pt => {
-    totalPagesCount++; // Planilla 1
     const tList = pt.tareas || [];
+    const p1PagesCount = Math.max(1, Math.ceil(tList.length / 3));
+    totalPagesCount += p1PagesCount; // Planilla 1 (de a 3 tareas por página)
+
     tList.forEach(t => {
       ALL_FACTOR_KEYS.forEach(fKey => {
         if (t[`f_${fKey}_identificado`] === 'si') totalPagesCount++; // Planilla 2
@@ -1010,197 +1024,212 @@ export const generateProtocoloErgonomiaPdf = async (arg1, arg2, arg3, arg4, arg5
   // HOJAS 4+: PLANILLA 1 POR PUESTO DE TRABAJO (A4 Vertical)
   // ==========================================
   puntosList.forEach((pt, ptIdx) => {
-    doc.addPage('a4', 'portrait');
-    pageCounter++;
+    const tList = pt.tareas || [];
+    const taskChunks = [];
+    for (let i = 0; i < tList.length; i += 3) {
+      taskChunks.push(tList.slice(i, i + 3));
+    }
+    if (taskChunks.length === 0) {
+      taskChunks.push([]);
+    }
 
-    drawHeaderLogo();
+    taskChunks.forEach((chunk, chunkIdx) => {
+      doc.addPage('a4', 'portrait');
+      pageCounter++;
 
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    setTextColor(doc, COLOR_NEGRO);
-    doc.text('RESOLUCIÓN S.R.T. 886/15', 15, 28);
-    doc.text('ANEXO I- PLANILLA 1: IDENTIFICACION DE FACTORES DE RIESGO', 15, 33);
-    setDrawColor(doc, COLOR_SLATE_300);
-    doc.setLineWidth(0.25);
-    doc.line(15, 35, 195, 35);
+      drawHeaderLogo();
 
-    let p1Y = 40;
-
-    // Official Res. SRT 886/15 Planilla 1 Header Table (Datos del establecimiento y puesto)
-    const hdrX = 15;
-    let hdrY = p1Y;
-    const hdrW = 180;
-    const rH = 5.5;
-
-    setDrawColor(doc, COLOR_NEGRO);
-    doc.setLineWidth(0.25);
-
-    // Helper for key-value cell inside header table
-    const drawHdrCell = (xPos, yPos, wLen, hLen, keyText, valText) => {
-      doc.rect(xPos, yPos, wLen, hLen, 'S');
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(6.5);
+      doc.setFontSize(10);
       setTextColor(doc, COLOR_NEGRO);
-      const kStr = keyText + ': ';
-      const kW = doc.getTextWidth(kStr);
-      doc.text(kStr, xPos + 1.5, yPos + 3.8);
+      doc.text('RESOLUCIÓN S.R.T. 886/15', 15, 28);
+      doc.text('ANEXO I- PLANILLA 1: IDENTIFICACION DE FACTORES DE RIESGO', 15, 33);
+      setDrawColor(doc, COLOR_SLATE_300);
+      doc.setLineWidth(0.25);
+      doc.line(15, 35, 195, 35);
+
+      let p1Y = 40;
+
+      // Official Res. SRT 886/15 Planilla 1 Header Table (Datos del establecimiento y puesto)
+      const hdrX = 15;
+      let hdrY = p1Y;
+      const hdrW = 180;
+      const rH = 5.5;
+
+      setDrawColor(doc, COLOR_NEGRO);
+      doc.setLineWidth(0.25);
+
+      // Helper for key-value cell inside header table
+      const drawHdrCell = (xPos, yPos, wLen, hLen, keyText, valText) => {
+        doc.rect(xPos, yPos, wLen, hLen, 'S');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(6.5);
+        setTextColor(doc, COLOR_NEGRO);
+        const kStr = keyText + ': ';
+        const kW = doc.getTextWidth(kStr);
+        doc.text(kStr, xPos + 1.5, yPos + 3.8);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6.5);
+        const vStr = String(valText !== null && valText !== undefined && valText !== '' ? valText : '-');
+        const maxVW = Math.max(5, wLen - kW - 3);
+        const lines = doc.splitTextToSize(vStr, maxVW);
+        doc.text(lines[0] || '-', xPos + 1.5 + kW, yPos + 3.8);
+      };
+
+      // Row 1: Razón Social / C.U.I.T. (50% / 50%)
+      drawHdrCell(hdrX, hdrY, 90, rH, 'Razón Social', razonSocial);
+      drawHdrCell(hdrX + 90, hdrY, 90, rH, 'C.U.I.T.', cuit);
+      hdrY += rH;
+
+      // Row 2: CIIU (100%)
+      drawHdrCell(hdrX, hdrY, 180, rH, 'CIIU', ciiu);
+      hdrY += rH;
+
+      // Row 3: Dirección del establecimiento / Provincia (50% / 50%)
+      const dirFull = direccion + (localidad && localidad !== '-' ? `, ${localidad}` : '');
+      drawHdrCell(hdrX, hdrY, 90, rH, 'Dirección del establecimiento', dirFull);
+      drawHdrCell(hdrX + 90, hdrY, 90, rH, 'Provincia', provincia + (cp && cp !== '-' ? ` (CP ${cp})` : ''));
+      hdrY += rH;
+
+      // Row 4: Área y Sector en estudio / N° de trabajadores (50% / 50%)
+      drawHdrCell(hdrX, hdrY, 90, rH, 'Área y Sector en estudio', pt.sector_text || pt.sector || '-');
+      drawHdrCell(hdrX + 90, hdrY, 90, rH, 'N° de trabajadores', String(pt.cantidad_expuestos || 1));
+      hdrY += rH;
+
+      // Row 5: Puesto de trabajo / Capacitación (50% / 50%)
+      drawHdrCell(hdrX, hdrY, 90, rH, 'Puesto de trabajo', pt.puesto_text || pt.puesto || '-');
+      drawHdrCell(hdrX + 90, hdrY, 90, rH, 'Capacitación', (pt.capacitacion || 'no') === 'si' ? 'SI' : 'NO');
+      hdrY += rH;
+
+      // Row 6: Procedimiento escrito / Nombre del trabajador/es (50% / 50%)
+      drawHdrCell(hdrX, hdrY, 90, rH, 'Procedimiento escrito', (pt.procedimiento_escrito || 'no') === 'si' ? 'SI' : 'NO');
+      drawHdrCell(hdrX + 90, hdrY, 90, rH, 'Nombre del trabajador/es', pt.nombres_trabajadores || '-');
+      hdrY += rH;
+
+      // Row 7: Manifestación temprana / Ubicación del síntoma (50% / 50%)
+      drawHdrCell(hdrX, hdrY, 90, rH, 'Manifestación temprana', (pt.manifestacion_temprana || 'no') === 'si' ? 'SI' : 'NO');
+      drawHdrCell(hdrX + 90, hdrY, 90, rH, 'Ubicación del síntoma', pt.ubicacion_sintoma || '-');
+      hdrY += rH;
+
+      p1Y = hdrY + 6;
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(6.5);
-      const vStr = String(valText !== null && valText !== undefined && valText !== '' ? valText : '-');
-      const maxVW = Math.max(5, wLen - kW - 3);
-      const lines = doc.splitTextToSize(vStr, maxVW);
-      doc.text(lines[0] || '-', xPos + 1.5 + kW, yPos + 3.8);
-    };
+      doc.setFontSize(8);
+      setTextColor(doc, COLOR_NEGRO);
+      const step1Lines = doc.splitTextToSize('Paso 1: Identificar para el puesto de trabajo, las tareas y los factores de riesgo que se presentan de forma habitual en cada una de ellas.', 180);
+      doc.text(step1Lines, 15, p1Y);
+      p1Y += (step1Lines.length * 3.8) + 4;
 
-    // Row 1: Razón Social / C.U.I.T. (50% / 50%)
-    drawHdrCell(hdrX, hdrY, 90, rH, 'Razón Social', razonSocial);
-    drawHdrCell(hdrX + 90, hdrY, 90, rH, 'C.U.I.T.', cuit);
-    hdrY += rH;
+      // Tabla Matricial Planilla 1
+      const tblX = 15;
+      const colY = p1Y;
 
-    // Row 2: CIIU (100%)
-    drawHdrCell(hdrX, hdrY, 180, rH, 'CIIU', ciiu);
-    hdrY += rH;
+      const t1 = chunk[0];
+      const t2 = chunk[1];
+      const t3 = chunk[2];
 
-    // Row 3: Dirección del establecimiento / Provincia (50% / 50%)
-    const dirFull = direccion + (localidad && localidad !== '-' ? `, ${localidad}` : '');
-    drawHdrCell(hdrX, hdrY, 90, rH, 'Dirección del establecimiento', dirFull);
-    drawHdrCell(hdrX + 90, hdrY, 90, rH, 'Provincia', provincia + (cp && cp !== '-' ? ` (CP ${cp})` : ''));
-    hdrY += rH;
+      const startTaskNum = (chunkIdx * 3) + 1;
+      const num1 = startTaskNum;
+      const num2 = startTaskNum + 1;
+      const num3 = startTaskNum + 2;
 
-    // Row 4: Área y Sector en estudio / N° de trabajadores (50% / 50%)
-    drawHdrCell(hdrX, hdrY, 90, rH, 'Área y Sector en estudio', pt.sector_text || pt.sector || '-');
-    drawHdrCell(hdrX + 90, hdrY, 90, rH, 'N° de trabajadores', String(pt.cantidad_expuestos || 1));
-    hdrY += rH;
+      // Col 1: Factor de riesgo (60mm)
+      drawHeaderBox(tblX, colY, 60, 16, 'Factor de riesgo de la\njornada habitual de trabajo', { fontSize: 7, maxLines: 2 });
 
-    // Row 5: Puesto de trabajo / Capacitación (50% / 50%)
-    drawHdrCell(hdrX, hdrY, 90, rH, 'Puesto de trabajo', pt.puesto_text || pt.puesto || '-');
-    drawHdrCell(hdrX + 90, hdrY, 90, rH, 'Capacitación', (pt.capacitacion || 'no') === 'si' ? 'SI' : 'NO');
-    hdrY += rH;
+      // Col 2: Tareas Habituales (60mm total: 20mm each)
+      drawHeaderBox(tblX + 60, colY, 60, 6, 'Tareas habituales del Puesto de Trabajo', { fontSize: 6.5 });
+      drawHeaderBox(tblX + 60, colY + 6, 20, 10, t1 ? `Tarea ${num1}:\n${t1.nombre || '-'}` : `Tarea ${num1}:\n-`, { fontSize: 5.5, maxLines: 2 });
+      drawHeaderBox(tblX + 80, colY + 6, 20, 10, t2 ? `Tarea ${num2}:\n${t2.nombre || '-'}` : `Tarea ${num2}:\n-`, { fontSize: 5.5, maxLines: 2 });
+      drawHeaderBox(tblX + 100, colY + 6, 20, 10, t3 ? `Tarea ${num3}:\n${t3.nombre || '-'}` : `Tarea ${num3}:\n-`, { fontSize: 5.5, maxLines: 2 });
 
-    // Row 6: Procedimiento escrito / Nombre del trabajador/es (50% / 50%)
-    drawHdrCell(hdrX, hdrY, 90, rH, 'Procedimiento escrito', (pt.procedimiento_escrito || 'no') === 'si' ? 'SI' : 'NO');
-    drawHdrCell(hdrX + 90, hdrY, 90, rH, 'Nombre del trabajador/es', pt.nombres_trabajadores || '-');
-    hdrY += rH;
+      // Col 3: Tiempo Total (30mm)
+      drawHeaderBox(tblX + 120, colY, 30, 16, 'Tiempo Total\nde exposición al\nfactor de riesgo', { fontSize: 6, maxLines: 3 });
 
-    // Row 7: Manifestación temprana / Ubicación del síntoma (50% / 50%)
-    drawHdrCell(hdrX, hdrY, 90, rH, 'Manifestación temprana', (pt.manifestacion_temprana || 'no') === 'si' ? 'SI' : 'NO');
-    drawHdrCell(hdrX + 90, hdrY, 90, rH, 'Ubicación del síntoma', pt.ubicacion_sintoma || '-');
-    hdrY += rH;
+      // Col 4: Nivel de Riesgo (30mm total: 10mm each)
+      drawHeaderBox(tblX + 150, colY, 30, 6, 'Nivel de riesgo', { fontSize: 6.5 });
+      drawHeaderBox(tblX + 150, colY + 6, 10, 10, `Tarea\n${num1}`, { fontSize: 5.5 });
+      drawHeaderBox(tblX + 160, colY + 6, 10, 10, `Tarea\n${num2}`, { fontSize: 5.5 });
+      drawHeaderBox(tblX + 170, colY + 6, 10, 10, `Tarea\n${num3}`, { fontSize: 5.5 });
 
-    p1Y = hdrY + 6;
+      const rowStartY = colY + 16;
+      const rowH = 7.5;
 
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    setTextColor(doc, COLOR_NEGRO);
-    const step1Lines = doc.splitTextToSize('Paso 1: Identificar para el puesto de trabajo, las tareas y los factores de riesgo que se presentan de forma habitual en cada una de ellas.', 180);
-    doc.text(step1Lines, 15, p1Y);
-    p1Y += (step1Lines.length * 3.8) + 4;
+      const factorsDef = [
+        { key: 'levantamiento', code: 'A', label: 'Levantamiento y descenso' },
+        { key: 'empuje_arrastre', code: 'B', label: 'Empuje / Arrastre' },
+        { key: 'transporte', code: 'C', label: 'Transporte' },
+        { key: 'bipedestacion', code: 'D', label: 'Bipedestación' },
+        { key: 'mov_repetitivos', code: 'E', label: 'Movimientos Repetitivos de MMSS' },
+        { key: 'posturas_forzadas', code: 'F', label: 'Posturas Forzadas' },
+        { key: 'vibraciones_mano_brazo', code: 'G', label: 'Vibraciones' },
+        { key: 'confort_termico', code: 'H', label: 'Confort Térmico' },
+        { key: 'estres_contacto', code: 'I', label: 'Estrés de Contacto' }
+      ];
 
-    // Tabla Matricial Planilla 1
-    const tblX = 15;
-    const colY = p1Y;
+      setDrawColor(doc, COLOR_NEGRO);
+      doc.setLineWidth(0.25);
 
-    const tList = pt.tareas || [];
-    const t1 = tList[0] || { nombre: 'Tarea 1' };
-    const t2 = tList[1] || { nombre: 'Tarea 2' };
-    const t3 = tList[2] || { nombre: 'Tarea 3' };
+      factorsDef.forEach((f, rIdx) => {
+        const rowY = rowStartY + (rIdx * rowH);
 
-    // Col 1: Factor de riesgo (60mm)
-    drawHeaderBox(tblX, colY, 60, 16, 'Factor de riesgo de la\njornada habitual de trabajo', { fontSize: 7, maxLines: 2 });
+        // Col Code (8mm)
+        doc.rect(tblX, rowY, 8, rowH, 'S');
+        drawCellText(doc, f.code, tblX, rowY, 8, rowH, { align: 'center', fontStyle: 'bold', fontSize: 7 });
 
-    // Col 2: Tareas Habituales (60mm total: 20mm each)
-    drawHeaderBox(tblX + 60, colY, 60, 6, 'Tareas habituales del Puesto de Trabajo', { fontSize: 6.5 });
-    drawHeaderBox(tblX + 60, colY + 6, 20, 10, `Tarea 1:\n${t1.nombre || '-'}`, { fontSize: 5.5, maxLines: 2 });
-    drawHeaderBox(tblX + 80, colY + 6, 20, 10, `Tarea 2:\n${t2.nombre || '-'}`, { fontSize: 5.5, maxLines: 2 });
-    drawHeaderBox(tblX + 100, colY + 6, 20, 10, `Tarea 3:\n${t3.nombre || '-'}`, { fontSize: 5.5, maxLines: 2 });
+        // Col Factor label (52mm)
+        doc.rect(tblX + 8, rowY, 52, rowH, 'S');
+        drawCellText(doc, f.label, tblX + 9, rowY, 50, rowH, { align: 'center', fontSize: 6.5, maxLines: 2 });
 
-    // Col 3: Tiempo Total (30mm)
-    drawHeaderBox(tblX + 120, colY, 30, 16, 'Tiempo Total\nde exposición al\nfactor de riesgo', { fontSize: 6, maxLines: 3 });
+        // Col 2: Presence check (X or -)
+        const hasT1 = t1 && t1[`f_${f.key}_identificado`] === 'si';
+        const hasT2 = t2 && t2[`f_${f.key}_identificado`] === 'si';
+        const hasT3 = t3 && t3[`f_${f.key}_identificado`] === 'si';
 
-    // Col 4: Nivel de Riesgo (30mm total: 10mm each)
-    drawHeaderBox(tblX + 150, colY, 30, 6, 'Nivel de riesgo', { fontSize: 6.5 });
-    drawHeaderBox(tblX + 150, colY + 6, 10, 10, 'Tarea\n1', { fontSize: 5.5 });
-    drawHeaderBox(tblX + 160, colY + 6, 10, 10, 'Tarea\n2', { fontSize: 5.5 });
-    drawHeaderBox(tblX + 170, colY + 6, 10, 10, 'Tarea\n3', { fontSize: 5.5 });
+        doc.rect(tblX + 60, rowY, 20, rowH, 'S');
+        drawCellText(doc, t1 ? (hasT1 ? 'X' : '-') : '-', tblX + 60, rowY, 20, rowH, { align: 'center', fontSize: 7.5 });
 
-    const rowStartY = colY + 16;
-    const rowH = 7.5;
+        doc.rect(tblX + 80, rowY, 20, rowH, 'S');
+        drawCellText(doc, t2 ? (hasT2 ? 'X' : '-') : '-', tblX + 80, rowY, 20, rowH, { align: 'center', fontSize: 7.5 });
 
-    const factorsDef = [
-      { key: 'levantamiento', code: 'A', label: 'Levantamiento y descenso' },
-      { key: 'empuje_arrastre', code: 'B', label: 'Empuje / Arrastre' },
-      { key: 'transporte', code: 'C', label: 'Transporte' },
-      { key: 'bipedestacion', code: 'D', label: 'Bipedestación' },
-      { key: 'mov_repetitivos', code: 'E', label: 'Movimientos Repetitivos de MMSS' },
-      { key: 'posturas_forzadas', code: 'F', label: 'Posturas Forzadas' },
-      { key: 'vibraciones_mano_brazo', code: 'G', label: 'Vibraciones' },
-      { key: 'confort_termico', code: 'H', label: 'Confort Térmico' },
-      { key: 'estres_contacto', code: 'I', label: 'Estrés de Contacto' }
-    ];
+        doc.rect(tblX + 100, rowY, 20, rowH, 'S');
+        drawCellText(doc, t3 ? (hasT3 ? 'X' : '-') : '-', tblX + 100, rowY, 20, rowH, { align: 'center', fontSize: 7.5 });
 
-    setDrawColor(doc, COLOR_NEGRO);
-    doc.setLineWidth(0.25);
+        // Col 3: Exposure time (Summed across tasks)
+        const expTime = sumExposureTimes(tList, f.key);
+        doc.rect(tblX + 120, rowY, 30, rowH, 'S');
+        drawCellText(doc, expTime, tblX + 120, rowY, 30, rowH, { align: 'center', fontSize: 6.5, maxLines: 2 });
 
-    factorsDef.forEach((f, rIdx) => {
-      const rowY = rowStartY + (rIdx * rowH);
+        // Col 4: Risk levels (1, 2, 3 or -)
+        const rskT1 = t1 && hasT1 ? (t1[`f_${f.key}_riesgo`] || '-') : '-';
+        const rskT2 = t2 && hasT2 ? (t2[`f_${f.key}_riesgo`] || '-') : '-';
+        const rskT3 = t3 && hasT3 ? (t3[`f_${f.key}_riesgo`] || '-') : '-';
 
-      // Col Code (8mm)
-      doc.rect(tblX, rowY, 8, rowH, 'S');
-      drawCellText(doc, f.code, tblX, rowY, 8, rowH, { align: 'center', fontStyle: 'bold', fontSize: 7 });
+        doc.rect(tblX + 150, rowY, 10, rowH, 'S');
+        drawCellText(doc, t1 ? String(rskT1) : '-', tblX + 150, rowY, 10, rowH, { align: 'center', fontSize: 7.5 });
 
-      // Col Factor label (52mm)
-      doc.rect(tblX + 8, rowY, 52, rowH, 'S');
-      drawCellText(doc, f.label, tblX + 9, rowY, 50, rowH, { align: 'center', fontSize: 6.5, maxLines: 2 });
+        doc.rect(tblX + 160, rowY, 10, rowH, 'S');
+        drawCellText(doc, t2 ? String(rskT2) : '-', tblX + 160, rowY, 10, rowH, { align: 'center', fontSize: 7.5 });
 
-      // Col 2: Presence check (X or -)
-      const hasT1 = tList[0] && tList[0][`f_${f.key}_identificado`] === 'si';
-      const hasT2 = tList[1] && tList[1][`f_${f.key}_identificado`] === 'si';
-      const hasT3 = tList[2] && tList[2][`f_${f.key}_identificado`] === 'si';
+        doc.rect(tblX + 170, rowY, 10, rowH, 'S');
+        drawCellText(doc, t3 ? String(rskT3) : '-', tblX + 170, rowY, 10, rowH, { align: 'center', fontSize: 7.5 });
+      });
 
-      doc.rect(tblX + 60, rowY, 20, rowH, 'S');
-      drawCellText(doc, tList[0] ? (hasT1 ? 'X' : '-') : '-', tblX + 60, rowY, 20, rowH, { align: 'center', fontSize: 7.5 });
+      let botY = rowStartY + (factorsDef.length * rowH) + 4;
 
-      doc.rect(tblX + 80, rowY, 20, rowH, 'S');
-      drawCellText(doc, tList[1] ? (hasT2 ? 'X' : '-') : '-', tblX + 80, rowY, 20, rowH, { align: 'center', fontSize: 7.5 });
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      setTextColor(doc, COLOR_NEGRO);
+      doc.text('S/E Sin Evaluar', 15, botY);
+      botY += 4;
 
-      doc.rect(tblX + 100, rowY, 20, rowH, 'S');
-      drawCellText(doc, tList[2] ? (hasT3 ? 'X' : '-') : '-', tblX + 100, rowY, 20, rowH, { align: 'center', fontSize: 7.5 });
+      const noteLines = doc.splitTextToSize('Si alguno de los factores de riesgo se encuentra presente, continuar con la Evaluación Inicial de Factores de Riesgo que se identifican, completando la planilla 2', 180);
+      doc.text(noteLines, 15, botY);
 
-      // Col 3: Exposure time (Summed across tasks)
-      const expTime = sumExposureTimes(tList, f.key);
-      doc.rect(tblX + 120, rowY, 30, rowH, 'S');
-      drawCellText(doc, expTime, tblX + 120, rowY, 30, rowH, { align: 'center', fontSize: 6.5, maxLines: 2 });
-
-      // Col 4: Risk levels (1, 2, 3 or -)
-      const rskT1 = tList[0] && hasT1 ? (tList[0][`f_${f.key}_riesgo`] || '-') : '-';
-      const rskT2 = tList[1] && hasT2 ? (tList[1][`f_${f.key}_riesgo`] || '-') : '-';
-      const rskT3 = tList[2] && hasT3 ? (tList[2][`f_${f.key}_riesgo`] || '-') : '-';
-
-      doc.rect(tblX + 150, rowY, 10, rowH, 'S');
-      drawCellText(doc, tList[0] ? String(rskT1) : '-', tblX + 150, rowY, 10, rowH, { align: 'center', fontSize: 7.5 });
-
-      doc.rect(tblX + 160, rowY, 10, rowH, 'S');
-      drawCellText(doc, tList[1] ? String(rskT2) : '-', tblX + 160, rowY, 10, rowH, { align: 'center', fontSize: 7.5 });
-
-      doc.rect(tblX + 170, rowY, 10, rowH, 'S');
-      drawCellText(doc, tList[2] ? String(rskT3) : '-', tblX + 170, rowY, 10, rowH, { align: 'center', fontSize: 7.5 });
+      // Signatures
+      drawTripleSignatureBlock(248);
+      drawFooter(pageCounter, totalPagesCount);
     });
-
-    let botY = rowStartY + (factorsDef.length * rowH) + 4;
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.5);
-    setTextColor(doc, COLOR_NEGRO);
-    doc.text('S/E Sin Evaluar', 15, botY);
-    botY += 4;
-
-    const noteLines = doc.splitTextToSize('Si alguno de los factores de riesgo se encuentra presente, continuar con la Evaluación Inicial de Factores de Riesgo que se identifican, completando la planilla 2', 180);
-    doc.text(noteLines, 15, botY);
-
-    // Signatures
-    drawTripleSignatureBlock(248);
-    drawFooter(pageCounter, totalPagesCount);
 
     // ==========================================
     // HOJAS 6+: PLANILLA 2 POR FACTOR Y TAREA (A4 Vertical)
@@ -1532,19 +1561,19 @@ export const generateProtocoloErgonomiaPdf = async (arg1, arg2, arg3, arg4, arg5
     const p4X = 15;
     const hH = 9;
 
-    drawHeaderBox(p4X, p4Y, 10, hH, 'Nº\nM.C.P.', { fontSize: 5.5 });
-    drawHeaderBox(p4X + 10, p4Y, 45, hH, 'Nombre del Puesto', { fontSize: 6.5 });
-    drawHeaderBox(p4X + 55, p4Y, 22, hH, 'Fecha de\nEvaluación', { fontSize: 6 });
-    drawHeaderBox(p4X + 77, p4Y, 18, hH, 'Nivel de\nriesgo', { fontSize: 6 });
-    drawHeaderBox(p4X + 95, p4Y, 28, hH, 'Fecha de\nimplementación\nde la medida\nAdministrativa', { fontSize: 5 });
-    drawHeaderBox(p4X + 123, p4Y, 28, hH, 'Fecha de\nimplementación\nde la medida de\ningeniería', { fontSize: 5 });
-    drawHeaderBox(p4X + 151, p4Y, 29, hH, 'Fecha de\nCierre', { fontSize: 6 });
+    drawHeaderBox(p4X, p4Y, 12, hH, 'Nº\nM.C.P.', { fontSize: 5.5 });
+    drawHeaderBox(p4X + 12, p4Y, 53, hH, 'Nombre del Puesto', { fontSize: 6.5 });
+    drawHeaderBox(p4X + 65, p4Y, 22, hH, 'Fecha de\nEvaluación', { fontSize: 6 });
+    drawHeaderBox(p4X + 87, p4Y, 18, hH, 'Nivel de\nriesgo', { fontSize: 6 });
+    drawHeaderBox(p4X + 105, p4Y, 25, hH, 'Fecha impl.\nmedida Admin.', { fontSize: 5.5 });
+    drawHeaderBox(p4X + 130, p4Y, 25, hH, 'Fecha impl.\nmedida Ing.', { fontSize: 5.5 });
+    drawHeaderBox(p4X + 155, p4Y, 25, hH, 'Fecha de\nCierre', { fontSize: 6 });
 
     p4Y += hH;
     const defaultP4Rows = [
-      { num: 1, mcp: 'Realizar evaluación de los factores de riesgo ergonómico del puesto de trabajo (Levantamiento y descenso)', puesto_nombre: pt.puesto_text || '', fecha_evaluacion: formatDate(proto.fecha_medicion), nivel_riesgo: '', fecha_impl_admin: '', fecha_impl_ing: '', fecha_cierre: '' },
-      { num: 2, mcp: 'Realizar evaluación de los factores de riesgo ergonómico del puesto de trabajo (Transporte)', puesto_nombre: pt.puesto_text || '', fecha_evaluacion: formatDate(proto.fecha_medicion), nivel_riesgo: '', fecha_impl_admin: '', fecha_impl_ing: '', fecha_cierre: '' },
-      { num: 3, mcp: 'Realizar evaluación de los factores de riesgo ergonómico del puesto de trabajo (Posturas forzadas)', puesto_nombre: pt.puesto_text || '', fecha_evaluacion: formatDate(proto.fecha_medicion), nivel_riesgo: '', fecha_impl_admin: '', fecha_impl_ing: '', fecha_cierre: '' },
+      { num: 1, mcp: '', puesto_nombre: pt.puesto_text || '', fecha_evaluacion: formatDate(proto.fecha_medicion), nivel_riesgo: '', fecha_impl_admin: '', fecha_impl_ing: '', fecha_cierre: '' },
+      { num: 2, mcp: '', puesto_nombre: pt.puesto_text || '', fecha_evaluacion: formatDate(proto.fecha_medicion), nivel_riesgo: '', fecha_impl_admin: '', fecha_impl_ing: '', fecha_cierre: '' },
+      { num: 3, mcp: '', puesto_nombre: pt.puesto_text || '', fecha_evaluacion: formatDate(proto.fecha_medicion), nivel_riesgo: '', fecha_impl_admin: '', fecha_impl_ing: '', fecha_cierre: '' },
       { num: 4, mcp: '', puesto_nombre: pt.puesto_text || '', fecha_evaluacion: formatDate(proto.fecha_medicion), nivel_riesgo: '', fecha_impl_admin: '', fecha_impl_ing: '', fecha_cierre: '' },
       { num: 5, mcp: '', puesto_nombre: pt.puesto_text || '', fecha_evaluacion: formatDate(proto.fecha_medicion), nivel_riesgo: '', fecha_impl_admin: '', fecha_impl_ing: '', fecha_cierre: '' },
       { num: 6, mcp: '', puesto_nombre: pt.puesto_text || '', fecha_evaluacion: formatDate(proto.fecha_medicion), nivel_riesgo: '', fecha_impl_admin: '', fecha_impl_ing: '', fecha_cierre: '' },
@@ -1561,28 +1590,28 @@ export const generateProtocoloErgonomiaPdf = async (arg1, arg2, arg3, arg4, arg5
     setDrawColor(doc, COLOR_NEGRO);
     doc.setLineWidth(0.25);
 
-    p4Rows.forEach((m) => {
+    p4Rows.forEach((m, mIdx) => {
       const rowH = 7;
-      doc.rect(p4X, p4Y, 10, rowH, 'S');
-      drawCellText(doc, String(m.num || ''), p4X, p4Y, 10, rowH, { align: 'center', fontSize: 6.5, fontStyle: 'bold' });
+      doc.rect(p4X, p4Y, 12, rowH, 'S');
+      drawCellText(doc, String(m.num || mIdx + 1), p4X, p4Y, 12, rowH, { align: 'center', fontSize: 6.5, fontStyle: 'bold' });
 
-      doc.rect(p4X + 10, p4Y, 45, rowH, 'S');
-      drawCellText(doc, m.puesto_nombre !== undefined ? m.puesto_nombre : (pt.puesto_text || ''), p4X + 11, p4Y, 43, rowH, { align: 'left', fontSize: 6 });
+      doc.rect(p4X + 12, p4Y, 53, rowH, 'S');
+      drawCellText(doc, m.mcp || m.puesto_nombre || '', p4X + 13, p4Y, 51, rowH, { align: 'left', fontSize: 5.5, maxLines: 2 });
 
-      doc.rect(p4X + 55, p4Y, 22, rowH, 'S');
-      drawCellText(doc, m.fecha_evaluacion || '-', p4X + 55, p4Y, 22, rowH, { align: 'center', fontSize: 6 });
+      doc.rect(p4X + 65, p4Y, 22, rowH, 'S');
+      drawCellText(doc, m.fecha_evaluacion || '-', p4X + 65, p4Y, 22, rowH, { align: 'center', fontSize: 6 });
 
-      doc.rect(p4X + 77, p4Y, 18, rowH, 'S');
-      drawCellText(doc, m.nivel_riesgo || '-', p4X + 77, p4Y, 18, rowH, { align: 'center', fontSize: 6, fontStyle: 'bold' });
+      doc.rect(p4X + 87, p4Y, 18, rowH, 'S');
+      drawCellText(doc, m.nivel_riesgo || '-', p4X + 87, p4Y, 18, rowH, { align: 'center', fontSize: 6, fontStyle: 'bold' });
 
-      doc.rect(p4X + 95, p4Y, 28, rowH, 'S');
-      drawCellText(doc, m.fecha_impl_admin || '-', p4X + 95, p4Y, 28, rowH, { align: 'center', fontSize: 6 });
+      doc.rect(p4X + 105, p4Y, 25, rowH, 'S');
+      drawCellText(doc, m.fecha_impl_admin || '-', p4X + 105, p4Y, 25, rowH, { align: 'center', fontSize: 6 });
 
-      doc.rect(p4X + 123, p4Y, 28, rowH, 'S');
-      drawCellText(doc, m.fecha_impl_ing || '-', p4X + 123, p4Y, 28, rowH, { align: 'center', fontSize: 6 });
+      doc.rect(p4X + 130, p4Y, 25, rowH, 'S');
+      drawCellText(doc, m.fecha_impl_ing || '-', p4X + 130, p4Y, 25, rowH, { align: 'center', fontSize: 6 });
 
-      doc.rect(p4X + 151, p4Y, 29, rowH, 'S');
-      drawCellText(doc, m.fecha_cierre || '-', p4X + 151, p4Y, 29, rowH, { align: 'center', fontSize: 6 });
+      doc.rect(p4X + 155, p4Y, 25, rowH, 'S');
+      drawCellText(doc, m.fecha_cierre || '-', p4X + 155, p4Y, 25, rowH, { align: 'center', fontSize: 6 });
 
       p4Y += rowH;
     });

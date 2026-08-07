@@ -221,36 +221,9 @@ export const getDefaultPlanilla3Especificas = () => [
 ];
 
 export const getDefaultPlanilla4 = (puestoNombre = '', fechaEval = '') => [
-  {
-    num: 1,
-    mcp: 'Realizar evaluación de los factores de riesgo ergonómico del puesto de trabajo (Levantamiento y descenso)',
-    puesto_nombre: puestoNombre,
-    fecha_evaluacion: fechaEval,
-    nivel_riesgo: '',
-    fecha_impl_admin: '',
-    fecha_impl_ing: '',
-    fecha_cierre: ''
-  },
-  {
-    num: 2,
-    mcp: 'Realizar evaluación de los factores de riesgo ergonómico del puesto de trabajo (Transporte)',
-    puesto_nombre: puestoNombre,
-    fecha_evaluacion: fechaEval,
-    nivel_riesgo: '',
-    fecha_impl_admin: '',
-    fecha_impl_ing: '',
-    fecha_cierre: ''
-  },
-  {
-    num: 3,
-    mcp: 'Realizar evaluación de los factores de riesgo ergonómico del puesto de trabajo (Posturas forzadas)',
-    puesto_nombre: puestoNombre,
-    fecha_evaluacion: fechaEval,
-    nivel_riesgo: '',
-    fecha_impl_admin: '',
-    fecha_impl_ing: '',
-    fecha_cierre: ''
-  },
+  { num: 1, mcp: '', puesto_nombre: puestoNombre, fecha_evaluacion: fechaEval, nivel_riesgo: '', fecha_impl_admin: '', fecha_impl_ing: '', fecha_cierre: '' },
+  { num: 2, mcp: '', puesto_nombre: puestoNombre, fecha_evaluacion: fechaEval, nivel_riesgo: '', fecha_impl_admin: '', fecha_impl_ing: '', fecha_cierre: '' },
+  { num: 3, mcp: '', puesto_nombre: puestoNombre, fecha_evaluacion: fechaEval, nivel_riesgo: '', fecha_impl_admin: '', fecha_impl_ing: '', fecha_cierre: '' },
   { num: 4, mcp: '', puesto_nombre: puestoNombre, fecha_evaluacion: fechaEval, nivel_riesgo: '', fecha_impl_admin: '', fecha_impl_ing: '', fecha_cierre: '' },
   { num: 5, mcp: '', puesto_nombre: puestoNombre, fecha_evaluacion: fechaEval, nivel_riesgo: '', fecha_impl_admin: '', fecha_impl_ing: '', fecha_cierre: '' },
   { num: 6, mcp: '', puesto_nombre: puestoNombre, fecha_evaluacion: fechaEval, nivel_riesgo: '', fecha_impl_admin: '', fecha_impl_ing: '', fecha_cierre: '' },
@@ -3384,9 +3357,8 @@ export default function ProtocoloForm({
                           <table className="w-full text-xs text-left border-collapse">
                             <thead className="bg-slate-50">
                               <tr className="border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                                <th className="p-2 text-center w-8">Nº</th>
-                                <th className="p-2 min-w-[150px]">M.C.P.</th>
-                                <th className="p-2 w-36">Nombre del Puesto</th>
+                                <th className="p-2 text-center w-12 leading-tight">Nº<br/><span className="text-[9px]">M.C.P.</span></th>
+                                <th className="p-2 text-center min-w-[200px]">Nombre del Puesto</th>
                                 <th className="p-2 text-center w-32">Fecha de Evaluación</th>
                                 <th className="p-2 text-center w-28">Nivel de riesgo</th>
                                 <th className="p-2 text-center w-32">Fecha impl. medida Admin.</th>
@@ -3407,20 +3379,6 @@ export default function ProtocoloForm({
                                       onChange={(e) => {
                                         const updatedP4 = (p.p4_medidas || getDefaultPlanilla4(p.puesto_text || '', fechaMedicion ? formatAsDateInput(fechaMedicion) : '')).map((item, idx) =>
                                           idx === m4Idx ? { ...item, mcp: e.target.value } : item
-                                        );
-                                        setPuntos(puntos.map(x => x.id === p.id ? { ...x, p4_medidas: updatedP4 } : x));
-                                      }}
-                                    />
-                                  </td>
-                                  <td className="p-1.5">
-                                    <AppInput
-                                      disabled={!canEdit}
-                                      placeholder="Nombre del puesto..."
-                                      className="h-7 text-xs bg-white"
-                                      value={m4.puesto_nombre !== undefined ? m4.puesto_nombre : (p.puesto_text || '')}
-                                      onChange={(e) => {
-                                        const updatedP4 = (p.p4_medidas || getDefaultPlanilla4(p.puesto_text || '', fechaMedicion ? formatAsDateInput(fechaMedicion) : '')).map((item, idx) =>
-                                          idx === m4Idx ? { ...item, puesto_nombre: e.target.value } : item
                                         );
                                         setPuntos(puntos.map(x => x.id === p.id ? { ...x, p4_medidas: updatedP4 } : x));
                                       }}
