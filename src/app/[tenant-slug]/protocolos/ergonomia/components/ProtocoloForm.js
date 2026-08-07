@@ -3115,26 +3115,7 @@ export default function ProtocoloForm({
                                         );
                                       })}
                                     </tbody>
-                                    {(() => {
-                                      const sumResult = sumarTiemposTarea(t);
-                                      if (!sumResult) return null;
-                                      return (
-                                        <tfoot className="bg-slate-50/40 border-t border-slate-100 block md:table-footer-group">
-                                          <tr className="flex flex-col md:table-row w-full font-bold text-slate-700">
-                                            <td colSpan={2} className="p-2.5 text-left md:text-right uppercase tracking-wider text-[9px] text-slate-500 block md:table-cell">
-                                              Tiempo de Exposición Total:
-                                            </td>
-                                            <td className="p-2.5 text-center flex items-center justify-between md:justify-center gap-2 block md:table-cell">
-                                              <span className="md:hidden text-[10px] font-bold text-slate-400 uppercase w-20 shrink-0 text-left">Total Tarea:</span>
-                                              <span className="inline-flex px-2.5 py-1 rounded-md bg-blue-50 text-[#468DFF] text-xs font-extrabold border border-blue-100/50 shadow-sm">
-                                                {sumResult.formatted} ({sumResult.totalHoras})
-                                              </span>
-                                            </td>
-                                            <td className="hidden md:table-cell p-2.5"></td>
-                                          </tr>
-                                        </tfoot>
-                                      );
-                                    })()}
+
                                   </table>
                                   </div>
 
@@ -4147,61 +4128,32 @@ export default function ProtocoloForm({
             <p className="text-xs font-semibold text-slate-600">
               Se detectaron los siguientes datos no registrados en el perfil del establecimiento. ¿Desea guardarlos para futuras mediciones?
             </p>
-            <div className="max-h-[160px] overflow-y-auto border border-slate-100 rounded-xl p-3 bg-slate-50/50 space-y-2 text-xs">
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 leading-relaxed max-h-48 overflow-y-auto space-y-1.5 font-medium">
               {syncQueue.map((item, idx) => (
-                <div key={idx} className="flex justify-between items-center gap-2 border-b border-slate-100 pb-1.5 last:border-0 last:pb-0">
-                  <span className="font-bold text-slate-700">{item.label}</span>
-                  <span className="text-slate-500 font-medium">{item.value}</span>
+                <div key={idx} className="flex items-start gap-2">
+                  <span className="text-[#468DFF] font-bold">•</span>
+                  <span>{item.message}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2">
-            <AppButton
-              variant="outline"
-              onClick={() => {
-                setIsSyncOpen(false);
-                executeSave(estSectoresLocal);
-              }}
-              className="text-xs py-1.5 h-[34px]"
+          <div className="flex flex-col sm:flex-row justify-end gap-2.5 pt-2">
+            <button
+              type="button"
+              onClick={() => handleSyncConfirm('skip')}
+              className="px-4 py-2.5 border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-bold rounded-xl transition-all cursor-pointer text-center"
             >
-              Omitir todo
-            </AppButton>
-            <AppButton
-              variant="primary"
-              onClick={async () => {
-                setIsSyncOpen(false);
-                setSaveLoading(true);
-                try {
-                  const updatedSectores = [...estSectoresLocal];
-                  
-                  for (let i = 0; i < syncQueue.length; i++) {
-                    const qItem = syncQueue[i];
-                    if (qItem.type === 'sector') {
-                      const exists = updatedSectores.some(s => s.denominacion.toLowerCase() === qItem.value.toLowerCase());
-                      if (!exists) {
-                        updatedSectores.push({
-                          id: 's-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
-                          denominacion: qItem.value,
-                          puestos: []
-                        });
-                      }
-                    }
-                  }
-                  
-                  // Guardar sincronizados
-                  await executeSave(updatedSectores);
-                } catch (err) {
-                  console.error('Error in sync wizard save:', err);
-                  globalToast.toast('Error al sincronizar datos con el perfil.', 'error');
-                  setSaveLoading(false);
-                }
-              }}
-              className="text-xs py-1.5 h-[34px]"
+              Solo guardar en este protocolo
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSyncConfirm('save_profile')}
+              className="px-4 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold rounded-xl shadow-md shadow-[#468DFF]/10 transition-all cursor-pointer text-center"
             >
-              Guardar y Sincronizar
-            </AppButton>
+              Guardar todos en el perfil ({syncQueue.length})
+            </button>
           </div>
         </div>
       </div>

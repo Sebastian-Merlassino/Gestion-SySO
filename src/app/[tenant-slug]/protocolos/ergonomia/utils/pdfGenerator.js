@@ -249,6 +249,71 @@ const CUESTIONARIOS_PLANILLA2 = {
   }
 };
 
+const sumExposureTimes = (tList, factorKey) => {
+  let totalMinutes = 0;
+  let validCount = 0;
+  const rawStrings = [];
+
+  (tList || []).forEach(t => {
+    const isIdentified = t[`f_${factorKey}_identificado`] === 'si';
+    const timeStr = (t[`f_${factorKey}_tiempo`] || '').trim();
+
+    if ((isIdentified || timeStr) && timeStr) {
+      rawStrings.push(timeStr);
+      const str = timeStr.toLowerCase().replace(',', '.');
+
+      let mins = 0;
+      let matched = false;
+
+      const combinedMatch = str.match(/(\d+(?:\.\d+)?)\s*(?:hs|h|horas?)\s*(\d+(?:\.\d+)?)\s*(?:min|mins|minutos?)/);
+      if (combinedMatch) {
+        mins = (parseFloat(combinedMatch[1]) * 60) + parseFloat(combinedMatch[2]);
+        matched = true;
+      } else {
+        const hourMatch = str.match(/(\d+(?:\.\d+)?)\s*(?:hs|h|horas?)/);
+        if (hourMatch) {
+          mins = parseFloat(hourMatch[1]) * 60;
+          matched = true;
+        } else {
+          const minMatch = str.match(/(\d+(?:\.\d+)?)\s*(?:min|mins|minutos?|m)/);
+          if (minMatch) {
+            mins = parseFloat(minMatch[1]);
+            matched = true;
+          } else {
+            const numMatch = str.match(/^(\d+(?:\.\d+)?)$/);
+            if (numMatch) {
+              const val = parseFloat(numMatch[1]);
+              if (val <= 24) mins = val * 60;
+              else mins = val;
+              matched = true;
+            }
+          }
+        }
+      }
+
+      if (matched && !isNaN(mins)) {
+        totalMinutes += mins;
+        validCount++;
+      }
+    }
+  });
+
+  if (validCount > 0 && totalMinutes > 0) {
+    const roundedMins = Math.round(totalMinutes * 100) / 100;
+    if (roundedMins % 60 === 0) {
+      return `${roundedMins / 60} hs`;
+    } else if (roundedMins > 60) {
+      const hrs = Math.floor(roundedMins / 60);
+      const remMins = Math.round(roundedMins % 60);
+      return remMins > 0 ? `${hrs} hs ${remMins} min` : `${hrs} hs`;
+    } else {
+      return `${roundedMins} min`;
+    }
+  }
+
+  return rawStrings.join(', ') || '-';
+};
+
 export const generateProtocoloErgonomiaPdf = async (arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) => {
   let protocolo, empresa, establecimiento, userProfile, puntos, adjuntos;
 
@@ -1102,9 +1167,8 @@ export const generateProtocoloErgonomiaPdf = async (arg1, arg2, arg3, arg4, arg5
       doc.rect(tblX + 100, rowY, 20, rowH, 'S');
       drawCellText(doc, tList[2] ? (hasT3 ? 'X' : '-') : '-', tblX + 100, rowY, 20, rowH, { align: 'center', fontSize: 7.5 });
 
-      // Col 3: Exposure time
-      const timesList = tList.map((t) => (t[`f_${f.key}_tiempo`] || '').trim()).filter(Boolean);
-      const expTime = timesList.join(', ') || '-';
+      // Col 3: Exposure time (Summed across tasks)
+      const expTime = sumExposureTimes(tList, f.key);
       doc.rect(tblX + 120, rowY, 30, rowH, 'S');
       drawCellText(doc, expTime, tblX + 120, rowY, 30, rowH, { align: 'center', fontSize: 6.5, maxLines: 2 });
 

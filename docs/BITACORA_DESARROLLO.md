@@ -62,6 +62,9 @@
     21. *Actualización de Referencia Legal de Portada:* Se ajustó la primera norma de la carátula a `"ANEXO I - RESOLUCIÓN 295 / 2003"` en `pdfGenerator.js`.
     22. *Renderizado de Fecha de Evaluación sobre Paginación:* Se actualizó `drawFooter` en `pdfGenerator.js` para dibujar la fecha alineada a la derecha directamente por encima del número de página a partir de la Hoja 4 (`pageNum >= 4`).
     23. *Remoción de Etiqueta "Fecha de evaluación:":* Se quitó el prefijo de texto en `drawFooter`, dejando únicamente el valor formateado de la fecha (ej. `DD/MM/AAAA`) ubicado sobre el número de página.
+    24. *Suma Inteligente de Tiempos de Exposición en Planilla 1:* Se creó la función auxiliar `sumExposureTimes` en `pdfGenerator.js` para analizar y sumar automáticamente los tiempos de exposición de las tareas evaluadas por factor (ej. `1 hs + 1 hs + 1 hs = 3 hs`, `20 min + 20 min + 20 min = 1 hs`, `15 min + 15 min + 15 min = 45 min`), mostrando el acumulado total en la columna correspondiente.
+    25. *Eliminación del Bloque "Tiempo de Exposición Total" en Formulario UI:* Se removió la fila del pie de tabla (`tfoot`) que mostraba el cuadro resumen de tiempo total por tarea en `ProtocoloForm.js`.
+    26. *Estandarización del Modal de Sincronización con Perfil de Establecimiento:* Se actualizó el componente del asistente de sincronización en `ProtocoloForm.js` al alinearlo 100% con los protocolos de Ruido e Iluminación (renderizado de `item.message` con viñetas en el recuadro gris y botones estandarizados *"Solo guardar en este protocolo"* y *"Guardar todos en el perfil (N)"*).
 
 ### Archivos Modificados
 - `[NEW] supabase/migrations/20260818006000_add_p4_medidas_to_ergonomia_puntos.sql`
