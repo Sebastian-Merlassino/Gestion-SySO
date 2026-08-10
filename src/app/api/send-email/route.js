@@ -10,15 +10,15 @@ const sendEmailSchema = z.object({
     z.string().min(1, 'El destinatario es requerido.'),
     z.array(z.string().email('Dirección de correo electrónico inválida.'))
   ]),
-  filePath: z.string().min(1, 'El path del archivo adjunto es requerido.'),
-  companyName: z.string().optional(),
-  establishmentName: z.string().optional(),
-  date: z.string().optional(),
-  inspectorName: z.string().optional(),
-  tenantLogoBase64: z.string().nullable().optional(),
-  tenantName: z.string().optional(),
-  documentType: z.string().optional(), // can be 'aviso_riesgo' or others
-  checklistName: z.string().optional()
+  filePath: z.string().min(1, 'El path del archivo adjunto es requerido.').max(500),
+  companyName: z.string().max(200).optional(),
+  establishmentName: z.string().max(200).optional(),
+  date: z.string().max(100).optional(),
+  inspectorName: z.string().max(200).optional(),
+  tenantLogoBase64: z.string().max(2 * 1024 * 1024, 'El logo excede el tamaño máximo permitido de 2 MB.').nullable().optional(),
+  tenantName: z.string().max(200).optional(),
+  documentType: z.string().max(100).optional(), // can be 'aviso_riesgo' or others
+  checklistName: z.string().max(200).optional()
 });
 
 export async function POST(request) {
@@ -194,16 +194,21 @@ export async function POST(request) {
       try {
         const mimeMatch = tenantLogoBase64.match(/^data:(image\/[a-zA-Z+.-]+);base64,/);
         if (mimeMatch) {
-          const contentType = mimeMatch[1];
-          const base64Data = tenantLogoBase64.substring(mimeMatch[0].length);
-          const logoBuffer = Buffer.from(base64Data, 'base64');
-          logoCid = 'tenantlogo';
-          attachments.push({
-            filename: `logo.${contentType.split('/')[1] || 'png'}`,
-            content: logoBuffer,
-            contentType: contentType,
-            cid: logoCid,
-          });
+          const contentType = mimeMatch[1].toLowerCase();
+          const allowedImageTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+          if (allowedImageTypes.includes(contentType)) {
+            const base64Data = tenantLogoBase64.substring(mimeMatch[0].length);
+            const logoBuffer = Buffer.from(base64Data, 'base64');
+            if (logoBuffer.length <= 1.5 * 1024 * 1024) {
+              logoCid = 'tenantlogo';
+              attachments.push({
+                filename: `logo.${contentType.split('/')[1] || 'png'}`,
+                content: logoBuffer,
+                contentType: contentType,
+                cid: logoCid,
+              });
+            }
+          }
         }
       } catch (logoErr) {
         console.error('[Email Route] Error al procesar el adjunto del logo:', logoErr);

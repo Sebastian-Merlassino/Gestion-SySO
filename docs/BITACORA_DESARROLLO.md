@@ -1,5 +1,61 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-10] Remediación de Seguridad: Hardening de Webhook Mercado Pago y Sanitización de Email Payload (BAS-01 y BAS-02)
+
+### Resumen de Cambios
+- **BAS-01 — Verificación Estricta de Firma de Webhook en Producción/Staging (`src/app/api/webhooks/mercadopago/route.js`):**
+  - Se configuró el aborto estricto con error HTTP 500 si la variable `MERCADO_PAGO_WEBHOOK_SECRET` no está presente en entornos activos desplegados (Vercel Prod/Staging o entornos donde `process.env.VERCEL_ENV` esté presente), permitiendo la omisión con advertencia únicamente en desarrollo puramente local.
+- **BAS-02 — Acotamiento de Payload y Validación de Logo en Envío de Correos (`src/app/api/send-email/route.js`):**
+  - Se aplicaron límites estrictos de longitud (`.max(200)` / `.max(500)`) en el schema de **Zod** (`sendEmailSchema`) para los parámetros del correo.
+  - Se restringieron los tipos MIME válidos para logos adjuntos (`image/png`, `image/jpeg`, `image/jpg`, `image/webp`) y se fijó un límite máximo de buffer de 1.5 MB para evitar desbordamientos en la carga útil SMTP.
+
+### Archivos Modificados
+- `[MODIFY] src/app/api/webhooks/mercadopago/route.js`
+- `[MODIFY] src/app/api/send-email/route.js`
+- `[MODIFY] docs/security/SECURITY_FULL_AUDIT.md`
+- `[MODIFY] docs/security/SECURITY_REMEDIATION_PLAN.md`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-10] Remediación de Seguridad: Sanitización de PII y Mensajes de Error en Módulo IA (MED-01 y MED-02)
+
+### Resumen de Cambios
+- **MED-01 — Anonimización y Sanitización Previa de PII en Prompts IA (`src/app/api/ai/refine-text/route.js`):**
+  - Se implementó el helper `sanitizePII(str)` para detectar y enmascarar secuencias numéricas correspondientes a documentos personales (DNI de 7 u 8 dígitos, CUIT/CUIL de 11 dígitos) convirtiéndolos en etiquetas de reserva `[DNI_RESERVADO]` / `[CUIT_RESERVADO]`.
+  - La función se aplica tanto al texto ingresado (`text`) como al contexto (`context`) antes de estructurar el prompt enviado a la API de Google Gemini, previniendo la transmisión involuntaria de PII a servidores externos.
+- **MED-02 — Sanitización de Respuestas de Error HTTP en API de IA (`src/app/api/ai/*`):**
+  - Se eliminó la interpolación directa de `errInfo.message` proveniente de excepciones del SDK/API en las respuestas JSON 500 de los endpoints `/api/ai/refine-text`, `/api/ai/generate-accident-report` y `/api/ai/transcribe-audio`.
+  - Las trazas y detalles técnicos se registran exclusivamente en consola/logs de servidor (`[refine-text AI Error]`, etc.), mientras que al cliente final se le retorna una respuesta limpia y genérica (`"Ocurrió un error al comunicarse con el servicio de IA. Por favor, intente nuevamente."`).
+
+### Archivos Modificados
+- `[MODIFY] src/app/api/ai/refine-text/route.js`
+- `[MODIFY] src/app/api/ai/generate-accident-report/route.js`
+- `[MODIFY] src/app/api/ai/transcribe-audio/route.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-10] Auditoría Completa de Seguridad — Gestión SySO SaaS (`docs/security/SECURITY_FULL_AUDIT.md`)
+
+### Resumen de Cambios
+- **Revisión Integral de Seguridad:**  
+  Se realizó la auditoría completa del proyecto sin modificar código funcional ni configuraciones de entorno, abarcando 60 dimensiones de análisis:
+  - **Aislamiento Multi-Tenant y RLS:** Confirmado aislamiento de datos en PostgreSQL mediante Supabase RLS y la función `get_current_tenant_id()`. Validada la presencia de triggers `BEFORE UPDATE` que impiden modificaciones maliciosas desde el cliente en `profiles.role`, `profiles.tenant_id`, `profiles.empresa_id` y `tenants.plan_id`.
+  - **Pasarela de Pagos (Mercado Pago):** Verificada la autenticación de webhooks mediante firma HMAC-SHA256 (`x-signature` / `x-request-id`) con comparación segura contra timing attacks (`crypto.timingSafeEqual`). Confirmada la idempotencia mediante la tabla `pagos_procesados` y la reactivación/degradación de suscripciones basada en consultas de verificación server-side contra la API de Mercado Pago.
+  - **Módulo de IA (Google Gemini API):** Verificada la protección del secreto `GEMINI_API_KEY` exclusivamente en servidor. Auditada la resistencia a Prompt Injection en el `systemInstruction` de refino de texto y validado el rate limit en middleware de 20 solicitudes cada 15 min por IP.
+  - **Seguridad en Endpoints y Formularios:** Auditados schemas con Zod en APIs mutantes, validaciones de orígenes CSRF en producción y rate limits distribuidos en middleware.
+- **Entregables Creados:**
+  - `docs/security/SECURITY_FULL_AUDIT.md`: Informe principal de auditoría detallado.
+  - `docs/security/SECURITY_REMEDIATION_PLAN.md`: Plan de remediación priorizado por etapas.
+
+### Archivos Modificados / Creados
+- `[NEW] docs/security/SECURITY_FULL_AUDIT.md`
+- `[NEW] docs/security/SECURITY_REMEDIATION_PLAN.md`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
 ## [2026-08-10] Rediseño de Control de Duración (Estilo Ergonomía) y Alineación de Etiquetas (`src/app/[tenant-slug]/capacitaciones-online/page.js`)
 
 ### Resumen de Cambios

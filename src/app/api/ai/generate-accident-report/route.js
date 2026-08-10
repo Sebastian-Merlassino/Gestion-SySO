@@ -136,9 +136,8 @@ ${additionalComments || 'Ninguna'}
         },
       });
     } catch (errInfo) {
-      console.error('Error al llamar al helper de Gemini en generate-accident-report:', errInfo);
+      console.error('[generate-accident-report AI Error]:', errInfo);
       const status = errInfo.status || 500;
-      const message = errInfo.message || 'Error desconocido';
 
       if (status === 429) {
         return NextResponse.json(
@@ -147,9 +146,10 @@ ${additionalComments || 'Ninguna'}
         );
       }
 
+      // Sanitización de mensaje de error para evitar filtración de trazas internas (MED-02)
       return NextResponse.json(
-        { error: `Error en la comunicación con el servicio de IA: ${message}` },
-        { status }
+        { error: 'Ocurrió un error al comunicarse con el servicio de IA para generar el informe. Por favor, intente nuevamente.' },
+        { status: status >= 400 && status < 600 ? status : 500 }
       );
     }
     const rawReportText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';

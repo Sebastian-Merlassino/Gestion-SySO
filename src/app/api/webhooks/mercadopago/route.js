@@ -84,12 +84,12 @@ export async function POST(request) {
     const webhookSecret = process.env.MERCADO_PAGO_WEBHOOK_SECRET;
 
     if (!webhookSecret) {
-      const isProd = process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging';
-      if (isProd) {
-        console.error('[Webhook MP Error] MERCADO_PAGO_WEBHOOK_SECRET no está configurada en producción.');
+      const isDev = process.env.NODE_ENV === 'development' && !process.env.VERCEL_ENV;
+      if (!isDev) {
+        console.error('[Webhook MP Error] MERCADO_PAGO_WEBHOOK_SECRET no está configurada en el entorno activo (Producción / Staging).');
         return NextResponse.json({ error: 'Error de configuración en el servidor de pagos.' }, { status: 500 });
       }
-      console.warn('⚠️ [Webhook MP] Ignorando verificación de firma en desarrollo por falta de MERCADO_PAGO_WEBHOOK_SECRET.');
+      console.warn('⚠️ [Webhook MP] Ignorando verificación de firma en desarrollo local por falta de MERCADO_PAGO_WEBHOOK_SECRET.');
     } else {
       // Validar firma
       const isValid = verifySignature(request, body, webhookSecret);
