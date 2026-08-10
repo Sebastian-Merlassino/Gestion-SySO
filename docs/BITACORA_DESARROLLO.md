@@ -1,5 +1,40 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-10] Visor PDF Modo Filmina con PDF.js — Sin Scroll Continuo, Navegación Real por Página
+
+### Resumen de Cambios
+- **Nuevo componente `src/components/ui/PdfSlideViewer.js`:**
+  - Renderiza PDFs directamente en un `<canvas>` HTML usando `pdfjs-dist` (Mozilla PDF.js).
+  - Una página visible a la vez, sin scroll continuo, idéntico a PowerPoint en modo presentación.
+  - Navega exactamente a la página que indica el prop `currentPage` (pasado por el padre).
+  - Informa el total de páginas al padre via callback `onTotalPages`.
+  - Cargado dinámicamente con `next/dynamic` + `ssr: false` para no incrementar el bundle de otras rutas.
+- **Modificación de `src/app/capacitar/[token]/page.js`:**
+  - Reemplaza el iframe de GView para PDFs por `<PdfSlideViewer>` con control real de página.
+  - Google Slides ahora usa embed URL con parámetro `?slide=N` para navegar por diapositiva.
+  - Google Docs y Drive mantienen iframe (sin control de página, comportamiento nativo de Google).
+  - Botón "Siguiente" queda deshabilitado al llegar a la última filmina.
+  - `hasCompletedMaterial` se activa automáticamente al navegar hasta la última página (no manualmente).
+  - Modal pantalla completa usa el mismo `renderViewer()` — comparte instancia y estado con la vista embebida.
+  - Barra de navegación muestra `Filmina X / Y` con total de páginas.
+  - Corrección de bug: `directError`/`directData` indefinidos en `fetchCapacitacion`.
+- **Instalación de dependencia `pdfjs-dist` v4.x.**
+
+### Archivos Modificados
+- `[NEW] src/components/ui/PdfSlideViewer.js`
+- `[MODIFY] src/app/capacitar/[token]/page.js`
+- `[MODIFY] package.json` — pdfjs-dist añadido
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Commit
+`eeca35a` — feat: visor PDF modo filmina con PDF.js, sin scroll continuo, firma auto-habilitada al finalizar
+
+### Riesgos Residuales
+- Para Google Drive (PPTX no convertido), el iframe sigue mostrando el documento completo. Se recomienda usar Google Slides o PDF para experiencia de filmina perfecta.
+- La firma del worker de PDF.js usa CDN de cdnjs; si el CDN está caído, el visor fallará. Alternativa futura: copiar worker a `/public/`.
+
+---
+
 ## [2026-08-10] Renderizado PDF con Google GView (Sin Scroll Continuo) y Desbloqueo Estricto de Firma
 
 ### Resumen de Cambios
