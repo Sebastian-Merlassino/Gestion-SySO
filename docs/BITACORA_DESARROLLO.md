@@ -3,9 +3,10 @@
 ## [2026-08-10] Actualización de la Pantalla de Asistencia Registrada Exitosamente (`src/app/capacitar/[token]/page.js`)
 
 ### Resumen de Cambios
-- **Incorporación del Logo Principal del Administrador:**  
-  Se actualizó la RPC `get_capacitacion_publica` en la base de datos para realizar `LEFT JOIN public.tenants t ON t.id = c.tenant_id` y retornar `tenant_logo_url`.
-  - El contenedor principal de la vista de éxito (`submittedSuccess`) ahora renderiza en su encabezado el logo corporativo principal cargado en el perfil del usuario administrador (`tenant_logo_url` con fallback a `/brand/logo-primary.png`).
+- **Carga Exclusiva del Logo del Administrador:**  
+  Se actualizó la RPC `get_capacitacion_publica` en la base de datos para realizar `LEFT JOIN public.tenants t ON t.id = c.tenant_id` y retornar `COALESCE(t.logo_1_url, t.logo_2_url) AS tenant_logo_url`.
+  - El contenedor principal de la vista de éxito (`submittedSuccess`) renderiza en su encabezado **únicamente el logotipo corporativo oficial cargado por el usuario administrador** en su perfil (`capacitacion.tenant_logo_url`).
+  - Se eliminó el fallback al logo por defecto de la app (`/brand/logo-primary.png`), garantizando que no se muestre el logo institucional genérico si el administrador ha personalizado su marca.
 - **Ajuste del Texto Confirmatorio:**  
   Se modificó la descripción confirmatoria a: *"Muchas gracias **[Nombre]**. Tu constancia de capacitación de higiene y seguridad para la empresa **[Empresa]** se ha firmado y registrado exitosamente."*
 - **Renglón de Nombre y Apellido en Tarjeta Resumen:**  
