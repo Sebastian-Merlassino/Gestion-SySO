@@ -1,21 +1,22 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-10] Alineación Estética y Colores de Marca en el Modal de Compartir Capacitación
+## [2026-08-10] Actualización de Etiquetas "Enviar" y Resolución de URLs Firmadas en Visor Interactivo
 
 ### Resumen de Cambios
-- **Diseño Visual de Marca (`src/app/[tenant-slug]/capacitaciones-online/page.js`):**
-  - **Pestañas Estandarizadas (`Tabs`):** Se aplicaron los colores primarios de la marca (`#468DFF`, `#0511F2`) con sombra suave `shadow-md shadow-[#468DFF]/20` para la pestaña activa y fondos limpios `bg-slate-100/80` para las inactivas.
-  - **Botones Primarios de Acción:** Todos los botones del modal (*Despachar por WhatsApp*, *Despachar por Correo Electrónico* y *Copiar Enlace al Portapapeles*) adoptaron el estilo primario estandarizado:
-    - Relleno: `#468DFF`
-    - Texto/Borde: `#FFFFFF`
-    - Hover: `#0511F2`
-    - Sombra: `shadow-md shadow-[#468DFF]/20`
-  - **Campos e Inputs:** Enfocado activo con borde `#468DFF` y anillo de resplandor `ring-2 ring-[#468DFF]/20`.
+- **Etiquetas de Botones Unificadas (`src/app/[tenant-slug]/capacitaciones-online/page.js`):**
+  - Se actualizaron los botones del modal de compartir reemplazando *"Despachar por WhatsApp"* y *"Despachar por Correo Electrónico"* por **"Enviar por WhatsApp"** y **"Enviar por Correo Electrónico"**.
+- **Visualización de Documentos Locales en Portal del Trabajador (`src/app/capacitar/[token]/page.js`):**
+  - **Generación Garantizada de Signed URLs:** Se aseguró que al cargar una capacitación con un documento PDF adjunto guardado en Supabase Storage (ruta relativa), la URL firmada (`documentSignedUrl`) se genere de forma unificada tanto para la lectura por RPC como por consulta directa.
+  - **Manejo de Estado de Carga:** Se agregó un estado de carga en el iframe mientras la URL firmada se resuelve, evitando peticiones de rutas relativas erróneas (`/capacitar/[token]/archivo.pdf` 404).
+- **Ajuste de Content Security Policy (`src/middleware.js`):**
+  - Se actualizó el encabezado CSP a `"frame-ancestors 'self'"` para permitir la incrustación limpia de visores e iframes de la misma aplicación sin bloqueos de seguridad.
 - **Verificación:**
   - Compilación de producción ejecutada y aprobada (`✓ Compiled successfully`).
 
 ### Archivos Modificados
 - `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
+- `[MODIFY] src/app/capacitar/[token]/page.js`
+- `[MODIFY] src/middleware.js`
 - `[MODIFY] docs/BITACORA_DESARROLLO.md`
 
 ---

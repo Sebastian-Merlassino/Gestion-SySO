@@ -56,39 +56,11 @@ export default function PublicCapacitacionPage({ params }) {
           p_token: token
         });
 
+        let loadedCap = null;
         if (!rpcError && data && data.success) {
-          setCapacitacion(data);
-          if (data.target_puesto) {
-            setPuesto(data.target_puesto);
-          }
-          setLoading(false);
-          return;
-        }
-
-        // 2. Fallback de lectura directa por token (si la RPC no estuviese aplicada localmente aún)
-        const { data: directData, error: directError } = await supabase
-          .from('capacitaciones_online')
-          .select(`
-            id,
-            titulo,
-            descripcion,
-            asignacion_tipo,
-            target_puesto,
-            empleados_asignados,
-            material_tipo,
-            video_url,
-            document_url,
-            estado,
-            empresas ( razon_social )
-          `)
-          .eq('access_token', token)
-          .eq('estado', 'activa')
-          .single();
-
-        if (directError || !directData) {
-          setError('La capacitación solicitada no existe, ha expirado o se encuentra inactiva.');
-        } else {
-          setCapacitacion({
+          loadedCap = data;
+        } else if (!directError && directData) {
+          loadedCap = {
             id: directData.id,
             titulo: directData.titulo,
             descripcion: directData.descripcion,
@@ -98,12 +70,22 @@ export default function PublicCapacitacionPage({ params }) {
             video_url: directData.video_url,
             document_url: directData.document_url,
             empresa_nombre: directData.empresas?.razon_social || 'Gestión SySO'
-          });
-          if (directData.document_url && !directData.document_url.startsWith('http://') && !directData.document_url.startsWith('https://')) {
+          };
+        }
+
+        if (loadedCap) {
+          setCapacitacion(loadedCap);
+          if (loadedCap.target_puesto) {
+            setPuesto(loadedCap.target_puesto);
+          }
+
+          // Firmar URL si el documento es una ruta relativa en Supabase Storage
+          const docUrl = loadedCap.document_url;
+          if (docUrl && !docUrl.startsWith('http://') && !docUrl.startsWith('https://')) {
             try {
               const { data: signedData } = await supabase.storage
                 .from('documents')
-                .createSignedUrl(directData.document_url, 7200);
+                .createSignedUrl(docUrl, 7200);
               if (signedData?.signedUrl) {
                 setDocumentSignedUrl(signedData.signedUrl);
               }
@@ -111,6 +93,8 @@ export default function PublicCapacitacionPage({ params }) {
               console.warn('No se pudo firmar URL del documento:', e);
             }
           }
+        } else {
+          setError('La capacitación solicitada no existe, ha expirado o se encuentra inactiva.');
         }
       } catch (err) {
         console.error('Error al cargar la capacitación:', err);
@@ -128,10 +112,22 @@ export default function PublicCapacitacionPage({ params }) {
     if (!url) return null;
     const target = signedUrl || url;
 
+    // Si es una ruta relativa y signedUrl todavía no cargó, retornar estado cargando
+    const isRelative = !target.startsWith('http://') && !target.startsWith('https://');
+    if (isRelative) {
+      return {
+        loading: true,
+        type: 'pending',
+        embedUrl: null,
+        rawUrl: null
+      };
+    }
+
     // 1. Google Presentation / Slides
     const slidesMatch = target.match(/\/presentation\/d\/([a-zA-Z0-9_-]+)/);
     if (slidesMatch) {
       return {
+        loading: false,
         type: 'slides',
         embedUrl: `https://docs.google.com/presentation/d/${slidesMatch[1]}/embed?start=false&loop=false&delayms=3000`,
         rawUrl: target
@@ -142,6 +138,7 @@ export default function PublicCapacitacionPage({ params }) {
     const docMatch = target.match(/\/document\/d\/([a-zA-Z0-9_-]+)/);
     if (docMatch) {
       return {
+        loading: false,
         type: 'docs',
         embedUrl: `https://docs.google.com/document/d/${docMatch[1]}/preview`,
         rawUrl: target
@@ -152,6 +149,7 @@ export default function PublicCapacitacionPage({ params }) {
     const driveMatch = target.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || target.match(/\/d\/([a-zA-Z0-9_-]+)/);
     if (driveMatch) {
       return {
+        loading: false,
         type: 'drive',
         embedUrl: `https://drive.google.com/file/d/${driveMatch[1]}/preview`,
         rawUrl: target
@@ -160,6 +158,7 @@ export default function PublicCapacitacionPage({ params }) {
 
     // 4. Direct PDF URL / Supabase Storage PDF
     return {
+      loading: false,
       type: 'pdf',
       embedUrl: target,
       rawUrl: target
@@ -426,15 +425,17 @@ export default function PublicCapacitacionPage({ params }) {
                   <FileText className="w-5 h-5 text-[#468DFF]" />
                   Material de Lectura / Presentación Adjunta
                 </h2>
-                <a
-                  href={viewer.rawUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs font-bold text-[#468DFF] hover:underline flex items-center gap-1"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  Abrir en ventana completa
-                </a>
+                {viewer.rawUrl && (
+                  <a
+                    href={viewer.rawUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-bold text-[#468DFF] hover:underline flex items-center gap-1"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    Abrir en ventana completa
+                  </a>
+                )}
               </div>
 
               <p className="text-xs text-slate-500">
@@ -443,13 +444,20 @@ export default function PublicCapacitacionPage({ params }) {
 
               {/* Visor Interactivo Iframe Embed (Slides/PDF) */}
               <div className="aspect-[4/3] sm:aspect-[16/10] w-full rounded-xl overflow-hidden bg-slate-900 border border-slate-200 shadow-inner relative">
-                <iframe
-                  src={viewer.embedUrl}
-                  title="Visor de Presentación y Documentos"
-                  className="w-full h-full border-0"
-                  allow="autoplay; fullscreen"
-                  allowFullScreen
-                />
+                {viewer.loading ? (
+                  <div className="w-full h-full flex flex-col items-center justify-center text-white space-y-2">
+                    <Loader2 className="w-8 h-8 animate-spin text-[#468DFF]" />
+                    <p className="text-xs font-semibold text-slate-300">Cargando presentación...</p>
+                  </div>
+                ) : (
+                  <iframe
+                    src={viewer.embedUrl}
+                    title="Visor de Presentación y Documentos"
+                    className="w-full h-full border-0"
+                    allow="autoplay; fullscreen"
+                    allowFullScreen
+                  />
+                )}
               </div>
             </div>
           );
