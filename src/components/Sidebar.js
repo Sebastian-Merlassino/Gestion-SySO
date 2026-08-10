@@ -59,6 +59,27 @@ export default function Sidebar({
     }
   }, [currentSection]);
 
+  const onLogoutClick = async () => {
+    if (typeof handleLogout === 'function') {
+      try {
+        await handleLogout();
+        return;
+      } catch (err) {
+        console.error('Error al ejecutar handleLogout prop:', err);
+      }
+    }
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error('Error al cerrar sesión con Supabase:', err);
+    }
+    if (typeof window !== 'undefined') {
+      sessionStorage.clear();
+      localStorage.removeItem('user-profile');
+      window.location.href = '/login';
+    }
+  };
+
   const handleShareApp = async () => {
     const shareData = {
       title: 'Gestión SySO',
@@ -365,7 +386,7 @@ export default function Sidebar({
                 <span className="text-[10px] text-white/40 block truncate uppercase tracking-wider" suppressHydrationWarning>{mounted && profile?.role ? profile.role : 'Profesional'}</span>
               </div>
             )}
-            <button onClick={handleLogout} className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-600 hover:text-white transition-all cursor-pointer shrink-0" title="Cerrar Sesión">
+            <button onClick={onLogoutClick} className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-600 hover:text-white transition-all cursor-pointer shrink-0" title="Cerrar Sesión">
               <LogOut className="h-4 w-4" />
             </button>
           </div>
@@ -440,7 +461,7 @@ export default function Sidebar({
                   <span className="text-xs font-bold text-white block truncate" suppressHydrationWarning>{mounted && profile?.full_name ? profile.full_name : 'Usuario'}</span>
                   <span className="text-[10px] text-white/40 block truncate uppercase tracking-wider" suppressHydrationWarning>{mounted && profile?.role ? profile.role : 'Profesional'}</span>
                 </div>
-                <button onClick={handleLogout} className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-600 hover:text-white transition-all cursor-pointer shrink-0">
+                <button onClick={onLogoutClick} className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-600 hover:text-white transition-all cursor-pointer shrink-0">
                   <LogOut className="h-4 w-4" />
                 </button>
               </div>

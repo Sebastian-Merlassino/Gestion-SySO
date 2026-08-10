@@ -1,5 +1,24 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-10] Corrección del Botón de Cierre de Sesión (Salir) en Barra Lateral (`src/components/Sidebar.js`)
+
+### Resumen de Cambios
+- **Lógica Autónomica de Logout en `Sidebar.js`:**
+  - Se implementó la función handler `onLogoutClick` dentro de `Sidebar.js` que evalúa si la función `handleLogout` fue pasada como prop. Si no fue provista o falla, ejecuta la lógica autónoma de cierre de sesión: `supabase.auth.signOut()`, limpieza de almacenamiento de sesión (`sessionStorage` y `localStorage`) y redirección inmediata a `/login`.
+  - Se vincularon los botones de cierre de sesión en vista de escritorio y en el menú flotante móvil a `onLogoutClick`.
+- **Integración de `handleLogout` en Páginas Faltantes:**
+  - Se incorporó la función `handleLogout` y la prop `handleLogout={handleLogout}` en los componentes `<Sidebar />` de:
+    1. `src/app/[tenant-slug]/capacitaciones-online/page.js`
+    2. `src/app/[tenant-slug]/checklist-personalizados/page.js`
+
+### Archivos Modificados
+- `[MODIFY] src/components/Sidebar.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
 ## [2026-08-10] Remediación de Seguridad: Hardening de Webhook Mercado Pago y Sanitización de Email Payload (BAS-01 y BAS-02)
 
 ### Resumen de Cambios

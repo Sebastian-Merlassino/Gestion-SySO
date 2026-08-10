@@ -1792,6 +1792,15 @@ export default function ChecklistPersonalizadosPage({ params }) {
 
   // ==========================================
   // RENDER
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    if (typeof window !== 'undefined') {
+      sessionStorage.clear();
+      localStorage.removeItem('user-profile');
+    }
+    window.location.href = '/login';
+  };
+
   return (
     <div className="h-screen overflow-hidden bg-syso-bg text-slate-700 flex font-sans">
       <Sidebar
@@ -1802,6 +1811,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
         toggleSidebar={toggleSidebar}
         isMobileMenuOpen={isMobileMenuOpen}
         setIsMobileMenuOpen={setIsMobileMenuOpen}
+        handleLogout={handleLogout}
         onNavigate={(e, path) => {
           if (typeof window !== 'undefined') window.location.href = path;
         }}
