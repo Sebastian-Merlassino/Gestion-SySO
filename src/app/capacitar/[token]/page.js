@@ -440,18 +440,35 @@ export default function PublicCapacitacionPage({ params }) {
         </div>
         <div className="w-full max-w-lg z-10 flex-1 flex items-center justify-center p-4">
           <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-200 text-center w-full">
+            {/* Logo principal cargado en el perfil del usuario administrador */}
+            <div className="mb-6 flex justify-center">
+              <img 
+                src={capacitacion.tenant_logo_url || '/brand/logo-primary.png'} 
+                alt="Logo Empresa" 
+                className="h-12 max-w-[220px] object-contain"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = '/brand/logo-primary.png';
+                }}
+              />
+            </div>
+
             <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-10 h-10" />
             </div>
             <h2 className="text-2xl font-bold text-slate-800 mb-2">¡Asistencia Registrada!</h2>
             <p className="text-slate-600 text-base mb-6">
-              Muchas gracias <strong className="text-slate-800">{nombre}</strong>. Tu constancia de capacitación para la empresa <strong className="text-[#468DFF]">{capacitacion.empresa_nombre}</strong> se ha firmado y registrado exitosamente.
+              Muchas gracias <strong className="text-slate-800">{nombre}</strong>. Tu constancia de capacitación de higiene y seguridad para la empresa <strong className="text-[#468DFF]">{capacitacion.empresa_nombre}</strong> se ha firmado y registrado exitosamente.
             </p>
 
             <div className="bg-slate-50 p-4 rounded-xl text-left border border-slate-200 text-sm space-y-2 mb-6">
               <div className="flex justify-between border-b border-slate-200 pb-2">
                 <span className="text-slate-500">Capacitación:</span>
                 <span className="font-semibold text-slate-800 text-right">{capacitacion.titulo}</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-200 pb-2">
+                <span className="text-slate-500">Nombre y Apellido:</span>
+                <span className="font-semibold text-slate-800 text-right">{nombre}</span>
               </div>
               <div className="flex justify-between border-b border-slate-200 pb-2">
                 <span className="text-slate-500">DNI:</span>

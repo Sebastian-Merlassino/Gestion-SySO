@@ -85,15 +85,17 @@ SET search_path = public
 AS $$
 DECLARE
   v_cap RECORD;
-  v_empresa_nombre TEXT;
-  v_res JSONB;
 BEGIN
   -- Buscar capacitación activa por token
-  SELECT c.*, e.razon_social AS empresa_nombre, est.denominacion AS establecimiento_nombre
+  SELECT c.*, 
+         e.razon_social AS empresa_nombre, 
+         est.denominacion AS establecimiento_nombre,
+         t.logo_1_url AS tenant_logo_url
   INTO v_cap
   FROM public.capacitaciones_online c
   LEFT JOIN public.empresas e ON e.id = c.empresa_id
   LEFT JOIN public.establecimientos est ON est.id = c.establecimiento_id
+  LEFT JOIN public.tenants t ON t.id = c.tenant_id
   WHERE c.access_token = p_token AND c.estado = 'activa';
 
   IF NOT FOUND THEN
@@ -112,7 +114,8 @@ BEGIN
     'video_url', v_cap.video_url,
     'document_url', v_cap.document_url,
     'empresa_nombre', COALESCE(v_cap.empresa_nombre, 'Gestión SySO'),
-    'establecimiento_nombre', v_cap.establecimiento_nombre
+    'establecimiento_nombre', v_cap.establecimiento_nombre,
+    'tenant_logo_url', v_cap.tenant_logo_url
   );
 END;
 $$;
