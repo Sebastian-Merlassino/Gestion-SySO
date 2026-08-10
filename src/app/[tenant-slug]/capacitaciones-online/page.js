@@ -1833,7 +1833,7 @@ export default function CapacitacionesOnlinePage({ params }) {
                                           e.stopPropagation();
                                           handleViewPdf(item.document_url);
                                         }}
-                                        className="p-2 text-[#468DFF] hover:bg-[#DBEAFE] hover:text-[#0511F2] bg-[#EFF6FF] border border-[#468DFF]/30 rounded-xl transition-colors cursor-pointer"
+                                        className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                                         title="Visualizar Documento / Presentación"
                                       >
                                         <FileText className="h-4.5 w-4.5" />
@@ -1846,7 +1846,7 @@ export default function CapacitacionesOnlinePage({ params }) {
                                           e.stopPropagation();
                                           window.open(item.video_url, '_blank');
                                         }}
-                                        className="p-2 text-red-600 hover:bg-red-100 hover:text-red-700 bg-red-50 border border-red-200 rounded-xl transition-colors cursor-pointer"
+                                        className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                                         title="Ver Video Instructivo"
                                       >
                                         <Tv className="h-4.5 w-4.5" />
@@ -1874,7 +1874,7 @@ export default function CapacitacionesOnlinePage({ params }) {
                                     <button
                                       type="button"
                                       onClick={(e) => handleOpenShareModal(item, e)}
-                                      className="p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                                      className="p-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                                       title="Compartir Capacitación (WhatsApp / Email / Enlace)"
                                     >
                                       <Share2 className="h-4.5 w-4.5" />
@@ -1884,7 +1884,7 @@ export default function CapacitacionesOnlinePage({ params }) {
                                     <button
                                       type="button"
                                       onClick={(e) => handleOpenRegistrosModal(item, e)}
-                                      className="p-2 text-[#468DFF] hover:bg-[#EFF6FF] rounded-xl transition-colors"
+                                      className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                                       title="Ver Asistentes Firmantes"
                                     >
                                       <Users className="h-4.5 w-4.5" />
@@ -1894,7 +1894,7 @@ export default function CapacitacionesOnlinePage({ params }) {
                                     <button
                                       type="button"
                                       onClick={(e) => handleDownloadPdf(item, e)}
-                                      className="p-2 text-[#468DFF] hover:bg-[#EFF6FF] rounded-xl transition-colors"
+                                      className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                                       title="Descargar Reporte PDF de Asistencia"
                                     >
                                       <FileText className="h-4.5 w-4.5" />
@@ -1905,7 +1905,7 @@ export default function CapacitacionesOnlinePage({ params }) {
                                       <button
                                         type="button"
                                         onClick={() => handleEditClick(item)}
-                                        className="p-2 text-[#D97706] hover:bg-[#FEF3C7] rounded-xl transition-colors"
+                                        className="p-1.5 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 hover:text-amber-700 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                                         title="Editar Capacitación"
                                       >
                                         <Edit className="h-4.5 w-4.5" />
@@ -1920,7 +1920,7 @@ export default function CapacitacionesOnlinePage({ params }) {
                                           e.stopPropagation();
                                           setDeleteConfirm({ show: true, id: item.id, title: item.titulo });
                                         }}
-                                        className="p-2 text-[#DC2626] hover:bg-[#FEE2E2] rounded-xl transition-colors"
+                                        className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                                         title="Eliminar Capacitación"
                                       >
                                         <Trash2 className="h-4.5 w-4.5" />
