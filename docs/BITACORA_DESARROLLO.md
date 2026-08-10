@@ -1,5 +1,21 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-10] Corrección de Alineación al Pie del Footer Institucional (`PublicFooter`)
+
+### Resumen de Cambios
+- **Fix de Alineación del Footer (`src/app/capacitar/[token]/page.js`):**
+  - Se configuró el contenedor de los degradados de fondo como `fixed inset-0 overflow-hidden pointer-events-none z-0`.
+  - Esto elimina la generación de desbordamiento en el `body` ocasionado por posiciones relativas con `bottom-[-20%]`, asegurando que el pie de página (`<PublicFooter />`) quede exactamente al final del documento sin espacio gris inferior sobrante.
+
+### Archivos Modificados
+- `[MODIFY] src/app/capacitar/[token]/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Commit
+`255b93a` — fix: posicionamiento fixed de degradados ambientales para alinear PublicFooter al fondo exacto del documento
+
+---
+
 ## [2026-08-10] Ajuste Visual y de Textos en Vista Pública de Capacitación (Título, Metadatos, Textos y Footer Institucional)
 
 ### Resumen de Cambios
