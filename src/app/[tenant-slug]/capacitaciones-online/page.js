@@ -94,6 +94,9 @@ export default function CapacitacionesOnlinePage({ params }) {
   const [establecimientoId, setEstablecimientoId] = useState('');
   const [titulo, setTitulo] = useState('');
   const [descripcion, setDescripcion] = useState('');
+  const [metodologia, setMetodologia] = useState('Asincrónica con PowerPoint/PDF');
+  const [duracionHs, setDuracionHs] = useState('0');
+  const [duracionMin, setDuracionMin] = useState('45');
   const [asignacionTipo, setAsignacionTipo] = useState('puesto');
   const [targetPuesto, setTargetPuesto] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
@@ -440,6 +443,9 @@ export default function CapacitacionesOnlinePage({ params }) {
     setEstablecimientoId('');
     setTitulo('');
     setDescripcion('');
+    setMetodologia('Asincrónica con PowerPoint/PDF');
+    setDuracionHs('0');
+    setDuracionMin('45');
     setAsignacionTipo('puesto');
     setTargetPuesto('');
     setSelectedPuestos([]);
@@ -467,6 +473,18 @@ export default function CapacitacionesOnlinePage({ params }) {
     setEstablecimientoId(item.establecimiento_id || '');
     setTitulo(item.titulo || '');
     setDescripcion(item.descripcion || '');
+    setMetodologia(item.metodologia || (item.video_url ? 'Asincrónica con video' : 'Asincrónica con PowerPoint/PDF'));
+    
+    if (item.duracion) {
+      const hsMatch = item.duracion.match(/(\d+)\s*hs?/i);
+      const minMatch = item.duracion.match(/(\d+)\s*min/i);
+      setDuracionHs(hsMatch ? hsMatch[1] : '0');
+      setDuracionMin(minMatch ? minMatch[1] : (hsMatch ? '0' : '45'));
+    } else {
+      setDuracionHs('0');
+      setDuracionMin('45');
+    }
+
     setAsignacionTipo(item.asignacion_tipo || 'puesto');
     setTargetPuesto(item.target_puesto || '');
     
@@ -557,12 +575,23 @@ export default function CapacitacionesOnlinePage({ params }) {
         ? targetPuesto?.trim() || null
         : (Array.from(new Set(selectedEmpleados.map(e => (typeof e === 'object' ? e.puesto : '')).filter(Boolean))).join(', ') || null);
 
+      const formattedDuracionList = [];
+      if (parseInt(duracionHs, 10) > 0) {
+        formattedDuracionList.push(`${duracionHs} hs`);
+      }
+      if (parseInt(duracionMin, 10) > 0 || formattedDuracionList.length === 0) {
+        formattedDuracionList.push(`${duracionMin || 0} min`);
+      }
+      const duracionFinal = formattedDuracionList.join(' ') || '45 min';
+
       const payload = {
         tenant_id: profile.tenant_id,
         empresa_id: empresaId,
         establecimiento_id: establecimientoId || null,
         titulo: titulo.trim(),
         descripcion: descripcion?.trim() || null,
+        metodologia: metodologia,
+        duracion: duracionFinal,
         asignacion_tipo: asignacionTipo,
         target_puesto: targetPuestoFormatted || null,
         empleados_asignados: asignacionTipo === 'nomina' ? selectedEmpleados : [],
@@ -1547,6 +1576,66 @@ export default function CapacitacionesOnlinePage({ params }) {
                           }}
                           className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all resize-y text-slate-700 font-normal min-h-[90px]"
                         />
+                      </div>
+
+                      {/* Metodología y Duración */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                        <div className="space-y-1">
+                          <label className="text-xs font-bold text-slate-600 block mb-1">
+                            Metodología *
+                          </label>
+                          <select
+                            value={metodologia}
+                            disabled={isReadOnlyView}
+                            onChange={(e) => {
+                              setMetodologia(e.target.value);
+                              setFormIsDirty(true);
+                            }}
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 font-normal cursor-pointer disabled:opacity-60"
+                          >
+                            <option value="Asincrónica con video">Asincrónica con video</option>
+                            <option value="Asincrónica con PowerPoint/PDF">Asincrónica con PowerPoint/PDF</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-xs font-bold text-slate-600 block mb-1">
+                            Duración *
+                          </label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <select
+                              value={duracionHs}
+                              disabled={isReadOnlyView}
+                              onChange={(e) => {
+                                setDuracionHs(e.target.value);
+                                setFormIsDirty(true);
+                              }}
+                              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 text-slate-700 font-normal cursor-pointer disabled:opacity-60"
+                            >
+                              <option value="0">0 hs</option>
+                              <option value="1">1 hs</option>
+                              <option value="2">2 hs</option>
+                              <option value="3">3 hs</option>
+                              <option value="4">4 hs</option>
+                              <option value="5">5 hs</option>
+                            </select>
+
+                            <select
+                              value={duracionMin}
+                              disabled={isReadOnlyView}
+                              onChange={(e) => {
+                                setDuracionMin(e.target.value);
+                                setFormIsDirty(true);
+                              }}
+                              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 text-slate-700 font-normal cursor-pointer disabled:opacity-60"
+                            >
+                              <option value="0">0 min</option>
+                              <option value="15">15 min</option>
+                              <option value="30">30 min</option>
+                              <option value="45">45 min</option>
+                            </select>
+                          </div>
+                        </div>
                       </div>
 
                       <div className="space-y-1">

@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS public.capacitaciones_online (
   material_tipo TEXT NOT NULL DEFAULT 'video', -- 'video', 'pdf', 'ppt', 'mixto'
   video_url TEXT, -- URL limpia o parsed de YouTube
   document_url TEXT, -- URL / path de PDF o PPT
+  metodologia TEXT DEFAULT 'Asincrónica con PowerPoint/PDF',
+  duracion TEXT DEFAULT '45 min',
   access_token UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
   estado TEXT NOT NULL DEFAULT 'activa', -- 'activa', 'finalizada', 'borrador'
   created_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
