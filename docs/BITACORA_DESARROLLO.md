@@ -1,16 +1,19 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-10] Recomendación Arquitectónica y Sugerencia para Presentaciones PPTX / Google Slides
+## [2026-08-10] Modo Presentación Limpio con Controles y Desbloqueo Progresivo de Firma Digital
 
 ### Resumen de Cambios
-- **Inclusión de Recomendación Visual (`src/app/[tenant-slug]/capacitaciones-online/page.js`):**
-  - Se agregó una recomendación en la UI debajo de `DocumentUploadZone`:
-    > 💡 **Tip para Presentaciones (PPT/PPTX):** Para archivos PowerPoint pesados (>10 MB), lo más recomendable es utilizar la pestaña *Enlace Drive* pegando el link de **Google Slides**. Esto permite al personal navegar las diapositivas de forma fluida e instantánea sin consumir datos de descarga.
+- **Modo Presentación Limpio con Controles en Visor (`src/app/capacitar/[token]/page.js`):**
+  - **Barra de Navegación de Filminas:** Se incorporó una barra superior sobre el visor interactivo con botones de **Anterior** (`<ChevronLeft />`) y **Siguiente** (`<ChevronRight />`), indicador numérico de filmina activa (`Filmina / Diapositiva X`) y botón de **Pantalla Completa**.
+  - **Parámetros de Presentación Limpia:** Para documentos PDF, se inyectaron los parámetros `#toolbar=0&navpanes=0&scrollbar=0` eliminando barras de herramientas molestas y permitiendo vista limpia de filminas.
+- **Desbloqueo Progresivo de Firma Digital por Cumplimiento Auditado:**
+  - **Bloqueo Inicial:** La sección *Registro y Firma Digital de Asistencia* se presenta inicialmente bloqueada (`🔒 Firma Digital Temporariamente Bloqueada`) con una banner explicativa solicitando recorrer el material instructivo antes de firmar.
+  - **Habilitación de Firma:** Al avanzar entre las diapositivas o presionar *"Confirmar lectura completa del material y habilitar firma"*, la sección de firma digital se desbloquea con el distintivo verde `✓ Material Revisado`.
 - **Verificación:**
   - Compilación de producción ejecutada y aprobada (`✓ Compiled successfully`).
 
 ### Archivos Modificados
-- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
+- `[MODIFY] src/app/capacitar/[token]/page.js`
 - `[MODIFY] docs/BITACORA_DESARROLLO.md`
 
 ---

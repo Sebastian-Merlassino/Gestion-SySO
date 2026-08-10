@@ -17,7 +17,12 @@ import {
   User, 
   CreditCard,
   ShieldCheck,
-  ExternalLink
+  ExternalLink,
+  ChevronLeft,
+  ChevronRight,
+  Maximize2,
+  Lock,
+  Unlock
 } from 'lucide-react';
 
 export default function PublicCapacitacionPage({ params }) {
@@ -34,6 +39,11 @@ export default function PublicCapacitacionPage({ params }) {
   const [submitting, setSubmitting] = useState(false);
   const [submittedSuccess, setSubmittedSuccess] = useState(false);
   const [documentSignedUrl, setDocumentSignedUrl] = useState('');
+
+  // Estado de Navegación de Diapositivas / Filminas y Progreso
+  const [currentSlide, setCurrentSlide] = useState(1);
+  const [totalSlides, setTotalSlides] = useState(1);
+  const [hasCompletedMaterial, setHasCompletedMaterial] = useState(false);
 
   // Canvas Signature State
   const canvasRef = useRef(null);
@@ -157,10 +167,12 @@ export default function PublicCapacitacionPage({ params }) {
     }
 
     // 4. Direct PDF URL / Supabase Storage PDF
+    // Inyectar parámetros de presentación limpia (#toolbar=0&navpanes=0&scrollbar=0)
+    const cleanPdfUrl = target.includes('#') ? target : `${target}#toolbar=0&navpanes=0&scrollbar=0&view=FitH&page=${currentSlide}`;
     return {
       loading: false,
       type: 'pdf',
-      embedUrl: target,
+      embedUrl: cleanPdfUrl,
       rawUrl: target
     };
   };
@@ -413,36 +425,80 @@ export default function PublicCapacitacionPage({ params }) {
           </div>
         )}
 
-        {/* Sección 2: Documento / Presentación Interactiva (Navegar Diapositivas / Páginas) */}
+        {/* Sección 2: Documento / Presentación Interactiva (Modo Presentación Limpio con Controles) */}
         {capacitacion.document_url && (() => {
           const viewer = getDocumentViewerInfo(capacitacion.document_url, documentSignedUrl);
           if (!viewer) return null;
 
+          const handleNextSlide = () => {
+            const next = currentSlide + 1;
+            setCurrentSlide(next);
+            if (next >= totalSlides) {
+              setHasCompletedMaterial(true);
+            }
+          };
+
+          const handlePrevSlide = () => {
+            if (currentSlide > 1) {
+              setCurrentSlide(currentSlide - 1);
+            }
+          };
+
           return (
             <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-[#468DFF]" />
-                  Material de Lectura / Presentación Adjunta
-                </h2>
+                <div>
+                  <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-[#468DFF]" />
+                    Material de Lectura y Presentación
+                  </h2>
+                  <span className="text-xs text-slate-500 block mt-0.5">
+                    Modo Presentación — Utilice las flechas para avanzar o retroceder las filminas
+                  </span>
+                </div>
                 {viewer.rawUrl && (
                   <a
                     href={viewer.rawUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs font-bold text-[#468DFF] hover:underline flex items-center gap-1"
+                    className="text-xs font-bold text-[#468DFF] hover:underline flex items-center gap-1 bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-150"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
-                    Abrir en ventana completa
+                    Pantalla Completa
                   </a>
                 )}
               </div>
 
-              <p className="text-xs text-slate-500">
-                Visualice la presentación a continuación. Puede avanzar y retroceder de diapositivas o páginas antes de registrar su asistencia.
-              </p>
+              {/* Barra Superior de Controles de Diapositiva (Flechas Avance/Retroceso) */}
+              <div className="flex items-center justify-between bg-slate-900 text-white p-3 rounded-xl gap-3">
+                <button
+                  type="button"
+                  onClick={handlePrevSlide}
+                  disabled={currentSlide <= 1}
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer disabled:cursor-default"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Anterior
+                </button>
 
-              {/* Visor Interactivo Iframe Embed (Slides/PDF) */}
+                <div className="flex items-center gap-2 text-xs font-mono font-bold">
+                  <span>Filmina / Diapositiva</span>
+                  <span className="bg-[#468DFF] px-2.5 py-0.5 rounded-md text-white">
+                    {currentSlide}
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleNextSlide}
+                  className="px-3 py-1.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-lg text-xs font-bold flex items-center gap-1 transition-all shadow-sm cursor-pointer"
+                >
+                  Siguiente
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Visor Interactivo Iframe Embed (Slides/PDF Modo Limpio) */}
               <div className="aspect-[4/3] sm:aspect-[16/10] w-full rounded-xl overflow-hidden bg-slate-900 border border-slate-200 shadow-inner relative">
                 {viewer.loading ? (
                   <div className="w-full h-full flex flex-col items-center justify-center text-white space-y-2">
@@ -451,6 +507,7 @@ export default function PublicCapacitacionPage({ params }) {
                   </div>
                 ) : (
                   <iframe
+                    key={currentSlide}
                     src={viewer.embedUrl}
                     title="Visor de Presentación y Documentos"
                     className="w-full h-full border-0"
@@ -459,23 +516,81 @@ export default function PublicCapacitacionPage({ params }) {
                   />
                 )}
               </div>
+
+              {/* Botón de Confirmación de Lectura Completa */}
+              <div className="pt-2 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHasCompletedMaterial(true);
+                    setTimeout(() => {
+                      document.getElementById('firma-section')?.scrollIntoView({ behavior: 'smooth' });
+                    }, 100);
+                  }}
+                  className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                    hasCompletedMaterial
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      : 'bg-[#468DFF] hover:bg-[#0511F2] text-white shadow-md shadow-[#468DFF]/20'
+                  }`}
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  {hasCompletedMaterial
+                    ? '✓ Lectura de Presentación Verificada'
+                    : 'Confirmar lectura completa del material y habilitar firma'}
+                </button>
+              </div>
             </div>
           );
         })()}
 
-        {/* Sección 3: Formulario de Asistencia y Firma Digital */}
-        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-          <div className="border-b border-slate-200 pb-4 mb-6">
-            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-              <PenTool className="w-5 h-5 text-[#468DFF]" />
-              Registro y Firma Digital de Asistencia
-            </h2>
-            <p className="text-xs text-slate-500 mt-1">
-              Complete sus datos personales e ingrese su firma táctil para dejar constancia de haber realizado la capacitación.
-            </p>
-          </div>
+        {/* Sección 3: Formulario de Asistencia y Firma Digital (Desbloqueo Progresivo Auditado) */}
+        <div id="firma-section" className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+          {!hasCompletedMaterial && (capacitacion.document_url || capacitacion.video_url) ? (
+            <div className="bg-amber-50/90 border border-amber-200 rounded-2xl p-6 text-center space-y-3">
+              <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto shadow-sm">
+                <Lock className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-bold text-amber-900">
+                Firma Digital Temporariamente Bloqueada
+              </h3>
+              <p className="text-xs text-amber-700 max-w-md mx-auto leading-relaxed">
+                Por normativas de seguridad y salud ocupacional, debe navegar las filminas/diapositivas o revisar el material audiovisual antes de registrar su firma de asistencia.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setHasCompletedMaterial(true);
+                  setTimeout(() => {
+                    document.getElementById('firma-section')?.scrollIntoView({ behavior: 'smooth' });
+                  }, 100);
+                }}
+                className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-[#468DFF]/20 flex items-center gap-2 mx-auto cursor-pointer"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                Confirmar lectura completa del material y habilitar firma
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="border-b border-slate-200 pb-4 mb-6 flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <PenTool className="w-5 h-5 text-[#468DFF]" />
+                    Registro y Firma Digital de Asistencia
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Complete sus datos personales e ingrese su firma táctil para dejar constancia de haber realizado la capacitación.
+                  </p>
+                </div>
+                {(capacitacion.document_url || capacitacion.video_url) && (
+                  <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-[11px] font-bold flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    Material Revisado
+                  </span>
+                )}
+              </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1.5">
@@ -587,7 +702,9 @@ export default function PublicCapacitacionPage({ params }) {
               </button>
             </div>
           </form>
-        </div>
+        </>
+      )}
+    </div>
 
         <div className="text-center text-xs text-slate-400 py-2">
           Gestión SySO — Sistema de Gestión Integral en Seguridad y Salud Ocupacional
