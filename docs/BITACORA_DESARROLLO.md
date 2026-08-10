@@ -1,5 +1,22 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-10] Paneles Desplegables Emergentes con Adición Manual (+ Añadir) en Registro Público (`src/app/capacitar/[token]/page.js`)
+
+### Resumen de Cambios
+- **Rediseño de Desplegables de Registro Público:**  
+  Se reemplazaron los elementos `<select>` nativos por **paneles desplegables emergentes flotantes (`animate-scaleUp shadow-xl rounded-2xl`)**, replicando exactamente la UI/UX del selector de puestos del modal de edición de capacitaciones:
+  - **Panel de Nombre y Apellido:** Lista de forma interactiva el personal asignado de la nómina. Al hacer clic sobre cualquier trabajador, se auto-completan automáticamente su Nombre, DNI/CUIL y Puesto de Trabajo. En el pie del panel se integra un campo de texto con botón `+ Añadir` para ingresar cualquier operario que no figure en la lista.
+  - **Panel de Puesto de Trabajo:** Lista los puestos de trabajo asignados a la capacitación. Incluye en la parte inferior del panel emergente la caja de texto e ícono `+ Añadir` para ingresar cualquier puesto de trabajo personalizado directamente.
+
+### Archivos Modificados
+- `[MODIFY] src/app/capacitar/[token]/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Commit
+`ca59657` — feat: paneles desplegables emergentes con pie de adicion manual (+ Anadir) en registro publico de asistencia
+
+---
+
 ## [2026-08-10] Selectores Desplegables Inteligentes con Opción Manual en Registro Público (`src/app/capacitar/[token]/page.js`)
 
 ### Resumen de Cambios
