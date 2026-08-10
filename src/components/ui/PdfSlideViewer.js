@@ -36,15 +36,14 @@ export default function PdfSlideViewer({ url, currentPage = 1, onTotalPages }) {
         // Importar pdfjs-dist dinamicamente para no incrementar el bundle size de otras rutas
         const pdfjsLib = await import('pdfjs-dist');
 
-        // Configurar el worker desde el mismo paquete instalado
-        if (typeof window !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
-          pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+        // Worker servido desde /public/ (mismo origen) para evitar violaciones de CSP
+        // El archivo fue copiado de node_modules/pdfjs-dist/build/pdf.worker.min.mjs a public/
+        if (typeof window !== 'undefined') {
+          pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
         }
 
         const loadingTask = pdfjsLib.getDocument({
           url,
-          cMapUrl: `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/cmaps/`,
-          cMapPacked: true,
         });
 
         const pdf = await loadingTask.promise;
