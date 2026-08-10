@@ -1,20 +1,22 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-09] Alerta Estándar de Accesos Restringidos en Drive y Visor Interactivo de Diapositivas
+## [2026-08-09] Corrección de Redirección de Middleware y Diálogo Unificado de Compartir Capacitación
 
 ### Resumen de Cambios
-- **Alerta Informativa Estándar de Permisos Restringidos (`src/components/ui/DocumentUploadZone.js`):**
-  - Al ingresar un enlace de Google Drive en cualquier `DocumentUploadZone` (`SySO-Document-Compact-Layout`) donde el archivo esté configurado como "Restringido" en lugar de "Cualquier persona con el enlace", se muestra una alerta/toast preventiva:
-    > ⚠️ *Permisos restringidos en Google Drive: Cambia el permiso en Google Drive a "Cualquier persona con el enlace" para que los empleados puedan visualizar el documento sin pedir autorización.*
-- **Visor Interactivo de Diapositivas y Documentos en Portal Público (`src/app/capacitar/[token]/page.js`):**
-  - **Iframe Interactivo Enbebido:** Se implementó un reproductor/visor interactivo integrado para presentaciones de Google Slides (`/presentation/d/.../embed`), documentos de Google Docs (`/preview`), archivos de Google Drive y documentos PDF de Supabase Storage.
-  - **Navegación Táctil/Mouse (Pasar de Hoja o Slide):** Los empleados pueden pasar de diapositiva o página, visualizar en pantalla completa y leer el contenido completo de la capacitación directamente en pantalla antes de completar el formulario y la firma digital.
+- **Corrección de Rutas Reservadas en Middleware (`src/middleware.js`):**
+  - Se añadieron las rutas públicas `'capacitar'`, `'terminos'`, `'privacidad'` y `'cookies'` al arreglo de `reservedRoutes` en la verificación del middleware de restricciones de plan.
+  - Con esta corrección, acceder o compartir enlaces públicos de capacitación (`/capacitar/[token]`) ya no activa falsos positivos de control de plan ni redirige a la pantalla de edición de perfil (`/profile?upgrade=true`).
+- **Diálogo Unificado de Compartir conforme al Estándar (`src/app/[tenant-slug]/capacitaciones-online/page.js`):**
+  - Se implementó el modal unificado de compartir activado al hacer clic en el botón de compartir (<Share2 />):
+    - **Pestaña WhatsApp:** Genera el enlace directo a WhatsApp (`https://wa.me/`) con el mensaje pre-cargado e incluye el enlace público de la capacitación.
+    - **Pestaña Correo Electrónico:** Importa dinámicamente el correo de contacto de la Razón Social y permite despachar el email.
+    - **Pestaña Copiar Enlace:** Copia directamente la URL del portal público para empleados (`${window.location.origin}/capacitar/${token}`).
 - **Verificación:**
   - Compilación de producción ejecutada y aprobada (`✓ Compiled successfully`).
 
 ### Archivos Modificados
-- `[MODIFY] src/components/ui/DocumentUploadZone.js`
-- `[MODIFY] src/app/capacitar/[token]/page.js`
+- `[MODIFY] src/middleware.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
 - `[MODIFY] docs/BITACORA_DESARROLLO.md`
 
 ---

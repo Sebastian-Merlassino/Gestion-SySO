@@ -252,7 +252,7 @@ export async function middleware(request) {
     const routeTenantSlug = pathSegments[0];
     const section = pathSegments[1];
     
-    const reservedRoutes = ['login', 'register', 'onboarding', 'api', 'brand', 'assets'];
+    const reservedRoutes = ['login', 'register', 'onboarding', 'api', 'brand', 'assets', 'capacitar', 'terminos', 'privacidad', 'cookies'];
     if (!reservedRoutes.includes(routeTenantSlug) && !routeTenantSlug.includes('.')) {
       const tenant = profile.tenants;
       
