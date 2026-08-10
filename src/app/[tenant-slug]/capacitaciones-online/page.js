@@ -95,8 +95,8 @@ export default function CapacitacionesOnlinePage({ params }) {
   const [titulo, setTitulo] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [metodologia, setMetodologia] = useState('Asincrónica con PowerPoint/PDF');
-  const [duracionHs, setDuracionHs] = useState('0');
-  const [duracionMin, setDuracionMin] = useState('45');
+  const [duracionValor, setDuracionValor] = useState('45');
+  const [duracionUnidad, setDuracionUnidad] = useState('min');
   const [asignacionTipo, setAsignacionTipo] = useState('puesto');
   const [targetPuesto, setTargetPuesto] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
@@ -444,8 +444,8 @@ export default function CapacitacionesOnlinePage({ params }) {
     setTitulo('');
     setDescripcion('');
     setMetodologia('Asincrónica con PowerPoint/PDF');
-    setDuracionHs('0');
-    setDuracionMin('45');
+    setDuracionValor('45');
+    setDuracionUnidad('min');
     setAsignacionTipo('puesto');
     setTargetPuesto('');
     setSelectedPuestos([]);
@@ -478,11 +478,20 @@ export default function CapacitacionesOnlinePage({ params }) {
     if (item.duracion) {
       const hsMatch = item.duracion.match(/(\d+)\s*hs?/i);
       const minMatch = item.duracion.match(/(\d+)\s*min/i);
-      setDuracionHs(hsMatch ? hsMatch[1] : '0');
-      setDuracionMin(minMatch ? minMatch[1] : (hsMatch ? '0' : '45'));
+      if (hsMatch) {
+        setDuracionValor(hsMatch[1]);
+        setDuracionUnidad('hs');
+      } else if (minMatch) {
+        setDuracionValor(minMatch[1]);
+        setDuracionUnidad('min');
+      } else {
+        const numMatch = item.duracion.match(/(\d+)/);
+        setDuracionValor(numMatch ? numMatch[1] : '45');
+        setDuracionUnidad(item.duracion.toLowerCase().includes('hs') ? 'hs' : 'min');
+      }
     } else {
-      setDuracionHs('0');
-      setDuracionMin('45');
+      setDuracionValor('45');
+      setDuracionUnidad('min');
     }
 
     setAsignacionTipo(item.asignacion_tipo || 'puesto');
@@ -575,14 +584,7 @@ export default function CapacitacionesOnlinePage({ params }) {
         ? targetPuesto?.trim() || null
         : (Array.from(new Set(selectedEmpleados.map(e => (typeof e === 'object' ? e.puesto : '')).filter(Boolean))).join(', ') || null);
 
-      const formattedDuracionList = [];
-      if (parseInt(duracionHs, 10) > 0) {
-        formattedDuracionList.push(`${duracionHs} hs`);
-      }
-      if (parseInt(duracionMin, 10) > 0 || formattedDuracionList.length === 0) {
-        formattedDuracionList.push(`${duracionMin || 0} min`);
-      }
-      const duracionFinal = formattedDuracionList.join(' ') || '45 min';
+      const duracionFinal = duracionValor?.trim() ? `${duracionValor.trim()} ${duracionUnidad}` : `45 min`;
 
       const payload = {
         tenant_id: profile.tenant_id,
@@ -1579,9 +1581,10 @@ export default function CapacitacionesOnlinePage({ params }) {
                       </div>
 
                       {/* Metodología y Duración */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-                        <div className="space-y-1">
-                          <label className="text-xs font-bold text-slate-600 block mb-1">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1 items-start">
+                        {/* Metodología */}
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-slate-600 block h-4 leading-4">
                             Metodología *
                           </label>
                           <select
@@ -1591,49 +1594,47 @@ export default function CapacitacionesOnlinePage({ params }) {
                               setMetodologia(e.target.value);
                               setFormIsDirty(true);
                             }}
-                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 font-normal cursor-pointer disabled:opacity-60"
+                            className="w-full h-[42px] border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 font-normal cursor-pointer disabled:opacity-60"
                           >
                             <option value="Asincrónica con video">Asincrónica con video</option>
                             <option value="Asincrónica con PowerPoint/PDF">Asincrónica con PowerPoint/PDF</option>
                           </select>
                         </div>
 
-                        <div className="space-y-1">
-                          <label className="text-xs font-bold text-slate-600 block mb-1">
+                        {/* Duración (con selector de valor numérico e ícono/botón de unidad MIN / HS al estilo protocolo Ergonomía) */}
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-slate-600 block h-4 leading-4">
                             Duración *
                           </label>
-                          <div className="grid grid-cols-2 gap-2">
-                            <select
-                              value={duracionHs}
+                          <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden bg-slate-50/50 w-full h-[42px] focus-within:border-[#468DFF] transition-all">
+                            <input
+                              type="number"
+                              min="1"
                               disabled={isReadOnlyView}
+                              placeholder="Ej: 45"
+                              value={duracionValor}
                               onChange={(e) => {
-                                setDuracionHs(e.target.value);
+                                setDuracionValor(e.target.value);
                                 setFormIsDirty(true);
                               }}
-                              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 text-slate-700 font-normal cursor-pointer disabled:opacity-60"
-                            >
-                              <option value="0">0 hs</option>
-                              <option value="1">1 hs</option>
-                              <option value="2">2 hs</option>
-                              <option value="3">3 hs</option>
-                              <option value="4">4 hs</option>
-                              <option value="5">5 hs</option>
-                            </select>
-
-                            <select
-                              value={duracionMin}
+                              className="w-full text-sm h-full border-0 focus:ring-0 focus:outline-none font-semibold text-slate-800 bg-transparent px-3.5"
+                            />
+                            <div className="h-5 w-[1px] bg-slate-200 shrink-0" />
+                            <button
+                              type="button"
                               disabled={isReadOnlyView}
-                              onChange={(e) => {
-                                setDuracionMin(e.target.value);
+                              onClick={() => {
+                                setDuracionUnidad(duracionUnidad === 'min' ? 'hs' : 'min');
                                 setFormIsDirty(true);
                               }}
-                              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 text-slate-700 font-normal cursor-pointer disabled:opacity-60"
+                              className={`w-14 shrink-0 flex items-center justify-center h-full text-xs font-black uppercase transition-all cursor-pointer select-none ${
+                                duracionUnidad === 'min'
+                                  ? 'bg-blue-50 text-[#468DFF] hover:bg-blue-100'
+                                  : 'bg-amber-50 text-amber-600 hover:bg-amber-100'
+                              }`}
                             >
-                              <option value="0">0 min</option>
-                              <option value="15">15 min</option>
-                              <option value="30">30 min</option>
-                              <option value="45">45 min</option>
-                            </select>
+                              {duracionUnidad === 'min' ? 'MIN' : 'HS'}
+                            </button>
                           </div>
                         </div>
                       </div>
