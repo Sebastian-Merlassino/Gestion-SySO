@@ -439,14 +439,14 @@ export default function PublicCapacitacionPage({ params }) {
           <div className="absolute bottom-[-20%] right-[-20%] w-[600px] h-[600px] rounded-full bg-[#0511F2]/5 blur-[180px]" />
         </div>
         <div className="w-full max-w-lg z-10 flex-1 flex items-center justify-center p-4">
-          <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-200 text-center w-full">
+          <div className="bg-white p-6 sm:p-7 pt-5 sm:pt-6 rounded-2xl shadow-xl border border-slate-200 text-center w-full">
             {/* Logo principal cargado en el perfil del usuario administrador */}
             {capacitacion.tenant_logo_url && (
-              <div className="mb-6 flex justify-center">
+              <div className="mb-3 flex justify-center">
                 <img 
                   src={capacitacion.tenant_logo_url} 
                   alt="Logo Empresa Administradora" 
-                  className="h-14 max-w-[240px] object-contain mx-auto"
+                  className="h-20 sm:h-24 max-w-[280px] sm:max-w-[320px] object-contain mx-auto"
                   onError={(e) => {
                     e.target.style.display = 'none';
                   }}
@@ -454,8 +454,8 @@ export default function PublicCapacitacionPage({ params }) {
               </div>
             )}
 
-            <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle2 className="w-10 h-10" />
+            <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3">
+              <CheckCircle2 className="w-9 h-9" />
             </div>
             <h2 className="text-2xl font-bold text-slate-800 mb-2">¡Asistencia Registrada!</h2>
             <p className="text-slate-600 text-base mb-6">
