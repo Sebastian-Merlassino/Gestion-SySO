@@ -441,17 +441,18 @@ export default function PublicCapacitacionPage({ params }) {
         <div className="w-full max-w-lg z-10 flex-1 flex items-center justify-center p-4">
           <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-200 text-center w-full">
             {/* Logo principal cargado en el perfil del usuario administrador */}
-            <div className="mb-6 flex justify-center">
-              <img 
-                src={capacitacion.tenant_logo_url || '/brand/logo-primary.png'} 
-                alt="Logo Empresa" 
-                className="h-12 max-w-[220px] object-contain"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = '/brand/logo-primary.png';
-                }}
-              />
-            </div>
+            {capacitacion.tenant_logo_url && (
+              <div className="mb-6 flex justify-center">
+                <img 
+                  src={capacitacion.tenant_logo_url} 
+                  alt="Logo Empresa Administradora" 
+                  className="h-14 max-w-[240px] object-contain mx-auto"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
 
             <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-10 h-10" />

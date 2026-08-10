@@ -90,7 +90,7 @@ BEGIN
   SELECT c.*, 
          e.razon_social AS empresa_nombre, 
          est.denominacion AS establecimiento_nombre,
-         t.logo_1_url AS tenant_logo_url
+         COALESCE(t.logo_1_url, t.logo_2_url) AS tenant_logo_url
   INTO v_cap
   FROM public.capacitaciones_online c
   LEFT JOIN public.empresas e ON e.id = c.empresa_id
