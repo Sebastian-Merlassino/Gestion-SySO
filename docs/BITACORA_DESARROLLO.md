@@ -1,5 +1,23 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-10] Ampliación de Logotipo y Optimización de Márgenes Superiores (`src/app/capacitar/[token]/page.js`)
+
+### Resumen de Cambios
+- **Ampliación de Dimensiones del Logo:**  
+  Se incrementó la altura máxima del logotipo corporativo de `h-14` a `h-20 sm:h-24` (con ancho máximo `max-w-[280px] sm:max-w-[320px]`), otorgándole un protagonismo visual superior y una legibilidad óptima.
+- **Reducción de Márgenes y Padding Superior:**  
+  - Se redujo el padding superior de la tarjeta contenedora blanca de `p-8` a `p-6 sm:p-7 pt-5 sm:pt-6`.
+  - Se disminuyó el espacio inferior entre el logo y el ícono de verificado verde de `mb-6` a `mb-3`, logrando una maquetación más compacta y elegante.
+
+### Archivos Modificados
+- `[MODIFY] src/app/capacitar/[token]/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Commit
+`a101d37` — style: ampliar tamano de logo e incrementar densidad vertical reduciendo paddings y margenes superiores en tarjeta de confirmacion de asistencia
+
+---
+
 ## [2026-08-10] Actualización de la Pantalla de Asistencia Registrada Exitosamente (`src/app/capacitar/[token]/page.js`)
 
 ### Resumen de Cambios
