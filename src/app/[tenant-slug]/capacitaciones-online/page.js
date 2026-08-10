@@ -35,7 +35,8 @@ import {
   ArrowLeft, 
   AlertTriangle, 
   MapPin,
-  User
+  User,
+  HelpCircle
 } from 'lucide-react';
 
 export default function CapacitacionesOnlinePage({ params }) {
@@ -119,6 +120,26 @@ export default function CapacitacionesOnlinePage({ params }) {
   const [deleteConfirm, setDeleteConfirm] = useState({ show: false, id: null, title: '' });
   const [unsavedDialog, setUnsavedDialog] = useState({ show: false, pendingAction: null });
   const [formIsDirty, setFormIsDirty] = useState(false);
+  const [showPptTipModal, setShowPptTipModal] = useState(false);
+
+  // Helper para mostrar puestos reales en la tabla
+  const getItemPuestos = (item) => {
+    if (!item) return 'Todo el personal';
+    if (item.target_puesto && !item.target_puesto.toLowerCase().includes('nombre 1') && !item.target_puesto.toLowerCase().includes('nombre 2')) {
+      return item.target_puesto;
+    }
+    if (Array.isArray(item.empleados_asignados) && item.empleados_asignados.length > 0) {
+      const puestosSet = new Set();
+      item.empleados_asignados.forEach(emp => {
+        if (typeof emp === 'object' && emp?.puesto && emp.puesto.trim()) {
+          puestosSet.add(emp.puesto.trim());
+        }
+      });
+      const list = Array.from(puestosSet);
+      if (list.length > 0) return list.join(', ');
+    }
+    return 'Todo el personal';
+  };
 
   // Estado de puestos dinamicos traidos de nomina
   const [availablePuestos, setAvailablePuestos] = useState([]);
@@ -165,7 +186,7 @@ export default function CapacitacionesOnlinePage({ params }) {
     });
 
     if (itemsWithContent.length > 0) {
-      setDescripcion(itemsWithContent.join('\n\n'));
+      setDescripcion(itemsWithContent.join('\n'));
     }
   }, [selectedTemas, catalogTemas]);
 
@@ -1345,7 +1366,6 @@ export default function CapacitacionesOnlinePage({ params }) {
                                           e.stopPropagation();
                                           const newTemas = selectedTemas.filter(t => t !== temaName);
                                           setSelectedTemas(newTemas);
-                                          updateAutoContent(newTemas);
                                           setFormIsDirty(true);
                                         }}
                                       />
@@ -1505,7 +1525,7 @@ export default function CapacitacionesOnlinePage({ params }) {
                       <div className="space-y-1">
                         <div className="flex items-center justify-between gap-2 min-h-[28px] mb-1">
                           <label className="text-xs font-bold text-slate-600 block mb-0">
-                            Contenido / Objetivos Programados
+                            Contenido
                           </label>
                           <AITextHelper
                             value={descripcion}
@@ -1548,8 +1568,21 @@ export default function CapacitacionesOnlinePage({ params }) {
                       </div>
 
                       <div className="space-y-1">
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <label className="text-xs font-bold text-slate-600 block mb-0">
+                            Documento o Presentación Adjunta (PDF/PPT)
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => setShowPptTipModal(true)}
+                            className="text-[11px] font-bold text-[#468DFF] hover:underline flex items-center gap-1 cursor-pointer bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200 shadow-xs"
+                          >
+                            <HelpCircle className="h-3.5 w-3.5" />
+                            Tip para Presentaciones
+                          </button>
+                        </div>
                         <DocumentUploadZone
-                          label="Documento o Presentación Adjunta (PDF/PPT)"
+                          label=""
                           file={documentoFile}
                           fileName={selectedFileName}
                           url={documentUrl}
@@ -1570,9 +1603,6 @@ export default function CapacitacionesOnlinePage({ params }) {
                           disabled={isReadOnlyView}
                           onToast={globalToast.toast}
                         />
-                        <p className="text-[11px] text-slate-500 font-normal mt-1 flex items-center gap-1">
-                          💡 <strong>Tip para Presentaciones (PPT/PPTX):</strong> Para archivos PowerPoint pesados (&gt;10 MB), lo más recomendable es utilizar la pestaña <em>Enlace Drive</em> pegando el link de <strong>Google Slides</strong>. Esto permite al personal navegar las diapositivas de forma fluida e instantánea sin consumir datos de descarga.
-                        </p>
                       </div>
                     </div>
                   </fieldset>
@@ -1757,7 +1787,7 @@ export default function CapacitacionesOnlinePage({ params }) {
                               </div>
                             </th>
                             <th className="px-6 py-4 text-center">RECURSOS MULTIMEDIA</th>
-                            <th className="px-6 py-4 text-center">FIRMAS ASISTENCIA</th>
+                            <th className="px-6 py-4 text-center">ASISTENCIA</th>
                             <th className="px-6 py-4 text-right w-36">ACCIONES</th>
                           </tr>
                         </thead>
@@ -1782,7 +1812,7 @@ export default function CapacitacionesOnlinePage({ params }) {
                                 </td>
 
                                 <td className="px-6 py-4 font-medium text-slate-600">
-                                  <span className="block max-w-[180px] truncate">{item.target_puesto || 'Todo el personal'}</span>
+                                  <span className="block max-w-[180px] truncate">{getItemPuestos(item)}</span>
                                 </td>
 
                                 <td className="px-6 py-4 font-medium text-slate-600">
@@ -1794,23 +1824,45 @@ export default function CapacitacionesOnlinePage({ params }) {
                                   </span>
                                 </td>
 
-                                <td className="px-6 py-4 text-center">
+                                <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
                                   <div className="flex items-center justify-center gap-1.5">
-                                    {item.video_url && (
-                                      <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-red-50 text-red-600 border border-red-200 flex items-center gap-1">
-                                        <Tv className="h-3 w-3" /> Video
-                                      </span>
-                                    )}
                                     {item.document_url && (
-                                      <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-blue-50 text-[#468DFF] border border-blue-200 flex items-center gap-1">
-                                        <FileText className="h-3 w-3" /> PDF
-                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleViewPdf(item.document_url);
+                                        }}
+                                        className="p-2 text-[#468DFF] hover:bg-[#DBEAFE] hover:text-[#0511F2] bg-[#EFF6FF] border border-[#468DFF]/30 rounded-xl transition-colors cursor-pointer"
+                                        title="Visualizar Documento / Presentación"
+                                      >
+                                        <FileText className="h-4.5 w-4.5" />
+                                      </button>
+                                    )}
+                                    {item.video_url && (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          window.open(item.video_url, '_blank');
+                                        }}
+                                        className="p-2 text-red-600 hover:bg-red-100 hover:text-red-700 bg-red-50 border border-red-200 rounded-xl transition-colors cursor-pointer"
+                                        title="Ver Video Instructivo"
+                                      >
+                                        <Tv className="h-4.5 w-4.5" />
+                                      </button>
+                                    )}
+                                    {!item.document_url && !item.video_url && (
+                                      <span className="text-slate-400 text-xs italic">-</span>
                                     )}
                                   </div>
                                 </td>
 
-                                <td className="px-6 py-4 text-center">
-                                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[#468DFF]/10 text-[#468DFF] border border-[#468DFF]/20">
+                                <td className="px-6 py-4 text-center" onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenRegistrosModal(item, e);
+                                }}>
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[#468DFF]/10 text-[#468DFF] border border-[#468DFF]/20 hover:bg-[#468DFF]/20 cursor-pointer transition-colors">
                                     <ShieldCheck className="h-3.5 w-3.5 text-[#468DFF]" />
                                     {numFirmas} Asistente(s)
                                   </span>
@@ -2184,6 +2236,48 @@ export default function CapacitacionesOnlinePage({ params }) {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal Emergente Estándar: Tip para Presentaciones (PPT/PPTX) */}
+      {showPptTipModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 shadow-2xl relative space-y-4 animate-scaleUp">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2 text-[#468DFF]">
+                <HelpCircle className="h-5 w-5" />
+                <h3 className="font-outfit text-base font-bold text-slate-900">
+                  Tip para Presentaciones (PPT / PPTX)
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPptTipModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="bg-blue-50/60 p-4 rounded-xl border border-blue-100 text-xs text-slate-700 space-y-2 leading-relaxed">
+              <p>
+                Para presentaciones PowerPoint pesadas (<strong>mayores a 10 MB</strong>), lo más recomendable es utilizar la pestaña <strong>Enlace Drive</strong> e ingresar el enlace público de <strong>Google Slides</strong>.
+              </p>
+              <p>
+                Esto permite que los empleados naveguen la presentación filmina por filmina de forma fluida e instantánea, sin tiempos de espera ni consumo de datos por descarga.
+              </p>
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <AppButton
+                variant="primary"
+                size="sm"
+                onClick={() => setShowPptTipModal(false)}
+              >
+                Entendido
+              </AppButton>
+            </div>
           </div>
         </div>
       )}
