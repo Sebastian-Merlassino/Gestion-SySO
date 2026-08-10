@@ -1,5 +1,24 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-10] Rediseño de Control de Duración (Estilo Ergonomía) y Alineación de Etiquetas (`src/app/[tenant-slug]/capacitaciones-online/page.js`)
+
+### Resumen de Cambios
+- **Control de Duración idéntico a Ergonomía:**  
+  Se reemplazó el selector desplegable doble de horas/minutos por la caja de entrada numérica integrada con botón de conmutación de unidad (`MIN` / `HS`):
+  - Campo numérico libre para el valor (`placeholder: "Ej: 45"`).
+  - Botón de alternancia de unidad con badge distintivo: `MIN` en azul (`bg-blue-50 text-[#468DFF]`) y `HS` en ámbar (`bg-amber-50 text-amber-600`), calcado de la columna *"Tiempo Exp."* del protocolo de Ergonomía.
+- **Alineación Vertical de Etiquetas y Controles:**  
+  Se estandarizó la altura de las etiquetas (`Metodología *` y `Duración *`) con `h-4 leading-4` y la altura de ambos controles a `h-[42px]`, garantizando una alineación perfecta en altura dentro de la misma fila.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Commit
+`9633836` — style: alinear labels de Metodologia y Duracion e implementar selector con toggle MIN/HS al estilo Ergonomia
+
+---
+
 ## [2026-08-10] Incorporación de Campos Metodología y Duración en Capacitaciones Online (`src/app/[tenant-slug]/capacitaciones-online/page.js`)
 
 ### Resumen de Cambios
