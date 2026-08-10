@@ -1,5 +1,28 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-10] Ajuste Visual y de Textos en Vista Pública de Capacitación (Título, Metadatos, Textos y Footer Institucional)
+
+### Resumen de Cambios
+- **Título de la Página:** Actualizado a **"Capacitación de Higiene y Seguridad en el trabajo"**.
+- **Ficha de Metadatos:** Se eliminó la etiqueta de `Puesto/s`, dejando únicamente la **Empresa** y **Establecimiento**.
+- **Listado de Temas:** Se eliminaron los saltos de línea dobles entre los temas listados para lograr un formato compacto y continuo.
+- **Textos de Instrucción y Bloqueo:**
+  - Se reemplazó *"La firma se habilitará al llegar a la última."* por **"El formulario de registro se habilitará al completar la capacitación."**.
+  - Se eliminó el indicador de progreso al pie del reproductor visor.
+  - En la sección de registro bloqueado, se cambió *"Firma Digital Temporariamente Bloqueada..."* por el título **"Registro digital de capacitación"** y la descripción **"El formulario de registro se habilitará al completar la capacitación."**.
+- **Estilo General y Pie de Página:**
+  - Se integró el fondo `bg-syso-bg` con degradados ambientales idéntico al portal de login.
+  - Se reemplazó el pie de página de texto simple por el componente institucional `<PublicFooter />`.
+
+### Archivos Modificados
+- `[MODIFY] src/app/capacitar/[token]/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Commit
+`ac9590c` — fix: titulo exacto, remocion de puestos de metadatos, limpieza de saltos dobles en temas, footer de login y textos ajustados
+
+---
+
 ## [2026-08-10] Actualización de Cabecera Pública: Título Institucional, Establecimiento, Puestos Filtrados y Temas Incluidos
 
 ### Resumen de Cambios
