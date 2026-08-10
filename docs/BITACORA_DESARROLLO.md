@@ -1,14 +1,15 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-10] Modo Presentación Limpio con Controles y Desbloqueo Progresivo de Firma Digital
+## [2026-08-10] Bloqueo de Scroll Vertical e Integración de Pantalla Completa Dentro de la App
 
 ### Resumen de Cambios
-- **Modo Presentación Limpio con Controles en Visor (`src/app/capacitar/[token]/page.js`):**
-  - **Barra de Navegación de Filminas:** Se incorporó una barra superior sobre el visor interactivo con botones de **Anterior** (`<ChevronLeft />`) y **Siguiente** (`<ChevronRight />`), indicador numérico de filmina activa (`Filmina / Diapositiva X`) y botón de **Pantalla Completa**.
-  - **Parámetros de Presentación Limpia:** Para documentos PDF, se inyectaron los parámetros `#toolbar=0&navpanes=0&scrollbar=0` eliminando barras de herramientas molestas y permitiendo vista limpia de filminas.
-- **Desbloqueo Progresivo de Firma Digital por Cumplimiento Auditado:**
-  - **Bloqueo Inicial:** La sección *Registro y Firma Digital de Asistencia* se presenta inicialmente bloqueada (`🔒 Firma Digital Temporariamente Bloqueada`) con una banner explicativa solicitando recorrer el material instructivo antes de firmar.
-  - **Habilitación de Firma:** Al avanzar entre las diapositivas o presionar *"Confirmar lectura completa del material y habilitar firma"*, la sección de firma digital se desbloquea con el distintivo verde `✓ Material Revisado`.
+- **Supresión de Scroll Vertical en Visor (`src/app/capacitar/[token]/page.js`):**
+  - Se agregó la propiedad `scrolling="no"` al iframe y el ajuste de vista `view=Fit` en los parámetros de PDF.
+  - Esto elimina las barras de desplazamiento vertical internas del navegador PDF, garantizando que cada filmina/diapositiva se ajuste limpiamente al contenedor sin desbordamiento.
+- **Modal de Pantalla Completa Integrado Dentro de la App (In-App Fullscreen Modal):**
+  - **Experiencia sin salir de la plataforma:** Al hacer clic en *"Pantalla Completa"*, la app despliega un reproductor modal de pantalla completa integrado (`isFullscreenModalOpen`) en lugar de redirigir a pestañas externas.
+  - **Control de Avance Auditado:** El modal conserva la barra superior con botones de **Anterior**, **Siguiente**, indicador numérico de filmina y botón de *"Habilitar Firma"*.
+  - **Sincronización:** Toda interacción dentro del modal de pantalla completa actualiza en tiempo real el progreso de filminas y desbloquea el formulario de firma digital de la página principal.
 - **Verificación:**
   - Compilación de producción ejecutada y aprobada (`✓ Compiled successfully`).
 

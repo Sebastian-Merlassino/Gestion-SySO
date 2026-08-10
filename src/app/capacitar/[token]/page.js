@@ -21,8 +21,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Maximize2,
+  Minimize2,
   Lock,
-  Unlock
+  Unlock,
+  X
 } from 'lucide-react';
 
 export default function PublicCapacitacionPage({ params }) {
@@ -44,6 +46,7 @@ export default function PublicCapacitacionPage({ params }) {
   const [currentSlide, setCurrentSlide] = useState(1);
   const [totalSlides, setTotalSlides] = useState(1);
   const [hasCompletedMaterial, setHasCompletedMaterial] = useState(false);
+  const [isFullscreenModalOpen, setIsFullscreenModalOpen] = useState(false);
 
   // Canvas Signature State
   const canvasRef = useRef(null);
@@ -456,17 +459,14 @@ export default function PublicCapacitacionPage({ params }) {
                     Modo Presentación — Utilice las flechas para avanzar o retroceder las filminas
                   </span>
                 </div>
-                {viewer.rawUrl && (
-                  <a
-                    href={viewer.rawUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs font-bold text-[#468DFF] hover:underline flex items-center gap-1 bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-150"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    Pantalla Completa
-                  </a>
-                )}
+                <button
+                  type="button"
+                  onClick={() => setIsFullscreenModalOpen(true)}
+                  className="text-xs font-bold text-[#468DFF] hover:bg-blue-100 flex items-center gap-1.5 bg-blue-50 px-3.5 py-2 rounded-xl border border-blue-200 transition-all cursor-pointer shadow-sm"
+                >
+                  <Maximize2 className="w-4 h-4 text-[#468DFF]" />
+                  Pantalla Completa
+                </button>
               </div>
 
               {/* Barra Superior de Controles de Diapositiva (Flechas Avance/Retroceso) */}
@@ -498,7 +498,7 @@ export default function PublicCapacitacionPage({ params }) {
                 </button>
               </div>
 
-              {/* Visor Interactivo Iframe Embed (Slides/PDF Modo Limpio) */}
+              {/* Visor Interactivo Iframe Embed (Slides/PDF Modo Limpio Sin Scroll Vertical) */}
               <div className="aspect-[4/3] sm:aspect-[16/10] w-full rounded-xl overflow-hidden bg-slate-900 border border-slate-200 shadow-inner relative">
                 {viewer.loading ? (
                   <div className="w-full h-full flex flex-col items-center justify-center text-white space-y-2">
@@ -510,7 +510,8 @@ export default function PublicCapacitacionPage({ params }) {
                     key={currentSlide}
                     src={viewer.embedUrl}
                     title="Visor de Presentación y Documentos"
-                    className="w-full h-full border-0"
+                    className="w-full h-full border-0 overflow-hidden"
+                    scrolling="no"
                     allow="autoplay; fullscreen"
                     allowFullScreen
                   />
@@ -539,6 +540,88 @@ export default function PublicCapacitacionPage({ params }) {
                     : 'Confirmar lectura completa del material y habilitar firma'}
                 </button>
               </div>
+
+              {/* Modal de Pantalla Completa Integrado Dentro de la App */}
+              {isFullscreenModalOpen && (
+                <div className="fixed inset-0 z-[9999] bg-slate-950/95 flex flex-col backdrop-blur-md">
+                  {/* Cabecera del Modal */}
+                  <div className="bg-slate-900 border-b border-slate-800 p-3 sm:px-6 flex items-center justify-between flex-wrap gap-2 text-white">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-[#468DFF]" />
+                      <span className="text-sm font-bold truncate max-w-[200px] sm:max-w-md">
+                        {capacitacion.titulo}
+                      </span>
+                    </div>
+
+                    {/* Controles del Modal */}
+                    <div className="flex items-center gap-2 sm:gap-4">
+                      <button
+                        type="button"
+                        onClick={handlePrevSlide}
+                        disabled={currentSlide <= 1}
+                        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer disabled:cursor-default"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                        Anterior
+                      </button>
+
+                      <span className="text-xs font-mono font-bold bg-[#468DFF] px-2.5 py-1 rounded-md">
+                        Filmina {currentSlide}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={handleNextSlide}
+                        className="px-3 py-1.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer shadow-sm"
+                      >
+                        Siguiente
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setHasCompletedMaterial(true);
+                          setIsFullscreenModalOpen(false);
+                          setTimeout(() => {
+                            document.getElementById('firma-section')?.scrollIntoView({ behavior: 'smooth' });
+                          }, 100);
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                          hasCompletedMaterial
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-amber-600 hover:bg-amber-700 text-white'
+                        }`}
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        {hasCompletedMaterial ? '✓ Verificado' : 'Habilitar Firma'}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setIsFullscreenModalOpen(false)}
+                        className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-colors cursor-pointer"
+                        title="Cerrar Pantalla Completa"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Cuerpo de Pantalla Completa */}
+                  <div className="flex-1 w-full h-full relative overflow-hidden bg-black flex items-center justify-center">
+                    <iframe
+                      key={`modal-${currentSlide}`}
+                      src={viewer.embedUrl}
+                      title="Visor en Pantalla Completa"
+                      className="w-full h-full border-0 overflow-hidden"
+                      scrolling="no"
+                      allow="autoplay; fullscreen"
+                      allowFullScreen
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           );
         })()}
