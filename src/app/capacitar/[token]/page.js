@@ -57,6 +57,18 @@ export default function PublicCapacitacionPage({ params }) {
   const [hasCompletedMaterial, setHasCompletedMaterial] = useState(false);
   const [isFullscreenModalOpen, setIsFullscreenModalOpen] = useState(false);
 
+  // Bloquear scroll del body cuando el modal de pantalla completa está abierto
+  useEffect(() => {
+    if (isFullscreenModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isFullscreenModalOpen]);
+
   // Canvas Signature State
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
