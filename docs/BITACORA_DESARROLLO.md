@@ -1,5 +1,27 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-10] Inclusión de "Capacitaciones online" en Grilla de Planes Comerciales y Documentación Legal
+
+### Resumen de Cambios
+- **Modales de Modificación de Plan y Flujo de Onboarding:**
+  - Se incorporó el beneficio `"Capacitaciones online"` de forma explícita directamente debajo de `"Prog. Capacitación Anual"` en las tarjetas descriptivas de todos los planes comerciales (Plan Gratis, Plan Básico, Plan Estándar / Profesional y Plan Full) en:
+    1. Modal de Modificación de Plan del Perfil (`src/app/[tenant-slug]/profile/page.js`).
+    2. Modal de Modificación de Plan del Dashboard (`src/app/[tenant-slug]/dashboard/page.js`).
+    3. Selección de Plan del Onboarding (`src/app/onboarding/page.js`).
+- **Documentación Legal y Políticas:**
+  - **Términos y Condiciones (`src/app/terminos/page.js`):** Se actualizaron las secciones 4 ("Planes, Límites y Facturación") y 5 ("Uso Responsable") para explicitar el módulo de **Capacitaciones Online** y el **Programa de Capacitación Anual** dentro de las herramientas provistas por la plataforma.
+  - **Política de Privacidad (`src/app/privacidad/page.js`):** Se incluyó **Capacitaciones online** dentro del listado de datos operativos tratados del Tenant en la sección 2.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/onboarding/page.js`
+- `[MODIFY] src/app/terminos/page.js`
+- `[MODIFY] src/app/privacidad/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
 ## [2026-08-10] Corrección del Botón de Cierre de Sesión (Salir) en Barra Lateral (`src/components/Sidebar.js`)
 
 ### Resumen de Cambios

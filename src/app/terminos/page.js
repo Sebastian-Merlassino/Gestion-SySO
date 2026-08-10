@@ -75,7 +75,7 @@ export default function TerminosPage() {
             </p>
             <ul className="list-disc pl-5 text-xs text-slate-655 space-y-2">
               <li>
-                **Límites de Uso**: Cada plan comercial posee topes en la cantidad de empresas clientes que pueden cargarse en el sistema, número de inspectores/técnicos registrados y acceso a módulos y protocolos normativos (ej. Protocolo de Iluminación Res. 84/12, Protocolo de Ruido Res. 85/12, Protocolo de Ergonomía Res. SRT 886/15, Extintores, Control Eléctrico, Legajo Técnico, Checklists Personalizados).
+                **Límites de Uso**: Cada plan comercial posee topes en la cantidad de empresas clientes que pueden cargarse en el sistema, número de inspectores/técnicos registrados y acceso a módulos y protocolos normativos (ej. Programa de Capacitación Anual, Capacitaciones Online, Protocolo de Iluminación Res. 84/12, Protocolo de Ruido Res. 85/12, Protocolo de Ergonomía Res. SRT 886/15, Extintores, Control Eléctrico, Legajo Técnico, Checklists Personalizados).
               </li>
               <li>
                 **Procesamiento de Pagos**: Las suscripciones se pagan mensualmente por adelantado mediante la pasarela segura de **Mercado Pago**. Al suscribirse, usted autoriza el cobro automático mensual recurrente.
@@ -98,7 +98,7 @@ export default function TerminosPage() {
               Uso Responsable y Exención de Responsabilidad Laboral
             </h2>
             <p className="text-xs leading-relaxed text-slate-655">
-              Gestión SySO proporciona herramientas de software para facilitar el registro de datos, elaboración de protocolos normativos (Protocolo de Iluminación Res. 84/12, Protocolo de Ruido Res. 85/12, Protocolo de Ergonomía Res. SRT 886/15), control de extintores, constancias de visitas, programas anuales y auditorías. No obstante, **el Servicio no sustituye bajo ninguna circunstancia el criterio técnico, las mediciones físicas presenciales con instrumental homologado/calibrado, ni la auditoría y firma profesional matriculada exigida por las leyes y resoluciones nacionales de higiene, seguridad y medicina laboral (Ley Nº 19.587, Decreto Nº 351/79, Res. SRT 886/15, Res. SRT 84/12, Res. SRT 85/12 y Res. MTESS 295/03)**.
+              Gestión SySO proporciona herramientas de software para facilitar el registro de datos, elaboración de protocolos normativos (Protocolo de Iluminación Res. 84/12, Protocolo de Ruido Res. 85/12, Protocolo de Ergonomía Res. SRT 886/15), control de extintores, constancias de visitas, programa de capacitación anual, capacitaciones online y auditorías. No obstante, **el Servicio no sustituye bajo ninguna circunstancia el criterio técnico, las mediciones físicas presenciales con instrumental homologado/calibrado, ni la auditoría y firma profesional matriculada exigida por las leyes y resoluciones nacionales de higiene, seguridad y medicina laboral (Ley Nº 19.587, Decreto Nº 351/79, Res. SRT 886/15, Res. SRT 84/12, Res. SRT 85/12 y Res. MTESS 295/03)**.
             </p>
             <p className="text-xs leading-relaxed text-slate-655">
               La Plataforma y sus desarrolladores quedan eximidos de cualquier responsabilidad por accidentes laborales, siniestros, sanciones administrativas o multas estatales que sufran los clientes o sus empresas afiliadas, siendo responsabilidad exclusiva del Profesional SySO y de la dirección de la empresa cliente asegurar el cumplimiento de la normativa legal aplicable.
