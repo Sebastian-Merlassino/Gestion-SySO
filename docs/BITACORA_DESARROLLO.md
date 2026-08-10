@@ -1,5 +1,23 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-10] Estandarización de Pictogramas de Acción en Tabla de Capacitaciones Online (`src/app/[tenant-slug]/capacitaciones-online/page.js`)
+
+### Resumen de Cambios
+- **Alineación Visual de Pictogramas:** Se actualizaron todos los botones de las columnas **Recursos Multimedia** y **Acciones** para utilizar exactamente la paleta, padding y bordes redondeados del estándar institucional (`Programa de Capacitación Anual`):
+  - Botón Documento/Firmantes/PDF: `p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2]` con íconos de tamaño `h-4.5 w-4.5` y sombra `shadow-sm`.
+  - Botón Compartir / Enlace: `p-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200`.
+  - Botón Editar: `p-1.5 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100`.
+  - Botón Eliminar / Video: `p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100`.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Commit
+`a78dc0e` — fix: estandarizacion de pictogramas de accion en tabla de capacitaciones online
+
+---
+
 ## [2026-08-10] Mejoras Visuales en Tabla de Capacitaciones Online y Modal de Edición (`src/app/[tenant-slug]/capacitaciones-online/page.js`)
 
 ### Resumen de Cambios
