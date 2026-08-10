@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
+import { useToast } from '@/components/providers/ToastProvider';
 import { supabase } from '@/lib/supabase';
 import { 
   GraduationCap, 
@@ -42,6 +43,7 @@ export default function PublicCapacitacionPage({ params }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [capacitacion, setCapacitacion] = useState(null);
+  const { toast } = useToast();
   
   // Form State
   const [nombre, setNombre] = useState('');
@@ -97,9 +99,6 @@ export default function PublicCapacitacionPage({ params }) {
 
         if (loadedCap) {
           setCapacitacion(loadedCap);
-          if (loadedCap.target_puesto) {
-            setPuesto(loadedCap.target_puesto);
-          }
 
           // Firmar URL si el documento es una ruta relativa en Supabase Storage
           const docUrl = loadedCap.document_url;
@@ -255,13 +254,22 @@ export default function PublicCapacitacionPage({ params }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!nombre.trim() || !dni.trim() || !puesto.trim()) {
-      alert('Por favor complete todos los datos personales (Nombre, DNI y Puesto).');
+
+    // Validaciones en castellano usando el sistema de toasts unificado
+    if (!nombre.trim()) {
+      toast('Debe completar su nombre y apellido para continuar.', 'warning');
       return;
     }
-
+    if (!dni.trim()) {
+      toast('Debe completar su número de DNI/Documento para continuar.', 'warning');
+      return;
+    }
+    if (!puesto.trim()) {
+      toast('Debe completar el campo Puesto de Trabajo para continuar.', 'warning');
+      return;
+    }
     if (!hasSignature || !canvasRef.current) {
-      alert('Por favor dibuje su firma digital en el cuadro correspondiente antes de enviar.');
+      toast('Debe dibujar su firma digital en el recuadro antes de registrar la capacitación.', 'warning');
       return;
     }
 
@@ -303,7 +311,7 @@ export default function PublicCapacitacionPage({ params }) {
       setSubmittedSuccess(true);
     } catch (err) {
       console.error('Error al registrar la asistencia:', err);
-      alert('No se pudo guardar la constancia de firma. Por favor intente nuevamente.');
+      toast('No se pudo guardar el registro de capacitación. Por favor intente nuevamente.', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -821,12 +829,12 @@ export default function PublicCapacitacionPage({ params }) {
                 {submitting ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    Registrando Asistencia...
+                    Registrando...
                   </>
                 ) : (
                   <>
                     <CheckCircle2 className="w-5 h-5" />
-                    Firmar y Registrar Capacitación
+                    Registrar Capacitación
                   </>
                 )}
               </button>
