@@ -1,5 +1,27 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-10] Actualización de la Pantalla de Asistencia Registrada Exitosamente (`src/app/capacitar/[token]/page.js`)
+
+### Resumen de Cambios
+- **Incorporación del Logo Principal del Administrador:**  
+  Se actualizó la RPC `get_capacitacion_publica` en la base de datos para realizar `LEFT JOIN public.tenants t ON t.id = c.tenant_id` y retornar `tenant_logo_url`.
+  - El contenedor principal de la vista de éxito (`submittedSuccess`) ahora renderiza en su encabezado el logo corporativo principal cargado en el perfil del usuario administrador (`tenant_logo_url` con fallback a `/brand/logo-primary.png`).
+- **Ajuste del Texto Confirmatorio:**  
+  Se modificó la descripción confirmatoria a: *"Muchas gracias **[Nombre]**. Tu constancia de capacitación de higiene y seguridad para la empresa **[Empresa]** se ha firmado y registrado exitosamente."*
+- **Renglón de Nombre y Apellido en Tarjeta Resumen:**  
+  Dentro del cuadro contenedor de resumen (`bg-slate-50 border border-slate-200`) se incorporó la fila entre la capacitación y el DNI:
+  - `Nombre y Apellido:` **[Nombre del Trabajador]**
+
+### Archivos Modificados
+- `[MODIFY] src/app/capacitar/[token]/page.js`
+- `[MODIFY] supabase/migrations/20260820000000_add_capacitaciones_online.sql`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Commit
+`20e07b3` — feat: incorporar logo de administrador, texto de constancia de higiene y seguridad y renglon de Nombre y Apellido en resumen de asistencia registrada
+
+---
+
 ## [2026-08-10] Paneles Desplegables Emergentes con Adición Manual (+ Añadir) en Registro Público (`src/app/capacitar/[token]/page.js`)
 
 ### Resumen de Cambios
