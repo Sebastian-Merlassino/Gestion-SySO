@@ -2010,16 +2010,17 @@ export default function CapacitacionesOnlinePage({ params }) {
 
       {/* Modal Unificado de Compartir (WhatsApp / Email / Enlace) */}
       {shareModal.show && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-200 animate-scaleUp space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-blue-50 text-[#468DFF] rounded-xl">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 animate-scaleUp space-y-5">
+            {/* Cabecera del Modal */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-blue-50 text-[#468DFF] rounded-xl border border-blue-100">
                   <Share2 className="h-5 w-5" />
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-[#0D0D0D]">Compartir Capacitación</h3>
-                  <p className="text-xs text-slate-500 truncate max-w-[280px]">
+                  <p className="text-xs text-slate-500 font-normal truncate max-w-[280px]">
                     {shareModal.capacitacion?.titulo}
                   </p>
                 </div>
@@ -2027,21 +2028,21 @@ export default function CapacitacionesOnlinePage({ params }) {
               <button
                 type="button"
                 onClick={() => setShareModal({ ...shareModal, show: false })}
-                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+                className="text-slate-400 hover:text-[#468DFF] p-1.5 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
-            {/* Selector de Pestañas */}
-            <div className="flex border-b border-slate-200 bg-slate-50 p-1 rounded-xl gap-1 text-xs font-bold">
+            {/* Selector de Pestañas (Estandarizado Marca SySO) */}
+            <div className="flex bg-slate-100/80 p-1 rounded-xl gap-1 text-xs font-bold border border-slate-200">
               <button
                 type="button"
                 onClick={() => setShareModal({ ...shareModal, activeTab: 'whatsapp' })}
-                className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   shareModal.activeTab === 'whatsapp'
-                    ? 'bg-white text-emerald-600 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700'
+                    ? 'bg-[#468DFF] text-white shadow-md shadow-[#468DFF]/20 border border-[#468DFF]'
+                    : 'bg-transparent text-slate-600 hover:bg-white hover:text-[#468DFF]'
                 }`}
               >
                 💬 WhatsApp
@@ -2049,10 +2050,10 @@ export default function CapacitacionesOnlinePage({ params }) {
               <button
                 type="button"
                 onClick={() => setShareModal({ ...shareModal, activeTab: 'email' })}
-                className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   shareModal.activeTab === 'email'
-                    ? 'bg-white text-[#468DFF] shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700'
+                    ? 'bg-[#468DFF] text-white shadow-md shadow-[#468DFF]/20 border border-[#468DFF]'
+                    : 'bg-transparent text-slate-600 hover:bg-white hover:text-[#468DFF]'
                 }`}
               >
                 ✉️ Correo
@@ -2060,10 +2061,10 @@ export default function CapacitacionesOnlinePage({ params }) {
               <button
                 type="button"
                 onClick={() => setShareModal({ ...shareModal, activeTab: 'link' })}
-                className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   shareModal.activeTab === 'link'
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700'
+                    ? 'bg-[#468DFF] text-white shadow-md shadow-[#468DFF]/20 border border-[#468DFF]'
+                    : 'bg-transparent text-slate-600 hover:bg-white hover:text-[#468DFF]'
                 }`}
               >
                 🔗 Enlace
@@ -2072,9 +2073,9 @@ export default function CapacitacionesOnlinePage({ params }) {
 
             {/* Contenido Pestaña WhatsApp */}
             {shareModal.activeTab === 'whatsapp' && (
-              <div className="space-y-3 pt-2">
+              <div className="space-y-4 pt-1">
                 <div>
-                  <label className="text-xs font-bold text-slate-600 block mb-1">
+                  <label className="text-xs font-bold text-slate-700 block mb-1.5">
                     Número de WhatsApp Destinatario (Opcional)
                   </label>
                   <input
@@ -2082,18 +2083,18 @@ export default function CapacitacionesOnlinePage({ params }) {
                     placeholder="Ej. +5491112345678"
                     value={shareModal.phone}
                     onChange={(e) => setShareModal({ ...shareModal, phone: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50"
+                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#468DFF] focus:ring-2 focus:ring-[#468DFF]/20 bg-slate-50/50 transition-all text-slate-900 placeholder-slate-400"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-600 block mb-1">
+                  <label className="text-xs font-bold text-slate-700 block mb-1.5">
                     Mensaje a enviar
                   </label>
                   <textarea
                     rows={4}
                     value={shareModal.message}
                     onChange={(e) => setShareModal({ ...shareModal, message: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl p-3 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50 font-normal leading-relaxed text-slate-800"
+                    className="w-full border border-slate-200 rounded-xl p-3.5 text-xs focus:outline-none focus:border-[#468DFF] focus:ring-2 focus:ring-[#468DFF]/20 bg-slate-50/50 transition-all font-normal leading-relaxed text-slate-900"
                   />
                 </div>
                 <a
@@ -2101,7 +2102,7 @@ export default function CapacitacionesOnlinePage({ params }) {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => setShareModal({ ...shareModal, show: false })}
-                  className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-600/20"
+                  className="w-full py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-md shadow-[#468DFF]/20 cursor-pointer"
                 >
                   Despachar por WhatsApp
                 </a>
@@ -2110,9 +2111,9 @@ export default function CapacitacionesOnlinePage({ params }) {
 
             {/* Contenido Pestaña Correo */}
             {shareModal.activeTab === 'email' && (
-              <div className="space-y-3 pt-2">
+              <div className="space-y-4 pt-1">
                 <div>
-                  <label className="text-xs font-bold text-slate-600 block mb-1">
+                  <label className="text-xs font-bold text-slate-700 block mb-1.5">
                     Correo Electrónico Destinatario *
                   </label>
                   <input
@@ -2120,35 +2121,35 @@ export default function CapacitacionesOnlinePage({ params }) {
                     placeholder="ejemplo@empresa.com"
                     value={shareModal.email}
                     onChange={(e) => setShareModal({ ...shareModal, email: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50"
+                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#468DFF] focus:ring-2 focus:ring-[#468DFF]/20 bg-slate-50/50 transition-all text-slate-900 placeholder-slate-400"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-600 block mb-1">
+                  <label className="text-xs font-bold text-slate-700 block mb-1.5">
                     Asunto del Correo
                   </label>
                   <input
                     type="text"
                     value={shareModal.subject}
                     onChange={(e) => setShareModal({ ...shareModal, subject: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50"
+                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#468DFF] focus:ring-2 focus:ring-[#468DFF]/20 bg-slate-50/50 transition-all text-slate-900"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-600 block mb-1">
+                  <label className="text-xs font-bold text-slate-700 block mb-1.5">
                     Cuerpo del Mensaje
                   </label>
                   <textarea
                     rows={4}
                     value={shareModal.message}
                     onChange={(e) => setShareModal({ ...shareModal, message: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl p-3 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50 font-normal leading-relaxed text-slate-800"
+                    className="w-full border border-slate-200 rounded-xl p-3.5 text-xs focus:outline-none focus:border-[#468DFF] focus:ring-2 focus:ring-[#468DFF]/20 bg-slate-50/50 transition-all font-normal leading-relaxed text-slate-900"
                   />
                 </div>
                 <a
                   href={`mailto:${shareModal.email}?subject=${encodeURIComponent(shareModal.subject)}&body=${encodeURIComponent(shareModal.message)}`}
                   onClick={() => setShareModal({ ...shareModal, show: false })}
-                  className="w-full py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-md shadow-[#468DFF]/20"
+                  className="w-full py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-md shadow-[#468DFF]/20 cursor-pointer"
                 >
                   Despachar por Correo Electrónico
                 </a>
@@ -2157,16 +2158,16 @@ export default function CapacitacionesOnlinePage({ params }) {
 
             {/* Contenido Pestaña Enlace Directo */}
             {shareModal.activeTab === 'link' && (
-              <div className="space-y-3 pt-2">
+              <div className="space-y-4 pt-1">
                 <div>
-                  <label className="text-xs font-bold text-slate-600 block mb-1">
+                  <label className="text-xs font-bold text-slate-700 block mb-1.5">
                     Enlace Público para Empleados
                   </label>
                   <input
                     type="text"
                     readOnly
                     value={shareModal.publicUrl}
-                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-xs bg-slate-100 text-slate-700 font-mono"
+                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs bg-slate-100 text-slate-800 font-mono"
                   />
                 </div>
                 <button
@@ -2175,7 +2176,7 @@ export default function CapacitacionesOnlinePage({ params }) {
                     handleCopyPublicLink(shareModal.publicUrl);
                     setShareModal({ ...shareModal, show: false });
                   }}
-                  className="w-full py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-md shadow-[#468DFF]/20"
+                  className="w-full py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-md shadow-[#468DFF]/20 cursor-pointer"
                 >
                   Copiar Enlace al Portapapeles
                 </button>

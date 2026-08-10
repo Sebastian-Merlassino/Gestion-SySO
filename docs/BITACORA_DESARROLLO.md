@@ -1,12 +1,16 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-10] Corrección de Duplicación de URL al Copiar Enlace Público de Capacitación
+## [2026-08-10] Alineación Estética y Colores de Marca en el Modal de Compartir Capacitación
 
 ### Resumen de Cambios
-- **Corrección en Generación de Enlace (`src/app/[tenant-slug]/capacitaciones-online/page.js`):**
-  - Se corrigió la función `handleCopyPublicLink` para verificar si la entrada ya es una URL completa (`https://...`).
-  - Anteriormente, al pasar la URL completa del modal de compartir, la función concatenaba el prefijo `/capacitar/` dos veces, generando un enlace inválido (`/capacitar/https:/app.gestionsyso.com/capacitar/token`).
-  - Con esta corrección, la URL se construye limpia y de forma absoluta (`https://app.gestionsyso.com/capacitar/token`).
+- **Diseño Visual de Marca (`src/app/[tenant-slug]/capacitaciones-online/page.js`):**
+  - **Pestañas Estandarizadas (`Tabs`):** Se aplicaron los colores primarios de la marca (`#468DFF`, `#0511F2`) con sombra suave `shadow-md shadow-[#468DFF]/20` para la pestaña activa y fondos limpios `bg-slate-100/80` para las inactivas.
+  - **Botones Primarios de Acción:** Todos los botones del modal (*Despachar por WhatsApp*, *Despachar por Correo Electrónico* y *Copiar Enlace al Portapapeles*) adoptaron el estilo primario estandarizado:
+    - Relleno: `#468DFF`
+    - Texto/Borde: `#FFFFFF`
+    - Hover: `#0511F2`
+    - Sombra: `shadow-md shadow-[#468DFF]/20`
+  - **Campos e Inputs:** Enfocado activo con borde `#468DFF` y anillo de resplandor `ring-2 ring-[#468DFF]/20`.
 - **Verificación:**
   - Compilación de producción ejecutada y aprobada (`✓ Compiled successfully`).
 
