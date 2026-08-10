@@ -233,18 +233,28 @@ export default function PublicCapacitacionPage({ params }) {
     }
   };
 
+  // Helper para obtener coordenadas relativas al canvas escaladas proporcionalmente
+  const getCanvasPos = (e, canvas) => {
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches && e.touches.length > 0 ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches && e.touches.length > 0 ? e.touches[0].clientY : e.clientY;
+
+    const x = ((clientX - rect.left) / (rect.width || 1)) * canvas.width;
+    const y = ((clientY - rect.top) / (rect.height || 1)) * canvas.height;
+
+    return { x, y };
+  };
+
   // Lógica del Canvas de Firma Táctil / Mouse
   const startDrawing = (e) => {
     e.preventDefault();
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    const rect = canvas.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const pos = getCanvasPos(e, canvas);
 
     ctx.beginPath();
-    ctx.moveTo(clientX - rect.left, clientY - rect.top);
+    ctx.moveTo(pos.x, pos.y);
     setIsDrawing(true);
   };
 
@@ -254,16 +264,14 @@ export default function PublicCapacitacionPage({ params }) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    const rect = canvas.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const pos = getCanvasPos(e, canvas);
 
     ctx.lineWidth = 2.5;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.strokeStyle = '#0F172A'; // Slate-900
 
-    ctx.lineTo(clientX - rect.left, clientY - rect.top);
+    ctx.lineTo(pos.x, pos.y);
     ctx.stroke();
     setHasSignature(true);
   };
