@@ -28,6 +28,7 @@ export async function middleware(request) {
     "font-src 'self' https://fonts.gstatic.com",
     `img-src 'self' data: blob: ${supabaseUrl ? supabaseUrl : ''} https://*.appsheet.com https://www.appsheet.com`,
     `connect-src 'self' ${supabaseUrl ? supabaseUrl : ''} ${supabaseWsUrl ? supabaseWsUrl : ''} https://*.appsheet.com https://www.appsheet.com`,
+    `frame-src 'self' ${supabaseUrl ? supabaseUrl : ''} https://*.supabase.co https://docs.google.com https://drive.google.com https://www.youtube.com https://*.youtube.com blob:`,
     "frame-ancestors 'self'"
   ].filter(Boolean).join('; ');
 

@@ -1,21 +1,18 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-10] Actualización de Etiquetas "Enviar" y Resolución de URLs Firmadas en Visor Interactivo
+## [2026-08-10] Directiva CSP frame-src para Incrustación de PDF y Visor de Presentaciones
 
 ### Resumen de Cambios
-- **Etiquetas de Botones Unificadas (`src/app/[tenant-slug]/capacitaciones-online/page.js`):**
-  - Se actualizaron los botones del modal de compartir reemplazando *"Despachar por WhatsApp"* y *"Despachar por Correo Electrónico"* por **"Enviar por WhatsApp"** y **"Enviar por Correo Electrónico"**.
-- **Visualización de Documentos Locales en Portal del Trabajador (`src/app/capacitar/[token]/page.js`):**
-  - **Generación Garantizada de Signed URLs:** Se aseguró que al cargar una capacitación con un documento PDF adjunto guardado en Supabase Storage (ruta relativa), la URL firmada (`documentSignedUrl`) se genere de forma unificada tanto para la lectura por RPC como por consulta directa.
-  - **Manejo de Estado de Carga:** Se agregó un estado de carga en el iframe mientras la URL firmada se resuelve, evitando peticiones de rutas relativas erróneas (`/capacitar/[token]/archivo.pdf` 404).
 - **Ajuste de Content Security Policy (`src/middleware.js`):**
-  - Se actualizó el encabezado CSP a `"frame-ancestors 'self'"` para permitir la incrustación limpia de visores e iframes de la misma aplicación sin bloqueos de seguridad.
+  - Se agregó la directiva `frame-src` al encabezado CSP en `middleware.js`:
+    ```javascript
+    `frame-src 'self' ${supabaseUrl ? supabaseUrl : ''} https://*.supabase.co https://docs.google.com https://drive.google.com https://www.youtube.com https://*.youtube.com blob:`
+    ```
+  - Al no estar especificada `frame-src` anteriormente, el navegador aplicaba el fallback estricto `default-src 'self'`, lo que provocaba que el navegador bloquease los iframes de Supabase Storage (`https://*.supabase.co`), Google Drive/Docs/Slides y YouTube con el mensaje de error de consola: *"Framing ... violates Content Security Policy directive default-src 'self'"*.
 - **Verificación:**
   - Compilación de producción ejecutada y aprobada (`✓ Compiled successfully`).
 
 ### Archivos Modificados
-- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
-- `[MODIFY] src/app/capacitar/[token]/page.js`
 - `[MODIFY] src/middleware.js`
 - `[MODIFY] docs/BITACORA_DESARROLLO.md`
 
