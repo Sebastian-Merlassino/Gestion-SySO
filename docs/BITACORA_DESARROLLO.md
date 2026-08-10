@@ -1,15 +1,15 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-10] Bloqueo de Scroll Vertical e Integración de Pantalla Completa Dentro de la App
+## [2026-08-10] Renderizado PDF con Google GView (Sin Scroll Continuo) y Desbloqueo Estricto de Firma
 
 ### Resumen de Cambios
-- **Supresión de Scroll Vertical en Visor (`src/app/capacitar/[token]/page.js`):**
-  - Se agregó la propiedad `scrolling="no"` al iframe y el ajuste de vista `view=Fit` en los parámetros de PDF.
-  - Esto elimina las barras de desplazamiento vertical internas del navegador PDF, garantizando que cada filmina/diapositiva se ajuste limpiamente al contenedor sin desbordamiento.
-- **Modal de Pantalla Completa Integrado Dentro de la App (In-App Fullscreen Modal):**
-  - **Experiencia sin salir de la plataforma:** Al hacer clic en *"Pantalla Completa"*, la app despliega un reproductor modal de pantalla completa integrado (`isFullscreenModalOpen`) en lugar de redirigir a pestañas externas.
-  - **Control de Avance Auditado:** El modal conserva la barra superior con botones de **Anterior**, **Siguiente**, indicador numérico de filmina y botón de *"Habilitar Firma"*.
-  - **Sincronización:** Toda interacción dentro del modal de pantalla completa actualiza en tiempo real el progreso de filminas y desbloquea el formulario de firma digital de la página principal.
+- **Renderizado Limpio de PDF mediante Google GView (`src/app/capacitar/[token]/page.js`):**
+  - Para evitar que Chrome/Acrobat despliegue la lista continua con desplazamiento vertical de todas las páginas del PDF, la URL firmada del PDF se encapsula dinámicamente utilizando `https://docs.google.com/gview?url=${encodeURIComponent(target)}&embedded=true`.
+  - Esto renderiza el PDF en formato de diapositiva limpia sin scrollbars ni desbordamiento vertical.
+- **Desbloqueo Estricto de Firma Digital:**
+  - Se eliminó la habilitación prematura de firma al presionar la flecha "Siguiente" por primera vez.
+  - La sección *Registro y Firma Digital de Asistencia* únicamente se desbloquea cuando el trabajador presiona explícitamente el botón:
+    **"He finalizado la revisión completa del material — Habilitar Firma"**.
 - **Verificación:**
   - Compilación de producción ejecutada y aprobada (`✓ Compiled successfully`).
 

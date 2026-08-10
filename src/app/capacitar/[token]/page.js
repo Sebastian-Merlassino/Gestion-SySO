@@ -170,12 +170,15 @@ export default function PublicCapacitacionPage({ params }) {
     }
 
     // 4. Direct PDF URL / Supabase Storage PDF
-    // Inyectar parámetros de presentación limpia (#toolbar=0&navpanes=0&scrollbar=0)
-    const cleanPdfUrl = target.includes('#') ? target : `${target}#toolbar=0&navpanes=0&scrollbar=0&view=FitH&page=${currentSlide}`;
+    // Utilizar visor de Google GView para renderizar PDF en formato de diapositiva limpia sin scroll continuo
+    const embedViewerUrl = (target.startsWith('http://') || target.startsWith('https://'))
+      ? `https://docs.google.com/gview?url=${encodeURIComponent(target)}&embedded=true`
+      : target;
+
     return {
       loading: false,
       type: 'pdf',
-      embedUrl: cleanPdfUrl,
+      embedUrl: embedViewerUrl,
       rawUrl: target
     };
   };
@@ -434,11 +437,7 @@ export default function PublicCapacitacionPage({ params }) {
           if (!viewer) return null;
 
           const handleNextSlide = () => {
-            const next = currentSlide + 1;
-            setCurrentSlide(next);
-            if (next >= totalSlides) {
-              setHasCompletedMaterial(true);
-            }
+            setCurrentSlide(prev => prev + 1);
           };
 
           const handlePrevSlide = () => {
@@ -528,16 +527,16 @@ export default function PublicCapacitacionPage({ params }) {
                       document.getElementById('firma-section')?.scrollIntoView({ behavior: 'smooth' });
                     }, 100);
                   }}
-                  className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                  className={`w-full sm:w-auto px-5 py-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md ${
                     hasCompletedMaterial
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      : 'bg-[#468DFF] hover:bg-[#0511F2] text-white shadow-md shadow-[#468DFF]/20'
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-300'
+                      : 'bg-[#468DFF] hover:bg-[#0511F2] text-white shadow-[#468DFF]/20 scale-[1.01]'
                   }`}
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   {hasCompletedMaterial
-                    ? '✓ Lectura de Presentación Verificada'
-                    : 'Confirmar lectura completa del material y habilitar firma'}
+                    ? '✓ Lectura Verificada — Firma Habilitada'
+                    : 'He finalizado la revisión completa del material — Habilitar Firma'}
                 </button>
               </div>
 
@@ -590,11 +589,11 @@ export default function PublicCapacitacionPage({ params }) {
                         className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                           hasCompletedMaterial
                             ? 'bg-emerald-600 text-white'
-                            : 'bg-amber-600 hover:bg-amber-700 text-white'
+                            : 'bg-[#468DFF] hover:bg-[#0511F2] text-white shadow-sm'
                         }`}
                       >
                         <CheckCircle2 className="w-4 h-4" />
-                        {hasCompletedMaterial ? '✓ Verificado' : 'Habilitar Firma'}
+                        {hasCompletedMaterial ? '✓ Lectura Verificada' : 'Finalizar y Habilitar Firma'}
                       </button>
 
                       <button
