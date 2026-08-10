@@ -790,41 +790,70 @@ export default function NominaPage({ params }) {
     const inserts = [];
     const updates = [];
 
-    payload.forEach(item => {
-      const duplicate = existingRecords.find(rec => {
-        if (editingId && rec.id === editingId) return false;
-        const sameCuil = rec.cuil && item.cuil && rec.cuil.replace(/[^0-9]/g, '') === item.cuil.replace(/[^0-9]/g, '');
-        const sameName = rec.nombre_apellido && item.nombre_apellido && 
-          rec.nombre_apellido.trim().toLowerCase() === item.nombre_apellido.trim().toLowerCase();
-        return sameCuil || sameName;
-      });
+    if (editingId) {
+      // MODO EDICIÓN: Actualizar el registro existente identificado por editingId
+      const editedItem = payload[0];
+      if (editedItem) {
+        // Verificar si existe OTRO registro diferente con el mismo CUIL o Nombre
+        const conflict = existingRecords.find(rec => {
+          if (rec.id === editingId) return false;
+          const sameCuil = rec.cuil && editedItem.cuil && rec.cuil.replace(/[^0-9]/g, '') === editedItem.cuil.replace(/[^0-9]/g, '');
+          const sameName = rec.nombre_apellido && editedItem.nombre_apellido && 
+            rec.nombre_apellido.trim().toLowerCase() === editedItem.nombre_apellido.trim().toLowerCase();
+          return sameCuil || sameName;
+        });
 
-      if (duplicate) {
-        duplicates.push({ item, duplicate });
+        if (conflict) {
+          triggerToast('El CUIL o nombre ingresado ya pertenece a otro trabajador registrado en la misma Razón Social.', 'error');
+          setSaving(false);
+          return;
+        }
+
         updates.push({
-          id: duplicate.id,
+          id: editingId,
           data: {
-            nombre_apellido: item.nombre_apellido,
-            cuil: item.cuil,
-            fecha_alta: item.fecha_alta,
-            area_sector: item.area_sector,
-            puesto: item.puesto,
-            fecha_carga: item.fecha_carga
+            empresa_id: empresaId,
+            establecimiento_id: establecimientoId,
+            nombre_apellido: editedItem.nombre_apellido,
+            cuil: editedItem.cuil,
+            fecha_alta: editedItem.fecha_alta,
+            area_sector: editedItem.area_sector,
+            puesto: editedItem.puesto,
+            fecha_carga: editedItem.fecha_carga
           }
         });
-      } else {
-        inserts.push(item);
       }
-    });
+    } else {
+      // MODO CREACIÓN (Nuevas filas manuales o importación de Excel)
+      payload.forEach(item => {
+        const duplicate = existingRecords.find(rec => {
+          const sameCuil = rec.cuil && item.cuil && rec.cuil.replace(/[^0-9]/g, '') === item.cuil.replace(/[^0-9]/g, '');
+          const sameName = rec.nombre_apellido && item.nombre_apellido && 
+            rec.nombre_apellido.trim().toLowerCase() === item.nombre_apellido.trim().toLowerCase();
+          return sameCuil || sameName;
+        });
 
-    if (duplicates.length > 0) {
-      if (editingId) {
-        // If editing and found a duplicate conflict
-        triggerToast('El nombre o CUIL ingresado ya existe para esta Razón Social en el año seleccionado.', 'error');
-        setSaving(false);
-        return;
-      } else {
-        // Ask the user to overwrite
+        if (duplicate) {
+          duplicates.push({ item, duplicate });
+          updates.push({
+            id: duplicate.id,
+            data: {
+              empresa_id: empresaId,
+              establecimiento_id: establecimientoId,
+              nombre_apellido: item.nombre_apellido,
+              cuil: item.cuil,
+              fecha_alta: item.fecha_alta,
+              area_sector: item.area_sector,
+              puesto: item.puesto,
+              fecha_carga: item.fecha_carga
+            }
+          });
+        } else {
+          inserts.push(item);
+        }
+      });
+
+      if (duplicates.length > 0) {
         setSaving(false);
         setModalAlert({
           show: true,
@@ -840,7 +869,7 @@ export default function NominaPage({ params }) {
       }
     }
 
-    // If no duplicates, execute save directly
+    // Ejecutar guardado (Update o Insert segun corresponda)
     await executeSave(inserts, updates);
   };
 
@@ -1049,7 +1078,7 @@ export default function NominaPage({ params }) {
                           setEmpresaId(e.target.value);
                           setEstablecimientoId('');
                         }}
-                        disabled={profile?.role === 'cliente' || editingId !== null}
+                        disabled={profile?.role === 'cliente'}
                         className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white text-slate-700 transition-all cursor-pointer font-semibold disabled:text-slate-800 disabled:bg-slate-50 disabled:opacity-100"
                       >
                         <option value="">Selecciona un cliente</option>
@@ -1068,7 +1097,7 @@ export default function NominaPage({ params }) {
                         required
                         value={establecimientoId}
                         onChange={(e) => setEstablecimientoId(e.target.value)}
-                        disabled={!empresaId || editingId !== null}
+                        disabled={!empresaId}
                         className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white text-slate-700 transition-all cursor-pointer font-semibold disabled:text-slate-800 disabled:bg-slate-50 disabled:opacity-100"
                       >
                         <option value="">Selecciona un establecimiento</option>
@@ -1091,14 +1120,12 @@ export default function NominaPage({ params }) {
                           required
                           value={fechaCarga}
                           onChange={(e) => setFechaCarga(formatAsDateInput(e.target.value))}
-                          disabled={editingId !== null}
                           className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white text-slate-700 transition-all font-mono disabled:text-slate-800 disabled:bg-slate-50 disabled:opacity-100"
                         />
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
                           <Calendar className="h-4 w-4" />
                           <input
                             type="date"
-                            disabled={editingId !== null}
                             className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                             onChange={(e) => {
                               const val = e.target.value;

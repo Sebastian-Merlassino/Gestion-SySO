@@ -176,6 +176,7 @@ export async function middleware(request) {
     pathname === '/api/auth/login-cuit' ||
     pathname === '/api/auth/callback' ||
     pathname === '/api/webhooks/mercadopago' ||
+    pathname.startsWith('/capacitar/') ||
     pathname.startsWith('/_next/') ||
     pathname.includes('.') || // archivos estáticos en public/
     pathname.startsWith('/brand/');
@@ -235,7 +236,7 @@ export async function middleware(request) {
     const routeTenantSlug = pathSegments[0];
     
     // Lista de rutas raíz reservadas de Next.js
-    const reservedRoutes = ['login', 'register', 'onboarding', 'api', 'brand', 'assets'];
+    const reservedRoutes = ['login', 'register', 'onboarding', 'api', 'brand', 'assets', 'capacitar', 'terminos', 'privacidad', 'cookies'];
     
     if (!reservedRoutes.includes(routeTenantSlug) && !routeTenantSlug.includes('.')) {
       // Si el slug en la URL no coincide con el slug del tenant del usuario, redirigir a su propio dashboard
@@ -271,10 +272,10 @@ export async function middleware(request) {
       
       // Definir características habilitadas por plan
       const planFeatures = {
-        free: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'empresas', 'equipo', 'protocolos'],
-        basic_5: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'empresas', 'equipo', 'protocolos'],
-        standard_25: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'visitas', 'avisos', 'empresas', 'equipo', 'protocolos'],
-        libre: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'visitas', 'avisos', 'checklist-personalizados', 'legajo', 'portal-clientes', 'empresas', 'equipo', 'protocolos']
+        free: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'empresas', 'equipo', 'protocolos'],
+        basic_5: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'empresas', 'equipo', 'protocolos'],
+        standard_25: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'visitas', 'avisos', 'empresas', 'equipo', 'protocolos'],
+        libre: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'visitas', 'avisos', 'checklist-personalizados', 'legajo', 'portal-clientes', 'empresas', 'equipo', 'protocolos']
       };
       
       const allowedFeatures = planFeatures[effectivePlan] || planFeatures.free;

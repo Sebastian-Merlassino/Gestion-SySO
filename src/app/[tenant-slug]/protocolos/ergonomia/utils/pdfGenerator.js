@@ -67,22 +67,73 @@ const getImgDimensions = (base64Str) => {
 
 // Helper to fetch signature Base64 defensively from URL or Supabase storage path
 const fetchSignatureImage = async (urlOrPath) => {
-  if (!urlOrPath) return '';
+  if (!urlOrPath || urlOrPath === 'N/A') return '';
   if (typeof urlOrPath === 'string' && urlOrPath.startsWith('data:image/')) return urlOrPath;
 
-  // Direct HTTP fetch
-  try {
-    const b64 = await getBase64ImageFromUrl(urlOrPath);
-    if (b64 && b64.startsWith('data:image/')) return b64;
-  } catch (e) {}
+  let targetUrl = urlOrPath;
+  let relativePath = urlOrPath;
+  let bucketName = 'signatures';
 
-  // Supabase Storage fetch if relative path
-  if (typeof urlOrPath === 'string' && !urlOrPath.startsWith('http')) {
-    const buckets = ['protocolos-ergonomia', 'signatures', 'avatars', 'public'];
-    for (const bucket of buckets) {
+  // 1. Si es una URL completa HTTP/HTTPS (p. ej. Supabase Storage URL)
+  if (typeof urlOrPath === 'string' && (urlOrPath.startsWith('http://') || urlOrPath.startsWith('https://'))) {
+    try {
+      const b64Direct = await getBase64ImageFromUrl(urlOrPath);
+      if (b64Direct && b64Direct.startsWith('data:image/')) {
+        return b64Direct;
+      }
+    } catch (e) {}
+
+    try {
+      const urlObj = new URL(urlOrPath);
+      const pathParts = urlObj.pathname.split('/');
+      const bIdx = pathParts.findIndex(p => p === 'signatures' || p === 'documents' || p === 'avatars' || p === 'protocolos-ergonomia' || p === 'public');
+      if (bIdx !== -1 && bIdx < pathParts.length - 1) {
+        bucketName = pathParts[bIdx];
+        relativePath = pathParts.slice(bIdx + 1).join('/');
+      }
+    } catch (urlErr) {
+      console.warn('Error parsing URL in fetchSignatureImage:', urlErr);
+    }
+  }
+
+  // 2. Limpiar prefijos de bucket en relativePath (ej. 'signatures/tenant/user/file.png')
+  if (typeof relativePath === 'string') {
+    const knownBuckets = ['signatures', 'protocolos-ergonomia', 'documents', 'avatars', 'public'];
+    for (const b of knownBuckets) {
+      if (relativePath.startsWith(`${b}/`)) {
+        bucketName = b;
+        relativePath = relativePath.slice(b.length + 1);
+        break;
+      }
+    }
+  }
+
+  // 3. Intentar recuperar desde Supabase Storage generando URL firmada o descarga directa
+  if (typeof relativePath === 'string' && relativePath && !relativePath.startsWith('http') && !relativePath.startsWith('data:')) {
+    const candidateBuckets = Array.from(new Set([bucketName, 'signatures', 'protocolos-ergonomia', 'documents', 'avatars', 'public']));
+
+    for (const b of candidateBuckets) {
+      // Intento A: URL Firmada con sesión del usuario
       try {
-        const { data: blob, error } = await supabase.storage.from(bucket).download(urlOrPath);
-        if (!error && blob) {
+        const { data: sData, error: sErr } = await supabase.storage
+          .from(b)
+          .createSignedUrl(relativePath, 3600);
+
+        if (!sErr && sData?.signedUrl) {
+          const b64 = await getBase64ImageFromUrl(sData.signedUrl);
+          if (b64 && b64.startsWith('data:image/')) {
+            return b64;
+          }
+        }
+      } catch (err) {}
+
+      // Intento B: Descarga directa de Blob
+      try {
+        const { data: blob, error: dErr } = await supabase.storage
+          .from(b)
+          .download(relativePath);
+
+        if (!dErr && blob) {
           return new Promise((resolve) => {
             const reader = new FileReader();
             reader.onload = () => resolve(reader.result || '');
@@ -91,14 +142,26 @@ const fetchSignatureImage = async (urlOrPath) => {
           });
         }
       } catch (err) {}
+
+      // Intento C: URL pública
       try {
-        const { data: pData } = supabase.storage.from(bucket).getPublicUrl(urlOrPath);
+        const { data: pData } = supabase.storage.from(b).getPublicUrl(relativePath);
         if (pData?.publicUrl) {
           const b64 = await getBase64ImageFromUrl(pData.publicUrl);
-          if (b64 && b64.startsWith('data:image/')) return b64;
+          if (b64 && b64.startsWith('data:image/')) {
+            return b64;
+          }
         }
-      } catch (e) {}
+      } catch (err) {}
     }
+  }
+
+  // 4. Reintento final si targetUrl es HTTP
+  if (typeof targetUrl === 'string' && targetUrl.startsWith('http')) {
+    try {
+      const b64 = await getBase64ImageFromUrl(targetUrl);
+      if (b64 && b64.startsWith('data:image/')) return b64;
+    } catch (e) {}
   }
 
   return '';
@@ -431,7 +494,7 @@ export const generateProtocoloErgonomiaPdf = async (arg1, arg2, arg3, arg4, arg5
   const medicinaMatricula = proto.medicina_matricula || proto.medico_matricula || '';
 
   // Helper: Draw Aspect-Ratio Preserved Signature (No Stretching)
-  const drawAspectSignature = (base64, dims, colCenterX, lineY, maxW = 42, maxH = 22) => {
+  const drawAspectSignature = (base64, dims, colCenterX, lineY, maxW = 56, maxH = 32) => {
     if (!base64 || !base64.startsWith('data:image/')) return;
     try {
       const ratio = (dims?.width && dims?.height) ? (dims.width / dims.height) : 2.2;
@@ -629,7 +692,7 @@ export const generateProtocoloErgonomiaPdf = async (arg1, arg2, arg3, arg4, arg5
     doc.setLineWidth(0.25);
 
     // ==================== COL 1: EMPLEADOR (15 to 65, center = 40) ====================
-    drawAspectSignature(firmaEmpleadorBase64, firmaEmpleadorDims, 40, y, 42, 22);
+    drawAspectSignature(firmaEmpleadorBase64, firmaEmpleadorDims, 40, y, 48, 30);
     let currX = 15;
     while (currX < 65) {
       doc.line(currX, y, Math.min(currX + 1.5, 65), y);
@@ -641,7 +704,7 @@ export const generateProtocoloErgonomiaPdf = async (arg1, arg2, arg3, arg4, arg5
     }
 
     // ==================== COL 2: HIGIENE Y SEGURIDAD (75 to 135, center = 105) ====================
-    drawAspectSignature(firmaProfBase64, firmaProfDims, 105, y, 46, 24);
+    drawAspectSignature(firmaProfBase64, firmaProfDims, 105, y, 58, 34);
     currX = 75;
     while (currX < 135) {
       doc.line(currX, y, Math.min(currX + 1.5, 135), y);
@@ -656,7 +719,7 @@ export const generateProtocoloErgonomiaPdf = async (arg1, arg2, arg3, arg4, arg5
     }
 
     // ==================== COL 3: MEDICINA LABORAL (145 to 195, center = 170) ====================
-    drawAspectSignature(firmaMedicinaBase64, firmaMedicinaDims, 170, y, 42, 22);
+    drawAspectSignature(firmaMedicinaBase64, firmaMedicinaDims, 170, y, 48, 30);
     currX = 145;
     while (currX < 195) {
       doc.line(currX, y, Math.min(currX + 1.5, 195), y);

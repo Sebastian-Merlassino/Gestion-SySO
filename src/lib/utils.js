@@ -74,28 +74,28 @@ export const PLAN_FEATURES = {
     price: 0,
     maxClients: 1,
     maxMembers: 1,
-    features: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'empresas', 'equipo']
+    features: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'empresas', 'equipo']
   },
   basic_5: {
     name: 'Plan 25000',
     price: 25000,
     maxClients: 5,
     maxMembers: 5,
-    features: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'extintores', 'control-electrico', 'empresas', 'equipo']
+    features: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'extintores', 'control-electrico', 'empresas', 'equipo']
   },
   standard_25: {
     name: 'Plan 35000',
     price: 35000,
     maxClients: 15,
     maxMembers: 15,
-    features: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'extintores', 'control-electrico', 'visitas', 'avisos', 'empresas', 'equipo']
+    features: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'extintores', 'control-electrico', 'visitas', 'avisos', 'empresas', 'equipo']
   },
   libre: {
     name: 'Plan Full',
     price: 45000,
     maxClients: Infinity,
     maxMembers: Infinity,
-    features: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'extintores', 'control-electrico', 'visitas', 'avisos', 'checklist-personalizados', 'legajo', 'portal-clientes', 'empresas', 'equipo']
+    features: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'extintores', 'control-electrico', 'visitas', 'avisos', 'checklist-personalizados', 'legajo', 'portal-clientes', 'empresas', 'equipo']
   }
 };
 
@@ -108,17 +108,17 @@ export const PLAN_FEATURES = {
 export function getEffectivePlan(tenant) {
   if (!tenant) return 'free';
   if (tenant.is_exempt) return 'libre';
-  
+
   // Evaluar regalo activo primero
   if (tenant.gift_plan_id && tenant.gift_ends_at && new Date(tenant.gift_ends_at) > new Date()) {
     return tenant.gift_plan_id;
   }
-  
+
   // Evaluar si expiró su suscripción
   if (tenant.plan_ends_at && new Date(tenant.plan_ends_at) < new Date()) {
     return 'free';
   }
-  
+
   return tenant.plan_id || 'free';
 }
 

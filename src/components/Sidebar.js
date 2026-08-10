@@ -16,7 +16,8 @@ import {
   Settings, 
   LogOut, 
   ChevronLeft, 
-  ChevronRight, 
+  ChevronRight,
+  ChevronDown, 
   X,
   ShieldAlert,
   Zap,
@@ -46,6 +47,17 @@ export default function Sidebar({
   const [mounted, setMounted] = useState(isHydratedGlobal);
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null });
   const [tenantData, setTenantData] = useState(cachedTenantGlobal);
+
+  // Estado del submenú desplegable de Capacitación
+  const [isCapacitacionOpen, setIsCapacitacionOpen] = useState(
+    currentSection === 'capacitacion' || currentSection === 'capacitaciones-online'
+  );
+
+  useEffect(() => {
+    if (currentSection === 'capacitacion' || currentSection === 'capacitaciones-online') {
+      setIsCapacitacionOpen(true);
+    }
+  }, [currentSection]);
 
   const handleShareApp = async () => {
     const shareData = {
@@ -127,7 +139,16 @@ export default function Sidebar({
     { id: 'equipo', label: 'Equipo de Trabajo', path: `/${tenantSlug}/equipo`, icon: Briefcase, adminOnly: true },
     { id: 'divider-1', type: 'divider' },
     { id: 'programa', label: 'Prog. Gestión Anual', path: `/${tenantSlug}/programa`, icon: Calendar },
-    { id: 'capacitacion', label: 'Prog. Capacitación Anual', path: `/${tenantSlug}/capacitacion`, icon: GraduationCap },
+    { 
+      id: 'capacitacion-group', 
+      label: 'Capacitación', 
+      icon: GraduationCap,
+      type: 'group',
+      children: [
+        { id: 'capacitacion', label: 'Prog. Capacitación Anual', path: `/${tenantSlug}/capacitacion`, icon: GraduationCap },
+        { id: 'capacitaciones-online', label: 'Capacitaciones Online', path: `/${tenantSlug}/capacitaciones-online`, icon: GraduationCap }
+      ]
+    },
     { id: 'correctivas', label: 'Acciones Correctivas', path: `/${tenantSlug}/correctivas`, icon: ClipboardList },
     { id: 'accidentes', label: 'Accidentes', path: `/${tenantSlug}/accidentes`, icon: ShieldAlert },
     { id: 'matriz-riesgos', label: 'Matriz de riesgos', path: `/${tenantSlug}/matriz-riesgos`, icon: AlertTriangle },
@@ -161,10 +182,10 @@ export default function Sidebar({
   }
 
   const planFeatures = {
-    free: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'empresas', 'equipo', 'protocolo-iluminacion', 'protocolo-ruido', 'protocolo-ergonomia'],
-    basic_5: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'protocolo-iluminacion', 'protocolo-ruido', 'protocolo-ergonomia', 'empresas', 'equipo'],
-    standard_25: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'protocolo-iluminacion', 'protocolo-ruido', 'protocolo-ergonomia', 'visitas', 'avisos', 'empresas', 'equipo'],
-    libre: ['programa', 'capacitacion', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'protocolo-iluminacion', 'protocolo-ruido', 'protocolo-ergonomia', 'visitas', 'avisos', 'checklist-personalizados', 'legajo', 'portal-clientes', 'empresas', 'equipo']
+    free: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'empresas', 'equipo', 'protocolo-iluminacion', 'protocolo-ruido', 'protocolo-ergonomia'],
+    basic_5: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'protocolo-iluminacion', 'protocolo-ruido', 'protocolo-ergonomia', 'empresas', 'equipo'],
+    standard_25: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'protocolo-iluminacion', 'protocolo-ruido', 'protocolo-ergonomia', 'visitas', 'avisos', 'empresas', 'equipo'],
+    libre: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'protocolo-iluminacion', 'protocolo-ruido', 'protocolo-ergonomia', 'visitas', 'avisos', 'checklist-personalizados', 'legajo', 'portal-clientes', 'empresas', 'equipo']
   };
 
   const allowedFeatures = planFeatures[effectivePlan] || planFeatures.free;
@@ -200,6 +221,74 @@ export default function Sidebar({
 
     if (item.type === 'divider') {
       return <div key={item.id} className="h-px bg-white/10 my-4 shrink-0" />;
+    }
+
+    // SUBMENÚ AGRUPADO CON ESTÁNDAR VISUAL DE LA BARRA LATERAL
+    if (item.type === 'group') {
+      const isAnyChildActive = item.children.some(child => child.id === currentSection);
+      const isOpen = isCapacitacionOpen;
+      const isCollapsed = !isMobile && isSidebarCollapsed;
+      const GroupIcon = item.icon;
+
+      return (
+        <div key={item.id} className="space-y-1">
+          <button
+            type="button"
+            onClick={() => setIsCapacitacionOpen(!isCapacitacionOpen)}
+            title={isCollapsed ? item.label : undefined}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all cursor-pointer ${
+              isAnyChildActive
+                ? 'text-white bg-white/10'
+                : 'text-white/70 hover:text-white hover:bg-[#468DFF]'
+            } ${isCollapsed ? 'justify-center' : ''}`}
+          >
+            <GroupIcon className="h-4 w-4 shrink-0 text-white/70" />
+            {!isCollapsed && (
+              <>
+                <span className="animate-fade-in leading-tight flex-1 text-left">{item.label}</span>
+                <ChevronDown className={`h-3.5 w-3.5 text-white/50 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+              </>
+            )}
+          </button>
+
+          {(isOpen || (isCollapsed && isAnyChildActive)) && (
+            <div className={`space-y-1 ${isCollapsed ? '' : 'pl-3 my-1'}`}>
+              {item.children.map(child => {
+                const isChildAllowed = !mounted ? true : allowedFeatures.includes(child.id);
+                const isChildActive = isChildAllowed && currentSection === child.id;
+                const ChildIcon = child.icon;
+
+                return (
+                  <Link
+                    key={child.id}
+                    href={child.path}
+                    title={isChildAllowed ? child.label : `${child.label} (Módulo Premium)`}
+                    onClick={(e) => {
+                      if (isMobile) setIsMobileMenuOpen(false);
+                      handleLinkClick(e, child);
+                    }}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-xl font-semibold text-xs transition-all ${
+                      isChildActive 
+                        ? 'bg-[#468DFF] text-white shadow-md shadow-[#468DFF]/10' 
+                        : !isChildAllowed
+                          ? 'text-white/35 hover:text-white/60 hover:bg-white/5 cursor-pointer'
+                          : 'text-white/70 hover:text-white hover:bg-[#468DFF]'
+                    } ${isCollapsed ? 'justify-center' : ''}`}
+                  >
+                    <ChildIcon className={`h-3.5 w-3.5 shrink-0 ${!isChildAllowed ? 'opacity-40' : ''}`} />
+                    {!isCollapsed && (
+                      <span className="truncate leading-tight">{child.label}</span>
+                    )}
+                    {(!isChildAllowed && !isCollapsed) && (
+                      <Lock className="h-3 w-3 text-[#468DFF]/70 ml-auto shrink-0 animate-fade-in" />
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      );
     }
 
     const Icon = item.icon;

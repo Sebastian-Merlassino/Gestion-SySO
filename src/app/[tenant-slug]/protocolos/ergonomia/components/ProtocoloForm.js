@@ -498,9 +498,13 @@ export default function ProtocoloForm({
           if (isExternal) {
             setFirmaPerfilPreviewUrl(signaturePath);
           } else {
+            let cleanPath = relativePath;
+            if (cleanPath.startsWith('signatures/')) {
+              cleanPath = cleanPath.slice(11);
+            }
             const { data: sData, error: sErr } = await supabase.storage
               .from('signatures')
-              .createSignedUrl(relativePath, 3600);
+              .createSignedUrl(cleanPath, 3600);
             if (!sErr && sData?.signedUrl) {
               setFirmaPerfilPreviewUrl(sData.signedUrl);
             } else {

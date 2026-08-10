@@ -152,16 +152,29 @@ export default function DocumentUploadZone({
           body: JSON.stringify({ url: driveLink, tenantId }),
         });
         const data = await res.json();
-        if (!res.ok || data.error) {
-          throw new Error(data.error || 'Error al importar desde Drive.');
-        }
 
-        onDriveImportSuccess?.(data.filePath, 'Archivo de Drive importado');
-        onToast?.('Archivo importado desde Google Drive.', 'success');
+        if (res.ok && data.success && data.filePath) {
+          onDriveImportSuccess?.(data.filePath, 'Archivo de Drive importado');
+          onToast?.('Archivo importado desde Google Drive.', 'success');
+        } else {
+          // Fallback inteligente: vincular la URL pero alertar sobre el acceso restringido
+          console.log('[DocumentUploadZone] Archivo restringido o sin descarga directa. Vinculando URL de Drive:', data.error);
+          onDriveImportSuccess?.(driveLink, 'Enlace de Google Drive');
+          onToast?.(
+            '⚠️ Permisos restringidos en Google Drive: Cambia el permiso en Google Drive a "Cualquier persona con el enlace" para que los empleados puedan visualizar el documento sin pedir autorización.',
+            'warning'
+          );
+        }
         setDriveLink('');
       }
     } catch (err) {
-      onToast?.(err.message || 'Error al importar desde Drive.', 'error');
+      console.warn('[DocumentUploadZone] Vinculando URL de Drive por fallback tras excepción:', err);
+      onDriveImportSuccess?.(driveLink, 'Enlace de Google Drive');
+      onToast?.(
+        '⚠️ Permisos restringidos en Google Drive: Cambia el permiso en Google Drive a "Cualquier persona con el enlace" para que los empleados puedan visualizar el documento sin pedir autorización.',
+        'warning'
+      );
+      setDriveLink('');
     } finally {
       setUploading(false);
     }

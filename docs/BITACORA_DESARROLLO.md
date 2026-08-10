@@ -1,5 +1,165 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-09] Alerta Estándar de Accesos Restringidos en Drive y Visor Interactivo de Diapositivas
+
+### Resumen de Cambios
+- **Alerta Informativa Estándar de Permisos Restringidos (`src/components/ui/DocumentUploadZone.js`):**
+  - Al ingresar un enlace de Google Drive en cualquier `DocumentUploadZone` (`SySO-Document-Compact-Layout`) donde el archivo esté configurado como "Restringido" en lugar de "Cualquier persona con el enlace", se muestra una alerta/toast preventiva:
+    > ⚠️ *Permisos restringidos en Google Drive: Cambia el permiso en Google Drive a "Cualquier persona con el enlace" para que los empleados puedan visualizar el documento sin pedir autorización.*
+- **Visor Interactivo de Diapositivas y Documentos en Portal Público (`src/app/capacitar/[token]/page.js`):**
+  - **Iframe Interactivo Enbebido:** Se implementó un reproductor/visor interactivo integrado para presentaciones de Google Slides (`/presentation/d/.../embed`), documentos de Google Docs (`/preview`), archivos de Google Drive y documentos PDF de Supabase Storage.
+  - **Navegación Táctil/Mouse (Pasar de Hoja o Slide):** Los empleados pueden pasar de diapositiva o página, visualizar en pantalla completa y leer el contenido completo de la capacitación directamente en pantalla antes de completar el formulario y la firma digital.
+- **Verificación:**
+  - Compilación de producción ejecutada y aprobada (`✓ Compiled successfully`).
+
+### Archivos Modificados
+- `[MODIFY] src/components/ui/DocumentUploadZone.js`
+- `[MODIFY] src/app/capacitar/[token]/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-09] Agrupamiento y Submenú Desplegable de "Capacitación" en la Barra Lateral (Alineación Estética 1:1)
+
+### Resumen de Cambios
+- **Refactorización de la Barra Lateral (`src/components/Sidebar.js`):**
+  - **Estándar Visual 1:1:** Se alinearon los colores de pictogramas (`text-white/70`), efectos hover (`hover:bg-[#468DFF]`), tipografías (`font-semibold text-xs`), rellenos e ítems activos (`bg-[#468DFF] text-white shadow-md rounded-xl`) para garantizar coincidencia estética absoluta con los demás 18 botones de la barra lateral.
+  - **Submenú Desplegable de "Capacitación":** Icono `<GraduationCap className="h-4 w-4 shrink-0 text-white/70" />` con flecha indicadora `<ChevronDown />`.
+  - **Opciones Hijas:**
+    1. **Prog. Capacitación Anual** (`/capacitacion`)
+    2. **Capacitaciones Online** (`/capacitaciones-online`)
+  - **Apertura Automática Inteligente:** Si el usuario navega dentro de cualquiera de las dos secciones, el submenú se mantiene desplegado automáticamente.
+- **Verificación:**
+  - Compilación de producción ejecutada y aprobada (`✓ Compiled successfully`).
+
+### Archivos Modificados
+- `[MODIFY] src/components/Sidebar.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-08] Adaptación e Integración Identica 1:1 de Capacitaciones Online basada en la Sección de Control Eléctrico
+
+### Resumen de Cambios
+- **Replicación 1:1 de Maquetación (`src/app/[tenant-slug]/capacitaciones-online/page.js`):**
+  - **Estructura idéntica a Control Eléctrico (`control-electrico/page.js`):** Se adaptó la maquetación tomando como guía oficial la captura de la sección de Control Eléctrico.
+  - **Cabecera Institucional (`AppPageHeader`):** Título `Capacitaciones Online`, icono `<GraduationCap />`, badge del tenant `Gestión SySO` y pill de plan `PLAN FULL`.
+  - **Card 1 — Panel de Control Superior:** Buscador posicionado a la derecha, botón desplegable `FILTROS DE BÚSQUEDA` en mayúsculas a la izquierda con separador gris y botón primario de acción en la esquina derecha.
+  - **Card 2 — Contenedor de Tabla / Estado Vacío (`AppEmptyState`):** Misma tarjeta rounded-2xl con sombra con `<AppEmptyState />` y botón de acción azul `Registrar la primera`.
+- **Verificación:**
+  - Compilación de producción ejecutada y aprobada (`✓ Compiled successfully`).
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-08] Corrección de Renderizado de Firma Profesional de Perfil en PDF de Protocolo de Ergonomía
+
+### Resumen de Cambios
+- **Refactorización de `fetchSignatureImage` (`src/app/[tenant-slug]/protocolos/ergonomia/utils/pdfGenerator.js`):**
+  - Se corrigió la función `fetchSignatureImage` que fallaba al procesar imágenes de firmas de perfil provenientes del storage de Supabase (bucket `signatures`).
+  - Se añadió lógica de desasociación y limpieza de prefijos de bucket (`signatures/`) en paths relativos y URLs HTTP.
+  - Se implementó la resolución con `createSignedUrl` sobre la sesión activa del usuario para buckets protegidos por RLS, asegurando que jsPDF reciba el string Data Base64 válido tanto para firmas dibujadas a mano como para firmas guardadas en el perfil.
+- **Ampliación de Dimensiones de Firma en PDF (`src/app/[tenant-slug]/protocolos/ergonomia/utils/pdfGenerator.js`):**
+  - Se incrementaron los límites máximos de renderizado (`maxW` de 46 mm a 58 mm y `maxH` de 24 mm a 34 mm en H&S) en `drawAspectSignature` y `drawTripleSignatureBlock`, permitiendo que los sellos y firmas digitales importados del perfil se rendericen con un tamaño nítido y adecuado sobre la línea punteada.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/utils/pdfGenerator.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/components/ProtocoloForm.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-07] Módulo Independiente de Capacitaciones Online e Interactivas con Firma Digital y Acceso Público Tokenizado
+
+### Resumen de Cambios
+- **Migración de Base de Datos (`supabase/migrations/20260820000000_add_capacitaciones_online.sql`):**
+  - Se crearon las tablas `public.capacitaciones_online` (almacena capacitaciones, empresa, puesto asignado, videos de YouTube, presentaciones PDF/PPT, access_token UUID v4 único) y `public.capacitaciones_online_registros` (asistencias con Nombre, DNI, Puesto y Firma Digital Base64).
+  - Se definieron políticas de Row Level Security (RLS) para usuarios autenticados del tenant (`tenant_id = public.get_current_tenant_id()`).
+  - Se crearon las funciones `SECURITY DEFINER` `public.get_capacitacion_publica(p_token)` y `public.registrar_asistencia_capacitacion(p_token, p_nombre, p_dni, p_puesto, p_firma)` permitiendo el acceso público anónimo seguro de empleados sin exponer metadatos del tenant, billing ni usuarios de otros clientes.
+- **Protección de Enrutamiento y Middleware (`src/middleware.js`):**
+  - Se incluyeron los prefijos `/capacitar/` y `capacitar` en las listas de `isPublicRoute` y `reservedRoutes`, permitiendo el acceso público sin autenticación a los links tokenizados de capacitación y garantizando que cualquier intento de navegar a `/[tenant-slug]/...` sin credenciales sea redirigido a `/login`.
+- **Integración de Menú de Navegación (`src/components/Sidebar.js`):**
+  - Se incorporó la opción **Capacitaciones Online** (`/capacitaciones-online`) en el Sidebar bajo el icono de `<GraduationCap />`, manteniendo intacto y 100% independiente el módulo de **Programa de Capacitación Anual** (`/capacitacion`).
+- **Interfaz Pública para Empleados (`src/app/capacitar/[token]/page.js`):**
+  - Visualizador optimizado para smartphones y PCs: reproduce videos de YouTube embebidos, permite visualizar o descargar presentaciones adjuntas en PDF y provee un formulario con Pad de Firma Digital Canvas táctil/mouse para firmar la constancia de asistencia.
+- **Módulo de Gestión de Capacitaciones (`src/app/[tenant-slug]/capacitaciones-online/page.js`):**
+  - Diseñado con el estándar **SySO Compact Layout** (`md:h-[calc(100vh-128px)]`).
+  - Permite crear, editar y eliminar capacitaciones online, integrar dictado por voz e IA (`<AITextHelper />`) en títulos y resúmenes, copiar el enlace público tokenizado (`/capacitar/[token]`), visualizar la lista de firmantes en modal interactivo y exportar el informe oficial en PDF.
+- **Generador de Reportes PDF (`src/app/[tenant-slug]/capacitaciones-online/utils/pdfGenerator.js`):**
+  - Generación de comprobante oficial de asistencia A4 Vertical en PDF conteniendo datos de la capacitación, la Razón Social y la grilla completa con la firma digital renderizada de cada empleado.
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260820000000_add_capacitaciones_online.sql`
+- `[NEW] src/app/capacitar/[token]/page.js`
+- `[NEW] src/app/[tenant-slug]/capacitaciones-online/page.js`
+- `[NEW] src/app/[tenant-slug]/capacitaciones-online/utils/pdfGenerator.js`
+- `[MODIFY] src/middleware.js`
+- `[MODIFY] src/components/Sidebar.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-07] Asignación de Tareas a Miembros del Equipo y Sección de Tareas Terminadas en Dashboard
+
+### Resumen de Cambios
+- **Migración de Base de Datos (`supabase/migrations/20260819000000_add_assigned_to_to_tareas_pendientes.sql`):**
+  - Se añadieron las columnas `assigned_to UUID REFERENCES public.profiles(id)` y `assigned_miembro_id UUID REFERENCES public.miembros_equipo(id)` a la tabla `public.tareas_pendientes`.
+  - Se actualizaron las políticas de Row Level Security (RLS) (`tareas_pendientes_tenant_select`, `tareas_pendientes_tenant_update`, `tareas_pendientes_tenant_delete`) para garantizar la visibilidad y gestión compartida entre el creador de la tarea (`created_by = auth.uid()`) y el miembro asignado (`assigned_to = auth.uid()`).
+- **Asignación y Sección de Tareas Terminadas en el Dashboard (`src/app/[tenant-slug]/dashboard/page.js`):**
+  - **Filtrado Estricto de Tareas por Usuario Logueado:** Se implementó el helper `isTaskVisibleForUser` para que en la cuenta de cada miembro del equipo únicamente se muestren:
+    1. Tareas cargadas por ese miembro en su cuenta (`created_by === currentUser.id`).
+    2. Tareas asignadas directamente a ese miembro logueado (`assigned_to === currentUser.id` o `assigned_miembro_id === myMiembro.id`).
+    3. Tareas históricas/legadas sin creador ni asignado definido.
+  - **Igualación de Alturas de Contenedores:** Se ajustó la altura del contenedor unificado de Vencimientos / Calendario a `h-[480px]`, dejándolo exactamente simétrico y alineado en la grilla principal con el contenedor de Tareas Pendientes (`h-[480px]`).
+  - **Reordenamiento de Filas del Formulario de Creación:**
+    - **Fila 1:** `Nueva tarea...` (título con `AITextHelper`) y fecha `DD/MM/AAAA` con selector de calendario.
+    - **Fila 2:** Desplegables de `Razón Social (opcional)` y `Establecimiento (opcional)` distribuidos en 2 columnas (50% / 50%).
+    - **Fila 3:** Desplegable `Asignar a (opcional)` y botón primario `Agregar` integrados en 2 columnas (50% / 50%).
+  - **Insignias Visuales de Asignación:** Se agregaron badges informativos en cada ítem de tarea:
+    - `Asignado a: [Nombre del Miembro]` cuando la tarea se asigna a otro profesional del equipo.
+    - `Asignado a mí` cuando una tarea ha sido asignada al usuario autenticado por un tercero.
+  - **Sección / Pestañas de Tareas Terminadas:** Se reestructuró la cabecera del widget integrando pestañas interactivas:
+    - **Pestaña `Pendientes (N)`**: Muestra las tareas no completadas. Al marcar la casilla de verificación, el estado pasa a `realizada = true` trasladándose a la sección de completadas.
+    - **Pestaña `Terminadas (N)`**: Despliega el historial de tareas cumplidas con título tachado. Permite desmarcar (reabrir) la tarea para retornarla a pendientes o eliminarla definitivamente de la base de datos con el icono de papelera.
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260819000000_add_assigned_to_to_tareas_pendientes.sql`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-07] Inclusión de Protocolos de Ruido y Ergonomía en Desplegable de Planes y Actualización Legal
+
+### Resumen de Cambios
+- **Inclusión en Modales de Comparación de Planes:**
+  - Se incorporaron las características **Protocolo de Ruido** y **Protocolo de Ergonomía** inmediatamente debajo de **Protocolo de Iluminación** en los 4 niveles de suscripción (*Plan Gratis*, *Plan Básico*, *Plan Estándar / Profesional*, *Plan Full*).
+  - Componentes actualizados:
+    - Modal de planes en Dashboard (`src/app/[tenant-slug]/dashboard/page.js`).
+    - Modal de planes en Perfil de la Cuenta (`src/app/[tenant-slug]/profile/page.js`).
+    - Modal y grilla de selección de planes en Onboarding (`src/app/onboarding/page.js`).
+- **Actualización de Documentos Legales:**
+  - **Términos y Condiciones (`src/app/terminos/page.js`):**
+    - Se actualizó la Sección 4 (*Planes, Límites y Facturación*) detallando el acceso a los protocolos normativos de Iluminación (Res. 84/12), Ruido (Res. 85/12) y Ergonomía (Res. SRT 886/15).
+    - Se reforzó la Sección 5 (*Uso Responsable y Exención de Responsabilidad Laboral*) especificando que la generación de protocolos digitales no sustituye el criterio técnico, las mediciones físicas presenciales con instrumental homologado ni la firma del profesional matriculado de Higiene y Seguridad y Medicina del Trabajo exigida por las leyes nacionales (Ley 19.587, Dec. 351/79, Res. SRT 886/15, Res. 84/12, Res. 85/12, Res. 295/03).
+  - **Política de Privacidad (`src/app/privacidad/page.js`):**
+    - Se actualizó la Sección 2 (*Datos que Recopilamos*) bajo *Datos Operativos del Tenant*, explicitando el resguardo seguro y confidencial de protocolos de medición y estudios técnicos de Iluminación, Ruido y Ergonomía.
+  - **Política de Cookies (`src/app/cookies/page.js`):**
+    - Auditado y confirmado sin necesidad de cambios por operar exclusivamente con cookies técnicas de autenticación JWT (`sb-*`), anti-CSRF y caché de sesión local.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] src/app/onboarding/page.js`
+- `[MODIFY] src/app/terminos/page.js`
+- `[MODIFY] src/app/privacidad/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
 ## [2026-08-06] Incorporación de ANEXO I - PLANILLA 4 (Matriz de Seguimiento) por Puesto Evaluado en Ergonomía
 
 ### Resumen de Cambios

@@ -87,10 +87,12 @@ export default function TenantDashboard({ params }) {
   
   // Tareas Pendientes
   const [tareas, setTareas] = useState([]);
+  const [activeTaskTab, setActiveTaskTab] = useState('pendientes'); // 'pendientes' | 'terminadas'
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskFecha, setNewTaskFecha] = useState('');
   const [newTaskEmpresaId, setNewTaskEmpresaId] = useState('');
   const [newTaskEstablecimientoId, setNewTaskEstablecimientoId] = useState('');
+  const [newTaskAssignedMiembroId, setNewTaskAssignedMiembroId] = useState('');
 
   // Toast notifications
   const globalToast = useToast();
@@ -303,7 +305,7 @@ export default function TenantDashboard({ params }) {
         // Cargar Miembros del Equipo
         const { data: mems } = await supabase
           .from('miembros_equipo')
-          .select('id, full_name')
+          .select('id, full_name, profile_id')
           .eq('tenant_id', ten.id);
         setMiembros(mems || []);
 
@@ -340,11 +342,12 @@ export default function TenantDashboard({ params }) {
           .from('tareas_pendientes')
           .select('*')
           .eq('tenant_id', ten.id)
-          .or(`created_by.eq.${user.id},created_by.is.null`)
           .order('created_at', { ascending: true });
         const { data: tData, error: tareasErr } = await tareasQuery;
         if (!tareasErr) {
           setTareas(tData || []);
+        } else {
+          console.error('Error cargando tareas pendientes:', tareasErr);
         }
 
         // Cargar Accidentes del Tenant/Empresa
@@ -581,6 +584,10 @@ export default function TenantDashboard({ params }) {
     e.preventDefault();
     if (!newTaskTitle.trim()) return;
 
+    const selectedMiembro = miembros.find(m => m.id === newTaskAssignedMiembroId);
+    const assignedToProfileId = selectedMiembro?.profile_id || null;
+    const assignedMiembroId = selectedMiembro?.id || null;
+
     const newTaskObj = {
       tenant_id: tenant?.id,
       titulo: newTaskTitle.trim(),
@@ -588,7 +595,9 @@ export default function TenantDashboard({ params }) {
       empresa_id: newTaskEmpresaId || null,
       establecimiento_id: newTaskEstablecimientoId || null,
       realizada: false,
-      created_by: currentUser?.id
+      created_by: currentUser?.id,
+      assigned_to: assignedToProfileId,
+      assigned_miembro_id: assignedMiembroId
     };
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -606,6 +615,7 @@ export default function TenantDashboard({ params }) {
           setNewTaskFecha('');
           setNewTaskEmpresaId('');
           setNewTaskEstablecimientoId('');
+          setNewTaskAssignedMiembroId('');
         } else {
           console.error('Error al insertar tarea:', error);
         }
@@ -623,6 +633,7 @@ export default function TenantDashboard({ params }) {
       setNewTaskFecha('');
       setNewTaskEmpresaId('');
       setNewTaskEstablecimientoId('');
+      setNewTaskAssignedMiembroId('');
     }
   };
 
@@ -670,10 +681,32 @@ export default function TenantDashboard({ params }) {
         }
       } catch (err) {
         console.error('Excepción al eliminar tarea:', err);
-        setTareas(previousTareas);
       }
     }
   };
+
+  // Filtrado estricto de tareas por usuario logueado
+  // (Solo se muestran las tareas cargadas por cada miembro en su cuenta y las asignadas a él)
+  const isTaskVisibleForUser = (t) => {
+    if (!currentUser) return true;
+    const myMiembro = miembros.find(m => m.profile_id === currentUser.id);
+
+    // 1. Tarea cargada/creada por el miembro en su cuenta
+    if (t.created_by && t.created_by === currentUser.id) return true;
+
+    // 2. Tarea asignada al perfil del usuario logueado
+    if (t.assigned_to && t.assigned_to === currentUser.id) return true;
+
+    // 3. Tarea asignada al ID del miembro de equipo del usuario logueado
+    if (myMiembro && t.assigned_miembro_id && t.assigned_miembro_id === myMiembro.id) return true;
+
+    // 4. Tarea histórica previa sin creador ni asignación definida
+    if (!t.created_by && !t.assigned_to && !t.assigned_miembro_id) return true;
+
+    return false;
+  };
+
+  const userTareas = tareas.filter(isTaskVisibleForUser);
 
   // Helper para convertir imagen URL a base64
   const getBase64ImageFromUrl = async (imageUrl) => {
@@ -1943,7 +1976,7 @@ export default function TenantDashboard({ params }) {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:gap-6">
 
                   {/* Contenedor Unificado: Vencimientos o Calendario */}
-                  <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col justify-between h-[460px] overflow-hidden">
+                  <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col justify-between h-[480px] overflow-hidden">
                     <div className="flex flex-col flex-1 min-h-0">
                       {/* Pestañas de Selección con estilo segmentado similar a DocumentUploadZone */}
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3 mb-4 shrink-0">
@@ -2063,7 +2096,7 @@ export default function TenantDashboard({ params }) {
 
                                 const isSelected = d.dateStr === selectedDateStr;
                                 const dayActs = actividades.filter(a => a.fecha_planificada === d.dateStr);
-                                const dayTareas = tareas.filter(t => t.fecha === d.dateStr);
+                                const dayTareas = userTareas.filter(t => t.fecha === d.dateStr);
                                 const hasActs = dayActs.length > 0 || dayTareas.length > 0;
 
                                 let dotColor = '';
@@ -2117,7 +2150,7 @@ export default function TenantDashboard({ params }) {
                             </div>
                             <div className="space-y-2 max-h-[100px] overflow-y-auto pr-1">
                               {actividades.filter(a => a.fecha_planificada === selectedDateStr).length === 0 &&
-                               tareas.filter(t => t.fecha === selectedDateStr).length === 0 ? (
+                               userTareas.filter(t => t.fecha === selectedDateStr).length === 0 ? (
                                 <p className="text-[11px] text-slate-400 italic">No hay actividades ni tareas para este día.</p>
                               ) : (
                                 <>
@@ -2138,7 +2171,7 @@ export default function TenantDashboard({ params }) {
                                     );
                                   })}
                                   {/* Tareas */}
-                                  {tareas.filter(t => t.fecha === selectedDateStr).map(task => {
+                                  {userTareas.filter(t => t.fecha === selectedDateStr).map(task => {
                                     const emp = empresas.find(e => e.id === task.empresa_id);
                                     const est = establecimientos.find(e => e.id === task.establecimiento_id);
                                     return (
@@ -2179,63 +2212,110 @@ export default function TenantDashboard({ params }) {
                   </div>
 
                   {/* Contenedor B: Tareas Pendientes */}
-                  <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col justify-between h-[460px] overflow-hidden">
+                  <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col justify-between h-[480px] overflow-hidden">
                     <div className="flex flex-col flex-1 min-h-0">
-                      <div className="flex items-center gap-2 border-b border-slate-200 pb-3 mb-4">
-                        <ClipboardCheck className="h-5 w-5 text-[#468DFF]" />
-                        <h3 className="font-outfit text-base font-extrabold text-slate-900">Tareas Pendientes</h3>
+                      {/* Cabecera del Widget con Pestañas */}
+                      <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-3 shrink-0">
+                        <div className="flex items-center gap-2">
+                          <ClipboardCheck className="h-5 w-5 text-[#468DFF]" />
+                          <h3 className="font-outfit text-base font-extrabold text-slate-900 hidden sm:inline">Tareas</h3>
+                        </div>
+                        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+                          <button
+                            type="button"
+                            onClick={() => setActiveTaskTab('pendientes')}
+                            className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                              activeTaskTab === 'pendientes'
+                                ? 'bg-white text-[#468DFF] shadow-sm'
+                                : 'text-slate-500 hover:text-slate-700'
+                            }`}
+                          >
+                            Pendientes ({userTareas.filter(t => !t.realizada).length})
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setActiveTaskTab('terminadas')}
+                            className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                              activeTaskTab === 'terminadas'
+                                ? 'bg-white text-[#468DFF] shadow-sm'
+                                : 'text-slate-500 hover:text-slate-700'
+                            }`}
+                          >
+                            Terminadas ({userTareas.filter(t => t.realizada).length})
+                          </button>
+                        </div>
                       </div>
 
-                      {/* Task checklist (Google Tasks style) */}
-                      <div className="flex-grow overflow-y-auto pr-1 space-y-2.5 max-h-[220px] min-h-[150px]">
-                        {tareas.length === 0 ? (
-                          <p className="text-xs text-slate-400 italic text-center py-4">No tienes tareas pendientes.</p>
+                      {/* Lista de tareas */}
+                      <div className="flex-grow overflow-y-auto pr-1 space-y-2.5 max-h-[220px] min-h-[140px]">
+                        {userTareas.filter(t => activeTaskTab === 'pendientes' ? !t.realizada : t.realizada).length === 0 ? (
+                          <p className="text-xs text-slate-400 italic text-center py-6">
+                            {activeTaskTab === 'pendientes' ? 'No tienes tareas pendientes.' : 'No hay tareas terminadas aún.'}
+                          </p>
                         ) : (
-                          tareas.map(t => {
-                            const emp = empresas.find(e => e.id === t.empresa_id);
-                            const est = establecimientos.find(e => e.id === t.establecimiento_id);
-                            return (
-                              <div key={t.id} className="flex items-start justify-between gap-2 p-2 rounded-xl bg-slate-50 border border-slate-100 hover:border-[#468DFF]/20 transition-all text-xs">
-                                <div className="flex items-start gap-2.5 min-w-0 flex-1">
-                                  <input
-                                    type="checkbox"
-                                    checked={t.realizada}
-                                    onChange={() => handleToggleTask(t.id, t.realizada)}
-                                    className="mt-0.5 rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF] h-4 w-4 cursor-pointer"
-                                  />
-                                  <div className="min-w-0 flex-1">
-                                    <span className={`font-semibold text-slate-700 block break-words ${t.realizada ? 'line-through text-slate-400 font-normal' : ''}`}>
-                                      {t.titulo}
-                                    </span>
-                                    <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5 text-[10px] text-slate-400 font-medium">
-                                      {t.fecha && (
-                                        <span className="bg-slate-200/50 px-1 py-0.2 rounded font-mono">
-                                          {formatDate(t.fecha)}
-                                        </span>
-                                      )}
-                                      {emp && (
-                                        <span className="truncate max-w-[120px]" title={emp.razon_social}>
-                                          {emp.razon_social} {est ? `• ${est.denominacion}` : ''}
-                                        </span>
-                                      )}
+                          userTareas
+                            .filter(t => activeTaskTab === 'pendientes' ? !t.realizada : t.realizada)
+                            .map(t => {
+                              const emp = empresas.find(e => e.id === t.empresa_id);
+                              const est = establecimientos.find(e => e.id === t.establecimiento_id);
+                              const assignedMiembro = miembros.find(m => m.id === t.assigned_miembro_id || (m.profile_id && m.profile_id === t.assigned_to));
+                              const isAssignedToMe = t.assigned_to === currentUser?.id && t.created_by !== currentUser?.id;
+                              const isAssignedToOther = assignedMiembro && t.assigned_to !== currentUser?.id;
+
+                              return (
+                                <div key={t.id} className={`flex items-start justify-between gap-2 p-2.5 rounded-xl border transition-all text-xs ${t.realizada ? 'bg-slate-50/70 border-slate-200/70' : 'bg-slate-50 border-slate-100 hover:border-[#468DFF]/20'}`}>
+                                  <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                                    <input
+                                      type="checkbox"
+                                      checked={t.realizada}
+                                      onChange={() => handleToggleTask(t.id, t.realizada)}
+                                      className="mt-0.5 rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF] h-4 w-4 cursor-pointer"
+                                    />
+                                    <div className="min-w-0 flex-1">
+                                      <span className={`font-semibold text-slate-700 block break-words ${t.realizada ? 'line-through text-slate-400 font-normal' : ''}`}>
+                                        {t.titulo}
+                                      </span>
+                                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 text-[10px] text-slate-400 font-medium">
+                                        {t.fecha && (
+                                          <span className="bg-slate-200/50 px-1 py-0.2 rounded font-mono">
+                                            {formatDate(t.fecha)}
+                                          </span>
+                                        )}
+                                        {emp && (
+                                          <span className="truncate max-w-[120px]" title={emp.razon_social}>
+                                            {emp.razon_social} {est ? `• ${est.denominacion}` : ''}
+                                          </span>
+                                        )}
+                                        {isAssignedToOther && (
+                                          <span className="inline-flex items-center gap-1 bg-blue-50 text-[#468DFF] border border-blue-100 px-1.5 py-0.5 rounded font-semibold">
+                                            <User className="h-3 w-3" />
+                                            Asignado a: {assignedMiembro.full_name}
+                                          </span>
+                                        )}
+                                        {isAssignedToMe && (
+                                          <span className="inline-flex items-center gap-1 bg-purple-50 text-purple-600 border border-purple-100 px-1.5 py-0.5 rounded font-semibold">
+                                            <User className="h-3 w-3" />
+                                            Asignado a mí
+                                          </span>
+                                        )}
+                                      </div>
                                     </div>
                                   </div>
+                                  <button
+                                    onClick={() => handleDeleteTask(t.id)}
+                                    className="p-1 rounded text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors shrink-0 cursor-pointer"
+                                    title="Eliminar tarea"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
                                 </div>
-                                <button
-                                  onClick={() => handleDeleteTask(t.id)}
-                                  className="p-1 rounded text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors shrink-0 cursor-pointer"
-                                  title="Eliminar tarea"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </button>
-                              </div>
-                            );
-                          })
+                              );
+                            })
                         )}
                       </div>
                     </div>
 
-                    {/* Inline creation form */}
+                    {/* Formulario de creación de tarea */}
                     <form onSubmit={handleAddTask} className="border-t border-slate-200 pt-3 mt-3 flex flex-col gap-2 shrink-0">
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <div className="sm:col-span-2 flex items-center gap-1.5 border border-slate-200 rounded-xl px-3.5 py-2 h-10 bg-slate-50/50 focus-within:border-[#468DFF] transition-all">
@@ -2271,20 +2351,21 @@ export default function TenantDashboard({ params }) {
                               onChange={(e) => {
                                 const val = e.target.value;
                                 if (val) {
-    const parts = val.split('-');
-    if (parts.length === 3) {
-      setNewTaskFecha(`${parts[2]}/${parts[1]}/${parts[0]}`);
-    }
-  } else {
-    setNewTaskFecha('');
-  }
+                                  const parts = val.split('-');
+                                  if (parts.length === 3) {
+                                    setNewTaskFecha(`${parts[2]}/${parts[1]}/${parts[0]}`);
+                                  }
+                                } else {
+                                  setNewTaskFecha('');
+                                }
                               }}
                             />
                           </div>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      {/* Fila 2: Razón Social y Establecimiento */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <AppSelect
                           value={newTaskEmpresaId}
                           onChange={e => {
@@ -2308,6 +2389,22 @@ export default function TenantDashboard({ params }) {
                         >
                           {establecimientos.filter(est => est.empresa_id === newTaskEmpresaId).map(est => (
                             <option key={est.id} value={est.id}>{est.denominacion}</option>
+                          ))}
+                        </AppSelect>
+                      </div>
+
+                      {/* Fila 3: Asignar a y Botón Agregar */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <AppSelect
+                          value={newTaskAssignedMiembroId}
+                          onChange={e => setNewTaskAssignedMiembroId(e.target.value)}
+                          placeholder="Asignar a (opcional)"
+                          containerClassName="w-full"
+                        >
+                          {miembros.map(m => (
+                            <option key={m.id} value={m.id}>
+                              {m.full_name} {m.profile_id === currentUser?.id ? '(Yo)' : ''}
+                            </option>
                           ))}
                         </AppSelect>
 
