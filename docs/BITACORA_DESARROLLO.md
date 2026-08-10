@@ -1,5 +1,26 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-10] Incorporación de Campos Metodología y Duración en Capacitaciones Online (`src/app/[tenant-slug]/capacitaciones-online/page.js`)
+
+### Resumen de Cambios
+- **Modelo de Datos y Base de Datos (Supabase):**  
+  - Se agregaron las columnas `metodologia` (TEXT) y `duracion` (TEXT) en la tabla `public.capacitaciones_online`.
+  - Se actualizó la función RPC `get_capacitacion_publica` para exponer ambos campos en la carga pública.
+- **Interfaz de Usuario del Modal ("Detalle / Editar Capacitación Online"):**  
+  Justo debajo del área de texto **Contenido**, se integró una fila con dos selectores estandarizados:
+  - **Metodología:** Selector con opciones `Asincrónica con video` y `Asincrónica con PowerPoint/PDF`.
+  - **Duración:** Selector doble de tiempo con selectores interactivos de **Horas** (`0 hs` a `5 hs`) y **Minutos** (`0 min`, `15 min`, `30 min`, `45 min`), formateando automáticamente valores como `"45 min"` o `"1 hs 30 min"`.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
+- `[MODIFY] supabase/migrations/20260820000000_add_capacitaciones_online.sql`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Commit
+`029c567` — feat: incorporar campos Metodologia y Duracion debajo de Contenido en modal de Capacitaciones Online
+
+---
+
 ## [2026-08-10] Ampliación de Logotipo y Optimización de Márgenes Superiores (`src/app/capacitar/[token]/page.js`)
 
 ### Resumen de Cambios
