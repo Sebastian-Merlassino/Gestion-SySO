@@ -1,5 +1,23 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-10] Mejoras Visuales en Tabla de Capacitaciones Online y Modal de Edición (`src/app/[tenant-slug]/capacitaciones-online/page.js`)
+
+### Resumen de Cambios
+- **Puestos Afectados:** Se implementó la lógica `getItemPuestos(item)` para extraer y mostrar los puestos de trabajo reales en la tabla en lugar de los nombres de los trabajadores.
+- **Recursos Multimedia:** Se reemplazaron las etiquetas estáticas por botones interactivos unificados de Documento (`FileText`, estandarizado con fondo `#EFF6FF` y texto `#468DFF`) y Video (`Tv`, `bg-red-50`). Al hacer clic sobre ellos, se abre directamente la vista previa del PDF/PPT o el enlace de YouTube en una pestaña nueva.
+- **Columna de Asistencia:** Renombrada a **"Asistencia"** mostrando la insignia interactiva de asistencias contadas (`X Asistente(s)`).
+- **Label de Contenido:** Renombrado a solo **"Contenido"** en el formulario de detalle/edición, y se configuró la concatenación de temas para eliminar renglones/saltos de línea vacíos intermedios.
+- **Tip para Presentaciones (PPT/PPTX):** Se transformó el texto explicativo inferior en un botón/insignia de ayuda que despliega el tip explicativo dentro de un modal emergente con diseño estándar SySO.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Commit
+`24c23d3` — fix: mejoras en tabla de capacitaciones online (puestos reales, pictogramas interactivos, columna Asistencia) y modal (label Contenido, tip PPT en popup)
+
+---
+
 ## [2026-08-10] Corrección de Desfase de Cursor/Trazo en Lienzo de Firma Digital (`src/app/capacitar/[token]/page.js`)
 
 ### Resumen de Cambios
