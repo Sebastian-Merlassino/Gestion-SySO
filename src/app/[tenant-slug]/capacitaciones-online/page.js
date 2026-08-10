@@ -1570,6 +1570,9 @@ export default function CapacitacionesOnlinePage({ params }) {
                           disabled={isReadOnlyView}
                           onToast={globalToast.toast}
                         />
+                        <p className="text-[11px] text-slate-500 font-normal mt-1 flex items-center gap-1">
+                          💡 <strong>Tip para Presentaciones (PPT/PPTX):</strong> Para archivos PowerPoint pesados (&gt;10 MB), lo más recomendable es utilizar la pestaña <em>Enlace Drive</em> pegando el link de <strong>Google Slides</strong>. Esto permite al personal navegar las diapositivas de forma fluida e instantánea sin consumir datos de descarga.
+                        </p>
                       </div>
                     </div>
                   </fieldset>

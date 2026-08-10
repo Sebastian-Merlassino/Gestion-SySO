@@ -1,19 +1,16 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-10] Directiva CSP frame-src para Incrustación de PDF y Visor de Presentaciones
+## [2026-08-10] Recomendación Arquitectónica y Sugerencia para Presentaciones PPTX / Google Slides
 
 ### Resumen de Cambios
-- **Ajuste de Content Security Policy (`src/middleware.js`):**
-  - Se agregó la directiva `frame-src` al encabezado CSP en `middleware.js`:
-    ```javascript
-    `frame-src 'self' ${supabaseUrl ? supabaseUrl : ''} https://*.supabase.co https://docs.google.com https://drive.google.com https://www.youtube.com https://*.youtube.com blob:`
-    ```
-  - Al no estar especificada `frame-src` anteriormente, el navegador aplicaba el fallback estricto `default-src 'self'`, lo que provocaba que el navegador bloquease los iframes de Supabase Storage (`https://*.supabase.co`), Google Drive/Docs/Slides y YouTube con el mensaje de error de consola: *"Framing ... violates Content Security Policy directive default-src 'self'"*.
+- **Inclusión de Recomendación Visual (`src/app/[tenant-slug]/capacitaciones-online/page.js`):**
+  - Se agregó una recomendación en la UI debajo de `DocumentUploadZone`:
+    > 💡 **Tip para Presentaciones (PPT/PPTX):** Para archivos PowerPoint pesados (>10 MB), lo más recomendable es utilizar la pestaña *Enlace Drive* pegando el link de **Google Slides**. Esto permite al personal navegar las diapositivas de forma fluida e instantánea sin consumir datos de descarga.
 - **Verificación:**
   - Compilación de producción ejecutada y aprobada (`✓ Compiled successfully`).
 
 ### Archivos Modificados
-- `[MODIFY] src/middleware.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
 - `[MODIFY] docs/BITACORA_DESARROLLO.md`
 
 ---
