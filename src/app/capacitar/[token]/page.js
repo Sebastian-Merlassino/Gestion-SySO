@@ -23,6 +23,7 @@ import {
   ChevronRight,
   Maximize2,
   Lock,
+  MapPin,
   X
 } from 'lucide-react';
 
@@ -179,6 +180,32 @@ export default function PublicCapacitacionPage({ params }) {
       type: 'pdf',
       rawUrl: target
     };
+  };
+
+  // Helper para formatear los puestos sin listar nombres de empleados
+  const getPuestosFormatted = (cap) => {
+    if (!cap) return 'General / Todo el personal';
+
+    // 1. Si asignacion_tipo es 'puesto' y hay target_puesto no vacío (sin nombres autogenerados)
+    if (cap.target_puesto && !cap.target_puesto.toLowerCase().includes('nombre 1') && !cap.target_puesto.toLowerCase().includes('nombre 2')) {
+      return cap.target_puesto;
+    }
+
+    // 2. Si asignacion_tipo es 'nomina' y hay empleados_asignados con campo puesto
+    if (Array.isArray(cap.empleados_asignados) && cap.empleados_asignados.length > 0) {
+      const puestosSet = new Set();
+      cap.empleados_asignados.forEach(emp => {
+        if (typeof emp === 'object' && emp?.puesto && emp.puesto.trim()) {
+          puestosSet.add(emp.puesto.trim());
+        }
+      });
+      const puestosList = Array.from(puestosSet);
+      if (puestosList.length > 0) {
+        return puestosList.join(', ');
+      }
+    }
+
+    return 'General / Todo el personal';
   };
 
   // Callback para cuando PdfSlideViewer informa el total de paginas
@@ -399,29 +426,39 @@ export default function PublicCapacitacionPage({ params }) {
                 Módulo de Capacitación Virtual
               </span>
               <h1 className="text-xl md:text-2xl font-bold text-slate-900 leading-tight">
-                {capacitacion.titulo}
+                Capacitación virtual de Higiene y seguridad en el trabajo
               </h1>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-200 mt-4">
+          {/* Ficha de Metadatos: Empresa, Establecimiento y Puestos */}
+          <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-600 bg-slate-50 p-3.5 rounded-xl border border-slate-200 mt-4">
             <div className="flex items-center gap-1.5">
               <Building2 className="w-4 h-4 text-slate-400" />
               <span>Empresa: <strong className="text-slate-800">{capacitacion.empresa_nombre}</strong></span>
             </div>
-            {capacitacion.target_puesto && (
+            {capacitacion.establecimiento_nombre && (
               <div className="flex items-center gap-1.5">
-                <Briefcase className="w-4 h-4 text-slate-400" />
-                <span>Puesto: <strong className="text-slate-800">{capacitacion.target_puesto}</strong></span>
+                <MapPin className="w-4 h-4 text-slate-400" />
+                <span>Establecimiento: <strong className="text-slate-800">{capacitacion.establecimiento_nombre}</strong></span>
               </div>
             )}
+            <div className="flex items-center gap-1.5">
+              <Briefcase className="w-4 h-4 text-slate-400" />
+              <span>Puesto/s: <strong className="text-slate-800">{getPuestosFormatted(capacitacion)}</strong></span>
+            </div>
           </div>
 
-          {capacitacion.descripcion && (
-            <p className="text-slate-600 text-sm mt-4 leading-relaxed whitespace-pre-line border-t border-slate-100 pt-4">
-              {capacitacion.descripcion}
-            </p>
-          )}
+          {/* Listado de Temas Incluidos en la Capacitación */}
+          <div className="mt-5 border-t border-slate-100 pt-4">
+            <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+              <FileText className="w-4 h-4 text-[#468DFF]" />
+              Temas incluidos en la capacitación:
+            </h2>
+            <div className="text-slate-700 text-sm leading-relaxed whitespace-pre-line bg-slate-50/70 p-4 rounded-xl border border-slate-200">
+              {capacitacion.descripcion || capacitacion.titulo}
+            </div>
+          </div>
         </div>
 
         {/* Sección 1: Material audiovisual (Video YouTube) */}

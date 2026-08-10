@@ -89,10 +89,11 @@ DECLARE
   v_res JSONB;
 BEGIN
   -- Buscar capacitación activa por token
-  SELECT c.*, e.razon_social AS empresa_nombre
+  SELECT c.*, e.razon_social AS empresa_nombre, est.denominacion AS establecimiento_nombre
   INTO v_cap
   FROM public.capacitaciones_online c
   LEFT JOIN public.empresas e ON e.id = c.empresa_id
+  LEFT JOIN public.establecimientos est ON est.id = c.establecimiento_id
   WHERE c.access_token = p_token AND c.estado = 'activa';
 
   IF NOT FOUND THEN
@@ -110,7 +111,8 @@ BEGIN
     'material_tipo', v_cap.material_tipo,
     'video_url', v_cap.video_url,
     'document_url', v_cap.document_url,
-    'empresa_nombre', COALESCE(v_cap.empresa_nombre, 'Gestión SySO')
+    'empresa_nombre', COALESCE(v_cap.empresa_nombre, 'Gestión SySO'),
+    'establecimiento_nombre', v_cap.establecimiento_nombre
   );
 END;
 $$;

@@ -534,7 +534,7 @@ export default function CapacitacionesOnlinePage({ params }) {
 
       const targetPuestoFormatted = asignacionTipo === 'puesto'
         ? targetPuesto?.trim() || null
-        : selectedEmpleados.map(e => (typeof e === 'string' ? e : e.nombre_apellido)).join(', ');
+        : (Array.from(new Set(selectedEmpleados.map(e => (typeof e === 'object' ? e.puesto : '')).filter(Boolean))).join(', ') || null);
 
       const payload = {
         tenant_id: profile.tenant_id,
