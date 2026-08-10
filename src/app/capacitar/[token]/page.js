@@ -1,7 +1,8 @@
 // src/app/capacitar/[token]/page.js
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { supabase } from '@/lib/supabase';
 import { 
   GraduationCap, 
@@ -17,15 +18,23 @@ import {
   User, 
   CreditCard,
   ShieldCheck,
-  ExternalLink,
   ChevronLeft,
   ChevronRight,
   Maximize2,
-  Minimize2,
   Lock,
-  Unlock,
   X
 } from 'lucide-react';
+
+// Cargar PdfSlideViewer solo en cliente (usa canvas de browser)
+const PdfSlideViewer = dynamic(() => import('@/components/ui/PdfSlideViewer'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full min-h-[300px] flex flex-col items-center justify-center bg-slate-900 gap-3">
+      <Loader2 className="w-8 h-8 animate-spin text-[#468DFF]" />
+      <p className="text-xs font-semibold text-slate-300">Cargando presentación PDF...</p>
+    </div>
+  )
+});
 
 export default function PublicCapacitacionPage({ params }) {
   const token = params?.token;
@@ -72,18 +81,6 @@ export default function PublicCapacitacionPage({ params }) {
         let loadedCap = null;
         if (!rpcError && data && data.success) {
           loadedCap = data;
-        } else if (!directError && directData) {
-          loadedCap = {
-            id: directData.id,
-            titulo: directData.titulo,
-            descripcion: directData.descripcion,
-            asignacion_tipo: directData.asignacion_tipo,
-            target_puesto: directData.target_puesto,
-            material_tipo: directData.material_tipo,
-            video_url: directData.video_url,
-            document_url: directData.document_url,
-            empresa_nombre: directData.empresas?.razon_social || 'Gestión SySO'
-          };
         }
 
         if (loadedCap) {
@@ -120,7 +117,7 @@ export default function PublicCapacitacionPage({ params }) {
     fetchCapacitacion();
   }, [token]);
 
-  // Helper para armar visor interactivo de diapositivas / PDF (Google Slides / Docs / Drive / PDF)
+  // Helper para armar visor interactivo de diapositivas / PDF
   const getDocumentViewerInfo = (url, signedUrl) => {
     if (!url) return null;
     const target = signedUrl || url;
@@ -128,21 +125,16 @@ export default function PublicCapacitacionPage({ params }) {
     // Si es una ruta relativa y signedUrl todavía no cargó, retornar estado cargando
     const isRelative = !target.startsWith('http://') && !target.startsWith('https://');
     if (isRelative) {
-      return {
-        loading: true,
-        type: 'pending',
-        embedUrl: null,
-        rawUrl: null
-      };
+      return { loading: true, type: 'pending', embedUrl: null, rawUrl: null };
     }
 
-    // 1. Google Presentation / Slides
+    // 1. Google Presentation / Slides — soporta navegación por diapositiva via URL
     const slidesMatch = target.match(/\/presentation\/d\/([a-zA-Z0-9_-]+)/);
     if (slidesMatch) {
       return {
         loading: false,
         type: 'slides',
-        embedUrl: `https://docs.google.com/presentation/d/${slidesMatch[1]}/embed?start=false&loop=false&delayms=3000`,
+        slidesId: slidesMatch[1],
         rawUrl: target
       };
     }
@@ -158,7 +150,7 @@ export default function PublicCapacitacionPage({ params }) {
       };
     }
 
-    // 3. Google Drive File
+    // 3. Google Drive File (PPTX o similar)
     const driveMatch = target.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || target.match(/\/d\/([a-zA-Z0-9_-]+)/);
     if (driveMatch) {
       return {
@@ -169,19 +161,19 @@ export default function PublicCapacitacionPage({ params }) {
       };
     }
 
-    // 4. Direct PDF URL / Supabase Storage PDF
-    // Utilizar visor de Google GView para renderizar PDF en formato de diapositiva limpia sin scroll continuo
-    const embedViewerUrl = (target.startsWith('http://') || target.startsWith('https://'))
-      ? `https://docs.google.com/gview?url=${encodeURIComponent(target)}&embedded=true`
-      : target;
-
+    // 4. PDF directo (URL publica o URL firmada de Supabase Storage)
+    // → Usa PdfSlideViewer con PDF.js (renderizado en canvas, control total de pagina)
     return {
       loading: false,
       type: 'pdf',
-      embedUrl: embedViewerUrl,
       rawUrl: target
     };
   };
+
+  // Callback para cuando PdfSlideViewer informa el total de paginas
+  const handleTotalPages = useCallback((n) => {
+    setTotalSlides(n);
+  }, []);
 
   // Helper para convertir URLs de YouTube en Iframe Embed URLs
   const getYouTubeEmbedUrl = (url) => {
@@ -431,20 +423,126 @@ export default function PublicCapacitacionPage({ params }) {
           </div>
         )}
 
-        {/* Sección 2: Documento / Presentación Interactiva (Modo Presentación Limpio con Controles) */}
+        {/* Sección 2: Documento / Presentación Interactiva — Modo Filmina */}
         {capacitacion.document_url && (() => {
           const viewer = getDocumentViewerInfo(capacitacion.document_url, documentSignedUrl);
           if (!viewer) return null;
 
+          // Para Google Slides: construir embed URL con numero de diapositiva
+          const getSlidesEmbedUrl = (slide) =>
+            `https://docs.google.com/presentation/d/${viewer.slidesId}/embed?start=false&loop=false&delayms=99999&slide=${slide - 1}`;
+
+          const isLastSlide = currentSlide >= totalSlides;
+
           const handleNextSlide = () => {
-            setCurrentSlide(prev => prev + 1);
+            setCurrentSlide(prev => {
+              const next = prev + 1;
+              // Habilitar firma cuando se llega a la ultima pagina/diapositiva
+              if (next >= totalSlides) {
+                setHasCompletedMaterial(true);
+              }
+              return next;
+            });
           };
 
           const handlePrevSlide = () => {
-            if (currentSlide > 1) {
-              setCurrentSlide(currentSlide - 1);
-            }
+            if (currentSlide > 1) setCurrentSlide(currentSlide - 1);
           };
+
+          // Render del visor según tipo
+          const renderViewer = (fullscreen = false) => {
+            const containerCls = fullscreen
+              ? 'flex-1 w-full overflow-hidden bg-black flex items-center justify-center'
+              : 'w-full rounded-xl overflow-hidden bg-slate-900 border border-slate-200 shadow-inner relative';
+
+            if (viewer.loading) {
+              return (
+                <div className={`${containerCls} min-h-[300px] flex flex-col items-center justify-center gap-3`}>
+                  <Loader2 className="w-8 h-8 animate-spin text-[#468DFF]" />
+                  <p className="text-xs font-semibold text-slate-300">Cargando presentación...</p>
+                </div>
+              );
+            }
+
+            if (viewer.type === 'pdf') {
+              // PDF propio → PdfSlideViewer con PDF.js (sin scroll, control real de página)
+              return (
+                <div className={containerCls} style={fullscreen ? {} : { aspectRatio: '16/10' }}>
+                  <PdfSlideViewer
+                    url={viewer.rawUrl}
+                    currentPage={currentSlide}
+                    onTotalPages={handleTotalPages}
+                  />
+                </div>
+              );
+            }
+
+            if (viewer.type === 'slides') {
+              // Google Slides → iframe con parámetro slide= para navegar por diapositiva
+              return (
+                <div className={containerCls} style={fullscreen ? {} : { aspectRatio: '16/10' }}>
+                  <iframe
+                    key={`slides-${currentSlide}`}
+                    src={getSlidesEmbedUrl(currentSlide)}
+                    title="Presentación Google Slides"
+                    className="w-full h-full border-0"
+                    allow="autoplay; fullscreen"
+                    allowFullScreen
+                  />
+                </div>
+              );
+            }
+
+            // Google Docs / Drive — iframe sin control de página
+            return (
+              <div className={containerCls} style={fullscreen ? {} : { aspectRatio: '16/10' }}>
+                <iframe
+                  src={viewer.embedUrl}
+                  title="Visor de Documento"
+                  className="w-full h-full border-0"
+                  allow="autoplay; fullscreen"
+                  allowFullScreen
+                />
+              </div>
+            );
+          };
+
+          // Barra de controles de navegación compartida
+          const renderNavBar = (dark = false) => (
+            <div className={`flex items-center justify-between p-3 rounded-xl gap-3 ${
+              dark ? 'bg-slate-900' : 'bg-slate-900'
+            }`}>
+              <button
+                type="button"
+                onClick={handlePrevSlide}
+                disabled={currentSlide <= 1}
+                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer disabled:cursor-default"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Anterior
+              </button>
+
+              <div className="flex items-center gap-2 text-xs font-mono font-bold text-white">
+                <span>Filmina</span>
+                <span className="bg-[#468DFF] px-2.5 py-0.5 rounded-md text-white">
+                  {currentSlide}
+                </span>
+                {totalSlides > 1 && (
+                  <span className="text-slate-400">/ {totalSlides}</span>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleNextSlide}
+                disabled={isLastSlide}
+                className="px-3 py-1.5 bg-[#468DFF] hover:bg-[#0511F2] disabled:opacity-50 disabled:cursor-default text-white rounded-lg text-xs font-bold flex items-center gap-1 transition-all shadow-sm cursor-pointer"
+              >
+                Siguiente
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          );
 
           return (
             <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
@@ -455,7 +553,7 @@ export default function PublicCapacitacionPage({ params }) {
                     Material de Lectura y Presentación
                   </h2>
                   <span className="text-xs text-slate-500 block mt-0.5">
-                    Modo Presentación — Utilice las flechas para avanzar o retroceder las filminas
+                    Modo Presentación — Use las flechas para avanzar filminas. La firma se habilitará al llegar a la última.
                   </span>
                 </div>
                 <button
@@ -468,92 +566,42 @@ export default function PublicCapacitacionPage({ params }) {
                 </button>
               </div>
 
-              {/* Barra Superior de Controles de Diapositiva (Flechas Avance/Retroceso) */}
-              <div className="flex items-center justify-between bg-slate-900 text-white p-3 rounded-xl gap-3">
-                <button
-                  type="button"
-                  onClick={handlePrevSlide}
-                  disabled={currentSlide <= 1}
-                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer disabled:cursor-default"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  Anterior
-                </button>
+              {/* Barra de navegación */}
+              {renderNavBar()}
 
-                <div className="flex items-center gap-2 text-xs font-mono font-bold">
-                  <span>Filmina / Diapositiva</span>
-                  <span className="bg-[#468DFF] px-2.5 py-0.5 rounded-md text-white">
-                    {currentSlide}
-                  </span>
-                </div>
+              {/* Visor principal */}
+              {renderViewer(false)}
 
-                <button
-                  type="button"
-                  onClick={handleNextSlide}
-                  className="px-3 py-1.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-lg text-xs font-bold flex items-center gap-1 transition-all shadow-sm cursor-pointer"
-                >
-                  Siguiente
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Visor Interactivo Iframe Embed (Slides/PDF Modo Limpio Sin Scroll Vertical) */}
-              <div className="aspect-[4/3] sm:aspect-[16/10] w-full rounded-xl overflow-hidden bg-slate-900 border border-slate-200 shadow-inner relative">
-                {viewer.loading ? (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-white space-y-2">
-                    <Loader2 className="w-8 h-8 animate-spin text-[#468DFF]" />
-                    <p className="text-xs font-semibold text-slate-300">Cargando presentación...</p>
-                  </div>
+              {/* Indicador de progreso */}
+              <div className={`pt-2 flex items-center justify-end gap-2 text-xs font-semibold ${
+                hasCompletedMaterial ? 'text-emerald-700' : 'text-amber-700'
+              }`}>
+                {hasCompletedMaterial ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    Presentación completada — Firma habilitada
+                  </>
                 ) : (
-                  <iframe
-                    key={currentSlide}
-                    src={viewer.embedUrl}
-                    title="Visor de Presentación y Documentos"
-                    className="w-full h-full border-0 overflow-hidden"
-                    scrolling="no"
-                    allow="autoplay; fullscreen"
-                    allowFullScreen
-                  />
+                  <>
+                    <Lock className="w-4 h-4 text-amber-500" />
+                    Avance hasta la última filmina para habilitar la firma
+                  </>
                 )}
               </div>
 
-              {/* Botón de Confirmación de Lectura Completa */}
-              <div className="pt-2 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setHasCompletedMaterial(true);
-                    setTimeout(() => {
-                      document.getElementById('firma-section')?.scrollIntoView({ behavior: 'smooth' });
-                    }, 100);
-                  }}
-                  className={`w-full sm:w-auto px-5 py-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md ${
-                    hasCompletedMaterial
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-300'
-                      : 'bg-[#468DFF] hover:bg-[#0511F2] text-white shadow-[#468DFF]/20 scale-[1.01]'
-                  }`}
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  {hasCompletedMaterial
-                    ? '✓ Lectura Verificada — Firma Habilitada'
-                    : 'He finalizado la revisión completa del material — Habilitar Firma'}
-                </button>
-              </div>
-
-              {/* Modal de Pantalla Completa Integrado Dentro de la App */}
+              {/* Modal de Pantalla Completa */}
               {isFullscreenModalOpen && (
-                <div className="fixed inset-0 z-[9999] bg-slate-950/95 flex flex-col backdrop-blur-md">
+                <div className="fixed inset-0 z-[9999] bg-slate-950 flex flex-col">
                   {/* Cabecera del Modal */}
-                  <div className="bg-slate-900 border-b border-slate-800 p-3 sm:px-6 flex items-center justify-between flex-wrap gap-2 text-white">
+                  <div className="bg-slate-900 border-b border-slate-800 px-4 py-3 flex items-center justify-between flex-wrap gap-2 text-white">
                     <div className="flex items-center gap-2">
                       <FileText className="w-5 h-5 text-[#468DFF]" />
-                      <span className="text-sm font-bold truncate max-w-[200px] sm:max-w-md">
+                      <span className="text-sm font-bold truncate max-w-[180px] sm:max-w-md">
                         {capacitacion.titulo}
                       </span>
                     </div>
 
-                    {/* Controles del Modal */}
-                    <div className="flex items-center gap-2 sm:gap-4">
+                    <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={handlePrevSlide}
@@ -565,36 +613,34 @@ export default function PublicCapacitacionPage({ params }) {
                       </button>
 
                       <span className="text-xs font-mono font-bold bg-[#468DFF] px-2.5 py-1 rounded-md">
-                        Filmina {currentSlide}
+                        {currentSlide}{totalSlides > 1 ? ` / ${totalSlides}` : ''}
                       </span>
 
                       <button
                         type="button"
                         onClick={handleNextSlide}
-                        className="px-3 py-1.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer shadow-sm"
+                        disabled={isLastSlide}
+                        className="px-3 py-1.5 bg-[#468DFF] hover:bg-[#0511F2] disabled:opacity-50 disabled:cursor-default text-white rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer shadow-sm"
                       >
                         Siguiente
                         <ChevronRight className="w-4 h-4" />
                       </button>
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setHasCompletedMaterial(true);
-                          setIsFullscreenModalOpen(false);
-                          setTimeout(() => {
-                            document.getElementById('firma-section')?.scrollIntoView({ behavior: 'smooth' });
-                          }, 100);
-                        }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                          hasCompletedMaterial
-                            ? 'bg-emerald-600 text-white'
-                            : 'bg-[#468DFF] hover:bg-[#0511F2] text-white shadow-sm'
-                        }`}
-                      >
-                        <CheckCircle2 className="w-4 h-4" />
-                        {hasCompletedMaterial ? '✓ Lectura Verificada' : 'Finalizar y Habilitar Firma'}
-                      </button>
+                      {hasCompletedMaterial && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsFullscreenModalOpen(false);
+                            setTimeout(() => {
+                              document.getElementById('firma-section')?.scrollIntoView({ behavior: 'smooth' });
+                            }, 100);
+                          }}
+                          className="px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer transition-all"
+                        >
+                          <CheckCircle2 className="w-4 h-4" />
+                          Ir a Firma
+                        </button>
+                      )}
 
                       <button
                         type="button"
@@ -608,17 +654,7 @@ export default function PublicCapacitacionPage({ params }) {
                   </div>
 
                   {/* Cuerpo de Pantalla Completa */}
-                  <div className="flex-1 w-full h-full relative overflow-hidden bg-black flex items-center justify-center">
-                    <iframe
-                      key={`modal-${currentSlide}`}
-                      src={viewer.embedUrl}
-                      title="Visor en Pantalla Completa"
-                      className="w-full h-full border-0 overflow-hidden"
-                      scrolling="no"
-                      allow="autoplay; fullscreen"
-                      allowFullScreen
-                    />
-                  </div>
+                  {renderViewer(true)}
                 </div>
               )}
             </div>
