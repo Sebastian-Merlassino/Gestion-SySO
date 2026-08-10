@@ -1,21 +1,16 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-09] Corrección de Redirección de Middleware y Diálogo Unificado de Compartir Capacitación
+## [2026-08-10] Corrección de Duplicación de URL al Copiar Enlace Público de Capacitación
 
 ### Resumen de Cambios
-- **Corrección de Rutas Reservadas en Middleware (`src/middleware.js`):**
-  - Se añadieron las rutas públicas `'capacitar'`, `'terminos'`, `'privacidad'` y `'cookies'` al arreglo de `reservedRoutes` en la verificación del middleware de restricciones de plan.
-  - Con esta corrección, acceder o compartir enlaces públicos de capacitación (`/capacitar/[token]`) ya no activa falsos positivos de control de plan ni redirige a la pantalla de edición de perfil (`/profile?upgrade=true`).
-- **Diálogo Unificado de Compartir conforme al Estándar (`src/app/[tenant-slug]/capacitaciones-online/page.js`):**
-  - Se implementó el modal unificado de compartir activado al hacer clic en el botón de compartir (<Share2 />):
-    - **Pestaña WhatsApp:** Genera el enlace directo a WhatsApp (`https://wa.me/`) con el mensaje pre-cargado e incluye el enlace público de la capacitación.
-    - **Pestaña Correo Electrónico:** Importa dinámicamente el correo de contacto de la Razón Social y permite despachar el email.
-    - **Pestaña Copiar Enlace:** Copia directamente la URL del portal público para empleados (`${window.location.origin}/capacitar/${token}`).
+- **Corrección en Generación de Enlace (`src/app/[tenant-slug]/capacitaciones-online/page.js`):**
+  - Se corrigió la función `handleCopyPublicLink` para verificar si la entrada ya es una URL completa (`https://...`).
+  - Anteriormente, al pasar la URL completa del modal de compartir, la función concatenaba el prefijo `/capacitar/` dos veces, generando un enlace inválido (`/capacitar/https:/app.gestionsyso.com/capacitar/token`).
+  - Con esta corrección, la URL se construye limpia y de forma absoluta (`https://app.gestionsyso.com/capacitar/token`).
 - **Verificación:**
   - Compilación de producción ejecutada y aprobada (`✓ Compiled successfully`).
 
 ### Archivos Modificados
-- `[MODIFY] src/middleware.js`
 - `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
 - `[MODIFY] docs/BITACORA_DESARROLLO.md`
 

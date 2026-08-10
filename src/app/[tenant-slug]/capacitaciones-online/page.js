@@ -624,13 +624,24 @@ export default function CapacitacionesOnlinePage({ params }) {
   // Copiar Enlace Público Directo
   const handleCopyPublicLink = (item, e) => {
     e?.stopPropagation();
-    const token = typeof item === 'string' ? item : (item?.access_token || item?.id);
-    const publicUrl = `${window.location.origin}/capacitar/${token}`;
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(publicUrl);
-      globalToast.toast('Enlace público copiado al portapapeles. Listo para enviar por WhatsApp o correo.', 'success');
-    } else {
-      globalToast.toast(`Enlace público: ${publicUrl}`, 'info');
+    let publicUrl = '';
+
+    if (typeof item === 'string') {
+      publicUrl = item.startsWith('http://') || item.startsWith('https://') 
+        ? item 
+        : `${window.location.origin}/capacitar/${item}`;
+    } else if (item) {
+      const token = item.access_token || item.id;
+      publicUrl = `${window.location.origin}/capacitar/${token}`;
+    }
+
+    if (publicUrl) {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(publicUrl);
+        globalToast.toast('Enlace público copiado al portapapeles. Listo para enviar por WhatsApp o correo.', 'success');
+      } else {
+        globalToast.toast(`Enlace público: ${publicUrl}`, 'info');
+      }
     }
   };
 
