@@ -1,5 +1,25 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-10] Selectores Desplegables Inteligentes con Opción Manual en Registro Público (`src/app/capacitar/[token]/page.js`)
+
+### Resumen de Cambios
+- **Desplegable Inteligente de Nombre y Apellido:**  
+  Se implementó `assignedEmployees` mediante `useMemo` para poblar una lista desplegable (`<select>`) con todo el personal seleccionado de la nómina para realizar la capacitación.
+  - Al seleccionar a un trabajador de la lista, la aplicación auto-completa automáticamente su **Nombre y Apellido**, su **DNI/Documento** (extraído de su CUIL) y su **Puesto de Trabajo**.
+  - Se incluyó la opción `➕ Escribir otro nombre manualmente...` e hipervínculo de alternancia para ingresar texto libre si un operario no figura en la nómina prefijada.
+- **Desplegable Inteligente de Puesto de Trabajo:**  
+  Se implementó `assignedPuestos` mediante `useMemo` que extrae los puestos asignados a la capacitación.
+  - El usuario puede elegir directamente su puesto en la lista desplegable o conmutar al modo de escritura manual `➕ Escribir otro puesto manualmente...`.
+
+### Archivos Modificados
+- `[MODIFY] src/app/capacitar/[token]/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Commit
+`8877b72` — feat: selectores desplegables inteligentes con ingreso manual para Nombre/Apellido y Puesto en vista publica de capacitacion
+
+---
+
 ## [2026-08-10] Estandarización de Pictogramas de Acción en Tabla de Capacitaciones Online (`src/app/[tenant-slug]/capacitaciones-online/page.js`)
 
 ### Resumen de Cambios
