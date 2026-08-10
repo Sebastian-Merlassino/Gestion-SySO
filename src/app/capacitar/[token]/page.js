@@ -347,8 +347,11 @@ export default function PublicCapacitacionPage({ params }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-syso-bg text-slate-700 flex flex-col justify-between items-center relative overflow-hidden font-sans">
-        <div className="absolute top-[-20%] left-[-20%] w-[600px] h-[600px] rounded-full bg-[#468DFF]/5 blur-[180px] pointer-events-none" />
+      <div className="min-h-screen bg-syso-bg text-slate-700 flex flex-col justify-between items-center relative font-sans">
+        <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+          <div className="absolute top-[-20%] left-[-20%] w-[600px] h-[600px] rounded-full bg-[#468DFF]/5 blur-[180px]" />
+          <div className="absolute bottom-[-20%] right-[-20%] w-[600px] h-[600px] rounded-full bg-[#0511F2]/5 blur-[180px]" />
+        </div>
         <div className="w-full max-w-md z-10 flex-1 flex items-center justify-center p-4">
           <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-200 text-center w-full">
             <Loader2 className="w-10 h-10 text-[#468DFF] animate-spin mx-auto mb-4" />
@@ -363,8 +366,11 @@ export default function PublicCapacitacionPage({ params }) {
 
   if (error || !capacitacion) {
     return (
-      <div className="min-h-screen bg-syso-bg text-slate-700 flex flex-col justify-between items-center relative overflow-hidden font-sans">
-        <div className="absolute top-[-20%] left-[-20%] w-[600px] h-[600px] rounded-full bg-[#468DFF]/5 blur-[180px] pointer-events-none" />
+      <div className="min-h-screen bg-syso-bg text-slate-700 flex flex-col justify-between items-center relative font-sans">
+        <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+          <div className="absolute top-[-20%] left-[-20%] w-[600px] h-[600px] rounded-full bg-[#468DFF]/5 blur-[180px]" />
+          <div className="absolute bottom-[-20%] right-[-20%] w-[600px] h-[600px] rounded-full bg-[#0511F2]/5 blur-[180px]" />
+        </div>
         <div className="w-full max-w-md z-10 flex-1 flex items-center justify-center p-4">
           <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-200 text-center w-full">
             <div className="w-14 h-14 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -381,8 +387,11 @@ export default function PublicCapacitacionPage({ params }) {
 
   if (submittedSuccess) {
     return (
-      <div className="min-h-screen bg-syso-bg text-slate-700 flex flex-col justify-between items-center relative overflow-hidden font-sans">
-        <div className="absolute top-[-20%] left-[-20%] w-[600px] h-[600px] rounded-full bg-[#468DFF]/5 blur-[180px] pointer-events-none" />
+      <div className="min-h-screen bg-syso-bg text-slate-700 flex flex-col justify-between items-center relative font-sans">
+        <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+          <div className="absolute top-[-20%] left-[-20%] w-[600px] h-[600px] rounded-full bg-[#468DFF]/5 blur-[180px]" />
+          <div className="absolute bottom-[-20%] right-[-20%] w-[600px] h-[600px] rounded-full bg-[#0511F2]/5 blur-[180px]" />
+        </div>
         <div className="w-full max-w-lg z-10 flex-1 flex items-center justify-center p-4">
           <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-200 text-center w-full">
             <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -429,10 +438,12 @@ export default function PublicCapacitacionPage({ params }) {
     .join('\n');
 
   return (
-    <div className="min-h-screen bg-syso-bg text-slate-700 flex flex-col justify-between items-center relative overflow-hidden font-sans">
-      {/* Gradiantes de fondo iguales a Login */}
-      <div className="absolute top-[-20%] left-[-20%] w-[600px] h-[600px] rounded-full bg-[#468DFF]/5 blur-[180px] pointer-events-none" />
-      <div className="absolute bottom-[-20%] right-[-20%] w-[600px] h-[600px] rounded-full bg-[#0511F2]/5 blur-[180px] pointer-events-none" />
+    <div className="min-h-screen bg-syso-bg text-slate-700 flex flex-col justify-between items-center relative font-sans">
+      {/* Gradiantes de fondo iguales a Login — fixed inset-0 para evitar desbordamiento al scroll */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-[-20%] left-[-20%] w-[600px] h-[600px] rounded-full bg-[#468DFF]/5 blur-[180px]" />
+        <div className="absolute bottom-[-20%] right-[-20%] w-[600px] h-[600px] rounded-full bg-[#0511F2]/5 blur-[180px]" />
+      </div>
 
       <div className="w-full max-w-3xl py-6 px-4 md:py-10 space-y-6 z-10 flex-1">
         
