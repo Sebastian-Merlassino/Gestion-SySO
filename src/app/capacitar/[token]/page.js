@@ -22,6 +22,7 @@ import {
   ShieldCheck,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Maximize2,
   Lock,
   MapPin,
@@ -51,9 +52,10 @@ export default function PublicCapacitacionPage({ params }) {
   const [nombre, setNombre] = useState('');
   const [dni, setDni] = useState('');
   const [puesto, setPuesto] = useState('');
-  const [selectedEmpIndex, setSelectedEmpIndex] = useState('');
-  const [isManualNombre, setIsManualNombre] = useState(false);
-  const [isManualPuesto, setIsManualPuesto] = useState(false);
+  const [isNombreDropdownOpen, setIsNombreDropdownOpen] = useState(false);
+  const [customNombreInput, setCustomNombreInput] = useState('');
+  const [isPuestoDropdownOpen, setIsPuestoDropdownOpen] = useState(false);
+  const [customPuestoInput, setCustomPuestoInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submittedSuccess, setSubmittedSuccess] = useState(false);
   const [documentSignedUrl, setDocumentSignedUrl] = useState('');
@@ -822,107 +824,152 @@ export default function PublicCapacitacionPage({ params }) {
 
               <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Campo Nombre y Apellido */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-semibold text-slate-700">
-                    Nombre y Apellido *
-                  </label>
-                  {assignedEmployees.length > 0 && (
-                    isManualNombre ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsManualNombre(false);
-                          setNombre('');
-                          setDni('');
-                          setPuesto('');
-                          setSelectedEmpIndex('');
-                        }}
-                        className="text-[11px] font-bold text-[#468DFF] hover:underline cursor-pointer"
-                      >
-                        Seleccionar de la lista
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsManualNombre(true);
-                          setNombre('');
-                          setSelectedEmpIndex('manual');
-                        }}
-                        className="text-[11px] font-bold text-[#468DFF] hover:underline cursor-pointer"
-                      >
-                        Escribir manualmente
-                      </button>
-                    )
+              {/* Campo Nombre y Apellido con Desplegable + Añadir Manual */}
+              <div className="relative">
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Nombre y Apellido *
+                </label>
+
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsNombreDropdownOpen(!isNombreDropdownOpen)}
+                    className="w-full min-h-[42px] border border-slate-300 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50 transition-all text-left flex items-center justify-between gap-2 cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                      <User className="h-4 w-4 text-slate-400 shrink-0" />
+                      {nombre ? (
+                        <span className="text-slate-900 font-medium truncate">{nombre}</span>
+                      ) : (
+                        <span className="text-slate-400 font-normal">-- Selecciona o ingresa tu nombre --</span>
+                      )}
+                    </div>
+                    <ChevronDown className={`h-4 w-4 text-slate-400 shrink-0 transition-transform ${isNombreDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {/* Backdrop para cerrar al hacer clic afuera */}
+                  {isNombreDropdownOpen && (
+                    <div
+                      className="fixed inset-0 z-20"
+                      onClick={() => setIsNombreDropdownOpen(false)}
+                    />
+                  )}
+
+                  {/* Desplegable emergente */}
+                  {isNombreDropdownOpen && (
+                    <div className="absolute z-30 left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl p-3 space-y-2.5 animate-scaleUp">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                        <span className="text-xs font-bold text-slate-700">
+                          Personal de la Nómina ({assignedEmployees.length})
+                        </span>
+                        {nombre && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setNombre('');
+                              setIsNombreDropdownOpen(false);
+                            }}
+                            className="text-[11px] font-bold text-slate-400 hover:text-slate-600 cursor-pointer"
+                          >
+                            Limpiar
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Lista de Empleados scrollable */}
+                      <div className="max-h-48 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+                        {assignedEmployees.length === 0 ? (
+                          <p className="text-xs text-slate-400 italic py-2 text-center">
+                            No hay personal prefijado para esta capacitación. Use el campo inferior para añadir su nombre.
+                          </p>
+                        ) : (
+                          assignedEmployees.map((emp, idx) => {
+                            const empName = typeof emp === 'string' ? emp : emp.nombre_apellido;
+                            const empPuesto = typeof emp === 'object' && emp?.puesto ? emp.puesto : '';
+                            const isSelected = nombre === empName;
+                            return (
+                              <div
+                                key={idx}
+                                onClick={() => {
+                                  setNombre(empName);
+                                  if (typeof emp === 'object') {
+                                    if (emp.cuil) {
+                                      const cleanCuil = emp.cuil.replace(/\D/g, '');
+                                      if (cleanCuil.length === 11) {
+                                        setDni(cleanCuil.substring(2, 10));
+                                      } else {
+                                        setDni(emp.cuil);
+                                      }
+                                    }
+                                    if (emp.puesto) {
+                                      setPuesto(emp.puesto);
+                                    }
+                                  }
+                                  setIsNombreDropdownOpen(false);
+                                }}
+                                className={`flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg text-xs font-medium cursor-pointer transition-colors ${
+                                  isSelected ? 'bg-[#468DFF]/10 text-[#468DFF] font-bold' : 'hover:bg-slate-50 text-slate-700'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2 truncate">
+                                  <User className="h-3.5 w-3.5 text-[#468DFF] shrink-0" />
+                                  <span className="truncate">{empName}</span>
+                                </div>
+                                {empPuesto && (
+                                  <span className="text-[10px] text-slate-400 shrink-0 font-normal">({empPuesto})</span>
+                                )}
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+
+                      {/* Opción para agregar un Nombre manualmente (+ Añadir) */}
+                      <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
+                        <input
+                          type="text"
+                          placeholder="Escribir un nuevo nombre..."
+                          value={customNombreInput}
+                          onChange={(e) => setCustomNombreInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (customNombreInput.trim()) {
+                                setNombre(customNombreInput.trim());
+                                setCustomNombreInput('');
+                                setIsNombreDropdownOpen(false);
+                              }
+                            }
+                          }}
+                          className="flex-1 border border-slate-200 rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (customNombreInput.trim()) {
+                              setNombre(customNombreInput.trim());
+                              setCustomNombreInput('');
+                              setIsNombreDropdownOpen(false);
+                            }
+                          }}
+                          className="px-2.5 py-1 bg-[#468DFF] text-white rounded-lg text-xs font-bold hover:bg-[#0511F2] transition-colors cursor-pointer shrink-0"
+                        >
+                          + Añadir
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
 
-                {assignedEmployees.length > 0 && !isManualNombre ? (
-                  <div className="relative">
-                    <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 z-10 pointer-events-none" />
-                    <select
-                      required
-                      value={selectedEmpIndex}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setSelectedEmpIndex(val);
-                        if (val === 'manual') {
-                          setIsManualNombre(true);
-                          setNombre('');
-                        } else if (val !== '') {
-                          const emp = assignedEmployees[parseInt(val, 10)];
-                          if (emp) {
-                            const empName = typeof emp === 'string' ? emp : emp.nombre_apellido;
-                            setNombre(empName || '');
-                            if (emp.cuil) {
-                              const cleanCuil = emp.cuil.replace(/\D/g, '');
-                              if (cleanCuil.length === 11) {
-                                setDni(cleanCuil.substring(2, 10));
-                              } else {
-                                setDni(emp.cuil);
-                              }
-                            }
-                            if (emp.puesto) {
-                              setPuesto(emp.puesto);
-                              if (!assignedPuestos.includes(emp.puesto)) {
-                                setIsManualPuesto(true);
-                              } else {
-                                setIsManualPuesto(false);
-                              }
-                            }
-                          }
-                        }
-                      }}
-                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#468DFF] focus:bg-white text-slate-900 cursor-pointer font-normal"
-                    >
-                      <option value="" disabled>-- Selecciona tu nombre y apellido --</option>
-                      {assignedEmployees.map((emp, idx) => {
-                        const empName = typeof emp === 'string' ? emp : emp.nombre_apellido;
-                        const empPuesto = typeof emp === 'object' && emp?.puesto ? emp.puesto : '';
-                        return (
-                          <option key={idx} value={idx}>
-                            {empName} {empPuesto ? `(${empPuesto})` : ''}
-                          </option>
-                        );
-                      })}
-                      <option value="manual">➕ Escribir otro nombre manualmente...</option>
-                    </select>
-                  </div>
-                ) : (
-                  <div className="relative">
-                    <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-                    <input
-                      type="text"
-                      required
-                      value={nombre}
-                      onChange={(e) => setNombre(e.target.value)}
-                      placeholder="Ej. Juan Pérez"
-                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#468DFF] focus:bg-white text-slate-900"
-                    />
-                  </div>
-                )}
+                {/* Input oculto para validación HTML5 required */}
+                <input
+                  type="text"
+                  required
+                  value={nombre}
+                  onChange={() => {}}
+                  tabIndex={-1}
+                  className="opacity-0 h-0 w-0 absolute pointer-events-none"
+                />
               </div>
 
               {/* Campo DNI / Documento */}
@@ -944,78 +991,131 @@ export default function PublicCapacitacionPage({ params }) {
               </div>
             </div>
 
-            {/* Campo Puesto de Trabajo */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-semibold text-slate-700">
-                  Puesto de Trabajo *
-                </label>
-                {assignedPuestos.length > 0 && (
-                  isManualPuesto ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsManualPuesto(false);
-                        setPuesto('');
-                      }}
-                      className="text-[11px] font-bold text-[#468DFF] hover:underline cursor-pointer"
-                    >
-                      Seleccionar de la lista
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsManualPuesto(true);
-                        setPuesto('');
-                      }}
-                      className="text-[11px] font-bold text-[#468DFF] hover:underline cursor-pointer"
-                    >
-                      Escribir manualmente
-                    </button>
-                  )
+            {/* Campo Puesto de Trabajo con Desplegable + Añadir Manual */}
+            <div className="relative">
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                Puesto de Trabajo *
+              </label>
+
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setIsPuestoDropdownOpen(!isPuestoDropdownOpen)}
+                  className="w-full min-h-[42px] border border-slate-300 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50 transition-all text-left flex items-center justify-between gap-2 cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                    <Briefcase className="h-4 w-4 text-slate-400 shrink-0" />
+                    {puesto ? (
+                      <span className="text-slate-900 font-medium truncate">{puesto}</span>
+                    ) : (
+                      <span className="text-slate-400 font-normal">-- Selecciona o ingresa tu puesto de trabajo --</span>
+                    )}
+                  </div>
+                  <ChevronDown className={`h-4 w-4 text-slate-400 shrink-0 transition-transform ${isPuestoDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {/* Backdrop para cerrar al hacer clic afuera */}
+                {isPuestoDropdownOpen && (
+                  <div
+                    className="fixed inset-0 z-20"
+                    onClick={() => setIsPuestoDropdownOpen(false)}
+                  />
+                )}
+
+                {/* Desplegable emergente */}
+                {isPuestoDropdownOpen && (
+                  <div className="absolute z-30 left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl p-3 space-y-2.5 animate-scaleUp">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                      <span className="text-xs font-bold text-slate-700">
+                        Puestos de Trabajo ({assignedPuestos.length})
+                      </span>
+                      {puesto && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPuesto('');
+                            setIsPuestoDropdownOpen(false);
+                          }}
+                          className="text-[11px] font-bold text-slate-400 hover:text-slate-600 cursor-pointer"
+                        >
+                          Limpiar
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Lista de Puestos scrollable */}
+                    <div className="max-h-48 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+                      {assignedPuestos.length === 0 ? (
+                        <p className="text-xs text-slate-400 italic py-2 text-center">
+                          No hay puestos prefijados para esta capacitación. Use el campo inferior para añadir su puesto.
+                        </p>
+                      ) : (
+                        assignedPuestos.map((puestoName, idx) => {
+                          const isSelected = puesto === puestoName;
+                          return (
+                            <div
+                              key={idx}
+                              onClick={() => {
+                                setPuesto(puestoName);
+                                setIsPuestoDropdownOpen(false);
+                              }}
+                              className={`flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg text-xs font-medium cursor-pointer transition-colors ${
+                                isSelected ? 'bg-[#468DFF]/10 text-[#468DFF] font-bold' : 'hover:bg-slate-50 text-slate-700'
+                              }`}
+                            >
+                              <span className="truncate">{puestoName}</span>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    {/* Opción para agregar un Puesto manualmente (+ Añadir) */}
+                    <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder="Escribir un nuevo puesto..."
+                        value={customPuestoInput}
+                        onChange={(e) => setCustomPuestoInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (customPuestoInput.trim()) {
+                              setPuesto(customPuestoInput.trim());
+                              setCustomPuestoInput('');
+                              setIsPuestoDropdownOpen(false);
+                            }
+                          }
+                        }}
+                        className="flex-1 border border-slate-200 rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (customPuestoInput.trim()) {
+                            setPuesto(customPuestoInput.trim());
+                            setCustomPuestoInput('');
+                            setIsPuestoDropdownOpen(false);
+                          }
+                        }}
+                        className="px-2.5 py-1 bg-[#468DFF] text-white rounded-lg text-xs font-bold hover:bg-[#0511F2] transition-colors cursor-pointer shrink-0"
+                      >
+                        + Añadir
+                      </button>
+                    </div>
+                  </div>
                 )}
               </div>
 
-              {assignedPuestos.length > 0 && !isManualPuesto ? (
-                <div className="relative">
-                  <Briefcase className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 z-10 pointer-events-none" />
-                  <select
-                    required
-                    value={puesto}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val === 'manual') {
-                        setIsManualPuesto(true);
-                        setPuesto('');
-                      } else {
-                        setPuesto(val);
-                      }
-                    }}
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#468DFF] focus:bg-white text-slate-900 cursor-pointer font-normal"
-                  >
-                    <option value="" disabled>-- Selecciona tu puesto de trabajo --</option>
-                    {assignedPuestos.map((puestoName, idx) => (
-                      <option key={idx} value={puestoName}>
-                        {puestoName}
-                      </option>
-                    ))}
-                    <option value="manual">➕ Escribir otro puesto manualmente...</option>
-                  </select>
-                </div>
-              ) : (
-                <div className="relative">
-                  <Briefcase className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-                  <input
-                    type="text"
-                    required
-                    value={puesto}
-                    onChange={(e) => setPuesto(e.target.value)}
-                    placeholder="Ej. Operador de Autoelevador / Técnico de Mantenimiento"
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#468DFF] focus:bg-white text-slate-900"
-                  />
-                </div>
-              )}
+              {/* Input oculto para validación HTML5 required */}
+              <input
+                type="text"
+                required
+                value={puesto}
+                onChange={() => {}}
+                tabIndex={-1}
+                className="opacity-0 h-0 w-0 absolute pointer-events-none"
+              />
             </div>
 
             {/* Pad de Firma Digital Canvas */}
