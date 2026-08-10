@@ -1,5 +1,30 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-10] Actualización de Cabecera Pública: Título Institucional, Establecimiento, Puestos Filtrados y Temas Incluidos
+
+### Resumen de Cambios
+- **Actualización de Título Principal (`src/app/capacitar/[token]/page.js`):**
+  - El encabezado principal `<h1>` se fijó exactamente a: **"Capacitación virtual de Higiene y seguridad en el trabajo"**.
+- **Ampliación de Ficha de Metadatos:**
+  - Se agregó el campo **Establecimiento** (`capacitacion.establecimiento_nombre`) en la barra de datos.
+  - Se creó la función `getPuestosFormatted()` para extraer y mostrar los puestos de trabajo reales (ej. *"Operador, Mantenimiento"*) eliminando la lista errónea de nombres de empleados.
+- **Sección de Temas Incluidos:**
+  - Se incorporó un bloque dedicado para el listado de temas y contenido de la capacitación bajo la ficha de metadatos.
+- **Actualización Backend SQL:**
+  - Se actualizó la función RPC `get_capacitacion_publica(p_token)` para realizar el `LEFT JOIN` con la tabla `establecimientos` y retornar `establecimiento_nombre`.
+  - Se ajustó `src/app/[tenant-slug]/capacitaciones-online/page.js` para asegurar que `target_puesto` no guarde nombres en nuevas capacitaciones asignadas por nómina.
+
+### Archivos Modificados
+- `[MODIFY] src/app/capacitar/[token]/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
+- `[MODIFY] supabase/migrations/20260820000000_add_capacitaciones_online.sql`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Commit
+`1edae6b` — fix: actualizar cabecera publica con titulo exacto, empresa, establecimiento, puestos filtrados sin nombres y seccion de temas incluidos
+
+---
+
 ## [2026-08-10] Visor PDF Modo Filmina con PDF.js — Sin Scroll Continuo, Navegación Real por Página
 
 ### Resumen de Cambios
