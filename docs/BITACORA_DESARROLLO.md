@@ -1,5 +1,21 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-10] Corrección de Desfase de Cursor/Trazo en Lienzo de Firma Digital (`src/app/capacitar/[token]/page.js`)
+
+### Resumen de Cambios
+- **Fix de Coordenadas Táctiles y Mouse (`getCanvasPos`):**
+  - Se implementó la función helper `getCanvasPos` que calcula la relación entre la resolución interna del canvas (`canvas.width` x `canvas.height`) y sus dimensiones de renderizado CSS real (`getBoundingClientRect()`).
+  - Al multiplicar las coordenadas `(clientX - rect.left)` y `(clientY - rect.top)` por `(canvas.width / rect.width)` y `(canvas.height / rect.height)`, el trazo dibujado coincide punto a punto de forma 1:1 con la punta del cursor o del dedo en dispositivos móviles y computadoras.
+
+### Archivos Modificados
+- `[MODIFY] src/app/capacitar/[token]/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Commit
+`c1c6c3d` — fix: escalado proporcional de coordenadas en el lienzo de firma digital para eliminar desfase entre cursor/trazo
+
+---
+
 ## [2026-08-10] Corrección de Alineación al Pie del Footer Institucional (`PublicFooter`)
 
 ### Resumen de Cambios
