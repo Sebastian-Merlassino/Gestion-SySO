@@ -5,6 +5,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { useToast } from '@/components/providers/ToastProvider';
 import { supabase } from '@/lib/supabase';
+import PublicFooter from '@/components/PublicFooter';
 import { 
   GraduationCap, 
   CheckCircle2, 
@@ -346,77 +347,97 @@ export default function PublicCapacitacionPage({ params }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 text-center max-w-md w-full">
-          <Loader2 className="w-10 h-10 text-[#468DFF] animate-spin mx-auto mb-4" />
-          <h2 className="text-lg font-semibold text-slate-800">Cargando Capacitación...</h2>
-          <p className="text-sm text-slate-500 mt-1">Obteniendo el material y formulario de asistencia</p>
+      <div className="min-h-screen bg-syso-bg text-slate-700 flex flex-col justify-between items-center relative overflow-hidden font-sans">
+        <div className="absolute top-[-20%] left-[-20%] w-[600px] h-[600px] rounded-full bg-[#468DFF]/5 blur-[180px] pointer-events-none" />
+        <div className="w-full max-w-md z-10 flex-1 flex items-center justify-center p-4">
+          <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-200 text-center w-full">
+            <Loader2 className="w-10 h-10 text-[#468DFF] animate-spin mx-auto mb-4" />
+            <h2 className="text-lg font-semibold text-slate-800">Cargando Capacitación...</h2>
+            <p className="text-sm text-slate-500 mt-1">Obteniendo el material y formulario de asistencia</p>
+          </div>
         </div>
+        <PublicFooter />
       </div>
     );
   }
 
   if (error || !capacitacion) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 text-center max-w-md w-full">
-          <div className="w-14 h-14 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="w-8 h-8" />
-          </div>
-          <h2 className="text-xl font-bold text-slate-800 mb-2">Acceso No Disponible</h2>
-          <p className="text-slate-600 text-sm mb-6">{error || 'La capacitación no existe o fue desactivada.'}</p>
-          <div className="text-xs text-slate-400 border-t border-slate-100 pt-4">
-            Gestión SySO — Plataforma de Seguridad y Salud Ocupacional
+      <div className="min-h-screen bg-syso-bg text-slate-700 flex flex-col justify-between items-center relative overflow-hidden font-sans">
+        <div className="absolute top-[-20%] left-[-20%] w-[600px] h-[600px] rounded-full bg-[#468DFF]/5 blur-[180px] pointer-events-none" />
+        <div className="w-full max-w-md z-10 flex-1 flex items-center justify-center p-4">
+          <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-200 text-center w-full">
+            <div className="w-14 h-14 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-8 h-8" />
+            </div>
+            <h2 className="text-xl font-bold text-slate-800 mb-2">Acceso No Disponible</h2>
+            <p className="text-slate-600 text-sm mb-6">{error || 'La capacitación no existe o fue desactivada.'}</p>
           </div>
         </div>
+        <PublicFooter />
       </div>
     );
   }
 
   if (submittedSuccess) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 animate-fade-in">
-        <div className="bg-white p-8 rounded-2xl shadow-md border border-slate-200 text-center max-w-lg w-full">
-          <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircle2 className="w-10 h-10" />
-          </div>
-          <h2 className="text-2xl font-bold text-slate-800 mb-2">¡Asistencia Registrada!</h2>
-          <p className="text-slate-600 text-base mb-6">
-            Muchas gracias <strong className="text-slate-800">{nombre}</strong>. Tu constancia de capacitación para la empresa <strong className="text-[#468DFF]">{capacitacion.empresa_nombre}</strong> se ha firmado y registrado exitosamente.
-          </p>
+      <div className="min-h-screen bg-syso-bg text-slate-700 flex flex-col justify-between items-center relative overflow-hidden font-sans">
+        <div className="absolute top-[-20%] left-[-20%] w-[600px] h-[600px] rounded-full bg-[#468DFF]/5 blur-[180px] pointer-events-none" />
+        <div className="w-full max-w-lg z-10 flex-1 flex items-center justify-center p-4">
+          <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-200 text-center w-full">
+            <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 className="w-10 h-10" />
+            </div>
+            <h2 className="text-2xl font-bold text-slate-800 mb-2">¡Asistencia Registrada!</h2>
+            <p className="text-slate-600 text-base mb-6">
+              Muchas gracias <strong className="text-slate-800">{nombre}</strong>. Tu constancia de capacitación para la empresa <strong className="text-[#468DFF]">{capacitacion.empresa_nombre}</strong> se ha firmado y registrado exitosamente.
+            </p>
 
-          <div className="bg-slate-50 p-4 rounded-xl text-left border border-slate-200 text-sm space-y-2 mb-6">
-            <div className="flex justify-between border-b border-slate-200 pb-2">
-              <span className="text-slate-500">Capacitación:</span>
-              <span className="font-semibold text-slate-800 text-right">{capacitacion.titulo}</span>
+            <div className="bg-slate-50 p-4 rounded-xl text-left border border-slate-200 text-sm space-y-2 mb-6">
+              <div className="flex justify-between border-b border-slate-200 pb-2">
+                <span className="text-slate-500">Capacitación:</span>
+                <span className="font-semibold text-slate-800 text-right">{capacitacion.titulo}</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-200 pb-2">
+                <span className="text-slate-500">DNI:</span>
+                <span className="font-semibold text-slate-800">{dni}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Puesto:</span>
+                <span className="font-semibold text-slate-800">{puesto}</span>
+              </div>
             </div>
-            <div className="flex justify-between border-b border-slate-200 pb-2">
-              <span className="text-slate-500">DNI:</span>
-              <span className="font-semibold text-slate-800">{dni}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-500">Puesto:</span>
-              <span className="font-semibold text-slate-800">{puesto}</span>
-            </div>
-          </div>
 
-          <div className="text-xs text-slate-400 flex items-center justify-center gap-1">
-            <ShieldCheck className="w-4 h-4 text-emerald-500" />
-            Registro firmado digitalmente con validez técnica
+            <div className="text-xs text-slate-400 flex items-center justify-center gap-1">
+              <ShieldCheck className="w-4 h-4 text-emerald-500" />
+              Registro firmado digitalmente con validez técnica
+            </div>
           </div>
         </div>
+        <PublicFooter />
       </div>
     );
   }
 
   const embedVideoUrl = getYouTubeEmbedUrl(capacitacion.video_url);
 
+  // Formatear los temas sin saltos de línea dobles
+  const formattedTemas = (capacitacion.descripcion || capacitacion.titulo || '')
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean)
+    .join('\n');
+
   return (
-    <div className="min-h-screen bg-slate-100 py-6 px-4 md:py-10">
-      <div className="max-w-3xl mx-auto space-y-6">
+    <div className="min-h-screen bg-syso-bg text-slate-700 flex flex-col justify-between items-center relative overflow-hidden font-sans">
+      {/* Gradiantes de fondo iguales a Login */}
+      <div className="absolute top-[-20%] left-[-20%] w-[600px] h-[600px] rounded-full bg-[#468DFF]/5 blur-[180px] pointer-events-none" />
+      <div className="absolute bottom-[-20%] right-[-20%] w-[600px] h-[600px] rounded-full bg-[#0511F2]/5 blur-[180px] pointer-events-none" />
+
+      <div className="w-full max-w-3xl py-6 px-4 md:py-10 space-y-6 z-10 flex-1">
         
         {/* Cabecera Principal */}
-        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+        <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-md">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2.5 bg-blue-50 text-[#468DFF] rounded-xl">
               <GraduationCap className="w-7 h-7" />
@@ -426,12 +447,12 @@ export default function PublicCapacitacionPage({ params }) {
                 Módulo de Capacitación Virtual
               </span>
               <h1 className="text-xl md:text-2xl font-bold text-slate-900 leading-tight">
-                Capacitación virtual de Higiene y seguridad en el trabajo
+                Capacitación de Higiene y Seguridad en el trabajo
               </h1>
             </div>
           </div>
 
-          {/* Ficha de Metadatos: Empresa, Establecimiento y Puestos */}
+          {/* Ficha de Metadatos: Empresa y Establecimiento */}
           <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-600 bg-slate-50 p-3.5 rounded-xl border border-slate-200 mt-4">
             <div className="flex items-center gap-1.5">
               <Building2 className="w-4 h-4 text-slate-400" />
@@ -443,20 +464,16 @@ export default function PublicCapacitacionPage({ params }) {
                 <span>Establecimiento: <strong className="text-slate-800">{capacitacion.establecimiento_nombre}</strong></span>
               </div>
             )}
-            <div className="flex items-center gap-1.5">
-              <Briefcase className="w-4 h-4 text-slate-400" />
-              <span>Puesto/s: <strong className="text-slate-800">{getPuestosFormatted(capacitacion)}</strong></span>
-            </div>
           </div>
 
-          {/* Listado de Temas Incluidos en la Capacitación */}
+          {/* Listado de Temas Incluidos en la Capacitación (sin saltos dobles) */}
           <div className="mt-5 border-t border-slate-100 pt-4">
             <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
               <FileText className="w-4 h-4 text-[#468DFF]" />
               Temas incluidos en la capacitación:
             </h2>
             <div className="text-slate-700 text-sm leading-relaxed whitespace-pre-line bg-slate-50/70 p-4 rounded-xl border border-slate-200">
-              {capacitacion.descripcion || capacitacion.titulo}
+              {formattedTemas}
             </div>
           </div>
         </div>
@@ -602,7 +619,7 @@ export default function PublicCapacitacionPage({ params }) {
           );
 
           return (
-            <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
+            <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-md space-y-4">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div>
                   <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
@@ -610,7 +627,7 @@ export default function PublicCapacitacionPage({ params }) {
                     Material de Lectura y Presentación
                   </h2>
                   <span className="text-xs text-slate-500 block mt-0.5">
-                    Modo Presentación — Use las flechas para avanzar filminas. La firma se habilitará al llegar a la última.
+                    Modo Presentación — Use las flechas para avanzar filminas. El formulario de registro se habilitará al completar la capacitación.
                   </span>
                 </div>
                 <button
@@ -628,23 +645,6 @@ export default function PublicCapacitacionPage({ params }) {
 
               {/* Visor principal */}
               {renderViewer(false)}
-
-              {/* Indicador de progreso */}
-              <div className={`pt-2 flex items-center justify-end gap-2 text-xs font-semibold ${
-                hasCompletedMaterial ? 'text-emerald-700' : 'text-amber-700'
-              }`}>
-                {hasCompletedMaterial ? (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    Presentación completada — Firma habilitada
-                  </>
-                ) : (
-                  <>
-                    <Lock className="w-4 h-4 text-amber-500" />
-                    Avance hasta la última filmina para habilitar la firma
-                  </>
-                )}
-              </div>
 
               {/* Modal de Pantalla Completa */}
               {isFullscreenModalOpen && (
@@ -718,18 +718,18 @@ export default function PublicCapacitacionPage({ params }) {
           );
         })()}
 
-        {/* Sección 3: Formulario de Asistencia y Firma Digital (Desbloqueo Progresivo Auditado) */}
-        <div id="firma-section" className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+        {/* Sección 3: Formulario de Asistencia y Firma Digital */}
+        <div id="firma-section" className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-md">
           {!hasCompletedMaterial && (capacitacion.document_url || capacitacion.video_url) ? (
             <div className="bg-amber-50/90 border border-amber-200 rounded-2xl p-6 text-center space-y-3">
               <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto shadow-sm">
                 <Lock className="w-6 h-6" />
               </div>
               <h3 className="text-base font-bold text-amber-900">
-                Firma Digital Temporariamente Bloqueada
+                Registro digital de capacitación
               </h3>
               <p className="text-xs text-amber-700 max-w-md mx-auto leading-relaxed">
-                Por normativas de seguridad y salud ocupacional, debe navegar las filminas/diapositivas o revisar el material audiovisual antes de registrar su firma de asistencia.
+                El formulario de registro se habilitará al completar la capacitación.
               </p>
               <button
                 type="button"
@@ -742,7 +742,7 @@ export default function PublicCapacitacionPage({ params }) {
                 className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-[#468DFF]/20 flex items-center gap-2 mx-auto cursor-pointer"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                Confirmar lectura completa del material y habilitar firma
+                Confirmar lectura del material y habilitar formulario
               </button>
             </div>
           ) : (
@@ -879,12 +879,10 @@ export default function PublicCapacitacionPage({ params }) {
           </form>
         </>
       )}
-    </div>
-
-        <div className="text-center text-xs text-slate-400 py-2">
-          Gestión SySO — Sistema de Gestión Integral en Seguridad y Salud Ocupacional
         </div>
       </div>
+
+      <PublicFooter />
     </div>
   );
 }
