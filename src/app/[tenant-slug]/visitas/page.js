@@ -21,6 +21,7 @@ import AppCard from '@/components/ui/AppCard';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import AppSortIcon from '@/components/ui/AppSortIcon';
 import { formatPdfFileName } from '@/lib/pdf/pdfFileName';
+import * as XLSX from 'xlsx';
 import { 
   PlusCircle, 
   AlertCircle,
@@ -58,6 +59,7 @@ import {
   Send,
   Trash,
   FileText,
+  FileSpreadsheet,
   Folder,
   Phone,
   MessageCircle
@@ -2442,6 +2444,76 @@ export default function VisitasPage({ params }) {
     }
   };
 
+  const handleExportExcel = () => {
+    if (!sortedVisitas || sortedVisitas.length === 0) {
+      globalToast.toast('No hay visitas registradas para exportar.', 'error');
+      return;
+    }
+
+    try {
+      globalToast.toast('Generando reporte Excel de visitas...', 'info');
+
+      const dataToExport = sortedVisitas.map(v => {
+        const emp = empresas.find(e => e.id === v.empresa_id);
+        const est = allEstablecimientos.find(e => e.id === v.establecimiento_id);
+
+        const medicionesStr = Array.isArray(v.selected_mediciones) 
+          ? v.selected_mediciones.join(', ') 
+          : (v.selected_mediciones || '');
+
+        const temasStr = Array.isArray(v.selected_temas) 
+          ? v.selected_temas.join(', ') 
+          : (v.selected_temas || '');
+
+        const simulacrosStr = Array.isArray(v.selected_simulacros) 
+          ? v.selected_simulacros.join(', ') 
+          : (v.selected_simulacros || '');
+
+        const docuStr = Array.isArray(v.selected_documentacion) 
+          ? v.selected_documentacion.join(', ') 
+          : (v.selected_documentacion || '');
+
+        return {
+          'Fecha': v.fecha ? formatDate(v.fecha) : '',
+          'Cliente / Razón Social': emp ? emp.razon_social : '',
+          'Establecimiento': est ? est.denominacion : '',
+          'Profesional / Técnico': v.profesional_nombre || '',
+          'Responsable Presente': v.responsable_presente || '',
+          'Ocurrieron Incidentes': v.ocurrieron_incidentes ? 'Sí' : 'No',
+          'Análisis Correspondiente': v.analisis_correspondiente || 'N/A',
+          'Causa Raíz': v.causa_raiz || '',
+          'Acción Correctiva': v.accion_correctiva || '',
+          'Relevamiento H&S': v.relevamiento_higiene_seguridad || 'N/A',
+          'Relevamiento Prácticas Seguras': v.relevamiento_practicas_seguras || 'N/A',
+          'Relevamiento EPP': v.relevamiento_epp || 'N/A',
+          'Realizaron Mediciones': v.realizaron_mediciones || 'N/A',
+          'Detalle de Mediciones': medicionesStr,
+          'Verificación Acciones Correctivas': v.verifico_acciones_correctivas || 'N/A',
+          'Dictaron Capacitaciones': v.dictaron_capacitaciones ? 'Sí' : 'No',
+          'Temas de Capacitación': temasStr,
+          'Realizaron Simulacros': v.realizaron_simulacros ? 'Sí' : 'No',
+          'Detalle de Simulacros': simulacrosStr,
+          'Emite Aviso de Riesgo': v.emite_aviso_riesgo ? 'Sí' : 'No',
+          'Documentación Solicitada/Entregada': docuStr,
+          'Observaciones y Recomendaciones': v.observaciones_recomendaciones || '',
+          'Observaciones Generales': v.observaciones || ''
+        };
+      });
+
+      const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Constancias de Visita');
+
+      const fileName = `Constancias_de_Visita_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+
+      globalToast.toast('Planilla Excel descargada con éxito.', 'success');
+    } catch (err) {
+      console.error('Error al exportar visitas a Excel:', err);
+      globalToast.toast('Ocurrió un error al exportar la planilla a Excel.', 'error');
+    }
+  };
+
   return (
     <div className="h-screen overflow-hidden bg-syso-bg text-slate-700 flex font-sans">
       
@@ -2483,7 +2555,7 @@ export default function VisitasPage({ params }) {
                     {/* Espaciador para empujar el buscador a la derecha en desktop */}
                     <div className="hidden md:block flex-1"></div>
 
-                    {/* Buscador */}
+                    {/* Buscador y Exportar a Excel */}
                     <div className="flex flex-col md:flex-row md:items-center gap-2 w-full md:w-auto">
                       <div className="relative w-full md:w-64">
                         <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 pointer-events-none" />
@@ -2495,6 +2567,16 @@ export default function VisitasPage({ params }) {
                           className="w-full pl-9 pr-3.5 py-1.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400"
                         />
                       </div>
+
+                      <button
+                        type="button"
+                        onClick={handleExportExcel}
+                        title="Descargar tabla completa de datos de visitas en Excel"
+                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm shrink-0"
+                      >
+                        <FileSpreadsheet className="h-4 w-4" />
+                        <span>Exportar Excel</span>
+                      </button>
                     </div>
                   </div>
 

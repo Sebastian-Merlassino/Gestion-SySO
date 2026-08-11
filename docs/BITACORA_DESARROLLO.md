@@ -1,5 +1,21 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-11] Integración de Botón para Exportar Tabla Completa de Visitas a Excel
+
+### Resumen de Cambios
+- **Módulo Constancia de Visita (`src/app/[tenant-slug]/visitas/page.js`):**
+  - **Ubicación en UI:** Se agregó el botón verde esmeralda `Exportar Excel` (con el icono `FileSpreadsheet` de Lucide) en la tarjeta contenedora superior de herramientas, ubicado inmediatamente a la derecha del campo de búsqueda (`input` de filtro).
+  - **Lógica de Generación Excel (`handleExportExcel`):**
+    - Procesa dinámicamente las visitas filtradas/ordenadas en la tabla (`sortedVisitas`) exportando todas las columnas y metadatos: *Fecha, Cliente / Razón Social, Establecimiento, Profesional / Técnico, Responsable Presente, Incidentes, Análisis, Causa Raíz, Acción Correctiva, Relevamientos (H&S, Prácticas Seguras, EPP), Mediciones (Realizadas y Detalle), Verificación de Acciones Correctivas, Capacitaciones (Dictadas y Temas), Simulacros (Realizados y Detalle), Aviso de Riesgo Emitido, Documentación Solicitada/Entregada, Observaciones y Recomendaciones, y Observaciones Generales*.
+    - Exporta directamente el archivo `.xlsx` (`Constancias_de_Visita_YYYY-MM-DD.xlsx`) con la librería `XLSX`.
+    - Notifica al usuario mediante el estándar global de toast (`useToast`) con estado informativo/éxito.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
 ## [2026-08-11] Integración de la Fórmula Exacta de Firma de Protocolo de Ergonomía en Capacitaciones Online (PDF)
 
 ### Resumen de Cambios
