@@ -1737,10 +1737,10 @@ export default function EmpresasClientes({ params }) {
             // ==========================================
             // VISTA: LISTADO DE EMPRESAS (TABLA)
             // ==========================================
-            <div className="space-y-6 flex-1 flex flex-col min-h-0">
+            <div className="space-y-0 md:space-y-6 flex-1 flex flex-col min-h-0">
               
               {/* Toolbar y Filtros Unificados */}
-              <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl p-3.5 sm:p-5 md:p-6 shadow-sm space-y-3">
+              <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl px-3.5 py-2.5 sm:px-5 sm:py-3 md:px-6 md:py-3.5 shadow-sm space-y-2.5 shrink-0">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                   {/* Espaciador para empujar el buscador a la derecha en desktop */}
                   <div className="hidden md:block flex-1"></div>

@@ -1,5 +1,165 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-11] Integración de la Fórmula Exacta de Firma de Protocolo de Ergonomía en Capacitaciones Online (PDF)
+
+### Resumen de Cambios
+- **Fórmula Idéntica a Protocolos (`src/app/[tenant-slug]/capacitaciones-online/utils/pdfGenerator.js`):**
+  - **Límites de Escala:** Se expandió la altura máxima del renderizado de firma a `maxH = 32 mm` (mismo límite de `drawAspectSignature` en `protocolos/ergonomia/utils/pdfGenerator.js`), permitiendo que sellos o firmas verticales se muestren con el 100% de su tamaño completo.
+  - **Superposición Estética `0.78`:** Se adoptó la coordenada vertical exacta `renderY = lineY - (renderH * 0.78)`, haciendo flotar el 78% de la firma por encima de la línea y sobreponiéndose con soltura elegante sobre el nombre y la matrícula, garantizando un aspecto de firma física sobre documento idéntico al Protocolo de Ergonomía y Ruido.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/utils/pdfGenerator.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-11] Ampliación del Logo del Encabezado y Resolución Definitiva de Firma del Capacitador con Supabase Storage (PDF)
+
+### Resumen de Cambios
+- **Logo del Encabezado (`src/app/[tenant-slug]/capacitaciones-online/utils/pdfGenerator.js`):**
+  - Se ampliaron los límites máximos del logo en el encabezado de `45 x 15 mm` a `65 x 22 mm`, permitiendo una presencia de marca significativamente más legible y destacada sin perder la relación de aspecto original (`width / height`).
+- **Resolución e Incrustación Definitiva de Firmas de Capacitador y Asistentes:**
+  - **Inyección del Cliente Supabase:** Se pasó el cliente autenticado `supabase` desde `page.js` al generador PDF.
+  - **Resolución Asíncrona con URLs Firmadas y Públicas:** Se implementó `resolveStorageUrl`, que detecta si la firma proviene del bucket privado/público de Supabase Storage (`signatures` / `documents`), ejecutando `supabase.storage.from(bucket).createSignedUrl` o `getPublicUrl` para resolver dinámicamente cualquier ruta o URL restringida antes de llamar a `getBase64ImageFromUrl`.
+  - **Formato Dinámico de Imagen:** Soporte automático para formatos `PNG` y `JPEG` evitando fallos de descodificación en `doc.addImage`.
+  - **Pre-carga Asíncrona de Asistentes:** Se pre-cargan todas las firmas de asistentes de forma asíncrona antes de invocar `autoTable`, garantizando el dibujado síncrono limpio en las celdas sin omisiones ni retardos.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/utils/pdfGenerator.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-11] Corrección de Proporción de Logo, Remoción de Leyenda y Cuadro Dinámico de Tema en PDF de Capacitaciones Online
+
+### Resumen de Cambios
+- **Encabezado y Proporción del Logo (`src/app/[tenant-slug]/capacitaciones-online/utils/pdfGenerator.js`):**
+  - **Remoción de Leyenda:** Se eliminó la leyenda *"Consultora en Higiene, Seguridad y Medio Ambiente"* debajo del logo en el encabezado.
+  - **Relación de Aspecto del Logo:** Se implementó la función auxiliar `getImageDimensions` para calcular dinámicamente el ancho y alto del logo de la marca en base64, manteniendo la relación de aspecto original (`width / height`) sin distorsión ni estiramiento.
+- **Formato del Cuadro de "Tema:":**
+  - **Texto en Peso Normal:** Se cambió el peso tipográfico de `bold` a `normal` (`helvetica normal`, 8.5 pt).
+  - **Soporte Multilínea y Recuadro Extensible:** Se incorporó `doc.splitTextToSize` para dividir títulos extensos o múltiples temas en líneas limpias, calculando dinámicamente el alto del recuadro (`Math.max(12, calculado)`) para evitar cualquier desbordamiento visual.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/utils/pdfGenerator.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-11] Ajustes Finales de Plantilla, Duración, Fecha/Hora, Fondo de Asistentes, Logo y Firma en PDF de Capacitaciones Online
+
+### Resumen de Cambios
+- **Ajustes en Generador PDF (`src/app/[tenant-slug]/capacitaciones-online/utils/pdfGenerator.js`):**
+  1. **Material Entregado:** Se fijó la respuesta en **`NO`**.
+  2. **Duración Exacta:** Se refleja de forma idéntica el valor cargado en la duración de *"Detalle / Editar Capacitación Online"* (`duracion_valor` + `duracion_unidad`, ej. `45 Min` o `1 Hs`).
+  3. **Fecha y Hora Asincrónica (SRT 2/22):** 
+     - `Fecha:` Si la capacitación no posee fecha fija presencial, calcula dinámicamente el rango entre la primera y la última firma registrada (`DD/MM/AAAA - DD/MM/AAAA`).
+     - `Hora:` Muestra `"Asincrónica (SRT 2/22)"` cuando las firmas digitales se realizan en diferentes horarios.
+  4. **Subencabezado "Asistentes":** Se cambió el fondo a gris neutro estandarizado (`#E2E8F0` / `[226, 232, 240]`) con texto en Slate-900 bold (`[15, 23, 42]`).
+  5. **Logo Principal del Administrador:** Se carga la imagen del logo de la marca cargado en el perfil del usuario administrador/tenant (`tenant.logo_1_url` o `profile.logo_1_url`).
+  6. **Firma y Aclaración del Capacitador:** Incrusta la imagen de firma (`firma_url`) y nombre del usuario logueado. Si el usuario logueado no posee firma cargada en su perfil, consulta automáticamente el perfil del **usuario profesional administrador** del tenant para incluir su firma y nombre.
+- **Consultas de Respaldo en UI (`src/app/[tenant-slug]/capacitaciones-online/page.js`):**
+  - Se añadió la función `fetchAdminProfileIfNeeded` para obtener el perfil del usuario profesional administrador con firma cuando el usuario activo no la posea, pasándolo como `adminProfile` al generador PDF.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/utils/pdfGenerator.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-11] Integración del Diseño Base Oficial del Registro de Capacitación de Higiene y Seguridad en el Trabajo (PDF & Acciones Imprimir / Descargar)
+
+### Resumen de Cambios
+- **Diseño Base Oficial de Registro de Capacitación PDF (`src/app/[tenant-slug]/capacitaciones-online/utils/pdfGenerator.js`):**
+  - Se reconstruyó la generación de PDF utilizando `jsPDF` y `jspdf-autotable` respetando de forma idéntica la plantilla oficial provista:
+    1. **Encabezado Institucional:** Logo `Gestión SySO` y leyenda *"Consultora en Higiene, Seguridad y Medio Ambiente"*.
+    2. **Barra de Título Principal:** Relleno azul `#468DFF` con texto blanco centrado *"Registro de Capacitación de Higiene y Seguridad en el Trabajo"*.
+    3. **Recuadro de Tema:** Campo de alto relieve para el tema de la capacitación.
+    4. **Grilla de Metadatos (3 Filas):** Razón Social, Fecha, Hora, Duración, Metodología (*Asincrónica con PowerPoint*) y Material entregado (*Sí/No*).
+    5. **Tabla de Asistentes:** Subencabezado oscuro *"Asistentes"* con columnas: `Nombre y Apellido`, `D.N.I.`, `Puesto / Cargo` y `Firma`. Incluye incrustación de firma digital si está registrada y grilla mínima de 15 filas limpias para impresión en papel.
+    6. **Recuadro de Observaciones:** Leyenda normativa *"Los datos de los participantes se recabaron mediante el uso de una aplicación informática, según lo dispuesto en la Disposición SRT 2/22 y la Resolución 48/25"*.
+    7. **Sección Capacitador y Medición de la Eficacia:** Casillas de verificación para Evaluación oral, escrita, práctica, en el puesto, auditoría, simulacro y otra; más recuadro de fecha y *"Verificado por:"*.
+    8. **Pie de Página Estandarizado:** Se reemplazó el pie previo por el estándar global de la plataforma (línea horizontal de acento en azul `#468DFF`, texto de contacto dinámico centrado `[Nombre Comercial] • Tel: [telefono] • Email: [email]` extrayendo los datos del perfil de usuario/equipo logueado y tenant, y numeración `Página X de Y` a la derecha).
+- **Acciones Separadas de Imprimir y Descargar en UI (`src/app/[tenant-slug]/capacitaciones-online/page.js`):**
+  - **Botonera en Tabla de Datos:** Se desacopló la acción PDF en dos botones independientes:
+    - `Printer` (Icono Impresora en Azul `#468DFF`): *"Ver e Imprimir Registro de Capacitación (PDF)"*, abriendo la vista directa en nueva pestaña lista para imprimir.
+    - `Download` (Icono Descargar en Gris Slate): *"Descargar Registro de Capacitación (PDF)"*, ejecutando la descarga directa del archivo `.pdf`.
+  - **Modal de Firmantes / Registros:** Se agregaron ambos botones (*Imprimir Registro* y *Descargar PDF*) en el pie del modal emergente de asistentes.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/utils/pdfGenerator.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-11] Actualización Global a SySO Compact Layout v2.0 (Reducción de Padding Vertical en 15 Secciones)
+
+### Resumen de Cambios
+- **Inclusión Formal en el Estándar SySO Compact Layout v2.0:**
+  - Se formalizó la actualización en `.agents/skills/gestion-syso-brand-guidelines/SKILL.md` estableciendo el padding ultra compacto `px-3.5 py-2.5 sm:px-5 sm:py-3 md:px-6 md:py-3.5` y espaciado de filas `space-y-2.5` para la tarjeta de herramientas de todos los módulos de la plataforma.
+- **Implementación Global en 15 Módulos de la Aplicación:**
+  - Se aplicó la reducción de padding vertical de 24px a 14px en escritorio (más de un 40% de reducción de espacio blanco vertical) en las tarjetas superiores de listados en:
+    1. `src/app/[tenant-slug]/equipo/page.js` (Estructura de 2 filas idéntica con divisor de borde `border-t border-slate-100` y padding compacto v2.0)
+    2. `src/app/[tenant-slug]/visitas/page.js`
+    3. `src/app/[tenant-slug]/empresas/page.js`
+    4. `src/app/[tenant-slug]/extintores/page.js`
+    5. `src/app/[tenant-slug]/control-electrico/page.js`
+    6. `src/app/[tenant-slug]/accidentes/page.js`
+    7. `src/app/[tenant-slug]/avisos/page.js`
+    8. `src/app/[tenant-slug]/capacitacion/page.js`
+    9. `src/app/[tenant-slug]/capacitaciones-online/page.js`
+    10. `src/app/[tenant-slug]/checklist-personalizados/page.js`
+    11. `src/app/[tenant-slug]/correctivas/page.js`
+    12. `src/app/[tenant-slug]/legajo/page.js`
+    13. `src/app/[tenant-slug]/matriz-riesgos/page.js`
+    14. `src/app/[tenant-slug]/nomina/page.js`
+    15. `src/app/[tenant-slug]/programa/page.js`
+    16. `src/app/[tenant-slug]/protocolos/ergonomia/page.js`
+    17. `src/app/[tenant-slug]/protocolos/iluminacion/page.js`
+    18. `src/app/[tenant-slug]/protocolos/ruido/page.js`
+
+### Archivos Modificados
+- `[MODIFY] .agents/skills/gestion-syso-brand-guidelines/SKILL.md`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/matriz-riesgos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/nomina/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-11] Estandarización de Layout en Equipo de Trabajo (SySO Compact Layout)
+
+### Resumen de Cambios
+- **Módulo Equipo de Trabajo (`src/app/[tenant-slug]/equipo/page.js`):**
+  - **Eliminación de separación vertical en Móvil:** Se actualizó la clase contenedora principal a `space-y-0 md:space-y-6 flex-1 flex flex-col min-h-0`. En pantallas móviles (`< 768px`), la tarjeta de herramientas y la tarjeta de la tabla quedan contiguas sin mostrar el fondo gris intermedio (`#D9D9D9`).
+  - **Estandarización del Encabezado de Herramientas:** Se reestructuró la tarjeta de herramientas al estándar **SySO Compact Layout**:
+    - Buscador responsivo (`w-full md:w-64`) en la fila superior alineado a la derecha.
+    - Sub-barra inferior (`pt-1.5 border-t border-slate-100`) con botón `Limpiar búsqueda` a la izquierda y el botón primario `+ Agregar Integrante` a la derecha.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
 ## [2026-08-11] Restauración de Scroll Vertical en Contenedores de Formularios (`visitas` y `equipo`) y Auditoría Integral
 
 ### Resumen de Cambios

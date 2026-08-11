@@ -1840,7 +1840,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
             
             {/* TABS Y FILTROS COMPACTOS (Solo si no está abierto ningún formulario) */}
             {!isFormOpen && (
-              <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl p-3.5 sm:p-5 md:p-6 shadow-sm shrink-0 flex flex-col gap-3 mb-0 md:mb-4 transition-all">
+              <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl px-3.5 py-2.5 sm:px-5 sm:py-3 md:px-6 md:py-3.5 shadow-sm shrink-0 flex flex-col gap-2.5 mb-0 md:mb-4 transition-all">
                 {/* Fila superior: Tabs y Buscador */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 select-none">
                   <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 gap-1 flex-shrink-0 items-center">

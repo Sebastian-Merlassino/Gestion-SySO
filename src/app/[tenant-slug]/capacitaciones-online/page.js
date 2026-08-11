@@ -24,6 +24,7 @@ import {
   FileText, 
   Share2, 
   Download, 
+  Printer,
   Trash2, 
   Edit, 
   X, 
@@ -718,7 +719,27 @@ export default function CapacitacionesOnlinePage({ params }) {
     }
   };
 
-  // Generar Reporte PDF
+  // Obtener perfil de administrador si el usuario logueado no tiene firma
+  const fetchAdminProfileIfNeeded = async () => {
+    const hasUserSig = profile?.signature_url || profile?.firma_url;
+    if (hasUserSig || !profile?.tenant_id) return null;
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('tenant_id', profile.tenant_id)
+        .in('role', ['admin', 'owner', 'superadmin'])
+        .or('signature_url.neq.null,firma_url.neq.null')
+        .limit(1)
+        .maybeSingle();
+      return data || null;
+    } catch (e) {
+      console.error('Error al obtener firma de administrador:', e);
+      return null;
+    }
+  };
+
+  // Generar Reporte PDF (Descargar)
   const handleDownloadPdf = async (item, e) => {
     e?.stopPropagation();
     globalToast.toast('Generando reporte PDF de asistencia...', 'info');
@@ -731,18 +752,56 @@ export default function CapacitacionesOnlinePage({ params }) {
         .order('registrado_at', { ascending: true });
 
       const emp = empresas.find(e => e.id === item.empresa_id);
+      const adminProf = await fetchAdminProfileIfNeeded();
 
       await generateCapacitacionOnlinePdf({
         capacitacion: item,
         registros: registrosData || [],
         tenant: tenant,
-        empresa: emp
+        empresa: emp,
+        profile: profile,
+        adminProfile: adminProf,
+        supabase: supabase,
+        action: 'download'
       });
 
       globalToast.toast('Reporte PDF generado exitosamente.', 'success');
     } catch (err) {
       console.error('Error al generar PDF de capacitación:', err);
       globalToast.toast('No se pudo generar el reporte PDF.', 'error');
+    }
+  };
+
+  // Abrir e Imprimir PDF
+  const handlePrintPdf = async (item, e) => {
+    e?.stopPropagation();
+    globalToast.toast('Generando registro para imprimir...', 'info');
+    try {
+      const { data: registrosData } = await supabase
+        .from('capacitaciones_online_registros')
+        .select('*')
+        .eq('capacitacion_id', item.id)
+        .eq('tenant_id', profile.tenant_id)
+        .order('registrado_at', { ascending: true });
+
+      const emp = empresas.find(e => e.id === item.empresa_id);
+      const adminProf = await fetchAdminProfileIfNeeded();
+
+      await generateCapacitacionOnlinePdf({
+        capacitacion: item,
+        registros: registrosData || [],
+        tenant: tenant,
+        empresa: emp,
+        profile: profile,
+        adminProfile: adminProf,
+        supabase: supabase,
+        action: 'print'
+      });
+
+      globalToast.toast('Registro PDF abierto para imprimir.', 'success');
+    } catch (err) {
+      console.error('Error al abrir PDF de capacitación:', err);
+      globalToast.toast('No se pudo abrir el registro PDF.', 'error');
     }
   };
 
@@ -1742,7 +1801,7 @@ export default function CapacitacionesOnlinePage({ params }) {
               <div className="space-y-0 md:space-y-6 flex-grow flex flex-col min-h-0">
                 
                 {/* PANEL DE FILTROS Y BÚSQUEDA (MATCHING CONTROL-ELECTRICO 1:1) */}
-                <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl p-3.5 sm:p-5 md:p-6 shadow-sm space-y-3 shrink-0">
+                <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl px-3.5 py-2.5 sm:px-5 sm:py-3 md:px-6 md:py-3.5 shadow-sm space-y-2.5 shrink-0">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
                     {/* Espaciador para empujar el buscador a la derecha en desktop */}
                     <div className="hidden md:block flex-1"></div>
@@ -1990,14 +2049,24 @@ export default function CapacitacionesOnlinePage({ params }) {
                                       <Users className="h-4.5 w-4.5" />
                                     </button>
 
-                                    {/* Descargar PDF */}
+                                    {/* Imprimir */}
+                                    <button
+                                      type="button"
+                                      onClick={(e) => handlePrintPdf(item, e)}
+                                      className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                      title="Ver e Imprimir Registro de Capacitación (PDF)"
+                                    >
+                                      <Printer className="h-4.5 w-4.5" />
+                                    </button>
+
+                                    {/* Descargar Registro PDF */}
                                     <button
                                       type="button"
                                       onClick={(e) => handleDownloadPdf(item, e)}
-                                      className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                      title="Descargar Reporte PDF de Asistencia"
+                                      className="p-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
+                                      title="Descargar Registro de Capacitación (PDF)"
                                     >
-                                      <FileText className="h-4.5 w-4.5" />
+                                      <Download className="h-4.5 w-4.5" />
                                     </button>
 
                                     {/* Editar */}
@@ -2103,14 +2172,24 @@ export default function CapacitacionesOnlinePage({ params }) {
               <span className="text-xs font-bold text-slate-500">
                 Total Firmantes: {viewRegistrosModal.registros.length}
               </span>
-              <button
-                type="button"
-                onClick={() => handleDownloadPdf(viewRegistrosModal.capacitacion)}
-                className="px-4 py-2 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md shadow-[#468DFF]/20 cursor-pointer"
-              >
-                <Download className="h-4 w-4" />
-                Descargar Reporte PDF
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handlePrintPdf(viewRegistrosModal.capacitacion)}
+                  className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border border-slate-200"
+                >
+                  <Printer className="h-4 w-4 text-[#468DFF]" />
+                  Imprimir Registro
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDownloadPdf(viewRegistrosModal.capacitacion)}
+                  className="px-3.5 py-2 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md shadow-[#468DFF]/20 cursor-pointer"
+                >
+                  <Download className="h-4 w-4" />
+                  Descargar PDF
+                </button>
+              </div>
             </div>
           </div>
         </div>
