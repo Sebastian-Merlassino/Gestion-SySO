@@ -2783,7 +2783,7 @@ export default function VisitasPage({ params }) {
                 </div>
 
                 {/* Formulario */}
-                <form onSubmit={handleSaveVisita} className="p-3.5 sm:p-6 space-y-3.5 sm:space-y-6">
+                <form onSubmit={handleSaveVisita} className="p-3.5 sm:p-6 space-y-3.5 sm:space-y-6 overflow-y-auto flex-1 scrollbar-thin">
                   <fieldset disabled={!canEdit} className="space-y-4 sm:space-y-6">
                   
                   {/* SECCIÓN 1: DATOS GENERALES */}

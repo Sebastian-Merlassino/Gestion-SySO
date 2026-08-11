@@ -1,5 +1,21 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-11] Restauración de Scroll Vertical en Contenedores de Formularios (`visitas` y `equipo`) y Auditoría Integral
+
+### Resumen de Cambios
+- **Restauración de Scroll Vertical:**
+  - **Constancia de Visitas (`src/app/[tenant-slug]/visitas/page.js`):** Se agregaron las clases Tailwind `overflow-y-auto flex-1 scrollbar-thin` al contenedor `<form onSubmit={handleSaveVisita}>`. Esto solucionó la pérdida de desplazamiento vertical en el modal inline de "Registrar Nueva Constancia de Visita".
+  - **Integrantes del Equipo (`src/app/[tenant-slug]/equipo/page.js`):** Se agregaron las clases `overflow-y-auto flex-1 scrollbar-thin` al contenedor `<form onSubmit={handleSave}>`.
+- **Auditoría Integral de Formularios de la Plataforma:**
+  - Se auditaron las 16 vistas de formularios del SaaS (`avisos`, `accidentes`, `capacitacion`, `capacitaciones-online`, `checklist-personalizados`, `control-electrico`, `correctivas`, `empresas`, `extintores`, `legajo`, `matriz-riesgos`, `nomina`, `programa`, `protocolos/ergonomia`, `protocolos/iluminacion` y `protocolos/ruido`), verificando que las 14 restantes ya contaban adecuadamente con scroll interno `overflow-y-auto flex-1 scrollbar-thin`.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
 ## [2026-08-10] Inclusión de "Capacitaciones online" en Grilla de Planes Comerciales y Documentación Legal
 
 ### Resumen de Cambios

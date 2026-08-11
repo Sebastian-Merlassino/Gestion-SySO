@@ -1515,7 +1515,7 @@ export default function EquipoPage({ params }) {
                 </button>
               </div>
 
-              <form onSubmit={handleSave} className="p-6 md:p-8 space-y-8">
+              <form onSubmit={handleSave} className="p-6 md:p-8 space-y-8 overflow-y-auto flex-1 scrollbar-thin">
                 <fieldset disabled={!canEdit} className="space-y-8">
                   {/* 1. INFORMACIÓN PERSONAL */}
                   <div className="bg-white rounded-2xl border border-slate-200 p-6 md:p-8 shadow-sm space-y-6">
