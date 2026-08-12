@@ -146,25 +146,36 @@ export async function generateCapacitacionOnlinePdf({
 
   let matriculaItems = [];
 
-  if (supabase && (activeUserId || activeMemberId)) {
+  // Consulta limpia por profile_id sin incluir columnas inexistentes (evitando PostgREST 400 Bad Request)
+  if (supabase && activeUserId) {
     try {
-      const orFilter = [
-        activeUserId ? `profile_id.eq.${activeUserId}` : null,
-        activeUserId ? `user_id.eq.${activeUserId}` : null,
-        activeMemberId ? `miembro_id.eq.${activeMemberId}` : null
-      ].filter(Boolean).join(',');
-
-      const { data: matData } = await supabase
+      const { data: matData, error: matErr } = await supabase
         .from('matriculas')
         .select('institucion, numero')
-        .or(orFilter)
+        .eq('profile_id', activeUserId)
         .order('created_at', { ascending: true });
 
-      if (matData && matData.length > 0) {
+      if (!matErr && matData && matData.length > 0) {
         matriculaItems = matData;
       }
     } catch (e) {
-      console.error('Error al consultar tabla matriculas:', e);
+      console.error('Error al consultar tabla matriculas por profile_id:', e);
+    }
+  }
+
+  if (matriculaItems.length === 0 && supabase && activeMemberId) {
+    try {
+      const { data: mMemberData, error: mMemberErr } = await supabase
+        .from('matriculas')
+        .select('institucion, numero')
+        .eq('miembro_id', activeMemberId)
+        .order('created_at', { ascending: true });
+
+      if (!mMemberErr && mMemberData && mMemberData.length > 0) {
+        matriculaItems = mMemberData;
+      }
+    } catch (e) {
+      console.error('Error al consultar tabla matriculas por miembro_id:', e);
     }
   }
 
@@ -684,7 +695,7 @@ export async function generateCapacitacionOnlinePdf({
     doc.text(boldText, lineStartX, textY);
 
     doc.setFont('helvetica', 'normal');
-    doc.text(normalText, lineStartX + boldWidth, textY);
+    textY && doc.text(normalText, lineStartX + boldWidth, textY);
 
     // 3. Numeración de Página Estándar a la Derecha (Página X de Y)
     doc.setFont('helvetica', 'bold');
