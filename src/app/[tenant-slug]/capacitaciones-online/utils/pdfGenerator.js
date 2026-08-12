@@ -210,7 +210,6 @@ export async function generateCapacitacionOnlinePdf({
     if (pageIdx > 0) {
       doc.addPage();
     }
-    // Elevar la coordenada inicial para acercar el contenido al logo del encabezado
     let currentY = 5;
 
     // -------------------------------------------------------------
@@ -219,8 +218,8 @@ export async function generateCapacitacionOnlinePdf({
     if (logoBase64) {
       try {
         const dims = await getImageDimensions(logoBase64);
-        const maxW = 65;
-        const maxH = 22;
+        const maxW = 60;
+        const maxH = 20;
         const ratio = dims.width / dims.height;
 
         let renderW = maxW;
@@ -231,34 +230,35 @@ export async function generateCapacitacionOnlinePdf({
         }
 
         doc.addImage(logoBase64, 'PNG', marginX, currentY, renderW, renderH, undefined, 'FAST');
-        currentY += Math.max(8, renderH - 5); // Acercar contenido elevando la barra de título
+        // Espaciado limpio de 3mm entre el logo y la barra de título (evitando superposición)
+        currentY += renderH + 3;
       } catch (e) {
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(14);
         doc.setTextColor(...COLOR_HEADER_BLUE);
         doc.text('GESTIÓN SySO', marginX, currentY + 7);
-        currentY += 10;
+        currentY += 11;
       }
     } else {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(14);
       doc.setTextColor(...COLOR_HEADER_BLUE);
       doc.text('GESTIÓN SySO', marginX, currentY + 7);
-      currentY += 10;
+      currentY += 11;
     }
 
     // Barra Azul de Título Principal (Relleno #468DFF)
     doc.setFillColor(...COLOR_HEADER_BLUE);
     doc.setDrawColor(...COLOR_BORDER);
     doc.setLineWidth(0.4);
-    doc.rect(marginX, currentY, contentWidth, 8, 'FD');
+    doc.rect(marginX, currentY, contentWidth, 7.5, 'FD');
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
     doc.setTextColor(255, 255, 255);
-    doc.text('Registro de Capacitación de Higiene y Seguridad en el Trabajo', marginX + contentWidth / 2, currentY + 5.5, { align: 'center' });
+    doc.text('Registro de Capacitación de Higiene y Seguridad en el Trabajo', marginX + contentWidth / 2, currentY + 5.2, { align: 'center' });
 
-    currentY += 8;
+    currentY += 7.5;
 
     // -------------------------------------------------------------
     // 2. CAMPO TEMA (Texto normal, soporte multilínea y recuadro dinámico)
@@ -269,9 +269,9 @@ export async function generateCapacitacionOnlinePdf({
     doc.setFontSize(8.5);
     const temaLines = doc.splitTextToSize(temaText, contentWidth - 20);
 
-    const lineH = 4.2;
-    const padY = 4;
-    const calculatedBoxHeight = Math.max(12, (padY * 2) + (temaLines.length * lineH) - 2);
+    const lineH = 4.0;
+    const padY = 3.5;
+    const calculatedBoxHeight = Math.max(10, (padY * 2) + (temaLines.length * lineH) - 2);
 
     doc.setFillColor(255, 255, 255);
     doc.setLineWidth(0.4);
@@ -280,14 +280,14 @@ export async function generateCapacitacionOnlinePdf({
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
     doc.setTextColor(...COLOR_TEXT_MAIN);
-    doc.text('Tema:', marginX + 3, currentY + 6.5);
+    doc.text('Tema:', marginX + 3, currentY + 5.8);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8.5);
     doc.setTextColor(30, 41, 59);
 
     temaLines.forEach((line, idx) => {
-      doc.text(line, marginX + 16, currentY + 6.5 + (idx * lineH));
+      doc.text(line, marginX + 16, currentY + 5.8 + (idx * lineH));
     });
 
     currentY += calculatedBoxHeight;
@@ -295,8 +295,8 @@ export async function generateCapacitacionOnlinePdf({
     // -------------------------------------------------------------
     // 3. GRILLA DE METADATOS (Razón Social, Fecha, Hora, Duración, Metodología, Material entregado)
     // -------------------------------------------------------------
-    const rowHeight = 7;
-    const gridHeight = rowHeight * 3; // 21 mm
+    const rowHeight = 6.5;
+    const gridHeight = rowHeight * 3; // 19.5 mm
 
     doc.rect(marginX, currentY, contentWidth, gridHeight, 'D');
 
@@ -306,12 +306,12 @@ export async function generateCapacitacionOnlinePdf({
 
     // Fila 1: Razón Social
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
+    doc.setFontSize(8.5);
     doc.setTextColor(...COLOR_TEXT_MAIN);
-    doc.text('Razón Social:', marginX + 3, currentY + 4.8);
+    doc.text('Razón Social:', marginX + 3, currentY + 4.5);
     doc.setFont('helvetica', 'normal');
     const razonSocial = empresa?.razon_social || capacitacion?.empresa_nombre || tenant?.name || 'Gestión SySO';
-    doc.text(String(razonSocial), marginX + 28, currentY + 4.8);
+    doc.text(String(razonSocial), marginX + 28, currentY + 4.5);
 
     // Fila 2: Fecha | Hora | Duración
     const col2_1 = marginX + 70;
@@ -357,39 +357,39 @@ export async function generateCapacitacionOnlinePdf({
 
     // Fecha
     doc.setFont('helvetica', 'bold');
-    doc.text('Fecha:', marginX + 3, currentY + rowHeight + 4.8);
+    doc.text('Fecha:', marginX + 3, currentY + rowHeight + 4.5);
     doc.setFont('helvetica', 'normal');
-    doc.text(String(fechaDisplay), marginX + 17, currentY + rowHeight + 4.8);
+    doc.text(String(fechaDisplay), marginX + 17, currentY + rowHeight + 4.5);
 
     // Hora
     doc.setFont('helvetica', 'bold');
-    doc.text('Hora:', col2_1 + 3, currentY + rowHeight + 4.8);
+    doc.text('Hora:', col2_1 + 3, currentY + rowHeight + 4.5);
     doc.setFont('helvetica', 'normal');
-    doc.text(String(horaDisplay), col2_1 + 16, currentY + rowHeight + 4.8);
+    doc.text(String(horaDisplay), col2_1 + 16, currentY + rowHeight + 4.5);
 
     // Duración
     doc.setFont('helvetica', 'bold');
-    doc.text('Duración:', col2_2 + 3, currentY + rowHeight + 4.8);
+    doc.text('Duración:', col2_2 + 3, currentY + rowHeight + 4.5);
     doc.setFont('helvetica', 'normal');
     const duracionVal = capacitacion?.duracion_valor !== undefined && capacitacion?.duracion_valor !== null
       ? `${capacitacion.duracion_valor} ${capacitacion.duracion_unidad === 'hs' ? 'Hs' : 'Min'}`
       : (capacitacion?.duracion || '45 Min');
-    doc.text(String(duracionVal), col2_2 + 21, currentY + rowHeight + 4.8);
+    doc.text(String(duracionVal), col2_2 + 21, currentY + rowHeight + 4.5);
 
     // Fila 3: Metodologia | Material entregado
     const col3_1 = marginX + 130;
     doc.line(col3_1, currentY + rowHeight * 2, col3_1, currentY + gridHeight);
 
     doc.setFont('helvetica', 'bold');
-    doc.text('Metodologia:', marginX + 3, currentY + rowHeight * 2 + 4.8);
+    doc.text('Metodologia:', marginX + 3, currentY + rowHeight * 2 + 4.5);
     doc.setFont('helvetica', 'normal');
     const metodolStr = capacitacion?.metodologia || 'Asincrónica con PowerPoint';
-    doc.text(String(metodolStr), marginX + 28, currentY + rowHeight * 2 + 4.8);
+    doc.text(String(metodolStr), marginX + 28, currentY + rowHeight * 2 + 4.5);
 
     doc.setFont('helvetica', 'bold');
-    doc.text('Material entregado:', col3_1 + 3, currentY + rowHeight * 2 + 4.8);
+    doc.text('Material entregado:', col3_1 + 3, currentY + rowHeight * 2 + 4.5);
     doc.setFont('helvetica', 'normal');
-    doc.text('NO', col3_1 + 38, currentY + rowHeight * 2 + 4.8);
+    doc.text('NO', col3_1 + 38, currentY + rowHeight * 2 + 4.5);
 
     currentY += gridHeight;
 
@@ -398,13 +398,13 @@ export async function generateCapacitacionOnlinePdf({
     // -------------------------------------------------------------
     doc.setFillColor(226, 232, 240); // Slate-200 / #E2E8F0
     doc.setDrawColor(...COLOR_BORDER);
-    doc.rect(marginX, currentY, contentWidth, 6, 'FD');
+    doc.rect(marginX, currentY, contentWidth, 5.5, 'FD');
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9.5);
+    doc.setFontSize(9);
     doc.setTextColor(...COLOR_TEXT_MAIN);
-    doc.text('Asistentes', marginX + contentWidth / 2, currentY + 4.2, { align: 'center' });
+    doc.text('Asistentes', marginX + contentWidth / 2, currentY + 3.8, { align: 'center' });
 
-    currentY += 6;
+    currentY += 5.5;
 
     const startIdx = pageIdx * ROWS_PER_PAGE;
     const endIdx = startIdx + ROWS_PER_PAGE;
@@ -447,7 +447,7 @@ export async function generateCapacitacionOnlinePdf({
         fontSize: 8,
         textColor: [30, 41, 59],
         valign: 'middle',
-        minCellHeight: 8.5,
+        minCellHeight: 7.8,
         lineWidth: 0.3,
         lineColor: COLOR_BORDER
       },
@@ -495,44 +495,44 @@ export async function generateCapacitacionOnlinePdf({
       }
     });
 
-    let finalY = doc.lastAutoTable?.finalY || (currentY + 120);
+    let finalY = doc.lastAutoTable?.finalY || (currentY + 115);
 
     // -------------------------------------------------------------
     // 5. RECUADRO OBSERVACIONES (En todas las hojas oficiales)
     // -------------------------------------------------------------
-    const obsHeight = 16;
+    const obsHeight = 14;
     doc.rect(marginX, finalY, contentWidth, obsHeight, 'D');
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8.5);
     doc.setTextColor(...COLOR_TEXT_MAIN);
-    doc.text('Observaciones:', marginX + 3, finalY + 4.5);
+    doc.text('Observaciones:', marginX + 3, finalY + 4);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(51, 65, 85);
     const legalNote = 'Los datos de los participantes se recabaron mediante el uso de una aplicación informática, según lo dispuesto en la Disposición SRT 2/22 y la Resolución 48/25.';
-    doc.text(legalNote, marginX + 3, finalY + 9.5, { maxWidth: contentWidth - 6 });
+    doc.text(legalNote, marginX + 3, finalY + 8.5, { maxWidth: contentWidth - 6 });
 
     finalY += obsHeight;
 
     // -------------------------------------------------------------
     // 6. FIRMA Y ACLARACIÓN DEL CAPACITADOR / ADMINISTRADOR (En todas las hojas oficiales)
     // -------------------------------------------------------------
-    const firmaBoxHeight = 30;
+    const firmaBoxHeight = 28;
     doc.rect(marginX, finalY, contentWidth, firmaBoxHeight, 'D');
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8.5);
     doc.setTextColor(...COLOR_TEXT_MAIN);
-    doc.text('Firma y Aclaración del Capacitador:', marginX + 3, finalY + 5);
+    doc.text('Firma y Aclaración del Capacitador:', marginX + 3, finalY + 4.5);
 
-    const lineY = finalY + 25.5;
+    const lineY = finalY + 23.8;
 
     if (trainerSigBase64) {
       try {
         const maxW = 60;
-        const maxH = 32;
+        const maxH = 30;
         const ratio = (trainerSigDims && trainerSigDims.width && trainerSigDims.height) ? (trainerSigDims.width / trainerSigDims.height) : 2.2;
 
         let renderW = maxW;
@@ -564,7 +564,7 @@ export async function generateCapacitacionOnlinePdf({
     // -------------------------------------------------------------
     // 7. MEDICIÓN DE LA EFICACIA & VERIFICADO POR (En todas las hojas oficiales)
     // -------------------------------------------------------------
-    const eficaciaHeight = 22;
+    const eficaciaHeight = 20;
     const leftWidth = 114;
     const rightWidth = contentWidth - leftWidth; // 76 mm
 
@@ -575,7 +575,7 @@ export async function generateCapacitacionOnlinePdf({
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8.5);
     doc.setTextColor(...COLOR_TEXT_MAIN);
-    doc.text('Medición de la eficacia:', marginX + 3, finalY + 4.5);
+    doc.text('Medición de la eficacia:', marginX + 3, finalY + 4);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
@@ -587,37 +587,37 @@ export async function generateCapacitacionOnlinePdf({
     const isPractica = effChoice.includes('práctica') || effChoice.includes('practica');
     const isOtra = effChoice.includes('otra');
 
-    doc.text(`${isOral ? '[X]' : '[  ]'} Evaluación oral`, marginX + 3, finalY + 9);
-    doc.text(`${isEscrita ? '[X]' : '[  ]'} Evaluación escrita`, marginX + 3, finalY + 13);
-    doc.text(`${isPractica ? '[X]' : '[  ]'} Evaluación práctica`, marginX + 3, finalY + 17);
+    doc.text(`${isOral ? '[X]' : '[  ]'} Evaluación oral`, marginX + 3, finalY + 8);
+    doc.text(`${isEscrita ? '[X]' : '[  ]'} Evaluación escrita`, marginX + 3, finalY + 12);
+    doc.text(`${isPractica ? '[X]' : '[  ]'} Evaluación práctica`, marginX + 3, finalY + 16);
 
     const isPuesto = effChoice.includes('puesto');
     const isAuditoria = effChoice.includes('auditoría') || effChoice.includes('auditoria');
     const isSimulacro = effChoice.includes('simulacro');
 
-    doc.text(`${isPuesto ? '[X]' : '[  ]'} Evaluación en el puesto de trabajo`, marginX + 50, finalY + 9);
-    doc.text(`${isAuditoria ? '[X]' : '[  ]'} Auditoría`, marginX + 50, finalY + 13);
-    doc.text(`${isSimulacro ? '[X]' : '[  ]'} Simulacro`, marginX + 50, finalY + 17);
+    doc.text(`${isPuesto ? '[X]' : '[  ]'} Evaluación en el puesto de trabajo`, marginX + 50, finalY + 8);
+    doc.text(`${isAuditoria ? '[X]' : '[  ]'} Auditoría`, marginX + 50, finalY + 12);
+    doc.text(`${isSimulacro ? '[X]' : '[  ]'} Simulacro`, marginX + 50, finalY + 16);
 
-    doc.text(`${isOtra ? '[X]' : '[  ]'} Otra: ................................................................................`, marginX + 3, finalY + 20.5);
+    doc.text(`${isOtra ? '[X]' : '[  ]'} Otra: ................................................................................`, marginX + 3, finalY + 19);
 
     // Lado Derecho: Fecha & Verificado por
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8.5);
-    doc.text('Fecha:', marginX + leftWidth + 3, finalY + 4.5);
+    doc.text('Fecha:', marginX + leftWidth + 3, finalY + 4);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     if (capacitacion?.eficacia_fecha) {
-      doc.text(String(formatDate(capacitacion.eficacia_fecha)), marginX + leftWidth + 18, finalY + 4.5);
+      doc.text(String(formatDate(capacitacion.eficacia_fecha)), marginX + leftWidth + 18, finalY + 4);
     }
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8.5);
-    doc.text('Verificado por:', marginX + leftWidth + 3, finalY + 12);
+    doc.text('Verificado por:', marginX + leftWidth + 3, finalY + 11);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     if (capacitacion?.eficacia_verificado_por) {
-      doc.text(String(capacitacion.eficacia_verificado_por), marginX + leftWidth + 3, finalY + 17);
+      doc.text(String(capacitacion.eficacia_verificado_por), marginX + leftWidth + 3, finalY + 15.5);
     }
   }
 

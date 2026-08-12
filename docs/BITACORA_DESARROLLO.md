@@ -1,13 +1,12 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-11] Estilo Normal en Aclaración, Múltiples Matrículas y Elevación Vertical de Estructura en PDF
+## [2026-08-11] Separación Limpia Post-Logo y Ajuste Equilibrado de Maquetación Vertical en PDF
 
 ### Resumen de Cambios
-- **Aclaración y Matrículas (`src/app/[tenant-slug]/capacitaciones-online/utils/pdfGenerator.js`):**
-  - **Formato Tipográfico:** Se cambió la tipografía del nombre del capacitador/administrador de `bold` a `normal` (`doc.setFont('helvetica', 'normal')`), tal como fue solicitado.
-  - **Resolución Multi-Matrícula:** Se consulta dinámicamente la tabla `matriculas` en Supabase para el usuario activo, concatenando todas sus matrículas registradas (`COPIME L002210 / CPSH LHS-000179 PSA`) en lugar de mostrar únicamente la primera.
-- **Elevación de la Estructura Vertical:**
-  - Se redujo el margen superior (`currentY = 5 mm`) y el salto post-logo (`Math.max(8, renderH - 5)`), desplazando todo el bloque (encabezado, grilla, tabla de 15 filas, observaciones, firma y eficacia) hacia arriba, acercándolo al logo y generando un espacio libre de más de **15 mm** antes del pie de página azul sin alterar dimensiones ni fuentes.
+- **Ajuste de Distancia Post-Logo (`src/app/[tenant-slug]/capacitaciones-online/utils/pdfGenerator.js`):**
+  - **Separación de Encabezado:** Se estableció el salto tras el logo en `currentY += renderH + 3` mm, garantizando una separación limpia y profesional de 3 mm entre la parte inferior del logo y la barra azul de título sin superposiciones ni colisiones visuales.
+  - **Distribución Vertical Equilibrada:** Se ajustaron sutil y proporcionalmente los altos de los cuadros (Título 7.5 mm, Metadatos 19.5 mm, Asistentes header 5.5 mm, Filas 7.8 mm, Observaciones 14 mm, Firma 28 mm, Eficacia 20 mm).
+  - **Resultado:** La estructura finaliza holgadamente en `Y = 256.8 mm`, dejando más de **25 mm** de margen libre antes de la línea azul del pie de página (`barY = 282 mm`).
 
 ### Archivos Modificados
 - `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/utils/pdfGenerator.js`
