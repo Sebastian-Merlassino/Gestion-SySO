@@ -1840,20 +1840,23 @@ export default function EmpresasClientes({ params }) {
         <AppPageHeader
           title="Clientes / Empresas"
           icon={Building}
-          tenantName={tenant?.name || 'Cargando...'}
+          tenantName={tenant?.name || 'Gestión SySO'}
           planId={tenant?.plan_id}
           showPlanBadge={profile && profile.role !== 'cliente'}
           setIsMobileMenuOpen={setIsMobileMenuOpen}
         />
 
-        <div className="w-full flex-grow flex flex-col min-h-0 p-0 md:py-8 md:max-w-[95%] md:mx-auto md:px-0">
-          
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 space-y-4">
-              <Loader2 className="h-10 w-10 animate-spin text-[#468DFF]" />
-              <p className="text-sm text-slate-500 font-medium">Cargando información comercial...</p>
+        {loading ? (
+          <div className="flex-1 flex flex-col items-center justify-center p-8">
+            <div className="text-center space-y-3">
+              <Loader2 className="h-10 w-10 animate-spin text-[#468DFF] mx-auto" />
+              <p className="text-xs text-slate-500 font-medium">Cargando información comercial...</p>
             </div>
-          ) : view === 'list' ? (
+          </div>
+        ) : (
+          <div className="w-full flex-grow flex flex-col min-h-0 p-0 md:py-8 md:max-w-[95%] md:mx-auto md:px-0">
+            
+            {view === 'list' ? (
             
             // ==========================================
             // VISTA: LISTADO DE EMPRESAS (TABLA)
@@ -3642,6 +3645,7 @@ export default function EmpresasClientes({ params }) {
           )}
 
         </div>
+        )}
       </main>
 
       {/* Ventanas Emergentes Modales Centradas (Backdrop-blur-sm) */}

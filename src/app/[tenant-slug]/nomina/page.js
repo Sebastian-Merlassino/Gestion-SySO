@@ -1012,16 +1012,18 @@ export default function NominaPage({ params }) {
         <AppPageHeader
           title="Nómina de Personal"
           icon={Users}
-          tenantName={tenant?.name || 'Cargando...'}
+          tenantName={tenant?.name || 'Gestión SySO'}
           planId={tenant?.plan_id}
           showPlanBadge={profile && profile.role !== 'cliente'}
           setIsMobileMenuOpen={setIsMobileMenuOpen}
         />
 
         {loading ? (
-          <div className="flex-grow flex flex-col items-center justify-center py-20 gap-2.5">
-            <Loader2 className="h-8 w-8 text-[#468DFF] animate-spin" />
-            <span className="text-xs font-bold text-slate-400">Cargando personal...</span>
+          <div className="flex-1 flex flex-col items-center justify-center p-8">
+            <div className="text-center space-y-3">
+              <Loader2 className="h-10 w-10 animate-spin text-[#468DFF] mx-auto" />
+              <p className="text-xs text-slate-500 font-medium">Cargando nómina de personal...</p>
+            </div>
           </div>
         ) : (
           <div className="w-full flex-grow flex flex-col min-h-0 p-0 md:py-8 md:max-w-[95%] md:mx-auto md:px-0">

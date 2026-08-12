@@ -1210,17 +1210,17 @@ export default function LegajoPage({ params }) {
         <AppPageHeader
           title="Legajo Técnico"
           icon={FolderOpen}
-          tenantName={tenant?.name || 'Cargando...'}
+          tenantName={tenant?.name || 'Gestión SySO'}
           planId={tenant?.plan_id}
           showPlanBadge={profile && profile.role !== 'cliente'}
           setIsMobileMenuOpen={setIsMobileMenuOpen}
         />
 
         {loading ? (
-          <div className="flex-1 flex items-center justify-center p-8">
+          <div className="flex-1 flex flex-col items-center justify-center p-8">
             <div className="text-center space-y-3">
-              <Loader2 className="h-8 w-8 animate-spin text-[#468DFF] mx-auto" />
-              <p className="text-xs text-slate-500 font-semibold">Cargando legajo técnico...</p>
+              <Loader2 className="h-10 w-10 animate-spin text-[#468DFF] mx-auto" />
+              <p className="text-xs text-slate-500 font-medium">Cargando legajo técnico...</p>
             </div>
           </div>
         ) : (

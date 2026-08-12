@@ -1,6 +1,32 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-12] Corrección de Política RLS en `public.tenants` (HTTP 406 Not Acceptable en Onboarding)
+## [2026-08-12] Auditoría y Estandarización Universal de Indicadores de Carga Circular (`loading`)
+
+### Resumen de Cambios
+- **Paridad Visual Universal en Todos los Módulos (`src/app/[tenant-slug]/`):**
+  - **Centrado Geométrico Perfecto (`flex-1 min-h-[calc(100vh-64px)]`)**: Se eliminaron los paddings estáticos desalineados (`py-20`) en los contenedores de carga de `Clientes / Empresas`, `Equipo de Trabajo` y `Nómina de Personal`, forzando el centrado vertical y horizontal exacto en la ventana remanente debajo de la cabecera `AppPageHeader`.
+  - **Estandarización de Leyendas y Tipografías**: Se incorporó texto explicativo en módulos que carecían de leyenda de carga (`Programa de Capacitación Anual`) y se unificó la jerarquía visual (`p.text-xs.text-slate-500.font-medium` con ícono `Loader2.h-10.w-10.animate-spin.text-[#468DFF]`).
+  - **Sustitución de Fallback 'Cargando...' en Cabecera**: Se ajustó el valor por defecto de `tenantName` en el componente `AppPageHeader` a `'Gestión SySO'` para evitar la aparición de badges grisáceos redundantes en la parte superior derecha durante la recuperación de datos.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/nomina/page.js`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+- `[MODIFY] src/app/[tenant-slug]/matriz-riesgos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
 
 ### Resumen de Cambios
 - **Migración SQL (`supabase/migrations/20260825000000_fix_tenant_update_onboarding_rls.sql`):**
