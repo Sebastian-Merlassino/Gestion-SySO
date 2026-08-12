@@ -18,32 +18,82 @@ export function cn(...inputs) {
  */
 export function formatDate(dateStr) {
   if (!dateStr) return '';
+  if (dateStr instanceof Date) {
+    if (isNaN(dateStr.getTime())) return '';
+    const d = dateStr.getDate().toString().padStart(2, '0');
+    const m = (dateStr.getMonth() + 1).toString().padStart(2, '0');
+    const y = dateStr.getFullYear();
+    return `${d}/${m}/${y}`;
+  }
   if (typeof dateStr !== 'string') {
-    if (dateStr instanceof Date) {
-      const d = dateStr.getDate().toString().padStart(2, '0');
-      const m = (dateStr.getMonth() + 1).toString().padStart(2, '0');
-      const y = dateStr.getFullYear();
-      return `${d}/${m}/${y}`;
-    }
     dateStr = String(dateStr);
   }
-  if (dateStr.includes('/')) return dateStr;
-  const cleanStr = dateStr.split('T')[0];
-  const parts = cleanStr.split('-');
-  if (parts.length !== 3) return dateStr;
-  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  const cleanStr = dateStr.trim();
+  if (!cleanStr) return '';
+  if (cleanStr.includes('/')) return cleanStr;
+  const isoPart = cleanStr.split('T')[0];
+  const parts = isoPart.split('-');
+  if (parts.length !== 3) return cleanStr;
+  if (parts[0].length === 4) {
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+  return cleanStr;
 }
 
 /**
- * Convierte una fecha de formato DD/MM/YYYY a YYYY-MM-DD.
- * @param {string} dateStr - Fecha en formato DD/MM/YYYY.
- * @returns {string|null} - Fecha en formato YYYY-MM-DD o null si está vacía.
+ * Convierte una fecha de cualquier formato (DD/MM/YYYY, DD-MM-YYYY, ISO) a YYYY-MM-DD para la base de datos.
+ * Retorna null si la entrada es nula, vacía o no es una fecha válida.
+ * @param {string|Date} dateStr - Fecha de entrada.
+ * @returns {string|null} - Fecha en formato YYYY-MM-DD o null.
  */
 export function convertToDbDate(dateStr) {
   if (!dateStr) return null;
-  const parts = dateStr.split('/');
-  if (parts.length !== 3) return dateStr;
-  return `${parts[2]}-${parts[1]}-${parts[0]}`;
+  if (dateStr instanceof Date) {
+    if (isNaN(dateStr.getTime())) return null;
+    const d = dateStr.getDate().toString().padStart(2, '0');
+    const m = (dateStr.getMonth() + 1).toString().padStart(2, '0');
+    const y = dateStr.getFullYear();
+    return `${y}-${m}-${d}`;
+  }
+  if (typeof dateStr !== 'string') {
+    dateStr = String(dateStr);
+  }
+  const clean = dateStr.trim();
+  if (!clean) return null;
+
+  // Si ya es formato ISO YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(clean)) {
+    return clean;
+  }
+
+  // Si viene con timestamp ISO (ej: 1979-08-26T03:00:00.000Z)
+  if (clean.includes('T')) {
+    const isoDate = clean.split('T')[0];
+    if (/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) {
+      return isoDate;
+    }
+  }
+
+  // Si viene con separadores /, - o .
+  const parts = clean.split(/[\/\-.]/);
+  if (parts.length === 3) {
+    // Caso 1: YYYY/MM/DD o YYYY.MM.DD
+    if (parts[0].length === 4) {
+      const year = parts[0];
+      const month = parts[1].padStart(2, '0');
+      const day = parts[2].padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+    // Caso 2: DD/MM/YYYY, DD-MM-YYYY, DD.MM.YYYY (ej: 26/08/1979)
+    if (parts[2].length === 4) {
+      const day = parts[0].padStart(2, '0');
+      const month = parts[1].padStart(2, '0');
+      const year = parts[2];
+      return `${year}-${month}-${day}`;
+    }
+  }
+
+  return null;
 }
 
 /**

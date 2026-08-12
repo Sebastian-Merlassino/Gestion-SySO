@@ -1,5 +1,21 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-12] Corrección del Error 400 (Bad Request) por Formato de Fecha 'out of range' en Actualización de Perfil (`profiles`)
+
+### Resumen de Cambios
+- **Normalización Robusta de Fechas en `src/lib/utils.js` (`convertToDbDate` & `formatDate`):**
+  - **Soporte Universal de Formatos**: Se reestructuró `convertToDbDate` para analizar y convertir de manera segura cadenas en formato argentino (`DD/MM/YYYY`, `DD-MM-YYYY`, `DD.MM.YYYY`), ISO (`YYYY-MM-DD`, `YYYY/MM/DD`) e instantes ISO (`YYYY-MM-DDTHH:mm:ss.sssZ`).
+  - **Inmunización contra Cadenas No Válidas**: Si la entrada de fecha no coincide con una estructura válida, `convertToDbDate` retorna de manera segura `null` en lugar de propagar cadenas de texto no formateadas como `"26/08/1979"`. Esto previene que PostgreSQL aborte la transacción con `HTTP 400 Bad Request (date/time field value out of range: "26/08/1979")`.
+- **Integración de `convertToDbDate` en Onboarding (`src/app/onboarding/page.js`):**
+  - Se envolvieron los campos `birth_date`, `matricula_vencimiento` y los ítems del listado `matriculas` con `convertToDbDate(...)` tanto en el flujo de guardado completo como en el guardado mínimo de campos obligatorios (`executeSaveOnlyRequired`), garantizando que la tabla `profiles` reciba siempre fechas en formato PostgreSQL `YYYY-MM-DD` o `NULL`.
+
+### Archivos Modificados
+- `[MODIFY] src/lib/utils.js`
+- `[MODIFY] src/app/onboarding/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
 ## [2026-08-12] Resolución de Error 400 y Recuperación de Usuarios en Creación de Miembros y Clientes
 
 ### Resumen de Cambios
