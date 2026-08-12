@@ -1,12 +1,11 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-11] Separación Limpia Post-Logo y Ajuste Equilibrado de Maquetación Vertical en PDF
+## [2026-08-11] Resolución Definitiva de Múltiples Matrículas en Aclaración de Capacitador (PDF)
 
 ### Resumen de Cambios
-- **Ajuste de Distancia Post-Logo (`src/app/[tenant-slug]/capacitaciones-online/utils/pdfGenerator.js`):**
-  - **Separación de Encabezado:** Se estableció el salto tras el logo en `currentY += renderH + 3` mm, garantizando una separación limpia y profesional de 3 mm entre la parte inferior del logo y la barra azul de título sin superposiciones ni colisiones visuales.
-  - **Distribución Vertical Equilibrada:** Se ajustaron sutil y proporcionalmente los altos de los cuadros (Título 7.5 mm, Metadatos 19.5 mm, Asistentes header 5.5 mm, Filas 7.8 mm, Observaciones 14 mm, Firma 28 mm, Eficacia 20 mm).
-  - **Resultado:** La estructura finaliza holgadamente en `Y = 256.8 mm`, dejando más de **25 mm** de margen libre antes de la línea azul del pie de página (`barY = 282 mm`).
+- **Corrección de Consulta Multi-Matrícula (`src/app/[tenant-slug]/capacitaciones-online/utils/pdfGenerator.js`):**
+  - **Filtro Multi-Columna en Supabase:** Se actualizó la consulta a la tabla `matriculas` utilizando `.or(`profile_id.eq.${activeUserId},user_id.eq.${activeUserId},miembro_id.eq.${activeMemberId}`)`, permitiendo matchear las matrículas almacenadas en la base de datos sin importar cuál sea el nombre de la clave foránea.
+  - **Formato Estándar:** Formatea cada matrícula como `${institucion} N° ${numero}` (ej: `COPIME N° L002210`), concatenando todas las matrículas registradas del profesional mediante barras (`COPIME N° L002210 / CPSH N° LHS-000179 PSA`).
 
 ### Archivos Modificados
 - `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/utils/pdfGenerator.js`

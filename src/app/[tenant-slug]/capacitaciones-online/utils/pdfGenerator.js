@@ -139,48 +139,68 @@ export async function generateCapacitacionOnlinePdf({
     activeNombre = capacitacion?.capacitador_nombre || 'Profesional de Higiene y Seguridad';
   }
 
-  // Resolución completa de TODAS las matrículas cargadas en el perfil
+  // Resolución completa de TODAS las matrículas asociadas al perfil/miembro en la tabla `matriculas`
   const activeProfile = userHasSig ? profile : (adminProfile || profile);
   const activeUserId = activeProfile?.id || profile?.id || adminProfile?.id;
+  const activeMemberId = activeProfile?.miembro_id || activeProfile?.equipo_miembro_id || null;
 
-  let activeMatricula = '';
-  if (supabase && activeUserId) {
+  let matriculaItems = [];
+
+  if (supabase && (activeUserId || activeMemberId)) {
     try {
+      const orFilter = [
+        activeUserId ? `profile_id.eq.${activeUserId}` : null,
+        activeUserId ? `user_id.eq.${activeUserId}` : null,
+        activeMemberId ? `miembro_id.eq.${activeMemberId}` : null
+      ].filter(Boolean).join(',');
+
       const { data: matData } = await supabase
         .from('matriculas')
         .select('institucion, numero')
-        .eq('user_id', activeUserId);
+        .or(orFilter)
+        .order('created_at', { ascending: true });
 
       if (matData && matData.length > 0) {
-        activeMatricula = matData
-          .map(m => {
-            const inst = m.institucion ? `${m.institucion.trim()} ` : '';
-            const num = m.numero ? m.numero.trim() : '';
-            return `${inst}${num}`.trim();
-          })
-          .filter(Boolean)
-          .join(' / ');
+        matriculaItems = matData;
       }
     } catch (e) {
       console.error('Error al consultar tabla matriculas:', e);
     }
   }
 
-  if (!activeMatricula) {
+  if (matriculaItems.length === 0) {
     if (activeProfile?.matriculas && Array.isArray(activeProfile.matriculas) && activeProfile.matriculas.length > 0) {
-      activeMatricula = activeProfile.matriculas
-        .map(m => {
-          const inst = m.institucion ? `${m.institucion.trim()} ` : '';
-          const num = m.numero ? m.numero.trim() : '';
-          return `${inst}${num}`.trim();
-        })
-        .filter(Boolean)
-        .join(' / ');
-    } else if (activeProfile?.matricula_institucion && activeProfile?.matricula_numero) {
-      activeMatricula = `${activeProfile.matricula_institucion} N° ${activeProfile.matricula_numero}`;
-    } else {
-      activeMatricula = activeProfile?.matricula || activeProfile?.matricula_numero || adminProfile?.matricula || adminProfile?.matricula_numero || '';
+      matriculaItems = activeProfile.matriculas;
+    } else if (activeProfile?.matricula_numero || activeProfile?.matricula) {
+      matriculaItems = [{
+        institucion: activeProfile.matricula_institucion || '',
+        numero: activeProfile.matricula_numero || activeProfile.matricula || ''
+      }];
+    } else if (adminProfile?.matricula_numero || adminProfile?.matricula) {
+      matriculaItems = [{
+        institucion: adminProfile.matricula_institucion || '',
+        numero: adminProfile.matricula_numero || adminProfile.matricula || ''
+      }];
     }
+  }
+
+  let activeMatricula = '';
+  if (matriculaItems.length > 0) {
+    const list = matriculaItems
+      .map(m => {
+        if (!m) return '';
+        const inst = m.institucion ? m.institucion.trim() : '';
+        let num = m.numero ? m.numero.trim() : '';
+        if (!num) return inst;
+        if (num.startsWith('N°') || num.startsWith('Mat') || num.startsWith('COPIME') || num.startsWith('CPSH')) {
+          return inst ? `${inst} ${num}` : num;
+        }
+        return inst ? `${inst} N° ${num}` : `N° ${num}`;
+      })
+      .filter(Boolean);
+
+    const uniqueList = Array.from(new Set(list));
+    activeMatricula = uniqueList.join(' / ');
   }
 
   let trainerSigBase64 = null;
@@ -552,7 +572,7 @@ export async function generateCapacitacionOnlinePdf({
       }
     }
 
-    // Texto de Aclaración y Matrícula (En tipografía normal sin negrita, con todas las matrículas)
+    // Texto de Aclaración y Matrículas (En tipografía normal sin negrita, con todas las matrículas concatenadas)
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8.5);
     doc.setTextColor(30, 41, 59);
