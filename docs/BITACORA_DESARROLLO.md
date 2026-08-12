@@ -1,17 +1,21 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-11] Integración de Botón para Exportar Tabla Completa de Visitas a Excel
+## [2026-08-11] Estructura Oficial Completa en Cada Hoja del Registro de Capacitaciones Online (PDF)
 
 ### Resumen de Cambios
-- **Módulo Constancia de Visita (`src/app/[tenant-slug]/visitas/page.js`):**
-  - **Ubicación en UI:** Se agregó el botón verde esmeralda `Exportar Excel` (con el icono `FileSpreadsheet` de Lucide) en la tarjeta contenedora superior de herramientas, ubicado inmediatamente a la derecha del campo de búsqueda (`input` de filtro).
-  - **Lógica de Generación Excel (`handleExportExcel`):**
-    - Procesa dinámicamente las visitas filtradas/ordenadas en la tabla (`sortedVisitas`) exportando todas las columnas y metadatos: *Fecha, Cliente / Razón Social, Establecimiento, Profesional / Técnico, Responsable Presente, Incidentes, Análisis, Causa Raíz, Acción Correctiva, Relevamientos (H&S, Prácticas Seguras, EPP), Mediciones (Realizadas y Detalle), Verificación de Acciones Correctivas, Capacitaciones (Dictadas y Temas), Simulacros (Realizados y Detalle), Aviso de Riesgo Emitido, Documentación Solicitada/Entregada, Observaciones y Recomendaciones, y Observaciones Generales*.
-    - Exporta directamente el archivo `.xlsx` (`Constancias_de_Visita_YYYY-MM-DD.xlsx`) con la librería `XLSX`.
-    - Notifica al usuario mediante el estándar global de toast (`useToast`) con estado informativo/éxito.
+- **Paginación Multi-Hoja Oficial (`src/app/[tenant-slug]/capacitaciones-online/utils/pdfGenerator.js`):**
+  - **Grilla Estándar de 15 Filas por Hoja:** Cada hoja del documento se estructura con la grilla de exactamente 15 filas de participantes (completando las filas vacías necesarias en caso de requerirse).
+  - **Inclusión del Formulario Oficial Completo en Todas las Hojas:** Cada página (tanto la 1 como las siguientes en capacitaciones de más de 15 asistentes) mantiene intactos los bloques del diseño original:
+    - Encabezado con Logo principal, Barra azul de título y Recuadro dinámico de Tema.
+    - Grilla de Metadatos (Razón Social, Fecha, Hora, Duración, Metodología, Material entregado).
+    - Subencabezado y Tabla de 15 Asistentes.
+    - Recuadro de Observaciones (nota legal SRT 2/22 y Res. 48/25).
+    - Recuadro de Firma y Aclaración del Capacitador.
+    - Recuadro de Medición de la Eficacia y Verificado Por.
+  - **Pie de Página Global:** Estampado dinámico `Página X de Y` y datos de contacto en todas las hojas.
 
 ### Archivos Modificados
-- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/utils/pdfGenerator.js`
 - `[MODIFY] docs/BITACORA_DESARROLLO.md`
 
 ---
