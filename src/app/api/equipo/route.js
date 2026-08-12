@@ -123,51 +123,73 @@ export async function POST(request) {
       }
     });
 
+    let userId;
+
     // Check if user already exists in profiles (LOW-01)
     const { data: existingProfile } = await adminClient
       .from('profiles')
-      .select('id')
+      .select('id, tenant_id')
       .eq('email', email)
       .maybeSingle();
 
-    if (existingProfile) {
-      return NextResponse.json(
-        { error: 'La dirección de correo electrónico ya se encuentra registrada en la plataforma.' },
-        { status: 400 }
-      );
-    }
+    if (existingProfile && existingProfile.tenant_id === profile.tenant_id) {
+      userId = existingProfile.id;
+    } else {
+      // Create user in auth.users
+      const { data: newUserData, error: createError } = await adminClient.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true, // Auto-confirm email to bypass confirmation email flow
+        user_metadata: {
+          full_name,
+          role: role || 'miembro',
+          cuit: cuit || null,
+          tenant_id: profile.tenant_id
+        }
+      });
 
-    // Create user in auth.users
-    const { data: newUserData, error: createError } = await adminClient.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true, // Auto-confirm email to bypass confirmation email flow
-      user_metadata: {
-        full_name,
-        role: role || 'miembro',
-        cuit,
-        tenant_id: profile.tenant_id
+      if (createError) {
+        // Fallback: Si el usuario ya existe en auth.users (debido a un fallo previo antes de completar la alta)
+        if (createError.message?.toLowerCase().includes('already') || createError.status === 422) {
+          const { data: { users } } = await adminClient.auth.admin.listUsers();
+          const existingAuthUser = users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
+
+          if (existingAuthUser) {
+            userId = existingAuthUser.id;
+            // Actualizar contraseña y metadatos del usuario de Auth existente
+            await adminClient.auth.admin.updateUserById(userId, {
+              password,
+              user_metadata: {
+                full_name,
+                role: role || 'miembro',
+                cuit: cuit || null,
+                tenant_id: profile.tenant_id
+              }
+            });
+          } else {
+            return NextResponse.json({ error: createError.message }, { status: 400 });
+          }
+        } else {
+          return NextResponse.json({ error: createError.message }, { status: 400 });
+        }
+      } else {
+        userId = newUserData.user.id;
       }
-    });
-
-    if (createError) {
-      return NextResponse.json({ error: createError.message }, { status: 400 });
     }
-
-    const userId = newUserData.user.id;
 
     // Update the profile manually to link to the same tenant & set role
     const { error: updateProfileError } = await adminClient
       .from('profiles')
       .update({ 
         tenant_id: profile.tenant_id,
-        role: role || 'miembro'
+        role: role || 'miembro',
+        cuit: cuit || null,
+        full_name
       })
       .eq('id', userId);
 
     if (updateProfileError) {
-      // Cleanup the user if profile linking failed
-      await adminClient.auth.admin.deleteUser(userId);
+      console.error('Error actualizando perfil en API equipo:', updateProfileError);
       return NextResponse.json({ error: `Error enlazando perfil: ${updateProfileError.message}` }, { status: 400 });
     }
 

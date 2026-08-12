@@ -1217,11 +1217,18 @@ export default function EmpresasClientes({ params }) {
         .from('profiles')
         .select('*')
         .eq('id', result.userId)
-        .single();
+        .maybeSingle();
 
-      if (clientProfErr) throw clientProfErr;
+      if (clientProfErr) console.warn('Aviso al consultar perfil de cliente:', clientProfErr);
 
-      setClientProfile(clientProf);
+      setClientProfile(clientProf || {
+        id: result.userId,
+        email: clientEmail,
+        full_name: clientName,
+        role: 'cliente',
+        empresa_id: editingId,
+        cuit: cuit
+      });
       setClientPassword('');
       triggerToast('Portal de cliente habilitado exitosamente.');
     } catch (err) {

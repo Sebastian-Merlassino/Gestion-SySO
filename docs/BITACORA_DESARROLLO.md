@@ -1,5 +1,26 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-12] Resolución de Error 400 y Recuperación de Usuarios en Creación de Miembros y Clientes
+
+### Resumen de Cambios
+- **Migración SQL de Seguridad e Inmunización (`supabase/migrations/20260823000000_fix_user_creation_profile_issues.sql`):**
+  - **Hardening de `handle_new_user()`**: Incorporación de sanitización con `CASE` y `NULLIF` para convertir cadenas vacías (`""`) en `NULL` antes de realizar el casteo a `uuid`, eliminando los fallos por sintaxis inválida (`ERROR: invalid input syntax for type uuid: ""`).
+  - **ON CONFLICT en Perfiles**: Adición de `ON CONFLICT (id) DO UPDATE SET` para actualizar metadatos (`tenant_id`, `empresa_id`, `role`, `cuit`) si el perfil ya existe.
+  - **Permiso Universal de Lectura Propia en `profile_isolation_select`**: Inclusión explícita de `id = auth.uid()` en la política RLS para garantizar que todo usuario autenticado pueda leer su propio perfil de forma segura.
+- **Recuperación Automática de Cuentas Huérfanas de Auth (`src/app/api/equipo/route.js` y `src/app/api/clientes/route.js`):**
+  - Si la creación en Auth retorna que el correo ya está registrado debido a un fallo en un intento previo, la API recupera la cuenta de `auth.users`, actualiza sus metadatos y contraseña, y completa la vinculación al tenant.
+- **Manejo Defensivo en Frontend (`src/app/[tenant-slug]/empresas/page.js`):**
+  - Reemplazo de `.single()` por `.maybeSingle()` al obtener el perfil de cliente creado, evitando bloqueos en la interfaz.
+
+### Archivos Creados / Modificados
+- `[NEW] supabase/migrations/20260823000000_fix_user_creation_profile_issues.sql`
+- `[MODIFY] src/app/api/equipo/route.js`
+- `[MODIFY] src/app/api/clientes/route.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
 ## [2026-08-12] Estandarización del Indicador de Carga Circular (Loader2) en la Sección Constancia de Visita
 
 ### Resumen de Cambios

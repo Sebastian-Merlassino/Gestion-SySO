@@ -138,6 +138,8 @@ export async function POST(request) {
       .eq('role', 'cliente')
       .maybeSingle();
 
+    let userId;
+
     if (existingProfile) {
       return NextResponse.json({ error: `El CUIT ${cuit} ya tiene un usuario de portal activo en este tenant.` }, { status: 400 });
     }
@@ -157,10 +159,32 @@ export async function POST(request) {
     });
 
     if (createError) {
-      return NextResponse.json({ error: createError.message }, { status: 400 });
-    }
+      // Fallback: Si el usuario ya existe en auth.users (por fallo previo antes de enlazar perfil)
+      if (createError.message?.toLowerCase().includes('already') || createError.status === 422) {
+        const { data: { users } } = await adminClient.auth.admin.listUsers();
+        const existingAuthUser = users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
 
-    const userId = newUserData.user.id;
+        if (existingAuthUser) {
+          userId = existingAuthUser.id;
+          await adminClient.auth.admin.updateUserById(userId, {
+            password,
+            user_metadata: {
+              full_name,
+              role: 'cliente',
+              tenant_id: profile.tenant_id,
+              empresa_id: empresaId,
+              cuit
+            }
+          });
+        } else {
+          return NextResponse.json({ error: createError.message }, { status: 400 });
+        }
+      } else {
+        return NextResponse.json({ error: createError.message }, { status: 400 });
+      }
+    } else {
+      userId = newUserData.user.id;
+    }
 
     // Actualizar el perfil manualmente para asegurar enlace al tenant y empresa correspondientes
     const { error: updateProfileError } = await adminClient
@@ -175,8 +199,7 @@ export async function POST(request) {
       .eq('id', userId);
 
     if (updateProfileError) {
-      // Limpiar el usuario creado en auth.users si falló la vinculación de base de datos
-      await adminClient.auth.admin.deleteUser(userId);
+      console.error('Error actualizando perfil en API clientes:', updateProfileError);
       return NextResponse.json({ error: `Error enlazando perfil de cliente: ${updateProfileError.message}` }, { status: 400 });
     }
 
