@@ -18,6 +18,7 @@ import AppEmptyState from '@/components/ui/AppEmptyState';
 import AITextHelper from '@/components/ui/AITextHelper';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import AppSortIcon from '@/components/ui/AppSortIcon';
+import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import { 
   Building, 
   Users, 
@@ -109,7 +110,64 @@ const HERRAMIENTAS_PORTATILES_OPTS = ['Amoladoras', 'Taladros manuales', 'Atorni
 const APARATOS_PRESION_OPTS = ['Calderas', 'Compresores / aire comprimido', 'Recipientes a presión', 'Intercambiadores y equipos asociados', 'Cilindros de gases a presión'];
 const EQUIPOS_TERMICOS_OPTS = ['Termotanques', 'Calefones', 'Calderas chicas domésticas o comerciales no registradas como ASP', 'Hornos eléctricos', 'Hornos a gas', 'Estufas industriales', 'Secadores térmicos', 'Equipos de calentamiento por resistencias'];
 const EQUIPOS_ELEVACION_OPTS = ['Ascensores', 'Montacargas', 'Plataformas elevadoras tipo tijera', 'Plataformas articuladas / telescópicas', 'Hidroelevadores (camión con canastilla)', 'Andamios motorizados colgantes', 'Plataformas suspendidas'];
-const EQUIPOS_IZAJE_OPTS = ['Puentes grúa', 'Pórticos', 'Semipórticos', 'Plumas', 'Grúas móviles', 'Camiones grúa', 'Autoelevadores', 'Polipastos eléctricos', 'Polipastos manuales', 'Tornos de izaje', 'Ganchos', 'Grilletes', 'Cables de acero', 'Cadenas', 'Balancines', 'Eslingas textiles, de cadena o de cable'];
+const resolveLogoUrl = async (url) => {
+  if (!url) return '';
+  if (url.startsWith('data:') || url.includes('/storage/v1/object/public/logos/')) return url;
+  if (url.includes('/storage/v1/object/public/documents/')) {
+    const path = url.split('/storage/v1/object/public/documents/')[1];
+    if (path) {
+      try {
+        const { data } = await supabase.storage.from('documents').createSignedUrl(path, 3600);
+        if (data?.signedUrl) return data.signedUrl;
+      } catch (e) {
+        console.error('Error al generar signed URL de logo:', e);
+      }
+    }
+  }
+  return url;
+};
+
+const ClientLogoAvatar = ({ logoUrl, razonSocial }) => {
+  const [displayUrl, setDisplayUrl] = useState('');
+  const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    setImgError(false);
+
+    const resolve = async () => {
+      if (!logoUrl) {
+        if (isMounted) setDisplayUrl('');
+        return;
+      }
+      const resolved = await resolveLogoUrl(logoUrl);
+      if (isMounted) setDisplayUrl(resolved);
+    };
+
+    resolve();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [logoUrl]);
+
+  if (displayUrl && !imgError) {
+    return (
+      <img
+        src={displayUrl}
+        alt={razonSocial}
+        onError={() => setImgError(true)}
+        className="h-8 w-8 rounded-lg object-contain bg-slate-50 border border-slate-200 p-0.5 shrink-0"
+      />
+    );
+  }
+
+  return (
+    <div className="h-8 w-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 shrink-0">
+      <Building className="h-4 w-4 text-[#468DFF]" />
+    </div>
+  );
+};
 
 export default function EmpresasClientes({ params }) {
   const tenantSlug = params['tenant-slug'];
@@ -249,6 +307,11 @@ export default function EmpresasClientes({ params }) {
   // Observaciones
   const [observaciones, setObservaciones] = useState('');
 
+  // Logo del Cliente
+  const [logoUrl, setLogoUrl] = useState('');
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoPreview, setLogoPreview] = useState('');
+
   // Tab activo en el formulario
   const [activeTab, setActiveTab] = useState('general');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -298,6 +361,7 @@ export default function EmpresasClientes({ params }) {
       ambienteUsuario,
       ambienteClave,
       observaciones,
+      logoPreview,
       clientEmail,
       clientName,
       establecimientos: (establecimientos || []).map(est => ({
@@ -350,6 +414,7 @@ export default function EmpresasClientes({ params }) {
       ambienteUsuario,
       ambienteClave,
       observaciones,
+      logoPreview,
       clientEmail,
       clientName,
       establecimientos: (establecimientos || []).map(est => ({
@@ -536,15 +601,29 @@ export default function EmpresasClientes({ params }) {
       setActividadesEconomicas(acts);
 
       // Cargar Empresas del Tenant con su conteo de establecimientos
-      const { data: emps, error: empErr } = await supabase
+      let { data: emps, error: empErr } = await supabase
         .from('empresas')
         .select(`
-          id, razon_social, nombre_comercial, cuit, actividades_ciiu,
+          id, razon_social, nombre_comercial, cuit, actividades_ciiu, logo_url,
           establecimientos:establecimientos(count)
         `)
         .eq('tenant_id', ten.id)
         .order('razon_social');
-      if (empErr) throw empErr;
+
+      if (empErr) {
+        // Fallback defensivo si la columna logo_url no estuviera disponible aún
+        const { data: fallbackEmps, error: fallbackErr } = await supabase
+          .from('empresas')
+          .select(`
+            id, razon_social, nombre_comercial, cuit, actividades_ciiu,
+            establecimientos:establecimientos(count)
+          `)
+          .eq('tenant_id', ten.id)
+          .order('razon_social');
+        
+        if (fallbackErr) throw empErr;
+        emps = fallbackEmps;
+      }
 
       const mappedEmps = emps.map(e => ({
         id: e.id,
@@ -552,6 +631,7 @@ export default function EmpresasClientes({ params }) {
         nombre_comercial: e.nombre_comercial,
         cuit: e.cuit,
         actividades_ciiu: e.actividades_ciiu,
+        logo_url: e.logo_url || null,
         establecimientos_count: e.establecimientos?.[0]?.count || 0
       }));
 
@@ -639,6 +719,9 @@ export default function EmpresasClientes({ params }) {
     setAmbienteUsuario('');
     setAmbienteClave('');
     setObservaciones('');
+    setLogoUrl('');
+    setLogoFile(null);
+    setLogoPreview('');
     
     // Resetear estados del portal de cliente
     setClientProfile(null);
@@ -662,6 +745,7 @@ export default function EmpresasClientes({ params }) {
       ambienteUsuario: '',
       ambienteClave: '',
       observaciones: '',
+      logoPreview: '',
       clientEmail: '',
       clientName: '',
       establecimientos: []
@@ -681,6 +765,9 @@ export default function EmpresasClientes({ params }) {
       setRazonSocial('Acme Argentina S.A.');
       setNombreComercial('Acme Solutions');
       setCuit('30712345678');
+      setLogoUrl('');
+      setLogoPreview('');
+      setLogoFile(null);
       setSelectedCiiu([
         { codigo: '11111', descripcion: 'Cultivo de arroz' },
         { codigo: '492290', descripcion: 'Servicio de transporte automotor de cargas n.c.p.' }
@@ -859,6 +946,10 @@ export default function EmpresasClientes({ params }) {
       setNombreComercial(emp.nombre_comercial || '');
       setCuit(emp.cuit);
       setCuitError('');
+      const resolvedLogo = await resolveLogoUrl(emp.logo_url || '');
+      setLogoUrl(emp.logo_url || '');
+      setLogoPreview(resolvedLogo);
+      setLogoFile(null);
       
       // Mapear CIIUs
       const mappedCiius = (emp.actividades_ciiu || []).map(code => {
@@ -1542,6 +1633,7 @@ export default function EmpresasClientes({ params }) {
         razon_social: razonSocial,
         nombre_comercial: nombreComercial,
         cuit: cuit,
+        logo_url: logoPreview || null,
         actividades_ciiu: selectedCiiu.map(c => c.codigo),
         establecimientos_count: establecimientos.length
       };
@@ -1561,11 +1653,33 @@ export default function EmpresasClientes({ params }) {
     try {
       const activitiesCodes = selectedCiiu.map(c => c.codigo);
 
+      let finalLogoUrl = logoUrl;
+
+      if (logoFile) {
+        const ext = logoFile.name.split('.').pop();
+        const cleanName = logoFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const filePath = `${tenant.id}/empresas/logos/logo_${Date.now()}_${cleanName}`;
+        const { error: uploadErr } = await supabase.storage
+          .from('logos')
+          .upload(filePath, logoFile, { upsert: true, cacheControl: '3600' });
+        
+        if (uploadErr) throw uploadErr;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('logos')
+          .getPublicUrl(filePath);
+
+        finalLogoUrl = publicUrl;
+      } else if (!logoPreview) {
+        finalLogoUrl = null;
+      }
+
       const payloadEmpresa = {
         tenant_id: tenant.id,
         razon_social: (razonSocial || '').trim(),
         nombre_comercial: (nombreComercial || '').trim() || null,
         cuit: cuit,
+        logo_url: finalLogoUrl,
         actividades_ciiu: activitiesCodes,
         contactos_telefonos: telefonos.filter(t => (t.valor || '').trim() !== ''),
         contactos_correos: correos.filter(c => (c.valor || '').trim() !== ''),
@@ -1892,9 +2006,12 @@ export default function EmpresasClientes({ params }) {
                                 className="hover:bg-slate-100 cursor-pointer transition-colors"
                               >
                                 <td className="px-6 py-4">
-                                  <span className="font-semibold text-slate-900 block truncate max-w-[240px]" title={emp.razon_social}>
-                                    {emp.razon_social}
-                                  </span>
+                                  <div className="flex items-center gap-2.5">
+                                    <ClientLogoAvatar logoUrl={emp.logo_url} razonSocial={emp.razon_social} />
+                                    <span className="font-semibold text-slate-900 block truncate max-w-[220px]" title={emp.razon_social}>
+                                      {emp.razon_social}
+                                    </span>
+                                  </div>
                                 </td>
                                 <td className="px-6 py-4">
                                   <span className="text-slate-600 block truncate max-w-[220px]" title={emp.nombre_comercial || 'Sin nombre comercial'}>
@@ -2125,6 +2242,30 @@ export default function EmpresasClientes({ params }) {
                               </div>
                             )}
                           </div>
+                        </div>
+
+                        {/* Logo del Cliente */}
+                        <div className="space-y-3 pt-4 border-t border-slate-100 md:col-span-2">
+                          <ImageUploadZone
+                            label="Logo del Cliente"
+                            preview={logoPreview}
+                            onFileChange={(file) => {
+                              setLogoFile(file);
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onloadend = () => setLogoPreview(reader.result);
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                            onClear={() => {
+                              setLogoFile(null);
+                              setLogoPreview('');
+                              setLogoUrl('');
+                            }}
+                            disabled={!canEdit}
+                            maxSizeMB={5}
+                            onToast={triggerToast}
+                          />
                         </div>
 
                       </div>

@@ -24,6 +24,11 @@ BEGIN
     RETURN true;
   END IF;
 
+  -- Si la carpeta es igual a su propio tenant_id, permitir
+  IF first_folder = caller_tenant_id::text THEN
+    RETURN true;
+  END IF;
+
   -- Si es un UUID válido, puede ser un profile_id o un miembro_id
   IF first_folder ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN
     -- Verificar si es profile_id del mismo tenant

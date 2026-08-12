@@ -1,5 +1,28 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-11] Integración de Carga de Logo del Cliente en Datos Generales e Identidad Visual (Empresas Clientes)
+
+### Resumen de Cambios
+- **Migración de Base de Datos (`supabase/migrations/20260821000000_add_logo_url_to_empresas.sql`):**
+  - Incorporación y ejecución de la columna `logo_url TEXT` en la tabla `public.empresas` del proyecto Supabase remoto.
+- **Ajuste de Políticas RLS de Storage (`can_access_member_asset`):**
+  - Se actualizó la función `public.can_access_member_asset` en Supabase para habilitar permisos de escritura en subcarpetas cuyo primer nivel corresponda al `tenant_id` (`IF first_folder = caller_tenant_id::text THEN RETURN true;`), solucionando el error `400 (StorageApiError: new row violates row-level security policy)`.
+- **Integración del Componente Estandarizado de Carga de Imágenes (`src/app/[tenant-slug]/empresas/page.js`):**
+  - **Componente `ImageUploadZone`**: Se importó e integró en la pestaña **Datos Generales** (`activeTab === 'general'`) para permitir la selección por archivo o cámara del logo del cliente (hasta 5 MB, JPG/PNG/WEBP/GIF).
+  - **Supabase Storage (`logos` bucket público)**: Se configuró la subida de logos al bucket `logos` (público), garantizando que las URLs generadas por `getPublicUrl` sean accesibles públicamente por las etiquetas `<img>` del navegador sin bloqueos RLS.
+  - **Componente `ClientLogoAvatar`**: Se implementó el componente auxiliar con renderizado inteligente y manejo del evento `onError` para conmutar suavemente al icono de edificio si una URL histórica tuviera fallos de carga o estuviera inalcanzable.
+  - **Fallback Defensivo de Consulta**: Se incorporó una captura defensiva en `loadRealData` que reintenta la lectura sin `logo_url` si la columna aún no estuviera disponible, evitando cualquier falla de carga de empresas clientes.
+  - **Listado / Tabla Principal**: Renderizado de miniatura del logo del cliente (avatar `h-8 w-8` con `object-contain`) junto a la Razón Social.
+  - **Gestión de Estado y Diálogos**: Integración completa con `checkHasUnsavedChanges`, `originalDataRef` y reseteo en creación/edición.
+
+### Archivos Modificados
+- `[NEW] supabase/migrations/20260821000000_add_logo_url_to_empresas.sql`
+- `[MODIFY] supabase/migrations/20260620020000_adjust_storage_policies.sql`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
 ## [2026-08-11] Resolución Definitiva de Múltiples Matrículas en Aclaración de Capacitador (PDF)
 
 ### Resumen de Cambios
