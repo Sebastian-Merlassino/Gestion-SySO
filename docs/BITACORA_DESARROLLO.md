@@ -1,5 +1,22 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-12] Corrección de Política RLS en `public.tenants` (HTTP 406 Not Acceptable en Onboarding)
+
+### Resumen de Cambios
+- **Migración SQL (`supabase/migrations/20260825000000_fix_tenant_update_onboarding_rls.sql`):**
+  - **Habilitación de Reutilización de Tenants Huérfanos**: Se ajustó la política RLS `tenant_isolation_update` para permitir que un usuario autenticado sin tenant asignado (`profiles.tenant_id IS NULL`) pueda actualizar un tenant huérfano (un tenant que posee `0` perfiles asociados).
+  - **Permisión de Configuración Inicial en Trigger**: Se modificó la función trigger `check_tenant_updates()` para permitir el establecimiento del plan comercial durante el alta/configuración inicial de un tenant huérfano.
+  - **Ejecución Directa en Supabase**: La migración se aplicó inmediatamente en la base de datos remota de producción mediante el conector SQL.
+
+### Causa Raíz
+Al intentar re-utilizar o configurar un tenant huérfano creado previamente durante el onboarding, la consulta `PATCH /rest/v1/tenants` fallaba con `HTTP 406 Not Acceptable (Cannot coerce the result to a single JSON object)` porque la política RLS evaluaba `user_has_tenant_access(id)` a `FALSE` (al no tener aún el perfil vinculado al `tenant_id`), haciendo que PostgreSQL no modificara ninguna fila.
+
+### Archivos Creados / Modificados
+- `[NEW] supabase/migrations/20260825000000_fix_tenant_update_onboarding_rls.sql`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
 ## [2026-08-12] Corrección del Trigger `check_profile_updates()` Bloqueando Onboarding (HTTP 400 - tenant_id y role)
 
 ### Resumen de Cambios
