@@ -1,125 +1,160 @@
-# Informe de Auditoría de Diseño UI y Consistencia Visual — Gestión SySO
+# Informe de Auditoría de Diseño UI, Consistencia Visual y Accesibilidad — Gestión SySO
 
-**Fecha:** 5 de Agosto de 2026  
-**Auditor:** Arquitecto Principal de UX/UI & Frontend  
-**Estado de Código:** Auditoría pasiva sin modificación de código fuente  
+**Fecha de Auditoría:** 12 de Agosto de 2026  
+**Auditor Senior:** Arquitecto Principal de UX/UI, Design System & Frontend  
+**Estado de Código:** Auditoría pasiva integral (Sin modificación de código fuente)  
+**Proyecto:** SaaS Gestión SySO (Gestión Integral de Higiene y Seguridad en el Trabajo)  
 
 ---
 
 ## 1. Resumen Ejecutivo
 
-### 1.1 Diagnóstico General
-La interfaz web de **Gestión SySO** presenta una base estética limpia, moderna y profesional orientada al ámbito de Higiene y Seguridad Laboral. Se destaca la utilización del color de marca principal (`#468DFF` / **Blue-500**) y un esfuerzo marcado por unificar componentes primarios como `AppButton`, `AppInput`, `AppSelect`, `AppCard` y `AppInfoModal`.
+### 1.1 Diagnóstico General de la Interfaz Web
+La aplicación web de **Gestión SySO** exhibe una identidad visual profesional y limpia alineada al dominio de la Higiene, Seguridad y Salud Ocupacional. La plataforma ha consolidado su paleta oficial basada en el Azul Corporativo SySO (`#468DFF` / **Blue-500**), el Azul Intenso de Acento (`#0511F2`), Gris Neutro Secundario (`#D9D9D9` / `slate-100`), Blanco (`#FFFFFF`) y Negro Carbón (`#000000` / `slate-950`).
 
-Sin embargo, a lo largo de la evolución del proyecto se han acumulado **desviaciones e inconsistencias visuales y técnicas relevantes** que afectan la predictibilidad del diseño, la densidad de información en dispositivos móviles, la accesibilidad y el mantenimiento a largo plazo:
+Adicionalmente, se registran importantes avances recientes como:
+- **SySO Compact Layout v2.0**: Reducción del padding vertical en las tarjetas superiores de herramientas y filtros (de 24px a 14px en escritorio) implementado en 15 módulos del sistema.
+- **Librería de Componentes Unificados en `src/components/ui/`**: `AppButton`, `AppInput`, `AppSelect`, `AppTextarea`, `AppCard`, `AppPageHeader`, `AppInfoModal`, `AppConfirmDialog`, `AppDestructiveConfirmDialog`, `AppUnsavedChangesDialog`, `DocumentUploadZone` e `ImageUploadZone`.
+- **Estándar de Asistente de Voz e IA (`AITextHelper`)**: Integración de dictado por voz y pulido con Google Gemini en campos de texto técnico de largo formato.
+- **Estándar `SySO-Multiple-Evidence-Photo-Grid`**: Grilla uniforme con miniaturas, visor en pantalla completa y botón de adición rápida `+`.
 
-1. **Variaciones de Tipografía y Escalas**: Coexistencia entre clases como `font-outfit` (utilizada en encabezados seleccionados) y la fuente sans-serif por defecto de Tailwind (`Inter` / system-ui), así como el uso atomizado de tamaños como `text-[10px]`, `text-[11px]`, `text-xs`, `text-sm` y `text-base` sin escala semántica estandarizada.
-2. **Casing Inconsistente (Mayúsculas/Minúsculas)**: Mezcla aleatoria de `UPPERCASE`, `Title Case` y `Sentence case` en botones (`"NUEVO PROTOCOLO"` vs `"Nuevo Protocolo"`), encabezados de tabla, etiquetas de campo (`RAZÓN SOCIAL *` vs `Dirección`), y títulos de modales.
-3. **Dispersión de la Paleta de Colores**: Presencia de múltiples tonalidades de gris (`slate-50`, `slate-100`, `slate-200`, `slate-300`, `slate-400`, `slate-500`, `slate-700`, `slate-800`, `slate-900`) y verde/rojo/amarillo heterogéneos sin abstracción a tokens semánticos (ej. `#00b050`, `emerald-500`, `green-600` conviviendo para estados exitosos/cerrados).
-4. **Comportamiento Responsivo en Dispositivos Móviles (<768px)**: Las tarjetas y tablas han requerido ajustes progresivos mediante media queries para forzar la eliminación de padding y bordes redondeados (`border-radius: 0`), provocando a veces colisiones con grillas de formularios de carga o brechas de espacio gris no deseadas.
-5. **Accesibilidad Visual (a11y)**: Uso frecuente de textos de contraste reducido como `text-slate-400` en etiquetas de tamaño muy pequeño (`text-[10px]`), lo cual compromete el cumplimiento de normas WCAG 2.1 AA.
+Sin embargo, tras la revisión exhaustiva de todas las rutas y componentes, se identifican **inconsistencias y desviaciones de diseño relevantes**:
+
+1. **Variación de Tipografía y Escalas**: Coexistencia entre la tipografía de encabezados e identidad (`Outfit` / `.font-outfit`) y la fuente de cuerpo (`Inter` / system-ui), con dispersión de tamaños sin escala semántica estricta (`text-[10px]`, `text-[11px]`, `text-xs`, `text-sm`, `text-base`).
+2. **Mezcla Inconsistente de Casing (Mayúsculas/Minúsculas)**: Convivencia no normada entre `UPPERCASE`, `Title Case` y `Sentence case` en botones (`"NUEVO PROTOCOLO"` vs `"Nuevo Protocolo"` vs `"Guardar"`), encabezados de tabla, etiquetas de formularios y badges de estado.
+3. **Ausencia de Componente Estandarizado de Captura de Firma Canvas (`AppSignatureCanvas`)**: El lienzo interactivo de firma digital HTML5 Canvas se encuentra duplicado con lógica e interfaces nativas inline en `visitas/page.js`, `capacitar/[token]/page.js`, `profile/page.js` y generadores de protocolos, en lugar de consumir un componente reutilizable.
+4. **Falta de Skeletons de Carga Reutilizables (`AppSkeleton`)**: La aplicación carece de componentes estructurados con animación de pulso (`animate-pulse`) para tarjetas, formularios y tablas, utilizando en su lugar indicadores de texto o spinners (`Loader2 animate-spin`) desalineados del layout final.
+5. **Uso Exclusivo de Tooltips Nativos del Navegador (`title="..."`)**: Inexistencia de un componente `AppTooltip` o `AppPopover` accesible, provocando textos emergentes no estilizados que no funcionan en dispositivos táctiles/móviles.
+6. **Integración Gráfica e Ilustraciones de Marca**: Ilustraciones de empty states y pantallas de error (404/500) dispersas, requiriendo normar la incorporación del personaje corporativo cartoon estilo años 30 (casco blanco, chaleco naranja reflectivo y zapatos de seguridad) para mantener el tono técnico humano de la plataforma.
 
 ---
 
-## 2. Mapa Visual por Sección y Módulo
+## 2. Mapa Visual por Sección y Módulo de la Aplicación
 
-| Módulo / Sección | Ruta Principal | Estado Visual | Tipografía | Colores | Botones | Formularios | Tablas Web | Nivel de Riesgo |
+| Módulo / Sección | Ruta | Estado Visual | Tipografía | Paleta de Colores | Botones | Formularios / Uploaders | Tablas Web | Nivel de Riesgo |
 |---|---|---|---|---|---|---|---|---|
-| **Dashboard** | `/[tenant-slug]/dashboard` | Aceptable | `font-outfit` + Sans | `#468DFF`, `slate-*`, `#00b050` | Estandarizado (`AppButton`) | N/A | Mixta (Tablas custom) | **Medio** |
-| **Legajo Técnico** | `/[tenant-slug]/legajo` | Bueno | Sans-serif / `font-outfit` | `#468DFF`, `slate-*` | `AppButton` + icons | Inline + Modales | Nítida con scroll mobile | **Bajo** |
-| **Protocolo Ergonomía** | `/[tenant-slug]/protocolos/ergonomia` | Complejo | Sans-serif | `#468DFF`, `slate-*`, `amber-*` | Mixto (`AppButton` y `<button>`) | Formulario extenso multi-paso | Grillas complejas SRT 886/15 | **Alto** |
-| **Protocolo Ruido** | `/[tenant-slug]/protocolos/ruido` | Complejo | Sans-serif | `#468DFF`, `slate-*` | `AppButton` + `<button>` | Extenso con anexos SRT | Tablas extensas de medición | **Alto** |
-| **Protocolo Iluminación** | `/[tenant-slug]/protocolos/iluminacion` | Complejo | Sans-serif | `#468DFF`, `slate-*` | `AppButton` + `<button>` | Extenso con anexos SRT | Tablas de puntos de medición | **Alto** |
-| **Visitas Técnicas** | `/[tenant-slug]/visitas` | Muy Bueno | Sans-serif / Outfit | `#468DFF`, `slate-*` | `AppButton` | Inline + Voice Helper | Tabla estandarizada | **Bajo** |
-| **Acciones Correctivas** | `/[tenant-slug]/correctivas` | Bueno | Sans-serif | `#468DFF`, `amber-*`, `red-*` | `AppButton` | Inline | Tabla estandarizada | **Medio** |
-| **Avisos de Riesgo** | `/[tenant-slug]/avisos` | Bueno | Sans-serif | `#468DFF`, `red-*` | `AppButton` | Inline | Tabla estandarizada | **Medio** |
-| **Investigación Accidentes** | `/[tenant-slug]/accidentes` | Bueno | Sans-serif | `#468DFF`, `red-*` | `AppButton` | Inline + Voice Helper | Tabla estandarizada | **Medio** |
-| **Programa Anual** | `/[tenant-slug]/programa` | Bueno | Sans-serif | `#468DFF`, `slate-*` | `AppButton` | Inline | Tabla de cronograma | **Medio** |
-| **Clientes / Empresas** | `/[tenant-slug]/empresas` | Bueno | Sans-serif | `#468DFF`, `slate-*` | `AppButton` | Inline | Tabla de clientes | **Bajo** |
-| **Billing / Planes** | `/[tenant-slug]/profile` | Bueno | `font-outfit` | `#468DFF`, `#0511F2` | `AppButton` | Formularios de tarjeta | Cards de suscripción | **Medio** |
+| **Portal de Autenticación / Login** | `/login`, `/registro` | Excelente | Outfit + Inter | `#468DFF`, `slate-900`, `syso-bg` | `AppButton` | `AppInput` | N/A | **Bajo** |
+| **Onboarding** | `/onboarding` | Muy Bueno | Outfit + Inter | `#468DFF`, `#0511F2` | `AppButton` | `AppInput`, `AppSelect` | N/A | **Bajo** |
+| **Dashboard Principal** | `/[tenant-slug]/dashboard` | Muy Bueno | Outfit + Inter | `#468DFF`, `slate-100`, `#00b050` | Segmentados + `AppButton` | N/A | Tabla Vencimientos (Sticky `thead`) | **Bajo** |
+| **Clientes / Empresas** | `/[tenant-slug]/empresas` | Excelente | Outfit + Inter | `#468DFF`, `slate-300`, `logos` bucket | `AppButton` | `AppInput`, `ImageUploadZone` (Logo) | Tabla con Avatar Logo | **Bajo** |
+| **Legajo Técnico** | `/[tenant-slug]/legajo` | Bueno | Inter + Outfit | `#468DFF`, `slate-200` | `AppButton` | Inline + `DocumentUploadZone` | Tabla responsiva | **Bajo** |
+| **Equipo de Trabajo** | `/[tenant-slug]/equipo` | Excelente | Inter + Outfit | `#468DFF`, `slate-100` | `AppButton` (Compact v2.0) | Modal Inline (`overflow-y-auto`) | Tabla de integrantes | **Bajo** |
+| **Visitas Técnicas** | `/[tenant-slug]/visitas` | Muy Bueno | Inter + Outfit | `#468DFF`, `blue-50`, `amber-50` | `AppButton` + Acciones | Voice Helper + Canvas Firma | Tabla estandarizada | **Medio** |
+| **Avisos de Riesgo** | `/[tenant-slug]/avisos` | Bueno | Inter + Outfit | `#468DFF`, `red-500` | `AppButton` | Inline + Photo Grid | Tabla estandarizada | **Bajo** |
+| **Investigación Accidentes** | `/[tenant-slug]/accidentes` | Bueno | Inter + Outfit | `#468DFF`, `red-600` | `AppButton` | Voice Helper + Photo Grid | Tabla estandarizada | **Bajo** |
+| **Extintores / Ignífugos** | `/[tenant-slug]/extintores` | Bueno | Inter + Outfit | `#468DFF`, `amber-500` | `AppButton` | Inline + Photo Grid | Tabla estandarizada | **Bajo** |
+| **Control Eléctrico** | `/[tenant-slug]/control-electrico` | Bueno | Inter + Outfit | `#468DFF`, `amber-500` | `AppButton` | Inline + Photo Grid | Tabla estandarizada | **Bajo** |
+| **Checklists Personalizados**| `/[tenant-slug]/checklist-personalizados` | Bueno | Inter + Outfit | `#468DFF`, `slate-100` | `AppButton` | Cuestionarios dinámicos | Tabla estandarizada | **Bajo** |
+| **Programa Anual** | `/[tenant-slug]/programa` | Bueno | Inter + Outfit | `#468DFF`, `slate-200` | `AppButton` | Formulario cronograma | Grilla Gantt / Cronograma | **Medio** |
+| **Capacitaciones Presenciales**| `/[tenant-slug]/capacitacion` | Bueno | Inter + Outfit | `#468DFF`, `blue-50` | `AppButton` | Formulario + Firmas | Tabla de registros | **Bajo** |
+| **Capacitaciones Online** | `/[tenant-slug]/capacitaciones-online` | Excelente | Inter + Outfit | `#468DFF`, `blue-50`, `red-50` | Pictogramas unificados | Duración MIN/HS + Modal PPT Tip | Tabla con Recursos PDF/Video | **Bajo** |
+| **Portal Público Asistencia** | `/capacitar/[token]` | Excelente | Outfit + Inter | `#468DFF`, `slate-50`, `PublicFooter` | `AppButton` + Paneles | Visor PdfSlideViewer + Canvas | N/A | **Bajo** |
+| **Protocolo Ergonomía** | `/[tenant-slug]/protocolos/ergonomia` | Complejo | Inter | `#468DFF`, `amber-500` | Mixto (`AppButton` / `<button>`) | Formulario multi-paso SRT 886/15 | Grillas complejas SRT | **Alto** |
+| **Protocolo Ruido** | `/[tenant-slug]/protocolos/ruido` | Complejo | Inter | `#468DFF`, `slate-200` | Mixto (`AppButton` / `<button>`) | Formulario anexos SRT 85/12 | Grillas de mediciones | **Alto** |
+| **Protocolo Iluminación** | `/[tenant-slug]/protocolos/iluminacion` | Complejo | Inter | `#468DFF`, `slate-200` | Mixto (`AppButton` / `<button>`) | Formulario anexos SRT 84/12 | Grillas de puntos lux | **Alto** |
+| **Matriz de Riesgos IPER** | `/[tenant-slug]/matriz-riesgos` | Complejo | Inter | `#468DFF`, `red-500`, `amber-500` | `AppButton` | Evaluador de probabilidad/severidad | Tabla matricial extensa | **Alto** |
+| **Acciones Correctivas** | `/[tenant-slug]/correctivas` | Bueno | Inter + Outfit | `#468DFF`, `amber-500` | `AppButton` | Inline + Voice Helper | Tabla estandarizada | **Bajo** |
+| **Perfil / Planes Billing** | `/[tenant-slug]/profile` | Muy Bueno | Outfit + Inter | `#468DFF`, `#0511F2` | `AppButton` | Tarjeta MP + Modales Plan | Cards de Suscripción | **Bajo** |
+| **Legales / Términos** | `/terminos`, `/privacidad` | Excelente | Inter + Outfit | `#468DFF`, `slate-800` | `AppButton` | N/A | N/A | **Bajo** |
 
 ---
 
-## 3. Inventario Tipográfico
+## 3. Inventario Detallado de Elementos UI
 
-| Uso / Elemento | Clase / Tamaño Actual | Dónde Aparece | Problema Detectado | Recomendación de Normalización |
-|---|---|---|---|---|
-| **Títulos Principales (H1)** | `font-outfit text-xl sm:text-2xl font-extrabold text-slate-900` | Encabezados de página, Dashboard | Variación ocasional entre `text-xl` y `text-2xl` | `text-2xl font-extrabold font-outfit` estandarizado en `AppPageHeader` |
-| **Subtítulos (H2 / H3)** | `text-base font-bold text-slate-800` / `font-outfit text-sm font-bold` | Secciones de tarjetas, Modales | Mezcla de `text-base` y `text-sm` con y sin `font-outfit` | Usar `text-base font-bold font-outfit` para H2 y `text-sm font-bold` para H3 |
-| **Etiquetas de Campo (Labels)** | `text-[10px] font-bold text-slate-400 uppercase tracking-wider` | Formularios de carga, Protocolos | Tamaño `text-[10px]` en `slate-400` tiene bajo contraste | `text-xs font-bold text-slate-600 uppercase tracking-wider` |
-| **Textos de Celdas de Tabla** | `text-xs font-medium text-slate-700` | Tablas de Visitas, Clientes, Legajo | Coexistencia de `text-xs` y `text-sm` según el módulo | `text-xs font-medium text-slate-700` unificado para todas las tablas |
-| **Textos de Ayuda / Hints** | `text-[11px] text-slate-500` / `text-xs text-slate-400` | Formularios, Zonas de carga | Tamaño muy pequeño e inconsistente | `text-xs text-slate-500` |
-| **Botones Primarios** | `text-xs font-bold uppercase` / `text-sm font-semibold` | Múltiples botones de la app | Mezcla entre mayúsculas y Sentence case | `text-xs font-bold` con Sentence case (`Guardar Registro`) |
+### 3.1 Tipografía y Escalas Visuales
+- **Fuente Principal del Sistema (Body / Datos)**: `Inter`, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto.
+- **Fuente Institucional de Encabezados (Titles / Branding)**: `Outfit` (`.font-outfit`).
+
+**Evaluación de Jerarquía Actual:**
+- **H1 (Título de Página)**: Clases `font-outfit text-xl sm:text-2xl font-extrabold text-slate-900`. Renderizado consistente en `AppPageHeader`.
+- **H2 (Títulos de Secciones y Cards)**: Clases `font-outfit text-base sm:text-lg font-bold text-slate-800`.
+- **H3 (Subtítulos y Cabeceras de Modales)**: Clases `text-sm font-bold text-slate-800` o `font-outfit text-sm font-bold text-white` (en modales oscuros).
+- **Labels Técnicos de Formularios**: Variaciones entre `text-[10px] font-bold text-slate-400 uppercase` y `text-xs font-bold text-slate-600 uppercase`.
+- **Celdas de Tablas**: Clases `text-xs font-medium text-slate-700`.
+
+### 3.2 Paleta de Colores y Tokens
+
+```css
+:root {
+  --primary: 217 100% 63.7%; /* #468DFF - Azul Corporativo SySO */
+  --accent: 237 96% 49%;     /* #0511F2 - Azul Intenso Acento */
+  --syso-bg: 0 0% 85%;       /* #D9D9D9 - Neutral Secundario */
+  --border: 215 20% 82%;     /* #cbd5e1 - Slate-300 Nítido */
+  --foreground: 222.2 84% 4.9%; /* #020617 - Slate-950 */
+}
+```
+
+- **Azul Primario (`#468DFF`)**: Aplicado en botones primarios, iconos de acción, sidebar activo, encabezados de tabla y badges informativos.
+- **Azul Intenso (`#0511F2`)**: Aplicado en el estado `:hover` de botones primarios, enlaces activos y focos interactivos.
+- **Gris de Bordes (`#cbd5e1` / `slate-300`)**: Configurado en `globals.css` como refuerzo visual de delineado nítido para todos los contenedores e inputs.
+- **Colores Semánticos de Estado**:
+  - **Éxito / Realizado**: `#16a34a` / `green-600` / `#00b050` (Badges de visitas/capacitaciones).
+  - **Advertencia / En Proceso**: `#f59e0b` / `amber-500` / `amber-600` (Edición, avisos).
+  - **Peligro / Vencido / Eliminar**: `#ef4444` / `red-500` / `red-600` (Eliminación, accidentes).
+
+### 3.3 Botones y Variantes (`AppButton`)
+El sistema utiliza el componente unificado `AppButton` con el siguiente patrón de diseño:
+- **Primario**: `bg-[#468DFF] text-white border border-[#468DFF] hover:bg-[#0511F2] hover:border-[#0511F2] rounded-xl font-bold text-xs shadow-md shadow-[#468DFF]/10`.
+- **Secundario / Salir**: `bg-white text-[#468DFF] border border-[#468DFF] hover:bg-[#468DFF] hover:text-white rounded-xl font-bold text-xs`.
+- **Editar (Formulario)**: `bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold`.
+- **Editar (Icono en Tabla)**: `p-1.5 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors`.
+- **Eliminar (Formulario)**: `bg-red-500 hover:bg-red-600 text-white rounded-xl text-xs font-bold`.
+- **Eliminar (Icono en Tabla)**: `p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors`.
+- **Documento / PDF (Icono en Tabla)**: `p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-colors` con icono `FileText` de Lucide React (`h-4.5 w-4.5`).
+
+### 3.4 Formularios, Uploaders y Captura de Firmas
+- **Campos de Entrada (`AppInput`, `AppSelect`, `AppTextarea`)**: Altura estandarizada `h-10` (40px) para inputs/selects, borde `#cbd5e1`, esquinas `rounded-xl`, focus ring en `#468DFF`.
+- **Componentes Avanzados de Carga**:
+  - `DocumentUploadZone`: Soporte para arrastre drag & drop y pestañas de conmutación local / Google Drive URL.
+  - `ImageUploadZone` (`SySO-Multiple-Evidence-Photo-Grid`): Carga individual o múltiple con grilla de miniaturas cuadradas, overlay de hover (`Eye` / `Trash2`), botón de carga rápida `+` y helper de des-serialización JSON.
+- **Captura de Firmas Web (Canvas HTML5)**:
+  - Implementación con escalado de coordenadas proporcionales (`getCanvasPos`): `(clientX - rect.left) * (canvas.width / rect.width)` que elimina desfases de trazo en móviles y escritorio.
+  - *Hallazgo:* Falta abstraer a `<AppSignatureCanvas />` para evitar duplicación de código en 4 módulos.
+
+### 3.5 Tablas Web, Filtros y Skeletons de Carga
+- **Layout Compacto de Tabla y Filtros (SySO Compact Layout v2.0)**:
+  - Tarjeta superior de herramientas con padding compacto `px-3.5 py-2.5 sm:px-5 sm:py-3 md:px-6 md:py-3.5` y espacio `space-y-2.5`.
+  - Buscador responsivo (`w-full md:w-64`) con icono `Search` a la izquierda.
+  - Botones de exportación e impresión estandarizados.
+  - Sub-barra inferior con botón `Limpiar búsqueda` a la izquierda y botón primario `+ Nuevo...` a la derecha.
+- **Encabezados de Tabla (`<thead>`)**: Posicionamiento adhesivo (`sticky top-0 z-10 bg-slate-50 border-b border-slate-200`), texto `text-xs font-bold text-slate-400 uppercase tracking-wider`.
+- **Estado de Tabla Vacía (`AppEmptyState`)**: Icono `AlertCircle` (`h-10 w-10 text-slate-300`), título `No hay [entidad] registradas/os` y botón CTA primario `+ Registrar [entidad]`.
+- **Skeletons de Carga**: *Hallazgo:* Actualmente se utilizan leyendas de texto o spinners en lugar de un componente `<AppSkeleton />` con grillas y barras desdibujadas animadas (`animate-pulse`).
+
+### 3.6 Alertas, Toasts, Modales, Tooltips y Popovers
+- **Feedback y Notificaciones (Toasts)**: Consumo global de `useToast()` con estándares:
+  - Operación PDF: Alerta `info` `"Generando reporte PDF..."` -> Alerta `success` `"PDF descargado exitosamente."` / `"Vista previa abierta."`.
+- **Diálogos Emergentes**: Consumo de Radix UI unificado en `AppConfirmDialog`, `AppDestructiveConfirmDialog` y `AppUnsavedChangesDialog`.
+- **Tooltips y Popovers**: *Hallazgo:* Prevalencia de `title="..."` nativo. Se requiere unificar con un componente `<AppTooltip />` estilizado y compatible con pantallas táctiles.
+
+### 3.7 Assets de Marca e Ilustraciones Corporativas
+- **Logotipos de Marca**: Ubicados en `public/brand/` (`logo-primary.png`, `logo-black.png`, `logo-white.png`, `favicon.ico`).
+- **Mascota Corporativa (Cartoon 1930s)**: Personaje caricaturesco institucional (casco blanco de seguridad, chaleco naranja reflectivo con bandas grises y zapatos de seguridad) para ilustrar estados vacíos, mensajes informativos y páginas de bienvenida u error (404/500).
 
 ---
 
-## 4. Inventario de Colores y Tokens
+## 4. Revisión Responsiva y Accesibilidad (a11y)
 
-| Color / Hex / Clase | Uso Actual | Módulos | Pertenece a Marca Oficial | Problema | Recomendación |
-|---|---|---|---|---|---|
-| `#468DFF` (`bg-[#468DFF]`) | Azul Primario, botones, íconos | Toda la aplicación | **SÍ (Oficial)** | Ninguno (Color Institucional) | Mantener como token `--primary` |
-| `#0511F2` (`bg-[#0511F2]`) | Hover de botones primarios, acento | Botones y CTA | **SÍ (Oficial)** | Ninguno | Mantener como token `--primary-hover` |
-| `#cbd5e1` (`slate-300`) | Bordes de inputs, cards y tablas | Global (`globals.css`) | **SÍ (Normalizado)** | Ninguno (Resuelve nitidez) | Mantener como token `--border` |
-| `#00b050` | Badges de estado "Realizado" / "Cerrado" | Visitas, Correctivas, PDFs | **NO (Hardcodeado)** | Inconsistencia con `emerald-500` / `green-600` | Abstraer a token `--success` |
-| `#ef4444` / `red-500` | Botones de eliminar, errores, alertas | Toda la app | **SÍ** | Variaciones con `red-600`, `red-700` | Estandarizar en token `--destructive` |
-| `#f59e0b` / `amber-500` | Botones de edición, alertas warning | Toda la app | **SÍ** | Variaciones entre `amber-500`, `amber-600`, `yellow-500` | Estandarizar en token `--warning` |
-| `#D9D9D9` (`syso-bg`) | Fondo secundario | Layouts | **SÍ (Oficial)** | Coexiste con `#f1f5f9` (`slate-100`) | Usar `#f1f5f9` para canvas de app y `#D9D9D9` como neutro secundario |
+### 4.1 Adaptabilidad Responsiva (Mobile, Tablet, Desktop)
+- **Celular (<768px)**: Las páginas ocupan la totalidad de la pantalla sin padding sobrante (`px-0`), la cabecera es fija (`position: fixed; z-index: 30`), las tarjetas de listado van de borde a borde sin bordes redondeados (`border-radius: 0`), y las tablas poseen scroll horizontal independiente (`overflow-x-auto`).
+- **Tablet y Desktop (>=768px)**: La interfaz flota sobre el canvas gris (`#f1f5f9` / `#D9D9D9`), recuperando tarjetas redondeadas (`rounded-2xl border border-slate-200 shadow-sm`) y márgenes laterales contenedores.
+
+### 4.2 Accesibilidad Visual (WCAG 2.1 AA)
+- **Relación de Contraste**: El texto `slate-400` (`#94a3b8`) sobre blanco en tamaños pequeños (10px) carece del ratio mínimo 4.5:1. Se propone elevar a `slate-600` (`#475569`).
+- **Áreas Táctiles Mínimas**: Todos los botones e iconos interactivos en vista móvil garantizan una superficie mínima de toque de `36x36px` o `40x40px`.
 
 ---
 
-## 5. Inventario de Botones
+## 5. Listado de Hallazgos Priorizados
 
-| Tipo de Botón | Clases Actuales Predominantes | Módulos donde se usa | Inconsistencias Detectadas | Estándar Proporcionado (`AppButton`) |
-|---|---|---|---|---|
-| **Primario** | `bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-xs font-bold` | Formularios, Modales, Acciones | Algunos botones usan `rounded-lg` o `text-sm` | `variant="primary"` (`h-10 px-4 rounded-xl font-bold`) |
-| **Secundario / Cancelar** | `bg-white border border-slate-200 text-slate-700 hover:bg-slate-50` | Modales, Cancelación | Algunos usan `border-[#468DFF]` y texto azul | `variant="secondary"` |
-| **Editar** | `bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold` | Tablas y Formularios | En tablas se usa botón compacto con `p-1.5 bg-amber-50 text-amber-600` | `variant="edit"` / `variant="table-edit"` |
-| **Eliminar / Destructivo** | `bg-red-500 hover:bg-red-600 text-white rounded-xl text-xs font-bold` | Confirmaciones y Tablas | En tablas se usa `p-1.5 bg-red-50 text-red-600` | `variant="destructive"` / `variant="table-delete"` |
-| **Icon-Only** | `p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100` | Cabeceras de tabla, Filtros | Tamaños de ícono variables (14px, 16px, 20px) | Estandarizar a `h-4 w-4` (16px) |
+### Hallazgos Críticos (Prioridad Alta)
+1. **Ausencia de Componente Estandarizado de Firma Canvas (`AppSignatureCanvas`)**: Duplicación de lógica de firma interactiva en 4 módulos.
+2. **Uso de Tooltips Nativos del Navegador (`title="..."`)**: Inaccesibles en dispositivos táctiles/móviles y desalineados del design system.
+3. **Contraste Reducido en Labels de Formulario**: Uso de `slate-400` en etiquetas de campos en tamaño `10px`.
 
----
-
-## 6. Inventario de Formularios y Carga
-
-| Elemento | Variante Actual | Módulos | Problema | Recomendación |
-|---|---|---|---|---|
-| **Inputs de Texto** | `h-10 border border-slate-300 rounded-xl px-3 text-xs bg-white` | Formularios principales | Muy unificado con `AppInput`, salvo en protocolos SRT | Enforzar `AppInput` en el 100% de los módulos |
-| **Selects / Combos** | `h-10 border border-slate-300 rounded-xl px-3 text-xs bg-white` | Clientes, Legajo, Protocolos | Algunos comboboxes nativos no tienen flecha personalizada | Enforzar `AppSelect` |
-| **Textareas** | `border border-slate-300 rounded-xl p-3 text-xs min-h-[100px]` | Observaciones, Visitas | Debe integrar obligatoriamente `<AITextHelper />` | Enforzar `AppTextarea` con IA integrada |
-| **Labels** | `text-[10px] font-bold text-slate-400 uppercase tracking-wider` | Toda la app | `slate-400` es muy claro para lectura accesible | Cambiar a `text-xs font-bold text-slate-600 uppercase` |
+### Hallazgos Medios (Prioridad Media)
+1. **Falta de Componente Skeleton de Carga (`AppSkeleton`)**: Sustitución de loaders visuales por spinners genéricos que mueven el layout durante el fetch.
+2. **Casing Heterogéneo en Botones y Badges**: Convivencia de mayúsculas sostenidas y capitalización de oraciones.
+3. **Estandarización de Ilustraciones de la Mascota Cartoon**: Integrar el personaje institucional en pantallas de error y empty states.
 
 ---
-
-## 7. Inventario de Mayúsculas y Minúsculas (Casing)
-
-| Elemento UI | Variantes Inconsistentes Encontradas | Regla Estándar Propuesta |
-|---|---|---|
-| **Botones Acciones Principales** | `GUARDAR REGISTRO` vs `Guardar Registro` vs `Guardar` | **Sentence case** (`Guardar Registro`, `Cargar Protocolo`) |
-| **Labels de Formulario** | `RAZÓN SOCIAL *` vs `Dirección` vs `Fecha de Visita` | **UPPERCASE** para labels técnicos (`RAZÓN SOCIAL *`, `C.U.I.T.`, `ESTABLECIMIENTO *`) |
-| **Encabezados de Tabla** | `Cliente / Razón Social` vs `CLIENTE` vs `Fecha` | **UPPERCASE** conciso (`CLIENTE / RAZÓN SOCIAL`, `FECHA`, `ESTADO`, `ACCIONES`) |
-| **Títulos de Modales** | `Instructivo de Completado` vs `INSTRUCTIVO DE COMPLETADO` | **Title Case** (`Instructivo de Completado — Res. SRT Nº 886/15`) |
-| **Badges de Estado** | `Realizada` vs `REALIZADA` vs `hecho` | **UPPERCASE** (`REALIZADA`, `PENDIENTE`, `EN ANÁLISIS`) |
-
----
-
-## 8. Revisión Responsive y Accesibilidad (a11y)
-
-### 8.1 Comportamiento Responsive
-- **Pantallas Celular (<768px)**: Las páginas de la app se extienden al 100% del viewport sin márgenes laterales redundantes (`px-0`), las tarjetas de tablas de filtros se integran continuamente (`border-b border-slate-200 md:rounded-2xl`) y las tablas cuentan con scroll horizontal accesible (`overflow-x-auto`).
-- **Pantallas Tablet (>=768px y <1024px)**: Recuperan márgenes exteriores (`md:py-8 md:max-w-[95%] md:mx-auto`), bordes redondeados y sombras elegantes.
-
-### 8.2 Accesibilidad Visual (a11y)
-- **Contraste de Fuentes**: El gris `#94a3b8` (`slate-400`) sobre blanco en fuentes pequeñas de 10px no cumple con el ratio de contraste mínimo 4.5:1 de WCAG 2.1 AA. Se requiere elevar a `#475569` (`slate-600`).
-- **Áreas Táctiles en Celulares**: Los botones de acción en tablas deben garantizar un área de toque mínima de `36x36px` o `40x40px` en pantallas táctiles.
-
----
-
-## 9. Clasificación de Hallazgos
-
-### Hallazgos Críticos (Severidad Alta / Bloqueante)
-1. **Contraste Deficiente en Labels de Formulario**: Uso de `text-[10px] text-slate-400` en campos de entrada técnica, dificultando la lectura a usuarios en dispositivos móviles con brillo reducido.
-2. **Duplicación de Librerías y Clases de Botón**: Presencia de componentes `<button>` con estilos inline Tailwind compitiendo con la librería unificada `AppButton`.
-
-### Hallazgos Medios
-1. **Casing Heterogéneo en Botones y Badges**: Mezcla de mayúsculas y minúsculas sin criterio semántico estricto.
-2. **Diversidad de Tonos de Verde/Rojo**: Coexistencia de `#00b050`, `emerald-500` y `green-600` para estados positivos.

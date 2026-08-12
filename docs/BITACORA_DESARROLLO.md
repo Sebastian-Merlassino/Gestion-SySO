@@ -1,5 +1,157 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-12] Estandarización del Indicador de Carga Circular (Loader2) en la Sección Constancia de Visita
+
+### Resumen de Cambios
+- **Indicador de Carga Unificado en `src/app/[tenant-slug]/visitas/page.js`:**
+  - **Reestructuración de Evaluación `loading`**: Se elevó la condición `{loading ? (...) : (...)}` para envolver todo el cuerpo principal de la vista justo debajo del encabezado `AppPageHeader`, logrando paridad completa con el resto de los módulos de la aplicación (`Dashboard`, `Control Eléctrico`, `Avisos de Riesgo`, `Accidentes`, `Empresas`, etc.).
+  - **Eliminación del Estado de Carga por Esqueleto Interno**: Se removió el renderizado prematuro de la barra de búsqueda, botones y filtros con la tabla vacía durante el montaje, reemplazándolo por el indicador de carga circular estándar (`Loader2` en color `#468DFF` con animación `animate-spin` y la leyenda de sistema `"Cargando constancias de visita..."`).
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+### Resumen de Cambios
+- **Soporte Directo de Enlaces de Google Drive en `DocumentUploadZone.js`:**
+  - **Vinculación Directa sin 413 (Payload Too Large)**: Se modificó la importación de la pestaña "Enlace Drive" para que, cuando el usuario ingresa una URL de Google Drive (`drive.google.com` o `docs.google.com`), se vincule directamente la URL sin forzar la descarga del archivo binario de 54MB por el servidor Node (`/api/upload-from-url`), evitando desbordamientos de memoria (HTTP 413) e ineficiencias de almacenamiento.
+  - **Incrustación en Visor Interactivo**: La URL vinculada permite que `/capacitar/[token]` renderice de forma nativa el visor interactivo de diapositivas en pantalla completa o por filminas para presentaciones pesadas (PPT/PPTX) de cualquier tamaño.
+- **Botón Pictograma de Visualización (`Eye` 👁️) en Componente `DocumentUploadZone.js`:**
+  - Se incorporó la botonera de acciones (`Eye` 👁️ Ver, `Download` / `ExternalLink` 🔗 Abrir, `Trash2` 🗑️ Eliminar) directamente sobre los contenedores de archivo cargado tanto en la pestaña **Archivo Local** como en **Enlace Drive**.
+  - Al presionar el botón azul **"Ver"** (ícono de Ojo `Eye`), abre la previsualización directa o el visor emergente sin importar el tamaño del archivo.
+- **Estandarización Unificada de Pads de Firma Digital (`AppSignatureCanvas.js` y `SySO-Signature-Tabbed-Container`):**
+  - **Ubicación Unificada del Botón 'Limpiar'**: Se eliminaron todos los botones externos duplicados (enlaces de texto rojo en cabeceras y badges rosa superiores) en todos los módulos (`Visitas`, `Control Eléctrico`, `Checklist Personalizados`, `Protocolo de Iluminación`, `Protocolo de Ruido`, `Protocolo de Ergonomía`, `Capacitaciones Online`).
+  - **Estándar del Botón de Limpieza**: Se estableció una única ubicación estándar para el botón **"Limpiar"** (con ícono `RotateCcw` 🔄), posicionado de forma fija dentro del lienzo en la **esquina inferior derecha (`bottom-2 right-2`)** sobre una pastilla semitransparente con borde slate.
+  - **Preservación de Firma de Perfil vs. Firmar a mano**: Se mantuvo intacto el funcionamiento del contenedor tabulado (`SySO-Signature-Tabbed-Container`), garantizando que la conmutación entre la firma digital registrada en el perfil del usuario profesional y la firma manual libre opere sin fisuras ni desalineaciones visuales.
+
+### Archivos Modificados
+- `[MODIFY] src/components/ui/AppSignatureCanvas.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/components/ProtocoloForm.js`
+- `[MODIFY] src/app/capacitar/[token]/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-12] Incorporación del Campo 'Observaciones' con SySO-AI-Voice-Helper y Hardening de Seguridad de IA en Capacitación Virtual
+
+### Resumen de Cambios
+- **Migración de Base de Datos (`supabase/migrations/20260822000000_add_observaciones_to_capacitaciones_online_registros.sql`):**
+  - Incorporación de la columna `observaciones TEXT` en la tabla `public.capacitaciones_online_registros`.
+  - Actualización de la función RPC `public.registrar_asistencia_capacitacion` para recibir el parámetro `p_observaciones TEXT DEFAULT NULL` y almacenarlo de forma aislada server-side.
+- **Hardening de Seguridad y Consumo de Tokens en Endpoint de IA (`src/app/api/ai/refine-text/route.js`):**
+  - **Autenticación Dual**: Implementación de verificación por sesión autenticada O validación de `publicToken` contra capacitaciones activas en `public.capacitaciones_online`, permitiendo su uso seguro en la vista pública de operarios sin exponer el servicio anónimamente.
+  - **Protección contra Prompt Injection / Jailbreaks**: Inmunización reforzada en la `systemInstruction` de Gemini para ignorar intentos de secuestro de rol u órdenes maliciosas en las observaciones de los usuarios.
+  - **Anonimización de PII (MED-01)**: Enmascaramiento preventivo de DNI y CUIT/CUIL antes del envío de datos a la API de Gemini.
+  - **Límite Estricto de Tokens y Salida**: Configuración de `generationConfig.maxOutputTokens: 1000`, restricción de texto a máx. 2000 caracteres y sanitización de mensajes de error de servidor (MED-02).
+- **Integración de Componente `AITextHelper` (`src/components/ui/AITextHelper.js`):**
+  - Inclusión de la prop `publicToken` para trasmitir el token de la capacitación activa al backend de refinamiento con IA.
+- **Registro y Firma Digital de Asistencia (`src/app/capacitar/[token]/page.js`):**
+  - Incorporación del campo de texto expandible **Observaciones** entre "Puesto de Trabajo" y la firma digital.
+  - Integración completa con la suite `SySO-AI-Voice-Helper` (dictado por voz `Mic`, refinamiento técnico `Sparkles` y limpieza `Trash2`).
+  - Envío del estado `observaciones` a la RPC `registrar_asistencia_capacitacion` y fallback directo.
+- **Dashboard Admin y Generación de PDF (`src/app/[tenant-slug]/capacitaciones-online/`):**
+  - **Modal de Registros de Firmas (`page.js`)**: Visualización de las observaciones de cada asistente en las tarjetas del modal.
+  - **Generador PDF (`utils/pdfGenerator.js`)**: Recopilación de observaciones de asistentes y maquetado dinámico dentro del recuadro "Observaciones" oficial del documento.
+
+### Archivos Creados / Modificados
+- `[NEW] supabase/migrations/20260822000000_add_observaciones_to_capacitaciones_online_registros.sql`
+- `[MODIFY] src/app/api/ai/refine-text/route.js`
+- `[MODIFY] src/components/ui/AITextHelper.js`
+- `[MODIFY] src/app/capacitar/[token]/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/utils/pdfGenerator.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-12] Rediseño Interactivo de 'Documentación incorporada al Legajo de SySO' (Constancia de Visita)
+
+### Resumen de Cambios
+- **Rediseño UI del Selector de Documentación Incorporada en `src/app/[tenant-slug]/visitas/page.js`:**
+  - **Panel Checklist en Cuadrícula (`md:grid-cols-2`)**: Reemplazo de los botones chip sueltos por un panel checklist estructurado en 2 columnas con tarjetas interactiva tipo checkbox (`CheckSquare` vs `Square`) en azul corporativo (`#468DFF`).
+  - **Buscador en Tiempo Real (`docSearchTerm`)**: Filtro de búsqueda insensible a mayúsculas y tildes para localizar instantáneamente entre las 25+ opciones predeterminadas del catálogo.
+  - **Contador y Acción Global**: Indicador dinámico de elementos seleccionados (`X seleccionados`) y botón para "Desmarcar todos".
+  - **Carga Manual Integrada**: Campo para agregar nueva documentación personalizada con respuesta a la tecla `Enter`, inserción directa al listado y autoselección.
+  - **Resumen por Badges**: Franja de etiquetas removibles (`X`) para desmarcar rápidamente cualquier elemento sin tener que buscarlo en la lista.
+  - **Eliminación de Notificación Duplicada en Vista Previa PDF**: Se removió el llamado redundante a `triggerToast('Generando reporte PDF...', 'info')` en `handlePreviewPdf`, ya que el generador unificado `src/app/[tenant-slug]/visitas/utils/pdfGenerator.js` ya dispara dicha alerta de forma interna. Esto soluciona la aparición simultánea de dos mensajes de aviso en la parte inferior al presionar el botón de visualizar.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-12] Implementación de la Fase 2: Componentes UI Base y Refactorización Defensiva de PDF
+
+### Resumen de Cambios
+- **Creación de Componentes UI Base Unificados en `src/components/ui/`:**
+  - `AppSignatureCanvas.js`: Lienzo interactivo Canvas HTML5 para captura de firmas digitales con escalado 1:1 (`getCanvasPos`), soporte táctil/mouse, botón de limpieza (`RotateCcw`) e indicador confirmatorio.
+  - `AppSkeleton.js`: Cargador estructurado con animación `animate-pulse` para variantes `table`, `card`, `form` y `text`.
+  - `AppTooltip.js`: Globos emergentes explicativos accesibles (`bg-slate-900 text-white text-[11px] font-medium`) con soporte para hover en desktop y tap en móviles.
+- **Refactorización Defensiva del Generador PDF de Visitas Técnicas:**
+  - **Módulo `src/app/[tenant-slug]/visitas/utils/pdfGenerator.js`**: Extracción de 600+ líneas de código PDF inline desde `visitas/page.js` hacia este módulo aislado.
+  - **Preservación Total de Modos**: Soporta los 3 modos de retorno indispensables: descarga directa (`download`), vista previa (`bloburl`) y objeto Blob para envío por correo o WhatsApp (`blob`).
+- **Integración de Componentes en Vistas:**
+  - `src/app/[tenant-slug]/visitas/page.js`: Delegación de `handleGeneratePdf` al generador refactorizado e integración de `AppSkeleton variant="table"` durante la carga inicial de datos.
+  - `src/app/capacitar/[token]/page.js`: Sustitución del canvas de firma digital inline por el componente unificado `<AppSignatureCanvas />`.
+  - `src/components/ui/AppLabel.js`: Elevación del contraste de texto a `text-slate-600` para cumplimiento accesible WCAG 2.1 AA.
+
+### Archivos Creados / Modificados
+- `[NEW] src/components/ui/AppSignatureCanvas.js`
+- `[NEW] src/components/ui/AppSkeleton.js`
+- `[NEW] src/components/ui/AppTooltip.js`
+- `[NEW] src/app/[tenant-slug]/visitas/utils/pdfGenerator.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/capacitar/[token]/page.js`
+- `[MODIFY] src/components/ui/AppLabel.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-12] Auditoría Integral de Diseño UI, Consistencia Visual y Generación de Documentos PDF
+
+### Resumen de Cambios
+- **Ejecución de Auditoría Pasiva de Diseño UI, Consistencia Visual y Documentos PDF:**
+  - Se realizó la revisión exhaustiva y sin modificaciones de código fuente sobre todas las rutas, componentes, modales, formularios, tablas, librerías y generadores PDF de la plataforma SaaS **Gestión SySO**.
+  - Se evaluó la coherencia con la identidad visual corporativa (`#468DFF`, `#0511F2`, `#D9D9D9`, `#FFFFFF`, `#000000`), el cumplimiento de normas de accesibilidad WCAG 2.1 AA, la adaptabilidad responsiva (móvil, tablet, desktop) y la precisión normativa de reportes impresos (SRT 2/22, Res. 48/25, SRT 85/12, SRT 84/12, SRT 886/15).
+- **Entregables Normativos Creados en `docs/design/`:**
+  1. `docs/design/UI_DESIGN_AUDIT.md`: Informe principal de auditoría UI, mapa visual por módulo, inventarios detallados (tipografía, colores, botones, formularios, uploaders, firmas, tablas, modales, tooltips/popovers, skeletons, assets/ilustraciones), revisión responsive, accesibilidad y hallazgos priorizados.
+  2. `docs/design/UI_STYLE_STANDARD_PROPOSAL.md`: Propuesta de estándar unificado UI con tokens CSS, jerarquía de fuentes, reglas de mayúsculas/minúsculas, variantes de botones, especificación de componentes base (`AppButton`, `AppInput`, `AppSelect`, `AppTextarea`, `DocumentUploadZone`, `ImageUploadZone`) y propuestas de abstraer `<AppSignatureCanvas />`, `<AppSkeleton />` y `<AppTooltip />`.
+  3. `docs/design/PDF_DESIGN_AUDIT.md`: Informe específico de auditoría PDF con inventario completo de los 15 generadores del sistema, revisión de layout, tablas `autoTable`, imágenes/evidencias, firmas digitales, resolución asíncrona de Supabase Storage, cálculo de aspect ratio de logos, patrón de nombres de archivo y hallazgos priorizados.
+  4. `docs/design/PDF_STYLE_STANDARD.md`: Estándar normativo de diseño y generación PDF definiendo geometría A4 en milímetros (`mm`), márgenes (`18 mm` superior / `20 mm` inferior / `15 mm` laterales), paleta `PDF_THEME`, cabecera `pdfHeader.js`, pie `pdfFooter.js` con paginación en 2 pasadas (`Página X de Y`), tabla `pdfTableStyles.js`, firmas `pdfSignatures.js` con solapamiento `0.78` y nombres `pdfFileName.js`.
+
+### Archivos Creados / Modificados
+- `[NEW / OVERWRITE] docs/design/UI_DESIGN_AUDIT.md`
+- `[NEW / OVERWRITE] docs/design/UI_STYLE_STANDARD_PROPOSAL.md`
+- `[NEW / OVERWRITE] docs/design/PDF_DESIGN_AUDIT.md`
+- `[NEW / OVERWRITE] docs/design/PDF_STYLE_STANDARD.md`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-12] Homogeneización Visual, Encabezado Fijo y Corrección de Filtro en Gráfico de Siniestralidad (Dashboard)
+
+### Resumen de Cambios
+- **Corrección de Filtrado por Empresa en Gráfico de Duración Media (DMB) (`src/app/[tenant-slug]/dashboard/page.js`):**
+  - **Diagnóstico:** Se identificó que la función `getAccidentesFiltrados` no validaba la ausencia de `empId` cuando el usuario era profesional/administrador (`profile.role !== 'cliente'`). Al no seleccionar ninguna empresa en el desplegable ("Selecciona una empresa"), `getAccidentesFiltrados` retornaba la totalidad de los accidentes de todas las empresas. Mientras que los índices de Incidencia, Mortalidad y Pérdida retornaban 0 por requerir `personasCubiertas > 0`, el cálculo de Duración Media (`dmb`) evaluaba `casosConBaja > 0` sin filtro de empresa, graficando datos globales del sistema de forma errónea.
+  - **Solución:** Se incorporó la condición defensiva `if (profile && profile.role !== 'cliente' && !empId) return [];` en `getAccidentesFiltrados`. Ahora, sin una empresa seleccionada, todos los gráficos de índices de siniestralidad (incluyendo DMB) se mantienen en 0 de forma consistente con las tarjetas contadoras superiores.
+- **Estilo Visual Unificado de Botones Vencimientos/Calendario (`src/app/[tenant-slug]/dashboard/page.js`):**
+  - Se modificó la estructura y clases CSS de los botones de pestañas superiores ("Vencimientos" y "Calendario") para adoptar de forma exacta el mismo diseño de cápsula segmentada utilizada en el contenedor contiguo de "Tareas" (`flex items-center gap-1 bg-slate-100 p-1 rounded-xl` con pestaña activa en fondo blanco `bg-white text-[#468DFF] shadow-sm` y pestañas inactivas en `text-slate-500 hover:text-slate-700`).
+- **Encabezado Fijo / Sticky en Tabla de Vencimientos (`src/app/[tenant-slug]/dashboard/page.js`):**
+  - Se actualizó el elemento `<thead className="sticky top-0 z-10 bg-slate-50">` y sus celdas `<th>` con posicionamiento pegajoso (`sticky top-0 z-10 bg-slate-50`), asegurando que al realizar desplazamiento (scroll) vertical en la lista de vencimientos, los títulos de las columnas permanezcan siempre visibles.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
 ## [2026-08-11] Integración de Carga de Logo del Cliente en Datos Generales e Identidad Visual (Empresas Clientes)
 
 ### Resumen de Cambios

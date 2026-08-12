@@ -320,7 +320,7 @@ function ExpandTextModal({ value, onChange, context, onClose, hasMediaSupport, i
 }
 
 // ── Componente Principal ──────────────────────────────────────────────────────
-export default function AITextHelper({ value, onChange, context = '', disabled = false, allowExpand = false }) {
+export default function AITextHelper({ value, onChange, context = '', publicToken = '', disabled = false, allowExpand = false }) {
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isRefining, setIsRefining] = useState(false);
@@ -501,7 +501,7 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
       const response = await fetch('/api/ai/refine-text', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: value, context }),
+        body: JSON.stringify({ text: value, context, publicToken }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Error al refinar el texto.');
@@ -635,3 +635,4 @@ export default function AITextHelper({ value, onChange, context = '', disabled =
     </>
   );
 }
+

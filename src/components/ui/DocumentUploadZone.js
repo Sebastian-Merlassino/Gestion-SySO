@@ -137,15 +137,24 @@ export default function DocumentUploadZone({
 
   const handleDriveImport = async () => {
     if (!driveLink) {
-      onToast?.('Ingresá un enlace de Google Drive.', 'error');
+      activeToast?.('Ingresá un enlace de Google Drive.', 'error');
       return;
     }
     setUploading(true);
     try {
-      if (onDriveImport) {
-        await onDriveImport(driveLink);
+      const isDriveUrl = driveLink.includes('drive.google.com') || driveLink.includes('docs.google.com');
+
+      if (isDriveUrl || onDriveImport) {
+        // Enlaces de Google Drive: vincular directamente la URL sin intentar descarga de 50MB por servidor
+        if (onDriveImport) {
+          await onDriveImport(driveLink);
+        } else {
+          onDriveImportSuccess?.(driveLink, 'Enlace de Google Drive');
+          activeToast?.('Enlace de Google Drive vinculado correctamente. Recordá que debe tener acceso público o por enlace.', 'success');
+        }
         setDriveLink('');
       } else {
+        // Otros enlaces HTTP directos
         const res = await fetch('/api/upload-from-url', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -155,25 +164,17 @@ export default function DocumentUploadZone({
 
         if (res.ok && data.success && data.filePath) {
           onDriveImportSuccess?.(data.filePath, 'Archivo de Drive importado');
-          onToast?.('Archivo importado desde Google Drive.', 'success');
+          activeToast?.('Archivo importado desde Google Drive.', 'success');
         } else {
-          // Fallback inteligente: vincular la URL pero alertar sobre el acceso restringido
-          console.log('[DocumentUploadZone] Archivo restringido o sin descarga directa. Vinculando URL de Drive:', data.error);
           onDriveImportSuccess?.(driveLink, 'Enlace de Google Drive');
-          onToast?.(
-            '⚠️ Permisos restringidos en Google Drive: Cambia el permiso en Google Drive a "Cualquier persona con el enlace" para que los empleados puedan visualizar el documento sin pedir autorización.',
-            'warning'
-          );
+          activeToast?.('Enlace vinculado correctamente.', 'success');
         }
         setDriveLink('');
       }
     } catch (err) {
-      console.warn('[DocumentUploadZone] Vinculando URL de Drive por fallback tras excepción:', err);
+      console.warn('[DocumentUploadZone] Vinculando URL de Drive por fallback:', err);
       onDriveImportSuccess?.(driveLink, 'Enlace de Google Drive');
-      onToast?.(
-        '⚠️ Permisos restringidos en Google Drive: Cambia el permiso en Google Drive a "Cualquier persona con el enlace" para que los empleados puedan visualizar el documento sin pedir autorización.',
-        'warning'
-      );
+      activeToast?.('Enlace de Google Drive vinculado correctamente.', 'success');
       setDriveLink('');
     } finally {
       setUploading(false);
@@ -191,7 +192,7 @@ export default function DocumentUploadZone({
               type="button"
               disabled={disabled || uploading}
               onClick={() => setUploadType(tab.id)}
-              className={`flex-1 py-2 transition-colors ${
+              className={`flex-1 py-2 transition-colors cursor-pointer ${
                 uploadType === tab.id
                   ? 'bg-[#468DFF] text-white'
                   : 'text-slate-500 hover:text-slate-700 disabled:opacity-50'
@@ -210,10 +211,10 @@ export default function DocumentUploadZone({
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            onClick={() => (!disabled && !uploading) && inputRef.current?.click()}
+            onClick={() => (!disabled && !uploading && !fileName && !fileUrl) && inputRef.current?.click()}
             className={`relative border-2 border-dashed rounded-xl p-4 text-center transition-all flex-1 flex flex-col items-center justify-center ${minHeightClass}
               ${isDragging ? 'border-[#468DFF] bg-blue-50' : 'border-slate-200 bg-white'}
-              ${disabled || uploading ? 'opacity-75 cursor-default' : 'hover:border-[#468DFF] hover:bg-blue-50/30 cursor-pointer'}`}
+              ${disabled || uploading ? 'opacity-75 cursor-default' : (fileName || fileUrl) ? 'border-slate-200 bg-white' : 'hover:border-[#468DFF] hover:bg-blue-50/30 cursor-pointer'}`}
           >
             <input
               ref={inputRef}
@@ -229,10 +230,45 @@ export default function DocumentUploadZone({
                 <p className="text-xs font-bold text-slate-700">Subiendo documento...</p>
                 <p className="text-[10px] text-slate-400 mt-0.5">Por favor aguarde unos instantes</p>
               </div>
-            ) : fileName ? (
-              <div className="flex items-center gap-2 justify-center text-sm text-slate-700 flex-wrap my-auto">
-                <FileText className="h-4 w-4 text-[#468DFF]" />
-                <span className="font-medium truncate max-w-[200px]">{fileName}</span>
+            ) : (fileName || fileUrl) ? (
+              <div className="flex items-center justify-between gap-2 text-sm text-slate-700 w-full px-2 my-auto flex-wrap sm:flex-nowrap">
+                <div className="flex items-center gap-2 font-medium truncate min-w-0">
+                  <FileText className="h-4 w-4 text-[#468DFF] shrink-0" />
+                  <span className="truncate max-w-[180px] sm:max-w-[280px] text-xs font-semibold text-slate-800">{fileName || 'Archivo adjunto'}</span>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                  {fileUrl && (
+                    <button
+                      type="button"
+                      onClick={() => onViewPdf ? onViewPdf(fileUrl) : (typeof window !== 'undefined' && window.open(fileUrl, '_blank'))}
+                      title="Visualizar presentación / archivo"
+                      className="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-blue-50/80 text-[#468DFF] hover:bg-[#468DFF] hover:text-white transition-colors cursor-pointer flex items-center gap-1 font-bold text-xs shadow-xs"
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                      <span>Ver</span>
+                    </button>
+                  )}
+                  {fileUrl && (
+                    <button
+                      type="button"
+                      onClick={() => (typeof window !== 'undefined' && window.open(fileUrl, '_blank'))}
+                      title="Descargar o abrir enlace"
+                      className="p-1.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-600 hover:text-[#468DFF] hover:bg-blue-50 transition-colors cursor-pointer"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                  {!disabled && onDelete && (
+                    <button
+                      type="button"
+                      onClick={onDelete}
+                      title="Eliminar archivo"
+                      className="p-1.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-600 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                    </button>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="my-auto flex flex-col items-center justify-center">
@@ -247,7 +283,7 @@ export default function DocumentUploadZone({
         )}
 
         {uploadType === 'drive' && (
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             <div className="flex gap-2">
               <input
                 type="url"
@@ -255,26 +291,61 @@ export default function DocumentUploadZone({
                 onChange={(e) => setDriveLink(e.target.value)}
                 disabled={disabled || uploading}
                 placeholder="https://drive.google.com/..."
-                className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#468DFF] disabled:opacity-60"
+                className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#468DFF] disabled:opacity-60 bg-white"
               />
               <button
                 type="button"
                 onClick={handleDriveImport}
                 disabled={disabled || uploading || !driveLink}
-                className="px-3 py-2 bg-[#468DFF] text-white rounded-lg text-xs font-semibold hover:bg-[#0511F2] transition-colors disabled:opacity-50 flex items-center gap-1"
+                className="px-3 py-2 bg-[#468DFF] text-white rounded-lg text-xs font-semibold hover:bg-[#0511F2] transition-colors disabled:opacity-50 flex items-center gap-1 cursor-pointer shrink-0"
               >
                 {uploading ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <ExternalLink className="h-3 w-3" />
+                  <ExternalLink className="h-3.5 w-3.5" />
                 )}
                 Importar
               </button>
             </div>
-            {fileName && (
-              <div className="flex items-center gap-2 text-xs text-slate-600">
-                <Check className="h-3.5 w-3.5 text-green-500" />
-                <span>{fileName}</span>
+            {(fileName || fileUrl) && (
+              <div className="flex items-center justify-between gap-2 p-2.5 bg-emerald-50/90 border border-emerald-200 rounded-xl text-xs text-slate-700 shadow-xs">
+                <div className="flex items-center gap-2 truncate font-medium min-w-0">
+                  <Check className="h-4 w-4 text-emerald-600 shrink-0" />
+                  <span className="truncate max-w-[180px] sm:max-w-[280px] font-bold text-emerald-950">{fileName || 'Enlace de Google Drive importado'}</span>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {fileUrl && (
+                    <button
+                      type="button"
+                      onClick={() => onViewPdf ? onViewPdf(fileUrl) : (typeof window !== 'undefined' && window.open(fileUrl, '_blank'))}
+                      title="Visualizar presentación / archivo"
+                      className="px-2.5 py-1.5 rounded-lg border border-emerald-300 bg-white text-[#468DFF] hover:bg-blue-50 transition-colors cursor-pointer flex items-center gap-1 font-bold text-xs shadow-xs"
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                      <span>Ver</span>
+                    </button>
+                  )}
+                  {fileUrl && (
+                    <button
+                      type="button"
+                      onClick={() => (typeof window !== 'undefined' && window.open(fileUrl, '_blank'))}
+                      title="Abrir enlace en Google Drive"
+                      className="p-1.5 rounded-lg border border-emerald-300 bg-white text-slate-600 hover:text-[#468DFF] hover:bg-blue-50 transition-colors cursor-pointer"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                  {!disabled && onDelete && (
+                    <button
+                      type="button"
+                      onClick={onDelete}
+                      title="Eliminar enlace"
+                      className="p-1.5 rounded-lg border border-emerald-300 bg-white text-slate-600 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -305,12 +376,10 @@ export default function DocumentUploadZone({
                   type="button"
                   onClick={() => {
                     if (!fileUrl.startsWith('http://') && !fileUrl.startsWith('https://') && !fileUrl.startsWith('blob:')) {
-                      // Es una ruta relativa de storage → firmar en caliente mediante onViewPdf
                       if (onViewPdf) {
                         onViewPdf(fileUrl);
                       }
                     } else {
-                      // Ya es una URL completa/firmada → abrir directamente para descarga
                       if (typeof window !== 'undefined') {
                         window.open(fileUrl, '_blank');
                       }
@@ -342,3 +411,4 @@ export default function DocumentUploadZone({
 
   return mainDropzone;
 }
+

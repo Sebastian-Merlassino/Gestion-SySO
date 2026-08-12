@@ -2151,6 +2151,11 @@ export default function CapacitacionesOnlinePage({ params }) {
                     <div className="space-y-1 text-xs">
                       <div className="font-bold text-slate-900">{reg.nombre_apellido}</div>
                       <div className="text-slate-500">DNI: <strong className="text-slate-800">{reg.dni}</strong> | Puesto: <strong className="text-slate-800">{reg.puesto}</strong></div>
+                      {reg.observaciones && (
+                        <div className="text-[11px] text-slate-600 bg-white p-2 rounded-lg border border-slate-200 mt-1 italic">
+                          <strong className="not-italic text-slate-800 font-semibold">Observación:</strong> {reg.observaciones}
+                        </div>
+                      )}
                       <div className="text-[10px] text-slate-400">Firmado el: {formatDate(reg.registrado_at)}</div>
                     </div>
 

@@ -39,7 +39,8 @@ import {
   X,
   ShieldCheck,
   MapPin,
-  PenTool
+  PenTool,
+  RotateCcw
 } from 'lucide-react';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import { getLimiteDbaForTe, getPuntoCalculos } from '../utils/tablasAnexoV';
@@ -3032,9 +3033,11 @@ export default function ProtocoloForm({
                         <button
                           type="button"
                           onClick={handleClearCanvas}
-                          className="absolute top-2.5 right-2.5 text-[10px] font-bold px-2 py-1 bg-red-50 text-red-500 hover:bg-red-100 rounded-md transition-colors cursor-pointer border border-red-200/50"
+                          className="absolute bottom-2 right-2 z-20 px-2.5 py-1 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white/90 hover:bg-white border border-slate-200 rounded-lg shadow-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                          title="Limpiar trazo de firma"
                         >
-                          Limpiar Firma
+                          <RotateCcw className="h-3 w-3 text-slate-500" />
+                          <span>Limpiar</span>
                         </button>
                       )}
                     </div>

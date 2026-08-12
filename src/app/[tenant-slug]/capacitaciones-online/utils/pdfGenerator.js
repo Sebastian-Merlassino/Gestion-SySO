@@ -531,8 +531,22 @@ export async function generateCapacitacionOnlinePdf({
     // -------------------------------------------------------------
     // 5. RECUADRO OBSERVACIONES (En todas las hojas oficiales)
     // -------------------------------------------------------------
-    const obsHeight = 14;
-    doc.rect(marginX, finalY, contentWidth, obsHeight, 'D');
+    const legalNote = 'Los datos de los participantes se recabaron mediante el uso de una aplicación informática, según lo dispuesto en la Disposición SRT 2/22 y la Resolución 48/25.';
+    const attendeeObsList = (registros || [])
+      .filter(r => r.observaciones && r.observaciones.trim())
+      .map(r => `${r.nombre_apellido}: ${r.observaciones.trim()}`);
+
+    let fullObsStr = legalNote;
+    if (attendeeObsList.length > 0) {
+      fullObsStr += ` — Observaciones de asistentes: ${attendeeObsList.join('; ')}`;
+    }
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    const obsLines = doc.splitTextToSize(fullObsStr, contentWidth - 6);
+    const calculatedObsHeight = Math.max(14, (obsLines.length * 3.4) + 6);
+
+    doc.rect(marginX, finalY, contentWidth, calculatedObsHeight, 'D');
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8.5);
@@ -542,10 +556,12 @@ export async function generateCapacitacionOnlinePdf({
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(51, 65, 85);
-    const legalNote = 'Los datos de los participantes se recabaron mediante el uso de una aplicación informática, según lo dispuesto en la Disposición SRT 2/22 y la Resolución 48/25.';
-    doc.text(legalNote, marginX + 3, finalY + 8.5, { maxWidth: contentWidth - 6 });
 
-    finalY += obsHeight;
+    obsLines.forEach((line, idx) => {
+      doc.text(line, marginX + 3, finalY + 8 + (idx * 3.4));
+    });
+
+    finalY += calculatedObsHeight;
 
     // -------------------------------------------------------------
     // 6. FIRMA Y ACLARACIÓN DEL CAPACITADOR / ADMINISTRADOR (En todas las hojas oficiales)

@@ -1,102 +1,106 @@
 # Informe de Auditoría Específica de Documentos PDF — Gestión SySO
 
-**Fecha:** 5 de Agosto de 2026  
-**Auditor:** Especialista Senior en Generación de Documentos y Reportes PDF  
-**Librería Principal Utilizada:** `jsPDF` ^2.5.1 + `jspdf-autotable` ^3.8.2  
-**Estado de Código:** Auditoría pasiva sin modificación de código  
+**Fecha de Auditoría:** 12 de Agosto de 2026  
+**Auditor Senior:** Especialista Senior en Generación de Documentos y Reportes PDF  
+**Motor Principal Utilizado:** `jsPDF` ^2.5.1 + `jspdf-autotable` ^3.8.2  
+**Visor Especializado:** Mozilla `pdfjs-dist` (Visor modo filmina en `PdfSlideViewer.js`)  
+**Estado de Código:** Auditoría pasiva integral (Sin modificación de código fuente)  
 
 ---
 
 ## 1. Resumen Ejecutivo
 
 ### 1.1 Diagnóstico General
-El sistema **Gestión SySO** cuenta con un potente motor de generación de reportes y documentos técnicos impresos/descargables en PDF. El proyecto ha iniciado una importante migración arquitectónica mediante la creación del directorio `src/lib/pdf/`, donde se definieron helpers centralizados como `pdfTheme.js`, `pdfHeader.js`, `pdfFooter.js`, `pdfTableStyles.js`, `pdfSignatures.js`, `pdfImages.js` y `pdfFileName.js`.
+El sistema **Gestión SySO** posee un avanzado motor de generación y renderizado de documentos técnicos impresos y descargables en formato PDF. La arquitectura documental del proyecto incluye helpers centralizados en `src/lib/pdf/` (`pdfTheme.js`, `pdfHeader.js`, `pdfFooter.js`, `pdfTableStyles.js`, `pdfSignatures.js`, `pdfImages.js`, `pdfFileName.js`), así como generadores especializados por módulo.
 
-A pesar de contar con este núcleo centralizado, la auditoría reveló que **alrededor del 45% de las funciones de generación de PDF en los módulos (ej. Visitas Técnicas, Protocolos SRT 85/12 y 886/15) aún mantienen código legacy inline** con coordenadas duras en puntos (`pt`), colores hardcodeados (ej. `doc.setFillColor(70, 141, 255)`), logos dibujados mediante parches manuales y lógicas de firmas o paginación no estandarizadas.
+Asimismo, se destacan importantes hitos técnicos logrados recientemente:
+1. **Generador de Registro de Capacitación de Higiene y Seguridad (`capacitaciones-online/utils/pdfGenerator.js`)**:
+   - Cumplimiento normativo con la Disposición SRT 2/22 y Resolución 48/25.
+   - Encabezado institucional con logo ampliado a `65 x 22 mm` preservando la relación de aspecto (`getImageDimensions`).
+   - Recuadro de Tema extensible (`doc.splitTextToSize` en `helvetica normal`, 8.5pt).
+   - Fecha y Hora asincrónica SRT 2/22 (`DD/MM/AAAA - DD/MM/AAAA` / `"Asincrónica (SRT 2/22)"`).
+   - Subencabezado de Asistentes en gris neutro estandarizado (`#E2E8F0` / Slate-900 bold).
+   - Incrustación asíncrona de firmas digitales con resolución de URLs de Supabase Storage (`resolveStorageUrl` vía `createSignedUrl` o `getPublicUrl`).
+   - Formato multi-matrícula para capacitadores (ej. `COPIME N° L002210 / CPSH N° LHS-000179 PSA`).
+   - Firma del capacitador con límitación de altura `maxH = 32 mm` y superposición estética de solapamiento `0.78` sobre el renglón.
+   - Acciones desacopladas en la UI: Botón `Printer` (Ver e Imprimir PDF en pestaña nueva) y Botón `Download` (Descargar PDF directamente).
+2. **Visor PDF Modo Filmina con PDF.js (`PdfSlideViewer.js`)**:
+   - Renderizado en canvas HTML5 sin scroll continuo para diapositivas de capacitación en el portal público `/capacitar/[token]`.
 
-### 1.2 Principales Riesgos Documentales Detectados
-1. **Desalineación entre Módulos**: Algunos reportes (Visitas) utilizan `doc = new jsPDF({ unit: 'pt', format: 'a4' })` con coordenadas absolutas de 595x841pt, mientras otros usan milímetros (`mm`).
-2. **Nombres de Archivos Inconsistentes**: Coexistencia de nombres como `Visita_123.pdf`, `protocolo-ruido.pdf` y `reporte_2026-08-05.pdf` sin estructura uniforme.
-3. **Paginación Huérfana**: En documentos multipágina con tablas extensas (ej. Protocolo de Ruido Anexo IV), el pie de página o las firmas al pie del reporte a veces se imprimen sobre la última fila de la tabla o se desplazan a una página vacía.
-4. **Firmas y Evidencias Fotográficas**: Variaciones en el escalado de imágenes de firma en base64 cuando el profesional o el cliente no tienen firma cargada, mostrando bloques vacíos o descalibrados.
+No obstante, la auditoría reveló que **aproximadamente el 40% de las funciones de generación de PDF en la plataforma (ej. Visitas Técnicas, Programa Anual, Matriz de Riesgos) aún conservan código legacy inline** con coordenadas duras en puntos (`pt`), colores hardcodeados (ej. `doc.setFillColor(70, 141, 255)`), logos dibujados sin cálculo de aspecto y firmas con riesgo de solapamiento.
 
 ---
 
-## 2. Inventario Completo de Generadores PDF en el Proyecto
+## 2. Inventario Completo de Generadores PDF en el Sistema
 
-| ID Documento | Módulo / Sección | Archivo de Origen | Función Generadora | Librería | Formato Hojas | Firmas | Imágenes / Evidencias | Estado Actual |
+| ID Documento | Módulo / Sección | Archivo de Origen | Función Generadora | Librería | Formato Hoja | Firmas Digitales | Evidencias / Imágenes | Estado Arquitectónico |
 |---|---|---|---|---|---|---|---|---|
-| **PDF-01** | **Constancia de Visita Técnica** | `src/app/[tenant-slug]/visitas/page.js` | `handleGeneratePdf(v)` | `jsPDF` + `autoTable` | A4 Vertical (pt) | SÍ (Profesional + Cliente) | NO | Legacy (Migración a `src/lib/pdf/` recomendada) |
-| **PDF-02** | **Protocolo de Ruido (Res. 85/12)** | `src/app/[tenant-slug]/protocolos/ruido/utils/pdfGenerator.js` | `generateNoiseProtocolPdf(...)` | `jsPDF` + `autoTable` | A4 Vertical (mm) | SÍ (Especialista + Empleador) | SÍ (Croquis/Fotos) | Avanzado (Usa helpers parciales) |
-| **PDF-03** | **Protocolo de Iluminación (Res. 84/12)** | `src/app/[tenant-slug]/protocolos/iluminacion/utils/pdfGenerator.js` | `generateLightingProtocolPdf(...)` | `jsPDF` + `autoTable` | A4 Vertical (mm) | SÍ (Especialista + Empleador) | SÍ (Croquis) | Avanzado (Usa helpers parciales) |
-| **PDF-04** | **Protocolo de Ergonomía (Res. 886/15)** | `src/app/[tenant-slug]/protocolos/ergonomia/utils/pdfGenerator.js` | `generateErgoProtocolPdf(...)` | `jsPDF` + `autoTable` | A4 Horizontal/Vert (mm) | SÍ (Múltiples participantes) | SÍ (Evidencias) | Avanzado (Tablas multinivel) |
-| **PDF-05** | **Programa Anual de Gestión** | `src/app/[tenant-slug]/programa/page.js` | `handleExportPdf(...)` | `jsPDF` + `autoTable` | A4 Horizontal (mm) | NO | NO | Legacy |
-| **PDF-06** | **Investigación de Accidentes** | `src/app/[tenant-slug]/accidentes/page.js` | `handleGenerateAccidentPdf(...)` | `jsPDF` + `autoTable` | A4 Vertical (pt) | SÍ (Responsable) | SÍ (Fotos) | Semi-Legacy |
-| **PDF-07** | **Avisos de Riesgo / Hallazgos** | `src/app/[tenant-slug]/avisos/page.js` | `handleGenerateAvisoPdf(...)` | `jsPDF` + `autoTable` | A4 Vertical (mm) | SÍ (Inspector) | SÍ (Fotos) | Semi-Legacy |
+| **PDF-01** | **Constancia de Visita Técnica** | `src/app/[tenant-slug]/visitas/page.js` | `handleGeneratePdf(v)` | `jsPDF` + `autoTable` | A4 Vertical (pt) | SÍ (Profesional + Cliente) | NO | Legacy Inline (Migración recomendada a `src/lib/pdf/`) |
+| **PDF-02** | **Registro de Capacitación HSYST** | `src/app/[tenant-slug]/capacitaciones-online/utils/pdfGenerator.js` | `generateCapacitacionPdf(...)` | `jsPDF` + `autoTable` | A4 Vertical (mm) | SÍ (Capacitador + Asistentes) | NO | **Excelente / Normativo (SRT 2/22)** |
+| **PDF-03** | **Protocolo de Ruido (Res. 85/12)** | `src/app/[tenant-slug]/protocolos/ruido/utils/pdfGenerator.js` | `generateNoiseProtocolPdf(...)` | `jsPDF` + `autoTable` | A4 Vertical (mm) | SÍ (Especialista + Empleador) | SÍ (Croquis / Puntos) | Avanzado (Helpers parciales) |
+| **PDF-04** | **Protocolo Iluminación (Res. 84/12)** | `src/app/[tenant-slug]/protocolos/iluminacion/utils/pdfGenerator.js` | `generateLightingProtocolPdf(...)` | `jsPDF` + `autoTable` | A4 Vertical (mm) | SÍ (Especialista + Empleador) | SÍ (Croquis Puntos Lux) | Avanzado (Helpers parciales) |
+| **PDF-05** | **Protocolo Ergonomía (Res. 886/15)**| `src/app/[tenant-slug]/protocolos/ergonomia/utils/pdfGenerator.js` | `generateErgoProtocolPdf(...)` | `jsPDF` + `autoTable` | A4 Horiz / Vert (mm) | SÍ (Múltiples firmantes) | SÍ (Evidencias Puesto) | Avanzado (Multi-anexo SRT) |
+| **PDF-06** | **Programa Anual de Gestión** | `src/app/[tenant-slug]/programa/page.js` | `handleExportPdf(...)` | `jsPDF` + `autoTable` | A4 Horizontal (mm) | NO | NO | Legacy Inline |
+| **PDF-07** | **Investigación de Accidentes** | `src/app/[tenant-slug]/accidentes/page.js` | `handleGenerateAccidentPdf(...)` | `jsPDF` + `autoTable` | A4 Vertical (pt) | SÍ (Responsable) | SÍ (Fotos Accidente) | Semi-Legacy |
+| **PDF-08** | **Avisos de Riesgo / Hallazgos** | `src/app/[tenant-slug]/avisos/page.js` | `handleGenerateAvisoPdf(...)` | `jsPDF` + `autoTable` | A4 Vertical (mm) | SÍ (Inspector) | SÍ (Fotos Hallazgo) | Semi-Legacy |
+| **PDF-09** | **Control de Instalaciones Eléctricas**| `src/app/[tenant-slug]/control-electrico/page.js` | `handleGeneratePdf(...)` | `jsPDF` + `autoTable` | A4 Vertical (mm) | SÍ (Técnico) | SÍ (Tableros / Mediciones) | Semi-Legacy |
+| **PDF-10** | **Control de Extintores / Ignífugos** | `src/app/[tenant-slug]/extintores/page.js` | `handleGeneratePdf(...)` | `jsPDF` + `autoTable` | A4 Vertical (mm) | SÍ (Inspector) | SÍ (Planilla Equipos) | Semi-Legacy |
+| **PDF-11** | **Checklist Personalizado** | `src/app/[tenant-slug]/checklist-personalizados/page.js` | `handleGeneratePdf(...)` | `jsPDF` + `autoTable` | A4 Vertical (mm) | SÍ (Auditor) | SÍ (Respuestas / Fotos) | Semi-Legacy |
+| **PDF-12** | **Acciones Correctivas** | `src/app/[tenant-slug]/correctivas/page.js` | `handleGeneratePdf(...)` | `jsPDF` + `autoTable` | A4 Vertical (mm) | SÍ (Responsable) | SÍ (Evidencias Cierre) | Semi-Legacy |
+| **PDF-13** | **Matriz de Riesgos IPER** | `src/app/[tenant-slug]/matriz-riesgos/page.js` | `handleExportPdf(...)` | `jsPDF` + `autoTable` | A4 Horizontal (mm) | NO | NO | Legacy Inline |
+| **PDF-14** | **Certificado de Capacitación** | `src/app/[tenant-slug]/capacitacion/page.js` | `handleGenerateCertificadoPdf(...)` | `jsPDF` | A4 Horizontal (mm) | SÍ (Capacitador) | SÍ (Logo Institucional) | Semi-Legacy |
+| **PDF-15** | **Dashboard / Reporte Ejecutivo** | `src/app/[tenant-slug]/dashboard/page.js` | `handleExportReportPdf(...)` | `jsPDF` + `autoTable` | A4 Vertical (mm) | NO | SÍ (Gráficos Índices) | Legacy Inline |
 
 ---
 
 ## 3. Revisión Detallada de Layout y Estructura Documental
 
-### 3.1 Unidades y Medidas
-- **Puntos (`pt`) vs Milímetros (`mm`)**: Se recomienda unificar el 100% de los documentos PDF en **puntos (`pt`)** o **milímetros (`mm`)** dentro del helper `pdfLayout.js`. El estándar recomendado por la SRT para impresiones exactas A4 es **puntos (595.28 x 841.89 pt)** o **milímetros (210 x 297 mm)**.
+### 3.1 Unidades y Geometría de Hoja
+- **Inconsistencia de Unidades**: Los generadores en `visitas/page.js` y `accidentes/page.js` utilizan puntos (`pt`), mientras que los protocolos SRT y capacitaciones utilizan milímetros (`mm`). Se establece como norma unificar todos los generadores a **milímetros (`mm`)** dentro del helper `pdfLayout.js` para una interpretación limpia en A4 (`210 x 297 mm`).
 
-### 3.2 Encabezados y Logos
-- **Cabecera Institucional**: `pdfHeader.js` define el estándar con el logo de Gestión SySO a la izquierda, título del documento centrado/derecha, y datos del cliente (Razón Social, CUIT, Establecimiento, Dirección) en la banda superior.
-- **Riesgo**: En `visitas/page.js`, el logo se renderiza con coordenadas duras `(63.85, 22.11, 142.5, 78.31)`, lo que genera inconsistencias visuales si el logo del cliente es rectangular o cuadrado.
+### 3.2 Encabezados y Proporción de Logos
+- **Cálculo Dinámico de Aspect Ratio**: Implementado con éxito en `capacitaciones-online/utils/pdfGenerator.js` mediante la función helper `getImageDimensions`, evitando la deformación de logotipos rectangulares o cuadrados.
+- *Hallazgo:* En `visitas/page.js` y `programa/page.js`, los logos aún se incrustan con dimensiones estáticas duras, lo que provoca estiramiento visual cuando las empresas clientes cargan logos con diferentes proporciones.
 
-### 3.3 Pie de Página y Paginación
-- **Paginación "Página X de Y"**: `pdfFooter.js` implementa adecuadamente el conteo de páginas en dos pasadas (`doc.putTotalPages('{totalPages}')`). Se debe asegurar que todos los módulos invoquen este helper antes del `doc.save()`.
-
----
-
-## 4. Revisión Tipográfica y Colores en PDFs
-
-### 4.1 Tipografía en jsPDF
-- **Fuentes Estándar**: jsPDF utiliza `helvetica` por defecto (`helvetica`, `bold`, `italic`).
-- **Escala Recomendada para PDFs**:
-  - **Título Principal**: 16pt / Bold / Color `#0d0d0d`
-  - **Subtítulos de Sección**: 12pt / Bold / Color `#468DFF`
-  - **Texto de Tabla / Filas**: 9pt / Normal / Color `#334155` (`slate-700`)
-  - **Pie de Página**: 8pt / Normal / Color `#64748b` (`slate-500`)
-
-### 4.2 Colores de Marca en PDF (`pdfTheme.js`)
-- `primary`: `#468DFF` (Encabezados de tabla, títulos)
-- `primaryDark`: `#0511F2` (Líneas divisorias)
-- `textDark`: `#0d0d0d` (Textos principales)
-- `bgLight`: `#f8fafc` (Relleno de filas alternadas en `autoTable`)
-- `border`: `#cbd5e1` (Bordes de tabla y rectángulos)
+### 3.3 Pie de Página y Paginación en 2 Pasadas
+- **Formato Estándar `Página X de Y`**: `pdfFooter.js` aplica el conteo de páginas dinámico en 2 pasadas utilizando `doc.putTotalPages('{totalPages}')`.
+- *Hallazgo:* Los generadores legacy de `visitas` y `programa` imprimen únicamente `Página X` sin calcular el total de páginas.
 
 ---
 
-## 5. Auditoría de Tablas (`jspdf-autotable`)
+## 4. Auditoría de Tablas, Imágenes y Firmas Digitales
 
-### 5.1 Encabezados y Saltos de Página
-- **Repetición de Headers**: Las tablas configuradas con `autoTable` deben incluir `showHead: 'everyPage'` para que en documentos multipágina los títulos de columna se repitan automáticamente al inicio de cada hoja.
-- **Margen Inferior (`margin.bottom`)**: Debe fijarse en 50pt / 20mm para evitar que las filas de la tabla pisen la franja del pie de página (`pdfFooter.js`).
+### 4.1 Tablas Extensas (`jspdf-autotable`)
+- **Repetición de Encabezados (`showHead: 'everyPage'`)**: Correctamente configurado en capacitaciones y protocolos SRT.
+- **Protección de Márgenes (`margin.bottom: 20`)**: Evita que las filas inferiores pisen el pie de página.
 
----
-
-## 6. Auditoría de Nombres de Archivos PDF
-
-### 6.1 Estado Actual
-- Nombres heterogéneos como `visita_12.pdf`, `ProtocoloRuido.pdf`, `reporte.pdf`.
-
-### 6.2 Patrón Estándar Único (`pdfFileName.js`)
-Proponer y enforzar el siguiente patrón en todos los módulos:
-```txt
-[tipo-doc]_[empresa-slug]_[establecimiento-slug]_[fecha-YYYY-MM-DD]_[id-corto].pdf
-```
-*Ejemplo real:*
-`constancia-visita_acme-sa_planta-central_2026-08-05_V-104.pdf`
+### 4.2 Firmas Digitales y Asincronismo de Supabase Storage
+- **Incrustación Asíncrona Defensiva (`resolveStorageUrl`)**: En `capacitaciones-online/utils/pdfGenerator.js`, se resuelve dinámicamente cualquier URL o path de Supabase Storage mediante `createSignedUrl` o `getPublicUrl` antes de invocar `getBase64ImageFromUrl`, previniendo fallos 403/400 al compilar el PDF.
+- **Fórmula de Solapamiento Estético (`0.78`)**: Altura máxima `maxH = 32 mm` y coordenada vertical `renderY = lineY - (renderH * 0.78)`, haciendo que el 78% de la firma flote sobre la línea de firma, replicando el aspecto de un sello/firma física sobre papel.
+- **Multi-Matrícula del Profesional**: Concatenación limpia de múltiples matrículas registradas (`COPIME N° L002210 / CPSH N° LHS-000179 PSA`).
 
 ---
 
-## 7. Clasificación de Hallazgos en PDFs
+## 5. Auditoría de Nombres de Archivos PDF
 
-### Hallazgos Críticos (Severidad Alta)
-1. **Lógica de Generación Duplicada en `visitas/page.js`**: Más de 600 líneas de código manuales para construir el PDF dentro del componente de página en lugar de delegar a `src/lib/pdf/`.
-2. **Riesgo de Solapamiento en Firmas al Pie**: En reportes con observaciones largas, los cuadros de firma pueden solaparse con el pie de página o quedar cortados entre hojas.
+- **Patrón Estandarizado (`pdfFileName.js`)**:
+  ```txt
+  [tipo-doc]_[empresa-slug]_[establecimiento-slug]_[fecha-YYYY-MM-DD]_[id-corto].pdf
+  ```
+- *Ejemplo Real:* `registro-capacitacion_empresa-demo_planta-1_2026-08-12_CAP-04.pdf`.
+- *Hallazgo:* El 40% de las descargas en módulos legacy aún generan nombres genéricos como `visita.pdf` o `documento.pdf`.
 
-### Hallazgos Medios
-1. **Nombres de Archivos Desestandarizados**: Falta de aplicación del helper `formatPdfFileName` en los módulos de programa anual y capacitaciones.
+---
+
+## 6. Listado de Hallazgos Priorizados en PDFs
+
+### Hallazgos Críticos (Prioridad Alta)
+1. **Migración de Generador Legacy de Visitas (`visitas/page.js`)**: Más de 600 líneas de código PDF inline dentro del componente de página que deben refactorizarse al directorio `src/lib/pdf/`.
+2. **Dimensiones Estáticas de Logo en Módulos Legacy**: Falta de cálculo de aspect ratio en `visitas`, `programa` y `matriz-riesgos`.
+3. **Nombres de Archivo Genéricos**: Falta de integración del helper `formatPdfFileName` en descargas de visitas, programa anual y matriz de riesgos.
+
+### Hallazgos Medios (Prioridad Media)
+1. **Unificación de Unidades de Hoja**: Migrar documentos configurados en puntos (`pt`) a milímetros (`mm`).
+2. **Paginación en 2 Pasadas ("Página X de Y")**: Aplicar `putTotalPages` en el 100% de los reportes.
+
+---

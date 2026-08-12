@@ -41,7 +41,8 @@ import {
   ChevronUp, 
   ChevronDown,
   ArrowLeft,
-  Menu
+  Menu,
+  RotateCcw
 } from 'lucide-react';
 
 export default function ChecklistPersonalizadosPage({ params }) {
@@ -2792,15 +2793,6 @@ export default function ChecklistPersonalizadosPage({ params }) {
                               <div className="space-y-2 flex flex-col">
                                 <div className="flex flex-row justify-between items-center min-h-[24px]">
                                   <label className="text-xs font-bold text-slate-600">Firma del Responsable del Establecimiento</label>
-                                  {!isInspeccionReadOnly && (hasSignedResp || firmaRespSavedUrl) && (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleClearCanvas(firmaRespCanvasRef, setHasSignedResp, setFirmaRespSavedUrl)}
-                                      className="text-[10px] font-bold text-red-500 hover:text-red-700 cursor-pointer shrink-0 border-none bg-transparent"
-                                    >
-                                      Limpiar Firma
-                                    </button>
-                                  )}
                                 </div>
                                 <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl h-[220px] relative overflow-hidden flex items-center justify-center shadow-sm">
                                   {firmaRespSavedUrl && !hasSignedResp ? (
@@ -2815,6 +2807,17 @@ export default function ChecklistPersonalizadosPage({ params }) {
                                   )}
                                   {!hasSignedResp && !firmaRespSavedUrl && (
                                     <span className="absolute pointer-events-none text-[10px] text-slate-400 font-bold uppercase tracking-wider">Dibuje la firma aquí</span>
+                                  )}
+                                  {!isInspeccionReadOnly && (hasSignedResp || firmaRespSavedUrl) && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleClearCanvas(firmaRespCanvasRef, setHasSignedResp, setFirmaRespSavedUrl)}
+                                      className="absolute bottom-2 right-2 z-20 px-2.5 py-1 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white/90 hover:bg-white border border-slate-200 rounded-lg shadow-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                                      title="Limpiar trazo de firma"
+                                    >
+                                      <RotateCcw className="h-3 w-3 text-slate-500" />
+                                      <span>Limpiar</span>
+                                    </button>
                                   )}
                                 </div>
                                 <div className="flex flex-col gap-1 pt-1.5">
@@ -2913,9 +2916,11 @@ export default function ChecklistPersonalizadosPage({ params }) {
                                           <button
                                             type="button"
                                             onClick={() => handleClearCanvas(firmaProfCanvasRef, setHasSignedProf, setFirmaProfSavedUrl)}
-                                            className="absolute top-2.5 right-2.5 text-[10px] font-bold px-2 py-1 bg-red-50 text-red-500 hover:bg-red-100 rounded-md transition-colors cursor-pointer border border-red-200/50"
+                                            className="absolute bottom-2 right-2 z-20 px-2.5 py-1 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white/90 hover:bg-white border border-slate-200 rounded-lg shadow-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                                            title="Limpiar trazo de firma"
                                           >
-                                            Limpiar Firma
+                                            <RotateCcw className="h-3 w-3 text-slate-500" />
+                                            <span>Limpiar</span>
                                           </button>
                                         )}
                                       </div>

@@ -1,101 +1,115 @@
-# Propuesta de Estándar Unificado de Diseño UI — Gestión SySO
+# Propuesta de Estándar Unificado de Diseño UI y Design System — Gestión SySO
 
-**Fecha:** 5 de Agosto de 2026  
-**Área:** Arquitectura de Frontend & Design System  
-**Objetivo:** Normar tokens visuales, componentes de interfaz y guías de maquetación para eliminar la deriva visual en Gestión SySO.
-
----
-
-## 1. Sistema Tipográfico
-
-### 1.1 Fuente Principal y Secundaria
-- **Fuente Principal (Sans-serif)**: `Inter`, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto.
-- **Fuente de Títulos / Identidad (`font-outfit`)**: `Outfit`, sans-serif (utilizada exclusivamente en encabezados H1/H2, títulos de cards principales, modales y marca).
-
-### 1.2 Escala Jerárquica de Fuentes
-
-| Nivel Semántico | Clase Tailwind Estándar | Tamaño (px) | Peso (Weight) | Interlineado | Tracking | Caso de Uso |
-|---|---|---|---|---|---|---|
-| **H1 (Título de Página)** | `font-outfit text-2xl font-extrabold` | 24px | 800 (Extrabold) | `leading-tight` | `tracking-tight` | Encabezado principal (`AppPageHeader`) |
-| **H2 (Sección Principal)** | `font-outfit text-lg font-bold` | 18px | 700 (Bold) | `leading-snug` | Normal | Títulos de tarjetas de módulo y modales |
-| **H3 (Subsección / Card)** | `text-sm font-bold` | 14px | 700 (Bold) | `leading-normal` | Normal | Cabeceras de formularios y paneles |
-| **Body / Celdas Tabla** | `text-xs font-medium` | 12px | 500 (Medium) | `leading-relaxed` | Normal | Textos principales de tablas, listas e inputs |
-| **Labels Técnicos** | `text-xs font-bold uppercase` | 12px | 700 (Bold) | `leading-none` | `tracking-wider` | Etiquetas de campos de carga en formularios |
-| **Captions / Hints** | `text-xs font-normal text-slate-500` | 12px | 400 (Normal) | `leading-normal` | Normal | Ayudas, subtítulos de input e instrucciones |
-| **Badges / Tags** | `text-[10px] font-bold uppercase` | 10px | 700 (Bold) | `leading-none` | `tracking-wider` | Estados en tablas (`REALIZADA`, `PENDIENTE`) |
+**Fecha:** 12 de Agosto de 2026  
+**Área:** Arquitectura de Frontend, UI/UX & Design System  
+**Objetivo:** Establecer la especificación normativa única de tokens visuales, componentes de interfaz y guías de maquetación para la aplicación web Gestión SySO.
 
 ---
 
-## 2. Paleta de Colores y Tokens CSS
+## 1. Tokens de Marca, Tipografía y Colores
 
-### 2.1 Tokens Oficiales (`src/app/globals.css`)
+### 1.1 Tipografía y Fuentes
+- **Fuente Principal del Sistema (Body / Tablas / Inputs)**: `Inter`, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif.
+- **Fuente Institucional de Títulos e Identidad**: `Outfit` (`font-outfit`, sans-serif).
+
+#### Escala Jerárquica Normalizada
+
+| Nivel Semántico | Clase Tailwind | Tamaño | Peso (Weight) | Tracking | Caso de Uso |
+|---|---|---|---|---|---|
+| **H1 (Título de Página)** | `font-outfit text-xl sm:text-2xl font-extrabold text-slate-900` | 24px | Extrabold (800) | `tracking-tight` | Header de Página (`AppPageHeader`) |
+| **H2 (Sección Principal)** | `font-outfit text-base sm:text-lg font-bold text-slate-800` | 18px | Bold (700) | Normal | Títulos de tarjetas y modales |
+| **H3 (Subsección)** | `text-sm font-bold text-slate-800` | 14px | Bold (700) | Normal | Cabeceras de formularios y subsecciones |
+| **Body / Celdas Tabla** | `text-xs font-medium text-slate-700` | 12px | Medium (500) | Normal | Textos principales de tablas y listas |
+| **Labels Técnicos** | `text-xs font-bold text-slate-600 uppercase` | 12px | Bold (700) | `tracking-wider` | Etiquetas de campos de entrada |
+| **Hints / Ayudas** | `text-xs text-slate-500` | 12px | Normal (400) | Normal | Textos aclaratorios e instrucciones |
+| **Badges / Estados** | `text-[10px] font-bold uppercase` | 10px | Bold (700) | `tracking-wider` | Insignias de estado en tablas |
+
+### 1.2 Reglas de Mayúsculas y Minúsculas (Casing)
+- **Botones de Acción**: **Sentence case** (`"Guardar registro"`, `"Nuevo aviso de riesgo"`, `"Cancelar"`).
+- **Etiquetas de Campo (Labels)**: **UPPERCASE** (`"RAZÓN SOCIAL *"`, `"C.U.I.T."`, `"ESTABLECIMIENTO *"`).
+- **Encabezados de Columna de Tabla**: **UPPERCASE** (`"CLIENTE / RAZÓN SOCIAL"`, `"FECHA"`, `"ESTADO"`, `"ACCIONES"`).
+- **Badges de Estado**: **UPPERCASE** (`"REALIZADA"`, `"PENDIENTE"`, `"EN ANÁLISIS"`).
+- **Títulos de Modales**: **Title Case** (`"Registrar Nueva Constancia de Visita"`).
+
+### 1.3 Tokens CSS de Color (`src/app/globals.css`)
 
 ```css
 :root {
-  /* Brand Tokens */
+  /* Brand Colors */
   --primary: 217 100% 63.7%; /* #468DFF (Azul SySO Principal) */
-  --primary-hover: 236 96% 48%; /* #0511F2 (Azul Intenso Acento) */
-  --primary-foreground: 0 0% 100%; /* #FFFFFF */
+  --primary-hover: 237 96% 49%; /* #0511F2 (Azul Intenso Acento) */
+  --primary-foreground: 0 0% 100%;
 
-  /* Neutral Surface & Backgrounds */
-  --background: 210 40% 98%; /* #f8fafc (Slate-50) */
-  --foreground: 222.2 84% 4.9%; /* #020817 (Slate-950) */
-  --card: 0 0% 100%; /* #FFFFFF */
-  --card-foreground: 222.2 84% 4.9%;
-  
-  /* Borders & Inputs */
-  --border: 215 20% 82%; /* #cbd5e1 (Slate-300: gris nítido de alto contraste) */
+  /* Neutral Backgrounds & Canvas */
+  --background: 210 20% 98%; /* #f1f5f9 (slate-100 canvas) */
+  --card: 0 0% 100%; /* #FFFFFF (Blanco puro) */
+  --foreground: 222.2 84% 4.9%; /* #020617 (slate-950) */
+
+  /* Borders & Focus Rings */
+  --border: 215 20% 82%; /* #cbd5e1 (slate-300: bordes nítidos) */
   --input: 215 20% 82%;
   --ring: 217 100% 63.7%;
 
-  /* Semantic Feedback Tokens */
+  /* Semantic Feedback */
   --success: 142.1 76.2% 36.3%; /* #16a34a (Green-600) */
-  --success-foreground: 0 0% 100%;
   --warning: 38 92% 50%; /* #f59e0b (Amber-500) */
-  --warning-foreground: 0 0% 100%;
   --destructive: 0 84.2% 60.2%; /* #ef4444 (Red-500) */
-  --destructive-foreground: 0 0% 100%;
 
-  /* Geometry Radius */
-  --radius: 0.75rem; /* 12px (rounded-xl) */
+  --radius: 0.75rem; /* rounded-xl (12px) */
 }
 ```
 
 ---
 
-## 3. Especificación de Componentes Base UI
+## 2. Componentes Base Estandarizados (`src/components/ui/`)
 
-### 3.1 Botones (`AppButton`)
-- **Altura estándar**: `h-10` (40px) para escritorio y móvil.
-- **Padding horizontal**: `px-4`.
-- **Border Radius**: `rounded-xl` (12px).
-- **Variantes Obligatorias**:
-  - `primary`: Relleno `#468DFF`, texto `#FFFFFF`. Hover: `#0511F2`.
-  - `secondary`: Relleno `#FFFFFF`, borde `#cbd5e1`, texto `#468DFF`. Hover: `#468DFF`, texto `#FFFFFF`.
-  - `edit`: Relleno `#f59e0b` (Amber-500), texto `#FFFFFF`. Hover: `#d97706` (Amber-600). En tabla (icono): relleno `#fef3c7`, texto `#d97706`.
-  - `destructive`: Relleno `#ef4444` (Red-500), texto `#FFFFFF`. Hover: `#dc2626` (Red-600). En tabla (icono): relleno `#fee2e2`, texto `#dc2626`.
-  - `icon-only`: `h-9 w-9 border border-slate-200 rounded-lg p-2 text-slate-500 hover:bg-slate-100`.
+### 2.1 Botones (`AppButton`)
+- **Primario**: `bg-[#468DFF] text-white border border-[#468DFF] hover:bg-[#0511F2] hover:border-[#0511F2] rounded-xl font-bold text-xs h-10 px-4 shadow-md shadow-[#468DFF]/10 transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-[0.98]`.
+- **Secundario / Salir**: `bg-white text-[#468DFF] border border-[#468DFF] hover:bg-[#468DFF] hover:text-white rounded-xl font-bold text-xs h-10 px-4 transition-all cursor-pointer flex items-center justify-center gap-1.5`.
+- **Editar (Formulario)**: `bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold h-10 px-4 transition-all shadow-md shadow-amber-500/10`.
+- **Editar (Tabla)**: `p-1.5 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors cursor-pointer`.
+- **Eliminar (Formulario)**: `bg-red-500 hover:bg-red-600 text-white rounded-xl text-xs font-bold h-10 px-4 transition-all shadow-md shadow-red-500/10`.
+- **Eliminar (Tabla)**: `p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors cursor-pointer`.
+- **Documento / PDF (Tabla)**: `p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-colors cursor-pointer` con icono `FileText` de Lucide React (`h-4.5 w-4.5`).
 
-### 3.2 Formularios de Carga (`AppInput`, `AppSelect`, `AppTextarea`)
-- **Altura de Input / Select**: `h-10` (40px).
-- **Borde**: `1px solid #cbd5e1` (`slate-300`).
-- **Radius**: `rounded-xl`.
-- **Focus Ring**: `focus:ring-2 focus:ring-[#468DFF]/20 focus:border-[#468DFF]`.
-- **Labels**: Siempre visibles sobre el campo, en `text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5`.
-- **Textareas técnicas**: Integración obligatoria de `<AITextHelper />` para dictado por voz y refinamiento por IA (Gemini).
+### 2.2 Entradas de Formulario (`AppInput`, `AppSelect`, `AppTextarea`)
+- **Input / Select**: `h-10 border border-slate-300 rounded-xl px-3 py-2 text-xs bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#468DFF]/20 focus:border-[#468DFF] transition-all`.
+- **Textarea Técnica**: `border border-slate-300 rounded-xl p-3 text-xs bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#468DFF]/20 focus:border-[#468DFF] transition-all min-h-[100px]`. Incorpora obligatoriamente el componente `<AITextHelper />` para dictado por voz y refino por IA (Gemini).
 
-### 3.3 Tablas Web (`AppTable`)
-- **Encabezado (`thead`)**: Fondo `bg-slate-50`, texto `text-[10px] font-bold text-slate-500 uppercase tracking-wider`, alto de fila `h-10`, borde inferior `border-b border-slate-200`.
-- **Celdas (`tbody tr`)**: Alto de fila `h-12` (48px), texto `text-xs font-medium text-slate-700`, hover en fila `hover:bg-slate-50/80 transition-colors`.
-- **Acciones**: Botones de acción alineados a la derecha en la última columna, utilizando `AppButton` variante tabla.
+### 2.3 Captura de Firmas Web (`AppSignatureCanvas` - Propuesta)
+Componente reutilizable de lienzo interactivo Canvas HTML5 para captura de firmas digitales:
+- **Props**: `onSave(base64)`, `onClear()`, `initialUrl`, `disabled`, `height`, `width`.
+- **Características**:
+  - Escalado de coordenadas proporcionales (`getCanvasPos`): `x = ((clientX - rect.left) / rect.width) * canvas.width`.
+  - Soporte táctil (`onTouchStart`, `onTouchMove`, `onTouchEnd`) y mouse (`onMouseDown`, `onMouseMove`, `onMouseUp`).
+  - Botón de limpieza `"Limpiar Firma"` (`RotateCcw`) y badge de estado de firma registrada (`CheckCircle2`).
 
-### 3.4 Modales (`AppInfoModal`, `AppConfirmDialog`, `AppDestructiveConfirmDialog`)
-- **Cabecera**: Fondo `bg-slate-900`, ícono en contenedor `#468DFF/20`, título `font-outfit text-base font-extrabold text-white`.
-- **Cuerpo**: Fondo `#FFFFFF`, scrollbar nativa sobre el contenedor principal (`overflow-y-auto max-h-[75vh]`).
-- **Pie**: Fondo `bg-slate-50`, borde superior `border-t border-slate-200`, botón primario alineado a la derecha.
+### 2.4 Uploaders Avanzados (`DocumentUploadZone` e `ImageUploadZone`)
+- **DocumentUploadZone**: Contenedor de bordes redondeados (`rounded-xl border border-slate-200 bg-slate-50`), pestañas de alternancia superior para archivo local / Google Drive URL, y zona de arrastre punteada reactiva.
+- **ImageUploadZone (`SySO-Multiple-Evidence-Photo-Grid`)**: Grilla de miniaturas cuadradas (`aspect-square`), overlay de hover con acciones (`Eye` para visualizar y `Trash2` para eliminar), tarjeta de carga rápida `+`, y helper de deserialización JSON de URLs de imágenes.
+
+### 2.5 Skeletons de Carga (`AppSkeleton` - Propuesta)
+Componente reutilizable para renderizado defensivo durante la carga de datos:
+- `<AppSkeleton variant="table" rows={5} />`: Mantiene la cabecera fija y muestra filas desdibujadas con animación `animate-pulse` y fondo `bg-slate-100 rounded-lg`.
+- `<AppSkeleton variant="card" />`: Muestra la silueta de tarjetas contadoras o paneles descriptivos.
+
+### 2.6 Tooltips y Popovers (`AppTooltip` / `AppPopover` - Propuesta)
+- **AppTooltip**: Componente estilizado que envuelve elementos interactivos, mostrando un globo oscuro (`bg-slate-900 text-white text-[11px] font-medium px-2.5 py-1 rounded-lg shadow-lg z-50 animate-fade-in`) en eventos hover en escritorio y click/tap sostenido en pantallas móviles.
+
+### 2.7 Assets e Ilustraciones de Marca
+- **Assets Públicos**: Organizados en `public/brand/` (`logo-primary.png`, `logo-black.png`, `logo-white.png`, `favicon.ico`).
+- **Ilustración Corporativa Mascot (Cartoon 1930s)**: Representación caricaturesca de la mascota oficial (casco blanco, chaleco naranja reflectivo y zapatos de seguridad) normada para empty states (`AppEmptyState`), modales informativos y páginas de bienvenida o error.
 
 ---
 
-## 4. Reglas de Maquetación Responsiva
-- **Móvil (<768px)**: Las tarjetas de tablas y listados se adhieren de borde a borde (`px-0`), sin márgenes laterales redundantes, eliminando redondeados flotantes (`border-radius: 0`) y aplicando `border-b border-slate-200` entre elementos consecutivos.
-- **Tablet y Desktop (>=768px)**: Las páginas flotan ordenadamente sobre el canvas de la app (`md:max-w-[95%] md:mx-auto md:py-8`), recuperando tarjetas redondeadas (`md:rounded-2xl md:border md:shadow-sm`) y separaciones verticales de `space-y-6`.
+## 3. Guía de Maquetación Responsiva
+
+- **Vista Celular (<768px)**:
+  - Header fijo superior (`position: fixed; z-index: 30`).
+  - Margen lateral cero (`px-0`), las tarjetas de tabla y herramientas van de borde a borde con `border-radius: 0` y `border-b border-slate-200`.
+  - Tablas con scroll horizontal independiente (`overflow-x-auto`).
+- **Vista Desktop (>=768px)**:
+  - Tarjetas flotantes con bordes redondeados (`md:rounded-2xl md:border md:border-slate-200 md:shadow-sm`).
+  - Layout compacto de tabla con SySO Compact Layout v2.0 (padding `px-6 py-3.5`).
+
+---

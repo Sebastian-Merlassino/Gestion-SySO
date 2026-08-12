@@ -6,6 +6,8 @@ import dynamic from 'next/dynamic';
 import { useToast } from '@/components/providers/ToastProvider';
 import { supabase } from '@/lib/supabase';
 import PublicFooter from '@/components/PublicFooter';
+import AppSignatureCanvas from '@/components/ui/AppSignatureCanvas';
+import AITextHelper from '@/components/ui/AITextHelper';
 import { 
   GraduationCap, 
   CheckCircle2, 
@@ -26,6 +28,7 @@ import {
   Maximize2,
   Lock,
   MapPin,
+  MessageSquare,
   X
 } from 'lucide-react';
 
@@ -52,6 +55,7 @@ export default function PublicCapacitacionPage({ params }) {
   const [nombre, setNombre] = useState('');
   const [dni, setDni] = useState('');
   const [puesto, setPuesto] = useState('');
+  const [observaciones, setObservaciones] = useState('');
   const [isNombreDropdownOpen, setIsNombreDropdownOpen] = useState(false);
   const [customNombreInput, setCustomNombreInput] = useState('');
   const [isPuestoDropdownOpen, setIsPuestoDropdownOpen] = useState(false);
@@ -357,7 +361,8 @@ export default function PublicCapacitacionPage({ params }) {
         p_nombre: nombre.trim(),
         p_dni: dni.trim(),
         p_puesto: puesto.trim(),
-        p_firma: firmaBase64
+        p_firma: firmaBase64,
+        p_observaciones: observaciones.trim() || null
       });
 
       if (!rpcError && data && data.success) {
@@ -375,7 +380,8 @@ export default function PublicCapacitacionPage({ params }) {
           nombre_apellido: nombre.trim(),
           dni: dni.trim(),
           puesto: puesto.trim(),
-          firma_url: firmaBase64
+          firma_url: firmaBase64,
+          observaciones: observaciones.trim() || null
         }]);
 
       if (directInsertError) {
@@ -657,41 +663,54 @@ export default function PublicCapacitacionPage({ params }) {
           };
 
           // Barra de controles de navegación compartida
-          const renderNavBar = (dark = false) => (
-            <div className={`flex items-center justify-between p-3 rounded-xl gap-3 ${
-              dark ? 'bg-slate-900' : 'bg-slate-900'
-            }`}>
-              <button
-                type="button"
-                onClick={handlePrevSlide}
-                disabled={currentSlide <= 1}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer disabled:cursor-default"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                Anterior
-              </button>
+          const renderNavBar = (dark = false) => {
+            if (viewer.type !== 'pdf') {
+              return (
+                <div className="flex items-center p-3 rounded-xl gap-3 bg-slate-900 text-white text-xs">
+                  <div className="flex items-center gap-2 font-medium">
+                    <span className="text-[#468DFF] font-bold shrink-0">📌 Visor de Google Presentation / Drive:</span>
+                    <span className="text-slate-300">Utilizá los controles integrados en la parte inferior del visor (flechas &lt; &gt;) para navegar las filminas.</span>
+                  </div>
+                </div>
+              );
+            }
 
-              <div className="flex items-center gap-2 text-xs font-mono font-bold text-white">
-                <span>Filmina</span>
-                <span className="bg-[#468DFF] px-2.5 py-0.5 rounded-md text-white">
-                  {currentSlide}
-                </span>
-                {totalSlides > 1 && (
-                  <span className="text-slate-400">/ {totalSlides}</span>
-                )}
+            return (
+              <div className={`flex items-center justify-between p-3 rounded-xl gap-3 ${
+                dark ? 'bg-slate-900' : 'bg-slate-900'
+              }`}>
+                <button
+                  type="button"
+                  onClick={handlePrevSlide}
+                  disabled={currentSlide <= 1}
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer disabled:cursor-default"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Anterior
+                </button>
+
+                <div className="flex items-center gap-2 text-xs font-mono font-bold text-white">
+                  <span>Filmina</span>
+                  <span className="bg-[#468DFF] px-2.5 py-0.5 rounded-md text-white">
+                    {currentSlide}
+                  </span>
+                  {totalSlides > 1 && (
+                    <span className="text-slate-400">/ {totalSlides}</span>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleNextSlide}
+                  disabled={isLastSlide}
+                  className="px-3 py-1.5 bg-[#468DFF] hover:bg-[#0511F2] disabled:opacity-50 disabled:cursor-default text-white rounded-lg text-xs font-bold flex items-center gap-1 transition-all shadow-sm cursor-pointer"
+                >
+                  Siguiente
+                  <ChevronRight className="w-4 h-4" />
+                </button>
               </div>
-
-              <button
-                type="button"
-                onClick={handleNextSlide}
-                disabled={isLastSlide}
-                className="px-3 py-1.5 bg-[#468DFF] hover:bg-[#0511F2] disabled:opacity-50 disabled:cursor-default text-white rounded-lg text-xs font-bold flex items-center gap-1 transition-all shadow-sm cursor-pointer"
-              >
-                Siguiente
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          );
+            );
+          };
 
           return (
             <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-md space-y-4">
@@ -707,7 +726,10 @@ export default function PublicCapacitacionPage({ params }) {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setIsFullscreenModalOpen(true)}
+                  onClick={() => {
+                    if (viewer.type !== 'pdf') setHasCompletedMaterial(true);
+                    setIsFullscreenModalOpen(true);
+                  }}
                   className="text-xs font-bold text-[#468DFF] hover:bg-blue-100 flex items-center gap-1.5 bg-blue-50 px-3.5 py-2 rounded-xl border border-blue-200 transition-all cursor-pointer shadow-sm"
                 >
                   <Maximize2 className="w-4 h-4 text-[#468DFF]" />
@@ -734,44 +756,52 @@ export default function PublicCapacitacionPage({ params }) {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={handlePrevSlide}
-                        disabled={currentSlide <= 1}
-                        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer disabled:cursor-default"
-                      >
-                        <ChevronLeft className="w-4 h-4" />
-                        Anterior
-                      </button>
+                      {viewer.type === 'pdf' ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={handlePrevSlide}
+                            disabled={currentSlide <= 1}
+                            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer disabled:cursor-default"
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                            Anterior
+                          </button>
 
-                      <span className="text-xs font-mono font-bold bg-[#468DFF] px-2.5 py-1 rounded-md">
-                        {currentSlide}{totalSlides > 1 ? ` / ${totalSlides}` : ''}
-                      </span>
+                          <span className="text-xs font-mono font-bold bg-[#468DFF] px-2.5 py-1 rounded-md">
+                            {currentSlide}{totalSlides > 1 ? ` / ${totalSlides}` : ''}
+                          </span>
 
-                      <button
-                        type="button"
-                        onClick={handleNextSlide}
-                        disabled={isLastSlide}
-                        className="px-3 py-1.5 bg-[#468DFF] hover:bg-[#0511F2] disabled:opacity-50 disabled:cursor-default text-white rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer shadow-sm"
-                      >
-                        Siguiente
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
+                          <button
+                            type="button"
+                            onClick={handleNextSlide}
+                            disabled={isLastSlide}
+                            className="px-3 py-1.5 bg-[#468DFF] hover:bg-[#0511F2] disabled:opacity-50 disabled:cursor-default text-white rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer shadow-sm"
+                          >
+                            Siguiente
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
 
-                      {hasCompletedMaterial && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsFullscreenModalOpen(false);
-                            setTimeout(() => {
-                              document.getElementById('firma-section')?.scrollIntoView({ behavior: 'smooth' });
-                            }, 100);
-                          }}
-                          className="px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer transition-all"
-                        >
-                          <CheckCircle2 className="w-4 h-4" />
-                          Ir a Firma
-                        </button>
+                          {hasCompletedMaterial && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsFullscreenModalOpen(false);
+                                setTimeout(() => {
+                                  document.getElementById('firma-section')?.scrollIntoView({ behavior: 'smooth' });
+                                }, 100);
+                              }}
+                              className="px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 bg-[#468DFF] hover:bg-[#0511F2] text-white cursor-pointer transition-all shadow-sm"
+                            >
+                              <CheckCircle2 className="w-4 h-4" />
+                              Ir a Firma
+                            </button>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-xs text-slate-300 font-medium bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 hidden sm:inline-block">
+                          📌 Navegación por controles del visor (flechas &lt; &gt;)
+                        </span>
                       )}
 
                       <button
@@ -1136,42 +1166,41 @@ export default function PublicCapacitacionPage({ params }) {
               />
             </div>
 
+            {/* Campo Observaciones / Comentarios con SySO-AI-Voice-Helper */}
+            <div className="pt-1">
+              <div className="flex items-center justify-between gap-2 mb-1.5 min-h-[28px]">
+                <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                  <MessageSquare className="w-3.5 h-3.5 text-[#468DFF]" />
+                  Observaciones / Comentarios (Opcional)
+                </label>
+                <AITextHelper
+                  value={observaciones}
+                  onChange={setObservaciones}
+                  context="Observaciones del trabajador en la capacitación de Higiene y Seguridad en el Trabajo"
+                  publicToken={token}
+                  allowExpand={true}
+                />
+              </div>
+              <textarea
+                value={observaciones}
+                onChange={(e) => setObservaciones(e.target.value)}
+                rows={3}
+                placeholder="Escriba o utilice el dictado por voz para ingresar cualquier observación o aclaración sobre la capacitación realizada..."
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#468DFF] focus:bg-white text-slate-900 transition-all resize-y min-h-[85px]"
+              />
+            </div>
+
             {/* Pad de Firma Digital Canvas */}
             <div className="pt-2">
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-semibold text-slate-700">
-                  Firma Digital (Con el dedo en pantalla táctil o mouse en PC) *
-                </label>
-                <button
-                  type="button"
-                  onClick={clearSignature}
-                  className="text-xs text-red-600 hover:text-red-700 font-medium flex items-center gap-1 py-1 px-2 rounded-lg hover:bg-red-50 transition-colors"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  Limpiar trazo
-                </button>
-              </div>
-
-              <div className="relative bg-slate-50 rounded-xl border-2 border-dashed border-slate-300 overflow-hidden touch-none">
-                <canvas
-                  ref={canvasRef}
-                  width={600}
-                  height={180}
-                  onMouseDown={startDrawing}
-                  onMouseMove={draw}
-                  onMouseUp={stopDrawing}
-                  onMouseLeave={stopDrawing}
-                  onTouchStart={startDrawing}
-                  onTouchMove={draw}
-                  onTouchEnd={stopDrawing}
-                  className="w-full h-44 cursor-crosshair block"
-                />
-                {!hasSignature && (
-                  <div className="absolute inset-0 pointer-events-none flex items-center justify-center text-slate-400 text-xs font-medium">
-                    Firme sobre la línea punteada
-                  </div>
-                )}
-              </div>
+              <AppSignatureCanvas
+                ref={canvasRef}
+                label="Firma Digital (Con el dedo en pantalla táctil o mouse en PC)"
+                required
+                height={175}
+                width={600}
+                onChange={(signed) => setHasSignature(signed)}
+                onClear={() => setHasSignature(false)}
+              />
             </div>
 
             <div className="pt-4">

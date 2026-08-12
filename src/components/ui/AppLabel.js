@@ -11,7 +11,7 @@ export default function AppLabel({
   return (
     <label
       className={cn(
-        'block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 select-none',
+        'block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 select-none',
         className
       )}
       {...props}

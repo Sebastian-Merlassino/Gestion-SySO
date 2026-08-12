@@ -1422,6 +1422,9 @@ export default function TenantDashboard({ params }) {
   };
 
   const getAccidentesFiltrados = (startDate, endDate, empId, estId) => {
+    if (profile && profile.role !== 'cliente' && !empId) {
+      return [];
+    }
     return accidentes.filter(acc => {
       if (empId && acc.empresa_id !== empId) return false;
       if (estId && acc.establecimiento_id !== estId) return false;
@@ -1982,14 +1985,14 @@ export default function TenantDashboard({ params }) {
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3 mb-4 shrink-0">
                         <div className="flex items-center gap-2.5">
                           <Calendar className="h-5 w-5 text-[#468DFF] shrink-0" />
-                          <div className="flex border border-slate-200 rounded-xl overflow-hidden text-[11px] font-bold bg-slate-50 shrink-0 min-w-[250px]">
+                          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl shrink-0">
                             <button
                               type="button"
                               onClick={() => setActiveTab('vencimientos')}
-                              className={`flex-1 py-1.5 transition-colors cursor-pointer text-center ${
+                              className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                                 activeTab === 'vencimientos'
-                                  ? 'bg-[#468DFF] text-white font-extrabold'
-                                  : 'text-slate-500 hover:text-slate-700 bg-white font-semibold'
+                                  ? 'bg-white text-[#468DFF] shadow-sm'
+                                  : 'text-slate-500 hover:text-slate-700'
                               }`}
                             >
                               Vencimientos
@@ -1997,10 +2000,10 @@ export default function TenantDashboard({ params }) {
                             <button
                               type="button"
                               onClick={() => setActiveTab('calendario')}
-                              className={`flex-1 py-1.5 transition-colors cursor-pointer text-center border-l border-slate-200 ${
+                              className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                                 activeTab === 'calendario'
-                                  ? 'bg-[#468DFF] text-white font-extrabold'
-                                  : 'text-slate-500 hover:text-slate-700 bg-white font-semibold'
+                                  ? 'bg-white text-[#468DFF] shadow-sm'
+                                  : 'text-slate-500 hover:text-slate-700'
                               }`}
                             >
                               Calendario
@@ -2031,13 +2034,13 @@ export default function TenantDashboard({ params }) {
                       {activeTab === 'vencimientos' ? (
                         <div className="overflow-auto flex-1 scrollbar-thin">
                           <table className="w-full border-collapse text-left text-xs min-w-[500px]">
-                            <thead>
-                              <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                                <th className="px-4 py-3">Cliente / Razón Social</th>
-                                <th className="px-4 py-3">Establecimiento</th>
-                                <th className="px-4 py-3">Actividad</th>
-                                <th className="px-4 py-3">F. Planificada</th>
-                                <th className="px-4 py-3">Estado</th>
+                            <thead className="sticky top-0 z-10 bg-slate-50">
+                              <tr className="border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                <th className="px-4 py-3 bg-slate-50">Cliente / Razón Social</th>
+                                <th className="px-4 py-3 bg-slate-50">Establecimiento</th>
+                                <th className="px-4 py-3 bg-slate-50">Actividad</th>
+                                <th className="px-4 py-3 bg-slate-50">F. Planificada</th>
+                                <th className="px-4 py-3 bg-slate-50">Estado</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">

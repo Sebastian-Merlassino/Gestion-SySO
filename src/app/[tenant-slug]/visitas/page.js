@@ -20,6 +20,10 @@ import AppEmptyState from '@/components/ui/AppEmptyState';
 import AppCard from '@/components/ui/AppCard';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import AppSortIcon from '@/components/ui/AppSortIcon';
+import AppSignatureCanvas from '@/components/ui/AppSignatureCanvas';
+import AppSkeleton from '@/components/ui/AppSkeleton';
+import AppTooltip from '@/components/ui/AppTooltip';
+import { generateVisitaPdf } from './utils/pdfGenerator';
 import { formatPdfFileName } from '@/lib/pdf/pdfFileName';
 import * as XLSX from 'xlsx';
 import { 
@@ -62,7 +66,10 @@ import {
   FileSpreadsheet,
   Folder,
   Phone,
-  MessageCircle
+  MessageCircle,
+  CheckSquare,
+  Square,
+  RotateCcw
 } from 'lucide-react';
 // Opciones de Mediciones
 const MEDICIONES_OPTS = [
@@ -222,6 +229,7 @@ export default function VisitasPage({ params }) {
   // Documentación multiselect
   const [selectedDocumentacion, setSelectedDocumentacion] = useState([]);
   const [documentacionCustomText, setDocumentacionCustomText] = useState('');
+  const [docSearchTerm, setDocSearchTerm] = useState('');
 
   const [observacionesRecomendaciones, setObservacionesRecomendaciones] = useState('');
   const [observaciones, setObservaciones] = useState(''); // Observaciones finales
@@ -1451,6 +1459,7 @@ export default function VisitasPage({ params }) {
       setSelectedDocumentacion(prev => [...prev, txt]);
     }
     setDocumentacionCustomText('');
+    setDocSearchTerm('');
   };
 
   const handleToggleTemaCapacitacion = (tName) => {
@@ -1547,633 +1556,23 @@ export default function VisitasPage({ params }) {
     });
   };
 
-  // Generar PDF
+  // Generar PDF refactorizado en utils/pdfGenerator.js
   const handleGeneratePdf = async (v, shouldDownload = true) => {
-    try {
-      triggerToast('Generando reporte PDF...', 'info');
-
-      const { jsPDF } = await import('jspdf');
-      await import('jspdf-autotable');
-
-      // 1. Obtener nombres de empresa y establecimiento
-      const emp = empresas.find(e => e.id === v.empresa_id);
-      const est = allEstablecimientos.find(e => e.id === v.establecimiento_id);
-      
-      const empName = emp ? emp.razon_social : 'N/A';
-      const cuit = emp ? emp.cuit : 'N/A';
-      const estName = est ? est.denominacion : 'N/A';
-      const address = est ? est.direccion : 'N/A';
-
-      // Inicializar jsPDF en puntos, orientación retrato, formato A4 (595.28 x 841.89 pt) con compresión
-      const doc = new jsPDF({
-        orientation: 'portrait',
-        unit: 'pt',
-        format: 'a4',
-        compress: true
-      });
-
-      // Cargar Logo
-      let logoBase64 = '';
-      try {
-        if (tenant && tenant.logo_1_url) {
-          logoBase64 = await getBase64ImageFromUrl(tenant.logo_1_url);
-        }
-      } catch (e) {
-        console.error('No se pudo cargar el logo 1 personalizado, intentando logo principal por defecto:', e);
-      }
-
-      if (!logoBase64) {
-        try {
-          logoBase64 = await getBase64ImageFromUrl('/brand/logo-primary.png');
-        } catch (e) {
-          console.error('No se pudo cargar el logo de la cabecera por defecto en el PDF:', e);
-        }
-      }
-
-      if (logoBase64) {
-        logoBase64 = await resizeImage(logoBase64, 300, 300);
-      }
-
-      // Helper para dibujar Cabecera y Pie de Página en cada página
-      const drawHeaderAndFooter = (pageNum) => {
-        // Logo superior izquierdo
-        if (logoBase64) {
-          try {
-            doc.addImage(logoBase64, 'PNG', 63.85, 22.11, 142.5, 78.31);
-          } catch (e) {
-            console.error('Error dibujando el logo de la cabecera:', e);
-          }
-        }
-        
-        // Footer: Línea Azul Corporativo de 1pt
-        doc.setDrawColor(70, 141, 255); // COLOR_AZUL_PRINCIPAL RGB
-        doc.setLineWidth(1);
-        doc.line(42.1, 735.63, 567.85, 735.63);
-        
-        // Footer: Texto centrado híbrido
-        const boldText = tenant?.name || "Gestión SySO";
-        const phoneVal = profile?.role === 'miembro' ? (profile?.phone || '') : adminContact.phone;
-        const emailVal = profile?.role === 'miembro' ? (profile?.email || '') : adminContact.email;
-        const normalText = `  •  Tel: ${phoneVal}  •  Email: ${emailVal}`;
-
-        doc.setFontSize(7.5);
-        doc.setTextColor(71, 85, 105); // COLOR_SLATE_700 RGB
-
-        // Medir anchos
-        doc.setFont('helvetica', 'bold');
-        const boldWidth = doc.getTextWidth(boldText);
-
-        doc.setFont('helvetica', 'normal');
-        const normalWidth = doc.getTextWidth(normalText);
-
-        const totalTextWidth = boldWidth + normalWidth;
-        const totalW = 567.85 - 42.1; // 525.75 pt
-        const lineStartX = 42.1 + (totalW / 2) - (totalTextWidth / 2);
-
-        // Dibujar secuencialmente
-        doc.setFont('helvetica', 'bold');
-        doc.text(boldText, lineStartX, 751);
-
-        doc.setFont('helvetica', 'normal');
-        doc.text(normalText, lineStartX + boldWidth, 751);
-        
-        // Footer: Número de página (derecha, negrita, Slate 700)
-        doc.setFont('helvetica', 'bold');
-        doc.text(`${pageNum}`, 567.85, 751, { align: 'right' });
-      };
-
-      // ==========================================
-      // PAGINA 1
-      // ==========================================
-      drawHeaderAndFooter(1);
-
-      // Título del documento
-      doc.setFillColor(70, 141, 255); // COLOR_AZUL_PRINCIPAL RGB (#468DFF)
-      doc.rect(61.6, 116.71, 486.75, 25.5, 'F');
-      
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(12);
-      doc.setTextColor(255, 255, 255);
-      doc.text('Constancia de visita', 61.6 + 486.75 / 2, 116.71 + 16.5, { align: 'center' });
-
-      // Tabla de Datos Generales (Renderizado manual del grid)
-      doc.setDrawColor(0, 0, 0);
-      doc.setLineWidth(0.8); // Delineado estandarizado a 0.8 pt
-      doc.rect(62, 156, 487, 144);
-
-      // Líneas horizontales de división
-      for (let i = 1; i <= 5; i++) {
-        doc.line(62, 156 + 24 * i, 62 + 487, 156 + 24 * i);
-      }
-      // Líneas verticales de división
-      doc.line(305, 180, 305, 204);
-      doc.line(305, 228, 305, 252);
-
-      // Textos de la Tabla de Datos Generales
-      doc.setFontSize(10);
-      doc.setTextColor(0, 0, 0);
-
-      // Fila 1
-      doc.setFont('helvetica', 'bold');
-      doc.text('Razón social de la empresa:', 68, 171);
-      doc.setFont('helvetica', 'normal');
-      doc.text(empName, 205, 171);
-
-      // Fila 2
-      doc.setFont('helvetica', 'bold');
-      doc.text('C.U.I.T.:', 68, 195);
-      doc.setFont('helvetica', 'normal');
-      doc.text(cuit, 115, 195);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Establecimiento:', 311, 195);
-      doc.setFont('helvetica', 'normal');
-      doc.text(estName, 395, 195);
-
-      // Fila 3
-      doc.setFont('helvetica', 'bold');
-      doc.text('Dirección:', 68, 219);
-      doc.setFont('helvetica', 'normal');
-      doc.text(address, 120, 219);
-
-      // Fila 4
-      doc.setFont('helvetica', 'bold');
-      doc.text('Fecha:', 68, 243);
-      doc.setFont('helvetica', 'normal');
-      doc.text(formatDate(v.fecha), 105, 243);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Hora de finalización:', 311, 243);
-      doc.setFont('helvetica', 'normal');
-      doc.text(v.hora_finalizacion || 'N/A', 415, 243);
-
-      // Fila 5
-      doc.setFont('helvetica', 'bold');
-      doc.text('Nombre y cargo del responsable presente:', 68, 267);
-      doc.setFont('helvetica', 'normal');
-      doc.text(v.responsable_presente || 'N/A', 285, 267);
-
-      // Fila 6
-      doc.setFont('helvetica', 'bold');
-      doc.text('Profesional interviniente:', 68, 291);
-      doc.setFont('helvetica', 'normal');
-      doc.text(v.profesional_nombre || 'N/A', 205, 291);
-
-      // Tabla de Actividades de la Página 1
-      doc.setFillColor(102, 102, 102); // Gris medio #666666 para encabezado
-      doc.rect(62.35, 314.25, 486, 24.75, 'F');
-      
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      doc.setTextColor(255, 255, 255);
-      doc.text('Actividades realizadas durante la visita', 68, 314.25 + 15.5);
-      doc.text('Si', 462.85 + 14.25, 314.25 + 15.5, { align: 'center' });
-      doc.text('No', 491.35 + 14.25, 314.25 + 15.5, { align: 'center' });
-      doc.text('NA', 519.85 + 14.25, 314.25 + 15.5, { align: 'center' });
-
-      // Líneas verticales de cabecera
-      doc.setDrawColor(0, 0, 0);
-      doc.setLineWidth(0.8); // Delineado estandarizado a 0.8 pt
-      doc.line(462.85, 314.25, 462.85, 314.25 + 24.75);
-      doc.line(491.35, 314.25, 491.35, 314.25 + 24.75);
-      doc.line(519.85, 314.25, 519.85, 314.25 + 24.75);
-
-      // Estructura de las filas de la Página 1
-      const isMedFisQuim = (v.mediciones_realizadas || []).some(x => x !== 'Evaluación ergonómica' && x !== 'N/A');
-      const isMedErg = (v.mediciones_realizadas || []).includes('Evaluación ergonómica');
-      const isMedOther = (v.mediciones_realizadas || []).some(x => !MEDICIONES_OPTS.includes(x) && x !== 'N/A');
-      const fisQuimMedText = (v.mediciones_realizadas || []).filter(x => x !== 'Evaluación ergonómica' && MEDICIONES_OPTS.includes(x) && x !== 'N/A').join(', ');
-      const otherMedText = (v.mediciones_realizadas || []).filter(x => x !== 'Evaluación ergonómica' && !MEDICIONES_OPTS.includes(x)).join(', ');
-
-      const p1Rows = [
-        { id: '1', text: '1. ¿Ocurrieron incidentes o accidentes laborales desde la última visita?', type: 'main', height: 25, val: v.ocurrieron_incidentes ? 'Sí' : 'No' },
-        { id: '1.1', text: '  1.1. ¿Se realizó el análisis correspondiente (causa raíz, acciones correctivas)?', type: 'sub', height: 25, val: v.analisis_correspondiente },
-        { id: '1.2', text: '  1.2. ¿Cuál fue la causa raíz?:\n  ' + (v.causa_raiz || 'N/A'), type: 'desc', height: 36 },
-        { id: '1.3', text: '  1.3. ¿Qué acción correctiva se planificó / realizó?:\n  ' + (v.accion_correctiva || 'N/A'), type: 'desc', height: 37 },
-        { id: '2', text: '2. ¿Se realizó relevamiento de:', type: 'group', height: 24 },
-        { id: '2.1', text: '  2.1. Condiciones inseguras', type: 'sub', height: 25, val: v.relevamiento_higiene_seguridad },
-        { id: '2.2', text: '  2.2. Actos inseguros', type: 'sub', height: 25, val: v.relevamiento_practicas_seguras },
-        { id: '2.3', text: '  2.3. Uso adecuado de elementos de protección personal (EPP’s)', type: 'sub', height: 25, val: v.relevamiento_epp },
-        { id: '3', text: '3. ¿Se realizaron mediciones o evaluaciones técnicas específicas?', type: 'main', height: 25, val: v.realizaron_mediciones },
-        { id: '3.1', text: '  3.1. Medición de contaminantes físicos y/o químicos?: ' + (fisQuimMedText || 'Ninguna'), type: 'sub', height: 25, val: isMedFisQuim ? 'Sí' : (v.realizaron_mediciones === 'N/A' ? 'N/A' : 'No') },
-        { id: '3.2', text: '  3.2. Evaluación de riesgos ergonómicos', type: 'sub', height: 25, val: isMedErg ? 'Sí' : (v.realizaron_mediciones === 'N/A' ? 'N/A' : 'No') },
-        { id: '3.3', text: '  3.3. Otras (especificar): ' + (otherMedText || 'Ninguna'), type: 'sub', height: 25, val: isMedOther ? 'Sí' : (v.realizaron_mediciones === 'N/A' ? 'N/A' : 'No') },
-        { id: '4', text: '4. ¿Se verificó la implementación de acciones correctivas previamente recomendadas?', type: 'main', height: 37, val: v.verifico_acciones_correctivas }
-      ];
-
-      let curY = 314.25 + 24.75;
-      doc.rect(62.35, 314.25, 486, 385);
-
-      p1Rows.forEach(row => {
-        // Línea horizontal de fondo
-        doc.line(62.35, curY + row.height, 62.35 + 486, curY + row.height);
-        
-        // Líneas verticales divisoras (excepto para campos descriptivos)
-        if (row.type !== 'desc') {
-          doc.line(462.85, curY, 462.85, curY + row.height);
-          doc.line(491.35, curY, 491.35, curY + row.height);
-          doc.line(519.85, curY, 519.85, curY + row.height);
-        }
-
-        // Renderizar el Texto
-        doc.setFont('helvetica', (row.type === 'main' || row.type === 'group') ? 'bold' : 'normal');
-        doc.setFontSize(9);
-        doc.setTextColor(0, 0, 0);
-
-        if (row.type === 'desc') {
-          doc.text(row.text, 68, curY + 14, { maxWidth: 475 });
-        } else {
-          doc.text(row.text, 68, curY + 15, { maxWidth: 390 });
-        }
-
-        // Checkboxes y Checkmarks
-        if (row.type === 'main' || row.type === 'sub') {
-          const checkVal = row.val;
-          const cbSize = 8;
-          const cbY = curY + row.height / 2 - 4;
-
-          // Dibujar cuadrados de opción
-          doc.rect(462.85 + 10.25, cbY, cbSize, cbSize);
-          doc.rect(491.35 + 10.25, cbY, cbSize, cbSize);
-          doc.rect(519.85 + 10.25, cbY, cbSize, cbSize);
-
-          // Poner una X
-          doc.setFont('helvetica', 'bold');
-          doc.setFontSize(8);
-          if (checkVal === 'Sí' || checkVal === 'Si' || checkVal === true) {
-            doc.text('X', 462.85 + 12, cbY + 7);
-          } else if (checkVal === 'No' || checkVal === false) {
-            doc.text('X', 491.35 + 12, cbY + 7);
-          } else if (checkVal === 'N/A' || checkVal === 'NA') {
-            doc.text('X', 519.85 + 12, cbY + 7);
-          }
-        }
-
-        curY += row.height;
-      });
-
-      // ==========================================
-      // PAGINA 2
-      // ==========================================
-      doc.addPage();
-      drawHeaderAndFooter(2);
-
-      // Tabla de Actividades de la Página 2
-      doc.setFillColor(102, 102, 102); // Gris medio #666666
-      doc.rect(62.35, 102.91, 486, 24.75, 'F');
-      
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      doc.setTextColor(255, 255, 255);
-      doc.text('Actividades realizadas durante la visita', 68, 102.91 + 15.5);
-      doc.text('Si', 462.85 + 14.25, 102.91 + 15.5, { align: 'center' });
-      doc.text('No', 491.35 + 14.25, 102.91 + 15.5, { align: 'center' });
-      doc.text('NA', 519.85 + 14.25, 102.91 + 15.5, { align: 'center' });
-
-      // Líneas verticales de cabecera
-      doc.setDrawColor(0, 0, 0);
-      doc.setLineWidth(0.8); // Delineado estandarizado a 0.8 pt
-      doc.line(462.85, 102.91, 462.85, 102.91 + 24.75);
-      doc.line(491.35, 102.91, 491.35, 102.91 + 24.75);
-      doc.line(519.85, 102.91, 519.85, 102.91 + 24.75);
-
-      // Estructura de las filas de la Página 2
-      const capTemas = (v.capacitaciones_temas || []).join(', ');
-      const p2Rows = [
-        { id: '5', text: '5. ¿Se dictaron capacitaciones? Especificar temas: ' + (capTemas || 'N/A'), type: 'main', height: 37, val: v.dictaron_capacitaciones ? 'Sí' : 'No' },
-        { id: '6', text: '6. ¿Se realizaron simulacros?', type: 'main', height: 25, val: v.realizaron_simulacros ? 'Sí' : 'No' },
-        { id: '6.1', text: '  6.1. Tipo: Evacuación / Incendio / Derrame / Fuga de gas / Otro:', type: 'simulacro_options', height: 25 },
-        { id: '7', text: '7. ¿Se emitieron avisos por condiciones inseguras o actos inseguros?', type: 'main', height: 25, val: v.emite_aviso_riesgo ? 'Sí' : 'No' },
-        { id: '8', text: '8. Documentación incorporada al Legajo de SySO:\n  ' + ((v.documentacion_incorporada || []).join(', ') || 'Ninguna'), type: 'desc', height: 37 }
-      ];
-
-      let curY2 = 102.91 + 24.75;
-      doc.rect(62.35, 102.91, 486, 174);
-
-      p2Rows.forEach(row => {
-        // Línea horizontal de fondo
-        doc.line(62.35, curY2 + row.height, 62.35 + 486, curY2 + row.height);
-        
-        // Líneas verticales divisoras (excepto para descriptivos y simulacros en línea)
-        if (row.type !== 'desc' && row.type !== 'simulacro_options') {
-          doc.line(462.85, curY2, 462.85, curY2 + row.height);
-          doc.line(491.35, curY2, 491.35, curY2 + row.height);
-          doc.line(519.85, curY2, 519.85, curY2 + row.height);
-        }
-
-        // Renderizar el texto
-        doc.setFont('helvetica', (row.type === 'main') ? 'bold' : 'normal');
-        doc.setFontSize(9);
-        doc.setTextColor(0, 0, 0);
-
-        if (row.type === 'desc') {
-          doc.text(row.text, 68, curY2 + 14, { maxWidth: 475 });
-        } else if (row.type === 'simulacro_options') {
-          // Renderizar opciones múltiples en línea
-          doc.setFont('helvetica', 'normal');
-          doc.text('  6.1. Tipo:', 68, curY2 + 15);
-          
-          const opts = [
-            { name: 'Evacuación', x: 130 },
-            { name: 'Incendio', x: 210 },
-            { name: 'Derrame', x: 280 },
-            { name: 'Fuga de gas', x: 350 },
-            { name: 'Otro', x: 430 }
-          ];
-
-          opts.forEach(opt => {
-            const cbSize = 8;
-            const cbY = curY2 + 7;
-            
-            // Cuadrado
-            doc.rect(opt.x, cbY, cbSize, cbSize);
-            doc.text(opt.name, opt.x + 12, curY2 + 15);
-
-            const hasOpt = (v.simulacros_tipo || []).includes(opt.name);
-            if (hasOpt) {
-              doc.setFont('helvetica', 'bold');
-              doc.text('X', opt.x + 1.5, cbY + 7);
-              doc.setFont('helvetica', 'normal');
-            }
-          });
-        } else {
-          doc.text(row.text, 68, curY2 + 15, { maxWidth: 390 });
-        }
-
-        // Checkboxes Si/No/NA
-        if (row.type === 'main') {
-          const checkVal = row.val;
-          const cbSize = 8;
-          const cbY = curY2 + row.height / 2 - 4;
-
-          doc.rect(462.85 + 10.25, cbY, cbSize, cbSize);
-          doc.rect(491.35 + 10.25, cbY, cbSize, cbSize);
-          doc.rect(519.85 + 10.25, cbY, cbSize, cbSize);
-
-          doc.setFont('helvetica', 'bold');
-          doc.setFontSize(8);
-          if (checkVal === 'Sí' || checkVal === 'Si' || checkVal === true) {
-            doc.text('X', 462.85 + 12, cbY + 7);
-          } else if (checkVal === 'No' || checkVal === false) {
-            doc.text('X', 491.35 + 12, cbY + 7);
-          } else if (checkVal === 'N/A' || checkVal === 'NA') {
-            doc.text('X', 519.85 + 12, cbY + 7);
-          }
-        }
-
-        curY2 += row.height;
-      });
-
-      // Nota inferior
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(0, 0, 0);
-      doc.text('* Indicar con una X si corresponde: Sí / No / No Aplica (NA)', 62, 290);
-
-      // Sección de Observaciones
-      const obsY = 302.25;
-      doc.setFillColor(102, 102, 102); // Gris medio #666666
-      doc.rect(62.35, obsY, 486.75, 24.75, 'F');
-      
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      doc.setTextColor(255, 255, 255);
-      doc.text('Observaciones y recomendaciones preventivas:', 68, obsY + 15.5);
-
-      // Contenedor principal de observaciones
-      doc.setDrawColor(0, 0, 0);
-      doc.setLineWidth(0.8); // Delineado estandarizado a 0.8 pt
-      doc.rect(62.35, obsY, 486.75, 237.75); // Llega hasta y ~ 540
-
-      // Texto introductorio
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10);
-      doc.setTextColor(64, 64, 64);
-      doc.text('Se realiza la presente visita a efectos de verificar las condiciones de Higiene y Seguridad en el establecimiento, supervisar las prácticas laborales y dar seguimiento a las acciones correctivas recomendadas.', 68, obsY + 42, { maxWidth: 475 });
-      doc.text('Se detallan a continuación las observaciones relevantes y sugerencias preventivas:', 68, obsY + 80);
-
-      // Dibujar 6 líneas punteadas
-      doc.setLineDash([1, 2], 0);
-      doc.setLineWidth(1);
-      doc.setDrawColor(128, 128, 128); // #808080
-      const lineYs = [412, 436, 459, 483, 507, 531];
-      lineYs.forEach(lineY => {
-        doc.line(61.875, lineY, 548.875, lineY);
-      });
-      doc.setLineDash([], 0); // Resetear a sólido
-
-      // Imprimir el contenido de observaciones en las líneas
-      let fullObsText = v.observaciones_recomendaciones || '';
-      if (v.observaciones) {
-        fullObsText += '\n\nNotas internas generales:\n' + v.observaciones;
-      }
-
-      if (fullObsText) {
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
-        doc.setTextColor(0, 0, 0);
-        const lines = doc.splitTextToSize(fullObsText, 475);
-        for (let i = 0; i < Math.min(lines.length, 6); i++) {
-          doc.text(lines[i], 68, lineYs[i] - 4); // Alinear justo arriba de la línea
-        }
-      }
-
-      // Sección de Firmas (tercio inferior)
-      const sigY = 675;
-      doc.setDrawColor(0, 0, 0);
-      doc.setLineWidth(1);
-
-      // Firma Responsable Empresa (Columna Izquierda)
-      doc.line(79, sigY, 263, sigY);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(0, 0, 0);
-      doc.text('Firma del responsable de la empresa', 171, sigY + 10, { align: 'center' });
-      doc.setFont('helvetica', 'bold');
-      doc.text(v.responsable_presente || '', 171, sigY + 22, { align: 'center' });
-      doc.setFont('helvetica', 'normal');
-      doc.text('Responsable del Establecimiento', 171, sigY + 32, { align: 'center' });
-
-      // Firma Profesional HyS (Columna Derecha)
-      doc.line(346, sigY, 530, sigY);
-      doc.text('Firma del profesional de Higiene y', 438, sigY + 10, { align: 'center' });
-      doc.text('Seguridad', 438, sigY + 20, { align: 'center' });
-      doc.setFont('helvetica', 'bold');
-      doc.text(v.profesional_nombre || '', 438, sigY + 32, { align: 'center' });
-      doc.setFont('helvetica', 'normal');
-      doc.text('Profesional Interviniente', 438, sigY + 42, { align: 'center' });
-
-      // Obtener firmas como base64 de manera segura
-      let imgRespBase64 = '';
-      let imgProfBase64 = '';
-
-      if (v.firma_responsable_empresa && v.firma_responsable_empresa !== 'N/A') {
-        try {
-          if (v.firma_responsable_empresa.startsWith('data:')) {
-            imgRespBase64 = v.firma_responsable_empresa;
-          } else if (isDevMode || v.firma_responsable_empresa.startsWith('mock')) {
-            imgRespBase64 = await getBase64ImageFromUrl('/brand/logo-primary.png');
-          } else {
-            let relativePath = v.firma_responsable_empresa;
-            let isExternal = false;
-            
-            if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
-              try {
-                const urlObj = new URL(relativePath);
-                const pathParts = urlObj.pathname.split('/');
-                const bucketIndex = pathParts.findIndex(part => part === 'documents');
-                if (bucketIndex !== -1 && bucketIndex < pathParts.length - 1) {
-                  relativePath = pathParts.slice(bucketIndex + 1).join('/');
-                } else {
-                  isExternal = true;
-                }
-              } catch (urlErr) {
-                console.error('Error parseando URL de firma responsable:', urlErr);
-                isExternal = true;
-              }
-            }
-
-            if (isExternal) {
-              imgRespBase64 = await getBase64ImageFromUrl(v.firma_responsable_empresa);
-            } else {
-              const { data: sData, error: sErr } = await supabase.storage
-                .from('documents')
-                .createSignedUrl(relativePath, 3600);
-              if (!sErr && sData?.signedUrl) {
-                imgRespBase64 = await getBase64ImageFromUrl(sData.signedUrl);
-              }
-            }
-          }
-          if (imgRespBase64) {
-            imgRespBase64 = await resizeImage(imgRespBase64, 200, 100);
-          }
-        } catch (err) {
-          console.error('Error fetching responsable signature:', err);
-        }
-      }
-
-      if (v.firma_profesional && v.firma_profesional !== 'N/A') {
-        try {
-          if (v.firma_profesional.startsWith('data:')) {
-            imgProfBase64 = v.firma_profesional;
-          } else if (isDevMode || v.firma_profesional.startsWith('mock')) {
-            imgProfBase64 = await getBase64ImageFromUrl('/brand/logo-primary.png');
-          } else {
-            let relativePath = v.firma_profesional;
-            let isExternal = false;
-            
-            if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
-              try {
-                const urlObj = new URL(relativePath);
-                const pathParts = urlObj.pathname.split('/');
-                const bucketIndex = pathParts.findIndex(part => part === 'signatures' || part === 'documents');
-                if (bucketIndex !== -1 && bucketIndex < pathParts.length - 1) {
-                  relativePath = pathParts.slice(bucketIndex + 1).join('/');
-                } else {
-                  isExternal = true;
-                }
-              } catch (urlErr) {
-                console.error('Error parseando URL de firma profesional:', urlErr);
-                isExternal = true;
-              }
-            }
-
-            if (isExternal) {
-              imgProfBase64 = await getBase64ImageFromUrl(v.firma_profesional);
-            } else {
-              const bucketName = v.firma_tipo === 'perfil' ? 'signatures' : 'documents';
-              const { data: sData, error: sErr } = await supabase.storage
-                .from(bucketName)
-                .createSignedUrl(relativePath, 3600);
-              if (!sErr && sData?.signedUrl) {
-                imgProfBase64 = await getBase64ImageFromUrl(sData.signedUrl);
-              }
-            }
-          }
-          if (imgProfBase64) {
-            imgProfBase64 = await resizeImage(imgProfBase64, 1200, 600, true);
-          }
-        } catch (err) {
-          console.error('Error fetching profesional signature:', err);
-        }
-      }
-
-      // Dibujar las imágenes sobre las líneas de manera proporcional
-      if (imgRespBase64 && imgRespBase64.startsWith('data:image/')) {
-        try {
-          const dims = await getImgDimensions(imgRespBase64);
-          const imgRatio = dims.width / dims.height;
-          const maxW = 100;
-          const maxH = 40;
-          let imgW = maxW;
-          let imgH = maxH;
-          if (imgRatio > maxW / maxH) {
-            imgW = maxW;
-            imgH = maxW / imgRatio;
-          } else {
-            imgH = maxH;
-            imgW = maxH * imgRatio;
-          }
-          const imgX = 171 - imgW / 2;
-          const imgY = sigY - 5 - imgH;
-          doc.addImage(imgRespBase64, 'PNG', imgX, imgY, imgW, imgH);
-        } catch (err) {
-          console.error('Error rendering imgRespBase64:', err);
-        }
-      }
-      if (imgProfBase64 && imgProfBase64.startsWith('data:image/')) {
-        try {
-          const dims = await getImgDimensions(imgProfBase64);
-          const imgRatio = dims.width / dims.height;
-          const maxW = 240;
-          const maxH = 120;
-          let imgW = maxW;
-          let imgH = maxH;
-          if (imgRatio > maxW / maxH) {
-            imgW = maxW;
-            imgH = maxW / imgRatio;
-          } else {
-            imgH = maxH;
-            imgW = maxH * imgRatio;
-          }
-          const imgX = 438 - imgW / 2;
-          const imgY = sigY - 5 - imgH;
-          doc.addImage(imgProfBase64, 'PNG', imgX, imgY, imgW, imgH);
-        } catch (err) {
-          console.error('Error rendering imgProfBase64:', err);
-        }
-      }
-
-      // Guardar o retornar
-      if (shouldDownload === true) {
-        const fileName = formatPdfFileName({
-          modulo: 'visita',
-          empresa: empName,
-          establecimiento: estName,
-          fecha: v.fecha,
-          id: v.id
-        });
-        doc.save(fileName);
-        triggerToast('PDF descargado exitosamente.');
-        return null;
-      } else if (shouldDownload === 'bloburl') {
-        const blob = doc.output('blob');
-        return URL.createObjectURL(blob);
-      } else if (shouldDownload === 'blob') {
-        return doc.output('blob');
-      } else {
-        // Retornar en base64 para enviar por correo
-        return doc.output('datauristring');
-      }
-    } catch (e) {
-      console.error('Error al generar PDF:', e);
-      triggerToast('Error al generar el reporte PDF.', 'error');
-      return null;
-    }
+    return generateVisitaPdf(v, shouldDownload, {
+      empresas,
+      allEstablecimientos,
+      tenant,
+      profile,
+      adminContact,
+      supabase,
+      triggerToast,
+      isDevMode,
+    });
   };
 
   // Previsualizar PDF en nueva pestaña sin descargar
   const handlePreviewPdf = async (v) => {
     try {
-      triggerToast('Generando reporte PDF...', 'info');
       const blobUrl = await handleGeneratePdf(v, 'bloburl');
       if (blobUrl) {
         window.open(blobUrl, '_blank');
@@ -2544,7 +1943,15 @@ export default function VisitasPage({ params }) {
         />
 
         {/* Content Body */}
-        <div className="w-full flex-grow flex flex-col min-h-0 p-0 md:py-8 md:max-w-[95%] md:mx-auto md:px-0">
+        {loading ? (
+          <div className="flex-grow flex items-center justify-center p-8">
+            <div className="text-center space-y-4">
+              <Loader2 className="h-10 w-10 animate-spin text-[#468DFF] mx-auto" />
+              <p className="text-xs text-slate-500 font-medium">Cargando constancias de visita...</p>
+            </div>
+          </div>
+        ) : (
+          <div className="w-full flex-grow flex flex-col min-h-0 p-0 md:py-8 md:max-w-[95%] md:mx-auto md:px-0">
 
             {/* LISTADO DE VISITAS */}
             {!isFormOpen && (
@@ -3450,47 +2857,153 @@ export default function VisitasPage({ params }) {
                         </div>
                       </div>
 
-                    {/* Documentación incorporada al Legajo */}
-                    <div className="bg-slate-50/50 p-4 border border-slate-200 rounded-2xl space-y-3">
-                      <label className="text-xs font-bold text-slate-600 block">Documentación incorporada al Legajo de SySO:</label>
-                      
-                      <div className="flex flex-wrap gap-2">
-                        {Array.from(new Set([...DOCUMENTACION_OPTS, ...selectedDocumentacion])).map(d => {
-                          const isSel = selectedDocumentacion.includes(d);
-                          return (
-                            <button
-                              key={d}
-                              type="button"
-                              onClick={() => handleToggleDocumentacion(d)}
-                              className={`px-3 py-1.5 rounded-lg text-[10px] font-semibold border transition-all cursor-pointer ${
-                                isSel
-                                  ? 'bg-[#468DFF]/15 border-[#468DFF] text-[#468DFF]'
-                                  : 'bg-white border-slate-200 hover:bg-slate-50'
-                              }`}
-                            >
-                              {d}
-                            </button>
+                    {/* Documentación incorporada al Legajo - Panel Checklist */}
+                    <div className="bg-slate-50/70 p-4 sm:p-5 border border-slate-200 rounded-2xl space-y-3.5 shadow-xs">
+                      {/* Cabecera del Panel */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-3">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <FileText className="h-4.5 w-4.5 text-[#468DFF]" />
+                          <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                            Documentación incorporada al Legajo de SySO
+                          </label>
+                          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#468DFF]/10 text-[#468DFF]">
+                            {selectedDocumentacion.length} {selectedDocumentacion.length === 1 ? 'seleccionado' : 'seleccionados'}
+                          </span>
+                        </div>
+                        {selectedDocumentacion.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedDocumentacion([])}
+                            className="text-[11px] font-semibold text-slate-500 hover:text-red-500 transition-colors self-start sm:self-auto cursor-pointer"
+                          >
+                            Desmarcar todos
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Buscador de opciones */}
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                        <input
+                          type="text"
+                          placeholder="Buscar en el catálogo de documentación (ej: Ergonomía, Ruido, RGRL)..."
+                          value={docSearchTerm}
+                          onChange={(e) => setDocSearchTerm(e.target.value)}
+                          className="w-full pl-9 pr-8 py-2 border border-slate-200 rounded-xl text-xs bg-white text-slate-700 placeholder-slate-400 focus:outline-none focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] transition-all"
+                        />
+                        {docSearchTerm && (
+                          <button
+                            type="button"
+                            onClick={() => setDocSearchTerm('')}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Lista desplegada de Checkboxes en cuadrícula (2 columnas) */}
+                      <div className="max-h-72 overflow-y-auto pr-1 border border-slate-200/80 rounded-xl bg-white p-2 shadow-inner">
+                        {(() => {
+                          const allDocOptions = Array.from(new Set([...DOCUMENTACION_OPTS, ...selectedDocumentacion]));
+                          const filteredDocOptions = allDocOptions.filter(opt =>
+                            opt.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                              .includes(docSearchTerm.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""))
                           );
-                        })}
+
+                          if (filteredDocOptions.length === 0) {
+                            return (
+                              <div className="p-4 text-center text-xs text-slate-400 italic">
+                                No se encontraron elementos de documentación que coincidan con &quot;{docSearchTerm}&quot;
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
+                              {filteredDocOptions.map((d) => {
+                                const isSel = selectedDocumentacion.includes(d);
+                                return (
+                                  <button
+                                    key={d}
+                                    type="button"
+                                    onClick={() => handleToggleDocumentacion(d)}
+                                    className={`flex items-start gap-2.5 p-2.5 rounded-lg border text-left text-xs transition-all cursor-pointer select-none ${
+                                      isSel
+                                        ? 'bg-[#468DFF]/10 border-[#468DFF] text-[#468DFF] font-semibold'
+                                        : 'bg-slate-50/50 border-slate-200/70 hover:bg-slate-100 text-slate-700'
+                                    }`}
+                                  >
+                                    {isSel ? (
+                                      <CheckSquare className="h-4 w-4 text-[#468DFF] shrink-0 mt-0.5" />
+                                    ) : (
+                                      <Square className="h-4 w-4 text-slate-400 shrink-0 mt-0.5" />
+                                    )}
+                                    <span className="leading-snug flex-1 break-words">{d}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          );
+                        })()}
                       </div>
 
                       {/* Agregar documentación manual */}
-                      <div className="flex gap-2 max-w-md">
-                        <input
-                          type="text"
-                          placeholder="Agregar otra documentación..."
-                          value={documentacionCustomText}
-                          onChange={(e) => setDocumentacionCustomText(e.target.value)}
-                          className="flex-1 px-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-[#468DFF] bg-white"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleAddCustomDocumentacion}
-                          className="px-3 py-1.5 bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold rounded-lg cursor-pointer"
-                        >
-                          Agregar
-                        </button>
+                      <div className="pt-1">
+                        <label className="text-[11px] font-semibold text-slate-500 block mb-1.5">
+                          ¿No encuentras una opción en la lista? Agrégala manualmente:
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            placeholder="Escriba otra documentación no presente en el catálogo..."
+                            value={documentacionCustomText}
+                            onChange={(e) => setDocumentacionCustomText(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                handleAddCustomDocumentacion();
+                              }
+                            }}
+                            className="flex-1 px-3 py-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF] focus:ring-1 focus:ring-[#468DFF] bg-white"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleAddCustomDocumentacion}
+                            className="px-4 py-2 bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold rounded-xl transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer shadow-xs"
+                          >
+                            <PlusCircle className="h-3.5 w-3.5" />
+                            Agregar
+                          </button>
+                        </div>
                       </div>
+
+                      {/* Badges de resumen de seleccionados */}
+                      {selectedDocumentacion.length > 0 && (
+                        <div className="pt-2 border-t border-slate-200/60 space-y-1.5">
+                          <span className="text-[11px] font-bold text-slate-500 block">
+                            Documentos seleccionados actualmente:
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {selectedDocumentacion.map((d) => (
+                              <span
+                                key={d}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 text-[#468DFF] text-xs font-semibold"
+                              >
+                                <span className="max-w-[280px] truncate">{d}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleDocumentacion(d)}
+                                  className="hover:text-red-500 p-0.5 rounded-full hover:bg-blue-100 transition-colors cursor-pointer"
+                                  title="Quitar ítem"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                   </div>
@@ -3570,15 +3083,6 @@ export default function VisitasPage({ params }) {
                       <div className="space-y-2 flex flex-col">
                         <div className="flex flex-row justify-between items-end gap-2 min-h-[18px]">
                           <label className="text-xs font-bold text-slate-600 pr-2">Firma del Responsable de la Empresa</label>
-                          {canEdit && (hasSignedResp || firmaRespSavedUrl) && (
-                            <button
-                              type="button"
-                              onClick={() => handleClearCanvas(firmaRespCanvasRef, setHasSignedResp, setFirmaRespSavedUrl)}
-                              className="text-[10px] font-bold text-red-500 hover:text-red-700 cursor-pointer shrink-0"
-                            >
-                              Limpiar Firma
-                            </button>
-                          )}
                         </div>
 
                         {/* Espaciador para compensar el selector de la firma del profesional y mantener alineados los cuadros */}
@@ -3598,6 +3102,17 @@ export default function VisitasPage({ params }) {
                           )}
                           {!hasSignedResp && !firmaRespSavedUrl && (
                             <span className="absolute pointer-events-none text-[10px] text-slate-400 font-bold uppercase tracking-wider">Dibuje la firma aquí</span>
+                          )}
+                          {canEdit && (hasSignedResp || firmaRespSavedUrl) && (
+                            <button
+                              type="button"
+                              onClick={() => handleClearCanvas(firmaRespCanvasRef, setHasSignedResp, setFirmaRespSavedUrl)}
+                              className="absolute bottom-2 right-2 z-20 px-2.5 py-1 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white/90 hover:bg-white border border-slate-200 rounded-lg shadow-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                              title="Limpiar trazo de firma"
+                            >
+                              <RotateCcw className="h-3 w-3 text-slate-500" />
+                              <span>Limpiar</span>
+                            </button>
                           )}
                         </div>
                       </div>
@@ -3681,9 +3196,11 @@ export default function VisitasPage({ params }) {
                                   <button
                                     type="button"
                                     onClick={() => handleClearCanvas(firmaProfCanvasRef, setHasSignedProf, setFirmaProfSavedUrl)}
-                                    className="absolute top-2.5 right-2.5 text-[10px] font-bold px-2 py-1 bg-red-50 text-red-500 hover:bg-red-100 rounded-md transition-colors cursor-pointer border border-red-200/50"
+                                    className="absolute bottom-2 right-2 z-20 px-2.5 py-1 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white/90 hover:bg-white border border-slate-200 rounded-lg shadow-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                                    title="Limpiar trazo de firma"
                                   >
-                                    Limpiar Firma
+                                    <RotateCcw className="h-3 w-3 text-slate-500" />
+                                    <span>Limpiar</span>
                                   </button>
                                 )}
                               </div>
@@ -3772,6 +3289,7 @@ export default function VisitasPage({ params }) {
             )}
 
           </div>
+        )}
       </main>
 
       {/* MODAL DE ENVÍO DE REPORTE (CORREO / WHATSAPP) */}
