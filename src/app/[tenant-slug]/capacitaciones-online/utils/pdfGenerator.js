@@ -139,7 +139,49 @@ export async function generateCapacitacionOnlinePdf({
     activeNombre = capacitacion?.capacitador_nombre || 'Profesional de Higiene y Seguridad';
   }
 
-  let activeMatricula = (userHasSig ? (profile?.matricula || profile?.matricula_numero) : null) || adminProfile?.matricula || adminProfile?.matricula_numero || '';
+  // Resolución completa de TODAS las matrículas cargadas en el perfil
+  const activeProfile = userHasSig ? profile : (adminProfile || profile);
+  const activeUserId = activeProfile?.id || profile?.id || adminProfile?.id;
+
+  let activeMatricula = '';
+  if (supabase && activeUserId) {
+    try {
+      const { data: matData } = await supabase
+        .from('matriculas')
+        .select('institucion, numero')
+        .eq('user_id', activeUserId);
+
+      if (matData && matData.length > 0) {
+        activeMatricula = matData
+          .map(m => {
+            const inst = m.institucion ? `${m.institucion.trim()} ` : '';
+            const num = m.numero ? m.numero.trim() : '';
+            return `${inst}${num}`.trim();
+          })
+          .filter(Boolean)
+          .join(' / ');
+      }
+    } catch (e) {
+      console.error('Error al consultar tabla matriculas:', e);
+    }
+  }
+
+  if (!activeMatricula) {
+    if (activeProfile?.matriculas && Array.isArray(activeProfile.matriculas) && activeProfile.matriculas.length > 0) {
+      activeMatricula = activeProfile.matriculas
+        .map(m => {
+          const inst = m.institucion ? `${m.institucion.trim()} ` : '';
+          const num = m.numero ? m.numero.trim() : '';
+          return `${inst}${num}`.trim();
+        })
+        .filter(Boolean)
+        .join(' / ');
+    } else if (activeProfile?.matricula_institucion && activeProfile?.matricula_numero) {
+      activeMatricula = `${activeProfile.matricula_institucion} N° ${activeProfile.matricula_numero}`;
+    } else {
+      activeMatricula = activeProfile?.matricula || activeProfile?.matricula_numero || adminProfile?.matricula || adminProfile?.matricula_numero || '';
+    }
+  }
 
   let trainerSigBase64 = null;
   let trainerSigDims = null;
@@ -168,7 +210,8 @@ export async function generateCapacitacionOnlinePdf({
     if (pageIdx > 0) {
       doc.addPage();
     }
-    let currentY = 6;
+    // Elevar la coordenada inicial para acercar el contenido al logo del encabezado
+    let currentY = 5;
 
     // -------------------------------------------------------------
     // 1. ENCABEZADO (Logo Principal + Título Principal)
@@ -188,20 +231,20 @@ export async function generateCapacitacionOnlinePdf({
         }
 
         doc.addImage(logoBase64, 'PNG', marginX, currentY, renderW, renderH, undefined, 'FAST');
-        currentY += Math.max(12, renderH + 1);
+        currentY += Math.max(8, renderH - 5); // Acercar contenido elevando la barra de título
       } catch (e) {
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(14);
         doc.setTextColor(...COLOR_HEADER_BLUE);
         doc.text('GESTIÓN SySO', marginX, currentY + 7);
-        currentY += 12;
+        currentY += 10;
       }
     } else {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(14);
       doc.setTextColor(...COLOR_HEADER_BLUE);
       doc.text('GESTIÓN SySO', marginX, currentY + 7);
-      currentY += 12;
+      currentY += 10;
     }
 
     // Barra Azul de Título Principal (Relleno #468DFF)
@@ -509,8 +552,8 @@ export async function generateCapacitacionOnlinePdf({
       }
     }
 
-    // Texto de Aclaración y Matrícula (Ubicado al pie de la firma)
-    doc.setFont('helvetica', 'bold');
+    // Texto de Aclaración y Matrícula (En tipografía normal sin negrita, con todas las matrículas)
+    doc.setFont('helvetica', 'normal');
     doc.setFontSize(8.5);
     doc.setTextColor(30, 41, 59);
     const matText = activeMatricula ? ` - Matrícula: ${activeMatricula}` : '';

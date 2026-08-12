@@ -1,18 +1,13 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-11] Estructura Oficial Completa en Cada Hoja del Registro de Capacitaciones Online (PDF)
+## [2026-08-11] Estilo Normal en Aclaración, Múltiples Matrículas y Elevación Vertical de Estructura en PDF
 
 ### Resumen de Cambios
-- **Paginación Multi-Hoja Oficial (`src/app/[tenant-slug]/capacitaciones-online/utils/pdfGenerator.js`):**
-  - **Grilla Estándar de 15 Filas por Hoja:** Cada hoja del documento se estructura con la grilla de exactamente 15 filas de participantes (completando las filas vacías necesarias en caso de requerirse).
-  - **Inclusión del Formulario Oficial Completo en Todas las Hojas:** Cada página (tanto la 1 como las siguientes en capacitaciones de más de 15 asistentes) mantiene intactos los bloques del diseño original:
-    - Encabezado con Logo principal, Barra azul de título y Recuadro dinámico de Tema.
-    - Grilla de Metadatos (Razón Social, Fecha, Hora, Duración, Metodología, Material entregado).
-    - Subencabezado y Tabla de 15 Asistentes.
-    - Recuadro de Observaciones (nota legal SRT 2/22 y Res. 48/25).
-    - Recuadro de Firma y Aclaración del Capacitador.
-    - Recuadro de Medición de la Eficacia y Verificado Por.
-  - **Pie de Página Global:** Estampado dinámico `Página X de Y` y datos de contacto en todas las hojas.
+- **Aclaración y Matrículas (`src/app/[tenant-slug]/capacitaciones-online/utils/pdfGenerator.js`):**
+  - **Formato Tipográfico:** Se cambió la tipografía del nombre del capacitador/administrador de `bold` a `normal` (`doc.setFont('helvetica', 'normal')`), tal como fue solicitado.
+  - **Resolución Multi-Matrícula:** Se consulta dinámicamente la tabla `matriculas` en Supabase para el usuario activo, concatenando todas sus matrículas registradas (`COPIME L002210 / CPSH LHS-000179 PSA`) en lugar de mostrar únicamente la primera.
+- **Elevación de la Estructura Vertical:**
+  - Se redujo el margen superior (`currentY = 5 mm`) y el salto post-logo (`Math.max(8, renderH - 5)`), desplazando todo el bloque (encabezado, grilla, tabla de 15 filas, observaciones, firma y eficacia) hacia arriba, acercándolo al logo y generando un espacio libre de más de **15 mm** antes del pie de página azul sin alterar dimensiones ni fuentes.
 
 ### Archivos Modificados
 - `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/utils/pdfGenerator.js`
