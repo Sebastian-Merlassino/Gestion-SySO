@@ -1,5 +1,22 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-12] Corrección del Trigger `check_profile_updates()` Bloqueando Onboarding (HTTP 400 - tenant_id y role)
+
+### Resumen de Cambios
+- **Migración SQL (`supabase/migrations/20260824000000_allow_initial_tenant_assignment.sql`):**
+  - **Detección de Flujo de Onboarding**: Se incorporó lógica condicional que identifica cuando `OLD.tenant_id IS NULL AND NEW.tenant_id IS NOT NULL` (primera asignación de organización) y permite la actualización completa del perfil, incluyendo la transición de `role` de `miembro` a `admin`.
+  - **Mantención de Bloqueos de Seguridad Post-Onboarding**: Una vez completada la asignación inicial, el trigger sigue bloqueando cambios de `tenant_id` (migración de tenant), `role` (escalamiento de privilegios) y `empresa_id` (cambio de empresa) cuando se ejecutan desde el frontend con `anon` key.
+  - **Bypass Intacto para `service_role`**: Las operaciones de servidor (APIs de equipo, clientes, webhooks) siguen operando sin restricción alguna.
+
+### Causa Raíz
+El trigger `check_profile_updates()` (migración `20260802000000_block_empresa_id_update.sql`) bloqueaba TODOS los cambios de `tenant_id` y `role`, sin distinguir entre la asignación inicial durante onboarding (legítima) y una reasignación posterior (potencialmente maliciosa). Esto causaba el error: `"Operación no permitida: No puedes modificar tu vinculación de organización (tenant_id)."`.
+
+### Archivos Creados / Modificados
+- `[NEW] supabase/migrations/20260824000000_allow_initial_tenant_assignment.sql`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
 ## [2026-08-12] Corrección del Error 400 (Bad Request) por Formato de Fecha 'out of range' en Actualización de Perfil (`profiles`)
 
 ### Resumen de Cambios
