@@ -1,5 +1,22 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-13] Leyenda Instructiva en Video, Autohabilitación al Finalizar y Actualización de Botón en Capacitación Virtual
+
+### Resumen de Cambios
+- **Leyenda Superior en Video Instructivo (`src/app/capacitar/[token]/page.js`):**
+  - Se agregó el subtítulo explicativo bajo el título *Video Instructivo de la Capacitación*: `"Visualice el video instructivo antes de completar el registro de capacitación. El formulario de registro se habilitará al finalizar la visualización o al confirmar la lectura."`.
+- **Habilitación Automática por Finalización de Video:**
+  - **Video HTML5:** Se capturó el evento `onEnded` en la etiqueta `<video>` para habilitar de forma automática el formulario de asistencia (`setHasCompletedMaterial(true)`).
+  - **Video YouTube (Iframe):** Se incluyó el parámetro `enablejsapi=1` en el embed de YouTube y un listener de eventos `postMessage` (`playerState === 0`) para desbloquear el formulario automáticamente cuando el video termina.
+- **Actualización del Texto del Botón de Confirmación:**
+  - Se actualizó la etiqueta del botón de confirmación manual a `"Confirmar lectura/visualización del material y habilitar formulario"`.
+
+### Archivos Modificados
+- `[MODIFY] src/app/capacitar/[token]/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
 ## [2026-08-12] Auditoría y Estandarización Universal de Indicadores de Carga Circular (`loading`)
 
 ### Resumen de Cambios

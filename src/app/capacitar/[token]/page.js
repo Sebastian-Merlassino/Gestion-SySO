@@ -256,24 +256,61 @@ export default function PublicCapacitacionPage({ params }) {
     setTotalSlides(n);
   }, []);
 
-  // Helper para convertir URLs de YouTube en Iframe Embed URLs
-  const getYouTubeEmbedUrl = (url) => {
+  // Helper para determinar el tipo de video y URL de embed
+  const getVideoInfo = (url) => {
     if (!url) return null;
+    const trimmed = url.trim();
+    const lowerUrl = trimmed.toLowerCase();
+
+    // 1. Archivo de video HTML5 directo (.mp4, .webm, .mov, o Supabase Storage)
+    const isDirectVideo = lowerUrl.endsWith('.mp4') || lowerUrl.endsWith('.webm') || lowerUrl.endsWith('.mov') || lowerUrl.includes('/storage/v1/object/');
+    if (isDirectVideo) {
+      return { type: 'html5', url: trimmed };
+    }
+
+    // 2. YouTube
     try {
       let videoId = '';
-      if (url.includes('youtu.be/')) {
-        videoId = url.split('youtu.be/')[1]?.split('?')[0];
-      } else if (url.includes('youtube.com/watch')) {
-        const urlObj = new URL(url);
+      if (trimmed.includes('youtu.be/')) {
+        videoId = trimmed.split('youtu.be/')[1]?.split('?')[0];
+      } else if (trimmed.includes('youtube.com/watch')) {
+        const urlObj = new URL(trimmed);
         videoId = urlObj.searchParams.get('v');
-      } else if (url.includes('youtube.com/embed/')) {
-        return url;
+      } else if (trimmed.includes('youtube.com/embed/')) {
+        const parts = trimmed.split('youtube.com/embed/')[1]?.split('?')[0];
+        videoId = parts;
       }
-      return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
+      if (videoId) {
+        return {
+          type: 'youtube',
+          embedUrl: `https://www.youtube.com/embed/${videoId}?enablejsapi=1`
+        };
+      }
     } catch (e) {
-      return url;
+      console.warn('Error parseando URL de YouTube:', e);
     }
+
+    // 3. Fallback a iframe genérico
+    return { type: 'iframe', embedUrl: trimmed };
   };
+
+  // Listener de eventos postMessage para autohabilitar el formulario cuando un video de YouTube finaliza (playerState === 0)
+  useEffect(() => {
+    const handleWindowMessage = (event) => {
+      try {
+        const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+        if (data?.event === 'infoDelivery' && data?.info?.playerState === 0) {
+          setHasCompletedMaterial(true);
+          toast('¡Ha finalizado la visualización del video instructivo! El formulario de registro se ha habilitado.', 'info');
+        }
+      } catch (e) {
+        // Ignorar otros eventos postMessage no relacionados
+      }
+    };
+
+    window.addEventListener('message', handleWindowMessage);
+    return () => window.removeEventListener('message', handleWindowMessage);
+  }, [toast]);
 
   // Helper para obtener coordenadas relativas al canvas escaladas proporcionalmente
   const getCanvasPos = (e, canvas) => {
@@ -498,7 +535,7 @@ export default function PublicCapacitacionPage({ params }) {
     );
   }
 
-  const embedVideoUrl = getYouTubeEmbedUrl(capacitacion.video_url);
+  const videoInfo = getVideoInfo(capacitacion.video_url);
 
   // Formatear los temas sin saltos de línea dobles
   const formattedTemas = (capacitacion.descripcion || capacitacion.titulo || '')
@@ -559,21 +596,40 @@ export default function PublicCapacitacionPage({ params }) {
           </div>
         </div>
 
-        {/* Sección 1: Material audiovisual (Video YouTube) */}
-        {embedVideoUrl && (
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-            <h2 className="text-base font-bold text-slate-800 flex items-center gap-2 mb-4">
-              <Tv className="w-5 h-5 text-[#468DFF]" />
-              Video Instructivo de la Capacitación
-            </h2>
+        {/* Sección 1: Material audiovisual (Video Instructivo) */}
+        {videoInfo && (
+          <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-md space-y-4">
+            <div>
+              <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                <Tv className="w-5 h-5 text-[#468DFF]" />
+                Video Instructivo de la Capacitación
+              </h2>
+              <span className="text-xs text-slate-500 block mt-1">
+                Visualice el video instructivo antes de completar el registro de capacitación. El formulario de registro se habilitará al finalizar la visualización o al confirmar la lectura.
+              </span>
+            </div>
+
             <div className="aspect-video w-full rounded-xl overflow-hidden bg-slate-900 border border-slate-200 shadow-inner">
-              <iframe
-                src={embedVideoUrl}
-                title={capacitacion.titulo}
-                className="w-full h-full border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
+              {videoInfo.type === 'html5' ? (
+                <video
+                  src={videoInfo.url}
+                  controls
+                  controlsList="nodownload"
+                  onEnded={() => {
+                    setHasCompletedMaterial(true);
+                    toast('¡Ha finalizado la visualización del video instructivo! El formulario de registro se ha habilitado.', 'info');
+                  }}
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <iframe
+                  src={videoInfo.embedUrl}
+                  title={capacitacion.titulo}
+                  className="w-full h-full border-0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              )}
             </div>
           </div>
         )}
@@ -847,7 +903,7 @@ export default function PublicCapacitacionPage({ params }) {
                 className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-[#468DFF]/20 flex items-center gap-2 mx-auto cursor-pointer"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                Confirmar lectura del material y habilitar formulario
+                Confirmar lectura/visualización del material y habilitar formulario
               </button>
             </div>
           ) : (
