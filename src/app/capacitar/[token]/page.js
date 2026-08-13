@@ -47,6 +47,7 @@ const PdfSlideViewer = dynamic(() => import('@/components/ui/PdfSlideViewer'), {
 function YouTubePlayer({ videoId, onEnded, title }) {
   const containerRef = useRef(null);
   const playerRef = useRef(null);
+  const isInitializedRef = useRef(false);
   const [apiFailed, setApiFailed] = useState(false);
 
   useEffect(() => {
@@ -55,14 +56,10 @@ function YouTubePlayer({ videoId, onEnded, title }) {
 
     const initPlayer = () => {
       if (!isMounted || !containerRef.current || !window.YT || !window.YT.Player) return;
-
-      if (playerRef.current && typeof playerRef.current.destroy === 'function') {
-        try {
-          playerRef.current.destroy();
-        } catch (e) {}
-      }
+      if (isInitializedRef.current) return;
 
       try {
+        isInitializedRef.current = true;
         playerRef.current = new window.YT.Player(containerRef.current, {
           videoId: videoId,
           width: '100%',
@@ -131,11 +128,6 @@ function YouTubePlayer({ videoId, onEnded, title }) {
 
     return () => {
       isMounted = false;
-      if (playerRef.current && typeof playerRef.current.destroy === 'function') {
-        try {
-          playerRef.current.destroy();
-        } catch (e) {}
-      }
     };
   }, [videoId, onEnded]);
 

@@ -1,11 +1,11 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-13] Depuración de Advertencias de Consola (React `allowfullscreen` y YouTube WidgetAPI `postMessage`)
+## [2026-08-13] Protección Contra Doble Inicialización en React StrictMode para `YouTubePlayer`
 
 ### Resumen de Cambios
-- **Corrección de Advertencias en Consola (`src/app/capacitar/[token]/page.js`):**
-  - **Advertencia de Atributo React `allowfullscreen`:** Se unificaron las directivas de todos los iframes embebidos incluyendo `fullscreen` dentro de la propiedad `allow="...; fullscreen"` y removiendo el atributo secundario `allowFullScreen`, eliminando la advertencia de React en la consola.
-  - **Advertencia de YouTube `postMessage` Target Origin Mismatch:** Se removió el parámetro explicativo `origin` dentro de los `playerVars` de la instancia `new window.YT.Player(...)`, permitiendo que la API nativa de YouTube resuelva el origen de forma transparente sin disparar errores de reconciliación de postMessage en `www-widgetapi.js`.
+- **Instancia Única de Reproductor (`src/app/capacitar/[token]/page.js`):**
+  - Se incorporó la referencia de control `isInitializedRef` dentro del componente `YouTubePlayer`.
+  - En entornos de desarrollo (React 18 StrictMode), la ejecución duplicada del ciclo de vida del `useEffect` intentaba re-instanciar `new window.YT.Player(...)` mientras el reproductor previo seguía ejecutando su heartbeat interno. La salvaguarda mediante `isInitializedRef.current` evita la inicialización redundante y erradica por completo la advertencia interna de `www-widgetapi.js`.
 
 ### Archivos Modificados
 - `[MODIFY] src/app/capacitar/[token]/page.js`
