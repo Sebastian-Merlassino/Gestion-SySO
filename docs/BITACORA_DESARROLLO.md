@@ -1,6 +1,31 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-13] Resolución Crítica del Bug de Checkout Mercado Pago por Sanitización de Variables en Vercel
+
+### Resumen de Cambios
+- **Diagnóstico y Corrección en API Checkout (`src/app/api/checkout/route.js`):**
+  - Se identificó que la variable de entorno `MERCADO_PAGO_TEST_PAYER_EMAIL` presente en Vercel contenía una cadena vacía o espacios en blanco (`""` / `" "`), lo que provocaba que en JavaScript `process.env.MERCADO_PAGO_TEST_PAYER_EMAIL` fuera evaluado como una cadena VÁLIDA (truthy).
+  - Al enviarse `" "` como `payer_email` a los servidores de Mercado Pago, su API rebotaba la llamada devolviendo `{ message: 'Internal server error', status: 500 }`.
+  - Se implementó la sanitización robusta con `process.env.MERCADO_PAGO_TEST_PAYER_EMAIL?.trim()`: si la variable está vacía, contiene solo espacios o es menor a 4 caracteres, el sistema la descarta automáticamente y utiliza el correo limpio y normalizado del usuario autenticado (`user.email`).
+- **Resguardo en Inicialización de Mercado Pago (`src/config/mpConfig.js`):**
+  - Se eliminó el tiro de excepción en nivel de módulo si la variable `MERCADO_PAGO_ACCESS_TOKEN` no estuviese definida al cargar Next.js, convirtiéndolo en un aviso `console.warn` y permitiendo un manejo controlado de respuestas JSON HTTP 500 informativas en la API.
+- **Transparencia en Respuestas de Error:**
+  - Se modificó la API de checkout para devolver la descripción real del error devuelto por la pasarela de pagos (`err.message`) en lugar de ocultarla tras un texto genérico.
+
+### Archivos Modificados
+- `[MODIFY] src/app/api/checkout/route.js`
+- `[MODIFY] src/config/mpConfig.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Verificación directa contra la API de Mercado Pago con las casillas de correo reales del usuario (`sebastian.merlassino@gestionsyso.com` y `sebastianmerlassino@gmail.com`), obteniendo respuesta `200 OK` e `init_point` de checkout exitosos.
+- Compilación de producción exitosa (`npm.cmd run build` -> `✓ Compiled successfully`).
+- Despliegue en producción mediante push a la rama `main` en GitHub.
+
+---
+
 ## [2026-08-13] Restablecimiento Backend Infalible de Contraseñas — Flujo Completo Corregido
+
 
 ### Resumen de Cambios
 - **Corrección Crítica del Flujo de Recuperación (`src/app/api/auth/reset-password-request/route.js`):**
