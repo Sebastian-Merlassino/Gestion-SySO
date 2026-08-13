@@ -2042,47 +2042,52 @@ export default function ChecklistPersonalizadosPage({ params }) {
                                 {insp.responsable_higiene_seguridad_nombre || 'N/A'}
                               </td>
                               <td className="px-6 py-4 flex items-center justify-end gap-1.5 h-full">
-                                <button
-                                  onClick={() => handleExportPdfReport(insp, true, false)}
-                                  title="Ver PDF"
-                                  className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-colors border-none cursor-pointer"
-                                >
-                                  <FileText className="h-4.5 w-4.5" />
-                                </button>
-                                <button
-                                  onClick={() => handleExportPdfReport(insp, false, true)}
-                                  title="Descargar PDF"
-                                  className="p-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors border-none cursor-pointer"
-                                >
-                                  <Download className="h-4.5 w-4.5" />
-                                </button>
-                                {!isReadOnlyView && (
-                                  <button
-                                    onClick={() => handleOpenEmailModal(insp)}
-                                    title="Enviar por Correo"
-                                    className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-colors border-none cursor-pointer"
-                                  >
-                                    <Mail className="h-4.5 w-4.5" />
-                                  </button>
-                                )}
-                                {canEditar && (
-                                  <button
-                                    onClick={() => handleOpenEditInspeccion(insp, false)}
-                                    title="Editar"
-                                    className="p-1.5 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors border-none cursor-pointer"
-                                  >
-                                    <Edit className="h-4.5 w-4.5" />
-                                  </button>
-                                )}
-                                {canEliminar && (
-                                  <button
-                                    onClick={() => handleDeleteInspeccion(insp.id)}
-                                    title="Eliminar"
-                                    className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors border-none cursor-pointer"
-                                  >
-                                    <Trash2 className="h-4.5 w-4.5" />
-                                  </button>
-                                )}
+                                 <AppButton
+                                   variant="document-table"
+                                   size="icon"
+                                   onClick={() => handleExportPdfReport(insp, true, false)}
+                                   title="Ver PDF"
+                                 >
+                                   <FileText className="h-4.5 w-4.5" />
+                                 </AppButton>
+                                 <AppButton
+                                   variant="document-table"
+                                   size="icon"
+                                   onClick={() => handleExportPdfReport(insp, false, true)}
+                                   title="Descargar PDF"
+                                 >
+                                   <Download className="h-4.5 w-4.5" />
+                                 </AppButton>
+                                 {!isReadOnlyView && (
+                                   <AppButton
+                                     variant="document-table"
+                                     size="icon"
+                                     onClick={() => handleOpenEmailModal(insp)}
+                                     title="Enviar por Correo"
+                                   >
+                                     <Mail className="h-4.5 w-4.5" />
+                                   </AppButton>
+                                 )}
+                                 {canEditar && (
+                                   <AppButton
+                                     variant="edit-table"
+                                     size="icon"
+                                     onClick={() => handleOpenEditInspeccion(insp, false)}
+                                     title="Editar"
+                                   >
+                                     <Edit className="h-4.5 w-4.5" />
+                                   </AppButton>
+                                 )}
+                                 {canEliminar && (
+                                   <AppButton
+                                     variant="delete-table"
+                                     size="icon"
+                                     onClick={() => handleDeleteInspeccion(insp.id)}
+                                     title="Eliminar"
+                                   >
+                                     <Trash2 className="h-4.5 w-4.5" />
+                                   </AppButton>
+                                 )}
                               </td>
                             </tr>
                           );
@@ -2143,24 +2148,26 @@ export default function ChecklistPersonalizadosPage({ params }) {
                               {tmpl.bloque_firmas?.responsable_higiene_seguridad ? 'Habilitado' : 'Desactivado'}
                             </td>
                             <td className="px-6 py-4 flex items-center justify-end gap-1.5 h-full">
-                              {canEditar && (
-                                <button
-                                  onClick={() => handleOpenEditTemplate(tmpl)}
-                                  title="Editar Plantilla"
-                                  className="p-1.5 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors border-none cursor-pointer"
-                                >
-                                  <Edit className="h-4.5 w-4.5" />
-                                </button>
-                              )}
-                              {canEliminar && (
-                                <button
-                                  onClick={() => handleDeleteTemplate(tmpl.id, tmpl.nombre)}
-                                  title="Eliminar Plantilla"
-                                  className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors border-none cursor-pointer"
-                                >
-                                  <Trash2 className="h-4.5 w-4.5" />
-                                </button>
-                              )}
+                               {canEditar && (
+                                 <AppButton
+                                   variant="edit-table"
+                                   size="icon"
+                                   onClick={() => handleOpenEditTemplate(tmpl)}
+                                   title="Editar Plantilla"
+                                 >
+                                   <Edit className="h-4.5 w-4.5" />
+                                 </AppButton>
+                               )}
+                               {canEliminar && (
+                                 <AppButton
+                                   variant="delete-table"
+                                   size="icon"
+                                   onClick={() => handleDeleteTemplate(tmpl.id, tmpl.nombre)}
+                                   title="Eliminar Plantilla"
+                                 >
+                                   <Trash2 className="h-4.5 w-4.5" />
+                                 </AppButton>
+                               )}
                             </td>
                           </tr>
                         ))}

@@ -4610,33 +4610,33 @@ export default function MatrizRiesgosPage({ params }) {
                                 <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
                                   <div className="flex items-center justify-center gap-1.5">
                                     {isReadOnlyView ? (
-                                      <button
-                                        type="button"
+                                      <AppButton
+                                        variant="ghost-table"
+                                        size="icon"
                                         onClick={() => { handleEditClick(row); }}
-                                        className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center"
                                         title="Ver detalles"
                                       >
                                         <Eye className="h-4.5 w-4.5" />
-                                      </button>
+                                      </AppButton>
                                     ) : (
                                       <>
-                                        <button
-                                          type="button"
+                                        <AppButton
+                                          variant="edit-table"
+                                          size="icon"
                                           onClick={() => { setIsReadOnlyView(false); handleEditClick(row); }}
-                                          className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-colors cursor-pointer inline-flex items-center"
                                           title="Editar evaluación"
                                         >
                                           <Edit className="h-4.5 w-4.5" />
-                                        </button>
+                                        </AppButton>
                                         {canEliminar && (
-                                          <button
-                                            type="button"
+                                          <AppButton
+                                            variant="delete-table"
+                                            size="icon"
                                             onClick={() => handleDeleteClick(row.id)}
-                                            className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-colors cursor-pointer inline-flex items-center"
                                             title="Eliminar registro"
                                           >
                                             <Trash2 className="h-4.5 w-4.5" />
-                                          </button>
+                                          </AppButton>
                                         )}
                                       </>
                                     )}

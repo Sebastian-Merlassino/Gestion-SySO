@@ -2282,30 +2282,33 @@ export default function AccionesCorrectivasPage({ params }) {
                                           </a>
                                         )}
                                         {canEditar ? (
-                                          <button
+                                          <AppButton
+                                            variant="edit-table"
+                                            size="icon"
                                             onClick={() => { setIsReadOnlyView(false); handleEditClick(acc); }}
                                             title="Editar"
-                                            className="p-1.5 rounded-lg transition-all cursor-pointer inline-flex items-center bg-amber-50 hover:bg-amber-100 text-amber-600"
                                           >
                                             <Edit className="h-4.5 w-4.5" />
-                                          </button>
+                                          </AppButton>
                                         ) : (
-                                          <button
+                                          <AppButton
+                                            variant="ghost-table"
+                                            size="icon"
                                             onClick={() => { setIsReadOnlyView(true); handleEditClick(acc); }}
                                             title="Ver Detalle"
-                                            className="p-1.5 rounded-lg transition-all cursor-pointer inline-flex items-center bg-slate-100 hover:bg-slate-200 text-slate-600"
                                           >
                                             <Eye className="h-4.5 w-4.5" />
-                                          </button>
+                                          </AppButton>
                                         )}
                                         {canEliminar && (
-                                          <button
+                                          <AppButton
+                                            variant="delete-table"
+                                            size="icon"
                                             onClick={() => handleDeleteClick(acc.id)}
                                             title="Eliminar"
-                                            className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center"
                                           >
                                             <Trash2 className="h-4.5 w-4.5" />
-                                          </button>
+                                          </AppButton>
                                         )}
                                       </div>
                                     </td>

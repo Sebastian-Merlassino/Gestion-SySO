@@ -984,9 +984,8 @@ export default function ProtocolosRuidoPage({ params }) {
                             {/* Ver Detalles (solo Cliente) */}
                             {profile?.role === 'cliente' && (
                               <AppButton
-                                variant="ghost"
+                                variant="ghost-table"
                                 size="icon"
-                                className="bg-slate-100 hover:bg-slate-200 text-slate-600"
                                 onClick={() => {
                                   setEditingId(row.id);
                                   setFormMode('view');
@@ -1000,9 +999,8 @@ export default function ProtocolosRuidoPage({ params }) {
 
                             {/* Descargar PDF */}
                             <AppButton
-                              variant="ghost"
+                              variant="document-table"
                               size="icon"
-                              className="bg-slate-100 hover:bg-slate-200 text-slate-650"
                               onClick={() => handleExportPdf(row, false)}
                               title="Descargar PDF"
                             >
@@ -1011,9 +1009,8 @@ export default function ProtocolosRuidoPage({ params }) {
 
                             {/* Imprimir */}
                             <AppButton
-                              variant="ghost"
+                              variant="document-table"
                               size="icon"
-                              className="bg-slate-100 hover:bg-slate-200 text-slate-650"
                               onClick={() => handleExportPdf(row, true)}
                               title="Imprimir"
                             >
@@ -1035,9 +1032,8 @@ export default function ProtocolosRuidoPage({ params }) {
                             {/* Duplicar Borrador (solo no-cliente) */}
                             {profile?.role !== 'cliente' && canEditar && (
                               <AppButton
-                                variant="ghost"
+                                variant="document-table"
                                 size="icon"
-                                className="bg-indigo-50 hover:bg-indigo-100 text-indigo-650 border border-indigo-100/45 shadow-sm"
                                 onClick={() => handleDuplicate(row)}
                                 title="Duplicar borrador"
                               >

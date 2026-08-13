@@ -567,11 +567,6 @@ const [partidosList, setPartidosList] = useState([]);
     };
 
     const loadLocalidades = async () => {
-      if (!partido) {
-        setLocalidadesList([]);
-        setLocalidad('');
-        return;
-      }
       if (isDevMode) {
         // mock localities based on province and partido for dev mode
         const mockLocalities = provincia === 'BUENOS AIRES'
@@ -583,7 +578,7 @@ const [partidosList, setPartidosList] = useState([]);
         return;
       }
       try {
-        const data = await fetchAllGeography(provincia, partido);
+        const data = await fetchAllGeography(provincia, partido || null);
         if (data) {
           const uniqueLocs = Array.from(new Set(data.map(item => item.localidad_barrio))).sort();
           setLocalidadesList(uniqueLocs);
@@ -720,7 +715,7 @@ const [partidosList, setPartidosList] = useState([]);
     const isCliente = profileData?.role === 'cliente';
     const isBirthDateMissing = !isCliente && !birthDate;
 
-    if (!fullName || !email || !phone || !cuit || !provincia || !partido || isBirthDateMissing) {
+    if (!fullName || !email || !phone || !cuit || !provincia || isBirthDateMissing) {
       triggerToast('Por favor completa todos los campos obligatorios (*).', 'error');
       setLoading(false);
       return;
@@ -875,7 +870,7 @@ const [partidosList, setPartidosList] = useState([]);
           phone: phone,
           cuit: cuit,
           provincia: provincia,
-          departamento_partido: partido,
+          departamento_partido: partido || null,
           localidad: localidad,
           birth_date: convertToDbDate(birthDate) || null,
           signature_url: signatureUrl,
@@ -898,7 +893,7 @@ const [partidosList, setPartidosList] = useState([]);
           phone: phone,
           cuit: cuit,
           provincia: provincia,
-          departamento_partido: partido,
+          departamento_partido: partido || null,
           localidad: localidad,
           birth_date: convertToDbDate(birthDate) || null,
           signature_url: signatureUrl
@@ -1378,10 +1373,9 @@ const [partidosList, setPartidosList] = useState([]);
 
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                  Partido <span className="text-[#468DFF]">*</span>
+                  Partido <span className="text-slate-400 font-normal lowercase">(opcional)</span>
                 </label>
                 <select
-                  required
                   disabled={!provincia || partidosList.length === 0}
                   value={partido}
                   onChange={(e) => {
@@ -1390,7 +1384,7 @@ const [partidosList, setPartidosList] = useState([]);
                   }}
                   className="w-full max-w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 cursor-pointer disabled:opacity-50"
                 >
-                  <option value="" disabled>{!provincia ? 'Primero selecciona una provincia' : 'Selecciona un partido'}</option>
+                  <option value="">{!provincia ? 'Primero selecciona una provincia' : 'Selecciona un partido (opcional)'}</option>
                   {partidosList.map((p) => (
                     <option key={p} value={p}>
                       {p}
@@ -1404,13 +1398,13 @@ const [partidosList, setPartidosList] = useState([]);
                   Localidad (Opcional)
                 </label>
                 <select
-                  disabled={!partido || localidadesList.length === 0}
+                  disabled={!provincia || localidadesList.length === 0}
                   value={localidad}
                   onChange={(e) => setLocalidad(e.target.value)}
                   className="w-full max-w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 cursor-pointer disabled:opacity-50"
                 >
                   <option value="">
-                    {!partido ? 'Primero selecciona un partido' : 'Selecciona una localidad (opcional)'}
+                    {!provincia ? 'Primero selecciona una provincia' : 'Selecciona una localidad (opcional)'}
                   </option>
                   {localidadesList.map((loc) => (
                     <option key={loc} value={loc}>

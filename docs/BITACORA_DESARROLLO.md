@@ -1,5 +1,54 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-13] Estandarización de Textos y Subtítulo Profesional en Diálogo de Compartir Capacitaciones Online
+
+### Resumen de Cambios
+- **Ventana Emergente de Compartir (`src/app/[tenant-slug]/capacitaciones-online/page.js`):**
+  - **Subtítulo del Encabezado**: Se actualizó a `Capacitación virtual de Higiene y Seguridad` debajo del título principal `Compartir Capacitación`.
+  - **Cuerpo del Mensaje (WhatsApp y Email)**: Se formalizó la plantilla predeterminada con una redacción ejecutiva y profesional:
+    > *"Por medio del presente, les compartimos el enlace para ingresar a la capacitación virtual de higiene y seguridad en el trabajo. Temas: "${item.titulo}".\n\nPor favor ingrese al siguiente enlace para revisar el material y registrar su de asistencia:\n${publicUrl}\n\nGestión SySO"*
+  - **Dimensión de Cajas de Texto**: Se expandieron las áreas de texto (`textarea` `rows={6}`) para lectura y edición sin recortes.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+- `gestion-syso-brand-guidelines`
+- `gestion-syso-bitacora`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/components/ui/AppButton.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/nomina/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+- `[MODIFY] src/app/[tenant-slug]/matriz-riesgos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación estática de Next.js mediante `npm run build` con resultado impecable (`✓ Compiled successfully`).
+- Verificación de consistencia estética, iconografía de 18px (`h-4.5 w-4.5`) y paddings simétricos.
+
+### Próximo Paso Recomendado
+- Monitorear nuevas vistas o componentes que se agreguen en el futuro para asegurar que consuman directamente las variantes de `AppButton`.
+
+---
+
 ## [2026-08-13] Resolución de Excepción Crítica `EQUIPOS_IZAJE_OPTS is not defined` en Módulo Clientes / Empresas
 
 ### Resumen de Cambios
@@ -11837,3 +11886,58 @@ Se unificó estéticamente la pantalla de Perfil de Usuario (`/[tenant-slug]/pro
 ### Decisiones Clave
 - **Coexistencia**: El backend actual basado en Node/Express/Mongoose sigue estando activo y operativo en `src/server.js`, mientras que la nueva estructura Next.js se prepara bajo `src/app/` y `src/components/`.
 - **Enfoque Multi-tenant**: Se ha establecido desde el inicio un esquema relacional con `tenant_id` obligatorio en todas las tablas sensibles del tenant, protegido a nivel de base de datos usando Row Level Security (RLS) en Postgres/Supabase.
+
+---
+
+## [2026-08-13] Estandarización de Date Pickers en Editar Integrante de Equipo
+
+### Resumen de Cambios
+- **Refactorización de Campos de Fecha en `src/app/[tenant-slug]/equipo/page.js`**:
+  - Se sustituyeron los elementos `<input type="date">` nativos del navegador en `Fecha de Nacimiento` y `Fecha de Vencimiento` de Matrículas Profesionales por el componente de entrada estandarizado de la aplicación (`DD/MM/YYYY` + `formatAsDateInput` + icono `Calendar` de Lucide con selector emergente invisible).
+  - Se integraron las utilidades `formatDate`, `formatAsDateInput` y `convertToDbDate` desde `@/lib/utils` para garantizar la conversión bidireccional limpia entre el formato visual (`DD/MM/YYYY`) y la persistencia en Supabase (`YYYY-MM-DD`).
+
+### Decisiones Clave
+- Mantener la coherencia estética con el estándar visual de la aplicación (`profile/page.js`, `visitas/page.js`, `programa/page.js`), eliminando controles nativos inconsistentes entre navegadores.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación del proyecto (`npm run build`) en Next.js.
+- Verificación sintáctica y lógica de la conversión de datos ISO <-> DD/MM/YYYY.
+
+### Próximo Paso Recomendado
+- Continuar con la auditoría de formularios para asegurar que ningún otro módulo conserve campos de fecha nativos sin formatear.
+
+---
+
+## [2026-08-13] Flexibilización del Campo "Partido" a Opcional en Perfil e Integrantes
+
+### Resumen de Cambios
+- **Flexibilización de Formulario en `src/app/[tenant-slug]/equipo/page.js` y `src/app/[tenant-slug]/profile/page.js`**:
+  - Se eliminó el atributo `required` y la validación requerida server-side/client-side para el campo `Partido` (departamento/partido).
+  - Se actualizó la etiqueta visual a `Partido (Opcional)` / `Partido (opcional)`.
+  - Se ajustó la carga dinámica de localidades para permitir seleccionar localidad directamente filtrada por Provincia aun cuando el Partido permanezca vacío.
+
+### Decisiones Clave
+- Permitir el guardado de perfiles e integrantes sin exigir la selección de departamento/partido en jurisdicciones donde los usuarios no requieran dicho dato o no figure en sus direcciones.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Verificación del comportamiento del selector cascada Provincia -> Partido -> Localidad.
+- Compilación del proyecto (`npm run build`) exitosa.
+

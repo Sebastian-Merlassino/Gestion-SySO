@@ -1960,36 +1960,39 @@ export default function ExtintoresPage({ params }) {
                                           </a>
                                         )}
                                         {canEditar ? (
-                                          <button
+                                          <AppButton
+                                            variant="edit-table"
+                                            size="icon"
                                             onClick={() => {
                                               setIsReadOnlyView(false);
                                               handleEditClick(ext);
                                             }}
                                             title="Editar"
-                                            className="p-1.5 rounded-lg transition-all cursor-pointer bg-amber-50 hover:bg-amber-100 text-amber-600 inline-flex items-center"
                                           >
                                             <Edit className="h-4.5 w-4.5" />
-                                          </button>
+                                          </AppButton>
                                         ) : (
-                                          <button
+                                          <AppButton
+                                            variant="ghost-table"
+                                            size="icon"
                                             onClick={() => {
                                               setIsReadOnlyView(true);
                                               handleEditClick(ext);
                                             }}
                                             title="Ver Detalle"
-                                            className="p-1.5 rounded-lg transition-all cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-600 inline-flex items-center"
                                           >
                                             <Eye className="h-4.5 w-4.5" />
-                                          </button>
+                                          </AppButton>
                                         )}
                                         {canEliminar && (
-                                          <button
+                                          <AppButton
+                                            variant="delete-table"
+                                            size="icon"
                                             onClick={() => handleDeleteClick(ext.id)}
                                             title="Eliminar"
-                                            className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer"
                                           >
                                             <Trash2 className="h-4.5 w-4.5" />
-                                          </button>
+                                          </AppButton>
                                         )}
                                       </div>
                                     </td>

@@ -661,6 +661,7 @@ export default function CapacitacionesOnlinePage({ params }) {
 
     const emp = empresas.find(e => e.id === item.empresa_id);
     const defaultEmail = emp?.contactos_correos?.[0]?.valor || '';
+    const temasText = item.titulo || 'Higiene y Seguridad';
 
     setShareModal({
       show: true,
@@ -669,8 +670,8 @@ export default function CapacitacionesOnlinePage({ params }) {
       activeTab: 'whatsapp',
       phone: '',
       email: defaultEmail,
-      subject: `Capacitación Virtual SySO: ${item.titulo}`,
-      message: `Hola, les compartimos el enlace para ingresar a la capacitación virtual: "${item.titulo}".\n\nPor favor ingrese al siguiente enlace para revisar el material y registrar su firma de asistencia:\n${publicUrl}\n\nGestión SySO`
+      subject: `Capacitación Virtual SySO: ${temasText}`,
+      message: `Por medio del presente, les compartimos el enlace para ingresar a la capacitación virtual de higiene y seguridad en el trabajo. Temas: "${temasText}".\n\nPor favor ingrese al siguiente enlace para revisar el material y registrar su de asistencia:\n${publicUrl}\n\nGestión SySO`
     });
   };
 
@@ -2029,72 +2030,71 @@ export default function CapacitacionesOnlinePage({ params }) {
 
                                 <td className="px-6 py-4 text-right">
                                   <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
-                                    {/* Compartir Enlace */}
-                                    <button
-                                      type="button"
-                                      onClick={(e) => handleOpenShareModal(item, e)}
-                                      className="p-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                      title="Compartir Capacitación (WhatsApp / Email / Enlace)"
-                                    >
-                                      <Share2 className="h-4.5 w-4.5" />
-                                    </button>
+                                    <AppButton
+                                       variant="document-table"
+                                       size="icon"
+                                       onClick={(e) => handleOpenShareModal(item, e)}
+                                       title="Compartir Capacitación (WhatsApp / Email / Enlace)"
+                                     >
+                                       <Share2 className="h-4.5 w-4.5" />
+                                     </AppButton>
 
-                                    {/* Ver Firmas */}
-                                    <button
-                                      type="button"
-                                      onClick={(e) => handleOpenRegistrosModal(item, e)}
-                                      className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                      title="Ver Asistentes Firmantes"
-                                    >
-                                      <Users className="h-4.5 w-4.5" />
-                                    </button>
+                                     {/* Ver Firmas */}
+                                     <AppButton
+                                       variant="document-table"
+                                       size="icon"
+                                       onClick={(e) => handleOpenRegistrosModal(item, e)}
+                                       title="Ver Asistentes Firmantes"
+                                     >
+                                       <Users className="h-4.5 w-4.5" />
+                                     </AppButton>
 
-                                    {/* Imprimir */}
-                                    <button
-                                      type="button"
-                                      onClick={(e) => handlePrintPdf(item, e)}
-                                      className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                      title="Ver e Imprimir Registro de Capacitación (PDF)"
-                                    >
-                                      <Printer className="h-4.5 w-4.5" />
-                                    </button>
+                                     {/* Imprimir */}
+                                     <AppButton
+                                       variant="document-table"
+                                       size="icon"
+                                       onClick={(e) => handlePrintPdf(item, e)}
+                                       title="Ver e Imprimir Registro de Capacitación (PDF)"
+                                     >
+                                       <Printer className="h-4.5 w-4.5" />
+                                     </AppButton>
 
-                                    {/* Descargar Registro PDF */}
-                                    <button
-                                      type="button"
-                                      onClick={(e) => handleDownloadPdf(item, e)}
-                                      className="p-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                      title="Descargar Registro de Capacitación (PDF)"
-                                    >
-                                      <Download className="h-4.5 w-4.5" />
-                                    </button>
+                                     {/* Descargar Registro PDF */}
+                                     <AppButton
+                                       variant="document-table"
+                                       size="icon"
+                                       onClick={(e) => handleDownloadPdf(item, e)}
+                                       title="Descargar Registro de Capacitación (PDF)"
+                                     >
+                                       <Download className="h-4.5 w-4.5" />
+                                     </AppButton>
 
-                                    {/* Editar */}
-                                    {canEditar && (
-                                      <button
-                                        type="button"
-                                        onClick={() => handleEditClick(item)}
-                                        className="p-1.5 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 hover:text-amber-700 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                        title="Editar Capacitación"
-                                      >
-                                        <Edit className="h-4.5 w-4.5" />
-                                      </button>
-                                    )}
+                                     {/* Editar */}
+                                     {canEditar && (
+                                       <AppButton
+                                         variant="edit-table"
+                                         size="icon"
+                                         onClick={() => handleEditClick(item)}
+                                         title="Editar Capacitación"
+                                       >
+                                         <Edit className="h-4.5 w-4.5" />
+                                       </AppButton>
+                                     )}
 
-                                    {/* Eliminar */}
-                                    {canEliminar && (
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setDeleteConfirm({ show: true, id: item.id, title: item.titulo });
-                                        }}
-                                        className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                        title="Eliminar Capacitación"
-                                      >
-                                        <Trash2 className="h-4.5 w-4.5" />
-                                      </button>
-                                    )}
+                                     {/* Eliminar */}
+                                     {canEliminar && (
+                                       <AppButton
+                                         variant="delete-table"
+                                         size="icon"
+                                         onClick={(e) => {
+                                           e.stopPropagation();
+                                           setDeleteConfirm({ show: true, id: item.id, title: item.titulo });
+                                         }}
+                                         title="Eliminar Capacitación"
+                                       >
+                                         <Trash2 className="h-4.5 w-4.5" />
+                                       </AppButton>
+                                     )}
                                   </div>
                                 </td>
                               </tr>
@@ -2258,8 +2258,8 @@ export default function CapacitacionesOnlinePage({ params }) {
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-[#0D0D0D]">Compartir Capacitación</h3>
-                  <p className="text-xs text-slate-500 truncate max-w-[280px]">
-                    {shareModal.capacitacion?.titulo}
+                  <p className="text-xs text-slate-500 truncate max-w-[340px]">
+                    Capacitación virtual de Higiene y Seguridad
                   </p>
                 </div>
               </div>
@@ -2329,7 +2329,7 @@ export default function CapacitacionesOnlinePage({ params }) {
                     Mensaje a enviar
                   </label>
                   <textarea
-                    rows={4}
+                    rows={6}
                     value={shareModal.message}
                     onChange={(e) => setShareModal({ ...shareModal, message: e.target.value })}
                     className="w-full border border-slate-200 rounded-xl p-3 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50 font-normal leading-relaxed text-slate-800"
@@ -2378,7 +2378,7 @@ export default function CapacitacionesOnlinePage({ params }) {
                     Cuerpo del Mensaje
                   </label>
                   <textarea
-                    rows={4}
+                    rows={6}
                     value={shareModal.message}
                     onChange={(e) => setShareModal({ ...shareModal, message: e.target.value })}
                     className="w-full border border-slate-200 rounded-xl p-3 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50 font-normal leading-relaxed text-slate-800"

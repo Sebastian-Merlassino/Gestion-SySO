@@ -2697,57 +2697,63 @@ export default function AvisosRiesgoPage({ params }) {
                                 <td className="px-6 py-4 text-slate-600">{av.profesional_nombre}</td>
                                 <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                                   <div className="flex items-center justify-end gap-2">
-                                    <button
-                                      onClick={() => handleOpenPdf(av)}
-                                      title="Visualizar PDF"
-                                      className="p-1.5 rounded-lg bg-[#EFF6FF] hover:bg-[#DBEAFE] text-[#468DFF] hover:text-[#0511F2] transition-all cursor-pointer"
-                                    >
-                                      <FileText className="h-4.5 w-4.5" />
-                                    </button>
-                                    <button
-                                      onClick={() => generateAvisoPdf(av)}
-                                      title="Descargar PDF"
-                                      className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer"
-                                    >
-                                      <Download className="h-4.5 w-4.5" />
-                                    </button>
-                                    {profile && profile.role !== 'cliente' && (
-                                      <button
-                                        onClick={() => handleOpenEmailModal(av)}
-                                        title="Enviar por Correo"
-                                        className="p-1.5 rounded-lg bg-blue-50 hover:bg-[#468DFF]/25 text-[#468DFF] transition-all cursor-pointer"
-                                      >
-                                        <Mail className="h-4.5 w-4.5" />
-                                      </button>
-                                    )}
-                                    {profile && profile.role !== 'cliente' && (
-                                      canEditar ? (
-                                        <button
-                                          onClick={() => { setIsReadOnlyView(false); handleEdit(av); }}
-                                          className="p-1.5 rounded-lg transition-all cursor-pointer bg-amber-50 hover:bg-amber-100 text-amber-600"
-                                          title="Editar Aviso"
-                                        >
-                                          <Edit className="h-4.5 w-4.5" />
-                                        </button>
-                                      ) : (
-                                        <button
-                                          onClick={() => { setIsReadOnlyView(true); handleEdit(av); }}
-                                          className="p-1.5 rounded-lg transition-all cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-600"
-                                          title="Ver Detalle"
-                                        >
-                                          <Eye className="h-4.5 w-4.5" />
-                                        </button>
-                                      )
-                                    )}
-                                    {profile && profile.role !== 'cliente' && canEliminar && (
-                                      <button
-                                        onClick={() => handleDelete(av.id)}
-                                        className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer"
-                                        title="Eliminar Aviso"
-                                      >
-                                        <Trash2 className="h-4.5 w-4.5" />
-                                      </button>
-                                    )}
+                                     <AppButton
+                                       variant="document-table"
+                                       size="icon"
+                                       onClick={() => handleOpenPdf(av)}
+                                       title="Visualizar PDF"
+                                     >
+                                       <FileText className="h-4.5 w-4.5" />
+                                     </AppButton>
+                                     <AppButton
+                                       variant="document-table"
+                                       size="icon"
+                                       onClick={() => generateAvisoPdf(av)}
+                                       title="Descargar PDF"
+                                     >
+                                       <Download className="h-4.5 w-4.5" />
+                                     </AppButton>
+                                     {profile && profile.role !== 'cliente' && (
+                                       <AppButton
+                                         variant="document-table"
+                                         size="icon"
+                                         onClick={() => handleOpenEmailModal(av)}
+                                         title="Enviar por Correo"
+                                       >
+                                         <Mail className="h-4.5 w-4.5" />
+                                       </AppButton>
+                                     )}
+                                     {profile && profile.role !== 'cliente' && (
+                                       canEditar ? (
+                                         <AppButton
+                                           variant="edit-table"
+                                           size="icon"
+                                           onClick={() => { setIsReadOnlyView(false); handleEdit(av); }}
+                                           title="Editar Aviso"
+                                         >
+                                           <Edit className="h-4.5 w-4.5" />
+                                         </AppButton>
+                                       ) : (
+                                         <AppButton
+                                           variant="ghost-table"
+                                           size="icon"
+                                           onClick={() => { setIsReadOnlyView(true); handleEdit(av); }}
+                                           title="Ver Detalle"
+                                         >
+                                           <Eye className="h-4.5 w-4.5" />
+                                         </AppButton>
+                                       )
+                                     )}
+                                     {profile && profile.role !== 'cliente' && canEliminar && (
+                                       <AppButton
+                                         variant="delete-table"
+                                         size="icon"
+                                         onClick={() => handleDelete(av.id)}
+                                         title="Eliminar Aviso"
+                                       >
+                                         <Trash2 className="h-4.5 w-4.5" />
+                                       </AppButton>
+                                     )}
                                   </div>
                                 </td>
                               </tr>

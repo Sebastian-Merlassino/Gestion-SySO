@@ -1687,30 +1687,33 @@ export default function NominaPage({ params }) {
                             <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                               <div className="flex items-center justify-end gap-1.5">
                                 {canEditar ? (
-                                  <button
+                                  <AppButton
+                                    variant="edit-table"
+                                    size="icon"
                                     onClick={() => { setIsReadOnlyView(false); handleOpenEditForm(item); }}
-                                    className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 hover:text-amber-700 transition-colors cursor-pointer bg-amber-50"
                                     title="Editar empleado"
                                   >
                                     <Edit className="h-4.5 w-4.5" />
-                                  </button>
+                                  </AppButton>
                                 ) : (
-                                  <button
+                                  <AppButton
+                                    variant="ghost-table"
+                                    size="icon"
                                     onClick={() => { setIsReadOnlyView(true); handleOpenEditForm(item); }}
-                                    className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer inline-flex items-center"
                                     title="Ver Detalle"
                                   >
                                     <Eye className="h-4.5 w-4.5" />
-                                  </button>
+                                  </AppButton>
                                 )}
                                 {canDelete && (
-                                  <button
+                                  <AppButton
+                                    variant="delete-table"
+                                    size="icon"
                                     onClick={() => handleDeleteClick(item.id)}
-                                    className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer bg-red-50"
                                     title="Eliminar empleado"
                                   >
                                     <Trash2 className="h-4.5 w-4.5" />
-                                  </button>
+                                  </AppButton>
                                 )}
                               </div>
                             </td>

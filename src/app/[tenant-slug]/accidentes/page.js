@@ -4163,13 +4163,14 @@ export default function AccidentesPage({ params }) {
                                 <td className="px-6 py-4 text-center" onClick={e => e.stopPropagation()}>
                                   <div className="flex items-center justify-center gap-1">
                                     {acc.denuncia_signed_url && (
-                                      <button
+                                      <AppButton
+                                        variant="document-table"
+                                        size="icon"
                                         onClick={e => { e.stopPropagation(); handleViewPdf(acc.denuncia_signed_url); }}
                                         title="Ver denuncia de accidente"
-                                        className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-colors inline-flex items-center justify-center shadow-sm"
                                       >
                                         <FileText className="h-4.5 w-4.5" />
-                                      </button>
+                                      </AppButton>
                                     )}
                                     {acc.informe_signed_url && (
                                       <button

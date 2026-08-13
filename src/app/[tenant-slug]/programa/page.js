@@ -2427,30 +2427,33 @@ export default function ProgramaGestion({ params }) {
                                     <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                                       <div className="flex items-center justify-end gap-2">
                                         {canEditar ? (
-                                          <button
+                                          <AppButton
+                                            variant="edit-table"
+                                            size="icon"
                                             onClick={(e) => { e.stopPropagation(); setIsReadOnlyView(false); handleEdit(act); }}
-                                            className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                                             title="Editar actividad"
                                           >
                                             <Edit className="h-4.5 w-4.5" />
-                                          </button>
+                                          </AppButton>
                                         ) : (
-                                          <button
+                                          <AppButton
+                                            variant="ghost-table"
+                                            size="icon"
                                             onClick={(e) => { e.stopPropagation(); setIsReadOnlyView(true); handleEdit(act); }}
-                                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                                             title="Ver Detalle"
                                           >
                                             <Eye className="h-4.5 w-4.5" />
-                                          </button>
+                                          </AppButton>
                                         )}
                                         {canEliminar && (
-                                          <button
+                                          <AppButton
+                                            variant="delete-table"
+                                            size="icon"
                                             onClick={(e) => { e.stopPropagation(); handleDelete(act.id); }}
-                                            className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                                             title="Eliminar actividad"
                                           >
                                             <Trash2 className="h-4.5 w-4.5" />
-                                          </button>
+                                          </AppButton>
                                         )}
                                       </div>
                                     </td>

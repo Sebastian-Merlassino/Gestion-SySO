@@ -13,26 +13,31 @@ export default function AppButton({
   type = 'button',
   ...props
 }) {
-  const baseClasses = 'inline-flex items-center justify-center rounded-xl font-bold transition-all duration-200 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 select-none focus:outline-none focus:ring-2 focus:ring-[#468DFF]/30 focus:ring-offset-1';
+  const baseClasses = 'inline-flex items-center justify-center rounded-xl font-bold transition-all duration-200 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 select-none focus:outline-none focus:ring-2 focus:ring-[#468DFF]/30 focus:ring-offset-1 cursor-pointer';
   
   const variants = {
+    // Variantes Generales de Botonera / Formulario
     primary: 'bg-[#468DFF] text-white border border-[#468DFF] hover:bg-[#0511F2] hover:border-[#0511F2] shadow-md shadow-blue-500/10 hover:shadow-blue-500/20',
     secondary: 'bg-white text-[#468DFF] border border-[#468DFF] hover:bg-[#468DFF] hover:text-white hover:border-[#468DFF]',
     outline: 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:text-slate-900',
     ghost: 'bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-800 border border-transparent',
     destructive: 'bg-red-500 text-white border border-red-500 hover:bg-red-600 hover:border-red-600 shadow-md shadow-red-500/10',
+    amber: 'bg-amber-500 text-white border border-amber-500 hover:bg-amber-600 hover:border-amber-600 shadow-md shadow-amber-500/10',
+    success: 'bg-emerald-600 text-white border border-emerald-600 hover:bg-emerald-700 hover:border-emerald-700 shadow-md shadow-emerald-500/10',
     
-    // Acciones rápidas de tabla
-    'edit-table': 'p-1.5 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 hover:text-amber-800 transition-colors border border-amber-200/40 shadow-sm',
-    'delete-table': 'p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-800 transition-colors border border-red-200/40 shadow-sm',
-    'document-table': 'p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-colors border border-blue-200/40 shadow-sm',
+    // Acciones de Tabla Unificadas (Iconos de Tabla)
+    'document-table': 'p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-colors border border-blue-200/50 shadow-xs',
+    'edit-table': 'p-1.5 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 hover:text-amber-800 transition-colors border border-amber-200/50 shadow-xs',
+    'delete-table': 'p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-800 transition-colors border border-red-200/50 shadow-xs',
+    'success-table': 'p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-800 transition-colors border border-emerald-200/50 shadow-xs',
+    'ghost-table': 'p-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 transition-colors border border-slate-200/50 shadow-xs',
   };
 
   const sizes = {
-    sm: 'h-8 px-3 text-xs',
-    md: 'h-10 px-5 text-sm',
-    lg: 'h-11 px-8 text-base',
-    icon: 'p-1.5 text-xs',
+    sm: 'h-8 px-3 text-xs gap-1.5',
+    md: 'h-10 px-5 text-sm gap-2',
+    lg: 'h-11 px-8 text-base gap-2.5',
+    icon: 'h-8 w-8 p-1.5 text-xs flex items-center justify-center shrink-0',
   };
 
   const selectedVariant = variants[variant] || variants.primary;
@@ -52,3 +57,4 @@ export default function AppButton({
     </button>
   );
 }
+

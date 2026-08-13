@@ -7,7 +7,7 @@ import Sidebar from '@/components/Sidebar';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import { supabase, fetchAllGeography } from '@/lib/supabase';
 import { useToast } from '@/components/providers/ToastProvider';
-import { getEffectivePlan, PLAN_FEATURES } from '@/lib/utils';
+import { formatDate, formatAsDateInput, convertToDbDate, getEffectivePlan, PLAN_FEATURES } from '@/lib/utils';
 import AppPageHeader from '@/components/ui/AppPageHeader';
 import AppButton from '@/components/ui/AppButton';
 import AppInput from '@/components/ui/AppInput';
@@ -497,7 +497,7 @@ export default function EquipoPage({ params }) {
   }, [provincia, isDevMode]);
 
   useEffect(() => {
-    if (!provincia || !partido) {
+    if (!provincia) {
       setLocalidadesList([]);
       setLocalidad('');
       return;
@@ -509,7 +509,7 @@ export default function EquipoPage({ params }) {
         return;
       }
       try {
-        const data = await fetchAllGeography(provincia, partido);
+        const data = await fetchAllGeography(provincia, partido || null);
         const uniqueLocs = Array.from(new Set(data.map(item => item.localidad_barrio))).sort();
         setLocalidadesList(uniqueLocs);
       } catch (err) {
@@ -757,7 +757,7 @@ export default function EquipoPage({ params }) {
       setCuit(match.cuit);
       setCuitError('');
       setPhone(match.phone);
-      setBirthDate('1985-05-15');
+      setBirthDate(formatDate('1985-05-15'));
       setProvincia(match.provincia);
       setPartido(match.partido);
       setLocalidad(match.localidad);
@@ -772,7 +772,7 @@ export default function EquipoPage({ params }) {
           id: 'mock-m-1',
           institucion: 'COPIME',
           numero: 'L123456',
-          vencimiento: '2028-12-31',
+          vencimiento: formatDate('2028-12-31'),
           fotoFrente: null,
           fotoFrentePreview: 'https://placeholder-storage.com/documents/frente.png',
           fotoDorso: null,
@@ -784,7 +784,7 @@ export default function EquipoPage({ params }) {
         email: match.email || '',
         cuit: match.cuit || '',
         phone: match.phone || '',
-        birthDate: '1985-05-15',
+        birthDate: formatDate('1985-05-15'),
         provincia: match.provincia || '',
         partido: match.partido || '',
         localidad: match.localidad || '',
@@ -794,7 +794,7 @@ export default function EquipoPage({ params }) {
           {
             institucion: 'COPIME',
             numero: 'L123456',
-            vencimiento: '2028-12-31'
+            vencimiento: formatDate('2028-12-31')
           }
         ]
       });
@@ -817,7 +817,7 @@ export default function EquipoPage({ params }) {
       setCuit(member.cuit);
       setCuitError('');
       setPhone(member.phone);
-      setBirthDate(member.birth_date);
+      setBirthDate(formatDate(member.birth_date));
       setProvincia(member.provincia);
       setPartido(member.partido);
       
@@ -868,7 +868,7 @@ export default function EquipoPage({ params }) {
             id: m.id,
             institucion: m.institucion || '',
             numero: m.numero || '',
-            vencimiento: m.vencimiento || '',
+            vencimiento: formatDate(m.vencimiento),
             fotoFrentePreview: m.foto_frente_url ? await getSignedUrl('documents', m.foto_frente_url) : '',
             fotoDorsoPreview: m.foto_dorso_url ? await getSignedUrl('documents', m.foto_dorso_url) : '',
             fotoFrentePath: m.foto_frente_url || '',
@@ -899,7 +899,7 @@ export default function EquipoPage({ params }) {
         email: member.email,
         cuit: member.cuit,
         phone: member.phone,
-        birthDate: member.birth_date,
+        birthDate: formatDate(member.birth_date),
         provincia: member.provincia,
         partido: member.partido,
         localidad: member.localidad || '',
@@ -920,7 +920,7 @@ export default function EquipoPage({ params }) {
         email: member.email || '',
         cuit: member.cuit || '',
         phone: member.phone || '',
-        birthDate: member.birth_date || '',
+        birthDate: formatDate(member.birth_date),
         provincia: member.provincia || '',
         partido: member.partido || '',
         localidad: member.localidad || '',
@@ -998,7 +998,7 @@ export default function EquipoPage({ params }) {
     setSaving(true);
 
     // General Validations
-    if (!fullName || !email || !phone || !cuit || !provincia || !partido) {
+    if (!fullName || !email || !phone || !cuit || !provincia) {
       triggerToast('Por favor completa todos los campos obligatorios (*).', 'error');
       setSaving(false);
       return;
@@ -1124,7 +1124,7 @@ export default function EquipoPage({ params }) {
         phone,
         birth_date: birthDate || null,
         provincia,
-        partido,
+        partido: partido || null,
         localidad: localidad || null,
         tiene_acceso: tieneAcceso,
         profile_id: linkedProfileId,
@@ -1463,30 +1463,33 @@ export default function EquipoPage({ params }) {
                                 <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                                   <div className="flex items-center justify-end gap-2">
                                     {canEditar ? (
-                                      <button
+                                      <AppButton
+                                        variant="edit-table"
+                                        size="icon"
                                         onClick={() => { setIsReadOnlyView(false); handleEdit(m.id); }}
-                                        className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                                         title="Editar"
                                       >
                                         <Edit className="h-4.5 w-4.5" />
-                                      </button>
+                                      </AppButton>
                                     ) : (
-                                      <button
+                                      <AppButton
+                                        variant="ghost-table"
+                                        size="icon"
                                         onClick={() => { setIsReadOnlyView(true); handleEdit(m.id); }}
-                                        className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                                         title="Ver Detalle"
                                       >
                                         <Eye className="h-4.5 w-4.5" />
-                                      </button>
+                                      </AppButton>
                                     )}
                                     {canEliminar && (
-                                      <button
+                                      <AppButton
+                                        variant="delete-table"
+                                        size="icon"
                                         onClick={() => handleDelete(m.id, m.full_name, m.profile_id)}
-                                        className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
                                         title="Eliminar"
                                       >
                                         <Trash2 className="h-4.5 w-4.5" />
-                                      </button>
+                                      </AppButton>
                                     )}
                                   </div>
                                 </td>
@@ -1614,12 +1617,38 @@ export default function EquipoPage({ params }) {
                       <label className="text-xs font-bold text-slate-600 block mb-1">
                         Fecha de Nacimiento
                       </label>
-                      <input
-                        type="date"
-                        value={birthDate}
-                        onChange={(e) => setBirthDate(e.target.value)}
-                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
-                      />
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="DD/MM/YYYY"
+                          maxLength={10}
+                          value={birthDate}
+                          onChange={(e) => setBirthDate(formatAsDateInput(e.target.value))}
+                          disabled={!canEdit}
+                          className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono text-slate-700 disabled:opacity-50 disabled:bg-slate-100 disabled:pointer-events-none"
+                        />
+                        {canEdit && (
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center" onClick={(e) => e.stopPropagation()}>
+                            <Calendar className="h-4 w-4" />
+                            <input
+                              type="date"
+                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val) {
+                                  const parts = val.split('-');
+                                  if (parts.length === 3) {
+                                    setBirthDate(`${parts[2]}/${parts[1]}/${parts[0]}`);
+                                  }
+                                }
+                              }}
+                            />
+                          </div>
+                        )}
+                        {!canEdit && (
+                          <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -1649,10 +1678,9 @@ export default function EquipoPage({ params }) {
 
                     <div>
                       <label className="text-xs font-bold text-slate-600 block mb-1">
-                        Partido <span className="text-[#468DFF]">*</span>
+                        Partido <span className="text-slate-400">(Opcional)</span>
                       </label>
                       <select
-                        required
                         disabled={!provincia || partidosList.length === 0}
                         value={partido}
                         onChange={(e) => {
@@ -1661,7 +1689,7 @@ export default function EquipoPage({ params }) {
                         }}
                         className="w-full max-w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 cursor-pointer disabled:opacity-50"
                       >
-                        <option value="" disabled>{!provincia ? 'Selecciona provincia primero' : 'Selecciona un partido'}</option>
+                        <option value="">{!provincia ? 'Selecciona provincia primero' : 'Selecciona un partido (Opcional)'}</option>
                         {partidosList.map((p) => (
                           <option key={p} value={p}>
                             {p}
@@ -1675,12 +1703,12 @@ export default function EquipoPage({ params }) {
                         Localidad <span className="text-slate-400">(Opcional)</span>
                       </label>
                       <select
-                        disabled={!partido || localidadesList.length === 0}
+                        disabled={!provincia || localidadesList.length === 0}
                         value={localidad}
                         onChange={(e) => setLocalidad(e.target.value)}
                         className="w-full max-w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 cursor-pointer disabled:opacity-50"
                       >
-                        <option value="">{!partido ? 'Selecciona partido primero' : 'Selecciona localidad (Opcional)'}</option>
+                        <option value="">{!provincia ? 'Selecciona provincia primero' : 'Selecciona localidad (Opcional)'}</option>
                         {localidadesList.map((loc) => (
                           <option key={loc} value={loc}>
                             {loc}
@@ -1954,12 +1982,38 @@ export default function EquipoPage({ params }) {
                             <label className="text-xs font-bold text-slate-600 block mb-1">
                               Fecha de Vencimiento
                             </label>
-                            <input
-                              type="date"
-                              value={mat.vencimiento}
-                              onChange={(e) => handleMatriculaChange(idx, 'vencimiento', e.target.value)}
-                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
-                            />
+                            <div className="relative">
+                              <input
+                                type="text"
+                                placeholder="DD/MM/YYYY"
+                                maxLength={10}
+                                value={mat.vencimiento}
+                                onChange={(e) => handleMatriculaChange(idx, 'vencimiento', formatAsDateInput(e.target.value))}
+                                disabled={!canEdit}
+                                className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono text-slate-700 disabled:opacity-50 disabled:bg-slate-100 disabled:pointer-events-none"
+                              />
+                              {canEdit && (
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center" onClick={(e) => e.stopPropagation()}>
+                                  <Calendar className="h-4 w-4" />
+                                  <input
+                                    type="date"
+                                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      if (val) {
+                                        const parts = val.split('-');
+                                        if (parts.length === 3) {
+                                          handleMatriculaChange(idx, 'vencimiento', `${parts[2]}/${parts[1]}/${parts[0]}`);
+                                        }
+                                      }
+                                    }}
+                                  />
+                                </div>
+                              )}
+                              {!canEdit && (
+                                <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                              )}
+                            </div>
                           </div>
                         </div>
 

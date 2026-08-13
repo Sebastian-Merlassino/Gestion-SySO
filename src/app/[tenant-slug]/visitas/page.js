@@ -2180,28 +2180,31 @@ export default function VisitasPage({ params }) {
                                 <td className="px-6 py-4 text-slate-500">{v.responsable_presente}</td>
                                 <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                                   <div className="flex items-center justify-end gap-2">
-                                    <button 
+                                    <AppButton 
+                                      variant="document-table"
+                                      size="icon"
                                       onClick={() => handlePreviewPdf(v)}
-                                      className="p-1.5 rounded-lg bg-[#EFF6FF] hover:bg-[#DBEAFE] text-[#468DFF] hover:text-[#0511F2] transition-all cursor-pointer"
                                       title="Visualizar PDF"
                                     >
                                       <FileText className="h-4.5 w-4.5" />
-                                    </button>
-                                    <button 
+                                    </AppButton>
+                                    <AppButton 
+                                      variant="document-table"
+                                      size="icon"
                                       onClick={() => handleGeneratePdf(v)}
-                                      className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer"
                                       title="Descargar PDF"
                                     >
                                       <Download className="h-4.5 w-4.5" />
-                                    </button>
+                                    </AppButton>
                                     {profile && profile.role !== 'cliente' && (
-                                      <button 
+                                      <AppButton 
+                                        variant="document-table"
+                                        size="icon"
                                         onClick={() => handleOpenMailModal(v)}
-                                        className="p-1.5 rounded-lg bg-blue-50 hover:bg-[#468DFF]/25 text-[#468DFF] transition-all cursor-pointer"
                                         title="Enviar por Correo"
                                       >
                                         <Mail className="h-4.5 w-4.5" />
-                                      </button>
+                                      </AppButton>
                                     )}
                                     {profile && profile.role !== 'cliente' && (
                                       canEditar ? (
@@ -2215,9 +2218,8 @@ export default function VisitasPage({ params }) {
                                         </AppButton>
                                       ) : (
                                         <AppButton 
-                                          variant="ghost"
+                                          variant="ghost-table"
                                           size="icon"
-                                          className="bg-slate-100 hover:bg-slate-200 text-slate-600"
                                           onClick={() => { setIsReadOnlyView(true); handleEditClick(v); }}
                                           title="Ver Detalle"
                                         >
