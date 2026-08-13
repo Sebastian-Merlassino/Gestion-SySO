@@ -43,6 +43,93 @@ const PdfSlideViewer = dynamic(() => import('@/components/ui/PdfSlideViewer'), {
   )
 });
 
+// Componente para reproductor interactivo de YouTube mediante la API IFrame de YouTube
+function YouTubePlayer({ videoId, onEnded, title }) {
+  const containerRef = useRef(null);
+  const playerRef = useRef(null);
+
+  useEffect(() => {
+    if (!videoId) return;
+    let isMounted = true;
+
+    const initPlayer = () => {
+      if (!isMounted || !containerRef.current || !window.YT || !window.YT.Player) return;
+
+      if (playerRef.current && typeof playerRef.current.destroy === 'function') {
+        try {
+          playerRef.current.destroy();
+        } catch (e) {}
+      }
+
+      playerRef.current = new window.YT.Player(containerRef.current, {
+        videoId: videoId,
+        width: '100%',
+        height: '100%',
+        playerVars: {
+          autoplay: 0,
+          controls: 1,
+          rel: 0,
+          modestbranding: 1,
+          origin: typeof window !== 'undefined' ? window.location.origin : ''
+        },
+        events: {
+          onStateChange: (event) => {
+            // event.data === 0 (YT.PlayerState.ENDED) representa la finalización del video
+            if (event.data === 0) {
+              onEnded?.();
+            }
+          }
+        }
+      });
+    };
+
+    if (window.YT && window.YT.Player) {
+      initPlayer();
+    } else {
+      if (!document.getElementById('youtube-iframe-api-script')) {
+        const tag = document.createElement('script');
+        tag.id = 'youtube-iframe-api-script';
+        tag.src = 'https://www.youtube.com/iframe_api';
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag?.parentNode?.insertBefore(tag, firstScriptTag);
+      }
+
+      const previousCallback = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = () => {
+        if (previousCallback) previousCallback();
+        initPlayer();
+      };
+
+      const intervalId = setInterval(() => {
+        if (window.YT && window.YT.Player) {
+          clearInterval(intervalId);
+          initPlayer();
+        }
+      }, 300);
+
+      return () => {
+        isMounted = false;
+        clearInterval(intervalId);
+      };
+    }
+
+    return () => {
+      isMounted = false;
+      if (playerRef.current && typeof playerRef.current.destroy === 'function') {
+        try {
+          playerRef.current.destroy();
+        } catch (e) {}
+      }
+    };
+  }, [videoId, onEnded]);
+
+  return (
+    <div className="w-full h-full min-h-[300px]">
+      <div ref={containerRef} className="w-full h-full min-h-[300px]" />
+    </div>
+  );
+}
+
 export default function PublicCapacitacionPage({ params }) {
   const token = params?.token;
 
@@ -256,6 +343,15 @@ export default function PublicCapacitacionPage({ params }) {
     setTotalSlides(n);
   }, []);
 
+  // Callback unificado cuando finaliza la reproducción de un video
+  const handleVideoEnd = useCallback(() => {
+    setHasCompletedMaterial(true);
+    toast('¡Ha finalizado la visualización del video! El formulario de registro se ha habilitado.', 'info');
+    setTimeout(() => {
+      document.getElementById('firma-section')?.scrollIntoView({ behavior: 'smooth' });
+    }, 300);
+  }, [toast]);
+
   // Helper para determinar el tipo de video y URL de embed
   const getVideoInfo = (url) => {
     if (!url) return null;
@@ -281,10 +377,9 @@ export default function PublicCapacitacionPage({ params }) {
         videoId = parts;
       }
       if (videoId) {
-        const originParam = typeof window !== 'undefined' ? `&origin=${encodeURIComponent(window.location.origin)}` : '';
         return {
           type: 'youtube',
-          embedUrl: `https://www.youtube.com/embed/${videoId}?enablejsapi=1${originParam}`
+          videoId: videoId
         };
       }
     } catch (e) {
@@ -294,35 +389,6 @@ export default function PublicCapacitacionPage({ params }) {
     // 3. Fallback a iframe genérico
     return { type: 'iframe', embedUrl: trimmed };
   };
-
-  // Listener de eventos postMessage para autohabilitar el formulario cuando un video de YouTube finaliza (playerState === 0)
-  useEffect(() => {
-    const handleWindowMessage = (event) => {
-      try {
-        if (!event.data) return;
-        const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-
-        // Capturar cualquier variante de finalización de video de YouTube (state 0 = ENDED)
-        const isEnded = 
-          (data?.event === 'infoDelivery' && data?.info?.playerState === 0) ||
-          (data?.event === 'onStateChange' && (data?.info === 0 || data?.data === 0)) ||
-          (data?.info?.playerState === 0);
-
-        if (isEnded) {
-          setHasCompletedMaterial(true);
-          toast('¡Ha finalizado la visualización del video! El formulario de registro se ha habilitado.', 'info');
-          setTimeout(() => {
-            document.getElementById('firma-section')?.scrollIntoView({ behavior: 'smooth' });
-          }, 300);
-        }
-      } catch (e) {
-        // Ignorar otros eventos postMessage no relacionados
-      }
-    };
-
-    window.addEventListener('message', handleWindowMessage);
-    return () => window.removeEventListener('message', handleWindowMessage);
-  }, [toast]);
 
   // Helper para obtener coordenadas relativas al canvas escaladas proporcionalmente
   const getCanvasPos = (e, canvas) => {
@@ -622,18 +688,18 @@ export default function PublicCapacitacionPage({ params }) {
             </div>
 
             <div className="aspect-video w-full rounded-xl overflow-hidden bg-slate-900 border border-slate-200 shadow-inner">
-              {videoInfo.type === 'html5' ? (
+              {videoInfo.type === 'youtube' ? (
+                <YouTubePlayer
+                  videoId={videoInfo.videoId}
+                  onEnded={handleVideoEnd}
+                  title={capacitacion.titulo}
+                />
+              ) : videoInfo.type === 'html5' ? (
                 <video
                   src={videoInfo.url}
                   controls
                   controlsList="nodownload"
-                  onEnded={() => {
-                    setHasCompletedMaterial(true);
-                    toast('¡Ha finalizado la visualización del video! El formulario de registro se ha habilitado.', 'info');
-                    setTimeout(() => {
-                      document.getElementById('firma-section')?.scrollIntoView({ behavior: 'smooth' });
-                    }, 300);
-                  }}
+                  onEnded={handleVideoEnd}
                   className="w-full h-full object-contain"
                 />
               ) : (

@@ -1,16 +1,15 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-13] Leyenda Exacta, Título y Autohabilitación al Finalizar Video de Capacitación Virtual
+## [2026-08-13] Integración de YouTube IFrame Player API para Desbloqueo Automático y Scroll en Video
 
 ### Resumen de Cambios
-- **Ajuste de Título y Leyenda Superior (`src/app/capacitar/[token]/page.js`):**
-  - **Título de Sección:** Se renombró la cabecera a **`Video de la Capacitación`** (reflejando que el material del módulo es la capacitación misma en formato video).
-  - **Leyenda Exacta:** Se estableció el texto: `"Visualice el video antes de completar el registro de capacitación. El formulario de registro se habilitará al finalizar la visualización o al confirmar la lectura."`.
-- **Habilitación Automática por Finalización de Video:**
-  - **Video HTML5:** Evento `onEnded` en la etiqueta `<video>` para habilitar automáticamente el formulario (`setHasCompletedMaterial(true)`).
-  - **Video YouTube:** Parámetro `enablejsapi=1` y listener de eventos `postMessage` (`playerState === 0`).
-- **Botón de Confirmación Manual:**
-  - Etiqueta del botón: `"Confirmar lectura/visualización del material y habilitar formulario"`.
+- **Componente `YouTubePlayer` (`src/app/capacitar/[token]/page.js`):**
+  - Se creó el subcomponente dinámico `<YouTubePlayer />` que carga e inicializa de forma nativa la API de YouTube (`https://www.youtube.com/iframe_api`).
+  - **Detección de Finalización Infalible:** Al finalizar la reproducción del video (`YT.PlayerState.ENDED`, `event.data === 0`), se ejecuta inmediatamente el callback `handleVideoEnd()`.
+- **Desbloqueo Automático & Smooth Scroll:**
+  - `handleVideoEnd()` activa la variable de estado `setHasCompletedMaterial(true)` desbloqueando el formulario de firmas, emite la notificación informativa y desplaza suavemente la pantalla (*smooth scroll*) hacia el formulario (`#firma-section`).
+- **Resguardo Manual:**
+  - El botón azul *"Confirmar lectura/visualización del material y habilitar formulario"* se mantiene operativo como mecanismo de respaldo.
 
 ### Archivos Modificados
 - `[MODIFY] src/app/capacitar/[token]/page.js`
