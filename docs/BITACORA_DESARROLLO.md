@@ -1,20 +1,15 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-13] Estandarización Universal de Despacho de Correos por API Backend y Selector de Contactos de Razón Social en Capacitaciones Online
+## [2026-08-13] Resolución Automática e Infalible del Logo del Tenant en la API de Correos para Todos los Módulos
 
 ### Resumen de Cambios
-- **Despacho Directo por Backend (`src/app/api/send-email/route.js`):**
-  - Se flexibilizó `sendEmailSchema` en la API backend para permitir el envío de notificaciones y enlaces por correo sin requerir un PDF adjunto en Storage (`filePath` opcional).
-  - Se incorporaron las propiedades `customSubject` y `customMessage` permitiendo renderizar plantillas de correo HTML corporativas con el logo del Tenant y un enlace seguro de acceso a la capacitación.
-- **Diálogo de Compartir (`src/app/[tenant-slug]/capacitaciones-online/page.js`):**
-  - **Selector Dinámico de Contactos**: Se incorporó la carga de `contactos_correos` y `contactos_telefonos` registrados en la Razón Social del cliente (con checkboxes de selección individual) más el campo libre de entrada manual.
-  - **Asunto del Correo Estandarizado**: Se fijó como predeterminado *"Capacitación virtual de higiene y seguridad en el trabajo"*.
-  - **Eliminación Total de Popups de Correo Nativos (`mailto:`):** El botón *"Enviar Correo"* ejecuta el despacho directo contra `/api/send-email` con spinner de carga `Loader2` y notificación global `useToast`, imitando la experiencia de los módulos de Visitas y Protocolos.
-  - **Estándar Visual Unificado:** Se migró la ventana emergente al diseño corporativo exacto con ícono de despacho, pestañas `Correo Electrónico`, `WhatsApp` y `Enlace Directo`.
+- **Resolución de Logo en Servidor Backend (`src/app/api/send-email/route.js`):**
+  - Se implementó la función servidora `fetchImageAsBase64` para convertir URLs públicas de Supabase Storage en cadenas Base64 en tiempo de ejecución.
+  - Se agregó la consulta automática a la tabla `tenants` (`logo_1_url`) como respaldo cuando el parámetro `tenantLogoBase64` sea nulo o sea una URL HTTP estándar en lugar de Base64.
+  - Se garantiza que **todos los correos electrónicos** (Visitas, Capacitaciones, Protocolos, Avisos de Riesgo, Checklists) incluyan siempre el logo oficial de la empresa embebido como adjunto CID (`cid:tenantlogo`), solucionando la falta de logo que ocurría al enviar desde ciertos módulos o clientes de correo que bloquean imágenes externas.
 
 ### Archivos Modificados
 - `[MODIFY] src/app/api/send-email/route.js`
-- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
 - `[MODIFY] docs/BITACORA_DESARROLLO.md`
 
 ---

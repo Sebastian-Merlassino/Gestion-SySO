@@ -202,18 +202,53 @@ export async function POST(request) {
 
     console.log(`[API Send-Email] Tenant: ${profile.tenant_id} | Sender: ${user.email} | To: ${emailList.join(', ')} | Subject: ${mailSubject}`);
 
-    // Handle tenant logo as CID inline attachment to bypass webmail block (Gmail)
-    let logoCid = null;
-    if (tenantLogoBase64 && tenantLogoBase64.startsWith('data:image/')) {
+    // Helper para convertir URL de imagen a Base64 en servidor
+    const fetchImageAsBase64 = async (url) => {
+      if (!url || typeof url !== 'string' || !url.startsWith('http')) return null;
       try {
-        const mimeMatch = tenantLogoBase64.match(/^data:(image\/[a-zA-Z+.-]+);base64,/);
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        const arrayBuffer = await res.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const contentType = res.headers.get('content-type') || 'image/png';
+        return `data:${contentType};base64,${buffer.toString('base64')}`;
+      } catch (err) {
+        console.error('[API Send-Email] Error al convertir URL de logo a Base64:', err);
+        return null;
+      }
+    };
+
+    // Obtener y preparar el logo del Tenant como adjunto CID embebido
+    let logoBase64 = null;
+    if (tenantLogoBase64 && tenantLogoBase64.startsWith('data:image/')) {
+      logoBase64 = tenantLogoBase64;
+    } else if (tenantLogoBase64 && tenantLogoBase64.startsWith('http')) {
+      logoBase64 = await fetchImageAsBase64(tenantLogoBase64);
+    }
+
+    if (!logoBase64 && profile?.tenant_id) {
+      const { data: tenantRow } = await serverClient
+        .from('tenants')
+        .select('logo_1_url')
+        .eq('id', profile.tenant_id)
+        .single();
+      
+      if (tenantRow?.logo_1_url) {
+        logoBase64 = await fetchImageAsBase64(tenantRow.logo_1_url);
+      }
+    }
+
+    let logoCid = null;
+    if (logoBase64 && logoBase64.startsWith('data:image/')) {
+      try {
+        const mimeMatch = logoBase64.match(/^data:(image\/[a-zA-Z+.-]+);base64,/);
         if (mimeMatch) {
           const contentType = mimeMatch[1].toLowerCase();
           const allowedImageTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
           if (allowedImageTypes.includes(contentType)) {
-            const base64Data = tenantLogoBase64.substring(mimeMatch[0].length);
+            const base64Data = logoBase64.substring(mimeMatch[0].length);
             const logoBuffer = Buffer.from(base64Data, 'base64');
-            if (logoBuffer.length <= 1.5 * 1024 * 1024) {
+            if (logoBuffer.length <= 2 * 1024 * 1024) {
               logoCid = 'tenantlogo';
               attachments.push({
                 filename: `logo.${contentType.split('/')[1] || 'png'}`,
