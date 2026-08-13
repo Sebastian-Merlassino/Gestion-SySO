@@ -43,10 +43,11 @@ const PdfSlideViewer = dynamic(() => import('@/components/ui/PdfSlideViewer'), {
   )
 });
 
-// Componente para reproductor interactivo de YouTube mediante la API IFrame de YouTube
+// Componente para reproductor interactivo de YouTube mediante la API IFrame de YouTube (con fallback robusto a iframe)
 function YouTubePlayer({ videoId, onEnded, title }) {
   const containerRef = useRef(null);
   const playerRef = useRef(null);
+  const [apiFailed, setApiFailed] = useState(false);
 
   useEffect(() => {
     if (!videoId) return;
@@ -61,26 +62,31 @@ function YouTubePlayer({ videoId, onEnded, title }) {
         } catch (e) {}
       }
 
-      playerRef.current = new window.YT.Player(containerRef.current, {
-        videoId: videoId,
-        width: '100%',
-        height: '100%',
-        playerVars: {
-          autoplay: 0,
-          controls: 1,
-          rel: 0,
-          modestbranding: 1,
-          origin: typeof window !== 'undefined' ? window.location.origin : ''
-        },
-        events: {
-          onStateChange: (event) => {
-            // event.data === 0 (YT.PlayerState.ENDED) representa la finalización del video
-            if (event.data === 0) {
-              onEnded?.();
+      try {
+        playerRef.current = new window.YT.Player(containerRef.current, {
+          videoId: videoId,
+          width: '100%',
+          height: '100%',
+          playerVars: {
+            autoplay: 0,
+            controls: 1,
+            rel: 0,
+            modestbranding: 1,
+            origin: typeof window !== 'undefined' ? window.location.origin : ''
+          },
+          events: {
+            onStateChange: (event) => {
+              // event.data === 0 (YT.PlayerState.ENDED) representa la finalización del video
+              if (event.data === 0) {
+                onEnded?.();
+              }
             }
           }
-        }
-      });
+        });
+      } catch (err) {
+        console.warn('Error al instanciar YT.Player, activando iframe de resguardo:', err);
+        if (isMounted) setApiFailed(true);
+      }
     };
 
     if (window.YT && window.YT.Player) {
@@ -90,6 +96,9 @@ function YouTubePlayer({ videoId, onEnded, title }) {
         const tag = document.createElement('script');
         tag.id = 'youtube-iframe-api-script';
         tag.src = 'https://www.youtube.com/iframe_api';
+        tag.onerror = () => {
+          if (isMounted) setApiFailed(true);
+        };
         const firstScriptTag = document.getElementsByTagName('script')[0];
         firstScriptTag?.parentNode?.insertBefore(tag, firstScriptTag);
       }
@@ -107,9 +116,16 @@ function YouTubePlayer({ videoId, onEnded, title }) {
         }
       }, 300);
 
+      const timeoutId = setTimeout(() => {
+        if (isMounted && (!window.YT || !window.YT.Player)) {
+          setApiFailed(true);
+        }
+      }, 3500);
+
       return () => {
         isMounted = false;
         clearInterval(intervalId);
+        clearTimeout(timeoutId);
       };
     }
 
@@ -122,6 +138,19 @@ function YouTubePlayer({ videoId, onEnded, title }) {
       }
     };
   }, [videoId, onEnded]);
+
+  if (apiFailed) {
+    const originParam = typeof window !== 'undefined' ? `&origin=${encodeURIComponent(window.location.origin)}` : '';
+    return (
+      <iframe
+        src={`https://www.youtube.com/embed/${videoId}?enablejsapi=1${originParam}`}
+        title={title || 'Video de la Capacitación'}
+        className="w-full h-full border-0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+      />
+    );
+  }
 
   return (
     <div className="w-full h-full min-h-[300px]">

@@ -1,17 +1,15 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-13] Integración de YouTube IFrame Player API para Desbloqueo Automático y Scroll en Video
+## [2026-08-13] Autorización CSP de API de YouTube en Middleware y Resguardo a IFrame en Capacitación
 
 ### Resumen de Cambios
-- **Componente `YouTubePlayer` (`src/app/capacitar/[token]/page.js`):**
-  - Se creó el subcomponente dinámico `<YouTubePlayer />` que carga e inicializa de forma nativa la API de YouTube (`https://www.youtube.com/iframe_api`).
-  - **Detección de Finalización Infalible:** Al finalizar la reproducción del video (`YT.PlayerState.ENDED`, `event.data === 0`), se ejecuta inmediatamente el callback `handleVideoEnd()`.
-- **Desbloqueo Automático & Smooth Scroll:**
-  - `handleVideoEnd()` activa la variable de estado `setHasCompletedMaterial(true)` desbloqueando el formulario de firmas, emite la notificación informativa y desplaza suavemente la pantalla (*smooth scroll*) hacia el formulario (`#firma-section`).
-- **Resguardo Manual:**
-  - El botón azul *"Confirmar lectura/visualización del material y habilitar formulario"* se mantiene operativo como mecanismo de respaldo.
+- **Ajuste de Política de Seguridad CSP (`src/middleware.js`):**
+  - Se añadieron `https://www.youtube.com` y `https://s.ytimg.com` a la directiva `script-src` en la cabecera Content-Security-Policy generada por el middleware. Esto resuelve de forma definitiva el error de bloqueo CSP manifestado en el navegador (`Loading the script 'https://www.youtube.com/iframe_api' violates script-src...`).
+- **Resguardo Automático en `YouTubePlayer` (`src/app/capacitar/[token]/page.js`):**
+  - Se incorporó un mecanismo de fallback con timeout de 3.5s y callback `onerror`. Si por alguna condición la API IFrame no cargara, el reproductor conmuta de forma transparente e inmediata a un `<iframe>` embebido sin pantalla negra.
 
 ### Archivos Modificados
+- `[MODIFY] src/middleware.js`
 - `[MODIFY] src/app/capacitar/[token]/page.js`
 - `[MODIFY] docs/BITACORA_DESARROLLO.md`
 
