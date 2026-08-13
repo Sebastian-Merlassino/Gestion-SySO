@@ -21,49 +21,67 @@ export default function ResetPasswordPage() {
   // Modal de error
   const [showErrorModal, setShowErrorModal] = useState(false);
 
+  const [sessionReady, setSessionReady] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+
   useEffect(() => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     const isDev = !supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('placeholder');
     if (isDev) {
       setIsDevMode(true);
+      setCheckingSession(false);
+      setSessionReady(true);
+      return;
     }
 
-    const exchangeCode = async () => {
-      if (isDev) return;
+    const initPage = async () => {
       const urlParams = new URLSearchParams(window.location.search);
+      
+      // Detectar errores de verificación server-side
+      const errorParam = urlParams.get('error');
+      if (errorParam === 'invalid_or_expired') {
+        setError('El enlace de restablecimiento es inválido o ha expirado. Por favor, solicite uno nuevo.');
+        setShowErrorModal(true);
+        setCheckingSession(false);
+        return;
+      }
+      if (errorParam === 'missing_token' || errorParam === 'config' || errorParam === 'unexpected') {
+        setError('Ocurrió un error al procesar el enlace. Por favor, solicite uno nuevo.');
+        setShowErrorModal(true);
+        setCheckingSession(false);
+        return;
+      }
+
+      // Soporte legacy: si llega con code (callback PKCE directo)
       const code = urlParams.get('code');
       if (code) {
         try {
-          const { error } = await supabase.auth.exchangeCodeForSession(code);
-          if (error) {
-            console.error('[Reset Password Client Fallback Error]:', error.message);
+          const { error: codeError } = await supabase.auth.exchangeCodeForSession(code);
+          if (codeError) {
+            console.error('[Reset Password] Code exchange error:', codeError.message);
             setError('El enlace de restablecimiento es inválido o ha expirado. Por favor, solicite uno nuevo.');
             setShowErrorModal(true);
+            setCheckingSession(false);
+            return;
           }
         } catch (err) {
-          console.error('[Reset Password Client Fallback Exception]:', err);
+          console.error('[Reset Password] Code exchange exception:', err);
         }
       }
 
-      // Soporte para verifyOtp con token_hash para flujo de recuperación (recovery)
-      const tokenHash = urlParams.get('token_hash');
-      const type = urlParams.get('type');
-      if (tokenHash && type === 'recovery') {
-        try {
-          const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
-          if (error) {
-            console.error('[Reset Password Client verifyOtp Error]:', error.message);
-            setError('El enlace de restablecimiento es inválido o ha expirado. Por favor, solicite uno nuevo.');
-            setShowErrorModal(true);
-          }
-        } catch (err) {
-          console.error('[Reset Password Client verifyOtp Exception]:', err);
-        }
+      // Verificar si hay sesión activa (establecida por /api/auth/verify-recovery)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setSessionReady(true);
+      } else {
+        setError('No se detectó una sesión activa. Por favor, solicitá un nuevo enlace de recuperación desde el login.');
+        setShowErrorModal(true);
       }
+      setCheckingSession(false);
     };
 
-    exchangeCode();
+    initPage();
   }, []);
 
   const handleReset = async (e) => {
@@ -110,14 +128,37 @@ export default function ResetPasswordPage() {
 
       if (updateErr) throw updateErr;
 
+      // Cerrar la sesión de recuperación para forzar un login limpio con la nueva contraseña
+      await supabase.auth.signOut();
+
       setLoading(false);
       setSuccess(true);
 
     } catch (err) {
-      setError(err.message || 'Error al cambiar la contraseña. Vuelva a solicitar el enlace.');
+      let rawMsg = err.message || '';
+      let userMsg = 'Error al cambiar la contraseña. Vuelva a solicitar el enlace.';
+      
+      if (rawMsg.includes('New password should be different') || rawMsg.includes('different from the old password')) {
+        userMsg = 'La nueva contraseña debe ser diferente a la contraseña anterior.';
+      } else if (rawMsg.includes('Password should be at least')) {
+        userMsg = 'La contraseña debe tener al menos 8 caracteres, una mayúscula y un número.';
+      } else if (rawMsg) {
+        userMsg = rawMsg;
+      }
+
+      setError(userMsg);
       setShowErrorModal(true);
       setLoading(false);
     }
+  };
+
+  const handleGoToLogin = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.error('Error al cerrar sesión:', e);
+    }
+    window.location.href = '/login';
   };
 
   return (
@@ -138,7 +179,12 @@ export default function ResetPasswordPage() {
             className="mx-auto object-contain mb-4"
           />
 
-          {success ? (
+          {checkingSession ? (
+            <div className="text-center space-y-4 py-8">
+              <Loader2 className="h-8 w-8 text-[#468DFF] animate-spin mx-auto" />
+              <p className="text-sm text-slate-500 font-medium">Verificando enlace de recuperación...</p>
+            </div>
+          ) : success ? (
             <div className="text-center space-y-4">
               <p className="text-sm text-slate-600 font-medium text-center mb-2">
                 Restablecimiento completo
@@ -151,14 +197,14 @@ export default function ResetPasswordPage() {
                 Tu clave ha sido actualizada con éxito. Ya podés ingresar a tu panel.
               </p>
               <button
-                onClick={() => { window.location.href = '/login'; }}
+                onClick={handleGoToLogin}
                 className="w-full py-3 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white font-semibold text-sm transition-all flex items-center justify-center gap-2 mt-4"
               >
                 Ir a Iniciar Sesión
                 <ArrowRight className="h-4 w-4" />
               </button>
             </div>
-          ) : (
+          ) : sessionReady ? (
             <>
               <p className="text-sm text-slate-600 font-medium text-center mb-6">
                 Ingresá tu nueva contraseña para volver a acceder de forma segura
@@ -247,6 +293,23 @@ export default function ResetPasswordPage() {
                 </button>
               </form>
             </>
+          ) : (
+            <div className="text-center space-y-4 py-4">
+              <div className="h-12 w-12 rounded-full bg-red-50 border border-red-100 flex items-center justify-center text-red-500 mx-auto">
+                <ShieldAlert className="h-6 w-6" />
+              </div>
+              <h3 className="font-outfit text-lg font-bold text-slate-900">Enlace No Válido</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                El enlace de restablecimiento es inválido, ha expirado o ya fue utilizado. Por favor, solicitá uno nuevo.
+              </p>
+              <button
+                onClick={() => { window.location.href = '/login'; }}
+                className="w-full py-3 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white font-semibold text-sm transition-all flex items-center justify-center gap-2 mt-4"
+              >
+                Volver al Login
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
           )}
         </div>
 

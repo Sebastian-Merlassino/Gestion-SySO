@@ -1,5 +1,38 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-13] Restablecimiento Backend Infalible de Contraseñas — Flujo Completo Corregido
+
+### Resumen de Cambios
+- **Corrección Crítica del Flujo de Recuperación (`src/app/api/auth/reset-password-request/route.js`):**
+  - Se eliminó la dependencia del `action_link` de Supabase, que usaba el flujo PKCE con callback intermedio (`/api/auth/callback`). Este flujo provocaba que el `redirect_to` con query params anidados se truncara, perdiendo el parámetro `?next=/reset-password` y redirigiendo al usuario al login o al dashboard en lugar de a la pantalla de cambio de clave.
+  - Se implementó el enfoque directo usando `hashed_token` (devuelto por `generateLink`): el enlace del correo ahora apunta directamente a `/reset-password?token_hash=XXXXX&type=recovery`. La página `/reset-password` ejecuta `verifyOtp({ token_hash, type: 'recovery' })` para autenticar al usuario y permitirle ingresar su nueva contraseña.
+  - Nuevo template HTML profesional con: header con gradiente azul corporativo, logo embebido via URL pública (`/brand/logo-black.png`), botón CTA con sombra, enlace alternativo, nota de seguridad con estilo warning, y footer con copyright.
+- **Corrección de Middleware (`src/middleware.js`):**
+  - Se incluyó `'reset-password'` en la lista `reservedRoutes` (evita que sea interpretado como slug de tenant).
+  - Se incluyó `/api/auth/reset-password-request` en `isPublicRoute` (permite solicitar la recuperación sin sesión activa).
+  - Se configuró rate limiting de 5 solicitudes cada 15 minutos por IP para el endpoint de recuperación.
+- **Estándar Unificado de Correos Electrónicos (`docs/design/EMAIL_TEMPLATE_STANDARD.md`):**
+  - Se creó la norma institucional `SySO-Email-Template-Standard-v1.0` y se incorporó como regla obligatoria en `.agents/agents.md`.
+  - Establece el diseño oficial para **todos** los correos de la plataforma: barra superior de acento `#468DFF`, tarjeta contenedora blanca con borde Slate 200, logo incrustado via CID inline (`cid:...`), tipografía corporativa y footer oficial con copyright.
+- **Implementación en Correos Operativos (`src/app/api/send-email/route.js`):**
+  - Se actualizó la ruta servidora `/api/send-email` (encargada del despacho de Constancias de Visita, Avisos de Riesgo, Control Eléctrico, Checklists, Protocolos de Iluminación/Ruido/Ergonomía y Capacitaciones Virtuales) para que renderice bajo el estándar `SySO-Email-Template-Standard-v1.0` con cajas informativas y logos del cliente embebidos via CID.
+- **Rediseño Profesional del Correo y Logo Embebido CID (`src/app/api/auth/reset-password-request/route.js`):**
+  - Se adjunta el logo oficial de la marca (`public/brand/logo-black.png`) directamente en la estructura MIME mediante un archivo incrustado CID (`cid:syso_brand_logo`).
+- **Traducción de Errores Supabase 422 al Español (`src/app/reset-password/page.js`):**
+  - Se agregó mapeo en el bloque `catch` para traducir errores técnicos en inglés de Supabase (como `"New password should be different from the old password"`) a mensajes claros en español.
+
+### Archivos Modificados
+- `[REWRITE] src/app/api/auth/reset-password-request/route.js`
+- `[MODIFY] src/app/login/page.js`
+- `[MODIFY] src/middleware.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Verificación exitosa de la conexión SMTP (`notificaciones@gestionsyso.com`) via `smtp.gmail.com:587`.
+- Compilación de producción Next.js mediante `npm.cmd run build` con resultado exitoso (`✓ Compiled successfully`).
+
+---
+
 ## [2026-08-13] Resolución Automática e Infalible del Logo del Tenant en la API de Correos para Todos los Módulos
 
 ### Resumen de Cambios

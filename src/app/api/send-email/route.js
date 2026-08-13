@@ -269,37 +269,106 @@ export async function POST(request) {
       : null;
 
     const mailHtml = `
-      <div style="font-family: 'Segoe UI', Inter, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1e293b; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px;">
-        <div style="text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">
-          ${logoCid
-            ? `<img src="cid:${logoCid}" alt="${tenantNameEscaped || 'Logo'}" style="max-height: 72px; max-width: 240px; object-fit: contain; display: block; margin: 0 auto 8px auto;" />`
-            : `<h2 style="margin: 0 0 8px 0; font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.025em;">${tenantNameEscaped || 'Gestión SySO'}</h2>`
-          }
-          <p style="margin: 0; font-size: 13px; font-weight: 600; color: #468DFF; text-transform: uppercase; letter-spacing: 0.05em;">
-            ${isCapacitacionOnline ? 'Capacitación Virtual de Higiene y Seguridad' : isAvisoRiesgo ? 'Aviso de Riesgo' : isControlElectrico ? 'Inspección Visual de Instalaciones Eléctricas' : isChecklistPersonalizado ? (checklistNameEscaped || 'Checklist Personalizado') : isProtocoloIluminacion ? 'Protocolo de Medición de Iluminación' : 'Constancia de Visita'}
-          </p>
-        </div>
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>${escapeHtml(mailSubject)} — Gestión SySO</title>
+      </head>
+      <body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: 'Segoe UI', Inter, Helvetica, Arial, sans-serif; color: #0f172a;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f8fafc; padding: 40px 16px;">
+          <tr>
+            <td align="center">
+              <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); border: 1px solid #D9D9D9;">
+                
+                <!-- Barra Superior con Color de Marca (#468DFF) -->
+                <tr>
+                  <td style="background-color: #468DFF; height: 6px; font-size: 0; line-height: 0;">&nbsp;</td>
+                </tr>
 
-        <div style="background-color: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 24px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);">
-          ${formattedCustomMessage ? `
-            <div style="font-size: 14px; line-height: 1.6; color: #334155;">
-              ${formattedCustomMessage}
-            </div>
-          ` : `
-            <p style="margin-top: 0; font-size: 15px; line-height: 1.6; color: #334155;">
-              Estimado cliente,
-            </p>
-            <p style="font-size: 15px; line-height: 1.6; color: #334155;">
-              Se adjunta el reporte correspondiente a sus instalaciones.
-            </p>
-          `}
-        </div>
+                <!-- Header con Logo del Tenant o Nombre de Organización -->
+                <tr>
+                  <td style="padding: 32px 32px 24px 32px; text-align: center; background-color: #ffffff; border-bottom: 1px solid #D9D9D9;">
+                    ${logoCid
+                      ? `<img src="cid:${logoCid}" alt="${tenantNameEscaped || 'Logo'}" style="max-height: 72px; max-width: 240px; object-fit: contain; display: block; margin: 0 auto;" />`
+                      : `<h2 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.025em;">${tenantNameEscaped || 'Gestión SySO'}</h2>`
+                    }
+                  </td>
+                </tr>
 
-        <p style="font-size: 12px; line-height: 1.6; color: #64748b; margin-top: 0; text-align: center;">
-          Este es un correo automático enviado a través de la plataforma de Gestión SySO.<br />
-          Por favor, no responda directamente a este email.
-        </p>
-      </div>
+                <!-- Título y Categoría de Documento -->
+                <tr>
+                  <td style="padding: 32px 32px 0 32px; text-align: center;">
+                    <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em;">
+                      ${isCapacitacionOnline ? 'Capacitación Virtual de Higiene y Seguridad' : isAvisoRiesgo ? 'Aviso de Riesgo' : isControlElectrico ? 'Inspección Visual de Instalaciones Eléctricas' : isChecklistPersonalizado ? (checklistNameEscaped || 'Checklist Personalizado') : isProtocoloIluminacion ? 'Protocolo de Medición de Iluminación' : 'Constancia de Visita Técnica'}
+                    </h1>
+                    <p style="margin: 6px 0 0 0; font-size: 13px; font-weight: 600; color: #468DFF; text-transform: uppercase; letter-spacing: 0.06em;">
+                      ${companyNameEscaped ? companyNameEscaped : 'Notificación Oficial de Servicio'}
+                    </p>
+                    <div style="width: 40px; height: 3px; background-color: #468DFF; border-radius: 2px; margin: 16px auto 0 auto;"></div>
+                  </td>
+                </tr>
+
+                <!-- Cuerpo del Mensaje -->
+                <tr>
+                  <td style="padding: 24px 32px;">
+                    <div style="background-color: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #D9D9D9; font-size: 15px; line-height: 1.7; color: #334155;">
+                      ${formattedCustomMessage ? `
+                        <div>${formattedCustomMessage}</div>
+                      ` : `
+                        <p style="margin-top: 0; font-size: 15px; line-height: 1.7; color: #334155;">
+                          Estimado cliente,
+                        </p>
+                        <p style="margin-bottom: 0; font-size: 15px; line-height: 1.7; color: #334155;">
+                          Se adjunta la documentación técnica correspondiente a sus instalaciones.
+                        </p>
+                      `}
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- Caja Informativa de Adjunto -->
+                ${filePath ? `
+                  <tr>
+                    <td style="padding: 0 32px 24px 32px;">
+                      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f8fafc; border: 1px solid #D9D9D9; border-radius: 12px;">
+                        <tr>
+                          <td style="padding: 16px 20px;">
+                            <p style="margin: 0 0 4px 0; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">
+                              📄 Archivo Adjunto Incluido
+                            </p>
+                            <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #475569;">
+                              El informe oficial en formato PDF ha sido adjuntado a este correo electrónico para su descarga y archivado.
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                ` : ''}
+
+                <!-- Footer Oficial con Colores Corporativos -->
+                <tr>
+                  <td style="background-color: #f8fafc; border-top: 1px solid #D9D9D9; padding: 24px 32px; text-align: center;">
+                    <p style="margin: 0 0 6px 0; font-size: 13px; font-weight: 700; color: #0f172a;">
+                      Gestión <span style="color: #468DFF;">SySO</span>
+                    </p>
+                    <p style="margin: 0 0 6px 0; font-size: 12px; font-weight: 600; color: #475569;">
+                      Plataforma SaaS de Higiene y Seguridad Ocupacional.
+                    </p>
+                    <p style="margin: 0; font-size: 12px; font-weight: 600; color: #475569;">
+                      © ${new Date().getFullYear()} Gestión SySO. Todos los derechos reservados.
+                    </p>
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
     `;
 
     if (host && user_smtp && pass) {

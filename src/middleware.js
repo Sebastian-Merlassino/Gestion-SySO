@@ -60,8 +60,8 @@ export async function middleware(request) {
       limit = 20; // Máximo 20 solicitudes de IA cada 15 minutos por IP
     } else if (pathname.startsWith('/api/clientes') || pathname.startsWith('/api/equipo')) {
       limit = 15;
-    } else if (pathname.startsWith('/api/auth/login-cuit')) {
-      limit = 5; // Máximo 5 intentos de inicio de sesión por CUIT cada 15 minutos por IP
+    } else if (pathname.startsWith('/api/auth/login-cuit') || pathname.startsWith('/api/auth/reset-password-request')) {
+      limit = 5; // Máximo 5 intentos de inicio/recuperación de sesión cada 15 minutos por IP
     }
 
     let rateLimitResult;
@@ -176,6 +176,8 @@ export async function middleware(request) {
     pathname === '/privacidad' ||
     pathname === '/cookies' ||
     pathname === '/api/auth/login-cuit' ||
+    pathname === '/api/auth/reset-password-request' ||
+    pathname === '/api/auth/verify-recovery' ||
     pathname === '/api/auth/callback' ||
     pathname === '/api/webhooks/mercadopago' ||
     pathname.startsWith('/capacitar/') ||
@@ -238,7 +240,7 @@ export async function middleware(request) {
     const routeTenantSlug = pathSegments[0];
     
     // Lista de rutas raíz reservadas de Next.js
-    const reservedRoutes = ['login', 'register', 'onboarding', 'api', 'brand', 'assets', 'capacitar', 'terminos', 'privacidad', 'cookies'];
+    const reservedRoutes = ['login', 'register', 'onboarding', 'reset-password', 'api', 'brand', 'assets', 'capacitar', 'terminos', 'privacidad', 'cookies'];
     
     if (!reservedRoutes.includes(routeTenantSlug) && !routeTenantSlug.includes('.')) {
       // Si el slug en la URL no coincide con el slug del tenant del usuario, redirigir a su propio dashboard
@@ -254,7 +256,7 @@ export async function middleware(request) {
     const routeTenantSlug = pathSegments[0];
     const section = pathSegments[1];
     
-    const reservedRoutes = ['login', 'register', 'onboarding', 'api', 'brand', 'assets', 'capacitar', 'terminos', 'privacidad', 'cookies'];
+    const reservedRoutes = ['login', 'register', 'onboarding', 'reset-password', 'api', 'brand', 'assets', 'capacitar', 'terminos', 'privacidad', 'cookies'];
     if (!reservedRoutes.includes(routeTenantSlug) && !routeTenantSlug.includes('.')) {
       const tenant = profile.tenants;
       

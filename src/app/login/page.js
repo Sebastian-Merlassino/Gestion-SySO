@@ -197,11 +197,20 @@ export default function LoginPage() {
       }
 
       try {
-        const { error: resetErr } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-          redirectTo: `${window.location.origin}/api/auth/callback?next=/reset-password`,
+        const res = await fetch('/api/auth/reset-password-request', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'profesional',
+            email: forgotEmail,
+          }),
         });
 
-        if (resetErr) throw resetErr;
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Ocurrió un error al enviar el enlace. Por favor, verifica el correo ingresado.');
+        }
 
         setForgotLoading(false);
         setForgotSuccess(true);
@@ -229,23 +238,20 @@ export default function LoginPage() {
       }
 
       try {
-        // 1. Resolver el email asociado al CUIT
-        const { data: clientEmail, error: rpcError } = await supabase.rpc('get_email_by_cuit', {
-          p_cuit: cleanCuit
+        const res = await fetch('/api/auth/reset-password-request', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'cliente',
+            cuit: cleanCuit,
+          }),
         });
 
-        if (rpcError) throw rpcError;
+        const data = await res.json();
 
-        if (!clientEmail) {
-          throw new Error('El CUIT ingresado no corresponde a ningún cliente registrado o con acceso habilitado.');
+        if (!res.ok) {
+          throw new Error(data.error || 'Ocurrió un error al enviar el enlace de restablecimiento.');
         }
-
-        // 2. Disparar el flujo de reset de contraseña
-        const { error: resetErr } = await supabase.auth.resetPasswordForEmail(clientEmail, {
-          redirectTo: `${window.location.origin}/api/auth/callback?next=/reset-password`,
-        });
-
-        if (resetErr) throw resetErr;
 
         setForgotLoading(false);
         setForgotSuccess(true);
