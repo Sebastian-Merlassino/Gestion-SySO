@@ -281,9 +281,10 @@ export default function PublicCapacitacionPage({ params }) {
         videoId = parts;
       }
       if (videoId) {
+        const originParam = typeof window !== 'undefined' ? `&origin=${encodeURIComponent(window.location.origin)}` : '';
         return {
           type: 'youtube',
-          embedUrl: `https://www.youtube.com/embed/${videoId}?enablejsapi=1`
+          embedUrl: `https://www.youtube.com/embed/${videoId}?enablejsapi=1${originParam}`
         };
       }
     } catch (e) {
@@ -298,10 +299,21 @@ export default function PublicCapacitacionPage({ params }) {
   useEffect(() => {
     const handleWindowMessage = (event) => {
       try {
+        if (!event.data) return;
         const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-        if (data?.event === 'infoDelivery' && data?.info?.playerState === 0) {
+
+        // Capturar cualquier variante de finalización de video de YouTube (state 0 = ENDED)
+        const isEnded = 
+          (data?.event === 'infoDelivery' && data?.info?.playerState === 0) ||
+          (data?.event === 'onStateChange' && (data?.info === 0 || data?.data === 0)) ||
+          (data?.info?.playerState === 0);
+
+        if (isEnded) {
           setHasCompletedMaterial(true);
-          toast('¡Ha finalizado la visualización del video instructivo! El formulario de registro se ha habilitado.', 'info');
+          toast('¡Ha finalizado la visualización del video! El formulario de registro se ha habilitado.', 'info');
+          setTimeout(() => {
+            document.getElementById('firma-section')?.scrollIntoView({ behavior: 'smooth' });
+          }, 300);
         }
       } catch (e) {
         // Ignorar otros eventos postMessage no relacionados
@@ -618,6 +630,9 @@ export default function PublicCapacitacionPage({ params }) {
                   onEnded={() => {
                     setHasCompletedMaterial(true);
                     toast('¡Ha finalizado la visualización del video! El formulario de registro se ha habilitado.', 'info');
+                    setTimeout(() => {
+                      document.getElementById('firma-section')?.scrollIntoView({ behavior: 'smooth' });
+                    }, 300);
                   }}
                   className="w-full h-full object-contain"
                 />
