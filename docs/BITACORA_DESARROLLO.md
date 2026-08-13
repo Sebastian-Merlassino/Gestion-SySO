@@ -1,15 +1,16 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-13] Leyenda Instructiva en Video, Autohabilitación al Finalizar y Actualización de Botón en Capacitación Virtual
+## [2026-08-13] Leyenda Exacta, Título y Autohabilitación al Finalizar Video de Capacitación Virtual
 
 ### Resumen de Cambios
-- **Leyenda Superior en Video Instructivo (`src/app/capacitar/[token]/page.js`):**
-  - Se agregó el subtítulo explicativo bajo el título *Video Instructivo de la Capacitación*: `"Visualice el video instructivo antes de completar el registro de capacitación. El formulario de registro se habilitará al finalizar la visualización o al confirmar la lectura."`.
+- **Ajuste de Título y Leyenda Superior (`src/app/capacitar/[token]/page.js`):**
+  - **Título de Sección:** Se renombró la cabecera a **`Video de la Capacitación`** (reflejando que el material del módulo es la capacitación misma en formato video).
+  - **Leyenda Exacta:** Se estableció el texto: `"Visualice el video antes de completar el registro de capacitación. El formulario de registro se habilitará al finalizar la visualización o al confirmar la lectura."`.
 - **Habilitación Automática por Finalización de Video:**
-  - **Video HTML5:** Se capturó el evento `onEnded` en la etiqueta `<video>` para habilitar de forma automática el formulario de asistencia (`setHasCompletedMaterial(true)`).
-  - **Video YouTube (Iframe):** Se incluyó el parámetro `enablejsapi=1` en el embed de YouTube y un listener de eventos `postMessage` (`playerState === 0`) para desbloquear el formulario automáticamente cuando el video termina.
-- **Actualización del Texto del Botón de Confirmación:**
-  - Se actualizó la etiqueta del botón de confirmación manual a `"Confirmar lectura/visualización del material y habilitar formulario"`.
+  - **Video HTML5:** Evento `onEnded` en la etiqueta `<video>` para habilitar automáticamente el formulario (`setHasCompletedMaterial(true)`).
+  - **Video YouTube:** Parámetro `enablejsapi=1` y listener de eventos `postMessage` (`playerState === 0`).
+- **Botón de Confirmación Manual:**
+  - Etiqueta del botón: `"Confirmar lectura/visualización del material y habilitar formulario"`.
 
 ### Archivos Modificados
 - `[MODIFY] src/app/capacitar/[token]/page.js`

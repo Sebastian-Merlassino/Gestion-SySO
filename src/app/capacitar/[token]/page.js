@@ -596,16 +596,16 @@ export default function PublicCapacitacionPage({ params }) {
           </div>
         </div>
 
-        {/* Sección 1: Material audiovisual (Video Instructivo) */}
+        {/* Sección 1: Material audiovisual (Video de la Capacitación) */}
         {videoInfo && (
           <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-md space-y-4">
             <div>
               <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
                 <Tv className="w-5 h-5 text-[#468DFF]" />
-                Video Instructivo de la Capacitación
+                Video de la Capacitación
               </h2>
               <span className="text-xs text-slate-500 block mt-1">
-                Visualice el video instructivo antes de completar el registro de capacitación. El formulario de registro se habilitará al finalizar la visualización o al confirmar la lectura.
+                Visualice el video antes de completar el registro de capacitación. El formulario de registro se habilitará al finalizar la visualización o al confirmar la lectura.
               </span>
             </div>
 
@@ -617,7 +617,7 @@ export default function PublicCapacitacionPage({ params }) {
                   controlsList="nodownload"
                   onEnded={() => {
                     setHasCompletedMaterial(true);
-                    toast('¡Ha finalizado la visualización del video instructivo! El formulario de registro se ha habilitado.', 'info');
+                    toast('¡Ha finalizado la visualización del video! El formulario de registro se ha habilitado.', 'info');
                   }}
                   className="w-full h-full object-contain"
                 />
