@@ -135,9 +135,18 @@ export async function POST(request) {
       }
     });
 
+    const mpToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
+    if (!mpToken) {
+      return NextResponse.json({ error: 'La variable de entorno MERCADO_PAGO_ACCESS_TOKEN no está configurada en el servidor.' }, { status: 500 });
+    }
+
     const initPoint = process.env.NODE_ENV === 'production' 
-      ? preApprovalResponse.init_point 
-      : preApprovalResponse.sandbox_init_point || preApprovalResponse.init_point;
+      ? (preApprovalResponse.init_point || preApprovalResponse.sandbox_init_point)
+      : (preApprovalResponse.sandbox_init_point || preApprovalResponse.init_point);
+
+    if (!initPoint) {
+      throw new Error('Mercado Pago no devolvió una URL válida de checkout (init_point ausente).');
+    }
 
     return NextResponse.json({ 
       success: true, 
@@ -146,8 +155,10 @@ export async function POST(request) {
 
   } catch (err) {
     console.error('[Checkout API Error Crítico]:', err);
+    const detailMsg = err?.message || (typeof err === 'string' ? err : 'Error desconocido en la pasarela de pagos.');
     return NextResponse.json({ 
-      error: 'Fallo al procesar el checkout de Mercado Pago. Intente de nuevo.'
+      error: `Fallo al procesar el checkout: ${detailMsg}`
     }, { status: 500 });
   }
 }
+
