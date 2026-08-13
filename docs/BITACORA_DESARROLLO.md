@@ -1,5 +1,26 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-13] Resolución de Excepción Crítica `EQUIPOS_IZAJE_OPTS is not defined` en Módulo Clientes / Empresas
+
+### Resumen de Cambios
+- **Definición de Constante Global de Equipos (`src/app/[tenant-slug]/empresas/page.js`):**
+  - Se declaró la constante `EQUIPOS_IZAJE_OPTS` con las opciones de equipos de elevación de cargas (`Autoelevadores`, `Puentes grúa`, `Grúas móviles / telescópicas`, `Aparejos eléctricos / manuales`, `Plumas / Grúas pluma`, `Monorrieles`, `Manipuladores telescópicos`).
+  - La ausencia de esta constante provocaba un error fatal de JavaScript (`Uncaught ReferenceError: EQUIPOS_IZAJE_OPTS is not defined`) al renderizar el selector de máquinas y herramientas por establecimiento.
+  - La captura de dicho error en la fase de renderizado por el Error Boundary de React Dev Overlay a su vez producía la advertencia `Cannot update a component ('HotReload') while rendering a different component ('EmpresasClientes')`.
+- **Inmunización y Fallbacks Defensivos (`src/app/[tenant-slug]/empresas/page.js`):**
+  - Se incorporó la expresión defensiva `(item.options || [])` en los métodos `.map()` y `.filter()` del listado de máquinas y herramientas, evitando interrupciones en la interfaz ante eventuales propiedades no inicializadas.
+- **Auditoría Preventiva Global**:
+  - Se verificó que el resto de los módulos (`visitas`, `legajo`, `avisos`, `extintores`, `protocolos`) tengan todas sus constantes de opciones (`_OPTS`) debidamente declaradas al inicio de cada archivo.
+
+### Causa Raíz
+Al maquetar las 7 categorías de máquinas y equipos para establecimientos en `empresas/page.js`, la categoría `equipos_izaje` se enlazó a la constante `EQUIPOS_IZAJE_OPTS`, pero su declaración fue omitida accidentalmente en la cabecera del archivo donde se definieron `MAQUINAS_FIJAS_OPTS`, `MAQUINAS_MOVILES_OPTS`, `EQUIPOS_ELEVACION_OPTS`, etc.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
 ## [2026-08-13] Protección Contra Doble Inicialización en React StrictMode para `YouTubePlayer`
 
 ### Resumen de Cambios

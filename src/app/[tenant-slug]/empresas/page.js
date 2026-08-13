@@ -110,6 +110,7 @@ const HERRAMIENTAS_PORTATILES_OPTS = ['Amoladoras', 'Taladros manuales', 'Atorni
 const APARATOS_PRESION_OPTS = ['Calderas', 'Compresores / aire comprimido', 'Recipientes a presión', 'Intercambiadores y equipos asociados', 'Cilindros de gases a presión'];
 const EQUIPOS_TERMICOS_OPTS = ['Termotanques', 'Calefones', 'Calderas chicas domésticas o comerciales no registradas como ASP', 'Hornos eléctricos', 'Hornos a gas', 'Estufas industriales', 'Secadores térmicos', 'Equipos de calentamiento por resistencias'];
 const EQUIPOS_ELEVACION_OPTS = ['Ascensores', 'Montacargas', 'Plataformas elevadoras tipo tijera', 'Plataformas articuladas / telescópicas', 'Hidroelevadores (camión con canastilla)', 'Andamios motorizados colgantes', 'Plataformas suspendidas'];
+const EQUIPOS_IZAJE_OPTS = ['Autoelevadores', 'Puentes grúa', 'Grúas móviles / telescópicas', 'Aparejos eléctricos / manuales', 'Plumas / Grúas pluma', 'Monorrieles', 'Manipuladores telescópicos'];
 const resolveLogoUrl = async (url) => {
   if (!url) return '';
   if (url.startsWith('data:') || url.includes('/storage/v1/object/public/logos/')) return url;
@@ -3144,7 +3145,7 @@ export default function EmpresasClientes({ params }) {
                                   
                                   {/* Listado de Opciones Fijas */}
                                   <div className="flex flex-wrap gap-1.5">
-                                    {item.options.map(opt => {
+                                    {(item.options || []).map(opt => {
                                       const isSelected = (est[item.key] || []).includes(opt);
                                       return (
                                         <button
@@ -3164,9 +3165,9 @@ export default function EmpresasClientes({ params }) {
                                   </div>
 
                                   {/* Mostrar Otras custom agregadas */}
-                                  { (est[item.key] || []).filter(o => !item.options.includes(o)).length > 0 && (
+                                  { (est[item.key] || []).filter(o => !(item.options || []).includes(o)).length > 0 && (
                                     <div className="flex flex-wrap gap-1.5 border-t border-dashed border-slate-200 pt-2 mt-2">
-                                      { (est[item.key] || []).filter(o => !item.options.includes(o)).map(opt => (
+                                      { (est[item.key] || []).filter(o => !(item.options || []).includes(o)).map(opt => (
                                         <div key={opt} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 text-[#468DFF] text-[10px] font-bold">
                                           <span>{opt}</span>
                                           <button
