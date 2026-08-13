@@ -112,12 +112,15 @@ export async function POST(request) {
     }
     const backUrl = `${origin}/${tenant.slug}/profile`;
 
-    console.log(`[Checkout API] Creando Preapproval para Tenant: ${tenantId}, Plan: ${planId}, Monto: $${finalAmount}`);
-
-    const payerEmail = process.env.MERCADO_PAGO_TEST_PAYER_EMAIL || user.email;
+    const testEmail = process.env.MERCADO_PAGO_TEST_PAYER_EMAIL?.trim();
+    const userEmail = user?.email?.trim()?.toLowerCase();
+    const payerEmail = (testEmail && testEmail.length > 3) ? testEmail : userEmail;
 
     const rawReason = `Suscripción Mensual - ${planConfig.name} (${tenant.name})`;
     const reason = rawReason.length > 60 ? rawReason.substring(0, 57) + '...' : rawReason;
+
+    console.log(`[Checkout API] Payer Email resuelto: "${payerEmail}"`);
+
 
     const preApprovalResponse = await preApprovalClient.create({
       body: {
