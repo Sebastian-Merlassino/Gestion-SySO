@@ -1,15 +1,13 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-13] Autorización CSP de API de YouTube en Middleware y Resguardo a IFrame en Capacitación
+## [2026-08-13] Depuración de Advertencias de Consola (React `allowfullscreen` y YouTube WidgetAPI `postMessage`)
 
 ### Resumen de Cambios
-- **Ajuste de Política de Seguridad CSP (`src/middleware.js`):**
-  - Se añadieron `https://www.youtube.com` y `https://s.ytimg.com` a la directiva `script-src` en la cabecera Content-Security-Policy generada por el middleware. Esto resuelve de forma definitiva el error de bloqueo CSP manifestado en el navegador (`Loading the script 'https://www.youtube.com/iframe_api' violates script-src...`).
-- **Resguardo Automático en `YouTubePlayer` (`src/app/capacitar/[token]/page.js`):**
-  - Se incorporó un mecanismo de fallback con timeout de 3.5s y callback `onerror`. Si por alguna condición la API IFrame no cargara, el reproductor conmuta de forma transparente e inmediata a un `<iframe>` embebido sin pantalla negra.
+- **Corrección de Advertencias en Consola (`src/app/capacitar/[token]/page.js`):**
+  - **Advertencia de Atributo React `allowfullscreen`:** Se unificaron las directivas de todos los iframes embebidos incluyendo `fullscreen` dentro de la propiedad `allow="...; fullscreen"` y removiendo el atributo secundario `allowFullScreen`, eliminando la advertencia de React en la consola.
+  - **Advertencia de YouTube `postMessage` Target Origin Mismatch:** Se removió el parámetro explicativo `origin` dentro de los `playerVars` de la instancia `new window.YT.Player(...)`, permitiendo que la API nativa de YouTube resuelva el origen de forma transparente sin disparar errores de reconciliación de postMessage en `www-widgetapi.js`.
 
 ### Archivos Modificados
-- `[MODIFY] src/middleware.js`
 - `[MODIFY] src/app/capacitar/[token]/page.js`
 - `[MODIFY] docs/BITACORA_DESARROLLO.md`
 

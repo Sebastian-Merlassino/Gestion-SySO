@@ -72,7 +72,7 @@ function YouTubePlayer({ videoId, onEnded, title }) {
             controls: 1,
             rel: 0,
             modestbranding: 1,
-            origin: typeof window !== 'undefined' ? window.location.origin : ''
+            enablejsapi: 1
           },
           events: {
             onStateChange: (event) => {
@@ -143,11 +143,10 @@ function YouTubePlayer({ videoId, onEnded, title }) {
     const originParam = typeof window !== 'undefined' ? `&origin=${encodeURIComponent(window.location.origin)}` : '';
     return (
       <iframe
-        src={`https://www.youtube.com/embed/${videoId}?enablejsapi=1${originParam}`}
+        src={`https://www.youtube.com/embed/${videoId}?enablejsapi=1`}
         title={title || 'Video de la Capacitación'}
         className="w-full h-full border-0"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        allowFullScreen
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
       />
     );
   }
@@ -736,8 +735,7 @@ export default function PublicCapacitacionPage({ params }) {
                   src={videoInfo.embedUrl}
                   title={capacitacion.titulo}
                   className="w-full h-full border-0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                 />
               )}
             </div>
@@ -808,7 +806,6 @@ export default function PublicCapacitacionPage({ params }) {
                     title="Presentación Google Slides"
                     className="w-full h-full border-0"
                     allow="autoplay; fullscreen"
-                    allowFullScreen
                   />
                 </div>
               );
@@ -822,7 +819,6 @@ export default function PublicCapacitacionPage({ params }) {
                   title="Visor de Documento"
                   className="w-full h-full border-0"
                   allow="autoplay; fullscreen"
-                  allowFullScreen
                 />
               </div>
             );
