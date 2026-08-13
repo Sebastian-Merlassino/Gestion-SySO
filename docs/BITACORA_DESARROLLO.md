@@ -1,15 +1,19 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-13] Estandarización de Textos y Subtítulo Profesional en Diálogo de Compartir Capacitaciones Online
+## [2026-08-13] Estandarización Universal de Despacho de Correos por API Backend y Selector de Contactos de Razón Social en Capacitaciones Online
 
 ### Resumen de Cambios
-- **Ventana Emergente de Compartir (`src/app/[tenant-slug]/capacitaciones-online/page.js`):**
-  - **Subtítulo del Encabezado**: Se actualizó a `Capacitación virtual de Higiene y Seguridad` debajo del título principal `Compartir Capacitación`.
-  - **Cuerpo del Mensaje (WhatsApp y Email)**: Se formalizó la plantilla predeterminada con una redacción ejecutiva y profesional:
-    > *"Por medio del presente, les compartimos el enlace para ingresar a la capacitación virtual de higiene y seguridad en el trabajo. Temas: "${item.titulo}".\n\nPor favor ingrese al siguiente enlace para revisar el material y registrar su de asistencia:\n${publicUrl}\n\nGestión SySO"*
-  - **Dimensión de Cajas de Texto**: Se expandieron las áreas de texto (`textarea` `rows={6}`) para lectura y edición sin recortes.
+- **Despacho Directo por Backend (`src/app/api/send-email/route.js`):**
+  - Se flexibilizó `sendEmailSchema` en la API backend para permitir el envío de notificaciones y enlaces por correo sin requerir un PDF adjunto en Storage (`filePath` opcional).
+  - Se incorporaron las propiedades `customSubject` y `customMessage` permitiendo renderizar plantillas de correo HTML corporativas con el logo del Tenant y un enlace seguro de acceso a la capacitación.
+- **Diálogo de Compartir (`src/app/[tenant-slug]/capacitaciones-online/page.js`):**
+  - **Selector Dinámico de Contactos**: Se incorporó la carga de `contactos_correos` y `contactos_telefonos` registrados en la Razón Social del cliente (con checkboxes de selección individual) más el campo libre de entrada manual.
+  - **Asunto del Correo Estandarizado**: Se fijó como predeterminado *"Capacitación virtual de higiene y seguridad en el trabajo"*.
+  - **Eliminación Total de Popups de Correo Nativos (`mailto:`):** El botón *"Enviar Correo"* ejecuta el despacho directo contra `/api/send-email` con spinner de carga `Loader2` y notificación global `useToast`, imitando la experiencia de los módulos de Visitas y Protocolos.
+  - **Estándar Visual Unificado:** Se migró la ventana emergente al diseño corporativo exacto con ícono de despacho, pestañas `Correo Electrónico`, `WhatsApp` y `Enlace Directo`.
 
 ### Archivos Modificados
+- `[MODIFY] src/app/api/send-email/route.js`
 - `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
 - `[MODIFY] docs/BITACORA_DESARROLLO.md`
 

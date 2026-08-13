@@ -37,7 +37,12 @@ import {
   AlertTriangle, 
   MapPin,
   User,
-  HelpCircle
+  HelpCircle,
+  Mail,
+  MessageCircle,
+  Send,
+  Copy,
+  Link
 } from 'lucide-react';
 
 export default function CapacitacionesOnlinePage({ params }) {
@@ -113,11 +118,14 @@ export default function CapacitacionesOnlinePage({ params }) {
     show: false,
     capacitacion: null,
     publicUrl: '',
-    activeTab: 'whatsapp',
-    phone: '',
-    email: '',
-    subject: '',
-    message: ''
+    activeTab: 'email',
+    availableEmails: [],
+    manualEmail: '',
+    availablePhones: [],
+    manualPhone: '',
+    subject: 'Capacitación virtual de higiene y seguridad en el trabajo',
+    message: '',
+    sendingEmail: false
   });
 
   // Diálogos de confirmación
@@ -382,7 +390,7 @@ export default function CapacitacionesOnlinePage({ params }) {
       if (prof?.tenant_id) {
         const { data: emps } = await supabase
           .from('empresas')
-          .select('id, razon_social, cuit')
+          .select('id, razon_social, cuit, contactos_correos, contactos_telefonos')
           .eq('tenant_id', prof.tenant_id)
           .order('razon_social');
         setEmpresas(emps || []);
@@ -660,19 +668,113 @@ export default function CapacitacionesOnlinePage({ params }) {
     const publicUrl = `${window.location.origin}/capacitar/${token}`;
 
     const emp = empresas.find(e => e.id === item.empresa_id);
-    const defaultEmail = emp?.contactos_correos?.[0]?.valor || '';
+
+    // Correos de la Razón Social
+    const emails = emp?.contactos_correos || [];
+    const initialAvailableEmails = emails.map(c => ({
+      descripcion: `${c.contacto || 'Contacto'}: ${c.valor}`,
+      valor: c.valor,
+      checked: false
+    }));
+
+    // Teléfonos de la Razón Social
+    const phones = emp?.contactos_telefonos || [];
+    const initialAvailablePhones = phones.map(c => ({
+      descripcion: `${c.contacto || 'Contacto'}: ${c.valor}`,
+      valor: c.valor,
+      checked: false
+    }));
+
     const temasText = item.titulo || 'Higiene y Seguridad';
 
     setShareModal({
       show: true,
       capacitacion: item,
       publicUrl,
-      activeTab: 'whatsapp',
-      phone: '',
-      email: defaultEmail,
-      subject: `Capacitación Virtual SySO: ${temasText}`,
-      message: `Por medio del presente, les compartimos el enlace para ingresar a la capacitación virtual de higiene y seguridad en el trabajo. Temas: "${temasText}".\n\nPor favor ingrese al siguiente enlace para revisar el material y registrar su de asistencia:\n${publicUrl}\n\nGestión SySO`
+      activeTab: 'email',
+      availableEmails: initialAvailableEmails,
+      manualEmail: '',
+      availablePhones: initialAvailablePhones,
+      manualPhone: '',
+      subject: 'Capacitación virtual de higiene y seguridad en el trabajo',
+      message: `Por medio del presente, les compartimos el enlace para ingresar a la capacitación virtual de higiene y seguridad en el trabajo. Temas: "${temasText}".\n\nPor favor ingrese al siguiente enlace para revisar el material y registrar su de asistencia:\n${publicUrl}\n\nGestión SySO`,
+      sendingEmail: false
     });
+  };
+
+  // Enviar Capacitación por Email usando /api/send-email
+  const handleSendEmailFromShareModal = async () => {
+    const selectedEmails = (shareModal.availableEmails || [])
+      .filter(e => e.checked)
+      .map(e => e.valor);
+    
+    const manualVal = (shareModal.manualEmail || '').trim();
+    const manualEmails = manualVal
+      ? manualVal.split(',').map(e => e.trim()).filter(Boolean)
+      : [];
+
+    const recipients = [...new Set([...selectedEmails, ...manualEmails])];
+
+    if (recipients.length === 0) {
+      globalToast.toast('Debe seleccionar al menos un contacto o ingresar un correo electrónico manual.', 'error');
+      return;
+    }
+
+    setShareModal(prev => ({ ...prev, sendingEmail: true }));
+
+    try {
+      const emp = empresas.find(e => e.id === shareModal.capacitacion?.empresa_id);
+
+      const res = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          emails: recipients,
+          companyName: emp ? emp.razon_social : 'Cliente',
+          customSubject: shareModal.subject || 'Capacitación virtual de higiene y seguridad en el trabajo',
+          customMessage: shareModal.message,
+          tenantLogoBase64: tenant?.logo_1_url || null,
+          tenantName: tenant?.name || tenant?.razon_social || 'Gestión SySO',
+          documentType: 'capacitacion_online'
+        })
+      });
+
+      const responseData = await res.json();
+      if (!res.ok) {
+        throw new Error(responseData.error || 'Error al enviar el correo electrónico.');
+      }
+
+      globalToast.toast('Capacitación enviada exitosamente por correo electrónico.', 'success');
+      setShareModal(prev => ({ ...prev, show: false, sendingEmail: false }));
+    } catch (err) {
+      console.error('Error al enviar correo:', err);
+      globalToast.toast(err.message || 'No se pudo enviar el correo electrónico.', 'error');
+      setShareModal(prev => ({ ...prev, sendingEmail: false }));
+    }
+  };
+
+  // Compartir por WhatsApp
+  const handleSendWhatsAppFromShareModal = () => {
+    const selectedPhones = (shareModal.availablePhones || [])
+      .filter(p => p.checked)
+      .map(p => p.valor);
+    
+    const manualVal = (shareModal.manualPhone || '').trim();
+
+    let targetPhone = '';
+    if (selectedPhones.length > 0) {
+      targetPhone = selectedPhones[0];
+    } else if (manualVal) {
+      targetPhone = manualVal;
+    }
+
+    const cleanPhone = targetPhone.replace(/[^0-9]/g, '');
+    const waUrl = cleanPhone 
+      ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(shareModal.message)}`
+      : `https://wa.me/?text=${encodeURIComponent(shareModal.message)}`;
+
+    window.open(waUrl, '_blank');
+    setShareModal(prev => ({ ...prev, show: false }));
   };
 
   // Copiar Enlace Público Directo
@@ -2247,18 +2349,20 @@ export default function CapacitacionesOnlinePage({ params }) {
         onCancel={() => setDeleteConfirm({ show: false, id: null, title: '' })}
       />
 
-      {/* Modal Unificado de Compartir (WhatsApp / Email / Enlace) */}
+      {/* Modal Unificado de Compartir Capacitación (WhatsApp / Email / Enlace) */}
       {shareModal.show && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-200 animate-scaleUp space-y-4">
+            
+            {/* Header del Modal */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
                 <div className="p-2 bg-blue-50 text-[#468DFF] rounded-xl">
-                  <Share2 className="h-5 w-5" />
+                  <Send className="h-5 w-5" />
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-[#0D0D0D]">Compartir Capacitación</h3>
-                  <p className="text-xs text-slate-500 truncate max-w-[340px]">
+                  <p className="text-xs text-slate-500 font-medium truncate max-w-[340px]">
                     Capacitación virtual de Higiene y Seguridad
                   </p>
                 </div>
@@ -2268,158 +2372,273 @@ export default function CapacitacionesOnlinePage({ params }) {
                 onClick={() => setShareModal({ ...shareModal, show: false })}
                 className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
               >
-                ✕
+                <X className="h-4 w-4" />
               </button>
             </div>
 
-            {/* Selector de Pestañas */}
-            <div className="flex border-b border-slate-200 bg-slate-50 p-1 rounded-xl gap-1 text-xs font-bold">
-              <button
-                type="button"
-                onClick={() => setShareModal({ ...shareModal, activeTab: 'whatsapp' })}
-                className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-                  shareModal.activeTab === 'whatsapp'
-                    ? 'bg-white text-emerald-600 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700'
-                }`}
-              >
-                💬 WhatsApp
-              </button>
+            {/* Selector de Pestañas (Correo Electrónico | WhatsApp | Enlace) */}
+            <div className="flex border-b border-slate-200 pb-1 gap-4 text-xs font-bold">
               <button
                 type="button"
                 onClick={() => setShareModal({ ...shareModal, activeTab: 'email' })}
-                className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                className={`flex items-center gap-1.5 py-2 px-1 border-b-2 transition-all cursor-pointer ${
                   shareModal.activeTab === 'email'
-                    ? 'bg-white text-[#468DFF] shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700'
+                    ? 'border-[#468DFF] text-[#468DFF]'
+                    : 'border-transparent text-slate-400 hover:text-slate-600'
                 }`}
               >
-                ✉️ Correo
+                <Mail className="h-3.5 w-3.5" />
+                Correo Electrónico
               </button>
+
+              <button
+                type="button"
+                onClick={() => setShareModal({ ...shareModal, activeTab: 'whatsapp' })}
+                className={`flex items-center gap-1.5 py-2 px-1 border-b-2 transition-all cursor-pointer ${
+                  shareModal.activeTab === 'whatsapp'
+                    ? 'border-emerald-600 text-emerald-600'
+                    : 'border-transparent text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                <MessageCircle className="h-3.5 w-3.5" />
+                WhatsApp
+              </button>
+
               <button
                 type="button"
                 onClick={() => setShareModal({ ...shareModal, activeTab: 'link' })}
-                className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                className={`flex items-center gap-1.5 py-2 px-1 border-b-2 transition-all cursor-pointer ${
                   shareModal.activeTab === 'link'
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700'
+                    ? 'border-slate-800 text-slate-800'
+                    : 'border-transparent text-slate-400 hover:text-slate-600'
                 }`}
               >
-                🔗 Enlace
+                <Link className="h-3.5 w-3.5" />
+                Enlace Directo
               </button>
             </div>
 
-            {/* Contenido Pestaña WhatsApp */}
-            {shareModal.activeTab === 'whatsapp' && (
-              <div className="space-y-3 pt-2">
-                <div>
-                  <label className="text-xs font-bold text-slate-600 block mb-1">
-                    Número de WhatsApp Destinatario (Opcional)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Ej. +5491112345678"
-                    value={shareModal.phone}
-                    onChange={(e) => setShareModal({ ...shareModal, phone: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-slate-600 block mb-1">
-                    Mensaje a enviar
-                  </label>
-                  <textarea
-                    rows={6}
-                    value={shareModal.message}
-                    onChange={(e) => setShareModal({ ...shareModal, message: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl p-3 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50 font-normal leading-relaxed text-slate-800"
-                  />
-                </div>
-                <a
-                  href={`https://wa.me/${shareModal.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(shareModal.message)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => setShareModal({ ...shareModal, show: false })}
-                  className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-600/20"
-                >
-                  Enviar por WhatsApp
-                </a>
-              </div>
-            )}
-
-            {/* Contenido Pestaña Correo */}
+            {/* PESTAÑA: CORREO ELECTRÓNICO */}
             {shareModal.activeTab === 'email' && (
-              <div className="space-y-3 pt-2">
-                <div>
-                  <label className="text-xs font-bold text-slate-600 block mb-1">
-                    Correo Electrónico Destinatario *
-                  </label>
-                  <input
-                    type="email"
-                    placeholder="ejemplo@empresa.com"
-                    value={shareModal.email}
-                    onChange={(e) => setShareModal({ ...shareModal, email: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50"
-                  />
+              <div className="space-y-4">
+                <p className="text-[11px] text-slate-500 font-medium">
+                  Seleccione los contactos cargados de la Razón Social o ingrese correos electrónicos manualmente (separados por comas) para enviar la capacitación virtual.
+                </p>
+
+                <div className="space-y-3">
+                  {/* Contactos de la Razón Social */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-600 block">Correos de la Razón Social:</label>
+                    {(!shareModal.availableEmails || shareModal.availableEmails.length === 0) ? (
+                      <p className="text-xs text-slate-400 italic font-semibold">No hay contactos registrados para esta empresa.</p>
+                    ) : (
+                      <div className="bg-slate-50 p-3 border border-slate-200 rounded-xl max-h-32 overflow-y-auto space-y-1.5">
+                        {shareModal.availableEmails.map((e, idx) => (
+                          <label key={idx} className="flex items-center gap-2.5 text-xs font-semibold text-slate-700 cursor-pointer hover:bg-slate-100/50 py-1 rounded">
+                            <input
+                              type="checkbox"
+                              checked={e.checked}
+                              onChange={() => {
+                                setShareModal(prev => ({
+                                  ...prev,
+                                  availableEmails: prev.availableEmails.map((item, i) => i === idx ? { ...item, checked: !item.checked } : item)
+                                }));
+                              }}
+                              className="accent-[#468DFF] h-4 w-4"
+                            />
+                            {e.descripcion}
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Ingreso manual */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-slate-600">Correos Manuales:</label>
+                    <textarea
+                      rows="2"
+                      placeholder="ejemplo1@correo.com, ejemplo2@correo.com..."
+                      value={shareModal.manualEmail}
+                      onChange={(e) => setShareModal({ ...shareModal, manualEmail: e.target.value })}
+                      className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 resize-none font-medium text-slate-800"
+                    />
+                  </div>
+
+                  {/* Asunto del Correo */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-slate-600">Asunto del Correo:</label>
+                    <input
+                      type="text"
+                      value={shareModal.subject}
+                      onChange={(e) => setShareModal({ ...shareModal, subject: e.target.value })}
+                      className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 font-medium text-slate-800"
+                    />
+                  </div>
+
+                  {/* Cuerpo del Mensaje */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-slate-600">Cuerpo del Mensaje:</label>
+                    <textarea
+                      rows="4"
+                      value={shareModal.message}
+                      onChange={(e) => setShareModal({ ...shareModal, message: e.target.value })}
+                      className="w-full border border-slate-200 rounded-xl p-3 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 font-normal leading-relaxed text-slate-800"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs font-bold text-slate-600 block mb-1">
-                    Asunto del Correo
-                  </label>
-                  <input
-                    type="text"
-                    value={shareModal.subject}
-                    onChange={(e) => setShareModal({ ...shareModal, subject: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50"
-                  />
+
+                {/* Acciones Correo */}
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShareModal({ ...shareModal, show: false })}
+                    className="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-100 cursor-pointer transition-all active:scale-98"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    disabled={shareModal.sendingEmail}
+                    onClick={handleSendEmailFromShareModal}
+                    className="px-4 py-2 bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold rounded-lg cursor-pointer transition-all flex items-center gap-1.5 shadow-md shadow-[#468DFF]/10 disabled:opacity-50 active:scale-98"
+                  >
+                    {shareModal.sendingEmail ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        Enviando...
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="h-3.5 w-3.5" />
+                        Enviar Correo
+                      </>
+                    )}
+                  </button>
                 </div>
-                <div>
-                  <label className="text-xs font-bold text-slate-600 block mb-1">
-                    Cuerpo del Mensaje
-                  </label>
-                  <textarea
-                    rows={6}
-                    value={shareModal.message}
-                    onChange={(e) => setShareModal({ ...shareModal, message: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl p-3 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50 font-normal leading-relaxed text-slate-800"
-                  />
-                </div>
-                <a
-                  href={`mailto:${shareModal.email}?subject=${encodeURIComponent(shareModal.subject)}&body=${encodeURIComponent(shareModal.message)}`}
-                  onClick={() => setShareModal({ ...shareModal, show: false })}
-                  className="w-full py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-md shadow-[#468DFF]/20"
-                >
-                  Enviar por Correo Electrónico
-                </a>
               </div>
             )}
 
-            {/* Contenido Pestaña Enlace Directo */}
+            {/* PESTAÑA: WHATSAPP */}
+            {shareModal.activeTab === 'whatsapp' && (
+              <div className="space-y-4">
+                <p className="text-[11px] text-slate-500 font-medium">
+                  Seleccione un contacto registrado o ingrese un número manualmente para compartir la capacitación.
+                </p>
+
+                <div className="space-y-3">
+                  {/* Contactos de la empresa */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-600 block">Teléfonos de la Razón Social:</label>
+                    {(!shareModal.availablePhones || shareModal.availablePhones.length === 0) ? (
+                      <p className="text-xs text-slate-400 italic font-semibold">No hay contactos con teléfono registrados.</p>
+                    ) : (
+                      <div className="bg-slate-50 p-3 border border-slate-200 rounded-xl max-h-32 overflow-y-auto space-y-1.5">
+                        {shareModal.availablePhones.map((p, idx) => (
+                          <label key={idx} className="flex items-center gap-2.5 text-xs font-semibold text-slate-700 cursor-pointer hover:bg-slate-100/50 py-1 rounded">
+                            <input
+                              type="checkbox"
+                              checked={p.checked}
+                              onChange={() => {
+                                setShareModal(prev => ({
+                                  ...prev,
+                                  availablePhones: prev.availablePhones.map((item, i) => i === idx ? { ...item, checked: !item.checked } : { ...item, checked: false })
+                                }));
+                              }}
+                              className="accent-[#468DFF] h-4 w-4"
+                            />
+                            {p.descripcion}
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Ingreso manual */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-slate-600">Número Manual (ej: 5491159969956):</label>
+                    <input
+                      type="text"
+                      placeholder="Código de país + área + número (sin espacios ni guiones)"
+                      value={shareModal.manualPhone}
+                      onChange={(e) => setShareModal({ ...shareModal, manualPhone: e.target.value })}
+                      className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 font-medium text-slate-800"
+                    />
+                  </div>
+
+                  {/* Mensaje a enviar */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-slate-600">Mensaje a enviar:</label>
+                    <textarea
+                      rows="4"
+                      value={shareModal.message}
+                      onChange={(e) => setShareModal({ ...shareModal, message: e.target.value })}
+                      className="w-full border border-slate-200 rounded-xl p-3 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 font-normal leading-relaxed text-slate-800"
+                    />
+                  </div>
+                </div>
+
+                {/* Acciones WhatsApp */}
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShareModal({ ...shareModal, show: false })}
+                    className="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-100 cursor-pointer transition-all active:scale-98"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSendWhatsAppFromShareModal}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg cursor-pointer transition-all flex items-center gap-1.5 shadow-md shadow-emerald-500/10 active:scale-98"
+                  >
+                    <MessageCircle className="h-3.5 w-3.5" />
+                    Enviar por WhatsApp
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* PESTAÑA: ENLACE DIRECTO */}
             {shareModal.activeTab === 'link' && (
-              <div className="space-y-3 pt-2">
-                <div>
-                  <label className="text-xs font-bold text-slate-600 block mb-1">
-                    Enlace Público para Empleados
-                  </label>
+              <div className="space-y-4">
+                <p className="text-[11px] text-slate-500 font-medium">
+                  Copie el enlace público para distribuirlo directamente a los empleados.
+                </p>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-slate-600">Enlace Público para Empleados:</label>
                   <input
                     type="text"
                     readOnly
                     value={shareModal.publicUrl}
-                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-xs bg-slate-100 text-slate-700 font-mono"
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs bg-slate-100 text-slate-700 font-mono"
                   />
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleCopyPublicLink(shareModal.publicUrl);
-                    setShareModal({ ...shareModal, show: false });
-                  }}
-                  className="w-full py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-md shadow-[#468DFF]/20"
-                >
-                  Copiar Enlace al Portapapeles
-                </button>
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShareModal({ ...shareModal, show: false })}
+                    className="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-100 cursor-pointer transition-all active:scale-98"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleCopyPublicLink(shareModal.publicUrl);
+                      setShareModal({ ...shareModal, show: false });
+                    }}
+                    className="px-4 py-2 bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold rounded-lg cursor-pointer transition-all flex items-center gap-1.5 shadow-md shadow-[#468DFF]/10 active:scale-98"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    Copiar Enlace
+                  </button>
+                </div>
               </div>
             )}
+
           </div>
         </div>
       )}

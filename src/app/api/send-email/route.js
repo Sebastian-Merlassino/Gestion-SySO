@@ -10,14 +10,16 @@ const sendEmailSchema = z.object({
     z.string().min(1, 'El destinatario es requerido.'),
     z.array(z.string().email('Dirección de correo electrónico inválida.'))
   ]),
-  filePath: z.string().min(1, 'El path del archivo adjunto es requerido.').max(500),
+  filePath: z.string().max(500).optional().nullable(),
+  customSubject: z.string().max(300).optional().nullable(),
+  customMessage: z.string().max(10000).optional().nullable(),
   companyName: z.string().max(200).optional(),
   establishmentName: z.string().max(200).optional(),
   date: z.string().max(100).optional(),
   inspectorName: z.string().max(200).optional(),
   tenantLogoBase64: z.string().max(2 * 1024 * 1024, 'El logo excede el tamaño máximo permitido de 2 MB.').nullable().optional(),
   tenantName: z.string().max(200).optional(),
-  documentType: z.string().max(100).optional(), // can be 'aviso_riesgo' or others
+  documentType: z.string().max(100).optional(), // can be 'aviso_riesgo', 'capacitacion_online', etc.
   checklistName: z.string().max(200).optional()
 });
 
@@ -74,7 +76,7 @@ export async function POST(request) {
         details: parseResult.error.format() 
       }, { status: 400 });
     }
-    const { emails, filePath, companyName, establishmentName, date, inspectorName, tenantLogoBase64, tenantName, documentType, checklistName } = parseResult.data;
+    const { emails, filePath, customSubject, customMessage, companyName, establishmentName, date, inspectorName, tenantLogoBase64, tenantName, documentType, checklistName } = parseResult.data;
 
     // Sanitización HTML para evitar inyección en el correo (HIGH-02)
     const escapeHtml = (str) => {
@@ -116,36 +118,60 @@ export async function POST(request) {
       );
     }
 
-    // Descargar el PDF desde Supabase Storage (RLS valida el acceso)
-    console.log(`[API Send-Email] Downloading PDF from Storage: ${filePath}`);
-    const { data: fileData, error: downloadErr } = await serverClient.storage
-      .from('documents')
-      .download(filePath);
+    // Inline attachments list
+    const attachments = [];
 
-    if (downloadErr || !fileData) {
-      console.error('[API Send-Email] Failed to download PDF from storage:', downloadErr);
-      return NextResponse.json(
-        { error: 'El archivo adjunto no existe o no se tienen permisos para acceder a él.' },
-        { status: 403 }
-      );
-    }
+    // Descargar el PDF desde Supabase Storage si se especifica un filePath (RLS valida el acceso)
+    if (filePath) {
+      console.log(`[API Send-Email] Downloading PDF from Storage: ${filePath}`);
+      const { data: fileData, error: downloadErr } = await serverClient.storage
+        .from('documents')
+        .download(filePath);
 
-    const pdfBuffer = Buffer.from(await fileData.arrayBuffer());
+      if (downloadErr || !fileData) {
+        console.error('[API Send-Email] Failed to download PDF from storage:', downloadErr);
+        return NextResponse.json(
+          { error: 'El archivo adjunto no existe o no se tienen permisos para acceder a él.' },
+          { status: 403 }
+        );
+      }
 
-    // Validar tamaño máximo del PDF adjunto (5 MB)
-    if (pdfBuffer.length > 5 * 1024 * 1024) {
-      return NextResponse.json(
-        { error: 'El archivo PDF adjunto excede el tamaño máximo permitido de 5 MB.' },
-        { status: 413 }
-      );
-    }
+      const pdfBuffer = Buffer.from(await fileData.arrayBuffer());
 
-    // Validar firma mágica del PDF
-    if (pdfBuffer.length < 4 || pdfBuffer.toString('ascii', 0, 4) !== '%PDF') {
-      return NextResponse.json(
-        { error: 'El archivo adjunto no es un documento PDF válido.' },
-        { status: 415 }
-      );
+      // Validar tamaño máximo del PDF adjunto (5 MB)
+      if (pdfBuffer.length > 5 * 1024 * 1024) {
+        return NextResponse.json(
+          { error: 'El archivo PDF adjunto excede el tamaño máximo permitido de 5 MB.' },
+          { status: 413 }
+        );
+      }
+
+      // Validar firma mágica del PDF
+      if (pdfBuffer.length < 4 || pdfBuffer.toString('ascii', 0, 4) !== '%PDF') {
+        return NextResponse.json(
+          { error: 'El archivo adjunto no es un documento PDF válido.' },
+          { status: 415 }
+        );
+      }
+
+      const isAvisoRiesgo = documentType === 'aviso_riesgo';
+      const isControlElectrico = documentType === 'control_electrico';
+      const isChecklistPersonalizado = documentType === 'checklist_personalizado';
+      const isProtocoloIluminacion = documentType === 'protocolo_iluminacion';
+
+      attachments.push({
+        filename: isAvisoRiesgo
+          ? `Aviso_Riesgo_${(companyName || 'Cliente').replace(/\s+/g, '_')}_${date || 'aviso'}.pdf`
+          : isControlElectrico
+          ? `Inspección_Visual_Instalaciones_Eléctricas_${(companyName || 'Cliente').replace(/\s+/g, '_')}_${date || 'control'}.pdf`
+          : isChecklistPersonalizado
+          ? `Checklist_${(checklistName || 'Personalizado').replace(/\s+/g, '_')}_${(companyName || 'Cliente').replace(/\s+/g, '_')}_${date || 'checklist'}.pdf`
+          : isProtocoloIluminacion
+          ? `Protocolo_Iluminacion_${(companyName || 'Cliente').replace(/\s+/g, '_')}_${date || 'iluminacion'}.pdf`
+          : `Constancia_Visita_${(companyName || 'Cliente').replace(/\s+/g, '_')}_${date || 'visita'}.pdf`,
+        content: pdfBuffer,
+        contentType: 'application/pdf'
+      });
     }
 
     const host = process.env.SMTP_HOST;
@@ -158,8 +184,11 @@ export async function POST(request) {
     const isControlElectrico = documentType === 'control_electrico';
     const isChecklistPersonalizado = documentType === 'checklist_personalizado';
     const isProtocoloIluminacion = documentType === 'protocolo_iluminacion';
-    
-    const mailSubject = isAvisoRiesgo
+    const isCapacitacionOnline = documentType === 'capacitacion_online';
+
+    const mailSubject = customSubject
+      ? customSubject
+      : isAvisoRiesgo
       ? `Aviso de Riesgo de Higiene y Seguridad - ${companyName || 'Cliente'}`
       : isControlElectrico
       ? `Inspección Visual de Instalaciones Eléctricas - ${companyName || 'Cliente'}`
@@ -167,26 +196,11 @@ export async function POST(request) {
       ? `${checklistName || 'Checklist'} - ${companyName || 'Cliente'}`
       : isProtocoloIluminacion
       ? `Protocolo para Medición de Iluminación - ${companyName || 'Cliente'}`
+      : isCapacitacionOnline
+      ? `Capacitación virtual de higiene y seguridad en el trabajo`
       : `Constancia de Visita de Higiene y Seguridad - ${companyName || 'Cliente'}`;
 
-    console.log(`[API Send-Email] Tenant: ${profile.tenant_id} | Sender: ${user.email} | To: ${emailList.join(', ')} | Subject: ${mailSubject} | Size: ${pdfBuffer.length} bytes`);
-
-    // Inline attachments list
-    const attachments = [];
-
-    attachments.push({
-      filename: isAvisoRiesgo
-        ? `Aviso_Riesgo_${(companyName || 'Cliente').replace(/\s+/g, '_')}_${date || 'aviso'}.pdf`
-        : isControlElectrico
-        ? `Inspección_Visual_Instalaciones_Eléctricas_${(companyName || 'Cliente').replace(/\s+/g, '_')}_${date || 'control'}.pdf`
-        : isChecklistPersonalizado
-        ? `Checklist_${(checklistName || 'Personalizado').replace(/\s+/g, '_')}_${(companyName || 'Cliente').replace(/\s+/g, '_')}_${date || 'checklist'}.pdf`
-        : isProtocoloIluminacion
-        ? `Protocolo_Iluminacion_${(companyName || 'Cliente').replace(/\s+/g, '_')}_${date || 'iluminacion'}.pdf`
-        : `Constancia_Visita_${(companyName || 'Cliente').replace(/\s+/g, '_')}_${date || 'visita'}.pdf`,
-      content: pdfBuffer,
-      contentType: 'application/pdf'
-    });
+    console.log(`[API Send-Email] Tenant: ${profile.tenant_id} | Sender: ${user.email} | To: ${emailList.join(', ')} | Subject: ${mailSubject}`);
 
     // Handle tenant logo as CID inline attachment to bypass webmail block (Gmail)
     let logoCid = null;
@@ -215,6 +229,10 @@ export async function POST(request) {
       }
     }
 
+    const formattedCustomMessage = customMessage
+      ? escapeHtml(customMessage).replace(/\n/g, '<br />')
+      : null;
+
     const mailHtml = `
       <div style="font-family: 'Segoe UI', Inter, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1e293b; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px;">
         <div style="text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">
@@ -223,36 +241,23 @@ export async function POST(request) {
             : `<h2 style="margin: 0 0 8px 0; font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.025em;">${tenantNameEscaped || 'Gestión SySO'}</h2>`
           }
           <p style="margin: 0; font-size: 13px; font-weight: 600; color: #468DFF; text-transform: uppercase; letter-spacing: 0.05em;">
-            ${isAvisoRiesgo ? 'Aviso de Riesgo' : isControlElectrico ? 'Inspección Visual de Instalaciones Eléctricas' : isChecklistPersonalizado ? (checklistNameEscaped || 'Checklist Personalizado') : isProtocoloIluminacion ? 'Protocolo de Medición de Iluminación' : 'Constancia de Visita'}
+            ${isCapacitacionOnline ? 'Capacitación Virtual de Higiene y Seguridad' : isAvisoRiesgo ? 'Aviso de Riesgo' : isControlElectrico ? 'Inspección Visual de Instalaciones Eléctricas' : isChecklistPersonalizado ? (checklistNameEscaped || 'Checklist Personalizado') : isProtocoloIluminacion ? 'Protocolo de Medición de Iluminación' : 'Constancia de Visita'}
           </p>
         </div>
 
         <div style="background-color: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 24px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);">
-          <p style="margin-top: 0; font-size: 15px; line-height: 1.6; color: #334155;">
-            Estimado cliente,
-          </p>
-          <p style="font-size: 15px; line-height: 1.6; color: #334155;">
-            Se adjunta el reporte de <strong>${isAvisoRiesgo ? 'Aviso de Riesgo de Higiene y Seguridad' : isControlElectrico ? 'Inspección Visual de Instalaciones Eléctricas' : isChecklistPersonalizado ? (checklistNameEscaped || 'Checklist Personalizado') : isProtocoloIluminacion ? 'Protocolo para Medición de Iluminación en el Ambiente Laboral' : 'Constancia de Visita de Higiene y Seguridad'}</strong> correspondiente a sus instalaciones.
-          </p>
-
-          <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px;">
-            <tr style="border-bottom: 1px solid #f1f5f9;">
-              <td style="padding: 10px 0; font-weight: 600; color: #64748b; width: 40%;">Razón Social:</td>
-              <td style="padding: 10px 0; font-weight: 700; color: #0f172a;">${companyNameEscaped || 'N/A'}</td>
-            </tr>
-            <tr style="border-bottom: 1px solid #f1f5f9;">
-              <td style="padding: 10px 0; font-weight: 600; color: #64748b;">Establecimiento:</td>
-              <td style="padding: 10px 0; font-weight: 700; color: #0f172a;">${establishmentNameEscaped || 'N/A'}</td>
-            </tr>
-            <tr style="border-bottom: 1px solid #f1f5f9;">
-              <td style="padding: 10px 0; font-weight: 600; color: #64748b;">${isAvisoRiesgo ? 'Fecha de emisión:' : isControlElectrico ? 'Fecha de control:' : isChecklistPersonalizado ? 'Fecha:' : isProtocoloIluminacion ? 'Fecha de medición:' : 'Fecha de visita:'}</td>
-              <td style="padding: 10px 0; font-weight: 700; color: #0f172a;">${dateEscaped || 'N/A'}</td>
-            </tr>
-            <tr>
-              <td style="padding: 10px 0; font-weight: 600; color: #64748b;">Profesional a cargo:</td>
-              <td style="padding: 10px 0; font-weight: 700; color: #0f172a;">${inspectorNameEscaped || 'N/A'}</td>
-            </tr>
-          </table>
+          ${formattedCustomMessage ? `
+            <div style="font-size: 14px; line-height: 1.6; color: #334155;">
+              ${formattedCustomMessage}
+            </div>
+          ` : `
+            <p style="margin-top: 0; font-size: 15px; line-height: 1.6; color: #334155;">
+              Estimado cliente,
+            </p>
+            <p style="font-size: 15px; line-height: 1.6; color: #334155;">
+              Se adjunta el reporte correspondiente a sus instalaciones.
+            </p>
+          `}
         </div>
 
         <p style="font-size: 12px; line-height: 1.6; color: #64748b; margin-top: 0; text-align: center;">
