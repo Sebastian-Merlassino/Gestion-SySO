@@ -267,9 +267,6 @@ export async function POST(request) {
       </div>
     `;
 
-    // Attachment helper setup is done above.
-    const pdfBufferLength = pdfBuffer.length;
-
     if (host && user_smtp && pass) {
       console.log(`[Email Route] Enviando correo real a ${emailList.join(', ')} via ${host}:${port} — usuario: ${user.email}`);
 
