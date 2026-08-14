@@ -81,25 +81,28 @@ export default function Sidebar({
   };
 
   const handleShareApp = async () => {
+    const shareMessage = 'Te comparto Gestión SySO, la plataforma web para organizar y digitalizar toda la gestión de Seguridad, Higiene y Salud Ocupacional. Probala gratis acá: https://app.gestionsyso.com/';
     const shareData = {
       title: 'Gestión SySO',
-      text: 'Plataforma profesional para la gestión de seguridad, salud ocupacional e higiene industrial.',
-      url: typeof window !== 'undefined' ? window.location.origin : 'https://gestionsyso.com'
+      text: shareMessage,
+      url: 'https://app.gestionsyso.com/'
     };
 
     if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
       try {
         await navigator.share(shareData);
       } catch (err) {
-        console.log('Error sharing:', err);
+        if (err?.name !== 'AbortError') {
+          console.log('Error sharing:', err);
+        }
       }
     } else {
       try {
-        await navigator.clipboard.writeText(shareData.url);
-        globalToast.toast('Enlace copiado al portapapeles exitosamente.', 'success');
+        await navigator.clipboard.writeText(shareMessage);
+        globalToast.toast('Mensaje copiado al portapapeles exitosamente.', 'success');
       } catch (err) {
         console.error('Error copying text:', err);
-        globalToast.toast('No se pudo copiar el enlace automáticamente.', 'error');
+        globalToast.toast('No se pudo copiar el mensaje automáticamente.', 'error');
       }
     }
   };

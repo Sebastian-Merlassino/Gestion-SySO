@@ -1,5 +1,23 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-13] Actualización del Mensaje Institucional del Botón Compartir App en la Barra Lateral
+
+### Resumen de Cambios
+- **Actualización de Mensaje en Sidebar (`src/components/Sidebar.js`):**
+  - Se modificó la función `handleShareApp` para utilizar el mensaje promocional e institucional exacto al compartir mediante la Web Share API o al copiar directamente al portapapeles:
+    `"Te comparto Gestión SySO, la plataforma web para organizar y digitalizar toda la gestión de Seguridad, Higiene y Salud Ocupacional. Probala gratis acá: https://app.gestionsyso.com/"`
+  - Se configuró el `shareData` con la URL oficial `https://app.gestionsyso.com/` y la notificación Toast adaptada para indicar que se copió el mensaje completo.
+
+### Archivos Modificados
+- `[MODIFY] src/components/Sidebar.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Verificación de la función `handleShareApp` en `src/components/Sidebar.js`.
+- Verificación del manejo seguro de excepciones (cancelación del diálogo nativo Web Share sin loguear errores innecesarios).
+
+---
+
 ## [2026-08-13] Resolución Crítica del Bug de Checkout Mercado Pago por Sanitización de Variables en Vercel
 
 ### Resumen de Cambios
