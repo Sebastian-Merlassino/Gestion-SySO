@@ -42,7 +42,15 @@ export async function POST(request) {
       .eq('role', 'cliente')
       .maybeSingle();
 
-    if (dbError || !profile) {
+    if (dbError) {
+      console.error('DB Error looking up CUIT in login-cuit:', dbError);
+      return NextResponse.json(
+        { error: 'El servicio de base de datos no está disponible en este momento. Por favor, reintenta en unos minutos.' },
+        { status: 503 }
+      );
+    }
+
+    if (!profile) {
       // Retornar error genérico de credenciales para evitar enumeración/cosecha de CUITs
       return NextResponse.json({ error: 'Credenciales de inicio de sesión inválidas o cliente no registrado.' }, { status: 400 });
     }

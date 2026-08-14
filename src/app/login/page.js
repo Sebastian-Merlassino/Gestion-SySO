@@ -22,7 +22,7 @@ export default function LoginPage() {
   // Modales de Notificación y Olvido de Contraseña
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  
+
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotCuit, setForgotCuit] = useState('');
@@ -105,7 +105,17 @@ export default function LoginPage() {
       } catch (err) {
         console.error('Login error:', err);
         let friendlyMessage = 'Error al iniciar sesión. Verifica tus credenciales.';
-        if (err.message === 'Invalid login credentials' || err.status === 400) {
+        if (
+          err.status === 503 ||
+          err.status === 502 ||
+          err.status === 504 ||
+          err.message?.includes('upstream connect') ||
+          err.message?.includes('delayed connect') ||
+          err.message?.includes('Service Unavailable') ||
+          err.message?.includes('Failed to fetch')
+        ) {
+          friendlyMessage = 'El servidor de autenticación o base de datos está experimentando una interrupción temporal de red. Por favor, reintenta en unos momentos.';
+        } else if (err.message === 'Invalid login credentials' || err.status === 400) {
           friendlyMessage = 'Credenciales de inicio de sesión inválidas. Por favor, verifica tu correo y contraseña.';
         } else if (err.message === 'Email not confirmed') {
           friendlyMessage = 'El correo electrónico no ha sido verificado aún.';
@@ -153,7 +163,17 @@ export default function LoginPage() {
       } catch (err) {
         console.error('Login client error:', err);
         let friendlyMessage = err.message || 'Error al iniciar sesión. Verifica tus credenciales.';
-        if (err.message === 'Invalid login credentials' || err.status === 400) {
+        if (
+          err.status === 503 ||
+          err.status === 502 ||
+          err.status === 504 ||
+          err.message?.includes('upstream connect') ||
+          err.message?.includes('delayed connect') ||
+          err.message?.includes('Service Unavailable') ||
+          err.message?.includes('Failed to fetch')
+        ) {
+          friendlyMessage = 'El servicio de autenticación o base de datos está experimentando una interrupción temporal de red. Por favor, reintenta en unos momentos.';
+        } else if (err.message === 'Invalid login credentials' || err.status === 400) {
           friendlyMessage = 'Credenciales de inicio de sesión inválidas. Por favor, verifica tu CUIT y contraseña.';
         }
 
@@ -280,13 +300,13 @@ export default function LoginPage() {
             className="mx-auto object-contain mb-4"
           />
 
-           <p className="text-sm text-slate-600 font-semibold text-center mb-1">
+          <p className="text-sm text-slate-600 font-semibold text-center mb-1">
             {activeTab === 'profesional' ? 'Portal Profesional' : 'Portal de Clientes'}
           </p>
           <div className="min-h-[32px] flex items-center justify-center mb-6">
             <p className="text-xs text-slate-500 font-medium text-center">
-              {activeTab === 'profesional' 
-                ? 'Ingresá a tu panel de Higiene y Seguridad laboral' 
+              {activeTab === 'profesional'
+                ? 'Ingresá a tu panel de Higiene y Seguridad laboral'
                 : 'Ingresa para visualizar tu legajo técnico de higiene y seguridad'}
             </p>
           </div>
@@ -299,11 +319,10 @@ export default function LoginPage() {
                 setActiveTab('profesional');
                 setPassword('');
               }}
-              className={`flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                activeTab === 'profesional'
+              className={`flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer ${activeTab === 'profesional'
                   ? 'bg-[#468DFF] text-white shadow-sm'
                   : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/50'
-              }`}
+                }`}
             >
               Profesionales
             </button>
@@ -313,11 +332,10 @@ export default function LoginPage() {
                 setActiveTab('cliente');
                 setPassword('');
               }}
-              className={`flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                activeTab === 'cliente'
+              className={`flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer ${activeTab === 'cliente'
                   ? 'bg-[#468DFF] text-white shadow-sm'
                   : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/50'
-              }`}
+                }`}
             >
               Clientes
             </button>
@@ -439,9 +457,8 @@ export default function LoginPage() {
 
           {/* Registro link inside the card container with stable layout height to prevent jumping */}
           <div className="mt-6 text-center text-sm text-slate-600 min-h-[24px] flex items-center justify-center">
-            <span className={`transition-all duration-200 ${
-              activeTab === 'profesional' ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none select-none'
-            }`}>
+            <span className={`transition-all duration-200 ${activeTab === 'profesional' ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none select-none'
+              }`}>
               ¿No tenés una cuenta?{' '}
               <a href="/register" className="text-[#468DFF] hover:text-[#0511F2] font-bold transition-colors">
                 Registrate gratis
@@ -455,7 +472,7 @@ export default function LoginPage() {
       {showErrorModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-sm p-6 shadow-2xl relative text-center animate-scaleUp">
-            <button 
+            <button
               onClick={() => setShowErrorModal(false)}
               className="absolute top-4 right-4 p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors border border-slate-200"
             >
@@ -482,13 +499,13 @@ export default function LoginPage() {
       {showForgotModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-sm p-6 shadow-2xl relative animate-scaleUp">
-            <button 
+            <button
               onClick={() => setShowForgotModal(false)}
               className="absolute top-4 right-4 p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors border border-slate-200"
             >
               <X className="h-4 w-4" />
             </button>
-            
+
             <div className="text-center mb-6">
               <h3 className="font-outfit text-lg font-bold text-slate-900 mb-2">
                 {activeTab === 'profesional' ? 'Recuperar Contraseña' : 'Recuperar Clave de Cliente'}

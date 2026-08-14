@@ -195,6 +195,10 @@ export async function POST(request) {
           });
           
         if (insertErr) {
+          if (insertErr.code === '23505') {
+            console.log(`[Webhook MP Idempotencia] La suscripción ${dataId} ya fue procesada concurrentemente (23505).`);
+            return NextResponse.json({ success: true, message: 'Suscripción procesada previamente (Idempotente).' }, { status: 200 });
+          }
           console.error('[Webhook MP Warning] No se pudo guardar auditoría de activación:', insertErr);
         }
         
@@ -344,6 +348,10 @@ export async function POST(request) {
         });
 
       if (insertErr) {
+        if (insertErr.code === '23505') {
+          console.log(`[Webhook MP Idempotencia] El pago ${dataId} ya fue acreditado concurrentemente (23505).`);
+          return NextResponse.json({ success: true, message: 'Pago procesado previamente (Idempotente).' }, { status: 200 });
+        }
         console.error('[Webhook MP Error] Error al registrar el pago en la base de datos:', insertErr);
         return NextResponse.json({ error: 'Error al registrar transacción.' }, { status: 500 });
       }
@@ -405,6 +413,10 @@ export async function POST(request) {
       });
 
     if (insertNonApprovedErr) {
+      if (insertNonApprovedErr.code === '23505') {
+        console.log(`[Webhook MP Idempotencia] El estado del pago no aprobado ${dataId} ya fue registrado (23505).`);
+        return NextResponse.json({ success: true, message: 'Estado del pago registrado previamente (Idempotente).' }, { status: 200 });
+      }
       console.error('[Webhook MP Error] Error al registrar el pago no aprobado:', insertNonApprovedErr);
       return NextResponse.json({ error: 'Error al guardar estado de transacción.' }, { status: 500 });
     }

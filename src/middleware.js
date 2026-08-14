@@ -163,11 +163,7 @@ export async function middleware(request) {
     },
   });
 
-  // 2. Obtener el usuario autenticado
-  const { data: { user } } = await supabase.auth.getUser();
-
-
-  // Definir rutas públicas (Las APIs operativas ya no son públicas por defecto)
+  // Definir rutas públicas (Las APIs operativas y webhooks ya no requieren consulta previa a BD)
   const isPublicRoute = 
     pathname === '/login' || 
     pathname === '/register' || 
@@ -187,6 +183,21 @@ export async function middleware(request) {
 
   const isOnboardingRoute = pathname === '/onboarding';
 
+  // Si la ruta es pública y NO es login/register (donde podríamos querer re-dirigir a un usuario logueado), 
+  // retornamos de inmediato sin realizar llamadas de red a Auth ni a la Base de Datos.
+  if (isPublicRoute && pathname !== '/login' && pathname !== '/register') {
+    return withRateLimit(response);
+  }
+
+  // 2. Obtener el usuario autenticado para rutas privadas
+  let user = null;
+  try {
+    const authRes = await supabase.auth.getUser();
+    user = authRes?.data?.user || null;
+  } catch (authErr) {
+    console.error('[Middleware Auth Error]:', authErr.message);
+  }
+
   // Si no está autenticado
   if (!user) {
     // Si intenta acceder a una ruta privada
@@ -204,11 +215,17 @@ export async function middleware(request) {
   }
 
   // Si está autenticado, obtener su perfil para ver si completó el onboarding (tiene tenant_id)
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('tenant_id, role, tenants(slug, plan_id, plan_ends_at, is_exempt, gift_plan_id, gift_ends_at)')
-    .eq('id', user.id)
-    .single();
+  let profile = null;
+  try {
+    const profRes = await supabase
+      .from('profiles')
+      .select('tenant_id, role, tenants(slug, plan_id, plan_ends_at, is_exempt, gift_plan_id, gift_ends_at)')
+      .eq('id', user.id)
+      .maybeSingle();
+    profile = profRes?.data || null;
+  } catch (pErr) {
+    console.error('[Middleware Profile Error]:', pErr.message);
+  }
 
   const hasTenant = profile?.tenant_id && profile?.tenants?.slug;
 

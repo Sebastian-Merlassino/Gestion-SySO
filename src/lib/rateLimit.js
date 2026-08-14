@@ -28,13 +28,13 @@ if (typeof setInterval !== 'undefined') {
  * @returns {Promise<{ success: boolean, limit: number, remaining: number, resetTime: number }>}
  */
 export async function checkRateLimit(ip, route, limit = 100, windowMs = 15 * 60 * 1000) {
-  const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
-  const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const redisUrl = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+  const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
 
   // En staging o producción, exigir obligatoriamente Upstash Redis para evitar bypasses en Vercel
   const isEnvRestricted = process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging';
   if (isEnvRestricted && (!redisUrl || !redisToken)) {
-    throw new Error('[RateLimit] Se requiere la configuración de Upstash Redis (UPSTASH_REDIS_REST_URL y UPSTASH_REDIS_REST_TOKEN) en producción/staging.');
+    throw new Error('[RateLimit] Se requiere la configuración de Upstash Redis (UPSTASH_REDIS_REST_URL o KV_REST_API_URL y UPSTASH_REDIS_REST_TOKEN o KV_REST_API_TOKEN) en producción/staging.');
   }
 
   if (redisUrl && redisToken) {
