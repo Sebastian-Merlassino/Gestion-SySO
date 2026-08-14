@@ -1,5 +1,33 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-14] Actualización de la Ventana Modal de Planes Comerciales y Sincronización Legales (Términos, Privacidad y Cookies)
+
+### Resumen de Cambios e Implementación
+- **Sincronización de Ítems en Modales de Planes Comerciales:**
+  - Se actualizaron las ventanas modales de selección y modificación de planes (`Modificar tu Plan` / `Seleccioná tu Plan Comercial`) en `src/app/[tenant-slug]/dashboard/page.js`, `src/app/[tenant-slug]/profile/page.js` y `src/app/onboarding/page.js`.
+  - Se agregaron explícitamente debajo de **Protocolo de Iluminación** las viñetas técnicas para todos los planes comerciales (`free`, `basic_5`, `standard_25`, `libre`):
+    - **Protocolo de Ruido** (Res. SRT 85/12)
+    - **Protocolo de Ergonomía** (Res. SRT 886/15)
+    - **Protocolo de Puesta a Tierra** (Res. SRT 900/15)
+- **Sincronización de Términos, Privacidad y Cookies:**
+  - **Términos y Condiciones (`src/app/terminos/page.js`):** Se incorporó el **Protocolo de Puesta a Tierra Res. SRT 900/15** en la sección 4 de límites por plan y en la sección 5 de exención técnica y resoluciones normativas nacionales aplicables.
+  - **Política de Privacidad (`src/app/privacidad/page.js`):** Se incluyó el **Protocolo de Puesta a Tierra Res. SRT 900/15** en el listado de datos operativos y estudios técnicos recolectados por la plataforma.
+  - **Política de Cookies (`src/app/cookies/page.js`):** Se actualizó la fecha de última revisión al 14 de Agosto de 2026 para mantener la coherencia temporal de todo el bloque legal.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] src/app/onboarding/page.js`
+- `[MODIFY] src/app/terminos/page.js`
+- `[MODIFY] src/app/privacidad/page.js`
+- `[MODIFY] src/app/cookies/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Verificación de sintaxis de JSX y renderizado de componentes.
+
+---
+
 ## [2026-08-14] Implementación de la Fase 2: Indexación SQL Masiva, Optimización RLS y Caché Geográfico
 
 ### Resumen de Cambios e Implementación

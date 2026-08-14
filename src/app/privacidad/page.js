@@ -32,7 +32,7 @@ export default function PrivacidadPage() {
         {/* Content */}
         <div className="p-8 sm:p-10 space-y-8">
           <div className="border-b border-slate-100 pb-4">
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Última actualización: 14 de Julio de 2026</p>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Última actualización: 14 de Agosto de 2026</p>
           </div>
 
           <section className="space-y-3">
@@ -58,7 +58,7 @@ export default function PrivacidadPage() {
                 **Datos de Cuenta e Incorporación (Onboarding)**: Nombre completo, correo electrónico, número de teléfono, CUIT, provincia, partido/localidad, fecha de nacimiento, matrículas profesionales (incluyendo imágenes del frente y dorso de las credenciales), firma ológrafa/digital y logotipos de la consultora.
               </li>
               <li>
-                **Datos Operativos del Tenant**: Información de empresas clientes del profesional, nómina de empleados, actas de capacitación, programa de capacitación anual, capacitaciones online, protocolos de medición y estudios técnicos (Iluminación Res. 84/12, Ruido Res. 85/12, Ergonomía Res. SRT 886/15), inspecciones de extintores, auditorías de control eléctrico, avisos de riesgo, registros de accidentes y acciones correctivas.
+                **Datos Operativos del Tenant**: Información de empresas clientes del profesional, nómina de empleados, actas de capacitación, programa de capacitación anual, capacitaciones online, protocolos de medición y estudios técnicos (Iluminación Res. 84/12, Ruido Res. 85/12, Ergonomía Res. SRT 886/15, Puesta a Tierra Res. SRT 900/15), inspecciones de extintores, auditorías de control eléctrico, avisos de riesgo, registros de accidentes y acciones correctivas.
               </li>
               <li>
                 **Datos de Facturación**: Identificadores de transacciones de pago, estado de suscripciones y cupones de descuento procesados mediante Mercado Pago (no almacenamos directamente los datos de tarjetas de crédito o débito).
