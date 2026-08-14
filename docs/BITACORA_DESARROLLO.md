@@ -1,5 +1,21 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-13] Actualización de Metadatos Globales y OpenGraph para Previsualización de Enlaces (WhatsApp / RRSS)
+
+### Resumen de Cambios
+- **Actualización de Metadata en Root Layout (`src/app/layout.js`):**
+  - Se modificó la descripción global de la aplicación a: `"Plataforma web integral para la gestión de Seguridad, Higiene y Salud Ocupacional. Centralizá clientes, inspecciones, informes y matrices de riesgo."`.
+  - Se agregaron las etiquetas OpenGraph (`openGraph`) para optimizar la tarjeta de vista previa al compartir el enlace `https://app.gestionsyso.com/` en WhatsApp, LinkedIn y redes sociales.
+
+### Archivos Modificados
+- `[MODIFY] src/app/layout.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Verificación del objeto `metadata` en `src/app/layout.js`.
+
+---
+
 ## [2026-08-13] Actualización del Mensaje Institucional del Botón Compartir App en la Barra Lateral
 
 ### Resumen de Cambios

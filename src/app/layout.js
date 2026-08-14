@@ -4,7 +4,15 @@ import Providers from './providers';
 
 export const metadata = {
   title: 'Gestión SySO | App',
-  description: 'Plataforma SaaS profesional para la gestión de seguridad, salud ocupacional e higiene industrial multi-tenant.',
+  description: 'Plataforma web integral para la gestión de Seguridad, Higiene y Salud Ocupacional. Centralizá clientes, inspecciones, informes y matrices de riesgo.',
+  openGraph: {
+    title: 'Gestión SySO | App',
+    description: 'Plataforma web integral para la gestión de Seguridad, Higiene y Salud Ocupacional. Centralizá clientes, inspecciones, informes y matrices de riesgo.',
+    url: 'https://app.gestionsyso.com',
+    siteName: 'Gestión SySO',
+    locale: 'es_AR',
+    type: 'website',
+  },
   icons: {
     icon: '/brand/favicon.ico',
     apple: '/brand/apple-touch-icon.png',
