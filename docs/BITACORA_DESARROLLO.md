@@ -1,5 +1,107 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-15] Estandarización 100% de la Sección Perfil al Estándar 'SySO Compact Layout v2.0' y Eliminación de Scroll Externo de Ventana
+
+### Resumen de Cambios
+- **Eliminación del Scroll Lateral / Externe de Ventana en Perfil (`src/app/[tenant-slug]/profile/page.js`):**
+  - Se configuró el contenedor principal `<main>` con `overflow-hidden flex flex-col min-w-0 min-h-0 relative`, erradicando la barra de desplazamiento nativa de la ventana del navegador.
+- **Adaptación Responsiva Móvil 100% Full-Screen en Perfil (`src/app/[tenant-slug]/profile/page.js`):**
+  - **Remoción de Márgenes y Fondo Gris Móvil**: Se actualizaron las clases contenedoras en dispositivos móviles a `py-0 px-0 border-0 rounded-none shadow-none h-full`, haciendo que la tarjeta blanca del formulario ocupe el 100% del ancho y alto disponible sin ningún margen gris circundante (`bg-syso-bg`).
+  - **Barra de Acciones Inferior Responsiva**: Se reestructuró la barra fija de acciones a `flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5`, disponiendo los botones "Salir" y "Guardar Cambios" horizontalmente en móviles con flex-1 y adaptando el botón de eliminación de cuenta de forma adaptativa.
+  - **Persistencia en Escritorio**: En pantallas de escritorio (`md:`), se preserva intacto el diseño flotante de tarjeta compacta `md:max-w-[95%] md:mx-auto md:border md:rounded-2xl md:shadow-sm md:h-[calc(100vh-130px)]`.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación estática de producción sin errores ejecutando `npm.cmd run build`.
+
+---
+
+## [2026-08-15] Resolución de Excepción 'ReferenceError: geographyCache is not defined' y Optimización del Desplazamiento Vertical Móvil en Perfil de Usuario
+
+### Resumen de Cambios
+- **Resolución de Excepción `ReferenceError: geographyCache is not defined`:**
+  - **Causa Raíz:** En `src/lib/supabase.js`, el bloque de comentarios JSDoc `/**` anterior a la declaración del caché en memoria carecía de la etiqueta de cierre `*/`, lo que provocó que el compilador / minificador de Next.js comentara la instrucción `const geographyCache = new Map();`. Al ser invocada la función `fetchAllGeography` desde `/profile` (y otros módulos), JavaScript arrojaba `ReferenceError: geographyCache is not defined` desencadenando alertas Toast de error al cargar partidos y localidades.
+  - **Solución:** Se corrigió el bloque de comentarios JSDoc en `src/lib/supabase.js`, declarando de forma explícita y visible `const geographyCache = new Map();` en el scope del módulo.
+- **Optimización del Desplazamiento Vertical (Scroll) en Dispositivos Móviles:**
+  - **Corrección en `/profile` (`src/app/[tenant-slug]/profile/page.js`):**
+    - Se agregó `min-h-0` al contenedor principal `<main>` (`flex-1 flex flex-col min-w-0 min-h-0 overflow-y-auto overflow-x-hidden relative py-0 px-0`) para forzar al motor de renderizado de Safari / Chrome Mobile a calcular de forma correcta la altura del contenedor con scroll en flexbox.
+    - Se añadió `pb-12 md:pb-6` al wrapper del formulario para garantizar un margen inferior adecuado que evite el solapamiento o la pérdida de desplazamiento al final de la pantalla en dispositivos móviles.
+
+### Archivos Modificados
+- `[MODIFY] src/lib/supabase.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación estática exitosa del proyecto con `npm.cmd run build` sin errores de sintaxis, tipos o empaquetado.
+
+---
+
+## [2026-08-14] Refactorización Completa del Formulario a 'SySO Compact Layout v2.0' y Resolución de Error 400 en Establecimientos
+
+### Resumen de Cambios
+- **Resolución de Excepción HTTP 400 Bad Request en Supabase:**
+  - Se identificó la causa raíz del error `400 Bad Request` en la consola: la consulta `from('establecimientos').select('*').order('nombre.asc')` intentaba ordenar por la columna inexistente `nombre`.
+  - Se corrigió la consulta en `src/app/[tenant-slug]/protocolos/puesta-a-tierra/page.js` utilizando la columna oficial `denominacion` y filtrando por `tenant_id` (`.select('id, empresa_id, denominacion, sectores').eq('tenant_id', tenant.id).order('denominacion')`).
+- **Estandarización 100% del Formulario al Layout 'SySO Compact Layout v2.0':**
+  - **Reestructuración de `ProtocoloForm.js`:**
+    - Estructura contenedora fija idéntica a `protocolos/ruido/components/ProtocoloForm.js`: `bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl shadow-sm overflow-hidden flex flex-col flex-grow min-h-0 md:h-[calc(100vh-140px)]`.
+    - Cabecera fija de formulario (`h-16 px-6 bg-slate-50 border-b border-slate-200`) con título unificado, distintivo normativo Res. SRT 900/15, botón de retorno `ArrowLeft`, botones de reporte (`PDF` y `Enviar`) y botón `X`.
+    - Cuerpo de formulario con scrollabilidad interna (`overflow-y-auto flex-1 scrollbar-thin`).
+    - Tarjetas `AppCard` con etiquetas `AppLabel` estándar (sección "Datos del Establecimiento" con label "Establecimiento", "Razón Social" con autocompletado, "Datos para medición", "Datos de la medición ({puntos.length})", "Observaciones" con `AITextHelper` y "Documentación que se Adjuntará a la Medición").
+    - Sección de Tomas de Tierra con acordeón colapsable por toma (Toma N° 1, 2, etc.), optimización del flujo de inicialización pasando `initialEmpresas` e `initialEstablecimientos` desde `page.js` a `ProtocoloForm.js` (eliminando por completo el segundo spinner/parpadeo al recargar la página), remoción de `globalToast` de las dependencias de `useCallback`, botón "Agregar punto de muestreo", duplicación de punto de muestreo con notificación Toast verde (`Punto de Muestreo N° duplicado con éxito.`), selector desplegable de `SECTOR` con opción `+ Ingresar sector manual...` y diálogo de confirmación unificado `AppConfirmDialog` para guardar nuevos sectores en el establecimiento.
+    - Barra inferior fija de acciones (`bg-slate-50 border-t border-slate-200 p-4`) con selector de estado (Borrador/Finalizado) y botones `AppButton` para "Volver", "Guardar Borrador" y "Guardar y Finalizar".
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-14] Implementación del Protocolo de Puesta a Tierra (Res. SRT 900/2015) en Entorno Local
+
+### Resumen de Cambios e Implementación
+- **Creación de Migración y Estructura en Supabase (`supabase/migrations/20260829000000_create_protocolo_puesta_a_tierra.sql`):**
+  - Se crearon las tablas `public.protocolos_puesta_a_tierra`, `public.protocolos_puesta_a_tierra_puntos` y `public.protocolos_puesta_a_tierra_adjuntos`.
+  - Se definieron políticas RLS para aislamiento multi-tenant por `tenant_id` y control de permisos por perfil.
+  - Se actualizaron los permisos por defecto de `profiles` y `miembros_equipo` para incluir `"protocolo_puesta_a_tierra": true`.
+  - Se creó el bucket privado de storage `protocolos-puesta-a-tierra` con sus políticas de acceso autenticado.
+  - Se aplicó la migración exitosamente en la base de datos de Supabase.
+- **Ubicación en Menú Lateral y Permisos de Planes (`src/components/Sidebar.js`):**
+  - Se agregó el elemento `Protocolo de Puesta a Tierra` inmediatamente debajo de `Protocolo de Ergonomía` en el menú lateral.
+  - Se incluyó la sección en la lista de características permitidas para todos los planes comerciales (`free`, `basic_5`, `standard_25`, `libre`).
+- **Desarrollo de Módulos Frontend SPA (`src/app/[tenant-slug]/protocolos/puesta-a-tierra/`):**
+  - **Vista Principal (`page.js`):** Listado con buscador de texto, filtros por Empresa, Establecimiento y Año, acciones de reporte, edición y borrado con `AppConfirmDialog`. Incluye el diálogo unificado con pestañas (Tabs) para envío por Correo Electrónico y WhatsApp.
+  - **Formulario SPA (`components/ProtocoloForm.js`):** Pestañas para Datos e Instrumental, Tabla interactiva de Jabalinas (Ohms, cumplimiento Res. 900/15, continuidad de masas y disyuntores), Fotografías y Adjuntos, Conclusiones/Recomendaciones con integración obligatoria del estándar `SySO-AI-Voice-Helper` (`<AITextHelper />`) y Firma Digital del Profesional (`<AppSignatureCanvas />`).
+  - **Generador de Reporte PDF (`utils/pdfGenerator.js`):** Generación de reporte de 6 páginas con `jspdf` y `jspdf-autotable`, replicando de forma idéntica el modelo oficial de la Res. SRT 900/2015 y Dec. 351/79 (Carátula, Marco Normativo, Registro Fotográfico, Hoja 1 Datos e Instrumental, Hoja 2 Medición de Puesta a Tierra y Continuidad de Masas, Hoja 3 Análisis de Datos y Conclusiones).
+  - **Rutas Auxiliares (`nuevo/page.js`, `[id]/page.js`, `[id]/editar/page.js`, `[id]/pdf/page.js`):** Redirecciones automáticas para navegación limpia SPA.
+- **Sincronización de Correo Backend (`src/app/api/send-email/route.js`):**
+  - Se incorporó la categoría `protocolo_puesta_a_tierra` en la API servidora de correo respetando el estándar `SySO-Email-Template-Standard-v1.0` (acento `#468DFF`, tarjeta blanca con borde Slate, logo adjunto vía CID inline).
+- **Resguardo Local:** Todos los cambios permanecen preservados en el repositorio local sin realizar `git push`.
+
+### Archivos Creados / Modificados
+- `[NEW] supabase/migrations/20260829000000_create_protocolo_puesta_a_tierra.sql`
+- `[MODIFY] src/components/Sidebar.js`
+- `[NEW] src/app/[tenant-slug]/protocolos/puesta-a-tierra/page.js`
+- `[NEW] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[NEW] src/app/[tenant-slug]/protocolos/puesta-a-tierra/utils/pdfGenerator.js`
+- `[NEW] src/app/[tenant-slug]/protocolos/puesta-a-tierra/nuevo/page.js`
+- `[NEW] src/app/[tenant-slug]/protocolos/puesta-a-tierra/[id]/page.js`
+- `[NEW] src/app/[tenant-slug]/protocolos/puesta-a-tierra/[id]/editar/page.js`
+- `[NEW] src/app/[tenant-slug]/protocolos/puesta-a-tierra/[id]/pdf/page.js`
+- `[MODIFY] src/app/api/send-email/route.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Aplicación de migración SQL y políticas RLS en Supabase.
+- Verificación de compilación estática mediante `npm.cmd run build`.
+
+---
+
 ## [2026-08-14] Actualización de la Ventana Modal de Planes Comerciales y Sincronización Legales (Términos, Privacidad y Cookies)
 
 ### Resumen de Cambios e Implementación

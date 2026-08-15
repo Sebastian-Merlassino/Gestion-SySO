@@ -158,6 +158,9 @@ export async function POST(request) {
       const isControlElectrico = documentType === 'control_electrico';
       const isChecklistPersonalizado = documentType === 'checklist_personalizado';
       const isProtocoloIluminacion = documentType === 'protocolo_iluminacion';
+      const isProtocoloRuido = documentType === 'protocolo_ruido';
+      const isProtocoloErgonomia = documentType === 'protocolo_ergonomia';
+      const isProtocoloPuestaATierra = documentType === 'protocolo_puesta_a_tierra';
 
       attachments.push({
         filename: isAvisoRiesgo
@@ -168,6 +171,12 @@ export async function POST(request) {
           ? `Checklist_${(checklistName || 'Personalizado').replace(/\s+/g, '_')}_${(companyName || 'Cliente').replace(/\s+/g, '_')}_${date || 'checklist'}.pdf`
           : isProtocoloIluminacion
           ? `Protocolo_Iluminacion_${(companyName || 'Cliente').replace(/\s+/g, '_')}_${date || 'iluminacion'}.pdf`
+          : isProtocoloRuido
+          ? `Protocolo_Ruido_${(companyName || 'Cliente').replace(/\s+/g, '_')}_${date || 'ruido'}.pdf`
+          : isProtocoloErgonomia
+          ? `Protocolo_Ergonomia_${(companyName || 'Cliente').replace(/\s+/g, '_')}_${date || 'ergonomia'}.pdf`
+          : isProtocoloPuestaATierra
+          ? `Protocolo_Puesta_A_Tierra_${(companyName || 'Cliente').replace(/\s+/g, '_')}_${date || 'puesta_a_tierra'}.pdf`
           : `Constancia_Visita_${(companyName || 'Cliente').replace(/\s+/g, '_')}_${date || 'visita'}.pdf`,
         content: pdfBuffer,
         contentType: 'application/pdf'
@@ -301,7 +310,7 @@ export async function POST(request) {
                 <tr>
                   <td style="padding: 32px 32px 0 32px; text-align: center;">
                     <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em;">
-                      ${isCapacitacionOnline ? 'Capacitación Virtual de Higiene y Seguridad' : isAvisoRiesgo ? 'Aviso de Riesgo' : isControlElectrico ? 'Inspección Visual de Instalaciones Eléctricas' : isChecklistPersonalizado ? (checklistNameEscaped || 'Checklist Personalizado') : isProtocoloIluminacion ? 'Protocolo de Medición de Iluminación' : 'Constancia de Visita Técnica'}
+                      ${isCapacitacionOnline ? 'Capacitación Virtual de Higiene y Seguridad' : isAvisoRiesgo ? 'Aviso de Riesgo' : isControlElectrico ? 'Inspección Visual de Instalaciones Eléctricas' : isChecklistPersonalizado ? (checklistNameEscaped || 'Checklist Personalizado') : isProtocoloIluminacion ? 'Protocolo de Medición de Iluminación' : isProtocoloRuido ? 'Protocolo de Medición de Ruido' : isProtocoloErgonomia ? 'Protocolo de Ergonomía' : isProtocoloPuestaATierra ? 'Protocolo de Medición de Puesta a Tierra' : 'Constancia de Visita Técnica'}
                     </h1>
                     <p style="margin: 6px 0 0 0; font-size: 13px; font-weight: 600; color: #468DFF; text-transform: uppercase; letter-spacing: 0.06em;">
                       ${companyNameEscaped ? companyNameEscaped : 'Notificación Oficial de Servicio'}

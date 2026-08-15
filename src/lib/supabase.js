@@ -15,8 +15,6 @@ export const supabase = createBrowserClient(
   supabaseAnonKey || 'placeholder-key'
 );
 
-/**
- * Fetches all geographic locations (partidos or localidades) from Supabase by paginating
 // Caché en memoria para evitar re-consultas redundantes a la tabla estática geografia
 const geographyCache = new Map();
 

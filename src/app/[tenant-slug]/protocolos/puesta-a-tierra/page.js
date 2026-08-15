@@ -1,0 +1,1057 @@
+'use client';
+
+import React, { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Sidebar from '@/components/Sidebar';
+import { supabase } from '@/lib/supabase';
+import { formatDate } from '@/lib/utils';
+import { useToast } from '@/components/providers/ToastProvider';
+import AppPageHeader from '@/components/ui/AppPageHeader';
+import AppButton from '@/components/ui/AppButton';
+import AppEmptyState from '@/components/ui/AppEmptyState';
+import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
+import ProtocoloForm from './components/ProtocoloForm';
+import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
+import AppSortIcon from '@/components/ui/AppSortIcon';
+import { generatePuestaATierraPdf } from './utils/pdfGenerator';
+import { 
+  PlusCircle, 
+  Search, 
+  Building, 
+  X, 
+  Loader2, 
+  Trash2, 
+  Edit, 
+  Eye, 
+  Printer, 
+  FileText, 
+  Mail, 
+  Copy, 
+  Sliders, 
+  ChevronUp, 
+  ChevronDown,
+  Info,
+  Calendar,
+  AlertCircle,
+  Zap,
+  MessageCircle,
+  Send
+} from 'lucide-react';
+
+export default function ProtocolosPuestaATierraPage({ params }) {
+  const tenantSlug = params['tenant-slug'];
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const globalToast = useToast();
+
+  // Structural state
+  const [profile, setProfile] = useState(null);
+  const [tenant, setTenant] = useState(null);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [isDevMode, setIsDevMode] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Form Mode
+  const [formMode, setFormMode] = useState('list'); // 'list' | 'create' | 'edit' | 'view'
+  const [editingId, setEditingId] = useState(null);
+  const [isFormDirty, setIsFormDirty] = useState(false);
+  const [pendingRoute, setPendingRoute] = useState(null);
+  const [unsavedDialogOpen, setUnsavedDialogOpen] = useState(false);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    window.location.href = '/login';
+  };
+
+  const handleSidebarNavigation = (e, path) => {
+    setIsMobileMenuOpen(false);
+    if (isFormDirty) {
+      e.preventDefault();
+      setPendingRoute(path);
+      setUnsavedDialogOpen(true);
+    }
+  };
+
+  const handleConfirmLeave = () => {
+    setUnsavedDialogOpen(false);
+    setIsFormDirty(false);
+    if (pendingRoute) {
+      router.push(pendingRoute);
+    }
+  };
+
+  // Main collections
+  const [empresas, setEmpresas] = useState([]);
+  const [allEstablecimientos, setAllEstablecimientos] = useState([]);
+  const [protocolos, setProtocolos] = useState([]);
+
+  // Filters
+  const [filterText, setFilterText] = useState('');
+  const [filterEmpresa, setFilterEmpresa] = useState('');
+  const [filterEstablecimiento, setFilterEstablecimiento] = useState('');
+  const [filterAnio, setFilterAnio] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Sorting
+  const [sortField, setSortField] = useState('fecha_medicion');
+  const [sortOrder, setSortOrder] = useState('desc');
+
+  // Deletion Modal
+  const [deleteConfirm, setDeleteConfirm] = useState({ show: false, id: null });
+
+  // Email / WhatsApp Modal State (Diálogo Unificado con Tabs)
+  const [isMailModalOpen, setIsMailModalOpen] = useState(false);
+  const [mailTarget, setMailTarget] = useState(null);
+  const [availableEmails, setAvailableEmails] = useState([]);
+  const [manualEmail, setManualEmail] = useState('');
+  const [mailLoading, setMailLoading] = useState(false);
+  const [availablePhones, setAvailablePhones] = useState([]);
+  const [manualPhone, setManualPhone] = useState('');
+  const [activeTab, setActiveTab] = useState('email');
+  const [whatsappLoading, setWhatsappLoading] = useState(false);
+
+  // Section permissions
+  const getSectionPermissions = (userProfile, sectionName) => {
+    if (!userProfile) return { cargar: true, editar: true, eliminar: true };
+    if (userProfile.role === 'cliente') return { cargar: false, editar: false, eliminar: false };
+    if (userProfile.role === 'admin' || userProfile.role === 'owner') return { cargar: true, editar: true, eliminar: true };
+    const perm = userProfile.permisos?.[sectionName] || userProfile.permisos?.['protocolo_ruido'];
+    if (perm === true || perm === undefined) return { cargar: true, editar: true, eliminar: true };
+    if (perm === false) return { cargar: false, editar: false, eliminar: false };
+    return {
+      cargar: perm.cargar === true,
+      editar: perm.editar === true,
+      eliminar: perm.eliminar === true
+    };
+  };
+
+  const sectionPerms = getSectionPermissions(profile, 'protocolo_puesta_a_tierra');
+  const canCargar = sectionPerms.cargar;
+  const canEditar = sectionPerms.editar;
+  const canEliminar = sectionPerms.eliminar;
+
+  // Toggle Sidebar
+  useEffect(() => {
+    const collapsed = localStorage.getItem('sidebar-collapsed');
+    if (collapsed === 'true') {
+      setIsSidebarCollapsed(true);
+    }
+  }, []);
+
+  const toggleSidebar = () => {
+    const newVal = !isSidebarCollapsed;
+    setIsSidebarCollapsed(newVal);
+    localStorage.setItem('sidebar-collapsed', String(newVal));
+  };
+
+  // Carga Inicial de Datos (Corregida la consulta de ordenamiento de establecimientos)
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        window.location.href = '/login';
+        return;
+      }
+
+      // 1. Cargar Perfil
+      const { data: profData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      if (profData) setProfile(profData);
+
+      // 2. Cargar Tenant
+      const { data: tenData } = await supabase
+        .from('tenants')
+        .select('*')
+        .eq('slug', tenantSlug)
+        .single();
+
+      if (!tenData) {
+        window.location.href = '/login';
+        return;
+      }
+      setTenant(tenData);
+
+      // 3. Cargar Empresas / Clientes
+      const { data: empData } = await supabase
+        .from('empresas')
+        .select('id, razon_social, cuit, contactos_correos, contactos_telefonos')
+        .eq('tenant_id', tenData.id)
+        .order('razon_social', { ascending: true });
+      if (empData) setEmpresas(empData);
+
+      // 4. Cargar Establecimientos (Denominación)
+      const { data: estData } = await supabase
+        .from('establecimientos')
+        .select('id, empresa_id, denominacion, sectores')
+        .eq('tenant_id', tenData.id)
+        .order('denominacion', { ascending: true });
+      if (estData) setAllEstablecimientos(estData);
+
+      // 5. Cargar Protocolos de Puesta a Tierra
+      const { data: protoData, error: protoErr } = await supabase
+        .from('protocolos_puesta_a_tierra')
+        .select('*')
+        .eq('tenant_id', tenData.id)
+        .is('deleted_at', null)
+        .order('fecha_medicion', { ascending: false });
+
+      if (!protoErr && protoData) {
+        setProtocolos(protoData);
+      }
+    } catch (err) {
+      console.error('Error al cargar protocolos de puesta a tierra:', err);
+      globalToast.toast('Error de conexión con la base de datos.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [tenantSlug]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Manejo de URL Query Params para SPA Navigation
+  useEffect(() => {
+    if (!loading) {
+      const qId = searchParams.get('id') || searchParams.get('edit') || searchParams.get('view');
+      const qAction = searchParams.get('action');
+      if (qId) {
+        setEditingId(qId);
+        setFormMode(searchParams.get('view') ? 'view' : 'edit');
+      } else if (qAction === 'nuevo') {
+        setEditingId(null);
+        setFormMode('create');
+      } else {
+        setEditingId(null);
+        setFormMode('list');
+      }
+    }
+  }, [loading, searchParams]);
+
+  // Cargar lista actualizada de protocolos
+  const loadProtocolsList = async () => {
+    if (!tenant) return;
+    const { data } = await supabase
+      .from('protocolos_puesta_a_tierra')
+      .select('*')
+      .eq('tenant_id', tenant.id)
+      .is('deleted_at', null)
+      .order('fecha_medicion', { ascending: false });
+    setProtocolos(data || []);
+  };
+
+  // Eliminar Protocolo
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirm.id) return;
+    try {
+      const { error } = await supabase
+        .from('protocolos_puesta_a_tierra')
+        .delete()
+        .eq('id', deleteConfirm.id);
+
+      if (error) throw error;
+
+      globalToast.toast('Protocolo eliminado permanentemente.', 'success');
+      setDeleteConfirm({ show: false, id: null });
+      loadProtocolsList();
+    } catch (err) {
+      console.error('Error al eliminar protocolo:', err);
+      globalToast.toast('Error al eliminar el protocolo.', 'error');
+    }
+  };
+
+  // Exportar / Previsualizar PDF Reporte
+  const handleExportPdf = async (protoItem, shouldPrint = false) => {
+    try {
+      globalToast.toast('Generando reporte PDF...', 'info');
+
+      // Traer puntos y adjuntos actualizados del protocolo
+      const { data: pts } = await supabase
+        .from('protocolos_puesta_a_tierra_puntos')
+        .select('*')
+        .eq('protocolo_id', protoItem.id)
+        .order('orden');
+
+      const { data: adjs } = await supabase
+        .from('protocolos_puesta_a_tierra_adjuntos')
+        .select('*')
+        .eq('protocolo_id', protoItem.id);
+
+      const pdfDoc = await generatePuestaATierraPdf(
+        protoItem,
+        tenant,
+        empresas,
+        allEstablecimientos,
+        pts || [],
+        adjs || [],
+        isDevMode,
+        profile
+      );
+
+      if (shouldPrint) {
+        const blob = pdfDoc.output('blob');
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, '_blank');
+      } else {
+        pdfDoc.save(`Protocolo_Puesta_A_Tierra_${(protoItem.razon_social_text || 'Cliente').replace(/\s+/g, '_')}_${protoItem.fecha_medicion || '2026'}.pdf`);
+        globalToast.toast('PDF descargado con éxito.', 'success');
+      }
+    } catch (err) {
+      console.error('Error al exportar PDF:', err);
+      globalToast.toast('No se pudo generar el reporte PDF.', 'error');
+    }
+  };
+
+  // Abrir Modal de Envío (Email / WhatsApp)
+  const openEmailModal = (protoItem) => {
+    setMailTarget(protoItem);
+    const emp = empresas.find(e => e.id === protoItem.razon_social_id);
+    
+    // Correos
+    const emails = emp?.contactos_correos || [];
+    setAvailableEmails(emails.map(c => ({ descripcion: `${c.contacto || 'Contacto'}: ${c.valor}`, valor: c.valor, checked: false })));
+    setManualEmail('');
+
+    // Teléfonos
+    const phones = emp?.contactos_telefonos || [];
+    setAvailablePhones(phones.map(c => ({ descripcion: `${c.contacto || 'Contacto'}: ${c.valor}`, valor: c.valor, checked: false })));
+    setManualPhone('');
+
+    setActiveTab('email');
+    setIsMailModalOpen(true);
+  };
+
+  // Enviar por WhatsApp
+  const handleSendWhatsApp = async () => {
+    setWhatsappLoading(true);
+    try {
+      const checkedPhones = availablePhones.filter(p => p.checked).map(p => p.valor);
+      const manualVal = manualPhone.trim();
+      let targetPhone = checkedPhones.length > 0 ? checkedPhones[0] : manualVal;
+      let cleanPhone = targetPhone.replace(/[^0-9]/g, '');
+
+      const { data: pts } = await supabase
+        .from('protocolos_puesta_a_tierra_puntos')
+        .select('*')
+        .eq('protocolo_id', mailTarget.id)
+        .order('orden');
+      
+      const { data: adjs } = await supabase
+        .from('protocolos_puesta_a_tierra_adjuntos')
+        .select('*')
+        .eq('protocolo_id', mailTarget.id);
+
+      const doc = await generatePuestaATierraPdf(mailTarget, tenant, empresas, allEstablecimientos, pts || [], adjs || [], isDevMode, profile);
+      const pdfBlob = doc.output('blob');
+
+      const fileId = crypto.randomUUID();
+      const filePath = `${profile?.id || 'anonymous'}/puesta_a_tierra_${mailTarget.id}_${fileId}.pdf`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, pdfBlob, { contentType: 'application/pdf', upsert: true });
+
+      if (uploadError) throw new Error(`Error al subir el reporte a Storage: ${uploadError.message}`);
+
+      const { data: signData, error: signError } = await supabase.storage
+        .from('documents')
+        .createSignedUrl(filePath, 604800);
+
+      if (signError || !signData?.signedUrl) throw new Error('No se pudo generar el enlace seguro de descarga.');
+
+      const emp = empresas.find(e => e.id === mailTarget.razon_social_id);
+      const est = allEstablecimientos.find(e => e.id === mailTarget.establecimiento_id);
+      const empName = emp ? emp.razon_social : mailTarget.razon_social_text || 'Cliente';
+      const estName = est ? est.denominacion : mailTarget.establecimiento_text || 'Establecimiento';
+      const tName = tenant?.name || tenant?.razon_social || 'Gestión SySO';
+
+      const textMessage = `Estimado cliente de *${empName}* (Establecimiento: *${estName}*),\n\nLe adjuntamos el *Protocolo de Puesta a Tierra (Res. SRT 900/15)* del día *${formatDate(mailTarget.fecha_medicion)}* generado por el profesional *${mailTarget.profesional_nombre || 'Técnico SySO'}* de *${tName}*.\n\nPuede ver y descargar el documento PDF ingresando al siguiente enlace seguro:\n${signData.signedUrl}`;
+      const encodedMsg = encodeURIComponent(textMessage);
+
+      const waUrl = cleanPhone
+        ? `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodedMsg}`
+        : `https://api.whatsapp.com/send?text=${encodedMsg}`;
+
+      window.open(waUrl, '_blank');
+      globalToast.toast('Redirigiendo a WhatsApp...', 'success');
+      setIsMailModalOpen(false);
+    } catch (e) {
+      console.error(e);
+      globalToast.toast(e.message || 'Error al enviar por WhatsApp.', 'error');
+    } finally {
+      setWhatsappLoading(false);
+    }
+  };
+
+  // Enviar por Correo Electrónico
+  const handleSendEmail = async () => {
+    const checked = availableEmails.filter(e => e.checked).map(e => e.valor);
+    const manuals = manualEmail.split(',').map(e => e.trim()).filter(Boolean);
+    const recipients = [...checked, ...manuals];
+
+    if (recipients.length === 0) {
+      globalToast.toast('Ingrese o seleccione al menos un destinatario.', 'error');
+      return;
+    }
+
+    setMailLoading(true);
+    try {
+      const { data: pts } = await supabase
+        .from('protocolos_puesta_a_tierra_puntos')
+        .select('*')
+        .eq('protocolo_id', mailTarget.id)
+        .order('orden');
+      
+      const { data: adjs } = await supabase
+        .from('protocolos_puesta_a_tierra_adjuntos')
+        .select('*')
+        .eq('protocolo_id', mailTarget.id);
+
+      const doc = await generatePuestaATierraPdf(mailTarget, tenant, empresas, allEstablecimientos, pts || [], adjs || [], isDevMode, profile);
+      const pdfBlob = doc.output('blob');
+
+      const fileId = crypto.randomUUID();
+      const filePath = `${profile?.id || 'anonymous'}/puesta_a_tierra_${mailTarget.id}_${fileId}.pdf`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, pdfBlob, { contentType: 'application/pdf', upsert: true });
+
+      if (uploadError) throw new Error(`Error al subir archivo temporal: ${uploadError.message}`);
+
+      const emp = empresas.find(e => e.id === mailTarget.razon_social_id);
+      const est = allEstablecimientos.find(e => e.id === mailTarget.establecimiento_id);
+
+      const res = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          emails: recipients,
+          filePath: filePath,
+          companyName: emp ? emp.razon_social : mailTarget.razon_social_text || 'Cliente',
+          establishmentName: est ? est.denominacion : mailTarget.establecimiento_text || 'Establecimiento',
+          date: formatDate(mailTarget.fecha_medicion),
+          inspectorName: mailTarget.profesional_nombre || profile?.full_name || 'Profesional SySO',
+          tenantLogoBase64: tenant?.logo_1_url || null,
+          tenantName: tenant?.name || tenant?.razon_social || 'Gestión SySO',
+          documentType: 'protocolo_puesta_a_tierra'
+        })
+      });
+
+      const responseData = await res.json();
+      if (!res.ok) throw new Error(responseData.error || 'Error al enviar el correo.');
+
+      globalToast.toast('Protocolo enviado exitosamente por correo electrónico.', 'success');
+      setIsMailModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      globalToast.toast(err.message || 'Error al enviar el correo.', 'error');
+    } finally {
+      setMailLoading(false);
+    }
+  };
+
+  // Filtrado y Ordenamiento
+  const filteredProtocolos = protocolos.filter(pr => {
+    const searchString = `${pr.razon_social_text || ''} ${pr.establecimiento_text || ''} ${pr.instrumento_marca_modelo_serie || ''}`.toLowerCase();
+    const matchesSearch = searchString.includes(filterText.toLowerCase());
+    const matchesEmpresa = !filterEmpresa || pr.razon_social_id === filterEmpresa;
+    const matchesEstablecimiento = !filterEstablecimiento || pr.establecimiento_id === filterEstablecimiento;
+    const matchesAnio = !filterAnio || (pr.fecha_medicion && new Date(pr.fecha_medicion).getFullYear().toString() === filterAnio);
+
+    return matchesSearch && matchesEmpresa && matchesEstablecimiento && matchesAnio;
+  });
+
+  const añosDisponibles = Array.from(
+    new Set(
+      protocolos
+        .map(p => p.fecha_medicion ? new Date(p.fecha_medicion).getFullYear().toString() : null)
+        .filter(Boolean)
+    )
+  ).sort((a, b) => b - a);
+
+  const sortedProtocolos = [...filteredProtocolos].sort((a, b) => {
+    let aVal = a[sortField] || '';
+    let bVal = b[sortField] || '';
+
+    if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
+    if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const toggleSort = (field) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="h-screen overflow-hidden bg-syso-bg text-slate-700 flex font-sans">
+        <Sidebar
+          tenantSlug={tenantSlug}
+          profile={profile}
+          currentSection="protocolo-puesta-a-tierra"
+          isSidebarCollapsed={isSidebarCollapsed}
+          toggleSidebar={toggleSidebar}
+          isMobileMenuOpen={isMobileMenuOpen}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+          handleLogout={handleLogout}
+          onNavigate={handleSidebarNavigation}
+        />
+        <main className="flex-grow flex flex-col min-w-0 overflow-y-auto">
+          <AppPageHeader
+            title="Protocolo de Puesta a Tierra"
+            icon={Zap}
+            tenantName={tenant?.name || 'Gestión SySO'}
+            planId={tenant?.plan_id}
+            showPlanBadge={profile && profile.role !== 'cliente'}
+            setIsMobileMenuOpen={setIsMobileMenuOpen}
+          />
+          <div className="flex-1 flex flex-col items-center justify-center p-8">
+            <div className="text-center space-y-3">
+              <Loader2 className="h-10 w-10 animate-spin text-[#468DFF] mx-auto" />
+              <p className="text-xs text-slate-500 font-medium">Cargando protocolo de puesta a tierra...</p>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-screen overflow-hidden bg-syso-bg text-slate-700 flex font-sans">
+      <Sidebar
+        tenantSlug={tenantSlug}
+        profile={profile}
+        currentSection="protocolo-puesta-a-tierra"
+        isSidebarCollapsed={isSidebarCollapsed}
+        toggleSidebar={toggleSidebar}
+        isMobileMenuOpen={isMobileMenuOpen}
+        setIsMobileMenuOpen={setIsMobileMenuOpen}
+        handleLogout={handleLogout}
+        onNavigate={handleSidebarNavigation}
+      />
+
+      <main className="flex-grow flex flex-col min-w-0 overflow-y-auto">
+        <AppPageHeader
+          title="Protocolo de Puesta a Tierra"
+          icon={Zap}
+          tenantName={tenant?.name || 'Cargando...'}
+          planId={tenant?.plan_id}
+          showPlanBadge={profile && profile.role !== 'cliente'}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+        />
+
+        <div className="w-full flex-grow flex flex-col min-h-0 p-0 md:py-8 md:max-w-[95%] md:mx-auto md:px-0">
+          {formMode !== 'list' ? (
+            <ProtocoloForm
+              tenantSlug={tenantSlug}
+              profile={profile}
+              tenant={tenant}
+              initialEmpresas={empresas}
+              initialEstablecimientos={allEstablecimientos}
+              editingId={editingId}
+              mode={formMode === 'create' ? 'create' : formMode === 'edit' ? 'edit' : 'view'}
+              onClose={() => {
+                setFormMode('list');
+                setEditingId(null);
+                setIsFormDirty(false);
+                router.replace(`/${tenantSlug}/protocolos/puesta-a-tierra`);
+              }}
+              onSaveSuccess={() => {
+                setFormMode('list');
+                setEditingId(null);
+                setIsFormDirty(false);
+                loadProtocolsList();
+                router.replace(`/${tenantSlug}/protocolos/puesta-a-tierra`);
+              }}
+              onEdit={() => setFormMode('edit')}
+              onDirtyChange={setIsFormDirty}
+              onExportPdf={() => {
+                const proto = protocolos.find(p => p.id === editingId);
+                if (proto) handleExportPdf(proto, false);
+              }}
+              onSendPdf={() => {
+                const proto = protocolos.find(p => p.id === editingId);
+                if (proto) openEmailModal(proto);
+              }}
+            />
+          ) : (
+            <div className="space-y-0 md:space-y-6 flex-grow flex flex-col min-h-0">
+
+              {/* BUSCADOR Y BOTÓN NUEVO (SySO Compact Layout v2.0) */}
+              <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl px-3.5 py-2.5 sm:px-5 sm:py-3 md:px-6 md:py-3.5 shadow-sm space-y-2.5 shrink-0">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
+                  <div className="hidden md:block flex-1"></div>
+
+                  <div className="flex flex-col md:flex-row md:items-center gap-2 w-full md:w-auto">
+                    <div className="relative w-full md:w-64">
+                      <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 pointer-events-none" />
+                      <input
+                        type="text"
+                        placeholder="Buscar por cliente, establecimiento..."
+                        value={filterText}
+                        onChange={(e) => setFilterText(e.target.value)}
+                        className="w-full pl-9 pr-3.5 py-1.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 placeholder-slate-400"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Filtros de Búsqueda Colapsables */}
+                <div className="pt-1.5 border-t border-slate-100 space-y-2">
+                  <div className="flex items-center justify-between min-h-[28px]">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowFilters(!showFilters)}
+                        className="font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px] hover:text-slate-600 transition-colors cursor-pointer"
+                      >
+                        <Sliders className="h-3 w-3" />
+                        Filtros de Búsqueda
+                        {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                      </button>
+
+                      {(filterText || filterEmpresa || filterEstablecimiento || filterAnio) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFilterText('');
+                            setFilterEmpresa('');
+                            setFilterEstablecimiento('');
+                            setFilterAnio('');
+                          }}
+                          className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[10px] font-semibold cursor-pointer transition-all border border-slate-200"
+                        >
+                          Limpiar filtros
+                        </button>
+                      )}
+                    </div>
+
+                    {canCargar && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingId(null);
+                          setFormMode('create');
+                          router.replace(`/${tenantSlug}/protocolos/puesta-a-tierra?action=nuevo`);
+                        }}
+                        className="px-3 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0"
+                      >
+                        <PlusCircle className="h-3.5 w-3.5" />
+                        Nuevo Protocolo
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {showFilters && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-slate-100 animate-fade-in">
+                    <div className="space-y-1 col-span-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">Filtrar por Cliente</label>
+                      <select
+                        value={filterEmpresa}
+                        onChange={(e) => {
+                          setFilterEmpresa(e.target.value);
+                          setFilterEstablecimiento('');
+                        }}
+                        className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] font-semibold text-slate-600 bg-white focus:outline-none focus:ring-1 focus:ring-[#468DFF] cursor-pointer"
+                      >
+                        <option value="">Todos los clientes</option>
+                        {empresas.map(emp => (
+                          <option key={emp.id} value={emp.id}>{emp.razon_social}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-1 col-span-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">Establecimiento</label>
+                      <select
+                        disabled={!filterEmpresa}
+                        value={filterEstablecimiento}
+                        onChange={(e) => setFilterEstablecimiento(e.target.value)}
+                        className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] font-semibold text-slate-600 bg-white focus:outline-none focus:ring-1 focus:ring-[#468DFF] cursor-pointer disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed"
+                      >
+                        <option value="">{!filterEmpresa ? 'Seleccione cliente...' : 'Todos los establecimientos'}</option>
+                        {allEstablecimientos.filter(est => est.empresa_id === filterEmpresa).map(est => (
+                          <option key={est.id} value={est.id}>{est.denominacion}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-1 col-span-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">Año</label>
+                      <select
+                        value={filterAnio}
+                        onChange={(e) => setFilterAnio(e.target.value)}
+                        className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] font-semibold text-slate-600 bg-white focus:outline-none focus:ring-1 focus:ring-[#468DFF] cursor-pointer"
+                      >
+                        <option value="">Todos los años</option>
+                        {añosDisponibles.map(anio => (
+                          <option key={anio} value={anio}>{anio}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* LISTADO DE PROTOCOLOS COMPACT LAYOUT V2.0 */}
+              <div 
+                className={`bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl shadow-sm overflow-hidden flex flex-col flex-grow min-h-0 md:flex-initial transition-all duration-300 ease-in-out ${showFilters ? 'md:h-[calc(100vh-280px)]' : 'md:h-[calc(100vh-240px)]'}`}
+              >
+                {sortedProtocolos.length === 0 ? (
+                  <AppEmptyState
+                    title="No se encontraron protocolos de puesta a tierra"
+                    description="Registra un nuevo protocolo de medición para verificar el estado de las jabalinas y disyuntores."
+                    actionButton={canCargar && (
+                      <AppButton
+                        variant="primary"
+                        size="sm"
+                        onClick={() => {
+                          setEditingId(null);
+                          setFormMode('create');
+                          router.replace(`/${tenantSlug}/protocolos/puesta-a-tierra?action=nuevo`);
+                        }}
+                      >
+                        Crear Nuevo Protocolo
+                      </AppButton>
+                    )}
+                  />
+                ) : (
+                  <div className="overflow-x-auto overflow-y-auto flex-grow min-h-0 sidebar-scrollbar">
+                    <table className="w-full text-left border-collapse min-w-[700px]">
+                      <thead className="bg-slate-50/80 sticky top-0 z-10 backdrop-blur-sm border-b border-slate-200 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+                        <tr>
+                          <th className="px-4 py-2.5">
+                            <button
+                              type="button"
+                              onClick={() => toggleSort('razon_social_text')}
+                              className="flex items-center gap-1.5 hover:text-slate-700 transition-colors uppercase font-bold"
+                            >
+                              Razón Social / Establecimiento
+                              <AppSortIcon field="razon_social_text" currentField={sortField} currentOrder={sortOrder} />
+                            </button>
+                          </th>
+                          <th className="px-4 py-2.5">
+                            <button
+                              type="button"
+                              onClick={() => toggleSort('fecha_medicion')}
+                              className="flex items-center gap-1.5 hover:text-slate-700 transition-colors uppercase font-bold"
+                            >
+                              Fecha Medición
+                              <AppSortIcon field="fecha_medicion" currentField={sortField} currentOrder={sortOrder} />
+                            </button>
+                          </th>
+                          <th className="px-4 py-2.5">Telurímetro Utilizado</th>
+                          <th className="px-4 py-2.5 text-center">Estado</th>
+                          <th className="px-4 py-2.5 text-right">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-xs">
+                        {sortedProtocolos.map((proto) => (
+                          <tr key={proto.id} className="hover:bg-slate-50/80 transition-colors group">
+                            <td className="px-4 py-3">
+                              <div className="font-bold text-slate-800">{proto.razon_social_text || 'Sin Razón Social'}</div>
+                              <div className="text-[11px] text-slate-500 font-medium">{proto.establecimiento_text || 'Establecimiento no especificado'}</div>
+                            </td>
+
+                            <td className="px-4 py-3 font-medium text-slate-600">
+                              {proto.fecha_medicion ? formatDate(proto.fecha_medicion) : 'Sin fecha'}
+                            </td>
+
+                            <td className="px-4 py-3 font-medium text-slate-600">
+                              <div className="truncate max-w-[200px]" title={proto.instrumento_marca_modelo_serie}>
+                                {proto.instrumento_marca_modelo_serie || 'Telurímetro Digital'}
+                              </div>
+                            </td>
+
+                            <td className="px-4 py-3 text-center">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                                proto.estado === 'completado' || proto.estado === 'finalizado'
+                                  ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                                  : proto.estado === 'anulado'
+                                  ? 'bg-red-50 text-red-600 border border-red-200'
+                                  : 'bg-amber-50 text-amber-600 border border-amber-200'
+                              }`}>
+                                {proto.estado === 'completado' || proto.estado === 'finalizado' ? 'Finalizado' : proto.estado === 'anulado' ? 'Anulado' : 'Borrador'}
+                              </span>
+                            </td>
+
+                            <td className="px-4 py-3 text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingId(proto.id);
+                                    setFormMode('view');
+                                    router.replace(`/${tenantSlug}/protocolos/puesta-a-tierra?view=${proto.id}`);
+                                  }}
+                                  className="p-1.5 rounded-lg text-slate-400 hover:text-[#468DFF] hover:bg-blue-50 transition-colors"
+                                  title="Ver detalle"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleExportPdf(proto, false)}
+                                  className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
+                                  title="Descargar Reporte PDF"
+                                >
+                                  <FileText className="h-4 w-4" />
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => openEmailModal(proto)}
+                                  className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                                  title="Enviar por Correo o WhatsApp"
+                                >
+                                  <Mail className="h-4 w-4" />
+                                </button>
+
+                                {canEditar && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setEditingId(proto.id);
+                                      setFormMode('edit');
+                                      router.replace(`/${tenantSlug}/protocolos/puesta-a-tierra?edit=${proto.id}`);
+                                    }}
+                                    className="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-colors"
+                                    title="Editar Protocolo"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </button>
+                                )}
+
+                                {canEliminar && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setDeleteConfirm({ show: true, id: proto.id })}
+                                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                    title="Eliminar Protocolo"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* Diálogo Confirmar Eliminación */}
+      <AppConfirmDialog
+        open={deleteConfirm.show}
+        title="¿Eliminar Protocolo de Puesta a Tierra?"
+        description="Esta acción eliminará el registro del protocolo y sus mediciones asociadas de forma permanente."
+        confirmText="Eliminar Protocolo"
+        cancelText="Cancelar"
+        variant="danger"
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteConfirm({ show: false, id: null })}
+      />
+
+      {/* Diálogo Cambios No Guardados */}
+      <AppUnsavedChangesDialog
+        open={unsavedDialogOpen}
+        onConfirm={handleConfirmLeave}
+        onCancel={() => setUnsavedDialogOpen(false)}
+      />
+
+      {/* MODAL DIÁLOGO UNIFICADO CON TABS: DESPACHO POR EMAIL Y WHATSAPP */}
+      {isMailModalOpen && mailTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xl max-w-md w-full space-y-5 animate-scaleUp">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <Send className="h-5 w-5 text-[#468DFF]" />
+                <h3 className="font-outfit text-base font-bold text-slate-800">
+                  Despachar Protocolo (PDF)
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsMailModalOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Pestañas (Tabs) */}
+            <div className="flex border-b border-slate-200">
+              <button
+                type="button"
+                onClick={() => setActiveTab('email')}
+                className={`flex-1 py-2 text-center text-xs font-bold border-b-2 transition-colors flex items-center justify-center gap-1.5 ${
+                  activeTab === 'email'
+                    ? 'border-[#468DFF] text-[#468DFF]'
+                    : 'border-transparent text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                <Mail className="h-3.5 w-3.5" />
+                Correo Electrónico
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('whatsapp')}
+                className={`flex-1 py-2 text-center text-xs font-bold border-b-2 transition-colors flex items-center justify-center gap-1.5 ${
+                  activeTab === 'whatsapp'
+                    ? 'border-emerald-500 text-emerald-600'
+                    : 'border-transparent text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                <MessageCircle className="h-3.5 w-3.5" />
+                WhatsApp
+              </button>
+            </div>
+
+            {/* Pestaña Correo Electrónico */}
+            {activeTab === 'email' && (
+              <div className="space-y-4">
+                {availableEmails.length > 0 && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-700">Contactos de la Razón Social:</label>
+                    <div className="space-y-1.5">
+                      {availableEmails.map((item, idx) => (
+                        <label
+                          key={idx}
+                          className="flex items-center gap-2 p-2 bg-slate-50 hover:bg-blue-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 transition-all cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={item.checked}
+                            onChange={(e) => {
+                              const copy = [...availableEmails];
+                              copy[idx].checked = e.target.checked;
+                              setAvailableEmails(copy);
+                            }}
+                            className="rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF]"
+                          />
+                          <span className="truncate">{item.descripcion}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-700">O ingresar correo manual:</label>
+                  <input
+                    type="email"
+                    placeholder="ejemplo@empresa.com"
+                    value={manualEmail}
+                    onChange={(e) => setManualEmail(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF]"
+                  />
+                </div>
+
+                <div className="pt-2 flex justify-end gap-2">
+                  <AppButton
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsMailModalOpen(false)}
+                    disabled={mailLoading}
+                  >
+                    Cancelar
+                  </AppButton>
+                  <AppButton
+                    variant="primary"
+                    size="sm"
+                    onClick={handleSendEmail}
+                    disabled={mailLoading}
+                  >
+                    {mailLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Enviar Correo'}
+                  </AppButton>
+                </div>
+              </div>
+            )}
+
+            {/* Pestaña WhatsApp */}
+            {activeTab === 'whatsapp' && (
+              <div className="space-y-4">
+                {availablePhones.length > 0 && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-700">Contactos Registrados:</label>
+                    <div className="space-y-1.5">
+                      {availablePhones.map((item, idx) => (
+                        <label
+                          key={idx}
+                          className="flex items-center gap-2 p-2 bg-emerald-50/50 hover:bg-emerald-100/60 border border-emerald-200 rounded-xl text-xs font-semibold text-emerald-800 transition-all cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={item.checked}
+                            onChange={(e) => {
+                              const copy = [...availablePhones];
+                              copy[idx].checked = e.target.checked;
+                              setAvailablePhones(copy);
+                            }}
+                            className="rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
+                          />
+                          <span className="truncate">{item.descripcion}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-700">O ingresar número de WhatsApp:</label>
+                  <input
+                    type="tel"
+                    placeholder="+54 9 11 1234-5678"
+                    value={manualPhone}
+                    onChange={(e) => setManualPhone(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                <div className="pt-2 flex justify-end gap-2">
+                  <AppButton
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsMailModalOpen(false)}
+                    disabled={whatsappLoading}
+                  >
+                    Cancelar
+                  </AppButton>
+                  <AppButton
+                    variant="primary"
+                    size="sm"
+                    onClick={handleSendWhatsApp}
+                    disabled={whatsappLoading}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white border-none"
+                  >
+                    {whatsappLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Abrir WhatsApp'}
+                  </AppButton>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

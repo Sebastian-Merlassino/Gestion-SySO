@@ -184,6 +184,7 @@ export default function Sidebar({
     { id: 'protocolo-iluminacion', label: 'Protocolo de Iluminación', path: `/${tenantSlug}/protocolos/iluminacion`, icon: Sun, adminOnly: true },
     { id: 'protocolo-ruido', label: 'Protocolo de Ruido', path: `/${tenantSlug}/protocolos/ruido`, icon: Volume2, adminOnly: true },
     { id: 'protocolo-ergonomia', label: 'Protocolo de Ergonomía', path: `/${tenantSlug}/protocolos/ergonomia`, icon: PersonStanding, adminOnly: true },
+    { id: 'protocolo-puesta-a-tierra', label: 'Protocolo de Puesta a Tierra', path: `/${tenantSlug}/protocolos/puesta-a-tierra`, icon: Zap, adminOnly: true },
     { id: 'legajo', label: 'Legajo Técnico', path: `/${tenantSlug}/legajo`, icon: Folder },
     { id: 'nomina', label: 'Nómina de Personal', path: `/${tenantSlug}/nomina`, icon: Users },
     { id: 'divider-2', type: 'divider' },
@@ -206,10 +207,10 @@ export default function Sidebar({
   }
 
   const planFeatures = {
-    free: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'empresas', 'equipo', 'protocolo-iluminacion', 'protocolo-ruido', 'protocolo-ergonomia'],
-    basic_5: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'protocolo-iluminacion', 'protocolo-ruido', 'protocolo-ergonomia', 'empresas', 'equipo'],
-    standard_25: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'protocolo-iluminacion', 'protocolo-ruido', 'protocolo-ergonomia', 'visitas', 'avisos', 'empresas', 'equipo'],
-    libre: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'protocolo-iluminacion', 'protocolo-ruido', 'protocolo-ergonomia', 'visitas', 'avisos', 'checklist-personalizados', 'legajo', 'portal-clientes', 'empresas', 'equipo']
+    free: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'empresas', 'equipo', 'protocolo-iluminacion', 'protocolo-ruido', 'protocolo-ergonomia', 'protocolo-puesta-a-tierra'],
+    basic_5: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'protocolo-iluminacion', 'protocolo-ruido', 'protocolo-ergonomia', 'protocolo-puesta-a-tierra', 'empresas', 'equipo'],
+    standard_25: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'protocolo-iluminacion', 'protocolo-ruido', 'protocolo-ergonomia', 'protocolo-puesta-a-tierra', 'visitas', 'avisos', 'empresas', 'equipo'],
+    libre: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'protocolo-iluminacion', 'protocolo-ruido', 'protocolo-ergonomia', 'protocolo-puesta-a-tierra', 'visitas', 'avisos', 'checklist-personalizados', 'legajo', 'portal-clientes', 'empresas', 'equipo']
   };
 
   const allowedFeatures = planFeatures[effectivePlan] || planFeatures.free;

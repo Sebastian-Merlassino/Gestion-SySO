@@ -1202,7 +1202,7 @@ const [partidosList, setPartidosList] = useState([]);
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto overflow-x-hidden relative py-0 px-0">
+      <main className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden relative py-0 px-0">
         {/* Background gradients */}
         <div className="absolute top-[-10%] left-[-20%] w-[600px] h-[600px] rounded-full bg-[#468DFF]/5 blur-[150px] pointer-events-none" />
         <div className="absolute bottom-[-10%] right-[-20%] w-[600px] h-[600px] rounded-full bg-[#0511F2]/5 blur-[150px] pointer-events-none" />
@@ -1225,9 +1225,10 @@ const [partidosList, setPartidosList] = useState([]);
             </div>
           </div>
         ) : (
-          <div className="py-0 md:py-6 px-0 md:px-0 space-y-4 md:space-y-6 md:max-w-[95%] md:mx-auto w-full z-10">
-        
-        <form onSubmit={handleSaveChanges} className="space-y-6">
+          <div className="flex-1 flex flex-col min-h-0 py-0 md:py-4 px-0 md:px-0 md:max-w-[95%] md:mx-auto w-full z-10">
+            <div className="bg-white border-0 md:border md:border-slate-200 rounded-none md:rounded-2xl shadow-none md:shadow-sm overflow-hidden flex flex-col flex-1 min-h-0 h-full md:h-[calc(100vh-130px)]">
+              <form onSubmit={handleSaveChanges} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                <div className="flex-1 overflow-y-auto sidebar-scrollbar p-3.5 sm:p-5 md:p-6 space-y-6">
           
           {/* SECCIÓN 1: INFORMACIÓN DEL USUARIO */}
           <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl p-3.5 sm:p-5 md:p-6 shadow-sm space-y-5">
@@ -2094,151 +2095,152 @@ const [partidosList, setPartidosList] = useState([]);
         </>
       )}
 
-          {/* Form Actions */}
-          <div className="flex justify-between items-center pt-6 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={handleExitWithoutSave}
-              className="px-5 py-2.5 bg-[#FFFFFF] text-[#468DFF] border border-[#468DFF] rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-[#FFFFFF] hover:border-[#FFFFFF] transition-all active:scale-[0.98] cursor-pointer"
-            >
-              Salir
-            </button>
 
-            {profileData?.role !== 'cliente' && (
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Guardando...
-                  </>
-                ) : (
-                  <>
-                    Guardar
-                  </>
-                )}
-              </button>
-            )}
-          </div>
+                {/* ELIMINAR CUENTA (Disponible para todos los usuarios) */}
+                {profileData && profileData.role !== 'cliente' && showDeleteSection && (
+                  <div className="mt-6 border-t border-slate-100 pt-5">
+                    <div className="bg-white border border-red-150 rounded-2xl p-5 shadow-sm space-y-5 animate-scaleUp">
+                      <div className="flex items-center justify-between border-b border-red-100 pb-2">
+                        <h3 className="font-outfit text-sm font-bold text-red-600 flex items-center gap-2 uppercase tracking-wider">
+                          <AlertTriangle className="h-4 w-4 text-red-600" />
+                          {profileData?.role === 'admin' ? 'Eliminar Cuenta y Organización' : 'Eliminar Cuenta de Acceso'}
+                        </h3>
+                        <button
+                          type="button"
+                          onClick={() => { setShowDeleteSection(false); setDeletePassword(''); }}
+                          className="py-1.5 px-3 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-500 text-[10px] font-bold cursor-pointer transition-all active:scale-[0.98]"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                      
+                      {profileData?.role === 'admin' ? (
+                        <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-red-800 text-sm space-y-3 leading-relaxed">
+                          <p className="font-bold">¡ADVERTENCIA DE SEGURIDAD CRÍTICA!</p>
+                          <p>
+                            Al eliminar tu cuenta, se borrará de forma permanente e irreversible toda la información asociada a tu organización/consultora (<strong>{tenantData?.name}</strong>), incluyendo:
+                          </p>
+                          <ul className="list-disc pl-5 space-y-1 text-xs">
+                            <li>Configuración y perfil del administrador y miembros de equipo.</li>
+                            <li>Todas las empresas clientes y sus establecimientos cargados.</li>
+                            <li>El historial completo de auditorías, capacitaciones, acciones correctivas y extintores.</li>
+                            <li>Firmas, logotipos y archivos digitales subidos al almacenamiento.</li>
+                          </ul>
+                          <p className="font-semibold text-xs">
+                            Esta acción no se puede deshacer y no habrá forma de recuperar los datos.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-red-800 text-sm space-y-3 leading-relaxed">
+                          <p className="font-bold">¡ADVERTENCIA DE SEGURIDAD!</p>
+                          <p>
+                            Al confirmar, se elminará tu cuenta de usuario de forma permanente y ya no tendrás acceso a la organización/consultora <strong>{tenantData?.name}</strong>.
+                          </p>
+                          <p className="text-xs">
+                            Tu perfil y configuraciones personales serán borrados definitivamente. Sin embargo, las constancias de visita, capacitaciones y actividades del programa anual que hayas registrado o firmado seguirán guardadas para el historial de la organización.
+                          </p>
+                          <p className="font-semibold text-xs">
+                            Esta acción es irreversible y no podrás volver a ingresar con este usuario.
+                          </p>
+                        </div>
+                      )}
 
-        </form>
+                      <div className="space-y-4">
+                        <div className="max-w-md">
+                          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                            Para confirmar la eliminación, ingresá tu contraseña actual:
+                          </label>
+                          <div className="relative">
+                            <input
+                              type={showDeletePassword ? 'text' : 'password'}
+                              placeholder="Contraseña actual"
+                              value={deletePassword}
+                              onChange={(e) => setDeletePassword(e.target.value)}
+                              autoComplete="current-password"
+                              className="w-full border border-slate-200 rounded-xl py-2 pl-3.5 pr-12 text-sm focus:outline-none focus:border-red-500 bg-slate-50/50 transition-all text-slate-700"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowDeletePassword(!showDeletePassword)}
+                              className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700 cursor-pointer"
+                            >
+                              {showDeletePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          </div>
+                        </div>
 
-        {/* ELIMINAR CUENTA (Disponible para todos los usuarios) */}
-        {profileData && profileData.role !== 'cliente' && (
-          <div className="mt-6 border-t border-slate-100 pt-5">
-            {!showDeleteSection ? (
-              <div className="flex justify-start">
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteSection(true)}
-                  className="py-2.5 px-4 rounded-xl border border-red-200 hover:bg-red-50 text-red-600 text-xs font-bold transition-all cursor-pointer flex items-center gap-2 active:scale-[0.98]"
-                >
-                  <AlertTriangle className="h-4 w-4" />
-                  {profileData?.role === 'admin' ? 'Eliminar Cuenta y Organización' : 'Eliminar Cuenta de Acceso'}
-                </button>
-              </div>
-            ) : (
-              <div className="bg-white border border-red-150 rounded-2xl p-5 shadow-sm space-y-5 animate-scaleUp">
-                <div className="flex items-center justify-between border-b border-red-100 pb-2">
-                  <h3 className="font-outfit text-sm font-bold text-red-600 flex items-center gap-2 uppercase tracking-wider">
-                    <AlertTriangle className="h-4 w-4 text-red-600" />
-                    {profileData?.role === 'admin' ? 'Eliminar Cuenta y Organización' : 'Eliminar Cuenta de Acceso'}
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={() => { setShowDeleteSection(false); setDeletePassword(''); }}
-                    className="py-1.5 px-3 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-500 text-[10px] font-bold cursor-pointer transition-all active:scale-[0.98]"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-                
-                {profileData?.role === 'admin' ? (
-                  <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-red-800 text-sm space-y-3 leading-relaxed">
-                    <p className="font-bold">¡ADVERTENCIA DE SEGURIDAD CRÍTICA!</p>
-                    <p>
-                      Al eliminar tu cuenta, se borrará de forma permanente e irreversible toda la información asociada a tu organización/consultora (<strong>{tenantData?.name}</strong>), incluyendo:
-                    </p>
-                    <ul className="list-disc pl-5 space-y-1 text-xs">
-                      <li>Configuración y perfil del administrador y miembros de equipo.</li>
-                      <li>Todas las empresas clientes y sus establecimientos cargados.</li>
-                      <li>El historial completo de auditorías, capacitaciones, acciones correctivas y extintores.</li>
-                      <li>Firmas, logotipos y archivos digitales subidos al almacenamiento.</li>
-                    </ul>
-                    <p className="font-semibold text-xs">
-                      Esta acción no se puede deshacer y no habrá forma de recuperar los datos.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-red-800 text-sm space-y-3 leading-relaxed">
-                    <p className="font-bold">¡ADVERTENCIA DE SEGURIDAD!</p>
-                    <p>
-                      Al confirmar, se elminará tu cuenta de usuario de forma permanente y ya no tendrás acceso a la organización/consultora <strong>{tenantData?.name}</strong>.
-                    </p>
-                    <p className="text-xs">
-                      Tu perfil y configuraciones personales serán borrados definitivamente. Sin embargo, las constancias de visita, capacitaciones y actividades del programa anual que hayas registrado o firmado seguirán guardadas para el historial de la organización.
-                    </p>
-                    <p className="font-semibold text-xs">
-                      Esta acción es irreversible y no podrás volver a ingresar con este usuario.
-                    </p>
-                  </div>
-                )}
-
-                <div className="space-y-4">
-                  <div className="max-w-md">
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                      Para confirmar la eliminación, ingresá tu contraseña actual:
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showDeletePassword ? 'text' : 'password'}
-                        placeholder="Contraseña actual"
-                        value={deletePassword}
-                        onChange={(e) => setDeletePassword(e.target.value)}
-                        autoComplete="current-password"
-                        className="w-full border border-slate-200 rounded-xl py-2 pl-3.5 pr-12 text-sm focus:outline-none focus:border-red-500 bg-slate-50/50 transition-all text-slate-700"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowDeletePassword(!showDeletePassword)}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700 cursor-pointer"
-                      >
-                        {showDeletePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
+                        <div className="flex justify-start">
+                          <button
+                            type="button"
+                            onClick={handleDeleteAccount}
+                            disabled={deleteLoading || !deletePassword}
+                            className="py-3 px-6 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition-all flex items-center gap-2 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-lg shadow-red-500/10"
+                          >
+                            {deleteLoading ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Eliminando cuenta y datos...
+                              </>
+                            ) : (
+                              <>
+                                <AlertTriangle className="h-4 w-4" />
+                                {profileData?.role === 'admin' ? 'Eliminar Cuenta y Organización Permanente' : 'Eliminar Mi Acceso Permanentemente'}
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
+                )}
+              </div>
 
-                  <div className="flex justify-start">
+              {/* BARRA INFERIOR DE ACCIONES (SySO Compact Layout v2.0) */}
+              <div className="bg-slate-50 border-t border-slate-200 p-3 sm:p-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 shrink-0 rounded-b-none md:rounded-b-2xl">
+                <div className="flex justify-center sm:justify-start">
+                  {profileData && profileData.role !== 'cliente' && !showDeleteSection && (
                     <button
                       type="button"
-                      onClick={handleDeleteAccount}
-                      disabled={deleteLoading || !deletePassword}
-                      className="py-3 px-6 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition-all flex items-center gap-2 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-lg shadow-red-500/10"
+                      onClick={() => setShowDeleteSection(true)}
+                      className="w-full sm:w-auto py-2 px-3 rounded-xl border border-red-200 hover:bg-red-50 text-red-600 text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-[0.98]"
                     >
-                      {deleteLoading ? (
+                      <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                      <span>{profileData?.role === 'admin' ? 'Eliminar Cuenta y Organización' : 'Eliminar Cuenta de Acceso'}</span>
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 sm:gap-3 justify-end">
+                  <button
+                    type="button"
+                    onClick={handleExitWithoutSave}
+                    className="flex-1 sm:flex-none px-4 sm:px-5 py-2.5 bg-[#FFFFFF] text-[#468DFF] border border-[#468DFF] rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-[#FFFFFF] hover:border-[#FFFFFF] transition-all active:scale-[0.98] cursor-pointer text-center"
+                  >
+                    Salir
+                  </button>
+
+                  {profileData?.role !== 'cliente' && (
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="flex-1 sm:flex-none px-4 sm:px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
+                    >
+                      {loading ? (
                         <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Eliminando cuenta y datos...
+                          <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+                          <span>Guardando...</span>
                         </>
                       ) : (
-                        <>
-                          <AlertTriangle className="h-4 w-4" />
-                          {profileData?.role === 'admin' ? 'Eliminar Cuenta y Organización Permanente' : 'Eliminar Mi Acceso Permanentemente'}
-                        </>
+                        <span>Guardar Cambios</span>
                       )}
                     </button>
-                  </div>
+                  )}
                 </div>
               </div>
-            )}
+            </form>
           </div>
-        )}
-
-      </div>
-        )}
+        </div>
+      )}
     </main>
 
       {/* PLAN SELECTION MODAL */}
