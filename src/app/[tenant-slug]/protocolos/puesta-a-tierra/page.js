@@ -351,6 +351,34 @@ export default function ProtocolosPuestaATierraPage({ params }) {
 
   // Exportar / Previsualizar PDF Reporte
   const handleExportPdf = async (protoItem, shouldPrint = false) => {
+    let printWindow = null;
+    if (shouldPrint) {
+      // Abre la ventana de forma síncrona en la interacción del usuario para evitar bloqueos de ventanas emergentes del navegador
+      printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Imprimiendo Protocolo...</title>
+              <style>
+                body { margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: system-ui, -apple-system, sans-serif; background: #f8fafc; color: #475569; }
+                .loader { text-align: center; }
+                .spinner { width: 36px; height: 36px; border: 3px solid #cbd5e1; border-top-color: #468DFF; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+                @keyframes spin { to { transform: rotate(360deg); } }
+              </style>
+            </head>
+            <body>
+              <div class="loader">
+                <div class="spinner"></div>
+                <p style="font-weight: 600; margin: 0;">Generando vista de impresión...</p>
+              </div>
+            </body>
+          </html>
+        `);
+      }
+    }
+
     try {
       globalToast.toast('Generando reporte PDF...', 'info');
 
@@ -377,15 +405,33 @@ export default function ProtocolosPuestaATierraPage({ params }) {
         profile
       );
 
+      if (!pdfDoc) throw new Error('No se pudo generar el reporte PDF.');
+
       if (shouldPrint) {
-        const blob = pdfDoc.output('blob');
-        const blobUrl = URL.createObjectURL(blob);
-        window.open(blobUrl, '_blank');
+        if (typeof pdfDoc.autoPrint === 'function') {
+          pdfDoc.autoPrint();
+        }
+        const pdfBlob = pdfDoc.output('blob');
+        const blobUrl = URL.createObjectURL(pdfBlob);
+
+        if (printWindow && !printWindow.closed) {
+          printWindow.location.href = blobUrl;
+        } else {
+          const win = window.open(blobUrl, '_blank');
+          if (!win) {
+            pdfDoc.save(`Protocolo_Puesta_A_Tierra_${(protoItem.razon_social_text || 'Cliente').replace(/\s+/g, '_')}_${protoItem.fecha_medicion || '2026'}.pdf`);
+            globalToast.toast('Se descargó el PDF directamente.', 'warning');
+          }
+        }
+        globalToast.toast('Ventana de impresión abierta.', 'success');
       } else {
         pdfDoc.save(`Protocolo_Puesta_A_Tierra_${(protoItem.razon_social_text || 'Cliente').replace(/\s+/g, '_')}_${protoItem.fecha_medicion || '2026'}.pdf`);
         globalToast.toast('PDF descargado con éxito.', 'success');
       }
     } catch (err) {
+      if (printWindow && !printWindow.closed) {
+        printWindow.close();
+      }
       console.error('Error al exportar PDF:', err);
       globalToast.toast('No se pudo generar el reporte PDF.', 'error');
     }

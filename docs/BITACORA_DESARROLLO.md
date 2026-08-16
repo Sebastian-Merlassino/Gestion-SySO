@@ -1,6 +1,20 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-16] Actualización Normativa y Títulos en PDF de Puesta a Tierra, Priorización de Logos y Estandarización de Modales de Carga / Confirmación
+## [2026-08-16] Corrección de Apertura de Ventana de Impresión en Protocolo de Puesta a Tierra (`puesta-a-tierra/page.js`)
+
+### Resumen de Cambios
+- **Apertura Síncrona de Ventana para Prevenir Bloqueo de Popups:**
+  - Se corrigió la función `handleExportPdf` en la tabla de protocolos de Puesta a Tierra para abrir la ventana de previsualización/impresión (`window.open('', '_blank')`) de forma síncrona al momento del clic del usuario, evitando que los navegadores bloqueen la apertura tras resolver consultas asíncronas de Supabase y generación del PDF.
+  - Se implementó la pantalla de carga estilizada en la ventana emergente con spinner y mensaje *"Generando vista de impresión..."*.
+  - Se invocó `pdfDoc.autoPrint()` antes de cargar el blob para que el visor de PDF del navegador abra automáticamente el diálogo nativo de impresión del sistema.
+  - Se añadió fallback de descarga directa y cierre seguro de ventana ante cancelaciones o errores.
+- **Compilación de Producción:** Verificada con `npm.cmd run build` generando satisfactoriamente las 23/23 rutas con 0 errores.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
 
 ### Resumen de Cambios
 - **Actualización de Títulos y Marco Normativo en PDF de Puesta a Tierra (`puesta-a-tierra/utils/pdfGenerator.js`):**
