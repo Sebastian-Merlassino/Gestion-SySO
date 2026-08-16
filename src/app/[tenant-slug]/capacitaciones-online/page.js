@@ -16,6 +16,7 @@ import AITextHelper from '@/components/ui/AITextHelper';
 import AppSkeleton from '@/components/ui/AppSkeleton';
 import AppTooltip from '@/components/ui/AppTooltip';
 import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
+import AppLoadingSpinner from '@/components/ui/AppLoadingSpinner';
 import { generateCapacitacionOnlinePdf } from './utils/pdfGenerator';
 import { 
   GraduationCap, 
@@ -992,12 +993,7 @@ export default function CapacitacionesOnlinePage({ params }) {
         />
 
         {loading ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-8">
-            <div className="text-center space-y-3">
-              <Loader2 className="h-10 w-10 animate-spin text-[#468DFF] mx-auto" />
-              <p className="text-xs text-slate-500 font-medium">Cargando capacitaciones online...</p>
-            </div>
-          </div>
+          <AppLoadingSpinner message="Cargando capacitaciones online..." />
         ) : (
           <div className="w-full flex-grow flex flex-col min-h-0 p-0 md:py-8 md:max-w-[95%] md:mx-auto md:px-0">
             

@@ -133,10 +133,10 @@ export const generateNoiseProtocolPdf = async (
   const emp = empresas.find(e => e.id === proto.razon_social_id);
   const est = allEstablecimientos.find(e => e.id === proto.establecimiento_id);
 
-  // Download Header Logo (Tenant, User Profile Admin or Default)
+  // Download Header Logo (User Profile Admin, Tenant or Default)
   let logoBase64 = '';
   try {
-    const logoUrl = tenant?.logo_1_url || userProfile?.logo_1_url || userProfile?.logo_url;
+    const logoUrl = userProfile?.logo_1_url || userProfile?.logo_url || tenant?.logo_1_url || tenant?.logo_url;
     if (logoUrl) {
       logoBase64 = await getBase64ImageFromUrl(logoUrl);
     }

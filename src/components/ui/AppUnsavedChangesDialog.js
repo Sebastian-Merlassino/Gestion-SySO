@@ -9,6 +9,7 @@ export default function AppUnsavedChangesDialog({
   open,
   onOpenChange,
   onCancel,
+  onClose,
   title = 'Cambios sin guardar',
   description = 'Tenés cambios sin guardar en el formulario. Si salís ahora, perderás toda la información ingresada.',
   onLeave,
@@ -16,8 +17,21 @@ export default function AppUnsavedChangesDialog({
   leaveText = 'Salir sin guardar',
   stayText = 'Quedarse y editar'
 }) {
-  const handleLeave = onLeave || onConfirm;
-  const handleOpenChange = onOpenChange || (onCancel ? (val) => !val && onCancel() : () => {});
+  const handleLeaveAction = onLeave || onConfirm;
+
+  const handleClose = () => {
+    if (onOpenChange) onOpenChange(false);
+    if (onCancel) onCancel();
+    if (onClose) onClose();
+  };
+
+  const handleOpenChange = (isOpen) => {
+    if (onOpenChange) onOpenChange(isOpen);
+    if (!isOpen) {
+      if (onCancel) onCancel();
+      if (onClose) onClose();
+    }
+  };
 
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
@@ -28,18 +42,23 @@ export default function AppUnsavedChangesDialog({
         {/* Modal content container */}
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <Dialog.Content 
-            onPointerDownOutside={(e) => e.preventDefault()}
-            onInteractOutside={(e) => e.preventDefault()}
+            onPointerDownOutside={(e) => {
+              e.preventDefault();
+              handleClose();
+            }}
+            onInteractOutside={(e) => {
+              e.preventDefault();
+              handleClose();
+            }}
             className="relative w-full max-w-sm p-6 bg-white border border-slate-200 rounded-2xl shadow-2xl animate-scale-up focus:outline-none flex flex-col items-center text-center"
           >
             
             {/* Close button at top right (matching standard AppConfirmDialog and ruido) */}
             <Dialog.Close asChild>
               <button 
-                onClick={() => {
-                  if (onCancel) onCancel();
-                }}
-                className="absolute top-4 right-4 p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#468DFF]"
+                type="button"
+                onClick={handleClose}
+                className="absolute top-4 right-4 p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#468DFF] cursor-pointer"
                 aria-label="Cerrar"
               >
                 <X className="h-4 w-4" />
@@ -64,13 +83,12 @@ export default function AppUnsavedChangesDialog({
             {/* Action buttons (vertical stack matching reference image) */}
             <div className="flex flex-col gap-2.5 w-full">
               {/* Secondary button: Salir sin guardar */}
-              {handleLeave && (
+              {handleLeaveAction && (
                 <button
                   type="button"
                   onClick={() => {
-                    handleLeave();
-                    if (onOpenChange) onOpenChange(false);
-                    if (onCancel) onCancel();
+                    handleLeaveAction();
+                    handleClose();
                   }}
                   className="w-full py-2.5 px-4 bg-white text-[#468DFF] border border-[#468DFF] rounded-xl text-xs font-bold hover:bg-[#468DFF] hover:text-white transition-all active:scale-[0.99] cursor-pointer"
                 >
@@ -82,9 +100,7 @@ export default function AppUnsavedChangesDialog({
               <Dialog.Close asChild>
                 <button
                   type="button"
-                  onClick={() => {
-                    if (onCancel) onCancel();
-                  }}
+                  onClick={handleClose}
                   className="w-full py-2.5 px-4 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-xs font-bold transition-all active:scale-[0.99] cursor-pointer shadow-md shadow-[#468DFF]/20"
                 >
                   {stayText}

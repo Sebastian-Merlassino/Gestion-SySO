@@ -23,6 +23,7 @@ import AppSortIcon from '@/components/ui/AppSortIcon';
 import AppSignatureCanvas from '@/components/ui/AppSignatureCanvas';
 import AppSkeleton from '@/components/ui/AppSkeleton';
 import AppTooltip from '@/components/ui/AppTooltip';
+import AppLoadingSpinner from '@/components/ui/AppLoadingSpinner';
 import { generateVisitaPdf } from './utils/pdfGenerator';
 import { formatPdfFileName } from '@/lib/pdf/pdfFileName';
 import * as XLSX from 'xlsx';
@@ -1944,12 +1945,7 @@ export default function VisitasPage({ params }) {
 
         {/* Content Body */}
         {loading ? (
-          <div className="flex-grow flex items-center justify-center p-8">
-            <div className="text-center space-y-4">
-              <Loader2 className="h-10 w-10 animate-spin text-[#468DFF] mx-auto" />
-              <p className="text-xs text-slate-500 font-medium">Cargando constancias de visita...</p>
-            </div>
-          </div>
+          <AppLoadingSpinner message="Cargando constancias de visita..." />
         ) : (
           <div className="w-full flex-grow flex flex-col min-h-0 p-0 md:py-8 md:max-w-[95%] md:mx-auto md:px-0">
 

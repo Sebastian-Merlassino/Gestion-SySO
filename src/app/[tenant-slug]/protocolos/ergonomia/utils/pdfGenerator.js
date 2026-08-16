@@ -424,7 +424,7 @@ export const generateProtocoloErgonomiaPdf = async (arg1, arg2, arg3, arg4, arg5
 
   // Safe logo fetch (Prioritize Admin/Owner Profile & Tenant Primary Logo)
   let logoBase64 = '';
-  let logoUrl = tenantObj?.logo_1_url || tenantObj?.logo_url || userProfile?.logo_1_url || userProfile?.logo_url;
+  let logoUrl = userProfile?.logo_1_url || userProfile?.logo_url || tenantObj?.logo_1_url || tenantObj?.logo_url;
 
   if (!logoUrl && (proto.tenant_id || tenantObj?.id)) {
     try {

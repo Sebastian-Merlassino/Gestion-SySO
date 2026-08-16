@@ -21,6 +21,7 @@ import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
 import AppSortIcon from '@/components/ui/AppSortIcon';
 import AppSkeleton from '@/components/ui/AppSkeleton';
 import AppTooltip from '@/components/ui/AppTooltip';
+import AppLoadingSpinner from '@/components/ui/AppLoadingSpinner';
 import { generateNoiseProtocolPdf } from './utils/pdfGenerator';
 import { 
   PlusCircle, 
@@ -698,12 +699,7 @@ export default function ProtocolosRuidoPage({ params }) {
             showPlanBadge={profile && profile.role !== 'cliente'}
             setIsMobileMenuOpen={setIsMobileMenuOpen}
           />
-          <div className="flex-1 flex flex-col items-center justify-center p-8">
-            <div className="text-center space-y-3">
-              <Loader2 className="h-10 w-10 animate-spin text-[#468DFF] mx-auto" />
-              <p className="text-xs text-slate-500 font-medium">Cargando protocolo de ruido...</p>
-            </div>
-          </div>
+          <AppLoadingSpinner message="Cargando protocolo de ruido..." />
         </main>
       </div>
     );

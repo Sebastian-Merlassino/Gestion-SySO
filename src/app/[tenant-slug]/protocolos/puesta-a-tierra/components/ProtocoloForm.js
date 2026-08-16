@@ -17,6 +17,7 @@ import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
 import AITextHelper from '@/components/ui/AITextHelper';
 import AppSignatureCanvas from '@/components/ui/AppSignatureCanvas';
+import AppLoadingSpinner from '@/components/ui/AppLoadingSpinner';
 import {
   Building,
   Trash2,
@@ -1073,11 +1074,29 @@ export default function ProtocoloForm({
   };
 
   const handleToggleCollapsePunto = (id) => {
-    setPuntos(puntos.map(p => p.id === id ? { ...p, isCollapsed: !p.isCollapsed } : p));
+    setPuntos(prev => prev.map(p => p.id === id ? { ...p, isCollapsed: !p.isCollapsed } : p));
+  };
+
+  const handlePuntoSectorChange = (puntoId, sectorVal) => {
+    setPuntos(prev => prev.map(p => {
+      if (p.id === puntoId) {
+        if (sectorVal === '__custom__') {
+          return { ...p, sector: '', isCustomSector: true };
+        } else {
+          const sec = estSectoresLocal.find(s => s.denominacion === sectorVal || s.id === sectorVal);
+          return {
+            ...p,
+            sector: sec ? sec.denominacion : sectorVal,
+            isCustomSector: false
+          };
+        }
+      }
+      return p;
+    }));
   };
 
   const handlePuntoChange = (id, field, val) => {
-    setPuntos(puntos.map(p => {
+    setPuntos(prev => prev.map(p => {
       if (p.id === id) {
         const updated = { ...p, [field]: val };
         if (field === 'valor_medido_ohm') {
@@ -1238,9 +1257,8 @@ export default function ProtocoloForm({
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 space-y-3">
-        <Loader2 className="h-10 w-10 animate-spin text-[#468DFF]" />
-        <p className="text-xs text-slate-500 font-medium">Cargando protocolo de puesta a tierra...</p>
+      <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl shadow-sm overflow-hidden flex flex-col flex-grow min-h-0 md:h-[calc(100vh-140px)]">
+        <AppLoadingSpinner message="Cargando protocolo de puesta a tierra..." />
       </div>
     );
   }
@@ -1268,28 +1286,6 @@ export default function ProtocoloForm({
         </div>
 
         <div className="flex items-center gap-2">
-          {editingId && onExportPdf && (
-            <button
-              type="button"
-              onClick={onExportPdf}
-              className="px-3 py-1.5 bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-600 hover:text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
-            >
-              <FileText className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">PDF</span>
-            </button>
-          )}
-
-          {editingId && onSendPdf && (
-            <button
-              type="button"
-              onClick={onSendPdf}
-              className="px-3 py-1.5 bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-600 hover:text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
-            >
-              <Mail className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Enviar</span>
-            </button>
-          )}
-
           {isReadOnly && onEdit && (
             <AppButton
               variant="primary"
@@ -1613,18 +1609,9 @@ export default function ProtocoloForm({
                             value={
                               estSectoresLocal.some(s => s.denominacion.toLowerCase() === (p.sector || '').toLowerCase())
                                 ? (estSectoresLocal.find(s => s.denominacion.toLowerCase() === (p.sector || '').toLowerCase())?.denominacion || p.sector)
-                                : (p.isCustomSector || p.sector ? '__custom__' : '')
+                                : (p.isCustomSector || (p.sector && !estSectoresLocal.some(s => s.denominacion.toLowerCase() === (p.sector || '').toLowerCase())) ? '__custom__' : '')
                             }
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              if (val === '__custom__') {
-                                handlePuntoChange(p.id, 'sector', '');
-                                handlePuntoChange(p.id, 'isCustomSector', true);
-                              } else {
-                                handlePuntoChange(p.id, 'sector', val);
-                                handlePuntoChange(p.id, 'isCustomSector', false);
-                              }
-                            }}
+                            onChange={(e) => handlePuntoSectorChange(p.id, e.target.value)}
                           >
                             <option value="">Selecciona sector...</option>
                             {estSectoresLocal.map((s, sIdx) => (
@@ -1633,7 +1620,7 @@ export default function ProtocoloForm({
                             <option value="__custom__">+ Ingresar sector manual...</option>
                           </AppSelect>
                         )}
-                        {(p.isCustomSector || (!estSectoresLocal.some(s => s.denominacion.toLowerCase() === (p.sector || '').toLowerCase()) && (p.sector !== undefined && p.sector !== ''))) && canEdit && !isReadOnly && (
+                        {(p.isCustomSector || (p.sector && !estSectoresLocal.some(s => s.denominacion.toLowerCase() === (p.sector || '').toLowerCase()))) && canEdit && !isReadOnly && (
                           <AppInput
                             placeholder="Escribir sector manual..."
                             className="mt-1"
@@ -1802,12 +1789,12 @@ export default function ProtocoloForm({
           <div className="space-y-4">
             <div className="flex flex-col gap-1 col-span-full">
               <div className="flex items-center justify-between">
-                <AppLabel htmlFor="informacionAdicional">Información Adicional (Prueba de Disyuntores)</AppLabel>
+                <AppLabel htmlFor="informacionAdicional">Información Adicional</AppLabel>
                 <AITextHelper
                   disabled={!canEdit}
                   value={informacionAdicional}
                   onChange={setInformacionAdicional}
-                  context="Información adicional sobre la prueba de disyuntores y protecciones"
+                  context="Información adicional sobre el estado de la instalación y mediciones"
                 />
               </div>
               <AppTextarea
@@ -2303,9 +2290,11 @@ export default function ProtocoloForm({
       {/* Diálogo de Confirmación para Eliminar Protocolo */}
       <AppConfirmDialog
         open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        type="destructive"
         title="Eliminar Protocolo"
-        description="¿Estás seguro de que deseas eliminar este protocolo? Esta acción no se puede deshacer."
-        confirmText="Sí, Eliminar"
+        description="¿Está seguro de que desea eliminar permanentemente este protocolo de puesta a tierra y todos sus puntos de muestreo y mediciones asociados? Esta acción no se puede deshacer."
+        confirmText="Eliminar"
         cancelText="Cancelar"
         onConfirm={executeDelete}
         onCancel={() => setDeleteConfirmOpen(false)}

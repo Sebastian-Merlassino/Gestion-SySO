@@ -15,6 +15,7 @@ import AppInput from '@/components/ui/AppInput';
 import AppSelect from '@/components/ui/AppSelect';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppSkeleton from '@/components/ui/AppSkeleton';
+import AppLoadingSpinner from '@/components/ui/AppLoadingSpinner';
 import {
   Building,
   Users,
@@ -1964,12 +1965,7 @@ export default function TenantDashboard({ params }) {
           setIsMobileMenuOpen={setIsMobileMenuOpen}
         />
         {loading ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-8">
-            <div className="text-center space-y-3">
-              <Loader2 className="h-10 w-10 animate-spin text-[#468DFF] mx-auto" />
-              <p className="text-xs text-slate-500 font-medium">Cargando panel de control...</p>
-            </div>
-          </div>
+          <AppLoadingSpinner message="Cargando panel de control..." />
         ) : (
           <div className="w-full flex-grow flex flex-col min-h-0 p-0 md:py-8 md:max-w-[95%] md:mx-auto md:px-0 space-y-0 md:space-y-6">
             {/* Fila del Programa de Gestión o Siniestralidad */}

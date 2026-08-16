@@ -1,6 +1,125 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-16] Unificación Exacta de Ventana Emergente de Cambios Sin Guardar (`AppUnsavedChangesDialog.js`)
+## [2026-08-16] Actualización Normativa y Títulos en PDF de Puesta a Tierra, Priorización de Logos y Estandarización de Modales de Carga / Confirmación
+
+### Resumen de Cambios
+- **Actualización de Títulos y Marco Normativo en PDF de Puesta a Tierra (`puesta-a-tierra/utils/pdfGenerator.js`):**
+  - Título de portada actualizado a: `"Protocolo de medición de la puesta a tierra y continuidad de las masas"`.
+  - Encabezado interno de páginas oficiales actualizado a: `"PROTOCOLO DE MEDICIÓN DE LA PUESTA A TIERRA Y CONTINUIDAD DE LAS MASAS"`.
+  - Referencias normativas de portada actualizadas según normativa vigente:
+    - Línea 1: `"DECRETO Nº 351/79, ANEXO VI - CAPÍTULO 14 - INSTALACIONES ELÉCTRICAS"`
+    - Línea 2: `"ANEXO - RESOLUCIÓN 900/2015 (PROTOCOLO PARA LA MEDICIÓN DEL VALOR DE PUESTA A TIERRA Y LA VERIFICACIÓN DE LA CONTINUIDAD DE LAS MASAS EN EL AMBIENTE LABORAL)"`
+  - Priorización del logo principal del perfil de usuario (`userProfile.logo_1_url || userProfile.logo_url`) en portadas y encabezados de todos los protocolos (`puesta-a-tierra`, `ruido`, `iluminacion`, `ergonomia`).
+- **Componente Reutilizable y Estandarización de Spinners (`src/components/ui/AppLoadingSpinner.js`):**
+  - Creación del componente estándar `AppLoadingSpinner` con `Loader2` giratorio en azul corporativo `#468DFF`, centrado en pantalla y mensaje contextual configurable.
+  - Estandarización de estados de carga en los 19 módulos del sistema (`ruido`, `puesta-a-tierra`, `iluminacion`, `ergonomia`, `empresas`, `equipo`, `extintores`, `control-electrico`, `avisos`, `accidentes`, `dashboard`, `correctivas`, `matriz-riesgos`, `checklist-personalizados`, `programa`, `capacitacion`, `capacitaciones-online`, `legajo`, `nomina`, `profile`).
+- **Estandarización de Diálogos de Confirmación y Cambios sin Guardar:**
+  - `AppUnsavedChangesDialog`: Diseño exacto pixel-perfect con botón de cierre sutil, icono centrado de alerta ámbar, botón vertical de "Salir sin guardar" (blanco con borde azul) y botón vertical de "Quedarse y editar" (azul sólido).
+  - `AppConfirmDialog` y `AppDestructiveConfirmDialog`: Estandarización y compatibilidad con fallbacks de props `onConfirm`/`onCancel` y `onOpenChange`.
+- **Compilación de Producción:** Verificada con `npm.cmd run build` generando satisfactoriamente las 23/23 rutas con 0 errores.
+
+### Archivos Modificados
+- `[NEW] src/components/ui/AppLoadingSpinner.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/utils/pdfGenerator.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/utils/pdfGenerator.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/utils/pdfGenerator.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/utils/pdfGenerator.js`
+- `[MODIFY] src/components/ui/AppUnsavedChangesDialog.js`
+- `[MODIFY] src/components/ui/AppConfirmDialog.js`
+- `[MODIFY] src/components/ui/AppDestructiveConfirmDialog.js`
+- `[MODIFY] src/app/[tenant-slug]/**/page.js` (todos los módulos con carga estandarizada)
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+### Resumen de Cambios
+- **Actualización Atómica del Estado de Sectores:**
+  - Se implementó `handlePuntoSectorChange` con actualizaciones de estado funcionales (`prev => prev.map(...)`), eliminando la condición de carrera y sobrescritura de estado por cierres asíncronos que impedía seleccionar sectores del establecimiento.
+  - Soporte bidireccional fluido: selección de sectores predefinidos del establecimiento o ingreso de sector manual con `+ Ingresar sector manual...` y campo de texto desplegable.
+  - Refactorización de `handlePuntoChange` y `handleToggleCollapsePunto` para asegurar inmutabilidad funcional en todos los campos de cada toma de tierra.
+- **Compilación de Producción:** Verificada con `npm.cmd run build` generando satisfactoriamente las 23/23 rutas con 0 errores.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+### Resumen de Cambios
+- **Limpieza de Cabecera:**
+  - Se eliminaron los botones redundantes *"PDF"* y *"Enviar"* de la barra superior del formulario de edición de Puesta a Tierra, estandarizando la cabecera con el botón de retroceso, título del módulo y botón de cierre (`X`).
+- **Compilación de Producción:** Verificada con `npm.cmd run build` generando satisfactoriamente las 23/23 rutas con 0 errores.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+### Resumen de Cambios
+- **Actualización de Etiqueta:**
+  - Se modificó la etiqueta en la sección *Análisis de los Datos y Mejoras a Realizar* de `"Información Adicional (Prueba de Disyuntores)"` a **`"Información Adicional"`**.
+- **Compilación de Producción:** Verificada con `npm.cmd run build` generando satisfactoriamente las 23/23 rutas con 0 errores.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+### Resumen de Cambios
+- **Eliminación del Bloque de Horarios Habituales:**
+  - Se eliminó el recuadro *"Horarios/turnos habituales de trabajo"* en el formulario oficial del PDF de Puesta a Tierra (Res. SRT 900/15).
+- **Renombrado y Redistribución de Campos:**
+  - Se renombró el bloque *"Describa las condiciones normales y/o habituales de trabajo."* por `"Metodología utilizada:"`, vinculándolo a la metodología técnica seleccionada.
+  - Se renombró el bloque *"Describa las condiciones de trabajo al momento de la medición."* por `"Observaciones:"`, vinculándolo a las observaciones generales del protocolo.
+  - Se redistribuyó la altura de ambos cuadros (47mm c/u) logrando un balance perfecto dentro del bloque de 125mm de altura sin alterar la posición de los bloques de documentación y firma profesional.
+- **Compilación de Producción:** Verificada con `npm.cmd run build` generando satisfactoriamente las 23/23 rutas con 0 errores.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/utils/pdfGenerator.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+### Resumen de Cambios
+- **Unificación Visual con Ruido e Iluminación:**
+  - Se configuró `type="destructive"` en los diálogos de eliminación de `protocolos/puesta-a-tierra/page.js` y `puesta-a-tierra/components/ProtocoloForm.js`.
+  - Icono unificado: triángulo de advertencia rojo en contenedor circular `bg-red-50 text-red-500 border-red-100`.
+  - Título y texto explicativo estandarizados: *"Eliminar Protocolo"* y *"¿Está seguro de que desea eliminar permanentemente este protocolo de puesta a tierra y todos sus puntos de muestreo y mediciones asociados? Esta acción no se puede deshacer."*
+  - Botón de acción con estilo destructivo rojo institucional (`bg-[#EF4444]` / `hover:bg-red-600` con `confirmText="Eliminar"`).
+- **Controlador de Cierre Universal:**
+  - Soporte completo para `onOpenChange`, `onCancel` y `onClose` asegurando que la cruz (`X`), el botón Cancelar y el fondo cierren inmediatamente la ventana.
+- **Compilación de Producción:** Verificada con `npm.cmd run build` generando satisfactoriamente las 23/23 rutas con 0 errores.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] src/components/ui/AppConfirmDialog.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+### Resumen de Cambios
+- **Actualización de Título Oficial y Barra de Protocolo:**
+  - En la portada principal A4 se sustituyó el título por: `"Protocolo de medición de la puesta a tierra y continuidad de las masas"`.
+  - En la barra de título superior de todas las páginas interiores (`drawProtocolTitleBar`) se configuró: `"PROTOCOLO DE MEDICIÓN DE LA PUESTA A TIERRA Y CONTINUIDAD DE LAS MASAS"`.
+- **Actualización de Referencias Normativas en Portada e Interiores:**
+  - Se sustituyeron las referencias acústicas por las correspondientes a instalaciones eléctricas:
+    - **Línea 1:** `"DECRETO Nº 351/79, ANEXO VI - CAPÍTULO 14 - INSTALACIONES ELÉCTRICAS"`
+    - **Línea 2:** `"ANEXO - RESOLUCIÓN 900/2015 (PROTOCOLO PARA LA MEDICIÓN DEL VALOR DE PUESTA A TIERRA Y LA VERIFICACIÓN DE LA CONTINUIDAD DE LAS MASAS EN EL AMBIENTE LABORAL)"`
+  - En el encabezado de la sección informativa de la página 2 se configuró el título: `"Instalaciones Eléctricas (Título V - Capítulo 14 – Dec. 351/79)"`.
+  - Se sustituyeron todos los textos y tablas acústicas por los 10 párrafos regulatorios oficiales del Decreto 351/79 Título V - Capítulo 14 sobre seguridad en instalaciones y equipos eléctricos.
+- **Priorización del Logotipo del Perfil de Usuario:**
+  - Se garantizó que tanto en la portada como en los encabezados se descargue y renderice prioritariamente el logotipo principal configurado en el perfil/tenant (`userProfile?.logo_1_url || userProfile?.logo_url || tenant?.logo_1_url`).
+- **Compilación de Producción:** Verificada con `npm.cmd run build` generando satisfactoriamente las 23/23 rutas con 0 errores.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/utils/pdfGenerator.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
 
 ### Resumen de Cambios
 - **Corrección de Botón de Salida en Puesta a Tierra:** Se actualizó `puesta-a-tierra/components/ProtocoloForm.js` para enlazar correctamente la propiedad `onLeave={() => { setUnsavedDialogOpen(false); onClose(); }}` y `onOpenChange={setUnsavedDialogOpen}`, habilitando el botón secundario `"Salir sin guardar"`.

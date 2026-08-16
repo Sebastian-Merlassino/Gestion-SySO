@@ -17,6 +17,7 @@ import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
 import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import AITextHelper from '@/components/ui/AITextHelper';
+import AppLoadingSpinner from '@/components/ui/AppLoadingSpinner';
 import { 
   Building, 
   Trash2, 
@@ -1773,9 +1774,8 @@ Mejorar la distribución de la iluminación, procurando alcanzar una adecuada un
 
   if (loading) {
     return (
-      <div className="flex-grow flex items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 text-[#468DFF] animate-spin" />
-        <span className="ml-3 text-sm text-slate-500 font-medium">Cargando formulario de protocolo...</span>
+      <div className="bg-white md:rounded-2xl md:border md:border-slate-200 md:shadow-sm overflow-hidden flex flex-col h-full md:h-[calc(100vh-128px)] animate-fade-in w-full">
+        <AppLoadingSpinner message="Cargando protocolo de iluminación..." />
       </div>
     );
   }

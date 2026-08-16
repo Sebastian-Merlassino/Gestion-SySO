@@ -184,10 +184,10 @@ export const generatePuestaATierraPdf = async (
   const emp = (empresas || []).find(e => e.id === proto.razon_social_id);
   const est = (allEstablecimientos || []).find(e => e.id === proto.establecimiento_id);
 
-  // Download Header Logo (Tenant, User Profile Admin or Default)
+  // Download Header Logo (User Profile Admin, Tenant or Default)
   let logoBase64 = '';
   try {
-    const logoUrl = tenant?.logo_1_url || userProfile?.logo_1_url || userProfile?.logo_url;
+    const logoUrl = userProfile?.logo_1_url || userProfile?.logo_url || tenant?.logo_1_url || tenant?.logo_url;
     if (logoUrl) {
       logoBase64 = await getBase64ImageFromUrl(logoUrl);
     }
@@ -400,10 +400,10 @@ export const generatePuestaATierraPdf = async (
     setFillColor(doc, COLOR_AZUL_PRINCIPAL);
     doc.rect(pos.x, pos.y, pos.w, pos.h, 'F');
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9.5);
+    doc.setFontSize(8.5);
     setTextColor(doc, COLOR_BLANCO);
     const textY = pos.y + (pos.h / 2) + 1.1;
-    doc.text('PROTOCOLO PARA MEDICIÓN DE RUIDO EN EL AMBIENTE LABORAL', pos.x + (pos.w / 2), textY, { align: 'center' });
+    doc.text('PROTOCOLO DE MEDICIÓN DE LA PUESTA A TIERRA Y CONTINUIDAD DE LAS MASAS', pos.x + (pos.w / 2), textY, { align: 'center' });
   };
 
   // Helper: Signature Block
@@ -538,17 +538,18 @@ export const generatePuestaATierraPdf = async (
 
   // Cover Main Title
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(30);
+  doc.setFontSize(26);
   setTextColor(doc, COLOR_AZUL_PRINCIPAL);
-  const titleLines = doc.splitTextToSize('Protocolo para la Medición del nivel de Ruido en el Ambiente Laboral', 145);
-  doc.text(titleLines, 39, 172);
+  const titleLines = doc.splitTextToSize('Protocolo de medición de la puesta a tierra y continuidad de las masas', 145);
+  doc.text(titleLines, 39, 168);
 
   // Normative reference
-  doc.setFontSize(10.5);
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   setTextColor(doc, COLOR_SLATE_600);
-  doc.text('LEY Nº 19.587 - DECRETO Nº 351/79, ANEXO V, CAPITULO 13 - ACUSTICA', 39, 222);
-  doc.text('ANEXO - RESOLUCIÓN SRT 85 / 2012 (PROTOCOLO DE MEDICIÓN DE RUIDO)', 39, 228);
+  doc.text('DECRETO Nº 351/79, ANEXO VI - CAPÍTULO 14 - INSTALACIONES ELÉCTRICAS', 39, 218);
+  const normLines = doc.splitTextToSize('ANEXO - RESOLUCIÓN 900/2015 (PROTOCOLO PARA LA MEDICIÓN DEL VALOR DE PUESTA A TIERRA Y LA VERIFICACIÓN DE LA CONTINUIDAD DE LAS MASAS EN EL AMBIENTE LABORAL)', 145);
+  doc.text(normLines, 39, 224);
 
   // Brand / Consultora
   doc.setFont('helvetica', 'bold');
@@ -557,7 +558,7 @@ export const generatePuestaATierraPdf = async (
   doc.text(companyName.toUpperCase(), 39, 246);
 
   // ==========================================
-  // HOJAS INFORMATIVAS: ACÚSTICA (ANEXO V - CAPÍTULO 13 - DEC. 351/79)
+  // HOJAS INFORMATIVAS: INSTALACIONES ELÉCTRICAS (ANEXO VI - CAPÍTULO 14 - DEC. 351/79)
   // ==========================================
   doc.addPage('a4', 'portrait');
   pageCounter++;
@@ -567,7 +568,7 @@ export const generatePuestaATierraPdf = async (
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   setTextColor(doc, COLOR_NEGRO);
-  doc.text('Acústica (ANEXO V - Capítulo 13 – Dec. 351/79)', 15, 28);
+  doc.text('Instalaciones Eléctricas (Título V - Capítulo 14 – Dec. 351/79)', 15, 28);
   setDrawColor(doc, COLOR_AZUL_PRINCIPAL);
   doc.setLineWidth(0.4);
   doc.line(15, 30, 195, 30);
@@ -585,241 +586,34 @@ export const generatePuestaATierraPdf = async (
     return false;
   };
 
-  const printSectionHeader = (titleText) => {
-    checkPageY(10);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    setTextColor(doc, COLOR_AZUL_PRINCIPAL);
-    doc.text(titleText.toUpperCase(), 15, currentY);
-    currentY += 6;
+  const printParagraph = (pText) => {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    setTextColor(doc, COLOR_SLATE_900);
+    const lines = doc.splitTextToSize(pText, 180);
+    const blockH = (lines.length * 4.2) + 4.5;
+    checkPageY(blockH);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    setTextColor(doc, COLOR_SLATE_900);
+    doc.text(pText, 15, currentY, { align: 'justify', maxWidth: 180 });
+    currentY += blockH;
   };
 
-  const printParagraph = (pText, pStyle = 'normal') => {
-    if (pStyle === 'formula') {
-      checkPageY(10);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9.5);
-      setTextColor(doc, COLOR_NEGRO);
-      doc.text(pText, 25, currentY);
-      currentY += 6;
-    } else if (pStyle === 'legend') {
-      doc.setFont('helvetica', 'italic');
-      doc.setFontSize(8);
-      setTextColor(doc, COLOR_SLATE_600);
-      const lines = doc.splitTextToSize(pText, 180);
-      const blockH = (lines.length * 3.8) + 4.5;
-      checkPageY(blockH);
-      doc.setFont('helvetica', 'italic');
-      doc.setFontSize(8);
-      setTextColor(doc, COLOR_SLATE_600);
-      doc.text(pText, 15, currentY, { align: 'justify', maxWidth: 180 });
-      currentY += blockH;
-    } else {
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      setTextColor(doc, COLOR_SLATE_900);
-      const lines = doc.splitTextToSize(pText, 180);
-      const blockH = (lines.length * 4.2) + 4.5;
-      checkPageY(blockH);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      setTextColor(doc, COLOR_SLATE_900);
-      doc.text(pText, 15, currentY, { align: 'justify', maxWidth: 180 });
-      currentY += blockH;
-    }
-  };
-
-  // 1. Infrasonido y sonido de baja frecuencia
-  printSectionHeader('Infrasonido y sonido de baja frecuencia');
-  printParagraph('Estos límites representan las exposiciones al sonido a los que se cree que casi todos los trabajadores pueden estar expuestos repetidamente sin efectos adversos para la audición.');
-  printParagraph('Excepto para el sonido de impulsos de banda de un tercio de octava, con duración inferior a 2 segundos, los niveles para frecuencias entre 1 y 80 Hz de nivel de presión sonoro (NPS), no deben exceder el valor techo de 145 dB. Además, el NPS global no ponderado no debe exceder el valor techo de 150 dB.');
-  printParagraph('No hay tiempo límite para estas exposiciones. Sin embargo, la aplicación de los valores límite para el Ruido y el Ultrasonido, recomendados para prevenir la pérdida de audición por el ruido, puede proporcionar un nivel reducido aceptable en el tiempo.');
-  printParagraph('Una alternativa que puede utilizarse, pero con un criterio ligeramente más restrictivo, es cuando el pico NPS medido con la escala de frecuencias, del sonómetro en lineal o no ponderada, no exceda de 145 dB para situaciones de sonido sin impulsos.');
-  printParagraph('La resonancia en el pecho de los sonidos de baja frecuencia en el intervalo aproximado de 50 Hz a 60 Hz puede causar vibración del cuerpo entero. Este efecto puede causar molestias e incomodidad, hasta hacerse necesario reducir el NPS de este sonido a un nivel al que desaparezca el problema.');
-  printParagraph('Las mediciones de la exposición al ruido se deberán ajustar a las prescripciones establecidas por las normas nacionales e internacionales.');
-  printParagraph('Estos valores límite se refieren a los niveles de presión acústica y duraciones de exposición que representan las condiciones en las que se cree que casi todos los trabajadores pueden estar expuestos repetidamente sin efectos adversos sobre su capacidad para oír y comprender una conversación normal.');
-  printParagraph('Cuando los trabajadores estén expuestos al ruido a niveles iguales o superiores a los valores límite, es necesario un programa completo de conservación de la audición que incluya pruebas audiométricas.');
-
-  // 2. Ruido continuo o intermitente
-  printSectionHeader('Ruido continuo o intermitente');
-  printParagraph('El nivel de presión acústica se debe determinar por medio de un sonómetro o dosímetro que se ajusten, como mínimo, a los requisitos de la especificación de las normas nacionales o internacionales. El sonómetro deberá disponer de filtro de ponderación frecuencial A y respuesta lenta. La duración de la exposición no deberá exceder de los valores que se dan en la Tabla 1.');
-  printParagraph('Estos valores son de aplicación a la duración total de la exposición por día de trabajo, con independencia de si se trata de una exposición continua o de varias exposiciones de corta duración.');
-  printParagraph('Cuando la exposición diaria al ruido se compone de dos o más períodos de exposición a distintos niveles de ruidos, se debe tomar en consideración el efecto global, en lugar del efecto individual de cada período. Si la suma de las fracciones siguientes:');
-  
-  // Fórmula
-  printParagraph('Ecuación para Exposición Combinada a Ruido:', 'formula');
-  printParagraph('C1 / T1 + C2 / T2 + ... + Cn / Tn', 'formula');
-  printParagraph('es mayor que la unidad, entonces se debe considerar que la exposición global sobrepasa el valor límite umbral. C1 indica la duración total de la exposición a un nivel específico de ruido y T1 indica la duración total de la exposición permitida a ese nivel. En los cálculos citados, se usarán todas las exposiciones al ruido en el lugar de trabajo que alcancen o sean superiores a los 80 dBA. Esta fórmula se debe aplicar cuando se utilicen los sonómetros para sonidos con niveles estables de por lo menos 3 segundos. Para sonidos que no cumplan esta condición, se debe utilizar un dosímetro o sonómetro de integración. El límite se excede cuando la dosis es mayor de 100%, medida en un dosímetro fijado para un índice de conversión de 3 dB y un nivel de 85 dBA como criterio para las 8 horas.');
-  printParagraph('Utilizando el sonómetro de integración el valor límite se excede cuando el nivel medio de sonido supere los valores de la Tabla 1.');
-  currentY += 2;
-
-  // Tabla 1: Valores Límite para Ruido Continuo o Intermitente
-  const drawTabla1RuidoNormativa = () => {
-    const tX = 15;
-    const tW = 180;
-    
-    checkPageY(14);
-    setFillColor(doc, COLOR_AZUL_PRINCIPAL);
-    doc.rect(tX, currentY, tW, 6, 'F');
-    drawCellText(doc, 'TABLA 1: VALORES LÍMITE UMBRAL PARA RUIDO (Dec. 351/79 - ANEXO V)', tX, currentY, tW, 6, { align: 'center', fontStyle: 'bold', fontSize: 8, color: COLOR_BLANCO });
-    currentY += 6;
-
-    setDrawColor(doc, COLOR_SLATE_300);
-    setFillColor(doc, COLOR_SLATE_200);
-    doc.rect(tX, currentY, 60, 6, 'FD');
-    doc.rect(tX + 60, currentY, 40, 6, 'FD');
-    doc.rect(tX + 100, currentY, 80, 6, 'FD');
-    drawCellText(doc, 'Duración por Día', tX, currentY, 60, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
-    drawCellText(doc, 'Unidad', tX + 60, currentY, 40, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
-    drawCellText(doc, 'Nivel de Presión Acústica (dBA)', tX + 100, currentY, 80, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
-    currentY += 6;
-
-    const filasTabla1 = [
-      { dur: '24', uni: 'horas', dba: '80' },
-      { dur: '16', uni: 'horas', dba: '82' },
-      { dur: '8', uni: 'horas', dba: '85' },
-      { dur: '4', uni: 'horas', dba: '88' },
-      { dur: '2', uni: 'horas', dba: '91' },
-      { dur: '1', uni: 'hora', dba: '94' },
-      { dur: '30', uni: 'minutos', dba: '97' },
-      { dur: '15', uni: 'minutos', dba: '100' },
-      { dur: '7,50', uni: 'minutos', dba: '103' },
-      { dur: '3,75', uni: 'minutos', dba: '106' },
-      { dur: '1,88', uni: 'minutos', dba: '109' },
-      { dur: '0,94', uni: 'minutos', dba: '112' },
-      { dur: '28,12', uni: 'segundos', dba: '115' },
-      { dur: '14,06', uni: 'segundos', dba: '118' },
-      { dur: '7,03', uni: 'segundos', dba: '121' },
-      { dur: '3,52', uni: 'segundos', dba: '124' },
-      { dur: '1,76', uni: 'segundos', dba: '127' },
-      { dur: '0,88', uni: 'segundos', dba: '130' },
-      { dur: '0,44', uni: 'segundos', dba: '133' },
-      { dur: '0,22', uni: 'segundos', dba: '136' },
-      { dur: '0,11', uni: 'segundos', dba: '139' },
-    ];
-
-    filasTabla1.forEach(row => {
-      const rowH = 5;
-      if (checkPageY(rowH)) {
-        setDrawColor(doc, COLOR_SLATE_300);
-        setFillColor(doc, COLOR_SLATE_200);
-        doc.rect(tX, currentY, 60, 6, 'FD');
-        doc.rect(tX + 60, currentY, 40, 6, 'FD');
-        doc.rect(tX + 100, currentY, 80, 6, 'FD');
-        drawCellText(doc, 'Duración por Día', tX, currentY, 60, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
-        drawCellText(doc, 'Unidad', tX + 60, currentY, 40, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
-        drawCellText(doc, 'Nivel de Presión Acústica (dBA)', tX + 100, currentY, 80, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
-        currentY += 6;
-      }
-
-      setDrawColor(doc, COLOR_SLATE_300);
-      doc.rect(tX, currentY, 60, rowH, 'S');
-      doc.rect(tX + 60, currentY, 40, rowH, 'S');
-      doc.rect(tX + 100, currentY, 80, rowH, 'S');
-
-      drawCellText(doc, row.dur, tX + 2, currentY, 56, rowH, { fontSize: 7.5, valign: 'middle' });
-      drawCellText(doc, row.uni, tX + 62, currentY, 36, rowH, { align: 'center', fontSize: 7.5, valign: 'middle' });
-      drawCellText(doc, row.dba + ' dBA', tX + 102, currentY, 76, rowH, { align: 'center', fontStyle: 'bold', fontSize: 7.5, color: COLOR_AZUL_PRINCIPAL, valign: 'middle' });
-
-      currentY += rowH;
-    });
-
-    currentY += 2;
-    printParagraph('* No ha de haber exposiciones a ruido continuo, intermitente o de impacto por encima de un nivel pico C ponderado de 140 dB.', 'legend');
-    printParagraph('** El nivel se mide con sonómetro en ponderación A y respuesta lenta.', 'legend');
-    currentY += 4;
-  };
-
-  drawTabla1RuidoNormativa();
-
-  // 3. Ruido de impulso o de impacto
-  printSectionHeader('Ruido de impulso o de impacto');
-  printParagraph('La medida del ruido de impulso o de impacto estará en el rango de 80 y 140 dBA y el rango del pulso debe ser por lo menos de 63 dB. No se permitirán exposiciones sin protección auditiva por encima de un nivel pico C ponderado de presión acústica de 140 dB.');
-  printParagraph('Si no se dispone de la instrumentación para medir un pico C ponderado, se puede utilizar la medida de un pico no ponderado por debajo de 140 dB para suponer que el pico C ponderado está por debajo de ese valor.');
-  currentY += 4;
-
-  // 4. Ultrasonido
-  printSectionHeader('Ultrasonido');
-  printParagraph('Estos valores límite representan las condiciones bajo las cuales se cree que casi todos los trabajadores pueden estar expuestos repetidamente sin deteriorarse su capacidad para oír y escuchar una conversación normal.');
-  printParagraph('Los valores límite establecidos para las frecuencias de 10 kilohercios (kHz) a 20 kHz, para prevenir los efectos subjetivos, se indican en la Tabla 1 con uno o dos asteriscos como notas de advertencia al pie de la tabla. Los valores sonoros de la media ponderada en el tiempo de 8 horas son una ampliación del valor límite para el ruido que es un media ponderada en el tiempo para 8 horas de 85 dBA.');
-
-  const drawTablaUltrasonidoNormativa = () => {
-    const tX = 15;
-    const tW = 180;
-
-    checkPageY(14);
-    setFillColor(doc, COLOR_AZUL_PRINCIPAL);
-    doc.rect(tX, currentY, tW, 6, 'F');
-    drawCellText(doc, 'VALORES LÍMITE PARA ULTRASONIDO (Dec. 351/79 - ANEXO V)', tX, currentY, tW, 6, { align: 'center', fontStyle: 'bold', fontSize: 8, color: COLOR_BLANCO });
-    currentY += 6;
-
-    setDrawColor(doc, COLOR_SLATE_300);
-    setFillColor(doc, COLOR_SLATE_200);
-    doc.rect(tX, currentY, 50, 6, 'FD');
-    doc.rect(tX + 50, currentY, 40, 6, 'FD');
-    doc.rect(tX + 90, currentY, 45, 6, 'FD');
-    doc.rect(tX + 135, currentY, 45, 6, 'FD');
-    drawCellText(doc, 'Frecuencia Central (kHz)', tX, currentY, 50, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
-    drawCellText(doc, 'Techo Aire (dB)', tX + 50, currentY, 40, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
-    drawCellText(doc, 'TWA 8h Aire (dB)', tX + 90, currentY, 45, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
-    drawCellText(doc, 'Techo Agua (dB)', tX + 135, currentY, 45, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
-    currentY += 6;
-
-    const filasUltrasonido = [
-      { f: '10', tAire: '105*', twa: '88*', tAgua: '167' },
-      { f: '12,5', tAire: '105*', twa: '89*', tAgua: '167' },
-      { f: '16', tAire: '105*', twa: '92*', tAgua: '167' },
-      { f: '20', tAire: '105*', twa: '94*', tAgua: '167' },
-      { f: '25', tAire: '110**', twa: '—', tAgua: '172' },
-      { f: '31,5', tAire: '115**', twa: '—', tAgua: '177' },
-      { f: '40', tAire: '115**', twa: '—', tAgua: '177' },
-      { f: '50', tAire: '115**', twa: '—', tAgua: '177' },
-      { f: '63', tAire: '115**', twa: '—', tAgua: '177' },
-      { f: '80', tAire: '115**', twa: '—', tAgua: '177' },
-      { f: '100', tAire: '115**', twa: '—', tAgua: '177' },
-    ];
-
-    filasUltrasonido.forEach(row => {
-      const rowH = 5;
-      if (checkPageY(rowH)) {
-        setDrawColor(doc, COLOR_SLATE_300);
-        setFillColor(doc, COLOR_SLATE_200);
-        doc.rect(tX, currentY, 50, 6, 'FD');
-        doc.rect(tX + 50, currentY, 40, 6, 'FD');
-        doc.rect(tX + 90, currentY, 45, 6, 'FD');
-        doc.rect(tX + 135, currentY, 45, 6, 'FD');
-        drawCellText(doc, 'Frecuencia Central (kHz)', tX, currentY, 50, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
-        drawCellText(doc, 'Techo Aire (dB)', tX + 50, currentY, 40, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
-        drawCellText(doc, 'TWA 8h Aire (dB)', tX + 90, currentY, 45, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
-        drawCellText(doc, 'Techo Agua (dB)', tX + 135, currentY, 45, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
-        currentY += 6;
-      }
-
-      setDrawColor(doc, COLOR_SLATE_300);
-      doc.rect(tX, currentY, 50, rowH, 'S');
-      doc.rect(tX + 50, currentY, 40, rowH, 'S');
-      doc.rect(tX + 90, currentY, 45, rowH, 'S');
-      doc.rect(tX + 135, currentY, 45, rowH, 'S');
-
-      drawCellText(doc, row.f + ' kHz', tX + 2, currentY, 46, rowH, { fontStyle: 'bold', fontSize: 7.5, valign: 'middle' });
-      drawCellText(doc, row.tAire, tX + 52, currentY, 36, rowH, { align: 'center', fontSize: 7.5, valign: 'middle' });
-      drawCellText(doc, row.twa, tX + 92, currentY, 41, rowH, { align: 'center', fontSize: 7.5, valign: 'middle' });
-      drawCellText(doc, row.tAgua, tX + 137, currentY, 41, rowH, { align: 'center', fontSize: 7.5, valign: 'middle' });
-
-      currentY += rowH;
-    });
-
-    currentY += 2;
-  };
-
-  drawTablaUltrasonidoNormativa();
-
-  printParagraph('* Pueden darse molestias y malestar subjetivos en algunos individuos a niveles entre 75 y 105 dB para las frecuencias desde 10 kHz, especialmente si son de naturaleza tonal. Para prevenir los efectos subjetivos puede ser necesaria la protección auditiva o reducir a 80 dB los sonidos tonales de frecuencias por debajo de 10 kHZ.', 'legend');
-  printParagraph('** En estos valores se asume que existe acoplamiento humano con el agua u otro sustrato. Cuando no hay posibilidad de que el ultrasonido pueda acoplarse con el cuerpo en contacto con el agua o algún otro medio, estos valores umbrales pueden aumentarse en 30 dB. (Los valores de esta tabla no se aplican cuando la fuente de ultrasonido está en contacto directo con el cuerpo. Se debe utilizar el nivel de vibración en el hueso mastoideo).', 'legend');
-  printParagraph('Se deben evitar los valores de la aceleración de 15 dB por encima de la referencia de 1 g.v.c.m., reduciendo la exposición o aislando el cuerpo de la fuente de acoplamiento (g = aceleración debida a la fuerza de la gravedad, 9,80665 m/s; v.c.m.= valor cuadrático medio).');
+  // Párrafos normativos oficiales del Decreto 351/79 Título V - Capítulo 14
+  printParagraph('Las instalaciones y equipos eléctricos de los establecimientos deberán cumplir con las prescripciones necesarias para evitar riesgos a personas o cosas.');
+  printParagraph('Los materiales y equipos que se utilicen en las instalaciones eléctricas cumplirán con las exigencias de las normas técnicas correspondientes. En caso de no estar normalizados deberán asegurar las prescripciones previstas en el presente capítulo.');
+  printParagraph('Los proyectos de instalaciones y equipos eléctricos responderán a los Anexos correspondientes de este reglamento y además los de más de 1000 voltios de tensión deberán estar aprobados en los rubros de su competencia por el responsable del Servicio de Higiene y Seguridad en el Trabajo de cada establecimiento.');
+  printParagraph('Las tareas de montaje, maniobra o mantenimiento sin o con tensión, se regirán por las disposiciones del Anexo VI.');
+  printParagraph('Los trabajos de mantenimiento serán efectuados exclusivamente por personal capacitado, debidamente autorizado por la empresa para su ejecución.');
+  printParagraph('Los establecimientos efectuarán el mantenimiento de las instalaciones y verificarán las mismas periódicamente en base a sus respectivos programas, confeccionados de acuerdo con normas de seguridad, registrando debidamente sus resultados.');
+  printParagraph('Se extremarán las medidas de seguridad en salas de baterías y en aquellos locales donde se fabriquen, manipulen o almacenen materiales inflamables, explosivos o de alto riesgo; igualmente en locales húmedos, mojados o con sustancias corrosivas, conforme a lo establecido en el Anexo VI.');
+  printParagraph('En lo referente a motores, conductores, interruptores, seccionadores, transformadores, condensadores, alternadores, celdas de protección, cortacircuitos, equipos y herramientas, máquinas de elevación y transporte, se tendrá en cuenta lo establecido en el Anexo VI.');
+  printParagraph('Se deberán adoptar las medidas tendientes a la eliminación de la electricidad estática en todas aquellas operaciones donde pueda producirse. Los métodos se detallan en el Anexo VI. Se extremarán los recaudos en ambientes con riesgos de incendio o atmósferas explosivas.');
+  printParagraph('Los establecimientos e instalaciones expuestos a descargas atmosféricas poseerán una instalación contra las sobretensiones de este origen que asegure la eficaz protección de las personas y cosas. Las tomas a tierra de estas instalaciones deberán ser exclusivas e independientes de cualquier otra.');
 
   // ==========================================
-  // HOJA 1: FORMULARIO OFICIAL RUIDO (A4 Vertical - RES. SRT 85/12)
+  // HOJA 1: FORMULARIO OFICIAL PUESTA A TIERRA (A4 Vertical - RES. SRT 900/15)
   // ==========================================
   doc.addPage('a4', 'portrait');
   pageCounter++;
@@ -920,24 +714,18 @@ export const generatePuestaATierraPdf = async (
   drawCellText(doc, horaFin, t2X + 147, rY, 33, 7, { fontSize: 8.5 });
   rY += 7;
 
-  // Horarios/turnos habituales de trabajo
-  doc.rect(t2X, rY, t2W, 12, 'S');
-  drawCellText(doc, 'Horarios/turnos habituales de trabajo:', t2X, rY, t2W, 5, { fontStyle: 'bold', fontSize: 8.5 });
-  drawCellText(doc, horarios || 'Lunes a viernes de 8:00 a 17:00 hs', t2X, rY + 5, t2W, 7, { fontSize: 8.5, valign: 'top' });
-  rY += 12;
+  // Metodología utilizada:
+  doc.rect(t2X, rY, t2W, 47, 'S');
+  drawCellText(doc, 'Metodología utilizada:', t2X, rY, t2W, 5, { fontStyle: 'bold', fontSize: 8.5 });
+  const metodoText = proto.metodologia_utilizada || proto.metodologia || '“de caída de tensión” según Norma IRAM 2281 parte II: “Guía de mediciones de magnitudes de puesta a tierra”';
+  drawCellText(doc, metodoText, t2X + 2, rY + 5, t2W - 4, 41, { fontSize: 8.5, valign: 'top' });
+  rY += 47;
 
-  // Describa las condiciones normales y/o habituales de trabajo.
-  doc.rect(t2X, rY, t2W, 41, 'S');
-  drawCellText(doc, 'Describa las condiciones normales y/o habituales de trabajo.', t2X, rY, t2W, 5, { fontStyle: 'bold', fontSize: 8.5 });
-  const condHabitualesText = proto.condiciones_atmosfericas || 'Al momento de la medición, el establecimiento se encontraba funcionando en condiciones normales de producción.';
-  drawCellText(doc, condHabitualesText, t2X + 2, rY + 5, t2W - 4, 35, { fontSize: 8.5, valign: 'top' });
-  rY += 41;
-
-  // Describa las condiciones de trabajo al momento de la medición.
-  doc.rect(t2X, rY, t2W, 41, 'S');
-  drawCellText(doc, 'Describa las condiciones de trabajo al momento de la medición.', t2X, rY, t2W, 5, { fontStyle: 'bold', fontSize: 8.5 });
-  const obsText = proto.observaciones || 'Al momento de la medición, el establecimiento se encontraba funcionando en condiciones normales.';
-  drawCellText(doc, obsText, t2X + 2, rY + 5, t2W - 4, 35, { fontSize: 8.5, valign: 'top' });
+  // Observaciones:
+  doc.rect(t2X, rY, t2W, 47, 'S');
+  drawCellText(doc, 'Observaciones:', t2X, rY, t2W, 5, { fontStyle: 'bold', fontSize: 8.5 });
+  const obsText = proto.observaciones_generales || proto.observaciones || 'Valores límites recomendados: Circuito con protección contra contactos indirectos (DID / 30 mA) < 40 ohms; Circuito sin protección contra contactos indirectos < 10 ohms.';
+  drawCellText(doc, obsText, t2X + 2, rY + 5, t2W - 4, 41, { fontSize: 8.5, valign: 'top' });
 
   // Tabla 3: Documentación que se Adjuntará a la Medición (Cuadro único sin división horizontal en el medio)
   const t3X = 15;

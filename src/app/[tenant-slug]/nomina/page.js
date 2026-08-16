@@ -20,6 +20,7 @@ import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import AppSortIcon from '@/components/ui/AppSortIcon';
 import AppSkeleton from '@/components/ui/AppSkeleton';
 import AppTooltip from '@/components/ui/AppTooltip';
+import AppLoadingSpinner from '@/components/ui/AppLoadingSpinner';
 import {
   PlusCircle,
   Search,
@@ -1021,12 +1022,7 @@ export default function NominaPage({ params }) {
         />
 
         {loading ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-8">
-            <div className="text-center space-y-3">
-              <Loader2 className="h-10 w-10 animate-spin text-[#468DFF] mx-auto" />
-              <p className="text-xs text-slate-500 font-medium">Cargando nómina de personal...</p>
-            </div>
-          </div>
+          <AppLoadingSpinner message="Cargando nómina de personal..." />
         ) : (
           <div className="w-full flex-grow flex flex-col min-h-0 p-0 md:py-8 md:max-w-[95%] md:mx-auto md:px-0">
             

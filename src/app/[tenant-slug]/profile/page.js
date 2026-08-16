@@ -16,6 +16,7 @@ import AppCard from '@/components/ui/AppCard';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppDestructiveConfirmDialog from '@/components/ui/AppDestructiveConfirmDialog';
 import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
+import AppLoadingSpinner from '@/components/ui/AppLoadingSpinner';
 import {
   User, 
   Briefcase, 
@@ -1218,12 +1219,7 @@ const [partidosList, setPartidosList] = useState([]);
         />
 
         {initialLoading ? (
-          <div className="flex-1 flex items-center justify-center p-8">
-            <div className="text-center space-y-4">
-              <Loader2 className="h-10 w-10 animate-spin text-[#468DFF] mx-auto" />
-              <p className="text-xs text-slate-500 font-medium">Cargando datos del perfil...</p>
-            </div>
-          </div>
+          <AppLoadingSpinner message="Cargando datos del perfil..." />
         ) : (
           <div className="flex-1 flex flex-col min-h-0 py-0 md:py-4 px-0 md:px-0 md:max-w-[95%] md:mx-auto w-full z-10">
             <div className="bg-white border-0 md:border md:border-slate-200 rounded-none md:rounded-2xl shadow-none md:shadow-sm overflow-hidden flex flex-col flex-1 min-h-0 h-full md:h-[calc(100vh-130px)]">

@@ -16,6 +16,7 @@ import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
 import AppSortIcon from '@/components/ui/AppSortIcon';
 import AppSkeleton from '@/components/ui/AppSkeleton';
 import AppTooltip from '@/components/ui/AppTooltip';
+import AppLoadingSpinner from '@/components/ui/AppLoadingSpinner';
 import { generatePuestaATierraPdf } from './utils/pdfGenerator';
 import { 
   PlusCircle, 
@@ -599,12 +600,7 @@ export default function ProtocolosPuestaATierraPage({ params }) {
             showPlanBadge={profile && profile.role !== 'cliente'}
             setIsMobileMenuOpen={setIsMobileMenuOpen}
           />
-          <div className="flex-1 flex flex-col items-center justify-center p-8">
-            <div className="text-center space-y-3">
-              <Loader2 className="h-10 w-10 animate-spin text-[#468DFF] mx-auto" />
-              <p className="text-xs text-slate-500 font-medium">Cargando protocolo de puesta a tierra...</p>
-            </div>
-          </div>
+          <AppLoadingSpinner message="Cargando protocolo de puesta a tierra..." />
         </main>
       </div>
     );
@@ -997,11 +993,12 @@ export default function ProtocolosPuestaATierraPage({ params }) {
       {/* Diálogo Confirmar Eliminación */}
       <AppConfirmDialog
         open={deleteConfirm.show}
-        title="¿Eliminar Protocolo de Puesta a Tierra?"
-        description="Esta acción eliminará el registro del protocolo y sus mediciones asociadas de forma permanente."
-        confirmText="Eliminar Protocolo"
+        onOpenChange={(open) => !open && setDeleteConfirm({ show: false, id: null })}
+        type="destructive"
+        title="Eliminar Protocolo"
+        description="¿Está seguro de que desea eliminar permanentemente este protocolo de puesta a tierra y todos sus puntos de muestreo y mediciones asociados? Esta acción no se puede deshacer."
+        confirmText="Eliminar"
         cancelText="Cancelar"
-        variant="danger"
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeleteConfirm({ show: false, id: null })}
       />

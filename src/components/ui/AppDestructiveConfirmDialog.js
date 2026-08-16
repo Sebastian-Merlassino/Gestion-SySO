@@ -8,6 +8,8 @@ import { AlertTriangle, X } from 'lucide-react';
 export default function AppDestructiveConfirmDialog({
   open,
   onOpenChange,
+  onCancel,
+  onClose,
   title,
   description,
   requiredText = 'ELIMINAR',
@@ -27,20 +29,46 @@ export default function AppDestructiveConfirmDialog({
 
   const isConfirmed = inputText === requiredText;
 
+  const handleClose = () => {
+    if (onOpenChange) onOpenChange(false);
+    if (onCancel) onCancel();
+    if (onClose) onClose();
+  };
+
+  const handleOpenChange = (isOpen) => {
+    if (onOpenChange) onOpenChange(isOpen);
+    if (!isOpen) {
+      if (onCancel) onCancel();
+      if (onClose) onClose();
+    }
+  };
+
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+    <Dialog.Root open={open} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
         {/* Backdrop overlay */}
         <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm animate-fade-in" />
         
         {/* Modal content container */}
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <Dialog.Content className="relative w-full max-w-sm p-6 bg-white border border-slate-200 rounded-2xl shadow-2xl animate-scale-up focus:outline-none space-y-4 text-center">
+          <Dialog.Content 
+            onPointerDownOutside={(e) => {
+              e.preventDefault();
+              handleClose();
+            }}
+            onInteractOutside={(e) => {
+              e.preventDefault();
+              handleClose();
+            }}
+            className="relative w-full max-w-sm p-6 bg-white border border-slate-200 rounded-2xl shadow-2xl animate-scale-up focus:outline-none space-y-4 text-center"
+          >
             
             {/* Close button at top right */}
             <Dialog.Close asChild>
               <button 
-                className="absolute top-4 right-4 p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500"
+                type="button"
+                onClick={handleClose}
+                className="absolute top-4 right-4 p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
                 aria-label="Cerrar"
               >
                 <X className="h-4 w-4" />
@@ -85,6 +113,7 @@ export default function AppDestructiveConfirmDialog({
               <Dialog.Close asChild>
                 <button
                   type="button"
+                  onClick={handleClose}
                   className="flex-1 py-2.5 px-4 border border-slate-350 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer focus:outline-none focus:ring-2 focus:ring-slate-400"
                 >
                   {cancelText}
@@ -97,9 +126,13 @@ export default function AppDestructiveConfirmDialog({
                   disabled={!isConfirmed}
                   onClick={() => {
                     onConfirm();
-                    onOpenChange(false);
+                    handleClose();
                   }}
-                  className="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold text-white transition-all active:scale-[0.98] cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-500 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:pointer-events-none disabled:active:scale-100 shadow-lg shadow-red-500/10"
+                  className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-all active:scale-[0.98] shadow-md ${
+                    isConfirmed
+                      ? 'bg-red-600 hover:bg-red-700 text-white shadow-red-600/20 cursor-pointer'
+                      : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
+                  }`}
                 >
                   {confirmText}
                 </button>
