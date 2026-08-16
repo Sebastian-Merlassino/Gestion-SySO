@@ -80,16 +80,28 @@ export function convertToDbDate(dateStr) {
     // Caso 1: YYYY/MM/DD o YYYY.MM.DD
     if (parts[0].length === 4) {
       const year = parts[0];
-      const month = parts[1].padStart(2, '0');
-      const day = parts[2].padStart(2, '0');
-      return `${year}-${month}-${day}`;
+      const month = parseInt(parts[1], 10);
+      const day = parseInt(parts[2], 10);
+      if (!isNaN(month) && !isNaN(day) && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+        return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      }
     }
     // Caso 2: DD/MM/YYYY, DD-MM-YYYY, DD.MM.YYYY (ej: 26/08/1979)
     if (parts[2].length === 4) {
-      const day = parts[0].padStart(2, '0');
-      const month = parts[1].padStart(2, '0');
+      let day = parseInt(parts[0], 10);
+      let month = parseInt(parts[1], 10);
       const year = parts[2];
-      return `${year}-${month}-${day}`;
+      
+      // Auto-corrección si viniera en MM/DD/YYYY por accidente (month > 12 pero day <= 12)
+      if (month > 12 && day <= 12) {
+        const temp = day;
+        day = month;
+        month = temp;
+      }
+
+      if (!isNaN(month) && !isNaN(day) && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+        return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      }
     }
   }
 

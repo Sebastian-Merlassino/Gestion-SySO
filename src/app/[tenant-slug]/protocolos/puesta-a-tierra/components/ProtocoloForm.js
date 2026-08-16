@@ -776,9 +776,9 @@ export default function ProtocoloForm({
           setCpText(proto.cp_text || '');
           setHorariosTurnosText(proto.horarios_turnos_text || '');
           setInstrumento(proto.instrumento_marca_modelo_serie || '');
-          setFechaCalibracion(proto.fecha_calibracion ? formatAsDateInput(proto.fecha_calibracion) : '');
+          setFechaCalibracion(formatDate(proto.fecha_calibracion) || '');
           setMetodologia(proto.metodologia_utilizada || '');
-          setFechaMedicion(proto.fecha_medicion ? formatAsDateInput(proto.fecha_medicion) : '');
+          setFechaMedicion(formatDate(proto.fecha_medicion) || '');
           setHoraInicio(proto.hora_inicio || '');
           setHoraFinalizacion(proto.hora_finalizacion || '');
           setObservacionesGenerales(proto.observaciones || '');

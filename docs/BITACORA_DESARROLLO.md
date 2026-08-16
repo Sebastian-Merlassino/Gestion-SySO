@@ -1,6 +1,20 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-16] Corrección de Apertura de Ventana de Impresión en Protocolo de Puesta a Tierra (`puesta-a-tierra/page.js`)
+## [2026-08-16] Corrección de Formateo y Carga de Fechas en Formulario de Protocolo de Puesta a Tierra (`puesta-a-tierra/components/ProtocoloForm.js`)
+
+### Resumen de Cambios
+- **Corrección de Mutilación de Fechas en Modo Edición:**
+  - Se corrigió la inicialización de `fechaCalibracion` y `fechaMedicion` en `loadData` para utilizar `formatDate(proto.fecha_*)` en lugar de la máscara interactiva `formatAsDateInput(proto.fecha_*)`. Anteriormente, al cargar un registro existente con formato ISO (`"2026-08-16"`), `formatAsDateInput` extraía dígitos continuos y los reorganizaba erróneamente como `"20/26/0816"`, provocando el error Postgres `22008: date/time field value out of range: "0816-26-20"` al guardar.
+- **Robustecimiento de `convertToDbDate` (`src/lib/utils.js`):**
+  - Se añadieron validaciones de rango numérico para día (1..31) y mes (1..12) con auto-corrección de inversiones accidentales de mes/día, asegurando integridad antes de persistir hacia Supabase.
+- **Compilación de Producción:** Verificada con `npm.cmd run build` generando satisfactoriamente las 23/23 rutas con 0 errores.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] src/lib/utils.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
 
 ### Resumen de Cambios
 - **Apertura Síncrona de Ventana para Prevenir Bloqueo de Popups:**
