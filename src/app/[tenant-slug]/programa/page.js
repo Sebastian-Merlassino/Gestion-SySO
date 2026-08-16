@@ -16,10 +16,11 @@ import AppInput from '@/components/ui/AppInput';
 import AppSelect from '@/components/ui/AppSelect';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
-import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import AppSortIcon from '@/components/ui/AppSortIcon';
+import AppSkeleton from '@/components/ui/AppSkeleton';
+import AppTooltip from '@/components/ui/AppTooltip';
 import {
   Calendar,
   List,
@@ -2134,13 +2135,15 @@ export default function ProgramaGestion({ params }) {
                       </div>
 
                       {canCargar && (
-                        <button
+                        <AppButton
+                          variant="primary"
+                          size="sm"
                           onClick={() => handleAddNew()}
-                          className="px-3 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0"
+                          className="shrink-0"
                         >
                           <PlusCircle className="h-3.5 w-3.5" />
-                          Nueva Actividad
-                        </button>
+                          <span>Nueva actividad</span>
+                        </AppButton>
                       )}
                     </div>
 
@@ -2389,32 +2392,38 @@ export default function ProgramaGestion({ params }) {
                                     <div className="flex items-center justify-center gap-1.5">
                                       {act.documento_url ? (
                                         <>
-                                          <button
-                                            onClick={(e) => { e.stopPropagation(); handleViewPdf(act.documento_url); }}
-                                            className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                            title="Visualizar PDF"
-                                          >
-                                            <FileText className="h-4.5 w-4.5" />
-                                          </button>
-                                          {!act.documento_url.startsWith('http') && (
-                                            <button
-                                              onClick={(e) => { e.stopPropagation(); handleDownloadPdf(act.documento_url, `${act.descripcion}.pdf`); }}
-                                              className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                              title="Descargar PDF"
+                                          <AppTooltip content="Visualizar PDF">
+                                            <AppButton
+                                              variant="document-table"
+                                              size="icon"
+                                              onClick={(e) => { e.stopPropagation(); handleViewPdf(act.documento_url); }}
                                             >
-                                              <Download className="h-4.5 w-4.5" />
-                                            </button>
+                                              <FileText className="h-4.5 w-4.5" />
+                                            </AppButton>
+                                          </AppTooltip>
+                                          {!act.documento_url.startsWith('http') && (
+                                            <AppTooltip content="Descargar PDF">
+                                              <AppButton
+                                                variant="document-table"
+                                                size="icon"
+                                                onClick={(e) => { e.stopPropagation(); handleDownloadPdf(act.documento_url, `${act.descripcion}.pdf`); }}
+                                              >
+                                                <Download className="h-4.5 w-4.5" />
+                                              </AppButton>
+                                            </AppTooltip>
                                           )}
                                         </>
                                       ) : null}
                                       {act.fotos_paths && act.fotos_paths.length > 0 ? (
-                                        <button
-                                          onClick={(e) => { e.stopPropagation(); handleViewImages(act); }}
-                                          className="p-1.5 rounded-lg bg-[#EFF6FF] text-[#468DFF] hover:bg-[#DBEAFE] hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                          title={`Visualizar Evidencia (${act.fotos_paths.length} ${act.fotos_paths.length === 1 ? 'imagen' : 'imágenes'})`}
-                                        >
-                                          <Image className="h-4.5 w-4.5" />
-                                        </button>
+                                        <AppTooltip content={`Visualizar Evidencia (${act.fotos_paths.length} ${act.fotos_paths.length === 1 ? 'imagen' : 'imágenes'})`}>
+                                          <AppButton
+                                            variant="document-table"
+                                            size="icon"
+                                            onClick={(e) => { e.stopPropagation(); handleViewImages(act); }}
+                                          >
+                                            <Image className="h-4.5 w-4.5" />
+                                          </AppButton>
+                                        </AppTooltip>
                                       ) : null}
                                       {!act.documento_url && (!act.fotos_paths || act.fotos_paths.length === 0) && (
                                         <span className="text-[10px] text-slate-400 font-semibold italic">Vacío</span>
@@ -2427,33 +2436,36 @@ export default function ProgramaGestion({ params }) {
                                     <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                                       <div className="flex items-center justify-end gap-2">
                                         {canEditar ? (
-                                          <AppButton
-                                            variant="edit-table"
-                                            size="icon"
-                                            onClick={(e) => { e.stopPropagation(); setIsReadOnlyView(false); handleEdit(act); }}
-                                            title="Editar actividad"
-                                          >
-                                            <Edit className="h-4.5 w-4.5" />
-                                          </AppButton>
+                                          <AppTooltip content="Editar actividad">
+                                            <AppButton
+                                              variant="edit-table"
+                                              size="icon"
+                                              onClick={(e) => { e.stopPropagation(); setIsReadOnlyView(false); handleEdit(act); }}
+                                            >
+                                              <Edit className="h-4.5 w-4.5" />
+                                            </AppButton>
+                                          </AppTooltip>
                                         ) : (
-                                          <AppButton
-                                            variant="ghost-table"
-                                            size="icon"
-                                            onClick={(e) => { e.stopPropagation(); setIsReadOnlyView(true); handleEdit(act); }}
-                                            title="Ver Detalle"
-                                          >
-                                            <Eye className="h-4.5 w-4.5" />
-                                          </AppButton>
+                                          <AppTooltip content="Ver detalle">
+                                            <AppButton
+                                              variant="ghost-table"
+                                              size="icon"
+                                              onClick={(e) => { e.stopPropagation(); setIsReadOnlyView(true); handleEdit(act); }}
+                                            >
+                                              <Eye className="h-4.5 w-4.5" />
+                                            </AppButton>
+                                          </AppTooltip>
                                         )}
                                         {canEliminar && (
-                                          <AppButton
-                                            variant="delete-table"
-                                            size="icon"
-                                            onClick={(e) => { e.stopPropagation(); handleDelete(act.id); }}
-                                            title="Eliminar actividad"
-                                          >
-                                            <Trash2 className="h-4.5 w-4.5" />
-                                          </AppButton>
+                                          <AppTooltip content="Eliminar actividad">
+                                            <AppButton
+                                              variant="delete-table"
+                                              size="icon"
+                                              onClick={(e) => { e.stopPropagation(); handleDelete(act.id); }}
+                                            >
+                                              <Trash2 className="h-4.5 w-4.5" />
+                                            </AppButton>
+                                          </AppTooltip>
                                         )}
                                       </div>
                                     </td>

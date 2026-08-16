@@ -8,14 +8,19 @@ import { AlertTriangle, X } from 'lucide-react';
 export default function AppUnsavedChangesDialog({
   open,
   onOpenChange,
+  onCancel,
   title = 'Cambios sin guardar',
   description = 'Tenés cambios sin guardar en el formulario. Si salís ahora, perderás toda la información ingresada.',
   onLeave,
+  onConfirm,
   leaveText = 'Salir sin guardar',
   stayText = 'Quedarse y editar'
 }) {
+  const handleLeave = onLeave || onConfirm;
+  const handleOpenChange = onOpenChange || (onCancel ? (val) => !val && onCancel() : () => {});
+
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+    <Dialog.Root open={open} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
         {/* Backdrop overlay */}
         <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm animate-fade-in" />
@@ -25,12 +30,15 @@ export default function AppUnsavedChangesDialog({
           <Dialog.Content 
             onPointerDownOutside={(e) => e.preventDefault()}
             onInteractOutside={(e) => e.preventDefault()}
-            className="relative w-full max-w-sm p-6 bg-white border border-slate-200 rounded-2xl shadow-2xl animate-scale-up focus:outline-none space-y-4 text-center"
+            className="relative w-full max-w-sm p-6 bg-white border border-slate-200 rounded-2xl shadow-2xl animate-scale-up focus:outline-none flex flex-col items-center text-center"
           >
             
-            {/* Close button at top right */}
+            {/* Close button at top right (matching standard AppConfirmDialog and ruido) */}
             <Dialog.Close asChild>
               <button 
+                onClick={() => {
+                  if (onCancel) onCancel();
+                }}
                 className="absolute top-4 right-4 p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#468DFF]"
                 aria-label="Cerrar"
               >
@@ -38,32 +46,33 @@ export default function AppUnsavedChangesDialog({
               </button>
             </Dialog.Close>
 
-            {/* Amber AlertTriangle icon */}
-            <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center border bg-amber-50 text-amber-500 border-amber-100">
+            {/* Amber AlertTriangle circular icon */}
+            <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center border bg-amber-50 text-amber-500 border-amber-100 mb-3 mt-1">
               <AlertTriangle className="h-6 w-6 shrink-0" />
             </div>
 
-            {/* Texts */}
-            <div className="space-y-1">
-              <Dialog.Title className="font-outfit text-base font-extrabold text-slate-800">
-                {title}
-              </Dialog.Title>
-              <Dialog.Description className="text-xs text-slate-500 leading-relaxed">
+            {/* Title & Description */}
+            <Dialog.Title className="font-outfit text-base font-extrabold text-slate-800 mb-1">
+              {title}
+            </Dialog.Title>
+            {description && (
+              <Dialog.Description className="text-xs text-slate-500 leading-relaxed mb-5 max-w-[280px]">
                 {description}
               </Dialog.Description>
-            </div>
+            )}
 
-            {/* Action buttons */}
-            <div className="flex flex-col sm:flex-row gap-2 pt-2">
+            {/* Action buttons (vertical stack matching reference image) */}
+            <div className="flex flex-col gap-2.5 w-full">
               {/* Secondary button: Salir sin guardar */}
-              {onLeave && (
+              {handleLeave && (
                 <button
                   type="button"
                   onClick={() => {
-                    onLeave();
-                    onOpenChange(false);
+                    handleLeave();
+                    if (onOpenChange) onOpenChange(false);
+                    if (onCancel) onCancel();
                   }}
-                  className="flex-1 py-2.5 px-4 border border-[#468DFF] text-[#468DFF] bg-white rounded-xl text-xs font-bold hover:bg-[#468DFF] hover:text-white transition-all active:scale-[0.98] cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#468DFF]"
+                  className="w-full py-2.5 px-4 bg-white text-[#468DFF] border border-[#468DFF] rounded-xl text-xs font-bold hover:bg-[#468DFF] hover:text-white transition-all active:scale-[0.99] cursor-pointer"
                 >
                   {leaveText}
                 </button>
@@ -73,7 +82,10 @@ export default function AppUnsavedChangesDialog({
               <Dialog.Close asChild>
                 <button
                   type="button"
-                  className="flex-1 py-2.5 px-4 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#468DFF] shadow-lg shadow-blue-500/10"
+                  onClick={() => {
+                    if (onCancel) onCancel();
+                  }}
+                  className="w-full py-2.5 px-4 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-xs font-bold transition-all active:scale-[0.99] cursor-pointer shadow-md shadow-[#468DFF]/20"
                 >
                   {stayText}
                 </button>

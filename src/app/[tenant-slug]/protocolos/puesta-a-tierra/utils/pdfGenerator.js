@@ -1,37 +1,94 @@
+import { PDFDocument, PDFName } from 'pdf-lib';
 import { formatDate } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 import { setFillColor, setDrawColor, setTextColor, hexToRgb, PDF_THEME } from '@/lib/pdf/pdfTheme';
 import { getBase64ImageFromUrl } from '@/lib/pdf/pdfImages';
 
+// Helper de cálculo de límites y estado para compatibilidad de puntos
+const getLimiteDbaForTe = (teHours) => {
+  if (teHours <= 0.11 / 3600) return 139;
+  if (teHours <= 0.22 / 3600) return 136;
+  if (teHours <= 0.44 / 3600) return 133;
+  if (teHours <= 0.88 / 3600) return 130;
+  if (teHours <= 1.76 / 3600) return 127;
+  if (teHours <= 3.52 / 3600) return 124;
+  if (teHours <= 7.03 / 3600) return 121;
+  if (teHours <= 14.06 / 3600) return 118;
+  if (teHours <= 28.12 / 3600) return 115;
+  if (teHours <= 0.94 / 60) return 112;
+  if (teHours <= 1.88 / 60) return 109;
+  if (teHours <= 3.75 / 60) return 106;
+  if (teHours <= 7.5 / 60) return 103;
+  if (teHours <= 15 / 60) return 100;
+  if (teHours <= 30 / 60) return 97;
+  if (teHours <= 1) return 94;
+  if (teHours <= 2) return 91;
+  if (teHours <= 4) return 88;
+  if (teHours <= 8) return 85;
+  if (teHours <= 16) return 82;
+  return 80;
+};
+
+const getPuntoCalculos = (p) => {
+  if (!p) return { resultado_punto: '—' };
+  if (p.cumple === true || p.resultado === 'Cumple' || p.resultado_punto === 'Cumple') return { resultado_punto: 'Cumple' };
+  if (p.cumple === false || p.resultado === 'No cumple' || p.resultado_punto === 'No cumple') return { resultado_punto: 'No cumple' };
+
+  if (p.caracteristicas_ruido === 'impulso_impacto') {
+    if (p.nivel_pico_lc_pico_dbc) {
+      return { resultado_punto: Number(p.nivel_pico_lc_pico_dbc) <= 140 ? 'Cumple' : 'No cumple' };
+    }
+  } else {
+    const te = Number(p.tiempo_exposicion_hs || 8);
+    const limite = getLimiteDbaForTe(te);
+    if (p.nivel_laeq_te_dba) {
+      return { resultado_punto: Number(p.nivel_laeq_te_dba) <= limite ? 'Cumple' : 'No cumple' };
+    }
+    if (p.resultado_suma_fracciones) {
+      return { resultado_punto: Number(p.resultado_suma_fracciones) <= 1 ? 'Cumple' : 'No cumple' };
+    }
+    if (p.dosis_porcentaje) {
+      return { resultado_punto: Number(p.dosis_porcentaje) <= 100 ? 'Cumple' : 'No cumple' };
+    }
+  }
+  return { resultado_punto: 'Cumple' };
+};
+
 // Robust Base64 getter for attachments from Supabase storage / URLs
 const getAdjuntoBase64 = async (adj) => {
   if (!adj) return '';
 
+  // 1. Check direct base64 data URLs
   if (adj.preview && adj.preview.startsWith('data:image/')) return adj.preview;
   if (adj.public_url && adj.public_url.startsWith('data:image/')) return adj.public_url;
 
   const path = adj.storage_path || adj.original_path || adj.public_url || adj.url || adj.archivo_url;
   if (!path) return '';
 
+  // 2. Direct download from Supabase Storage bucket for relative paths
   if (!path.startsWith('http') && !path.startsWith('data:')) {
-    try {
-      const { data: blob, error } = await supabase.storage
-        .from('protocolos-puesta-a-tierra')
-        .download(path);
+    const bucketsToTry = ['protocolos-puesta-a-tierra', 'protocolos-ruido', 'documents'];
+    for (const b of bucketsToTry) {
+      try {
+        const { data: blob, error } = await supabase.storage
+          .from(b)
+          .download(path);
 
-      if (!error && blob) {
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result || '');
-          reader.onerror = () => resolve('');
-          reader.readAsDataURL(blob);
-        });
+        if (!error && blob) {
+          return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result || '');
+            reader.onerror = () => resolve('');
+            reader.readAsDataURL(blob);
+          });
+        }
+      } catch (err) {
+        // continue trying other buckets
       }
-    } catch (err) {
-      console.warn('[getAdjuntoBase64] Direct download warning:', err);
     }
   }
 
+  // 3. If HTTP URL or fallback: fetch signed/public URL
   let targetUrl = path;
   if (!targetUrl.startsWith('http') && !targetUrl.startsWith('data:')) {
     try {
@@ -50,6 +107,7 @@ const getAdjuntoBase64 = async (adj) => {
   return await getBase64ImageFromUrl(targetUrl);
 };
 
+// Resize image for PDF
 const resizeImageForPdf = (base64Str, maxWidth = 400, maxHeight = 400) => {
   return new Promise((resolve) => {
     if (!base64Str || !base64Str.startsWith('data:image/')) {
@@ -85,6 +143,7 @@ const resizeImageForPdf = (base64Str, maxWidth = 400, maxHeight = 400) => {
   });
 };
 
+// Get original dimensions of base64 image
 const getImgDimensions = (base64Str) => {
   return new Promise((resolve) => {
     if (!base64Str || !base64Str.startsWith('data:image/')) {
@@ -114,6 +173,7 @@ export const generatePuestaATierraPdf = async (
 ) => {
   const { jsPDF } = await import('jspdf');
 
+  // A4 size in mm: 210 x 297 (Portrait) / 297 x 210 (Landscape)
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -121,10 +181,10 @@ export const generatePuestaATierraPdf = async (
     compress: true
   });
 
-  const emp = empresas.find(e => e.id === proto.razon_social_id);
-  const est = allEstablecimientos.find(e => e.id === proto.establecimiento_id);
+  const emp = (empresas || []).find(e => e.id === proto.razon_social_id);
+  const est = (allEstablecimientos || []).find(e => e.id === proto.establecimiento_id);
 
-  // Logo institucional
+  // Download Header Logo (Tenant, User Profile Admin or Default)
   let logoBase64 = '';
   try {
     const logoUrl = tenant?.logo_1_url || userProfile?.logo_1_url || userProfile?.logo_url;
@@ -141,636 +201,1262 @@ export const generatePuestaATierraPdf = async (
     logoBase64 = await resizeImageForPdf(logoBase64, 400, 400);
   }
 
-  // Cargar firma profesional
-  let firmaBase64 = '';
+  // Calculate logo dimensions preserving exact aspect ratio
+  let logoDims = { width: 120, height: 50 };
+  if (logoBase64) {
+    logoDims = await getImgDimensions(logoBase64);
+  }
+
+  // Download Signature base64 if present (regenerate signed URL if expired)
+  let signatureBase64 = '';
+  let signatureDims = { width: 150, height: 60 };
   if (proto.firma_profesional) {
-    firmaBase64 = proto.firma_profesional;
-  } else if (userProfile?.firma_url) {
     try {
-      firmaBase64 = await getBase64ImageFromUrl(userProfile.firma_url);
-    } catch (e) {
-      console.warn('No se pudo cargar firma de perfil:', e);
-    }
-  }
+      let sigUrl = proto.firma_profesional;
+      if (sigUrl && !sigUrl.startsWith('data:')) {
+        let relativePath = sigUrl;
+        let bucketName = 'signatures';
 
-  // Pre-cargar adjuntos
-  const adjuntosProcesados = [];
-  if (adjuntosList && adjuntosList.length > 0) {
-    for (const adj of adjuntosList) {
-      try {
-        const b64 = await getAdjuntoBase64(adj);
-        if (b64) {
-          const resized = await resizeImageForPdf(b64, 600, 600);
-          adjuntosProcesados.push({
-            ...adj,
-            b64: resized
-          });
+        if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
+          try {
+            const urlObj = new URL(relativePath);
+            const pathParts = urlObj.pathname.split('/');
+            const bIdx = pathParts.findIndex(p => p === 'signatures' || p === 'documents' || p === 'avatars');
+            if (bIdx !== -1 && bIdx < pathParts.length - 1) {
+              bucketName = pathParts[bIdx];
+              relativePath = pathParts.slice(bIdx + 1).join('/');
+            }
+          } catch (urlErr) {
+            console.error('Error parseando URL de firma:', urlErr);
+          }
         }
-      } catch (e) {
-        console.warn('Error al procesar adjunto para PDF:', e);
+
+        if (relativePath && !relativePath.startsWith('http')) {
+          try {
+            const { data: sData, error: sErr } = await supabase.storage
+              .from(bucketName)
+              .createSignedUrl(relativePath, 3600);
+            if (!sErr && sData?.signedUrl) {
+              sigUrl = sData.signedUrl;
+            }
+          } catch (sErr) {
+            console.error('Error generando URL firmada para la firma:', sErr);
+          }
+        }
       }
+
+      signatureBase64 = await getBase64ImageFromUrl(sigUrl);
+      if (signatureBase64) {
+        signatureBase64 = await resizeImageForPdf(signatureBase64, 450, 450);
+        signatureDims = await getImgDimensions(signatureBase64);
+      }
+    } catch (e) {
+      console.error('Error fetching signature:', e);
     }
   }
 
-  const primaryBlue = '#468DFF';
-  const darkText = '#0D0D0D';
-  const lightGrey = '#F8FAFC';
-  const borderGrey = '#CBD5E1';
+  // Color Tokens (Gestión SySO Brand & PDF standard)
+  const COLOR_AZUL_PRINCIPAL = '#468DFF';
+  const COLOR_AZUL_SECUNDARIO = '#4F81BD';
+  const COLOR_SLATE_900 = '#0F172A';
+  const COLOR_SLATE_700 = '#334155';
+  const COLOR_SLATE_600 = '#475569';
+  const COLOR_SLATE_500 = '#64748B';
+  const COLOR_SLATE_300 = '#CBD5E1';
+  const COLOR_SLATE_200 = '#D9D9D9'; // Neutral header gray #D9D9D9
+  const COLOR_SLATE_50 = '#F2F2F2';  // Empty cells soft gray #F2F2F2
+  const COLOR_NEGRO = '#000000';
+  const COLOR_BLANCO = '#FFFFFF';
+  const COLOR_VERDE_CUMPLE = '#00B050'; // Green
+  const COLOR_ROJO_NO_CUMPLE = '#FF0000'; // Red
 
-  // Helper Header para páginas interiores
-  const drawPageHeader = (pageTitle = '') => {
-    if (logoBase64) {
-      try {
-        doc.addImage(logoBase64, 'PNG', 14, 8, 35, 12, undefined, 'FAST');
-      } catch (e) {
-        console.warn('Error imprimiendo logo header:', e);
+  // Contact Info for Footer
+  const companyName = tenant?.name || tenant?.razon_social || userProfile?.empresa || userProfile?.consultora || 'Gestión SySO';
+  const emailVal = userProfile?.email || tenant?.email || tenant?.correo || '—';
+  const phoneVal = userProfile?.phone || userProfile?.telefono || tenant?.phone || tenant?.telefono || '—';
+
+  // Helper: Draw cell text perfectly constrained within width & height without overflow
+  const drawCellText = (docInst, text, x, y, w, h, options = {}) => {
+    const {
+      align = 'left',
+      valign = 'middle',
+      fontSize = 8,
+      fontStyle = 'normal',
+      color = COLOR_NEGRO,
+      padding = 1.2,
+      maxLines = 0
+    } = options;
+
+    docInst.setFont('helvetica', fontStyle);
+    docInst.setFontSize(fontSize);
+    setTextColor(docInst, color);
+
+    const availableW = Math.max(2, w - (padding * 2));
+    let lines = docInst.splitTextToSize(String(text !== null && text !== undefined ? text : ''), availableW);
+
+    if (maxLines > 0 && lines.length > maxLines) {
+      lines = lines.slice(0, maxLines);
+      if (lines[maxLines - 1]) {
+        lines[maxLines - 1] = lines[maxLines - 1].replace(/\.?\s*$/, '...');
       }
     }
-    setFillColor(doc, primaryBlue);
-    doc.rect(14, 22, 182, 0.8, 'F');
-  };
 
-  // Helper Footer para páginas interiores
-  const drawPageFooter = (pageNum, totalPages = 6) => {
-    setFillColor(doc, primaryBlue);
-    doc.rect(14, 282, 182, 1.5, 'F');
-    setTextColor(doc, '#64748B');
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.text('GESTIÓN SYSO', 14, 288);
-    doc.text(`${pageNum}`, 196, 288, { align: 'right' });
-  };
+    const lineHeight = fontSize * 0.3527 * 1.15; // pt to mm conversion factor
+    const totalTextH = lines.length * lineHeight;
 
-  // Helper Cuadro de Firma Profesional
-  const drawSignatureBlock = (startY) => {
-    let y = startY;
-    if (y > 240) return 240;
-
-    if (firmaBase64) {
-      try {
-        doc.addImage(firmaBase64, 'PNG', 120, y - 18, 50, 18, undefined, 'FAST');
-      } catch (e) {
-        console.warn('Error al estampar firma:', e);
-      }
+    let startY = y + padding + (lineHeight * 0.75);
+    if (valign === 'middle') {
+      startY = y + (h - totalTextH) / 2 + (lineHeight * 0.75);
+    } else if (valign === 'bottom') {
+      startY = y + h - padding - (totalTextH - lineHeight);
     }
 
-    setDrawColor(doc, darkText);
-    doc.setLineWidth(0.3);
-    doc.line(100, y, 190, y);
+    lines.forEach((line, idx) => {
+      let posX = x + padding;
+      if (align === 'center') posX = x + (w / 2);
+      else if (align === 'right') posX = x + w - padding;
 
-    setTextColor(doc, darkText);
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Firma, Aclaración y Registro del Profesional Interviniente', 145, y + 4, { align: 'center' });
+      docInst.text(line, posX, startY + (idx * lineHeight), { align });
+    });
+  };
 
-    const profNombre = proto.profesional_nombre || userProfile?.full_name || 'Lic. Sebastian A. Merlassino';
-    const profMatricula = proto.profesional_matricula || userProfile?.matricula || 'Mat. COPIME U002210 / OPSH LHS-000179 PBA';
+  // Helper: Draw Header Logo maintaining aspect ratio
+  const drawHeaderLogo = (isLandscape = false) => {
+    if (!logoBase64) return;
+    const maxW = 38;
+    const maxH = 15;
+    const ratio = logoDims.width / logoDims.height;
+
+    let renderW = maxW;
+    let renderH = maxW / ratio;
+    if (renderH > maxH) {
+      renderH = maxH;
+      renderW = maxH * ratio;
+    }
+
+    const x = isLandscape ? 17 : 15;
+    const y = 6 + (maxH - renderH) / 2;
+
+    try {
+      doc.addImage(logoBase64, 'PNG', x, y, renderW, renderH, undefined, 'FAST');
+    } catch (err) {
+      console.error('Error drawing header logo:', err);
+    }
+  };
+
+  // Helper: Header across all inner pages
+  const drawHeader = (isLandscape = false) => {
+    drawHeaderLogo(isLandscape);
+  };
+
+  // Helper: Footer across all inner pages
+  const drawFooter = (isLandscape = false, pageNum = 1, totalPages = 1) => {
+    const startX = isLandscape ? 15 : 15;
+    const endX = isLandscape ? 282 : 195;
+    const barY = isLandscape ? 196 : 281;
+    const textY = isLandscape ? 200.5 : 285.5;
+    const subFooterY = isLandscape ? 204.5 : 289.5;
+    const totalW = endX - startX;
+
+    // Accent Blue Bar (espesor 0.35 mm o ~1 pt)
+    setDrawColor(doc, COLOR_AZUL_PRINCIPAL);
+    doc.setLineWidth(0.35);
+    doc.line(startX, barY, endX, barY);
+
+    // Contact Info Line Centered
+    const boldText = companyName;
+    const normalText = `  •  Tel: ${phoneVal}  •  Email: ${emailVal}`;
 
     doc.setFontSize(7.5);
-    doc.setFont('helvetica', 'bold');
-    doc.text(profNombre, 145, y + 8, { align: 'center' });
-    doc.setFont('helvetica', 'normal');
-    doc.text(profMatricula, 145, y + 11, { align: 'center' });
+    setTextColor(doc, COLOR_SLATE_700);
 
-    return y + 15;
+    // Medir anchos de los segmentos según su estilo
+    doc.setFont('helvetica', 'bold');
+    const boldWidth = doc.getTextWidth(boldText);
+
+    doc.setFont('helvetica', 'normal');
+    const normalWidth = doc.getTextWidth(normalText);
+
+    const totalTextWidth = boldWidth + normalWidth;
+    const lineStartX = startX + (totalW / 2) - (totalTextWidth / 2);
+
+    // Dibujar secuencialmente
+    doc.setFont('helvetica', 'bold');
+    doc.text(boldText, lineStartX, textY);
+
+    doc.setFont('helvetica', 'normal');
+    doc.text(normalText, lineStartX + boldWidth, textY);
+
+    // Sub-footer: Page count right
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    setTextColor(doc, COLOR_SLATE_600);
+    doc.text(`Página ${pageNum} de ${totalPages}`, endX, subFooterY, { align: 'right' });
   };
 
-  // ==========================================
-  // PÁGINA 1: CARÁTULA
-  // ==========================================
-  if (logoBase64) {
-    try {
-      doc.addImage(logoBase64, 'PNG', 45, 90, 120, 45, undefined, 'FAST');
-    } catch (e) {}
-  }
+  // Helper: Protocol Bar Title
+  const drawProtocolTitleBar = (isLandscape = false, customPos = null) => {
+    const pos = customPos || (isLandscape ? { x: 17, y: 22, w: 263, h: 5.5 } : { x: 15, y: 22, w: 180, h: 5.5 });
+    setFillColor(doc, COLOR_AZUL_PRINCIPAL);
+    doc.rect(pos.x, pos.y, pos.w, pos.h, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9.5);
+    setTextColor(doc, COLOR_BLANCO);
+    const textY = pos.y + (pos.h / 2) + 1.1;
+    doc.text('PROTOCOLO PARA MEDICIÓN DE RUIDO EN EL AMBIENTE LABORAL', pos.x + (pos.w / 2), textY, { align: 'center' });
+  };
 
-  // Cuadro del Año en esquina superior derecha
-  setFillColor(doc, primaryBlue);
-  doc.rect(160, 14, 36, 18, 'F');
-  setTextColor(doc, '#FFFFFF');
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'bold');
-  const anioMedicion = proto.fecha_medicion ? new Date(proto.fecha_medicion).getFullYear() : new Date().getFullYear();
-  doc.text(`${anioMedicion}`, 178, 25, { align: 'center' });
+  // Helper: Signature Block
+  const drawSignatureBlock = (x, y, w, h) => {
+    const imgMaxW = w;
+    const imgMaxH = Math.max(28, h - 8);
 
-  // Título Principal
-  setTextColor(doc, primaryBlue);
-  doc.setFontSize(24);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Protocolo de medición de la', 20, 160);
-  doc.text('puesta a tierra y continuidad', 20, 172);
-  doc.text('de las masas', 20, 184);
-
-  // Subtítulo Legal
-  setTextColor(doc, '#475569');
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'bold');
-  const sub1 = 'DECRETO Nº 351/79, ANEXO VI - CAPÍTULO 14 - INSTALACIONES ELÉCTRICAS';
-  const sub2 = 'ANEXO - RESOLUCIÓN 900/2015 (PROTOCOLO PARA LA MEDICIÓN DEL VALOR DE PUESTA A TIERRA Y LA VERIFICACIÓN DE LA CONTINUIDAD DE LAS MASAS EN EL AMBIENTE LABORAL)';
-  doc.text(sub1, 20, 205);
-
-  const sub2Lines = doc.splitTextToSize(sub2, 170);
-  doc.text(sub2Lines, 20, 211);
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.text('GESTIÓN SYSO', 20, 228);
-
-  // ==========================================
-  // PÁGINA 2: MARCO NORMATIVO
-  // ==========================================
-  doc.addPage();
-  drawPageHeader();
-
-  setTextColor(doc, primaryBlue);
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Instalaciones Eléctricas (Título V - Capítulo 14 – Dec. 351/79)', 14, 30);
-  setDrawColor(doc, primaryBlue);
-  doc.setLineWidth(0.5);
-  doc.line(14, 33, 196, 33);
-
-  setTextColor(doc, '#334155');
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-
-  const textoDec351 = [
-    'Las instalaciones y equipos eléctricos de los establecimientos deberán cumplir con las prescripciones necesarias para evitar riesgos a personas o cosas.',
-    'Los materiales y equipos que se utilicen en las instalaciones eléctricas cumplirán con las exigencias de las normas técnicas correspondientes. En caso de no estar normalizados deberán asegurar las prescripciones previstas en el presente capítulo.',
-    'Los proyectos de instalaciones y equipos eléctricos responderán a los Anexos correspondientes de este reglamento y además los de más de 1000 voltios de tensión deberán estar aprobados en los rubros de su competencia por el responsable del Servicio de Higiene y Seguridad en el Trabajo de cada establecimiento.',
-    'Las tareas de montaje, maniobra o mantenimiento sin o con tensión, se regirán por las disposiciones del Anexo VI.',
-    'Los trabajos de mantenimiento serán efectuados exclusivamente por personal capacitado, debidamente autorizado por la empresa para su ejecución.',
-    'Los establecimientos efectuarán el mantenimiento de las instalaciones y verificarán las mismas periódicamente en base a sus respectivos programas, confeccionados de acuerdo con normas de seguridad, registrando debidamente sus resultados.',
-    'Se extremarán las medidas de seguridad en salas de baterías y en aquellos locales donde se fabriquen, manipulen o almacenen materiales inflamables, explosivos o de alto riesgo; igualmente en locales húmedos, mojados o con sustancias corrosivas, conforme a lo establecido en el Anexo VI.',
-    'En lo referente a motores, conductores, interruptores, seccionadores, transformadores, condensadores, alternadores, celdas de protección, cortacircuitos, equipos y herramientas, máquinas de elevación y transporte, se tendrá en cuenta lo establecido en el Anexo VI.',
-    'Se deberán adoptar las medidas tendientes a la eliminación de la electricidad estática en todas aquellas operaciones donde pueda producirse. Los métodos se detallan en el Anexo VI. Se extremarán los recaudos en ambientes con riesgos de incendio o atmósferas explosivas.',
-    'Los establecimientos e instalaciones expuestos a descargas atmosféricas poseerán una instalación contra las sobretensiones de este origen que asegure la eficaz protección de las personas y cosas. Las tomas a tierra de estas instalaciones deberán ser exclusivas e independientes de cualquier otra.'
-  ];
-
-  let py = 40;
-  for (const parrafo of textoDec351) {
-    const lines = doc.splitTextToSize(parrafo, 180);
-    doc.text(lines, 14, py);
-    py += (lines.length * 4.5) + 3.5;
-  }
-
-  drawPageFooter(1);
-
-  // ==========================================
-  // PÁGINA 3: IMÁGENES DE LA EVALUACIÓN
-  // ==========================================
-  doc.addPage();
-  drawPageHeader();
-
-  setTextColor(doc, primaryBlue);
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Imágenes de la evaluación', 14, 30);
-  doc.line(14, 33, 196, 33);
-
-  if (adjuntosProcesados.length > 0) {
-    let imgY = 40;
-    let imgX = 14;
-
-    adjuntosProcesados.slice(0, 4).forEach((adj, idx) => {
+    // 1. Signature image
+    if (signatureBase64) {
       try {
-        setDrawColor(doc, borderGrey);
-        doc.rect(imgX, imgY, 86, 105);
-        doc.addImage(adj.b64, 'PNG', imgX + 2, imgY + 2, 82, 95, undefined, 'FAST');
+        const ratio = (signatureDims.width && signatureDims.height)
+          ? signatureDims.width / signatureDims.height
+          : 2.5;
 
-        if (adj.nombre_archivo) {
-          setTextColor(doc, '#475569');
-          doc.setFontSize(7.5);
-          doc.text(adj.nombre_archivo, imgX + 43, imgY + 101, { align: 'center' });
+        let renderW = imgMaxW;
+        let renderH = imgMaxW / ratio;
+        if (renderH > imgMaxH) {
+          renderH = imgMaxH;
+          renderW = imgMaxH * ratio;
         }
 
-        if (idx % 2 === 0) {
-          imgX = 108;
-        } else {
-          imgX = 14;
-          imgY += 112;
-        }
+        const renderX = x + (w - renderW) / 2;
+        const lineY = y + 24;
+        const renderY = lineY - (renderH * 0.72);
+
+        doc.addImage(signatureBase64, 'PNG', renderX, renderY, renderW, renderH, undefined, 'FAST');
       } catch (e) {
-        console.warn('Error agregando imagen a PDF:', e);
+        console.error('Error drawing signature image:', e);
       }
-    });
-  } else {
-    setTextColor(doc, '#94A3B8');
+    }
+
+    // 2. Dotted line
+    const lineY = y + 24;
+    setDrawColor(doc, COLOR_NEGRO);
+    doc.setLineWidth(0.25);
+    const startX = x + 2;
+    const endX = x + w - 2;
+    let currX = startX;
+    while (currX < endX) {
+      doc.line(currX, lineY, Math.min(currX + 1.5, endX), lineY);
+      currX += 2.5;
+    }
+
+    // 3. Label below line
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    setTextColor(doc, COLOR_NEGRO);
+    doc.text('Firma, Aclaración y Registro del Profesional Interviniente', x + (w / 2), lineY + 3.5, { align: 'center' });
+
+    // 4. Nombre y Apellido del Profesional
+    let currentTextY = lineY + 7.5;
+    if (profNombre) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      setTextColor(doc, COLOR_SLATE_900);
+      doc.text(profNombre, x + (w / 2), currentTextY, { align: 'center' });
+      currentTextY += 3.8;
+    }
+
+    // 5. Matrícula Profesional
+    if (profMatricula) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      setTextColor(doc, COLOR_SLATE_600);
+      doc.text(profMatricula, x + (w / 2), currentTextY, { align: 'center' });
+    }
+  };
+
+  // Safe data getters
+  const razonSocial = proto.razon_social_text || emp?.razon_social || 'EMPRESA CLIENTE S.A.';
+  const cuit = proto.cuit_text || emp?.cuit || '30-00000000-0';
+  const direccion = proto.direccion_text || est?.direccion || 'DIRECCIÓN DE PLANTA';
+  const localidad = proto.localidad_text || est?.localidad || 'LOCALIDAD';
+  const provincia = proto.provincia_text || est?.provincia || 'BUENOS AIRES';
+  const cp = proto.cp_text || est?.cp || '0000';
+  const horarios = proto.horarios_turnos_text || 'Lunes a viernes de 8:00 a 17:00 hs';
+  const marcaModeloNser = proto.instrumento_marca_modelo_serie || 'Telurímetro Digital marca CEM, modelo DT-5300B, N° de serie 19082201';
+  const fechaCalib = proto.fecha_calibracion ? formatDate(proto.fecha_calibracion) : '';
+  const metodologia = proto.metodologia_utilizada || 'Método de Caída de Potencial (3 picas)';
+  const fechaMedicion = proto.fecha_medicion ? formatDate(proto.fecha_medicion) : formatDate(new Date());
+  const horaInicio = proto.hora_inicio || '09:00';
+  const horaFin = proto.hora_finalizacion || '12:00';
+  const condAtmos = proto.condiciones_atmosfericas || 'Cielo despejado\nTemperatura: 22 °C\nHumedad: 55 %\nSuelo: Seco';
+
+  const profNombre = proto.profesional_nombre || userProfile?.full_name || '';
+  let profMatricula = proto.profesional_matricula || '';
+  if (!profMatricula && userProfile) {
+    if (userProfile.matricula_institucion && userProfile.matricula_numero) {
+      profMatricula = `${userProfile.matricula_institucion} N° ${userProfile.matricula_numero}`;
+    } else if (userProfile.matricula_numero) {
+      profMatricula = `Mat. N° ${userProfile.matricula_numero}`;
+    }
+  }
+
+  let pageCounter = 1;
+
+  // ==========================================
+  // PAGINA 1: PORTADA (A4 Vertical)
+  // ==========================================
+  setDrawColor(doc, COLOR_AZUL_PRINCIPAL);
+  doc.setLineWidth(0.4);
+  doc.rect(10, 10, 190, 277, 'S');
+
+  // Year Rectangle
+  const currentYear = proto.fecha_medicion ? new Date(proto.fecha_medicion).getFullYear() : new Date().getFullYear();
+  setFillColor(doc, COLOR_AZUL_PRINCIPAL);
+  doc.rect(168, 15, 20, 28, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  setTextColor(doc, COLOR_BLANCO);
+  doc.text(String(currentYear), 178, 32, { align: 'center' });
+
+  // Main Cover Logo
+  if (logoBase64) {
+    const maxCoverW = 85;
+    const maxCoverH = 45;
+    const ratio = logoDims.width / logoDims.height;
+    let coverW = maxCoverW;
+    let coverH = maxCoverW / ratio;
+    if (coverH > maxCoverH) {
+      coverH = maxCoverH;
+      coverW = maxCoverH * ratio;
+    }
+    const coverX = 39 + (maxCoverW - coverW) / 2;
+    const coverY = 105 + (maxCoverH - coverH) / 2;
+    try {
+      doc.addImage(logoBase64, 'PNG', coverX, coverY, coverW, coverH, undefined, 'FAST');
+    } catch (e) {
+      console.error('Error drawing cover logo:', e);
+    }
+  }
+
+  // Cover Main Title
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(30);
+  setTextColor(doc, COLOR_AZUL_PRINCIPAL);
+  const titleLines = doc.splitTextToSize('Protocolo para la Medición del nivel de Ruido en el Ambiente Laboral', 145);
+  doc.text(titleLines, 39, 172);
+
+  // Normative reference
+  doc.setFontSize(10.5);
+  doc.setFont('helvetica', 'normal');
+  setTextColor(doc, COLOR_SLATE_600);
+  doc.text('LEY Nº 19.587 - DECRETO Nº 351/79, ANEXO V, CAPITULO 13 - ACUSTICA', 39, 222);
+  doc.text('ANEXO - RESOLUCIÓN SRT 85 / 2012 (PROTOCOLO DE MEDICIÓN DE RUIDO)', 39, 228);
+
+  // Brand / Consultora
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  setTextColor(doc, COLOR_SLATE_900);
+  doc.text(companyName.toUpperCase(), 39, 246);
+
+  // ==========================================
+  // HOJAS INFORMATIVAS: ACÚSTICA (ANEXO V - CAPÍTULO 13 - DEC. 351/79)
+  // ==========================================
+  doc.addPage('a4', 'portrait');
+  pageCounter++;
+  drawHeader(false);
+
+  // Section Title
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  setTextColor(doc, COLOR_NEGRO);
+  doc.text('Acústica (ANEXO V - Capítulo 13 – Dec. 351/79)', 15, 28);
+  setDrawColor(doc, COLOR_AZUL_PRINCIPAL);
+  doc.setLineWidth(0.4);
+  doc.line(15, 30, 195, 30);
+
+  let currentY = 36;
+
+  const checkPageY = (neededH) => {
+    if (currentY + neededH > 275) {
+      doc.addPage('a4', 'portrait');
+      pageCounter++;
+      drawHeader(false);
+      currentY = 28;
+      return true;
+    }
+    return false;
+  };
+
+  const printSectionHeader = (titleText) => {
+    checkPageY(10);
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'italic');
-    doc.text('No se adjuntaron fotografías de la evaluación.', 14, 50);
+    setTextColor(doc, COLOR_AZUL_PRINCIPAL);
+    doc.text(titleText.toUpperCase(), 15, currentY);
+    currentY += 6;
+  };
+
+  const printParagraph = (pText, pStyle = 'normal') => {
+    if (pStyle === 'formula') {
+      checkPageY(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      setTextColor(doc, COLOR_NEGRO);
+      doc.text(pText, 25, currentY);
+      currentY += 6;
+    } else if (pStyle === 'legend') {
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(8);
+      setTextColor(doc, COLOR_SLATE_600);
+      const lines = doc.splitTextToSize(pText, 180);
+      const blockH = (lines.length * 3.8) + 4.5;
+      checkPageY(blockH);
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(8);
+      setTextColor(doc, COLOR_SLATE_600);
+      doc.text(pText, 15, currentY, { align: 'justify', maxWidth: 180 });
+      currentY += blockH;
+    } else {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      setTextColor(doc, COLOR_SLATE_900);
+      const lines = doc.splitTextToSize(pText, 180);
+      const blockH = (lines.length * 4.2) + 4.5;
+      checkPageY(blockH);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      setTextColor(doc, COLOR_SLATE_900);
+      doc.text(pText, 15, currentY, { align: 'justify', maxWidth: 180 });
+      currentY += blockH;
+    }
+  };
+
+  // 1. Infrasonido y sonido de baja frecuencia
+  printSectionHeader('Infrasonido y sonido de baja frecuencia');
+  printParagraph('Estos límites representan las exposiciones al sonido a los que se cree que casi todos los trabajadores pueden estar expuestos repetidamente sin efectos adversos para la audición.');
+  printParagraph('Excepto para el sonido de impulsos de banda de un tercio de octava, con duración inferior a 2 segundos, los niveles para frecuencias entre 1 y 80 Hz de nivel de presión sonoro (NPS), no deben exceder el valor techo de 145 dB. Además, el NPS global no ponderado no debe exceder el valor techo de 150 dB.');
+  printParagraph('No hay tiempo límite para estas exposiciones. Sin embargo, la aplicación de los valores límite para el Ruido y el Ultrasonido, recomendados para prevenir la pérdida de audición por el ruido, puede proporcionar un nivel reducido aceptable en el tiempo.');
+  printParagraph('Una alternativa que puede utilizarse, pero con un criterio ligeramente más restrictivo, es cuando el pico NPS medido con la escala de frecuencias, del sonómetro en lineal o no ponderada, no exceda de 145 dB para situaciones de sonido sin impulsos.');
+  printParagraph('La resonancia en el pecho de los sonidos de baja frecuencia en el intervalo aproximado de 50 Hz a 60 Hz puede causar vibración del cuerpo entero. Este efecto puede causar molestias e incomodidad, hasta hacerse necesario reducir el NPS de este sonido a un nivel al que desaparezca el problema.');
+  printParagraph('Las mediciones de la exposición al ruido se deberán ajustar a las prescripciones establecidas por las normas nacionales e internacionales.');
+  printParagraph('Estos valores límite se refieren a los niveles de presión acústica y duraciones de exposición que representan las condiciones en las que se cree que casi todos los trabajadores pueden estar expuestos repetidamente sin efectos adversos sobre su capacidad para oír y comprender una conversación normal.');
+  printParagraph('Cuando los trabajadores estén expuestos al ruido a niveles iguales o superiores a los valores límite, es necesario un programa completo de conservación de la audición que incluya pruebas audiométricas.');
+
+  // 2. Ruido continuo o intermitente
+  printSectionHeader('Ruido continuo o intermitente');
+  printParagraph('El nivel de presión acústica se debe determinar por medio de un sonómetro o dosímetro que se ajusten, como mínimo, a los requisitos de la especificación de las normas nacionales o internacionales. El sonómetro deberá disponer de filtro de ponderación frecuencial A y respuesta lenta. La duración de la exposición no deberá exceder de los valores que se dan en la Tabla 1.');
+  printParagraph('Estos valores son de aplicación a la duración total de la exposición por día de trabajo, con independencia de si se trata de una exposición continua o de varias exposiciones de corta duración.');
+  printParagraph('Cuando la exposición diaria al ruido se compone de dos o más períodos de exposición a distintos niveles de ruidos, se debe tomar en consideración el efecto global, en lugar del efecto individual de cada período. Si la suma de las fracciones siguientes:');
+  
+  // Fórmula
+  printParagraph('Ecuación para Exposición Combinada a Ruido:', 'formula');
+  printParagraph('C1 / T1 + C2 / T2 + ... + Cn / Tn', 'formula');
+  printParagraph('es mayor que la unidad, entonces se debe considerar que la exposición global sobrepasa el valor límite umbral. C1 indica la duración total de la exposición a un nivel específico de ruido y T1 indica la duración total de la exposición permitida a ese nivel. En los cálculos citados, se usarán todas las exposiciones al ruido en el lugar de trabajo que alcancen o sean superiores a los 80 dBA. Esta fórmula se debe aplicar cuando se utilicen los sonómetros para sonidos con niveles estables de por lo menos 3 segundos. Para sonidos que no cumplan esta condición, se debe utilizar un dosímetro o sonómetro de integración. El límite se excede cuando la dosis es mayor de 100%, medida en un dosímetro fijado para un índice de conversión de 3 dB y un nivel de 85 dBA como criterio para las 8 horas.');
+  printParagraph('Utilizando el sonómetro de integración el valor límite se excede cuando el nivel medio de sonido supere los valores de la Tabla 1.');
+  currentY += 2;
+
+  // Tabla 1: Valores Límite para Ruido Continuo o Intermitente
+  const drawTabla1RuidoNormativa = () => {
+    const tX = 15;
+    const tW = 180;
+    
+    checkPageY(14);
+    setFillColor(doc, COLOR_AZUL_PRINCIPAL);
+    doc.rect(tX, currentY, tW, 6, 'F');
+    drawCellText(doc, 'TABLA 1: VALORES LÍMITE UMBRAL PARA RUIDO (Dec. 351/79 - ANEXO V)', tX, currentY, tW, 6, { align: 'center', fontStyle: 'bold', fontSize: 8, color: COLOR_BLANCO });
+    currentY += 6;
+
+    setDrawColor(doc, COLOR_SLATE_300);
+    setFillColor(doc, COLOR_SLATE_200);
+    doc.rect(tX, currentY, 60, 6, 'FD');
+    doc.rect(tX + 60, currentY, 40, 6, 'FD');
+    doc.rect(tX + 100, currentY, 80, 6, 'FD');
+    drawCellText(doc, 'Duración por Día', tX, currentY, 60, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+    drawCellText(doc, 'Unidad', tX + 60, currentY, 40, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+    drawCellText(doc, 'Nivel de Presión Acústica (dBA)', tX + 100, currentY, 80, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+    currentY += 6;
+
+    const filasTabla1 = [
+      { dur: '24', uni: 'horas', dba: '80' },
+      { dur: '16', uni: 'horas', dba: '82' },
+      { dur: '8', uni: 'horas', dba: '85' },
+      { dur: '4', uni: 'horas', dba: '88' },
+      { dur: '2', uni: 'horas', dba: '91' },
+      { dur: '1', uni: 'hora', dba: '94' },
+      { dur: '30', uni: 'minutos', dba: '97' },
+      { dur: '15', uni: 'minutos', dba: '100' },
+      { dur: '7,50', uni: 'minutos', dba: '103' },
+      { dur: '3,75', uni: 'minutos', dba: '106' },
+      { dur: '1,88', uni: 'minutos', dba: '109' },
+      { dur: '0,94', uni: 'minutos', dba: '112' },
+      { dur: '28,12', uni: 'segundos', dba: '115' },
+      { dur: '14,06', uni: 'segundos', dba: '118' },
+      { dur: '7,03', uni: 'segundos', dba: '121' },
+      { dur: '3,52', uni: 'segundos', dba: '124' },
+      { dur: '1,76', uni: 'segundos', dba: '127' },
+      { dur: '0,88', uni: 'segundos', dba: '130' },
+      { dur: '0,44', uni: 'segundos', dba: '133' },
+      { dur: '0,22', uni: 'segundos', dba: '136' },
+      { dur: '0,11', uni: 'segundos', dba: '139' },
+    ];
+
+    filasTabla1.forEach(row => {
+      const rowH = 5;
+      if (checkPageY(rowH)) {
+        setDrawColor(doc, COLOR_SLATE_300);
+        setFillColor(doc, COLOR_SLATE_200);
+        doc.rect(tX, currentY, 60, 6, 'FD');
+        doc.rect(tX + 60, currentY, 40, 6, 'FD');
+        doc.rect(tX + 100, currentY, 80, 6, 'FD');
+        drawCellText(doc, 'Duración por Día', tX, currentY, 60, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+        drawCellText(doc, 'Unidad', tX + 60, currentY, 40, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+        drawCellText(doc, 'Nivel de Presión Acústica (dBA)', tX + 100, currentY, 80, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+        currentY += 6;
+      }
+
+      setDrawColor(doc, COLOR_SLATE_300);
+      doc.rect(tX, currentY, 60, rowH, 'S');
+      doc.rect(tX + 60, currentY, 40, rowH, 'S');
+      doc.rect(tX + 100, currentY, 80, rowH, 'S');
+
+      drawCellText(doc, row.dur, tX + 2, currentY, 56, rowH, { fontSize: 7.5, valign: 'middle' });
+      drawCellText(doc, row.uni, tX + 62, currentY, 36, rowH, { align: 'center', fontSize: 7.5, valign: 'middle' });
+      drawCellText(doc, row.dba + ' dBA', tX + 102, currentY, 76, rowH, { align: 'center', fontStyle: 'bold', fontSize: 7.5, color: COLOR_AZUL_PRINCIPAL, valign: 'middle' });
+
+      currentY += rowH;
+    });
+
+    currentY += 2;
+    printParagraph('* No ha de haber exposiciones a ruido continuo, intermitente o de impacto por encima de un nivel pico C ponderado de 140 dB.', 'legend');
+    printParagraph('** El nivel se mide con sonómetro en ponderación A y respuesta lenta.', 'legend');
+    currentY += 4;
+  };
+
+  drawTabla1RuidoNormativa();
+
+  // 3. Ruido de impulso o de impacto
+  printSectionHeader('Ruido de impulso o de impacto');
+  printParagraph('La medida del ruido de impulso o de impacto estará en el rango de 80 y 140 dBA y el rango del pulso debe ser por lo menos de 63 dB. No se permitirán exposiciones sin protección auditiva por encima de un nivel pico C ponderado de presión acústica de 140 dB.');
+  printParagraph('Si no se dispone de la instrumentación para medir un pico C ponderado, se puede utilizar la medida de un pico no ponderado por debajo de 140 dB para suponer que el pico C ponderado está por debajo de ese valor.');
+  currentY += 4;
+
+  // 4. Ultrasonido
+  printSectionHeader('Ultrasonido');
+  printParagraph('Estos valores límite representan las condiciones bajo las cuales se cree que casi todos los trabajadores pueden estar expuestos repetidamente sin deteriorarse su capacidad para oír y escuchar una conversación normal.');
+  printParagraph('Los valores límite establecidos para las frecuencias de 10 kilohercios (kHz) a 20 kHz, para prevenir los efectos subjetivos, se indican en la Tabla 1 con uno o dos asteriscos como notas de advertencia al pie de la tabla. Los valores sonoros de la media ponderada en el tiempo de 8 horas son una ampliación del valor límite para el ruido que es un media ponderada en el tiempo para 8 horas de 85 dBA.');
+
+  const drawTablaUltrasonidoNormativa = () => {
+    const tX = 15;
+    const tW = 180;
+
+    checkPageY(14);
+    setFillColor(doc, COLOR_AZUL_PRINCIPAL);
+    doc.rect(tX, currentY, tW, 6, 'F');
+    drawCellText(doc, 'VALORES LÍMITE PARA ULTRASONIDO (Dec. 351/79 - ANEXO V)', tX, currentY, tW, 6, { align: 'center', fontStyle: 'bold', fontSize: 8, color: COLOR_BLANCO });
+    currentY += 6;
+
+    setDrawColor(doc, COLOR_SLATE_300);
+    setFillColor(doc, COLOR_SLATE_200);
+    doc.rect(tX, currentY, 50, 6, 'FD');
+    doc.rect(tX + 50, currentY, 40, 6, 'FD');
+    doc.rect(tX + 90, currentY, 45, 6, 'FD');
+    doc.rect(tX + 135, currentY, 45, 6, 'FD');
+    drawCellText(doc, 'Frecuencia Central (kHz)', tX, currentY, 50, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+    drawCellText(doc, 'Techo Aire (dB)', tX + 50, currentY, 40, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+    drawCellText(doc, 'TWA 8h Aire (dB)', tX + 90, currentY, 45, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+    drawCellText(doc, 'Techo Agua (dB)', tX + 135, currentY, 45, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+    currentY += 6;
+
+    const filasUltrasonido = [
+      { f: '10', tAire: '105*', twa: '88*', tAgua: '167' },
+      { f: '12,5', tAire: '105*', twa: '89*', tAgua: '167' },
+      { f: '16', tAire: '105*', twa: '92*', tAgua: '167' },
+      { f: '20', tAire: '105*', twa: '94*', tAgua: '167' },
+      { f: '25', tAire: '110**', twa: '—', tAgua: '172' },
+      { f: '31,5', tAire: '115**', twa: '—', tAgua: '177' },
+      { f: '40', tAire: '115**', twa: '—', tAgua: '177' },
+      { f: '50', tAire: '115**', twa: '—', tAgua: '177' },
+      { f: '63', tAire: '115**', twa: '—', tAgua: '177' },
+      { f: '80', tAire: '115**', twa: '—', tAgua: '177' },
+      { f: '100', tAire: '115**', twa: '—', tAgua: '177' },
+    ];
+
+    filasUltrasonido.forEach(row => {
+      const rowH = 5;
+      if (checkPageY(rowH)) {
+        setDrawColor(doc, COLOR_SLATE_300);
+        setFillColor(doc, COLOR_SLATE_200);
+        doc.rect(tX, currentY, 50, 6, 'FD');
+        doc.rect(tX + 50, currentY, 40, 6, 'FD');
+        doc.rect(tX + 90, currentY, 45, 6, 'FD');
+        doc.rect(tX + 135, currentY, 45, 6, 'FD');
+        drawCellText(doc, 'Frecuencia Central (kHz)', tX, currentY, 50, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+        drawCellText(doc, 'Techo Aire (dB)', tX + 50, currentY, 40, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+        drawCellText(doc, 'TWA 8h Aire (dB)', tX + 90, currentY, 45, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+        drawCellText(doc, 'Techo Agua (dB)', tX + 135, currentY, 45, 6, { align: 'center', fontStyle: 'bold', fontSize: 7.5 });
+        currentY += 6;
+      }
+
+      setDrawColor(doc, COLOR_SLATE_300);
+      doc.rect(tX, currentY, 50, rowH, 'S');
+      doc.rect(tX + 50, currentY, 40, rowH, 'S');
+      doc.rect(tX + 90, currentY, 45, rowH, 'S');
+      doc.rect(tX + 135, currentY, 45, rowH, 'S');
+
+      drawCellText(doc, row.f + ' kHz', tX + 2, currentY, 46, rowH, { fontStyle: 'bold', fontSize: 7.5, valign: 'middle' });
+      drawCellText(doc, row.tAire, tX + 52, currentY, 36, rowH, { align: 'center', fontSize: 7.5, valign: 'middle' });
+      drawCellText(doc, row.twa, tX + 92, currentY, 41, rowH, { align: 'center', fontSize: 7.5, valign: 'middle' });
+      drawCellText(doc, row.tAgua, tX + 137, currentY, 41, rowH, { align: 'center', fontSize: 7.5, valign: 'middle' });
+
+      currentY += rowH;
+    });
+
+    currentY += 2;
+  };
+
+  drawTablaUltrasonidoNormativa();
+
+  printParagraph('* Pueden darse molestias y malestar subjetivos en algunos individuos a niveles entre 75 y 105 dB para las frecuencias desde 10 kHz, especialmente si son de naturaleza tonal. Para prevenir los efectos subjetivos puede ser necesaria la protección auditiva o reducir a 80 dB los sonidos tonales de frecuencias por debajo de 10 kHZ.', 'legend');
+  printParagraph('** En estos valores se asume que existe acoplamiento humano con el agua u otro sustrato. Cuando no hay posibilidad de que el ultrasonido pueda acoplarse con el cuerpo en contacto con el agua o algún otro medio, estos valores umbrales pueden aumentarse en 30 dB. (Los valores de esta tabla no se aplican cuando la fuente de ultrasonido está en contacto directo con el cuerpo. Se debe utilizar el nivel de vibración en el hueso mastoideo).', 'legend');
+  printParagraph('Se deben evitar los valores de la aceleración de 15 dB por encima de la referencia de 1 g.v.c.m., reduciendo la exposición o aislando el cuerpo de la fuente de acoplamiento (g = aceleración debida a la fuerza de la gravedad, 9,80665 m/s; v.c.m.= valor cuadrático medio).');
+
+  // ==========================================
+  // HOJA 1: FORMULARIO OFICIAL RUIDO (A4 Vertical - RES. SRT 85/12)
+  // ==========================================
+  doc.addPage('a4', 'portrait');
+  pageCounter++;
+
+  drawHeader(false);
+  drawProtocolTitleBar(false, { x: 15, y: 22, w: 180, h: 6 });
+
+  // Tabla 1: Datos del Establecimiento
+  const t1X = 15;
+  const t1Y = 29;
+  const t1W = 180;
+  const t1H = 36;
+
+  setDrawColor(doc, COLOR_NEGRO);
+  doc.setLineWidth(0.45);
+  doc.rect(t1X, t1Y, t1W, t1H, 'S');
+
+  // Title: Datos del establecimiento
+  setFillColor(doc, COLOR_SLATE_200);
+  doc.rect(t1X, t1Y, t1W, 6, 'FD');
+  drawCellText(doc, 'Datos del establecimiento', t1X, t1Y, t1W, 6, { align: 'center', fontStyle: 'bold', fontSize: 9 });
+
+  let rY = t1Y + 6;
+  doc.setLineWidth(0.25);
+
+  // Row: Razón Social
+  doc.rect(t1X, rY, t1W, 6, 'S');
+  drawCellText(doc, 'Razón Social:', t1X, rY, 30, 6, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, razonSocial, t1X + 30, rY, 150, 6, { fontSize: 8.5 });
+  rY += 6;
+
+  // Row: Dirección
+  doc.rect(t1X, rY, t1W, 6, 'S');
+  drawCellText(doc, 'Dirección:', t1X, rY, 30, 6, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, direccion, t1X + 30, rY, 150, 6, { fontSize: 8.5 });
+  rY += 6;
+
+  // Row: Localidad
+  doc.rect(t1X, rY, t1W, 6, 'S');
+  drawCellText(doc, 'Localidad:', t1X, rY, 30, 6, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, localidad, t1X + 30, rY, 150, 6, { fontSize: 8.5 });
+  rY += 6;
+
+  // Row: Provincia
+  doc.rect(t1X, rY, t1W, 6, 'S');
+  drawCellText(doc, 'Provincia:', t1X, rY, 30, 6, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, provincia, t1X + 30, rY, 150, 6, { fontSize: 8.5 });
+  rY += 6;
+
+  // Row: CP y CUIT
+  doc.rect(t1X, rY, 50, 6, 'S');
+  doc.rect(t1X + 50, rY, 130, 6, 'S');
+  drawCellText(doc, 'C.P.:', t1X, rY, 14, 6, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, cp, t1X + 14, rY, 36, 6, { fontSize: 8.5 });
+  drawCellText(doc, 'C.U.I.T.:', t1X + 50, rY, 20, 6, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, cuit, t1X + 70, rY, 110, 6, { fontSize: 8.5 });
+
+  // Tabla 2: Datos para la Medición
+  const t2X = 15;
+  const t2Y = t1Y + t1H + 3;
+  const t2W = 180;
+  const t2H = 125;
+
+  doc.setLineWidth(0.45);
+  doc.rect(t2X, t2Y, t2W, t2H, 'S');
+
+  // Title: Datos para la medición
+  setFillColor(doc, COLOR_SLATE_200);
+  doc.rect(t2X, t2Y, t2W, 6, 'FD');
+  drawCellText(doc, 'Datos para la medición', t2X, t2Y, t2W, 6, { align: 'center', fontStyle: 'bold', fontSize: 9 });
+
+  rY = t2Y + 6;
+  doc.setLineWidth(0.25);
+
+  // Marca, modelo y número de serie del instrumento utilizado
+  doc.rect(t2X, rY, t2W, 12, 'S');
+  drawCellText(doc, 'Marca, modelo y número de serie del instrumento utilizado:', t2X, rY, t2W, 5, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, marcaModeloNser, t2X, rY + 5, t2W, 7, { fontSize: 8.5 });
+  rY += 12;
+
+  // Fecha del certificado de calibración del instrumento utilizado en la medición
+  doc.rect(t2X, rY, t2W, 6, 'S');
+  drawCellText(doc, 'Fecha del certificado de calibración del instrumento utilizado en la medición:', t2X, rY, 130, 6, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, fechaCalib, t2X + 130, rY, 50, 6, { fontSize: 8.5 });
+  rY += 6;
+
+  // Fecha de la medición | Hora de inicio | Hora finalización
+  doc.rect(t2X, rY, 60, 7, 'S');
+  drawCellText(doc, 'Fecha de la medición:', t2X, rY, 34, 7, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, fechaMedicion, t2X + 34, rY, 26, 7, { fontSize: 8.5 });
+
+  doc.rect(t2X + 60, rY, 55, 7, 'S');
+  drawCellText(doc, 'Hora de inicio:', t2X + 60, rY, 28, 7, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, horaInicio, t2X + 88, rY, 27, 7, { fontSize: 8.5 });
+
+  doc.rect(t2X + 115, rY, 65, 7, 'S');
+  drawCellText(doc, 'Hora finalización:', t2X + 115, rY, 32, 7, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, horaFin, t2X + 147, rY, 33, 7, { fontSize: 8.5 });
+  rY += 7;
+
+  // Horarios/turnos habituales de trabajo
+  doc.rect(t2X, rY, t2W, 12, 'S');
+  drawCellText(doc, 'Horarios/turnos habituales de trabajo:', t2X, rY, t2W, 5, { fontStyle: 'bold', fontSize: 8.5 });
+  drawCellText(doc, horarios || 'Lunes a viernes de 8:00 a 17:00 hs', t2X, rY + 5, t2W, 7, { fontSize: 8.5, valign: 'top' });
+  rY += 12;
+
+  // Describa las condiciones normales y/o habituales de trabajo.
+  doc.rect(t2X, rY, t2W, 41, 'S');
+  drawCellText(doc, 'Describa las condiciones normales y/o habituales de trabajo.', t2X, rY, t2W, 5, { fontStyle: 'bold', fontSize: 8.5 });
+  const condHabitualesText = proto.condiciones_atmosfericas || 'Al momento de la medición, el establecimiento se encontraba funcionando en condiciones normales de producción.';
+  drawCellText(doc, condHabitualesText, t2X + 2, rY + 5, t2W - 4, 35, { fontSize: 8.5, valign: 'top' });
+  rY += 41;
+
+  // Describa las condiciones de trabajo al momento de la medición.
+  doc.rect(t2X, rY, t2W, 41, 'S');
+  drawCellText(doc, 'Describa las condiciones de trabajo al momento de la medición.', t2X, rY, t2W, 5, { fontStyle: 'bold', fontSize: 8.5 });
+  const obsText = proto.observaciones || 'Al momento de la medición, el establecimiento se encontraba funcionando en condiciones normales.';
+  drawCellText(doc, obsText, t2X + 2, rY + 5, t2W - 4, 35, { fontSize: 8.5, valign: 'top' });
+
+  // Tabla 3: Documentación que se Adjuntará a la Medición (Cuadro único sin división horizontal en el medio)
+  const t3X = 15;
+  const t3Y = t2Y + t2H + 3;
+  const t3W = 180;
+  const t3H = 19;
+
+  doc.setLineWidth(0.45);
+  doc.rect(t3X, t3Y, t3W, t3H, 'S');
+  setFillColor(doc, COLOR_SLATE_200);
+  doc.rect(t3X, t3Y, t3W, 6, 'FD');
+  drawCellText(doc, 'Documentación que se adjuntará a la medición', t3X, t3Y, t3W, 6, { align: 'center', fontStyle: 'bold', fontSize: 9 });
+
+  const docAdjText = proto.documentacion_adjunta || 'Certificado de Calibración.\nPlano o Croquis del establecimiento.';
+  drawCellText(doc, docAdjText, t3X + 3, t3Y + 6.5, t3W - 6, 12, { fontSize: 8.5, valign: 'top' });
+
+  // Firma Profesional (Alineada abajo a la derecha de la hoja 1)
+  drawSignatureBlock(105, t3Y + t3H + 4, 90, 36);
+
+  // ==========================================
+  // PAGINAS 3 Y SIGUIENTES: TABLA GENERAL DE MEDICIÓN (A4 Apaisado)
+  // ==========================================
+  const maxRowsPerPage = 12;
+  const totalPoints = (puntosList || []).length;
+  const totalTablePages = Math.max(1, Math.ceil(totalPoints / maxRowsPerPage));
+
+  for (let pIdx = 0; pIdx < totalTablePages; pIdx++) {
+    doc.addPage('a4', 'landscape');
+    pageCounter++;
+
+    drawHeader(true);
+    drawProtocolTitleBar(true, { x: 15, y: 22, w: 267, h: 5.5 });
+
+    // Encabezado Establecimiento
+    const eX = 15;
+    const eY = 29;
+    const eW = 267;
+
+    doc.setLineWidth(0.45);
+    setDrawColor(doc, COLOR_NEGRO);
+    doc.rect(eX, eY, eW, 14, 'S');
+    doc.setLineWidth(0.25);
+
+    // Fila 1: Razón Social (164mm) | C.U.I.T. (103mm)
+    doc.rect(eX, eY, 164, 7, 'S');
+    drawCellText(doc, 'Razón social:', eX, eY, 22, 7, { fontStyle: 'bold', fontSize: 8 });
+    drawCellText(doc, razonSocial, eX + 22, eY, 142, 7, { fontSize: 8 });
+
+    doc.rect(eX + 164, eY, 103, 7, 'S');
+    drawCellText(doc, 'C.U.I.T.:', eX + 164, eY, 18, 7, { fontStyle: 'bold', fontSize: 8 });
+    drawCellText(doc, cuit, eX + 182, eY, 85, 7, { fontSize: 8 });
+
+    // Fila 2: Dirección (135mm) | Localidad (55mm) | C.P. (25mm) | Provincia (52mm)
+    doc.rect(eX, eY + 7, 135, 7, 'S');
+    drawCellText(doc, 'Dirección:', eX, eY + 7, 18, 7, { fontStyle: 'bold', fontSize: 8 });
+    drawCellText(doc, direccion, eX + 18, eY + 7, 117, 7, { fontSize: 8 });
+
+    doc.rect(eX + 135, eY + 7, 55, 7, 'S');
+    drawCellText(doc, 'Localidad:', eX + 135, eY + 7, 18, 7, { fontStyle: 'bold', fontSize: 8 });
+    drawCellText(doc, localidad, eX + 153, eY + 7, 37, 7, { fontSize: 8 });
+
+    doc.rect(eX + 190, eY + 7, 25, 7, 'S');
+    drawCellText(doc, 'C.P.:', eX + 190, eY + 7, 10, 7, { fontStyle: 'bold', fontSize: 8 });
+    drawCellText(doc, cp, eX + 200, eY + 7, 15, 7, { fontSize: 8 });
+
+    doc.rect(eX + 215, eY + 7, 52, 7, 'S');
+    drawCellText(doc, 'Provincia:', eX + 215, eY + 7, 18, 7, { fontStyle: 'bold', fontSize: 8 });
+    drawCellText(doc, provincia, eX + 233, eY + 7, 34, 7, { fontSize: 8 });
+
+    // Tabla 4: Puntos de Muestreo (Encabezados estándar)
+    const colY = eY + 17;
+    const colH = 20;
+
+    const drawHeaderBox = (x, y, w, h, text, opts = {}) => {
+      setFillColor(doc, COLOR_SLATE_200);
+      doc.rect(x, y, w, h, 'FD');
+      drawCellText(doc, text, x, y, w, h, {
+        align: 'center',
+        fontStyle: 'bold',
+        fontSize: 6,
+        color: COLOR_NEGRO,
+        ...opts
+      });
+    };
+
+    let xPos = 15;
+    
+    // Col 1: Punto de medición (16mm)
+    drawHeaderBox(xPos, colY, 16, colH, 'Punto de medición', { fontSize: 6.5, maxLines: 3 });
+    xPos += 16;
+
+    // Col 2: Sector (36mm)
+    drawHeaderBox(xPos, colY, 36, colH, 'Sector', { fontSize: 7, maxLines: 2 });
+    xPos += 36;
+
+    // Col 3: Puesto (38mm)
+    drawHeaderBox(xPos, colY, 38, colH, 'Puesto / Puesto tipo / Puesto móvil', { fontSize: 6.5, maxLines: 3 });
+    xPos += 38;
+
+    // Col 4: Tiempo exposición (22mm)
+    drawHeaderBox(xPos, colY, 22, colH, 'Tiempo de exposición (Te en hs o min)', { fontSize: 6, maxLines: 5 });
+    xPos += 22;
+
+    // Col 5: Tiempo integración (22mm)
+    drawHeaderBox(xPos, colY, 22, colH, 'Tiempo de integración (tiempo de medición)', { fontSize: 6, maxLines: 5 });
+    xPos += 22;
+
+    // Col 6: Características del ruido (34mm)
+    drawHeaderBox(xPos, colY, 34, colH, 'Características generales del ruido a medir (continuo / intermitente / de impulso o de impacto)', { fontSize: 6, maxLines: 5 });
+    xPos += 34;
+
+    // Col 7: RUIDO DE IMPULSO O DE IMPACTO (25mm)
+    drawHeaderBox(xPos, colY, 25, 7, 'RUIDO DE IMPULSO O DE IMPACTO', { fontSize: 5.5, maxLines: 2 });
+    drawHeaderBox(xPos, colY + 7, 25, 13, 'Nivel pico de presión acústica ponderado C (LC pico, en dBC)', { fontSize: 5.5, maxLines: 5 });
+    xPos += 25;
+
+    // Col 8: SONIDO CONTINUO o INTERMITENTE (54mm)
+    drawHeaderBox(xPos, colY, 54, 7, 'SONIDO CONTINUO o INTERMITENTE', { fontSize: 6.5 });
+    drawHeaderBox(xPos, colY + 7, 19, 13, 'Nivel de presión acústica integrado (LAeq,Te en dBA)', { fontSize: 5.5, maxLines: 5 });
+    drawHeaderBox(xPos + 19, colY + 7, 18, 13, 'Resultado de la suma de las fracciones', { fontSize: 5.5, maxLines: 5 });
+    drawHeaderBox(xPos + 37, colY + 7, 17, 13, 'Dosis (en porcentaje %)', { fontSize: 5.5, maxLines: 4 });
+    xPos += 54;
+
+    // Col 9: Cumple (20mm)
+    drawHeaderBox(xPos, colY, 20, colH, 'Cumple con los valores de exposición diaria permitidos? (SI / NO)', { fontSize: 5.5, maxLines: 6 });
+
+    // Data Rows (12 filas por página)
+    const rowStartY = colY + colH;
+    const rowH = 5.8;
+
+    const startSlice = pIdx * maxRowsPerPage;
+    const endSlice = startSlice + maxRowsPerPage;
+    const pagePuntos = (puntosList || []).slice(startSlice, endSlice);
+
+    const tableColsDef = [
+      { w: 16, key: 'punto' },
+      { w: 36, key: 'sector' },
+      { w: 38, key: 'puesto' },
+      { w: 22, key: 'tiempo_exp' },
+      { w: 22, key: 'tiempo_integ' },
+      { w: 34, key: 'caracteristica' },
+      { w: 25, key: 'lc_pico' },
+      { w: 19, key: 'laeq_te' },
+      { w: 18, key: 'suma_fracciones' },
+      { w: 17, key: 'dosis' },
+      { w: 20, key: 'cumple' }
+    ];
+
+    for (let r = 0; r < maxRowsPerPage; r++) {
+      const rowY = rowStartY + (r * rowH);
+      const pt = pagePuntos[r];
+      let currXPos = 15;
+
+      if (!pt) {
+        tableColsDef.forEach(c => {
+          setFillColor(doc, COLOR_SLATE_50);
+          doc.rect(currXPos, rowY, c.w, rowH, 'FD');
+          drawCellText(doc, '-', currXPos, rowY, c.w, rowH, { align: 'center', fontSize: 7, color: COLOR_SLATE_500 });
+          currXPos += c.w;
+        });
+      } else {
+        const cal = getPuntoCalculos(pt);
+        const isImpulso = pt.caracteristicas_ruido === 'impulso_impacto';
+        const tipoContinuo = pt.tipo_carga_continuo || 'laeq';
+
+        const rowData = {
+          punto: String(pt.punto_muestreo || pt.orden || (r + 1)),
+          sector: pt.sector_text || pt.sector || pt.ubicacion || '-',
+          puesto: pt.puesto_text || pt.puesto || pt.tipo_toma_tierra || '-',
+          tiempo_exp: pt.tiempo_exposicion_hs ? `${pt.tiempo_exposicion_hs} hs` : '8 hs',
+          tiempo_integ: pt.tiempo_integracion || '15 min',
+          caracteristica: isImpulso ? 'Impulso / Impacto' : 'Continuo / Intermitente',
+          lc_pico: isImpulso ? (pt.nivel_pico_lc_pico_dbc ? `${pt.nivel_pico_lc_pico_dbc} dBC` : '—') : '—',
+          laeq_te: (!isImpulso && tipoContinuo === 'laeq' && pt.nivel_laeq_te_dba) ? `${pt.nivel_laeq_te_dba} dBA` : (pt.valor_medido_ohm ? `${pt.valor_medido_ohm} Ω` : '—'),
+          suma_fracciones: (!isImpulso && tipoContinuo === 'suma_fracciones' && pt.resultado_suma_fracciones) ? String(pt.resultado_suma_fracciones) : '—',
+          dosis: (!isImpulso && tipoContinuo === 'dosis' && pt.dosis_porcentaje) ? `${pt.dosis_porcentaje}%` : '—',
+          cumple: cal.resultado_punto === 'Cumple' ? 'SI' : (cal.resultado_punto === 'No cumple' ? 'NO' : '—')
+        };
+
+        tableColsDef.forEach(c => {
+          doc.rect(currXPos, rowY, c.w, rowH, 'S');
+          const val = rowData[c.key] || '—';
+          const isFail = (c.key === 'cumple' && val === 'NO');
+          const isPass = (c.key === 'cumple' && val === 'SI');
+
+          drawCellText(doc, val, currXPos, rowY, c.w, rowH, {
+            align: 'center',
+            fontSize: 7,
+            fontStyle: (isFail || isPass) ? 'bold' : 'normal',
+            color: isFail ? COLOR_ROJO_NO_CUMPLE : (isPass ? COLOR_VERDE_CUMPLE : COLOR_NEGRO),
+            maxLines: 1
+          });
+          currXPos += c.w;
+        });
+      }
+    }
+
+    // Bottom Box: Información adicional
+    const infoY = rowStartY + (maxRowsPerPage * rowH);
+    const infoH = 20;
+    doc.setLineWidth(0.45);
+    doc.rect(15, infoY, 267, infoH, 'S');
+    doc.setLineWidth(0.25);
+
+    drawCellText(doc, 'Información adicional:', 15, infoY, 267, 5, { fontStyle: 'bold', fontSize: 8, color: COLOR_NEGRO });
+    const addInfoText = proto.informacion_adicional || 'Sin información adicional registrada.';
+    drawCellText(doc, addInfoText, 15 + 2, infoY + 5, 267 - 4, 14, { fontSize: 8, valign: 'top', color: COLOR_NEGRO });
+
+    // Firma Profesional
+    drawSignatureBlock(185, infoY + infoH + 3, 90, 32);
   }
 
-  drawPageFooter(2);
+  // ==========================================
+  // PAGINA 6: ANÁLISIS Y MEJORAS (A4 Apaisado)
+  // ==========================================
+  doc.addPage('a4', 'landscape');
+  pageCounter++;
+
+  drawHeader(true);
+  drawProtocolTitleBar(true, { x: 18, y: 22, w: 263, h: 5.5 });
+
+  // Encabezado Establecimiento
+  const aX = 18;
+  const aY = 29;
+  const aW = 263;
+
+  doc.setLineWidth(0.45);
+  setDrawColor(doc, COLOR_NEGRO);
+  doc.rect(aX, aY, aW, 14, 'S');
+  doc.setLineWidth(0.25);
+
+  // Fila 1: Razón Social (160mm) | C.U.I.T. (103mm)
+  doc.rect(aX, aY, 160, 7, 'S');
+  drawCellText(doc, 'Razón Social:', aX, aY, 22, 7, { fontStyle: 'bold', fontSize: 8 });
+  drawCellText(doc, razonSocial, aX + 22, aY, 138, 7, { fontSize: 8 });
+
+  doc.rect(aX + 160, aY, 103, 7, 'S');
+  drawCellText(doc, 'C.U.I.T.:', aX + 160, aY, 18, 7, { fontStyle: 'bold', fontSize: 8 });
+  drawCellText(doc, cuit, aX + 178, aY, 85, 7, { fontSize: 8 });
+
+  // Fila 2: Dirección (135mm) | Localidad (55mm) | C.P. (25mm) | Provincia (48mm)
+  doc.rect(aX, aY + 7, 135, 7, 'S');
+  drawCellText(doc, 'Dirección:', aX, aY + 7, 18, 7, { fontStyle: 'bold', fontSize: 8 });
+  drawCellText(doc, direccion, aX + 18, aY + 7, 117, 7, { fontSize: 8 });
+
+  doc.rect(aX + 135, aY + 7, 55, 7, 'S');
+  drawCellText(doc, 'Localidad:', aX + 135, aY + 7, 18, 7, { fontStyle: 'bold', fontSize: 8 });
+  drawCellText(doc, localidad, aX + 153, aY + 7, 37, 7, { fontSize: 8 });
+
+  doc.rect(aX + 190, aY + 7, 25, 7, 'S');
+  drawCellText(doc, 'C.P.:', aX + 190, aY + 7, 10, 7, { fontStyle: 'bold', fontSize: 8 });
+  drawCellText(doc, cp, aX + 200, aY + 7, 15, 7, { fontSize: 8 });
+
+  doc.rect(aX + 215, aY + 7, 48, 7, 'S');
+  drawCellText(doc, 'Provincia:', aX + 215, aY + 7, 16, 7, { fontStyle: 'bold', fontSize: 8 });
+  drawCellText(doc, provincia, aX + 231, aY + 7, 32, 7, { fontSize: 8 });
+
+  // Tabla Análisis
+  const tAX = 18;
+  const tAY = 45;
+  const tAW = 263;
+  const contentH = 75;
+  const totalBoxH = 6 + 8 + contentH; // 89mm total height
+
+  doc.setLineWidth(0.45);
+  doc.rect(tAX, tAY, tAW, totalBoxH, 'S');
+
+  // Title Header
+  setFillColor(doc, COLOR_SLATE_200);
+  doc.rect(tAX, tAY, tAW, 6, 'FD');
+  drawCellText(doc, 'Análisis de los Datos y Mejoras a Realizar', tAX, tAY, tAW, 6, { align: 'center', fontStyle: 'bold', fontSize: 9, color: COLOR_NEGRO });
+
+  // 2 Columns Subheader Titles
+  const colW = tAW / 2;
+  setFillColor(doc, COLOR_SLATE_200);
+  doc.rect(tAX, tAY + 6, colW, 8, 'FD');
+  doc.rect(tAX + colW, tAY + 6, colW, 8, 'FD');
+
+  drawCellText(doc, 'Conclusiones', tAX, tAY + 6, colW, 8, { fontStyle: 'bold', fontSize: 8.5, color: COLOR_NEGRO });
+  drawCellText(doc, 'Recomendaciones para adecuar el nivel de ruido a la legislación vigente.', tAX + colW, tAY + 6, colW, 8, { fontStyle: 'bold', fontSize: 8.5, color: COLOR_NEGRO });
+
+  doc.rect(tAX, tAY + 14, colW, contentH, 'S');
+  doc.rect(tAX + colW, tAY + 14, colW, contentH, 'S');
+
+  // Conclusiones text
+  const rawConc = proto.conclusiones || "Los valores obtenidos en todos los puntos de muestreo, Cumplen con lo establecido en el ANEXO V - CAPITULO 13 (Acústica), del Decreto Nº 351/79.";
+  const concText = rawConc.trim().replace(/^[•\-\*\.\s]+/, '');
+  drawCellText(doc, concText, tAX, tAY + 14, colW, contentH, { fontSize: 8.5, valign: 'top', padding: 2 });
+
+  // Recomendaciones text
+  const defaultRecomStr = `Cuando los niveles de exposición superen o se encuentren próximos a los valores establecidos en la legislación vigente, se recomienda:\n\n• Implementar controles de ingeniería sobre las instalaciones y equipos.\n• Evaluar la sustitución o adecuación técnica de materiales y esquemas de puesta a tierra.\n• Delimitar y señalizar los sectores e inspeccionar periódicamente la continuidad de las masas.\n• Capacitar al personal sobre los riesgos asociados y medidas preventivas.`;
+
+  const recomText = proto.recomendaciones || defaultRecomStr;
+  drawCellText(doc, recomText, tAX + colW, tAY + 14, colW, contentH, { fontSize: 7.5, valign: 'top', padding: 2 });
+
+  // Firma Profesional
+  drawSignatureBlock(185, tAY + totalBoxH + 5, 95, 38);
 
   // ==========================================
-  // PÁGINA 4: HOJA 1 SRT 900/2015 (DATOS E INSTRUMENTAL)
+  // PLANOS Y CROQUIS DEL ESTABLECIMIENTO
   // ==========================================
-  doc.addPage();
-  drawPageHeader();
+  const planoAdjuntos = (adjuntosList || []).filter(adj => 
+    adj.tipo === 'Evidencia Fotográfica Plano' ||
+    adj.tipo === 'Foto Plano' ||
+    adj.tipo === 'Plano' ||
+    adj.tipo === 'Croquis' ||
+    (adj.tipo !== 'Certificado de Calibración' && adj.tipo !== 'Certificado' && adj.tipo !== 'Certificado de Calibración del Instrumental')
+  );
 
-  // Encabezado Formulario Azul
-  setFillColor(doc, primaryBlue);
-  doc.rect(14, 28, 182, 7, 'F');
-  setTextColor(doc, '#FFFFFF');
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'bold');
-  doc.text('PROTOCOLO DE MEDICIÓN DE LA PUESTA A TIERRA Y CONTINUIDAD DE LAS MASAS', 105, 32.5, { align: 'center' });
+  for (let cIdx = 0; cIdx < planoAdjuntos.length; cIdx++) {
+    const rawAdj = planoAdjuntos[cIdx];
 
-  // 1. Datos del Establecimiento
-  setFillColor(doc, '#E2E8F0');
-  doc.rect(14, 35, 182, 6, 'F');
-  setTextColor(doc, darkText);
-  doc.setFontSize(8.5);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Datos del establecimiento', 105, 39, { align: 'center' });
+    doc.addPage('a4', 'landscape');
+    pageCounter++;
 
-  setDrawColor(doc, darkText);
-  doc.setLineWidth(0.3);
+    drawHeader(true);
+    drawProtocolTitleBar(true, { x: 15, y: 22, w: 267, h: 5.5 });
 
-  // Fila Razón Social
-  doc.rect(14, 41, 182, 7);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Razón Social:', 16, 45.5);
-  doc.setFont('helvetica', 'normal');
-  doc.text(proto.razon_social_text || emp?.razon_social || '-', 42, 45.5);
+    const kX = 15;
+    const kY = 29;
+    const kW = 267;
 
-  // Fila Dirección
-  doc.rect(14, 48, 182, 7);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Dirección:', 16, 52.5);
-  doc.setFont('helvetica', 'normal');
-  doc.text(proto.direccion_text || est?.direccion || '-', 36, 52.5);
+    doc.setLineWidth(0.45);
+    setDrawColor(doc, COLOR_NEGRO);
+    doc.rect(kX, kY, kW, 6, 'S');
+    setFillColor(doc, COLOR_SLATE_200);
+    doc.rect(kX, kY, kW, 6, 'FD');
+    
+    const planoTitle = rawAdj.descripcion || rawAdj.nombre_archivo || rawAdj.nombre || `PLANO O CROQUIS DE MEDICIÓN (${cIdx + 1} de ${planoAdjuntos.length})`;
+    drawCellText(doc, planoTitle.toUpperCase(), kX, kY, kW, 6, { fontStyle: 'bold', fontSize: 9, align: 'center', color: COLOR_NEGRO });
 
-  // Fila Localidad
-  doc.rect(14, 55, 182, 7);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Localidad:', 16, 59.5);
-  doc.setFont('helvetica', 'normal');
-  doc.text(proto.localidad_text || est?.localidad || '-', 36, 59.5);
+    const mY = 37;
+    const mH = 150;
+    doc.rect(kX, mY, kW, mH, 'S');
 
-  // Fila Provincia
-  doc.rect(14, 62, 182, 7);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Provincia:', 16, 66.5);
-  doc.setFont('helvetica', 'normal');
-  doc.text(proto.provincia_text || est?.provincia || '-', 36, 66.5);
-
-  // Fila CP & CUIT
-  doc.rect(14, 69, 182, 7);
-  doc.setFont('helvetica', 'bold');
-  doc.text('CP:', 16, 73.5);
-  doc.setFont('helvetica', 'normal');
-  doc.text(proto.cp_text || est?.cp || '-', 25, 73.5);
-
-  doc.line(95, 69, 95, 76);
-  doc.setFont('helvetica', 'bold');
-  doc.text('C.U.I.T.:', 98, 73.5);
-  doc.setFont('helvetica', 'normal');
-  doc.text(proto.cuit_text || emp?.cuit || '-', 116, 73.5);
-
-  // 2. Datos para Medición
-  setFillColor(doc, '#E2E8F0');
-  doc.rect(14, 78, 182, 6, 'F');
-  setTextColor(doc, darkText);
-  doc.setFontSize(8.5);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Datos para medición', 105, 82, { align: 'center' });
-
-  // Instrumento
-  doc.rect(14, 84, 182, 18);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Marca, modelo y número de serie del instrumento utilizado:', 16, 88.5);
-  doc.setFont('helvetica', 'normal');
-  const instText = proto.instrumento_marca_modelo_serie || 'Telurímetro digital marca SEW, modelo ST-1520, número de serie 01987952';
-  const instLines = doc.splitTextToSize(instText, 178);
-  doc.text(instLines, 16, 94);
-
-  // Fecha Calibración
-  doc.rect(14, 102, 182, 7);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Fecha de Calibración del Instrumental utilizado:', 16, 106.5);
-  doc.setFont('helvetica', 'normal');
-  doc.text(proto.fecha_calibracion ? formatDate(proto.fecha_calibracion) : '-', 100, 106.5);
-
-  // Fecha medición / Horas
-  doc.rect(14, 109, 182, 10);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Fecha de la medición:', 16, 115);
-  doc.setFont('helvetica', 'normal');
-  doc.text(proto.fecha_medicion ? formatDate(proto.fecha_medicion) : '-', 50, 115);
-
-  doc.line(75, 109, 75, 119);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Hora de inicio:', 78, 115);
-  doc.setFont('helvetica', 'normal');
-  doc.text(proto.hora_inicio || '09:00', 105, 115);
-
-  doc.line(130, 109, 130, 119);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Hora finalización:', 133, 115);
-  doc.setFont('helvetica', 'normal');
-  doc.text(proto.hora_finalizacion || '10:00', 165, 115);
-
-  // Metodología Utilizada
-  doc.rect(14, 119, 182, 14);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Metodología utilizada:', 16, 124);
-  doc.setFont('helvetica', 'normal');
-  const metText = proto.metodologia_utilizada || '“de caída de tensión” según Norma IRAM 2281 parte II: “Guía de mediciones de magnitudes de puesta a tierra”';
-  const metLines = doc.splitTextToSize(metText, 140);
-  doc.text(metLines, 54, 124);
-
-  // 3. Observaciones
-  doc.rect(14, 136, 182, 35);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Observaciones:', 16, 141);
-  doc.setFont('helvetica', 'normal');
-  const obsLines = doc.splitTextToSize(proto.observaciones || 'N/A', 178);
-  doc.text(obsLines, 16, 147);
-
-  // 4. Documentación Adjunta
-  setFillColor(doc, '#E2E8F0');
-  doc.rect(14, 173, 182, 6, 'F');
-  setTextColor(doc, darkText);
-  doc.setFontSize(8.5);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Documentación que se Adjuntara a la Medición', 105, 177, { align: 'center' });
-
-  doc.rect(14, 179, 182, 25);
-  doc.setFont('helvetica', 'normal');
-  const docAdjText = proto.documentacion_adjunta || 'Certificado de Calibración: Número 23B4139 del Laboratorio Eléctrico de Metrología BALDOR';
-  const docAdjLines = doc.splitTextToSize(docAdjText, 178);
-  doc.text(docAdjLines, 16, 185);
-
-  // Bloque Firma
-  drawSignatureBlock(240);
-  drawPageFooter(3);
-
-  // ==========================================
-  // PÁGINA 5: HOJA 2 SRT 900/2015 (TABLA DE MEDICIONES DE JABALINAS)
-  // ==========================================
-  doc.addPage();
-  drawPageHeader();
-
-  // Header Azul
-  setFillColor(doc, primaryBlue);
-  doc.rect(14, 28, 182, 6, 'F');
-  setTextColor(doc, '#FFFFFF');
-  doc.setFontSize(8.5);
-  doc.setFont('helvetica', 'bold');
-  doc.text('PROTOCOLO DE MEDICIÓN DE LA PUESTA A TIERRA Y CONTINUIDAD DE LAS MASAS', 105, 32, { align: 'center' });
-
-  // Subheader Datos
-  doc.setFontSize(7.5);
-  doc.setFont('helvetica', 'normal');
-  doc.rect(14, 34, 182, 10);
-
-  doc.setFont('helvetica', 'bold');
-  doc.text('Razón Social:', 16, 38);
-  doc.setFont('helvetica', 'normal');
-  doc.text(proto.razon_social_text || emp?.razon_social || '-', 36, 38);
-
-  doc.setFont('helvetica', 'bold');
-  doc.text('C.U.I.T.:', 130, 38);
-  doc.setFont('helvetica', 'normal');
-  doc.text(proto.cuit_text || emp?.cuit || '-', 145, 38);
-
-  doc.setFont('helvetica', 'bold');
-  doc.text('Dirección:', 16, 42);
-  doc.setFont('helvetica', 'normal');
-  doc.text(proto.direccion_text || est?.direccion || '-', 30, 42);
-
-  doc.setFont('helvetica', 'bold');
-  doc.text('Localidad:', 85, 42);
-  doc.setFont('helvetica', 'normal');
-  doc.text(proto.localidad_text || est?.localidad || '-', 100, 42);
-
-  doc.setFont('helvetica', 'bold');
-  doc.text('CP:', 135, 42);
-  doc.setFont('helvetica', 'normal');
-  doc.text(proto.cp_text || est?.cp || '-', 142, 42);
-
-  doc.setFont('helvetica', 'bold');
-  doc.text('Provincia:', 155, 42);
-  doc.setFont('helvetica', 'normal');
-  doc.text(proto.provincia_text || est?.provincia || '-', 170, 42);
-
-  // Título Datos de la Medición
-  setFillColor(doc, '#E2E8F0');
-  doc.rect(14, 44, 182, 5, 'F');
-  setTextColor(doc, darkText);
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Datos de la Medición', 105, 47.5, { align: 'center' });
-
-  // Importar jspdf-autotable para la tabla compleja
-  const autoTable = (await import('jspdf-autotable')).default;
-
-  // Formatear filas de la tabla de jabalinas
-  const tableRows = (puntosList && puntosList.length > 0 ? puntosList : [
-    {
-      toma_tierra_num: 1,
-      sector: 'Jabalina de tablero principal',
-      condicion_terreno: 'Lecho húmedo',
-      uso_puesta_a_tierra: 'Toma de Tierra de Seguridad de las Masas',
-      esquema_conexion: 'TT',
-      valor_medido_ohm: '8,18',
-      cumple_ohm: 'Si',
-      continuidad_permanente: 'Si',
-      capacidad_carga: 'Si',
-      dispositivo_proteccion: 'Dispositivo diferencial (DD)',
-      desconexion_automatica: 'Si'
-    },
-    {
-      toma_tierra_num: 2,
-      sector: 'Tablero principal',
-      condicion_terreno: 'Otro',
-      uso_puesta_a_tierra: 'Toma de Tierra de Seguridad de las Masas',
-      esquema_conexion: 'TT',
-      valor_medido_ohm: '8,71',
-      cumple_ohm: 'Si',
-      continuidad_permanente: 'Si',
-      capacidad_carga: 'Si',
-      dispositivo_proteccion: 'Dispositivo diferencial (DD)',
-      desconexion_automatica: 'Si'
+    let finalBase64 = '';
+    if (rawAdj) {
+      try {
+        const rawBase64 = await getAdjuntoBase64(rawAdj);
+        if (rawBase64) {
+          const resized = await resizeImageForPdf(rawBase64, 1200, 1200);
+          finalBase64 = resized || rawBase64;
+        }
+      } catch (err) {
+        console.error('Error al procesar base64 de croquis:', err);
+      }
     }
-  ]).map(p => [
-    p.toma_tierra_num || '-',
-    p.sector || '-',
-    p.condicion_terreno || '-',
-    p.uso_puesta_a_tierra || '-',
-    p.esquema_conexion || 'TT',
-    p.valor_medido_ohm !== undefined && p.valor_medido_ohm !== null ? `${p.valor_medido_ohm}` : '-',
-    p.cumple_ohm || 'SI',
-    p.continuidad_permanente || 'SI',
-    p.capacidad_carga || 'SI',
-    p.dispositivo_proteccion || 'Dispositivo diferencial (DD)',
-    p.desconexion_automatica || 'SI'
-  ]);
 
-  // Completar filas vacías para estética si hay menos de 10
-  while (tableRows.length < 10) {
-    tableRows.push(['', '', '', '', '', '', '', '', '', '', '']);
+    if (finalBase64 && finalBase64.startsWith('data:image/')) {
+      try {
+        const dims = await getImgDimensions(finalBase64);
+        const maxW = kW - 10;
+        const maxH = mH - 8;
+        const ratio = (dims.width && dims.height) ? (dims.width / dims.height) : 1.5;
+
+        let renderW = maxW;
+        let renderH = maxW / ratio;
+        if (renderH > maxH) {
+          renderH = maxH;
+          renderW = maxH * ratio;
+        }
+
+        const imgX = kX + (kW - renderW) / 2;
+        const imgY = mY + 4 + (maxH - renderH) / 2;
+
+        doc.addImage(finalBase64, 'PNG', imgX, imgY, renderW, renderH, undefined, 'FAST');
+      } catch (err) {
+        console.error('Error al insertar imagen de croquis en PDF:', err);
+        setDrawColor(doc, COLOR_SLATE_300);
+        doc.setLineWidth(0.3);
+        doc.rect(kX + 10, mY + 14, kW - 20, mH - 20, 'S');
+        drawCellText(doc, `[ PLANO O CROQUIS DEL ESTABLECIMIENTO ]`, kX + 10, mY + 14, kW - 20, mH - 20, { align: 'center', fontStyle: 'bold', fontSize: 11, color: COLOR_SLATE_500 });
+      }
+    } else {
+      setDrawColor(doc, COLOR_SLATE_300);
+      doc.setLineWidth(0.3);
+      doc.rect(kX + 10, mY + 14, kW - 20, mH - 20, 'S');
+      drawCellText(doc, `[ PLANO O CROQUIS DEL ESTABLECIMIENTO ]`, kX + 10, mY + 14, kW - 20, mH - 20, { align: 'center', fontStyle: 'bold', fontSize: 11, color: COLOR_SLATE_500 });
+    }
   }
 
-  autoTable(doc, {
-    startY: 49,
-    margin: { left: 14, right: 14 },
-    head: [
-      [
-        { content: 'Número de toma de tierra', rowSpan: 2 },
-        { content: 'Sector', rowSpan: 2 },
-        { content: 'Descripción de la condición del terreno al momento de la medición', rowSpan: 2 },
-        { content: 'Uso de la puesta a tierra', rowSpan: 2 },
-        { content: 'Esquema de conexión a tierra utilizado', rowSpan: 2 },
-        { content: 'Medición de la puesta a tierra', colSpan: 2 },
-        { content: 'Continuidad de las masas', colSpan: 2 },
-        { content: 'Para la protección contra contactos indirectos se utiliza', rowSpan: 2 },
-        { content: 'El dispositivo de protección empleado ¿puede desconectar en forma automática...?', rowSpan: 2 }
-      ],
-      [
-        'Valor obtenido en ohm (Ω)',
-        'Cumple SI / NO',
-        'El circuito de puesta a tierra es continuo y permanente SI / NO',
-        'El circuito tiene capacidad de carga para corriente de falla... SI / NO'
-      ]
-    ],
-    body: tableRows,
-    theme: 'grid',
-    headStyles: {
-      fillColor: [226, 232, 240],
-      textColor: [13, 13, 13],
-      fontSize: 6,
-      fontStyle: 'bold',
-      halign: 'center',
-      valign: 'middle',
-      lineWidth: 0.1,
-      lineColor: [15, 23, 42]
-    },
-    bodyStyles: {
-      fontSize: 6.5,
-      textColor: [15, 23, 42],
-      halign: 'center',
-      valign: 'middle',
-      lineWidth: 0.1,
-      lineColor: [148, 163, 184]
-    },
-    columnStyles: {
-      0: { cellWidth: 10 },
-      1: { cellWidth: 22, halign: 'left' },
-      2: { cellWidth: 18 },
-      3: { cellWidth: 26, halign: 'left' },
-      4: { cellWidth: 14 },
-      5: { cellWidth: 14 },
-      6: { cellWidth: 12 },
-      7: { cellWidth: 16 },
-      8: { cellWidth: 16 },
-      9: { cellWidth: 20 },
-      10: { cellWidth: 14 }
+  // ==========================================
+  // PAGINAS FINALES: ANEXO CERTIFICADO DE CALIBRACIÓN
+  // ==========================================
+  const certAdjunto = (adjuntosList || []).filter(adj => 
+    adj.tipo === 'Certificado de Calibración' || adj.tipo === 'Certificado' || adj.tipo === 'Certificado de Calibración del Instrumental'
+  )[0];
+
+  let certPdfArrayBuffer = null;
+
+  if (certAdjunto) {
+    try {
+      const path = certAdjunto.storage_path || certAdjunto.original_path || certAdjunto.public_url || certAdjunto.url || certAdjunto.archivo_url;
+      const fileName = certAdjunto.nombre_archivo || certAdjunto.name || '';
+      const isPdfFile = fileName.toLowerCase().endsWith('.pdf') || (path && path.toLowerCase().endsWith('.pdf')) || (certAdjunto.preview && certAdjunto.preview.startsWith('data:application/pdf'));
+
+      if (isPdfFile) {
+        if (certAdjunto.preview && certAdjunto.preview.startsWith('data:application/pdf')) {
+          const res = await fetch(certAdjunto.preview);
+          certPdfArrayBuffer = await res.arrayBuffer();
+        } else if (path) {
+          if (!path.startsWith('http') && !path.startsWith('data:')) {
+            const bucketsToTry = ['protocolos-puesta-a-tierra', 'protocolos-ruido', 'documents'];
+            for (const b of bucketsToTry) {
+              const { data: blob } = await supabase.storage.from(b).download(path);
+              if (blob) {
+                certPdfArrayBuffer = await blob.arrayBuffer();
+                break;
+              }
+            }
+          } else {
+            const res = await fetch(path);
+            if (res.ok) {
+              const blob = await res.blob();
+              certPdfArrayBuffer = await blob.arrayBuffer();
+            }
+          }
+        }
+      } else {
+        const certBase64 = await getAdjuntoBase64(certAdjunto);
+        if (certBase64 && certBase64.startsWith('data:image/')) {
+          doc.addPage('a4', 'portrait');
+          pageCounter++;
+
+          drawHeader(false);
+          drawProtocolTitleBar(false, { x: 15, y: 22, w: 180, h: 5.5 });
+
+          const cX = 15;
+          const cY = 29;
+          const cW = 180;
+          const cH = 238;
+
+          doc.setLineWidth(0.45);
+          setDrawColor(doc, COLOR_NEGRO);
+          doc.rect(cX, cY, cW, 6, 'S');
+          drawCellText(doc, 'ANEXO: CERTIFICADO DE CALIBRACIÓN DEL INSTRUMENTAL', cX, cY, cW, 6, { fontStyle: 'bold', fontSize: 9, align: 'center' });
+
+          const imgY = 37;
+          const imgH = 228;
+          doc.rect(cX, imgY, cW, imgH, 'S');
+
+          const dims = await getImgDimensions(certBase64);
+          const maxW = cW - 10;
+          const maxH = imgH - 10;
+          const ratio = (dims.width && dims.height) ? (dims.width / dims.height) : 0.75;
+
+          let renderW = maxW;
+          let renderH = maxW / ratio;
+          if (renderH > maxH) {
+            renderH = maxH;
+            renderW = maxH * ratio;
+          }
+
+          const imgX = cX + (cW - renderW) / 2;
+          const posX = imgY + (imgH - renderH) / 2;
+
+          doc.addImage(certBase64, 'PNG', imgX, posX, renderW, renderH, undefined, 'FAST');
+        }
+      }
+    } catch (e) {
+      console.error('Error procesando certificado de calibración en PDF:', e);
     }
-  });
+  }
 
-  let finalY = doc.lastAutoTable.finalY + 4;
-  if (finalY > 210) finalY = 210;
+  // Draw headers and footers across all pages with total page count
+  const totalPagesCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= totalPagesCount; i++) {
+    doc.setPage(i);
+    if (i > 1) {
+      const pageInfo = doc.internal.pageSize;
+      const isLand = pageInfo.width > pageInfo.height;
+      drawFooter(isLand, i, totalPagesCount);
+    }
+  }
 
-  // Cuadro Información Adicional
-  setDrawColor(doc, darkText);
-  doc.rect(14, finalY, 182, 18);
-  doc.setFontSize(7.5);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Información adicional:', 16, finalY + 4.5);
-  doc.setFont('helvetica', 'normal');
-  const infoAddText = proto.informacion_adicional || 'Se probó disparo de disyuntores. Tipo y corriente de disparo, dentro de parámetros.';
-  const infoAddLines = doc.splitTextToSize(infoAddText, 178);
-  doc.text(infoAddLines, 16, finalY + 9);
+  // If a PDF certificate document was uploaded, merge pages using pdf-lib
+  if (certPdfArrayBuffer) {
+    try {
+      const mainPdfBytes = doc.output('arraybuffer');
+      const finalPdfDoc = await PDFDocument.load(mainPdfBytes);
+      const certDoc = await PDFDocument.load(certPdfArrayBuffer);
+      const certPages = await finalPdfDoc.copyPages(certDoc, certDoc.getPageIndices());
+      certPages.forEach(p => finalPdfDoc.addPage(p));
 
-  drawSignatureBlock(240);
-  drawPageFooter(4);
+      // Preserve / Inject OpenAction Print catalog entry so browser auto-opens print dialog
+      const catalog = finalPdfDoc.catalog;
+      const openAction = finalPdfDoc.context.obj({
+        S: PDFName.of('Named'),
+        N: PDFName.of('Print'),
+      });
+      catalog.set(PDFName.of('OpenAction'), openAction);
 
-  // ==========================================
-  // PÁGINA 6: HOJA 3 SRT 900/2015 (ANÁLISIS DE DATOS Y CONCLUSIONES)
-  // ==========================================
-  doc.addPage();
-  drawPageHeader();
+      const mergedPdfBytes = await finalPdfDoc.save();
+      const mergedBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
 
-  // Header Azul
-  setFillColor(doc, primaryBlue);
-  doc.rect(14, 28, 182, 6, 'F');
-  setTextColor(doc, '#FFFFFF');
-  doc.setFontSize(8.5);
-  doc.setFont('helvetica', 'bold');
-  doc.text('PROTOCOLO DE MEDICIÓN DE LA PUESTA A TIERRA Y CONTINUIDAD DE LAS MASAS', 105, 32, { align: 'center' });
+      // Override doc output & save methods to return merged PDF
+      const origOutput = doc.output.bind(doc);
+      doc.output = (type, ...args) => {
+        if (type === 'blob') return mergedBlob;
+        if (type === 'arraybuffer') return mergedPdfBytes.buffer;
+        if (type === 'bloburl' || type === 'bloburi') return URL.createObjectURL(mergedBlob);
+        if (type === 'datauristring' || type === 'dataurlstring') {
+          return 'data:application/pdf;base64,' + Buffer.from(mergedPdfBytes).toString('base64');
+        }
+        return origOutput(type, ...args);
+      };
 
-  // Subheader Datos
-  doc.setFontSize(7.5);
-  doc.setFont('helvetica', 'normal');
-  doc.rect(14, 34, 182, 10);
-
-  doc.setFont('helvetica', 'bold');
-  doc.text('Razón Social:', 16, 38);
-  doc.setFont('helvetica', 'normal');
-  doc.text(proto.razon_social_text || emp?.razon_social || '-', 36, 38);
-
-  doc.setFont('helvetica', 'bold');
-  doc.text('C.U.I.T.:', 130, 38);
-  doc.setFont('helvetica', 'normal');
-  doc.text(proto.cuit_text || emp?.cuit || '-', 145, 38);
-
-  doc.setFont('helvetica', 'bold');
-  doc.text('Dirección:', 16, 42);
-  doc.setFont('helvetica', 'normal');
-  doc.text(proto.direccion_text || est?.direccion || '-', 30, 42);
-
-  doc.setFont('helvetica', 'bold');
-  doc.text('Localidad:', 85, 42);
-  doc.setFont('helvetica', 'normal');
-  doc.text(proto.localidad_text || est?.localidad || '-', 100, 42);
-
-  doc.setFont('helvetica', 'bold');
-  doc.text('CP:', 135, 42);
-  doc.setFont('helvetica', 'normal');
-  doc.text(proto.cp_text || est?.cp || '-', 142, 42);
-
-  doc.setFont('helvetica', 'bold');
-  doc.text('Provincia:', 155, 42);
-  doc.setFont('helvetica', 'normal');
-  doc.text(proto.provincia_text || est?.provincia || '-', 170, 42);
-
-  // Título Análisis de Datos
-  setFillColor(doc, '#E2E8F0');
-  doc.rect(14, 44, 182, 5, 'F');
-  setTextColor(doc, darkText);
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Análisis de los Datos y Mejoras a Realizar', 105, 47.5, { align: 'center' });
-
-  // Cuadro 2 Columnas (Conclusiones / Recomendaciones)
-  doc.rect(14, 49, 182, 170);
-  doc.line(105, 49, 105, 219);
-
-  // Columna Izquierda: Conclusiones
-  doc.setFont('helvetica', 'bold');
-  doc.text('Conclusiones', 59, 54, { align: 'center' });
-  doc.line(14, 56, 105, 56);
-
-  doc.setFont('helvetica', 'normal');
-  const concText = proto.conclusiones || 'Los valores hallados de la medición de la puesta a tierra cumplen con lo establecido en la Resolución 900/15.';
-  const concLines = doc.splitTextToSize(concText, 86);
-  doc.text(concLines, 16, 61);
-
-  // Columna Derecha: Recomendaciones
-  doc.setFont('helvetica', 'bold');
-  doc.text('Recomendaciones para la adecuación a la legislación vigente', 150, 54, { align: 'center' });
-  doc.line(105, 56, 196, 56);
-
-  doc.setFont('helvetica', 'normal');
-  const recText = proto.recomendaciones || 'Es recomendable mantener limpio y libre de óxido las terminales de las jabalinas.';
-  const recLines = doc.splitTextToSize(recText, 86);
-  doc.text(recLines, 107, 61);
-
-  drawSignatureBlock(240);
-  drawPageFooter(5);
+      doc.save = (filename) => {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(mergedBlob);
+        link.download = filename || 'Protocolo_Puesta_A_Tierra.pdf';
+        link.click();
+      };
+    } catch (mergeErr) {
+      console.error('Error al fusionar certificado PDF con pdf-lib:', mergeErr);
+    }
+  }
 
   return doc;
 };
+
+export const generateNoiseProtocolPdf = generatePuestaATierraPdf;

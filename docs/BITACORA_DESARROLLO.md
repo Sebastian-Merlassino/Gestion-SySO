@@ -1,5 +1,407 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-16] Unificación Exacta de Ventana Emergente de Cambios Sin Guardar (`AppUnsavedChangesDialog.js`)
+
+### Resumen de Cambios
+- **Corrección de Botón de Salida en Puesta a Tierra:** Se actualizó `puesta-a-tierra/components/ProtocoloForm.js` para enlazar correctamente la propiedad `onLeave={() => { setUnsavedDialogOpen(false); onClose(); }}` y `onOpenChange={setUnsavedDialogOpen}`, habilitando el botón secundario `"Salir sin guardar"`.
+- **Soporte Universal de Propiedades:** Se implementó fallback en `<AppUnsavedChangesDialog />` (`handleLeave = onLeave || onConfirm`) para garantizar que el botón `"Salir sin guardar"` se renderice en todas las pantallas independientemente de la convención de props.
+- **Botón de Cierre Estándar Idéntico a Ruido:** Se ajustó el botón de cierre `X` en la esquina superior derecha con el contenedor rectangular suave idéntico al del resto de la plataforma y del protocolo de ruido (`p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#468DFF]`).
+- **Disposición Vertical de Botones (Full Width):**
+  1. `"Salir sin guardar"`: Fondo blanco, borde `#468DFF`, texto azul `#468DFF`, hover con fondo azul e inversión de color, esquinas `rounded-xl` y `w-full`.
+  2. `"Quedarse y editar"`: Fondo sólido azul institucional `#468DFF`, texto blanco, esquinas `rounded-xl`, sombra y `w-full`.
+- **Compilación de Producción:** Verificada con `npm.cmd run build` generando satisfactoriamente las 23/23 rutas con 0 errores.
+
+### Archivos Modificados
+- `[MODIFY] src/components/ui/AppUnsavedChangesDialog.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-16] Restauración de Indicadores Circulares de Carga (Spinners) en Todas las Secciones
+
+### Resumen de Cambios
+- **Restauración del Estándar Universal de Carga:** Se restableció en las 19 vistas principales el indicador circular animado de carga (`<Loader2 className="h-10 w-10 animate-spin text-[#468DFF] mx-auto" />`) con centrado geométrico perfecto (`flex-1 flex flex-col items-center justify-center p-8`) y texto explicativo individualizado para cada módulo:
+  1. `protocolos/ruido`: `"Cargando protocolo de ruido..."`
+  2. `protocolos/puesta-a-tierra`: `"Cargando protocolo de puesta a tierra..."`
+  3. `protocolos/iluminacion`: `"Cargando protocolo de iluminación..."`
+  4. `protocolos/ergonomia`: `"Cargando protocolo de ergonomía..."`
+  5. `empresas`: `"Cargando clientes..."`
+  6. `equipo`: `"Cargando equipo de trabajo..."`
+  7. `extintores`: `"Cargando extintores..."`
+  8. `control-electrico`: `"Cargando control de instalaciones eléctricas..."`
+  9. `avisos`: `"Cargando avisos de obra..."`
+  10. `accidentes`: `"Cargando accidentes e incidentes..."`
+  11. `dashboard`: `"Cargando panel de control..."`
+  12. `correctivas`: `"Cargando acciones correctivas..."`
+  13. `matriz-riesgos`: `"Cargando matriz de riesgos..."`
+  14. `checklist-personalizados`: `"Cargando listas de verificación..."`
+  15. `programa`: `"Cargando programa de gestión anual..."`
+  16. `capacitacion`: `"Cargando cronograma de capacitaciones..."`
+  17. `capacitaciones-online`: `"Cargando capacitaciones online..."`
+  18. `legajo`: `"Cargando legajo técnico..."`
+  19. `nomina`: `"Cargando nómina de personal..."`
+- **Compilación de Producción:** Verificada con `npm.cmd run build` generando satisfactoriamente las 23/23 rutas con 0 errores.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/matriz-riesgos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/nomina/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-16] Adopción del Motor y Diseño PDF de Ruido en Protocolo de Puesta a Tierra (`puesta-a-tierra/utils/pdfGenerator.js`)
+
+### Resumen de Cambios
+- **Unificación de Diseño y Estructura:** Se adaptó la arquitectura completa del generador de reportes PDF del protocolo de ruido a `src/app/[tenant-slug]/protocolos/puesta-a-tierra/utils/pdfGenerator.js`.
+- **Estructura Documental Multi-Página:**
+  - Carátula institucional estandarizada en A4 vertical con marco corporativo, logotipo, año y referencias legales.
+  - Marco normativo completo con diseño tipográfico y tablas técnicas oficiales.
+  - Formulario de datos del establecimiento y condiciones de medición.
+  - Tablas de puntos de muestreo en A4 horizontal con layout estructurado, colores `#468DFF`, cálculo de cumplimiento y notas al pie.
+  - Sección de análisis de datos, conclusiones y recomendaciones técnicas.
+  - Anexo de evidencias fotográficas / planos y croquis a página completa.
+  - Anexo de certificado de calibración con soporte para incrustación de imagen y fusión directa de archivos PDF mediante `pdf-lib`.
+- **Estándar de Encabezados y Pies de Página (2-pass):**
+  - Barra de acento `#468DFF`, datos de contacto de la consultora/tenant centrados y numeración dinámica `"Página X de Y"`.
+- **Compilación de Producción:** Verificada con `npm.cmd run build` (23/23 rutas estáticas y dinámicas compiladas exitosamente con 0 errores).
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/utils/pdfGenerator.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-16] Corrección y Estandarización de Tabla y Pictogramas en Protocolo de Puesta a Tierra (`puesta-a-tierra/page.js`)
+
+### Resumen de Cambios
+- **Alineación del Encabezado de Acciones:** Se modificó el encabezado de la columna `Acciones` a `<th className="px-6 py-4 text-center w-[5%]">Acciones</th>`, quedando centrado respecto a la columna y coincidiendo con `iluminacion`, `ruido` y `ergonomia`.
+- **Estandarización de Tamaño de Pictogramas:** Se actualizaron todos los íconos de las acciones (`Eye`, `FileText`, `Printer`, `Mail`, `Copy`, `Edit`, `Trash2`) a tamaño estándar `h-4.5 w-4.5` y el contenedor a `flex items-center justify-end gap-2`.
+- **Estructura y Paddings de Tabla:** Se establecieron las proporciones de columnas (`w-[35%]`, `w-[25%]`, `w-[15%]`, `w-[10%]`, `w-[10%]`, `w-[5%]`), paddings de celdas a `px-6 py-4` y scrollbar estandarizada (`overflow-auto flex-grow scrollbar-thin` con `min-w-[850px]`).
+- **Badges:** Se ajustaron a píldoras estilizadas `inline-flex px-2.5 py-0.5 rounded-full text-[9px] font-extrabold border uppercase`.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-16] Implementación de Skeletons de Carga (AppSkeleton), Tooltips Accesibles (AppTooltip) y Estandarización UI en Todos los Módulos
+
+### Resumen de la Intervención
+- **Fase 0: Saneamiento y Primitivas UI:**
+  - Se eliminó el archivo huérfano e incompatible `src/components/ui/button.jsx` que colisionaba con el estándar del proyecto.
+  - Se corrigió `src/components/ui/AppConfirmDialog.js` asegurando compatibilidad total con `AppButton` y soporte seguro para `onCancel`.
+- **Fase 1: Skeletons de Carga, Tooltips Accesibles y Normalización de Casing:**
+  - **Skeletons Unificados (`<AppSkeleton variant="table" rows={6} />`):** Se reemplazaron los spinners genéricos de carga a pantalla completa por esqueletos animados estructurados en todos los módulos: `empresas`, `equipo`, `extintores`, `control-electrico`, `avisos`, `accidentes`, `dashboard`, `correctivas`, `matriz-riesgos`, `checklist-personalizados`, `programa`, `capacitacion`, `capacitaciones-online`, `legajo`, `nomina`, `protocolos/puesta-a-tierra`, `protocolos/ruido`, `protocolos/iluminacion` y `protocolos/ergonomia`.
+  - **Tooltips Accesibles (`<AppTooltip content="..." />`):** Se migraron todos los atributos nativos de tabla `title="..."` a burbujas de tooltip accesibles con soporte hover y touch con posicionamiento `z-50 pointer-events-none`.
+  - **Estandarización de Casing:** Se normalizaron todas las etiquetas de botones primarios a Sentence case (`"Nuevo protocolo"`, `"Nueva actividad"`, `"Nueva capacitación"`, `"Nuevo registro"`, etc.) cumpliendo con las directrices de marca.
+  - **Botones de Acción en Tablas:** Se adaptaron los botones de acción para emplear las variantes estandarizadas de `AppButton` (`document-table`, `edit-table`, `delete-table`, `ghost-table`).
+- **Verificación de Compilación de Producción:**
+  - Se ejecutó `npm.cmd run build` generando satisfactoriamente las 23/23 rutas estáticas y dinámicas con cero errores de TypeScript/Next.js/linter.
+
+### Archivos Modificados
+- `[DELETE] src/components/ui/button.jsx`
+- `[MODIFY] src/components/ui/AppConfirmDialog.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/matriz-riesgos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/nomina/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-16] Auditoría Integral de Diseño UI, Consistencia Visual y Documentos PDF
+
+### Resumen de la Intervención y Diagnóstico
+- **Auditoría Pasiva Integral (Sin Modificación de Código de Aplicación):**
+  - Se completó la revisión integral de las 23 rutas y submódulos web de la plataforma SaaS y de los 18 puntos de generación de documentos PDF (`jsPDF`, `jspdf-autotable`, `pdf-lib`, `pdfjs-dist`).
+  - Se relevaron e inventariaron tipografías, colores oficiales vs hardcodeados, variantes de botones, formularios/uploaders, lienzos Canvas de firmas digitales, tablas, skeletons de carga, tooltips/popovers, assets de marca (incluyendo la mascota cartoon años 30), adaptabilidad responsiva móvil y accesibilidad WCAG 2.1 AA.
+- **Entregables de Documentación Generados:**
+  - `[MODIFY] docs/design/UI_DESIGN_AUDIT.md`: Informe principal de auditoría UI web, mapa visual por módulo, inventarios técnicos, revisión responsiva y matriz de hallazgos priorizados por severidad.
+  - `[MODIFY] docs/design/UI_STYLE_STANDARD_PROPOSAL.md`: Propuesta de estándar único de diseño UI con tokens de color, escalas tipográficas, variantes de `AppButton`, especificación de `AppSignatureCanvas`, `AppSkeleton`, `AppTooltip` y maquetación `SySO Compact Layout v2.0`.
+  - `[MODIFY] docs/design/PDF_DESIGN_AUDIT.md`: Informe específico de auditoría de documentos PDF, inventario de los 18 generadores, revisión de geometría A4, cálculo de aspect ratio de logos, paginación en 2 pasadas (`Página X de Y`), firmas digitales con solapamiento `0.78` y sanitización de nombres de archivo.
+  - `[MODIFY] docs/design/PDF_STYLE_STANDARD.md`: Estándar normativo preliminar de diseño PDF, tokens RGB seguros (`PDF_THEME`), configuración de `autoTable`, fusión de adjuntos con `pdf-lib` y formateador `formatPdfFileName`.
+- **Próximos Pasos Recomendados:**
+  - Iniciar la Fase 1 de implementación de diseño sobre el código fuente una vez aprobado el estándar:
+    1. Reemplazo masivo de `<button>` nativos por `<AppButton />` y eliminación del archivo huérfano `button.jsx`.
+    2. Migración del atributo nativo `title="..."` a `<AppTooltip />` en las 41 vistas identificadas.
+    3. Integración de `<AppSkeleton />` en los 18 módulos que actualmente usan spinners genéricos.
+    4. Unificación de lienzos Canvas de firma digital con `<AppSignatureCanvas />`.
+    5. Desacoplamiento de las funciones de generación de PDF inline en `page.js` hacia `src/lib/pdf/` con unificación a milímetros (`mm`).
+
+### Archivos Creados / Modificados
+- `[MODIFY] docs/design/UI_DESIGN_AUDIT.md`
+- `[MODIFY] docs/design/UI_STYLE_STANDARD_PROPOSAL.md`
+- `[MODIFY] docs/design/PDF_DESIGN_AUDIT.md`
+- `[MODIFY] docs/design/PDF_STYLE_STANDARD.md`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-16] Restauración Estricta de Tabla de Datos en Formato SySO Compact Layout v2.0
+
+### Resumen de Cambios
+- **Diseño de Tabla Compacta (`puesta-a-tierra/page.js`):**
+  - Se re-estableció el diseño unificado **SySO Compact Layout v2.0** en la tabla del listado de protocolos de Puesta a Tierra.
+  - **Padding compacto:** Reducido a `px-4 py-2.5` en la cabecera `thead` y `px-4 py-3` en el cuerpo `tbody` para mantener filas estilizadas y no infladas.
+  - **Jerarquía tipográfica:** Encabezados en `text-[10px] uppercase font-bold text-slate-500 tracking-wider`, título del cliente en `text-xs font-bold text-slate-800`, subtítulo de establecimiento en `text-[11px] font-medium text-slate-500` con icono `<Building className="h-3 w-3 text-slate-400" />`.
+  - **Badges compactos:** Píldoras de `RESULTADO` y `ESTADO` en `px-2 py-0.5 rounded-md text-[10px] font-bold border uppercase`.
+  - **Pictogramas reactivos:** Botones de acción sin bloques de fondo gruesos predeterminados, usando `p-1.5 rounded-lg text-slate-400` con resaltado suave al pasar el cursor (`hover:bg-[#468DFF]/10`, `hover:bg-amber-50`, `hover:bg-red-50`, etc.).
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+
+## [2026-08-16] Estandarización de Tabla de Listado, Columna Resultado, Pictogramas de Acción y Modal de Sincronización
+
+### Resumen de Cambios
+- **Estandarización de Selector de Sectores (`ProtocoloForm.js`):**
+  - Se configuró `placeholder={null}` en `<AppSelect>` con una opción explícita `<option value="">Selecciona sector...</option>` habilitada para asegurar la selección nativa correcta.
+- **Corrección de Indicadores de Ordenamiento (`AppSortIcon` en `puesta-a-tierra/page.js`):**
+  - Se corrigió el paso de propiedades a `<AppSortIcon>` enviando `sortField` y `sortOrder` en lugar de `currentField`/`currentOrder`, permitiendo renderizar las flechas azules activas de ordenación.
+- **Pictogramas y Botones de Acción de Tabla (`puesta-a-tierra/page.js` y `AppButton.js`):**
+  - Se asignó la variante estandarizada `delete-table` en `<AppButton>` para el botón de eliminación en tabla (fondo rojo suave `#FEE2E2`, icono `#DC2626` `Trash2` `h-4.5 w-4.5`).
+  - Se estandarizaron los 7 botones de acción con las variantes `document-table`, `edit-table`, `delete-table`, `ghost-table` y tamaño `size="icon"`.
+- **Inclusión de Columna `RESULTADO` (`puesta-a-tierra/page.js`):**
+  - Se incorporó la columna `RESULTADO` en la tabla de listado con badges dinámicos (`CUMPLE` en verde, `NO CUMPLE` en rojo, `PARCIAL` en naranja, `BORRADOR` en gris), 100% idéntica a los protocolos de Ruido e Iluminación.
+- **Función de Duplicación de Protocolos (`puesta-a-tierra/page.js`):**
+  - Se implementó la función `handleDuplicate` para clonar protocolos en modo Borrador junto con sus tomas de medición.
+- **Diseño del Modal de Sincronización (`ProtocoloForm.js`):**
+  - Se actualizó el modal `Sincronización con Perfil de Establecimiento` integrando el pictograma oficial `HelpCircle` de Lucide, estilos de contenedor y textos idénticos a Ruido e Iluminación.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+
+## [2026-08-16] Corrección de Error 400 / PGRST204 en Puntos de Puesta a Tierra (`ProtocoloForm.js`)
+
+### Resumen de Cambios
+- **Desacoplamiento de Evidencias Fotográficas de la Tabla Puntos (`ProtocoloForm.js`):**
+  - Se removió la propiedad no existente `evidencia_fotografica` de `ptsPayload` en la inserción a la tabla `protocolos_puesta_a_tierra_puntos`, eliminando el error de caché de esquema PostgREST `PGRST204: Could not find the 'evidencia_fotografica' column of 'protocolos_puesta_a_tierra_puntos'`.
+- **Consolidación en la Tabla de Adjuntos (`ProtocoloForm.js`):**
+  - Todas las fotografías de evidencia tomadas por cada punto (Toma N° 1, 2, ...) se guardan en la tabla `protocolos_puesta_a_tierra_adjuntos` etiquetadas con su correspondiente tipo (`Evidencia Fotográfica Toma N° X`).
+  - Al recargar el protocolo (`loadData`), las imágenes se reclasifican y asignan de nuevo a sus respectivas tomas sin pérdida de información.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+
+## [2026-08-16] Resolución de Error 400 Bad Request / PGRST204 al Guardar Protocolo de Puesta a Tierra (`ProtocoloForm.js`)
+
+### Resumen de Cambios
+- **Corrección de Esquema en Payload (`ProtocoloForm.js`):**
+  - Se eliminó la propiedad no existente `informacion_adicional` del objeto `payloadProto` enviado a la tabla `protocolos_puesta_a_tierra` en Supabase.
+  - Esto resuelve de raíz el error `PGRST204: Could not find the 'informacion_adicional' column of 'protocolos_puesta_a_tierra' in the schema cache` permitiendo guardar y actualizar protocolos de Puesta a Tierra sin inconvenientes.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+
+## [2026-08-16] Auto-completado de Dirección, Provincia, Localidad y C.P. al Seleccionar Establecimiento
+
+### Resumen de Cambios
+- **Ampliación de Consulta en `page.js` de Protocolos:**
+  - Se modificó la consulta a la tabla `establecimientos` en los puntos de entrada de los protocolos (`puesta-a-tierra/page.js`, `ruido/page.js`, `iluminacion/page.js` y `ergonomia/page.js`) para seleccionar todos los campos (`.select('*')`) en lugar de restringir únicamente a `id, empresa_id, denominacion, sectores`.
+- **Auto-relleno de Campos Domiciliarios (`ProtocoloForm.js`):**
+  - Se actualizó la función `handleEstablecimientoChange` en `ProtocoloForm.js` con resolución robusta de propiedades (`direccion`, `provincia`, `localidad_barrio`/`localidad`, `cp`/`codigo_postal`).
+  - Al seleccionar un cliente y establecimiento, los campos `DIRECCIÓN`, `PROVINCIA`, `LOCALIDAD` y `C.P.` del formulario se completan automáticamente con los valores almacenados en el perfil del establecimiento.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+
+## [2026-08-15] Corrección de Selector de Sectores y Modal de Sincronización con Perfil (`ProtocoloForm.js`)
+
+### Resumen de Cambios
+- **Corrección en Selector de Sector (`ProtocoloForm.js`):**
+  - Se eliminó la opción duplicada `Selecciona sector...` hardcodeada dentro de los hijos de `<AppSelect>`, permitiendo que únicamente la propiedad `placeholder="Selecciona sector..."` administre la opción deshabilitada por defecto.
+  - Se corrigió la lógica de asignación y mapeo de `estSectoresLocal` para que al seleccionar un sector de la lista desplegable en la tarjeta de cualquier toma (Toma N° 1, 2, ...), el valor se actualice y visualice correctamente sin bloquearse.
+- **Estandarización del Modal de Sincronización (`ProtocoloForm.js`):**
+  - Se reemplazó el diálogo anterior por el modal **Sincronización con Perfil de Establecimiento** idéntico al de los protocolos de Ruido e Iluminación.
+  - El modal presenta el título estilizado, contador de elementos modificados/nuevos, viñetas con punto azul (`•`), y las opciones: `"Solo guardar en este protocolo"` y `"Guardar todos en el perfil (N)"`, actualizando la propiedad `sectores` del establecimiento en la base de datos Supabase cuando se confirma la sincronización.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+
+## [2026-08-15] Estandarización 100% del Pie de Página de Puesta a Tierra al Estándar de Ruido e Iluminación (`ProtocoloForm.js`)
+
+### Resumen de Cambios
+- **Barra Inferior de Acciones (`ProtocoloForm.js`):**
+  - Se reemplazaron los botones anteriores ("Volver", "Guardar Borrador", "Guardar y Finalizar" / desplegable de estado) por el diseño estándar exacto de los protocolos de Ruido e Iluminación.
+  - **A la izquierda:** Botón `Salir` (`AppButton` secundario) + **Switch de Estado interactivo** (`Borrador` <-> `Completado`).
+  - **A la derecha:**
+    - Al editar un protocolo existente: Botones `Enviar PDF` (ícono correo) y `Descargar PDF` (ícono descarga, azul `#468DFF`).
+    - En modo lectura: Botón `Editar` (naranja).
+    - En modo edición/creación: Botón `Eliminar` (rojo destructivo con diálogo de confirmación `AppConfirmDialog`) y botón `Guardar` (azul `#468DFF`).
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+
+## [2026-08-15] Ajuste de Título en Módulo de Evidencia Fotográfica por Toma (`ProtocoloForm.js`)
+
+### Resumen de Cambios
+- **Limpieza de Etiqueta Visual (`ProtocoloForm.js`):**
+  - Se removió el texto técnico `(SySO Photo Grid)` de la cabecera del módulo de evidencia en cada toma de puesta a tierra, quedando limpiamente como **"Evidencia Fotográfica de la Toma"**.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+
+## [2026-08-15] Incorporación del Módulo `SySO-Multiple-Evidence-Photo-Grid` en Cada Toma de Puesta a Tierra (`ProtocoloForm.js`)
+
+### Resumen de Cambios
+- **Grilla de Fotografías de Evidencia por Toma (`ProtocoloForm.js`):**
+  - Se incorporó la zona de carga de fotografías de evidencia `<ImageUploadZone />` (`SySO-Multiple-Evidence-Photo-Grid`) dentro del contenedor desplegable de cada toma de puesta a tierra (Toma N° 1, 2, ...).
+  - Cada toma permite adjuntar múltiples imágenes de evidencia fotográfica directa de la jabalina o conexión, con vista previa en miniatura, almacenamiento en Storage (bucket `protocolos-puesta-a-tierra` con fallback a `documents`), firmado automático de URLs al cargar registros existentes y preservación al duplicar la toma (`handleDuplicatePunto`).
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+
+## [2026-08-15] Integración de Marcadores Numéricos de Puntos de Medición sobre Plano/Croquis en Puesta a Tierra (`MeasurementPointsEditorModal`)
+
+### Resumen de Cambios
+- **Edición Interactiva de Marcadores sobre Plano (`ProtocoloForm.js`):**
+  - Se vinculó la propiedad `onEditPhoto` en `<ImageUploadZone />` para abrir el modal `MeasurementPointsEditorModal` (`Identificar Puntos de Medición en Evidencia`) al presionar el ícono de lápiz en cualquier miniatura de imagen de plano o croquis.
+  - El modal permite al usuario hacer clic en cualquier sector del plano para colocar marcadores circulares azules (`#468DFF`) numerados secuencialmente (`①`, `②`, `③`, ...).
+  - Incluye funciones de **Deshacer último**, **Limpiar todo** y estampación asíncrona de marcadores sobre la imagen (`HTMLCanvasElement`), sincronizándose con la correlatividad global de puntos del protocolo.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+
+## [2026-08-15] Auto-selección Automática del Profesional Logueado en Módulo de Firma de Puesta a Tierra (Res. SRT 900/15)
+
+### Resumen de Cambios
+- **Auto-selección de Usuario Autenticado (`ProtocoloForm.js`):**
+  - Se replicó idénticamente la lógica de `Protocolo de Ruido` en `loadData` para consultar la sesión de Supabase del usuario logueado (`session.user`).
+  - Al iniciar un nuevo protocolo (`mode === 'create'`), se selecciona automáticamente el usuario autenticado (administrador o miembro de equipo) en el desplegable `PROFESIONAL INTERVINIENTE *`.
+  - Se autocompleta de inmediato su **Nombre Completo**, **Matrícula Profesional** (consultando la tabla `matriculas`) y su **Firma de Perfil** (obtenida y firmada vía Storage del bucket `signatures`), visualizándose automáticamente la pestaña `Firma de Perfil` activa con el mensaje `✓ Firma del perfil cargada correctamente.`.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+
+## [2026-08-15] Corrección de Error 'Invalid Key' (HTTP 400) al Cargar Archivos con Tildes, Caracteres Especiales y Paréntesis en Supabase Storage
+
+### Resumen de Cambios
+- **Sanitización de Claves en Supabase Storage (`ProtocoloForm.js`):**
+  - Se implementó la función `sanitizeFileName` para normalizar cadenas Unicode NFD, remover caracteres con diacríticos/acentos (ej. `ó` -> `o`, `á` -> `a`) y reemplazar cualquier símbolo o paréntesis que no sea alfanumérico por un guión bajo (`_`).
+  - Esto erradica por completo el error `StorageApiError: Invalid key` HTTP 400 devuelto por Supabase Storage cuando los archivos cargados contienen caracteres especiales o paréntesis en su nombre original (ej. `Registro_de_Capacitación_(Versión_3)_-_antigravity_-_Sheet1.pdf`).
+- **Mecanismo de Fallback de Buckets:**
+  - Se agregó una captura de excepción para reintentar la subida al bucket `documents` en caso de requerirse.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+
+## [2026-08-15] Integración Completa e Interactiva de los Módulos Post-Medición en Protocolo de Puesta a Tierra (Res. SRT 900/15)
+
+### Resumen de Cambios
+- **Módulo 'Documentación Adjunta' (`ProtocoloForm.js`):**
+  - Se vinculó completamente la zona de **Certificado de Calibración del Instrumental** (`<DocumentUploadZone />`) con subida directa a Storage en el bucket `protocolos-puesta-a-tierra`, soporte para enlaces de Google Drive y eliminación.
+  - Se conectó la grilla de **Plano o Croquis del Establecimiento** (`<ImageUploadZone />`) permitiendo carga múltiple de evidencias fotográficas del plano.
+- **Módulo 'Firma del Profesional de Higiene y Seguridad' (`ProtocoloForm.js`):**
+  - Se implementó la consulta en BD de miembros del equipo (`miembros_equipo`, `profiles`, `matriculas`) para autocompletar nombre, matrícula y firma al seleccionar un profesional.
+  - Se habilitó la interfaz de solapas **Firma de Perfil** (con vista previa firmada desde Storage) y **Firmar a mano** (con lienzo `<canvas>` interactivo de dibujo digital y botón de limpieza).
+  - Se aseguró que `executeSave` capture correctamente el trazo Base64 o la firma de perfil para guardarse en `firma_profesional`.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+
+## [2026-08-15] Actualización del Texto por Defecto de Observaciones en Protocolo de Puesta a Tierra
+
+### Resumen de Cambios
+- **Actualización de Texto por Defecto en Sección 'Observaciones' (`ProtocoloForm.js`):**
+  - Se modificó el valor inicial de `observacionesGenerales` en `src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js` para indicar los valores límites recomendados según normativa:
+    `Valores límites recomendados: Circuito con protección contra contactos indirectos (DID / 30 mA) < 40 ohms; Circuito sin protección contra contactos indirectos < 10 ohms.`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
 ## [2026-08-15] Estandarización 100% de la Sección Perfil al Estándar 'SySO Compact Layout v2.0' y Eliminación de Scroll Externo de Ventana
 
 ### Resumen de Cambios

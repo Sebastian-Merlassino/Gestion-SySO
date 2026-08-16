@@ -48,6 +48,7 @@ scripts/
 *.sw?
 .DS_Store
 Thumbs.db
+.mcp.json
 
 .vercel
 temp/

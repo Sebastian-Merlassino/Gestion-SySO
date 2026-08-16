@@ -20,6 +20,8 @@ import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
 import AITextHelper from '@/components/ui/AITextHelper';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import AppSortIcon from '@/components/ui/AppSortIcon';
+import AppSkeleton from '@/components/ui/AppSkeleton';
+import AppTooltip from '@/components/ui/AppTooltip';
 import { 
   PlusCircle, 
   Search, 
@@ -1446,7 +1448,7 @@ export default function CapacitacionPage({ params }) {
           <div className="flex-1 flex flex-col items-center justify-center p-8">
             <div className="text-center space-y-3">
               <Loader2 className="h-10 w-10 animate-spin text-[#468DFF] mx-auto" />
-              <p className="text-xs text-slate-500 font-medium">Cargando programa de capacitación...</p>
+              <p className="text-xs text-slate-500 font-medium">Cargando cronograma de capacitaciones...</p>
             </div>
           </div>
         ) : (
@@ -2136,13 +2138,15 @@ export default function CapacitacionPage({ params }) {
                       </div>
 
                       {canCargar && (
-                        <button
+                        <AppButton
+                          variant="primary"
+                          size="sm"
                           onClick={handleAddNew}
-                          className="px-3 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0"
+                          className="shrink-0"
                         >
                           <PlusCircle className="h-3.5 w-3.5" />
-                          Registrar Capacitación
-                        </button>
+                          <span>Nueva capacitación</span>
+                        </AppButton>
                       )}
                     </div>
                     
@@ -2352,64 +2356,70 @@ export default function CapacitacionPage({ params }) {
                                     <div className="flex items-center justify-end gap-2">
                                       {pdfAttachments.length > 0 && (
                                         <>
-                                          <AppButton
-                                            variant="document-table"
-                                            size="icon"
-                                            onClick={() => handleViewPdf(pdfAttachments[0].url)}
-                                            title="Visualizar PDF"
-                                          >
-                                            <FileText className="h-4.5 w-4.5" />
-                                          </AppButton>
-                                          {!pdfAttachments[0].path.startsWith('http') && (
+                                          <AppTooltip content="Visualizar PDF">
                                             <AppButton
                                               variant="document-table"
                                               size="icon"
-                                              onClick={() => handleDownloadPdf(pdfAttachments[0].path, `${cap.tema}.pdf`)}
-                                              title="Descargar PDF"
+                                              onClick={() => handleViewPdf(pdfAttachments[0].url)}
                                             >
-                                              <Download className="h-4.5 w-4.5" />
+                                              <FileText className="h-4.5 w-4.5" />
                                             </AppButton>
+                                          </AppTooltip>
+                                          {!pdfAttachments[0].path.startsWith('http') && (
+                                            <AppTooltip content="Descargar PDF">
+                                              <AppButton
+                                                variant="document-table"
+                                                size="icon"
+                                                onClick={() => handleDownloadPdf(pdfAttachments[0].path, `${cap.tema}.pdf`)}
+                                              >
+                                                <Download className="h-4.5 w-4.5" />
+                                              </AppButton>
+                                            </AppTooltip>
                                           )}
                                         </>
                                       )}
                                       {imageAttachments.length > 0 && (
-                                        <AppButton
-                                          variant="document-table"
-                                          size="icon"
-                                          onClick={() => handleViewFotosClick(cap)}
-                                          title={`Visualizar Evidencia (${imageAttachments.length} ${imageAttachments.length === 1 ? 'imagen' : 'imágenes'})`}
-                                        >
-                                          <ImageIcon className="h-4.5 w-4.5" />
-                                        </AppButton>
+                                        <AppTooltip content={`Visualizar evidencia (${imageAttachments.length} ${imageAttachments.length === 1 ? 'imagen' : 'imágenes'})`}>
+                                          <AppButton
+                                            variant="document-table"
+                                            size="icon"
+                                            onClick={() => handleViewFotosClick(cap)}
+                                          >
+                                            <ImageIcon className="h-4.5 w-4.5" />
+                                          </AppButton>
+                                        </AppTooltip>
                                       )}
                                       {canEditar ? (
-                                        <AppButton
-                                          variant="edit-table"
-                                          size="icon"
-                                          onClick={() => { setIsReadOnlyView(false); handleEditClick(cap); }}
-                                          title="Editar"
-                                        >
-                                          <Edit className="h-4.5 w-4.5" />
-                                        </AppButton>
+                                        <AppTooltip content="Editar capacitación">
+                                          <AppButton
+                                            variant="edit-table"
+                                            size="icon"
+                                            onClick={() => { setIsReadOnlyView(false); handleEditClick(cap); }}
+                                          >
+                                            <Edit className="h-4.5 w-4.5" />
+                                          </AppButton>
+                                        </AppTooltip>
                                       ) : (
-                                        <AppButton
-                                          variant="ghost-table"
-                                          size="icon"
-                                          onClick={() => { setIsReadOnlyView(true); handleEditClick(cap); }}
-                                          title="Ver Detalle"
-                                        >
-                                          <Eye className="h-4.5 w-4.5" />
-                                        </AppButton>
+                                        <AppTooltip content="Ver detalle">
+                                          <AppButton
+                                            variant="ghost-table"
+                                            size="icon"
+                                            onClick={() => { setIsReadOnlyView(true); handleEditClick(cap); }}
+                                          >
+                                            <Eye className="h-4.5 w-4.5" />
+                                          </AppButton>
+                                        </AppTooltip>
                                       )}
                                       {canEliminar && (
-                                        <AppButton
-                                          variant="delete-table"
-                                          size="icon"
-                                          onClick={() => handleDeleteClick(cap.id)}
-                                          title="Eliminar"
-                                        >
-                                          <Trash2 className="h-4.5 w-4.5" />
-                                        </AppButton>
+                                        <AppTooltip content="Eliminar capacitación">
+                                          <AppButton
+                                            variant="delete-table"
+                                            size="icon"
+                                            onClick={() => handleDeleteClick(cap.id)}
+                                          >
+                                            <Trash2 className="h-4.5 w-4.5" />
+                                          </AppButton>
+                                        </AppTooltip>
                                       )}
                                     </div>
                                   </td>

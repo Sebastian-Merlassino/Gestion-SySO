@@ -1,109 +1,205 @@
 # Estándar Normativo de Diseño y Generación de Documentos PDF — Gestión SySO
 
-**Fecha:** 12 de Agosto de 2026  
+**Fecha:** 16 de Agosto de 2026  
 **Área:** Arquitectura Documental, Reportes Impresos & Generación PDF  
-**Motor Principal:** `jsPDF` ^2.5.1 + `jspdf-autotable` ^3.8.2  
-**Helpers Centralizados:** `src/lib/pdf/`  
+**Estado:** Norma Técnica Institucional Obligatoria  
+**Motor Principal:** `jsPDF` ^4.2.1 + `jspdf-autotable` ^5.0.8  
+**Librerías Complementarias:** `pdf-lib` ^1.17.1 (fusión de adjuntos), `pdfjs-dist` ^6.2.108 (visor web de filminas)  
+**Ubicación de Helpers Centralizados:** `src/lib/pdf/`
 
 ---
 
 ## 1. Geometría, Formato y Márgenes de Hoja
 
-### 1.1 Formato Estándar A4
-- **Unidad de Medida Oficial**: Milímetros (`mm`).
-- **Dimensiones A4**: `210 x 297 mm`.
-- **Orientación**:
-  - **Retrato (Portrait / Vertical)**: Para Constancias de Visitas, Registros de Capacitación HSYST, Avisos de Riesgo, Investigaciones de Accidentes, Control Eléctrico, Extintores y Checklists.
-  - **Paisaje (Landscape / Horizontal)**: Para Programa Anual de Gestión, Matriz de Riesgos IPER y Protocolo de Ergonomía SRT 886/15 (Planillas Anexo II).
-- **Márgenes Obligatorios**:
-  - `Top`: `18 mm` (Espacio para encabezado institucional).
-  - `Bottom`: `20 mm` (Protección de franja de pie de página).
-  - `Left / Right`: `15 mm`.
+### 1.1 Formato Oficial A4
+- **Unidad de Medida Obligatoria:** Milímetros (`mm`). *(Queda deprecado el uso de puntos `pt`).*
+- **Dimensiones A4 Estándar:** `210 x 297 mm`.
+- **Orientación:**
+  - **Retrato (Portrait / Vertical):** Para Constancias de Visita, Registros de Capacitación HSYST, Avisos de Riesgo, Investigaciones de Accidentes, Control de Instalaciones Eléctricas, Protocolo de Puesta a Tierra Res. 900/15 y Checklists.
+  - **Paisaje (Landscape / Horizontal):** Para Programa Anual de Gestión, Matriz de Riesgos IPER, Control de Extintores, Acciones Correctivas y Planillas de Protocolo de Ergonomía SRT 886/15 (Anexos II).
+
+### 1.2 Márgenes de Hoja Obligatorios
+- **Margen Superior (`Top`):** `15 mm` (deja espacio limpio para el encabezado institucional).
+- **Margen Inferior (`Bottom`):** `22 mm` (reserva de seguridad para la franja del pie de página).
+- **Márgenes Laterales (`Left / Right`):** `15 mm` (ancho útil imprimible: `180 mm` en vertical / `267 mm` en horizontal).
 
 ---
 
 ## 2. Encabezado Institucional Estándar (`pdfHeader.js`)
 
-Todos los PDFs generados en Gestión SySO deben incorporar una cabecera homogénea compuesta por:
+Todos los documentos generados en Gestión SySO deben incorporar una cabecera homogénea compuesta por los siguientes 4 elementos:
 
-1. **Logo Corporativo (Izquierda)**: Logo de la empresa o de Gestión SySO en formato base64/PNG con fondo transparente, escalado dinámicamente según su relación de aspecto mediante `getImageDimensions` (`maxW = 65 mm`, `maxH = 22 mm`).
-2. **Título del Documento (Derecha / Arriba)**: Texto en mayúsculas, fuente `helvetica`, tamaño `13pt`, peso `bold`, color `#0d0d0d`.
-3. **Ficha Metadatos (Sub-cabecera)**:
-   - Razón Social de la Empresa
+```javascript
+// Ejemplo de invocación del helper
+const currentY = drawPdfHeader(doc, {
+  title: 'CONSTANCIA DE VISITA TÉCNICA',
+  codigo: 'VIS-2026-0816',
+  fecha: '16/08/2026',
+  empresa: 'Acme S.A.',
+  establecimiento: 'Planta Central',
+  logoBase64: logoDataUrl,
+  orientation: 'portrait'
+});
+```
+
+### Especificación Gráfica:
+1. **Logotipo Corporativo (Esquina Superior Izquierda):**
+   - Inserción asíncrona mediante `doc.addImage(logoBase64, 'PNG', ...)`.
+   - Dimensiones máximas acotadas: `maxW = 60 mm`, `maxH = 20 mm`.
+   - Cálculo dinámico de relación de aspecto (`getImageDimensions`) para impedir estiramientos:
+     ```javascript
+     const ratio = dims.width / dims.height;
+     let renderW = maxW;
+     let renderH = maxW / ratio;
+     if (renderH > maxH) {
+       renderH = maxH;
+       renderW = maxH * ratio;
+     }
+     ```
+2. **Título del Documento (Alineado a la Derecha o Barra Azul Centrada):**
+   - Fuente `helvetica`, tamaño `12pt`, peso `bold`, color `#0D0D0D` o fondo azul corporativo `#468DFF` con texto blanco.
+3. **Ficha de Metadatos (Sub-cabecera):**
+   - Razón Social de la Empresa Cliente
    - C.U.I.T.
    - Denominación del Establecimiento y Dirección
-   - Fecha de Emisión y Código Unívoco de Documento (ej. `VIS-2026-0812`)
-4. **Línea Divisoria Horizonal**: Línea de `0.8 pt` en color `#468DFF` (`Blue-500`) separando la cabecera del cuerpo técnico.
+   - Fecha de Emisión y Código Unívoco de Documento (ej. `VIS-2026-0816`)
+4. **Línea Divisoria Institucional:**
+   - Línea horizontal de `0.4 mm` (o `1.25 pt`) en color Azul Corporativo `#468DFF` (`[70, 141, 255]`) separando la cabecera del cuerpo técnico.
 
 ---
 
-## 3. Pie de Página y Paginación Dinámica (`pdfFooter.js`)
+## 3. Pie de Página y Paginación Dinámica en 2 Pasadas (`pdfFooter.js`)
 
-Todos los documentos deben contar con un pie de página estandarizado:
+Todo reporte debe cerrarse ejecutando el footer en dos pasadas sobre la totalidad de las fojas generadas:
 
-1. **Línea Divisoria Inferior**: Línea de `0.5 pt` en color `#cbd5e1` (`slate-300`) a `15 mm` del borde inferior.
-2. **Leyenda Institucional (Izquierda)**: `[Nombre Comercial] • Tel: [telefono] • Email: [email]` (Datos dinámicos del equipo/tenant).
-3. **Leyenda Normativa / Confidencialidad (Centro)**: `Documento generado conforme a normativa SRT / Disposición SRT 2/22`.
-4. **Número de Página (Derecha)**: Formato obligatorio en 2 pasadas: `Página X de Y` (utilizando `doc.putTotalPages('{totalPages}')`).
+```javascript
+export function drawPdfFooter(doc, options = {}) {
+  const {
+    consultora = 'Gestión SySO — Soluciones Integrales en Higiene y Seguridad',
+    telefono = '1159969956',
+    email = 'soporte@gestionsyso.com',
+    codigo = '',
+    orientation = 'portrait'
+  } = options;
+
+  const totalPages = doc.internal.getNumberOfPages();
+  const startX = 15;
+  const endX = orientation === 'landscape' ? 282 : 195;
+  const totalW = endX - startX;
+  const barY = orientation === 'landscape' ? 196 : 281;
+  const textY = orientation === 'landscape' ? 200.5 : 285.5;
+
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+
+    // 1. Línea Superior de Acento Azul
+    doc.setDrawColor(70, 141, 255); // #468DFF
+    doc.setLineWidth(0.35);
+    doc.line(startX, barY, endX, barY);
+
+    // 2. Datos Institucionales Centrados
+    const boldText = String(consultora);
+    const normalText = `  •  Tel: ${telefono}  •  Email: ${email}`;
+
+    doc.setFontSize(7.5);
+    doc.setTextColor(71, 85, 105); // Slate-600
+
+    doc.setFont('helvetica', 'bold');
+    const boldWidth = doc.getTextWidth(boldText);
+    doc.setFont('helvetica', 'normal');
+    const normalWidth = doc.getTextWidth(normalText);
+    const totalTextWidth = boldWidth + normalWidth;
+    const lineStartX = startX + (totalW / 2) - (totalTextWidth / 2);
+
+    doc.setFont('helvetica', 'bold');
+    doc.text(boldText, lineStartX, textY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(normalText, lineStartX + boldWidth, textY);
+
+    // 3. Numeración de Página Estándar a la Derecha (Página X de Y)
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(71, 85, 105);
+    doc.text(`Página ${i} de ${totalPages}`, endX, textY, { align: 'right' });
+  }
+}
+```
 
 ---
 
-## 4. Sistema Tipográfico y Colores PDF
+## 4. Sistema Tipográfico y Tokens de Color PDF (`pdfTheme.js`)
 
-### 4.1 Escala Tipográfica en jsPDF
-- **Título de Sección**: 11pt / Bold / Color `#468DFF`
-- **Subtítulo / Campos**: 9.5pt / Bold / Color `#1e293b` (`slate-800`)
-- **Texto Normal / Cuerpo**: 8.5pt / Normal / Color `#334155` (`slate-700`)
-- **Texto de Tabla (`autoTable`)**: 8pt / Normal / Color `#334155`
-- **Notas Normativas**: 7.5pt / Italic / Color `#64748b` (`slate-500`)
+### 4.1 Escala Tipográfica para Impresión
+- **Título de Documento / Portada:** `18pt - 24pt` / Bold / Color `#468DFF`
+- **Títulos de Secciones Técnicas:** `11pt` / Bold / Color `#468DFF` o `#0D0D0D`
+- **Subtítulos y Etiquetas de Ficha:** `8.5pt - 9pt` / Bold / Color `#0F172A`
+- **Cuerpo y Valores de Medición:** `8pt` / Normal / Color `#1E293B`
+- **Celdas de Tabla (`jspdf-autotable`):** `7.5pt - 8pt` / Normal / Color `#0F172A`
+- **Notas Normativas y Aclaraciones:** `7pt - 7.5pt` / Italic / Color `#64748B`
 
-### 4.2 Paleta de Colores PDF (`pdfTheme.js`)
+### 4.2 Tokens de Color RGB Seguros (`src/lib/pdf/pdfTheme.js`)
 
 ```javascript
 export const PDF_THEME = {
-  primary: '#468DFF',      // Azul institucional SySO
-  primaryDark: '#0511F2',  // Acento intenso / hover
-  textDark: '#0d0d0d',     // Títulos principales
-  textBody: '#334155',     // Texto normal (Slate-700)
-  textMuted: '#64748b',    // Captions y pies (Slate-500)
-  border: '#cbd5e1',       // Bordes de tabla y rectángulos (Slate-300)
-  bgHeader: '#468DFF',     // Relleno de cabecera de autoTable
-  bgSubHeader: '#E2E8F0',  // Relleno de subencabezados (Slate-200)
-  bgAltRow: '#f8fafc',     // Filas alternadas
-  success: '#16a34a',      // Estado completado / realizado
-  warning: '#d97706',      // Estado pendiente / advertencia
-  destructive: '#dc2626',  // Estado vencido / riesgo alto
+  // Paleta Oficial Gestión SySO (Valores RGB)
+  primary: [70, 141, 255],        // #468DFF (Azul Corporativo)
+  primaryDark: [5, 17, 242],      // #0511F2 (Azul Intenso de Acento)
+  textPrimary: [13, 13, 13],      // #0D0D0D (Negro Carbón)
+  textBody: [30, 41, 59],         // #1E293B (Slate-800)
+  textMuted: [100, 116, 139],     // #64748B (Slate-500)
+  border: [203, 213, 225],        // #CBD5E1 (Slate-300)
+  cardBg: [248, 250, 252],        // #F8FAFC (Gris Cebra Filas Alternadas)
+  subHeaderBg: [226, 232, 240],   // #E2E8F0 (Slate-200 Subencabezados)
+  white: [255, 255, 255],
+
+  // Estados Semánticos de Cumplimiento / Desvío
+  success: [22, 163, 74],         // #16A34A (Verde Cumple)
+  warning: [217, 119, 6],         // #D97706 (Ámbar Advertencia / Parcial)
+  destructive: [220, 38, 38],     // #DC2626 (Rojo No Cumple / Peligro)
 };
 ```
 
 ---
 
-## 5. Estándar de Tablas (`jspdf-autotable`)
+## 5. Estándar de Tablas Técnicas (`jspdf-autotable`)
 
-Todas las tablas dentro de los PDFs deben configurarse importando `pdfTableStyles.js`:
+Todas las tablas de reportes PDF deben consumir las opciones base de `src/lib/pdf/pdfTableStyles.js`:
 
 ```javascript
+import autoTable from 'jspdf-autotable';
+import { PDF_THEME } from '@/lib/pdf/pdfTheme';
+
 autoTable(doc, {
   startY: currentY,
-  head: [['CAMPO / CONCEPTO', 'DETALLE / VALOR', 'ESTADO']],
+  head: [['SECTOR', 'PUNTO / EQUIPO', 'VALOR OBTENIDO', 'LÍMITE', 'RESULTADO']],
   body: tableData,
   theme: 'grid',
-  showHead: 'everyPage', // Repetir encabezado al cambiar de página
+  tableLineWidth: 0.3,
+  tableLineColor: PDF_THEME.border,
+  showHead: 'everyPage', // Repite cabeceras en saltos de página automáticos
+  rowPageBreak: 'avoid',  // Evita cortar filas por la mitad
   headStyles: {
     fillColor: PDF_THEME.primary,
-    textColor: '#FFFFFF',
-    fontSize: 9,
+    textColor: PDF_THEME.white,
+    fontSize: 8.5,
     fontStyle: 'bold',
-    halign: 'left',
+    halign: 'center',
+    valign: 'middle',
+    lineWidth: 0.3,
+    lineColor: PDF_THEME.border
   },
   bodyStyles: {
-    textColor: PDF_THEME.textBody,
     fontSize: 8,
+    textColor: PDF_THEME.textBody,
+    valign: 'middle',
+    minCellHeight: 7,
+    lineWidth: 0.3,
+    lineColor: PDF_THEME.border
   },
   alternateRowStyles: {
-    fillColor: PDF_THEME.bgAltRow,
+    fillColor: PDF_THEME.cardBg // Fila cebra suave #F8FAFC
   },
-  margin: { top: 18, bottom: 20, left: 15, right: 15 },
+  margin: { left: 15, right: 15, top: 20, bottom: 22 }
 });
 ```
 
@@ -111,32 +207,62 @@ autoTable(doc, {
 
 ## 6. Firmas Digitales, Asincronismo y Trazabilidad (`pdfSignatures.js`)
 
-1. **Resolución Asíncrona de Storage (`resolveStorageUrl`)**:
-   - Detecta si la firma o imagen proviene de Supabase Storage (`signatures`, `documents`, `logos`).
-   - Ejecuta `supabase.storage.from(bucket).createSignedUrl` o `getPublicUrl` para obtener URLs accesibles por `getBase64ImageFromUrl` antes de invocar `doc.addImage`.
-2. **Formato Multi-Matrícula**:
-   - Concatenación de matrículas del profesional (`COPIME N° L002210 / CPSH N° LHS-000179 PSA`).
-3. **Fórmula de Solapamiento Estético (`0.78`)**:
-   - Altura máxima de firma `maxH = 32 mm`.
-   - Coordenada vertical `renderY = lineY - (renderH * 0.78)`, haciendo flotar el 78% de la firma sobre el renglón.
-4. **Protección de Salto de Página (Page Break Guard)**:
-   - Si el espacio vertical restante en la hoja es menor a `35 mm`, el generador invoca `doc.addPage()` automáticamente antes de dibujar el bloque de firmas.
+1. **Resolución Asíncrona de Supabase Storage (`resolveStorageUrl`):**  
+   Antes de solicitar el Base64 de una firma, se debe resolver su URL firmada si reside en los buckets `signatures`, `documents` o `avatars` mediante `supabase.storage.from(bucket).createSignedUrl(path, 3600)`.
+
+2. **Fórmula de Solapamiento Estético (`0.78`):**  
+   Para simular una firma manuscrita real que cruza el renglón sin deformarse:
+   ```javascript
+   const lineY = boxY + 24;
+   const renderY = lineY - (renderH * 0.78);
+   doc.addImage(firmaBase64, 'PNG', renderX, renderY, renderW, renderH, undefined, 'FAST');
+   ```
+
+3. **Guarda de Salto de Página (Page Break Protection):**  
+   Si el espacio vertical disponible en la página antes de estampar las firmas es inferior a `35 mm`, el generador debe ejecutar `doc.addPage()` para evitar que el bloque de firmas se corte entre dos páginas.
+
+4. **Multi-Matrícula del Profesional:**  
+   Concatenación obligatoria de todas las matrículas registradas en la tabla `matriculas` de Supabase:
+   `COPIME N° L002210 / CPSH N° LHS-000179 PSA`.
 
 ---
 
-## 7. Nombres de Archivo PDF (`pdfFileName.js`)
+## 7. Evidencias Fotográficas, Croquis y Fusión de Adjuntos (`pdf-lib`)
 
-Formato unificado obligatorio para descargas y envíos de PDF:
+1. **Grillas de Evidencias Fotográficas:**
+   - Miniaturas proporcionales con borde gris `#CBD5E1`, subtítulo de fecha/hora y número de toma (ej. `Toma N° 1 - Jabalina Tablero Principal`).
+2. **Marcadores Numéricos en Croquis:**
+   - Renderizado de círculos azules (`#468DFF`) con números secuenciales (`①`, `②`, `③`, ...) sobre planos de planta.
+3. **Fusión de Certificados de Calibración con `pdf-lib`:**
+   - En protocolos de Ruido e Iluminación, cuando el usuario adjunta el Certificado de Calibración del Instrumental en PDF, el sistema lo concatena al final del documento principal:
+     ```javascript
+     import { PDFDocument } from 'pdf-lib';
+     
+     const mainPdfBytes = doc.output('arraybuffer');
+     const finalPdfDoc = await PDFDocument.load(mainPdfBytes);
+     const certDoc = await PDFDocument.load(certPdfArrayBuffer);
+     const copiedPages = await finalPdfDoc.copyPages(certDoc, certDoc.getPageIndices());
+     copiedPages.forEach((page) => finalPdfDoc.addPage(page));
+     const mergedPdfBytes = await finalPdfDoc.save();
+     ```
+
+---
+
+## 8. Formato Estándar de Nombres de Archivo PDF (`pdfFileName.js`)
+
+Todos los documentos descargados o enviados por correo electrónico deben formatearse mediante el helper `formatPdfFileName`:
 
 ```javascript
-formatPdfFileName({
-  tipoDoc: 'constancia-visita',
-  empresa: 'acme-sa',
-  establecimiento: 'planta-central',
-  fecha: '2026-08-12',
-  id: 'VIS-104'
+import { formatPdfFileName } from '@/lib/pdf/pdfFileName';
+
+const fileName = formatPdfFileName({
+  tipoDoc: 'protocolo-puesta-a-tierra',
+  empresa: 'metalurgica-central',
+  establecimiento: 'planta-1',
+  fecha: '2026-08-16',
+  id: 'PAT-004'
 });
-// Resultado: constancia-visita_acme-sa_planta-central_2026-08-12_VIS-104.pdf
+// Resultado: protocolo-puesta-a-tierra_metalurgica-central_planta-1_2026-08-16_PAT-004.pdf
 ```
 
 ---

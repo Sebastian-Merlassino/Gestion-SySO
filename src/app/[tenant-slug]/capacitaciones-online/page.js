@@ -13,6 +13,9 @@ import AppSortIcon from '@/components/ui/AppSortIcon';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
 import AITextHelper from '@/components/ui/AITextHelper';
+import AppSkeleton from '@/components/ui/AppSkeleton';
+import AppTooltip from '@/components/ui/AppTooltip';
+import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
 import { generateCapacitacionOnlinePdf } from './utils/pdfGenerator';
 import { 
   GraduationCap, 
@@ -989,8 +992,8 @@ export default function CapacitacionesOnlinePage({ params }) {
         />
 
         {loading ? (
-          <div className="flex-grow flex items-center justify-center p-8">
-            <div className="text-center space-y-4">
+          <div className="flex-1 flex flex-col items-center justify-center p-8">
+            <div className="text-center space-y-3">
               <Loader2 className="h-10 w-10 animate-spin text-[#468DFF] mx-auto" />
               <p className="text-xs text-slate-500 font-medium">Cargando capacitaciones online...</p>
             </div>
@@ -1952,14 +1955,15 @@ export default function CapacitacionesOnlinePage({ params }) {
                       </div>
 
                       {canCargar && (
-                        <button
-                          type="button"
+                        <AppButton
+                          variant="primary"
+                          size="sm"
                           onClick={handleAddNew}
-                          className="px-3 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0 border border-[#468DFF] hover:border-[#0511F2]"
+                          className="shrink-0"
                         >
                           <PlusCircle className="h-3.5 w-3.5" />
-                          Nueva Capacitación
-                        </button>
+                          <span>Nueva capacitación</span>
+                        </AppButton>
                       )}
                     </div>
 
@@ -2089,30 +2093,33 @@ export default function CapacitacionesOnlinePage({ params }) {
                                 <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
                                   <div className="flex items-center justify-center gap-1.5">
                                     {item.document_url && (
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleViewPdf(item.document_url);
-                                        }}
-                                        className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                        title="Visualizar Documento / Presentación"
-                                      >
-                                        <FileText className="h-4.5 w-4.5" />
-                                      </button>
+                                      <AppTooltip content="Visualizar documento / presentación">
+                                        <AppButton
+                                          variant="document-table"
+                                          size="icon"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleViewPdf(item.document_url);
+                                          }}
+                                        >
+                                          <FileText className="h-4.5 w-4.5" />
+                                        </AppButton>
+                                      </AppTooltip>
                                     )}
                                     {item.video_url && (
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          window.open(item.video_url, '_blank');
-                                        }}
-                                        className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                        title="Ver Video Instructivo"
-                                      >
-                                        <Tv className="h-4.5 w-4.5" />
-                                      </button>
+                                      <AppTooltip content="Ver video instructivo">
+                                        <AppButton
+                                          variant="document-table"
+                                          size="icon"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            window.open(item.video_url, '_blank');
+                                          }}
+                                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                        >
+                                          <Tv className="h-4.5 w-4.5" />
+                                        </AppButton>
+                                      </AppTooltip>
                                     )}
                                     {!item.document_url && !item.video_url && (
                                       <span className="text-slate-400 text-xs italic">-</span>
@@ -2132,70 +2139,76 @@ export default function CapacitacionesOnlinePage({ params }) {
 
                                 <td className="px-6 py-4 text-right">
                                   <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
-                                    <AppButton
-                                       variant="document-table"
-                                       size="icon"
-                                       onClick={(e) => handleOpenShareModal(item, e)}
-                                       title="Compartir Capacitación (WhatsApp / Email / Enlace)"
-                                     >
-                                       <Share2 className="h-4.5 w-4.5" />
-                                     </AppButton>
+                                    <AppTooltip content="Compartir capacitación">
+                                      <AppButton
+                                         variant="document-table"
+                                         size="icon"
+                                         onClick={(e) => handleOpenShareModal(item, e)}
+                                       >
+                                         <Share2 className="h-4.5 w-4.5" />
+                                       </AppButton>
+                                    </AppTooltip>
 
                                      {/* Ver Firmas */}
-                                     <AppButton
-                                       variant="document-table"
-                                       size="icon"
-                                       onClick={(e) => handleOpenRegistrosModal(item, e)}
-                                       title="Ver Asistentes Firmantes"
-                                     >
-                                       <Users className="h-4.5 w-4.5" />
-                                     </AppButton>
+                                     <AppTooltip content="Ver asistentes firmantes">
+                                       <AppButton
+                                         variant="document-table"
+                                         size="icon"
+                                         onClick={(e) => handleOpenRegistrosModal(item, e)}
+                                       >
+                                         <Users className="h-4.5 w-4.5" />
+                                       </AppButton>
+                                     </AppTooltip>
 
                                      {/* Imprimir */}
-                                     <AppButton
-                                       variant="document-table"
-                                       size="icon"
-                                       onClick={(e) => handlePrintPdf(item, e)}
-                                       title="Ver e Imprimir Registro de Capacitación (PDF)"
-                                     >
-                                       <Printer className="h-4.5 w-4.5" />
-                                     </AppButton>
+                                     <AppTooltip content="Visualizar / Imprimir PDF">
+                                       <AppButton
+                                         variant="document-table"
+                                         size="icon"
+                                         onClick={(e) => handlePrintPdf(item, e)}
+                                       >
+                                         <Printer className="h-4.5 w-4.5" />
+                                       </AppButton>
+                                     </AppTooltip>
 
                                      {/* Descargar Registro PDF */}
-                                     <AppButton
-                                       variant="document-table"
-                                       size="icon"
-                                       onClick={(e) => handleDownloadPdf(item, e)}
-                                       title="Descargar Registro de Capacitación (PDF)"
-                                     >
-                                       <Download className="h-4.5 w-4.5" />
-                                     </AppButton>
+                                     <AppTooltip content="Descargar PDF">
+                                       <AppButton
+                                         variant="document-table"
+                                         size="icon"
+                                         onClick={(e) => handleDownloadPdf(item, e)}
+                                       >
+                                         <Download className="h-4.5 w-4.5" />
+                                       </AppButton>
+                                     </AppTooltip>
 
                                      {/* Editar */}
                                      {canEditar && (
-                                       <AppButton
-                                         variant="edit-table"
-                                         size="icon"
-                                         onClick={() => handleEditClick(item)}
-                                         title="Editar Capacitación"
-                                       >
-                                         <Edit className="h-4.5 w-4.5" />
-                                       </AppButton>
+                                       <AppTooltip content="Editar capacitación">
+                                         <AppButton
+                                           variant="edit-table"
+                                           size="icon"
+                                           onClick={() => handleEditClick(item)}
+                                         >
+                                           <Edit className="h-4.5 w-4.5" />
+                                         </AppButton>
+                                       </AppTooltip>
                                      )}
 
                                      {/* Eliminar */}
                                      {canEliminar && (
-                                       <AppButton
-                                         variant="delete-table"
-                                         size="icon"
-                                         onClick={(e) => {
-                                           e.stopPropagation();
-                                           setDeleteConfirm({ show: true, id: item.id, title: item.titulo });
-                                         }}
-                                         title="Eliminar Capacitación"
-                                       >
-                                         <Trash2 className="h-4.5 w-4.5" />
-                                       </AppButton>
+                                       <AppTooltip content="Eliminar capacitación">
+                                         <AppButton
+                                           variant="delete-table"
+                                           size="icon"
+                                           onClick={(e) => {
+                                             e.stopPropagation();
+                                             setDeleteConfirm({ show: true, id: item.id, title: item.titulo });
+                                           }}
+                                         >
+                                           <Trash2 className="h-4.5 w-4.5" />
+                                         </AppButton>
+                                       </AppTooltip>
                                      )}
                                   </div>
                                 </td>
@@ -2302,43 +2315,15 @@ export default function CapacitacionesOnlinePage({ params }) {
         </div>
       )}
 
-      {/* Modal Diálogo "Cambios sin guardar" Exacto */}
-      {unsavedDialog.show && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 text-center shadow-xl border border-slate-200 animate-scaleUp">
-            <div className="w-12 h-12 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-3">
-              <AlertTriangle className="w-6 h-6" />
-            </div>
-
-            <h3 className="text-lg font-bold text-[#0D0D0D] mb-1">
-              Cambios sin guardar
-            </h3>
-            <p className="text-xs text-slate-500 mb-6 leading-relaxed">
-              Tenés cambios sin guardar en el formulario. Si salís ahora, perderás toda la información ingresada.
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setUnsavedDialog({ show: false, pendingAction: null });
-                  if (unsavedDialog.pendingAction) unsavedDialog.pendingAction();
-                }}
-                className="w-full sm:w-auto px-5 py-2.5 bg-[#FFFFFF] text-[#468DFF] border border-[#468DFF] rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-[#FFFFFF] transition-all cursor-pointer"
-              >
-                Salir sin guardar
-              </button>
-              <button
-                type="button"
-                onClick={() => setUnsavedDialog({ show: false, pendingAction: null })}
-                className="w-full sm:w-auto px-5 py-2.5 bg-[#468DFF] text-white rounded-xl text-sm font-bold hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/20"
-              >
-                Quedarse y editar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Modal Diálogo "Cambios sin guardar" Unificado */}
+      <AppUnsavedChangesDialog
+        open={unsavedDialog.show}
+        onOpenChange={(open) => !open && setUnsavedDialog({ show: false, pendingAction: null })}
+        onLeave={() => {
+          setUnsavedDialog({ show: false, pendingAction: null });
+          if (unsavedDialog.pendingAction) unsavedDialog.pendingAction();
+        }}
+      />
 
       {/* Diálogo de Confirmación de Eliminación */}
       <AppConfirmDialog

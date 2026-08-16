@@ -14,10 +14,11 @@ import AppInput from '@/components/ui/AppInput';
 import AppSelect from '@/components/ui/AppSelect';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
-import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import AppSortIcon from '@/components/ui/AppSortIcon';
+import AppSkeleton from '@/components/ui/AppSkeleton';
+import AppTooltip from '@/components/ui/AppTooltip';
 import { 
   PlusCircle, 
   Search, 
@@ -1212,7 +1213,7 @@ export default function ExtintoresPage({ params }) {
           <div className="flex-1 flex flex-col items-center justify-center p-8">
             <div className="text-center space-y-3">
               <Loader2 className="h-10 w-10 animate-spin text-[#468DFF] mx-auto" />
-              <p className="text-xs text-slate-500 font-medium">Cargando equipos extintores...</p>
+              <p className="text-xs text-slate-500 font-medium">Cargando extintores...</p>
             </div>
           </div>
         ) : (
@@ -1724,13 +1725,15 @@ export default function ExtintoresPage({ params }) {
                       </div>
 
                       {canCargar && (
-                        <button
+                        <AppButton
+                          variant="primary"
+                          size="sm"
                           onClick={() => { setIsReadOnlyView(false); setIsFormOpen(true); }}
-                          className="px-3 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0"
+                          className="shrink-0"
                         >
                           <PlusCircle className="h-3.5 w-3.5" />
-                          Incorporar Nuevo Extintor
-                        </button>
+                          <span>Nuevo extintor</span>
+                        </AppButton>
                       )}
                     </div>
 
@@ -1948,51 +1951,55 @@ export default function ExtintoresPage({ params }) {
                                     <td className="py-4 px-6 text-right" onClick={(e) => e.stopPropagation()}>
                                       <div className="flex items-center justify-end gap-2">
                                         {ext.imagen_preview_url && (
-                                          <a 
-                                            href={ext.imagen_preview_url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            title="Ver Foto"
-                                            className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-colors inline-flex items-center justify-center shadow-sm"
-                                            onClick={(e) => e.stopPropagation()}
-                                          >
-                                            <ImageIcon className="h-4.5 w-4.5" />
-                                          </a>
+                                          <AppTooltip content="Ver fotografía">
+                                            <a 
+                                              href={ext.imagen_preview_url}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-colors inline-flex items-center justify-center shadow-sm"
+                                              onClick={(e) => e.stopPropagation()}
+                                            >
+                                              <ImageIcon className="h-4.5 w-4.5" />
+                                            </a>
+                                          </AppTooltip>
                                         )}
                                         {canEditar ? (
-                                          <AppButton
-                                            variant="edit-table"
-                                            size="icon"
-                                            onClick={() => {
-                                              setIsReadOnlyView(false);
-                                              handleEditClick(ext);
-                                            }}
-                                            title="Editar"
-                                          >
-                                            <Edit className="h-4.5 w-4.5" />
-                                          </AppButton>
+                                          <AppTooltip content="Editar extintor">
+                                            <AppButton
+                                              variant="edit-table"
+                                              size="icon"
+                                              onClick={() => {
+                                                setIsReadOnlyView(false);
+                                                handleEditClick(ext);
+                                              }}
+                                            >
+                                              <Edit className="h-4.5 w-4.5" />
+                                            </AppButton>
+                                          </AppTooltip>
                                         ) : (
-                                          <AppButton
-                                            variant="ghost-table"
-                                            size="icon"
-                                            onClick={() => {
-                                              setIsReadOnlyView(true);
-                                              handleEditClick(ext);
-                                            }}
-                                            title="Ver Detalle"
-                                          >
-                                            <Eye className="h-4.5 w-4.5" />
-                                          </AppButton>
+                                          <AppTooltip content="Ver detalle">
+                                            <AppButton
+                                              variant="ghost-table"
+                                              size="icon"
+                                              onClick={() => {
+                                                setIsReadOnlyView(true);
+                                                handleEditClick(ext);
+                                              }}
+                                            >
+                                              <Eye className="h-4.5 w-4.5" />
+                                            </AppButton>
+                                          </AppTooltip>
                                         )}
                                         {canEliminar && (
-                                          <AppButton
-                                            variant="delete-table"
-                                            size="icon"
-                                            onClick={() => handleDeleteClick(ext.id)}
-                                            title="Eliminar"
-                                          >
-                                            <Trash2 className="h-4.5 w-4.5" />
-                                          </AppButton>
+                                          <AppTooltip content="Eliminar extintor">
+                                            <AppButton
+                                              variant="delete-table"
+                                              size="icon"
+                                              onClick={() => handleDeleteClick(ext.id)}
+                                            >
+                                              <Trash2 className="h-4.5 w-4.5" />
+                                            </AppButton>
+                                          </AppTooltip>
                                         )}
                                       </div>
                                     </td>

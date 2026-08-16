@@ -20,6 +20,8 @@ import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import AppSortIcon from '@/components/ui/AppSortIcon';
+import AppSkeleton from '@/components/ui/AppSkeleton';
+import AppTooltip from '@/components/ui/AppTooltip';
 import { formatPdfFileName } from '@/lib/pdf/pdfFileName';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import {
@@ -2852,7 +2854,7 @@ export default function AccidentesPage({ params }) {
           <div className="flex-1 flex flex-col items-center justify-center p-8">
             <div className="text-center space-y-3">
               <Loader2 className="h-10 w-10 animate-spin text-[#468DFF] mx-auto" />
-              <p className="text-xs text-slate-500 font-medium">Cargando registro de siniestros...</p>
+              <p className="text-xs text-slate-500 font-medium">Cargando accidentes e incidentes...</p>
             </div>
           </div>
         ) : (
@@ -3938,18 +3940,20 @@ export default function AccidentesPage({ params }) {
                       </div>
 
                       {canCargar && (
-                        <button
+                        <AppButton
+                          variant="primary"
+                          size="sm"
                           onClick={() => {
                             setIsReadOnlyView(false);
                             setEditingId(null);
                             handleCloseForm();
                             setTimeout(() => setIsFormOpen(true), 0);
                           }}
-                          className="px-3 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0 font-sans"
+                          className="shrink-0"
                         >
                           <PlusCircle className="h-3.5 w-3.5" />
-                          Nuevo Siniestro
-                        </button>
+                          <span>Nuevo siniestro</span>
+                        </AppButton>
                       )}
                     </div>
                     
@@ -4163,23 +4167,26 @@ export default function AccidentesPage({ params }) {
                                 <td className="px-6 py-4 text-center" onClick={e => e.stopPropagation()}>
                                   <div className="flex items-center justify-center gap-1">
                                     {acc.denuncia_signed_url && (
-                                      <AppButton
-                                        variant="document-table"
-                                        size="icon"
-                                        onClick={e => { e.stopPropagation(); handleViewPdf(acc.denuncia_signed_url); }}
-                                        title="Ver denuncia de accidente"
-                                      >
-                                        <FileText className="h-4.5 w-4.5" />
-                                      </AppButton>
+                                      <AppTooltip content="Ver denuncia de accidente">
+                                        <AppButton
+                                          variant="document-table"
+                                          size="icon"
+                                          onClick={e => { e.stopPropagation(); handleViewPdf(acc.denuncia_signed_url); }}
+                                        >
+                                          <FileText className="h-4.5 w-4.5" />
+                                        </AppButton>
+                                      </AppTooltip>
                                     )}
                                     {acc.informe_signed_url && (
-                                      <button
-                                        onClick={e => { e.stopPropagation(); handleViewPdf(acc.informe_signed_url); }}
-                                        title="Ver informe de investigación"
-                                        className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-colors inline-flex items-center justify-center shadow-sm"
-                                      >
-                                        <FileText className="h-4.5 w-4.5" />
-                                      </button>
+                                      <AppTooltip content="Ver informe de investigación">
+                                        <AppButton
+                                          variant="document-table"
+                                          size="icon"
+                                          onClick={e => { e.stopPropagation(); handleViewPdf(acc.informe_signed_url); }}
+                                        >
+                                          <FileText className="h-4.5 w-4.5" />
+                                        </AppButton>
+                                      </AppTooltip>
                                     )}
                                     {!acc.denuncia_signed_url && !acc.informe_signed_url && (
                                       <span className="text-slate-350 text-[10px] font-semibold">—</span>
@@ -4189,39 +4196,48 @@ export default function AccidentesPage({ params }) {
                                 <td className="px-6 py-4 text-center" onClick={e => e.stopPropagation()}>
                                   <div className="flex items-center justify-center gap-1.5">
                                     {profile?.role !== 'cliente' && (
-                                      <button
-                                        onClick={e => { e.stopPropagation(); handleOpenAiModalFromList(acc); }}
-                                        title="Generar informe con IA"
-                                        className="p-1.5 rounded-lg text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 transition-colors bg-indigo-50 cursor-pointer inline-flex items-center justify-center shadow-sm"
-                                      >
-                                        <Sparkles className="h-4.5 w-4.5" />
-                                      </button>
+                                      <AppTooltip content="Generar informe con IA">
+                                        <AppButton
+                                          variant="ghost-table"
+                                          size="icon"
+                                          onClick={e => { e.stopPropagation(); handleOpenAiModalFromList(acc); }}
+                                          className="text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 bg-indigo-50"
+                                        >
+                                          <Sparkles className="h-4.5 w-4.5" />
+                                        </AppButton>
+                                      </AppTooltip>
                                     )}
                                     {canEditar ? (
-                                      <button
-                                        onClick={e => { e.stopPropagation(); handleEditClick(acc, false); }}
-                                        title="Editar accidente"
-                                        className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 hover:text-amber-700 transition-colors bg-amber-50"
-                                      >
-                                        <Edit className="h-4.5 w-4.5" />
-                                      </button>
+                                      <AppTooltip content="Editar siniestro">
+                                        <AppButton
+                                          variant="edit-table"
+                                          size="icon"
+                                          onClick={e => { e.stopPropagation(); handleEditClick(acc, false); }}
+                                        >
+                                          <Edit className="h-4.5 w-4.5" />
+                                        </AppButton>
+                                      </AppTooltip>
                                     ) : (
-                                      <button
-                                        onClick={e => { e.stopPropagation(); handleEditClick(acc, true); }}
-                                        title="Ver Detalle"
-                                        className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all cursor-pointer inline-flex items-center"
-                                      >
-                                        <Eye className="h-4.5 w-4.5" />
-                                      </button>
+                                      <AppTooltip content="Ver detalle">
+                                        <AppButton
+                                          variant="ghost-table"
+                                          size="icon"
+                                          onClick={e => { e.stopPropagation(); handleEditClick(acc, true); }}
+                                        >
+                                          <Eye className="h-4.5 w-4.5" />
+                                        </AppButton>
+                                      </AppTooltip>
                                     )}
                                     {canEliminar && (
-                                      <button
-                                        onClick={e => { e.stopPropagation(); handleDeleteClick(acc.id); }}
-                                        title="Eliminar accidente"
-                                        className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors bg-red-50"
-                                      >
-                                        <Trash2 className="h-4.5 w-4.5" />
-                                      </button>
+                                      <AppTooltip content="Eliminar siniestro">
+                                        <AppButton
+                                          variant="delete-table"
+                                          size="icon"
+                                          onClick={e => { e.stopPropagation(); handleDeleteClick(acc.id); }}
+                                        >
+                                          <Trash2 className="h-4.5 w-4.5" />
+                                        </AppButton>
+                                      </AppTooltip>
                                     )}
                                   </div>
                                 </td>

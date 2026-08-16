@@ -4,7 +4,7 @@
 import React from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { AlertTriangle, HelpCircle, Info, X } from 'lucide-react';
-import Button from './button';
+import AppButton from './AppButton';
 
 export default function AppConfirmDialog({
   open,
@@ -18,7 +18,7 @@ export default function AppConfirmDialog({
 }) {
   let Icon = HelpCircle;
   let iconBg = 'bg-blue-50 text-[#468DFF] border-blue-100';
-  let confirmVariant = 'default';
+  let confirmVariant = 'primary';
 
   if (type === 'destructive') {
     Icon = AlertTriangle;
@@ -27,9 +27,11 @@ export default function AppConfirmDialog({
   } else if (type === 'warning') {
     Icon = AlertTriangle;
     iconBg = 'bg-amber-50 text-amber-600 border-amber-100';
+    confirmVariant = 'amber';
   } else if (type === 'info') {
     Icon = Info;
     iconBg = 'bg-blue-50 text-[#468DFF] border-blue-100';
+    confirmVariant = 'primary';
   }
 
   return (
@@ -72,29 +74,27 @@ export default function AppConfirmDialog({
             {/* Action buttons */}
             <div className="flex gap-2 pt-2">
               <Dialog.Close asChild>
-                <button
-                  type="button"
-                  className="flex-1 py-2.5 px-4 border border-slate-300 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer focus:outline-none focus:ring-2 focus:ring-slate-400"
+                <AppButton
+                  variant="outline"
+                  size="md"
+                  className="flex-1"
                 >
                   {cancelText}
-                </button>
+                </AppButton>
               </Dialog.Close>
 
               {onConfirm && (
-                <button
-                  type="button"
+                <AppButton
+                  variant={confirmVariant}
+                  size="md"
+                  className="flex-1"
                   onClick={() => {
                     onConfirm();
                     onOpenChange(false);
                   }}
-                  className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                    confirmVariant === 'destructive'
-                      ? 'bg-red-500 hover:bg-red-650 text-white shadow-lg shadow-red-500/10 focus:ring-red-500'
-                      : 'bg-[#468DFF] hover:bg-[#0511F2] text-white shadow-lg shadow-blue-500/10 focus:ring-[#468DFF]'
-                  }`}
                 >
                   {confirmText}
-                </button>
+                </AppButton>
               )}
             </div>
             

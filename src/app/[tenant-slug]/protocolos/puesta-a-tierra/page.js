@@ -14,6 +14,8 @@ import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import ProtocoloForm from './components/ProtocoloForm';
 import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
 import AppSortIcon from '@/components/ui/AppSortIcon';
+import AppSkeleton from '@/components/ui/AppSkeleton';
+import AppTooltip from '@/components/ui/AppTooltip';
 import { generatePuestaATierraPdf } from './utils/pdfGenerator';
 import { 
   PlusCircle, 
@@ -185,10 +187,10 @@ export default function ProtocolosPuestaATierraPage({ params }) {
         .order('razon_social', { ascending: true });
       if (empData) setEmpresas(empData);
 
-      // 4. Cargar Establecimientos (Denominación)
+      // 4. Cargar Establecimientos (Denominación, Dirección, Provincia, Localidad, CP, etc.)
       const { data: estData } = await supabase
         .from('establecimientos')
-        .select('id, empresa_id, denominacion, sectores')
+        .select('*')
         .eq('tenant_id', tenData.id)
         .order('denominacion', { ascending: true });
       if (estData) setAllEstablecimientos(estData);
@@ -244,6 +246,86 @@ export default function ProtocolosPuestaATierraPage({ params }) {
       .is('deleted_at', null)
       .order('fecha_medicion', { ascending: false });
     setProtocolos(data || []);
+  };
+
+  // Duplicar Protocolo
+  const handleDuplicate = async (proto) => {
+    try {
+      globalToast.toast('Duplicando protocolo...', 'info');
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const { data: newProto, error: insErr } = await supabase
+        .from('protocolos_puesta_a_tierra')
+        .insert({
+          tenant_id: proto.tenant_id,
+          user_id: user?.id || proto.user_id,
+          organization_id: proto.organization_id,
+          razon_social_id: proto.razon_social_id,
+          establecimiento_id: proto.establecimiento_id,
+          razon_social_text: proto.razon_social_text ? proto.razon_social_text + ' - Copia' : 'Copia',
+          cuit_text: proto.cuit_text,
+          establecimiento_text: proto.establecimiento_text,
+          direccion_text: proto.direccion_text,
+          provincia_text: proto.provincia_text,
+          localidad_text: proto.localidad_text,
+          cp_text: proto.cp_text,
+          horarios_turnos_text: proto.horarios_turnos_text,
+          instrumento_marca_modelo_serie: proto.instrumento_marca_modelo_serie,
+          fecha_calibracion: proto.fecha_calibracion,
+          metodologia_utilizada: proto.metodologia_utilizada,
+          fecha_medicion: proto.fecha_medicion,
+          hora_inicio: proto.hora_inicio,
+          hora_finalizacion: proto.hora_finalizacion,
+          documentacion_adjunta: proto.documentacion_adjunta,
+          observaciones: proto.observaciones,
+          conclusiones: proto.conclusiones,
+          recomendaciones: proto.recomendaciones,
+          profesional_nombre: proto.profesional_nombre,
+          profesional_matricula: proto.profesional_matricula,
+          firma_tipo: proto.firma_tipo,
+          firma_profesional: proto.firma_profesional,
+          estado: 'borrador',
+          created_by: user?.id,
+          created_at: new Date().toISOString()
+        })
+        .select('id')
+        .single();
+
+      if (insErr) throw insErr;
+
+      // Duplicar Puntos
+      const { data: pts } = await supabase
+        .from('protocolos_puesta_a_tierra_puntos')
+        .select('*')
+        .eq('protocolo_id', proto.id);
+
+      if (pts && pts.length > 0) {
+        const ptsPayload = pts.map(p => ({
+          protocolo_id: newProto.id,
+          orden: p.orden,
+          toma_tierra_num: p.toma_tierra_num,
+          sector: p.sector,
+          condicion_terreno: p.condicion_terreno,
+          uso_puesta_a_tierra: p.uso_puesta_a_tierra,
+          esquema_conexion: p.esquema_conexion,
+          valor_medido_ohm: p.valor_medido_ohm,
+          cumple_ohm: p.cumple_ohm,
+          continuidad_permanente: p.continuidad_permanente,
+          capacidad_carga: p.capacidad_carga,
+          dispositivo_proteccion: p.dispositivo_proteccion,
+          desconexion_automatica: p.desconexion_automatica,
+          observaciones_punto: p.observaciones_punto
+        }));
+
+        await supabase.from('protocolos_puesta_a_tierra_puntos').insert(ptsPayload);
+      }
+
+      globalToast.toast('Protocolo duplicado como borrador con éxito.', 'success');
+      loadProtocolsList();
+    } catch (err) {
+      console.error('Error duplicando protocolo:', err);
+      globalToast.toast('Error al duplicar el protocolo.', 'error');
+    }
   };
 
   // Eliminar Protocolo
@@ -639,18 +721,19 @@ export default function ProtocolosPuestaATierraPage({ params }) {
                     </div>
 
                     {canCargar && (
-                      <button
-                        type="button"
+                      <AppButton
+                        variant="primary"
+                        size="sm"
                         onClick={() => {
                           setEditingId(null);
                           setFormMode('create');
                           router.replace(`/${tenantSlug}/protocolos/puesta-a-tierra?action=nuevo`);
                         }}
-                        className="px-3 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0"
+                        className="shrink-0"
                       >
                         <PlusCircle className="h-3.5 w-3.5" />
-                        Nuevo Protocolo
-                      </button>
+                        <span>Nuevo protocolo</span>
+                      </AppButton>
                     )}
                   </div>
                 </div>
@@ -723,133 +806,184 @@ export default function ProtocolosPuestaATierraPage({ params }) {
                           setFormMode('create');
                           router.replace(`/${tenantSlug}/protocolos/puesta-a-tierra?action=nuevo`);
                         }}
+                        className="shadow-md shadow-[#468DFF]/10 flex items-center gap-1.5"
                       >
-                        Crear Nuevo Protocolo
+                        Crear primer protocolo
                       </AppButton>
                     )}
                   />
                 ) : (
-                  <div className="overflow-x-auto overflow-y-auto flex-grow min-h-0 sidebar-scrollbar">
-                    <table className="w-full text-left border-collapse min-w-[700px]">
-                      <thead className="bg-slate-50/80 sticky top-0 z-10 backdrop-blur-sm border-b border-slate-200 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
-                        <tr>
-                          <th className="px-4 py-2.5">
-                            <button
-                              type="button"
-                              onClick={() => toggleSort('razon_social_text')}
-                              className="flex items-center gap-1.5 hover:text-slate-700 transition-colors uppercase font-bold"
-                            >
-                              Razón Social / Establecimiento
-                              <AppSortIcon field="razon_social_text" currentField={sortField} currentOrder={sortOrder} />
-                            </button>
+                  <div className="overflow-auto flex-grow scrollbar-thin">
+                    <table className="w-full border-collapse text-left text-xs min-w-[850px]">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wider sticky top-0 z-10">
+                          <th onClick={() => toggleSort('razon_social_text')} className="px-6 py-4 cursor-pointer select-none hover:text-slate-700 w-[35%]">
+                            <div className="flex items-center gap-1.5">
+                              Cliente / Establecimiento
+                              <AppSortIcon field="razon_social_text" sortField={sortField} sortOrder={sortOrder} />
+                            </div>
                           </th>
-                          <th className="px-4 py-2.5">
-                            <button
-                              type="button"
-                              onClick={() => toggleSort('fecha_medicion')}
-                              className="flex items-center gap-1.5 hover:text-slate-700 transition-colors uppercase font-bold"
-                            >
+                          <th onClick={() => toggleSort('instrumento_marca_modelo_serie')} className="px-6 py-4 cursor-pointer select-none hover:text-slate-700 w-[25%]">
+                            <div className="flex items-center gap-1.5">
+                              Telurímetro
+                              <AppSortIcon field="instrumento_marca_modelo_serie" sortField={sortField} sortOrder={sortOrder} />
+                            </div>
+                          </th>
+                          <th onClick={() => toggleSort('fecha_medicion')} className="px-6 py-4 cursor-pointer select-none hover:text-slate-700 w-[15%]">
+                            <div className="flex items-center gap-1.5">
                               Fecha Medición
-                              <AppSortIcon field="fecha_medicion" currentField={sortField} currentOrder={sortOrder} />
-                            </button>
+                              <AppSortIcon field="fecha_medicion" sortField={sortField} sortOrder={sortOrder} />
+                            </div>
                           </th>
-                          <th className="px-4 py-2.5">Telurímetro Utilizado</th>
-                          <th className="px-4 py-2.5 text-center">Estado</th>
-                          <th className="px-4 py-2.5 text-right">Acciones</th>
+                          <th className="px-6 py-4 text-center w-[10%]">Resultado</th>
+                          <th className="px-6 py-4 text-center w-[10%]">Estado</th>
+                          <th className="px-6 py-4 text-center w-[5%]">Acciones</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 text-xs">
-                        {sortedProtocolos.map((proto) => (
-                          <tr key={proto.id} className="hover:bg-slate-50/80 transition-colors group">
-                            <td className="px-4 py-3">
-                              <div className="font-bold text-slate-800">{proto.razon_social_text || 'Sin Razón Social'}</div>
-                              <div className="text-[11px] text-slate-500 font-medium">{proto.establecimiento_text || 'Establecimiento no especificado'}</div>
-                            </td>
+                      <tbody className="divide-y divide-slate-100 text-slate-700 font-normal">
+                        {sortedProtocolos.map((row) => {
+                          const resVal = row.resultado_general || (row.cumple === false ? 'No cumple' : row.cumple === true ? 'Cumple' : 'Borrador');
+                          let resultBadge = 'bg-slate-100 text-slate-600 border-slate-200';
+                          if (resVal === 'Cumple' || resVal === 'CUMPLE') resultBadge = 'bg-[#00B050]/15 text-[#00B050] border-[#00B050]/30';
+                          if (resVal === 'No cumple' || resVal === 'NO CUMPLE') resultBadge = 'bg-[#FF0000]/15 text-[#FF0000] border-[#FF0000]/30';
+                          if (resVal === 'Parcial' || resVal === 'PARCIAL') resultBadge = 'bg-[#FF9900]/15 text-[#FF9900] border-[#FF9900]/30';
 
-                            <td className="px-4 py-3 font-medium text-slate-600">
-                              {proto.fecha_medicion ? formatDate(proto.fecha_medicion) : 'Sin fecha'}
-                            </td>
+                          let stateBadge = 'bg-slate-100 text-slate-500 border-slate-200';
+                          if (row.estado === 'completado' || row.estado === 'finalizado') stateBadge = 'bg-blue-50 text-[#468DFF] border-blue-150';
+                          if (row.estado === 'anulado') stateBadge = 'bg-red-50 text-red-500 border-red-150';
 
-                            <td className="px-4 py-3 font-medium text-slate-600">
-                              <div className="truncate max-w-[200px]" title={proto.instrumento_marca_modelo_serie}>
-                                {proto.instrumento_marca_modelo_serie || 'Telurímetro Digital'}
-                              </div>
-                            </td>
+                          return (
+                            <tr 
+                              key={row.id} 
+                              onClick={() => {
+                                setEditingId(row.id);
+                                setFormMode('view');
+                                router.replace(`/${tenantSlug}/protocolos/puesta-a-tierra?view=${row.id}`);
+                              }}
+                              className="hover:bg-slate-100 cursor-pointer transition-colors"
+                            >
+                              <td className="px-6 py-4">
+                                <span className="font-bold text-slate-800 block text-xs leading-none mb-1.5">{row.razon_social_text || 'Sin Razón Social'}</span>
+                                <span className="text-[10px] text-slate-400 font-medium flex items-center gap-1">
+                                  <Building className="h-3 w-3 shrink-0" />
+                                  {row.establecimiento_text || 'Establecimiento no especificado'}
+                                </span>
+                              </td>
 
-                            <td className="px-4 py-3 text-center">
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold ${
-                                proto.estado === 'completado' || proto.estado === 'finalizado'
-                                  ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
-                                  : proto.estado === 'anulado'
-                                  ? 'bg-red-50 text-red-600 border border-red-200'
-                                  : 'bg-amber-50 text-amber-600 border border-amber-200'
-                              }`}>
-                                {proto.estado === 'completado' || proto.estado === 'finalizado' ? 'Finalizado' : proto.estado === 'anulado' ? 'Anulado' : 'Borrador'}
-                              </span>
-                            </td>
+                              <td className="px-6 py-4 text-slate-500 max-w-[180px] truncate" title={row.instrumento_marca_modelo_serie}>
+                                {row.instrumento_marca_modelo_serie || 'Telurímetro Digital'}
+                              </td>
 
-                            <td className="px-4 py-3 text-right">
-                              <div className="flex items-center justify-end gap-1">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setEditingId(proto.id);
-                                    setFormMode('view');
-                                    router.replace(`/${tenantSlug}/protocolos/puesta-a-tierra?view=${proto.id}`);
-                                  }}
-                                  className="p-1.5 rounded-lg text-slate-400 hover:text-[#468DFF] hover:bg-blue-50 transition-colors"
-                                  title="Ver detalle"
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </button>
+                              <td className="px-6 py-4 text-slate-500 font-medium">
+                                {row.fecha_medicion ? formatDate(row.fecha_medicion) : '-'}
+                              </td>
 
-                                <button
-                                  type="button"
-                                  onClick={() => handleExportPdf(proto, false)}
-                                  className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
-                                  title="Descargar Reporte PDF"
-                                >
-                                  <FileText className="h-4 w-4" />
-                                </button>
+                              <td className="px-6 py-4 text-center">
+                                <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[9px] font-extrabold border uppercase ${resultBadge}`}>
+                                  {resVal}
+                                </span>
+                              </td>
 
-                                <button
-                                  type="button"
-                                  onClick={() => openEmailModal(proto)}
-                                  className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                                  title="Enviar por Correo o WhatsApp"
-                                >
-                                  <Mail className="h-4 w-4" />
-                                </button>
+                              <td className="px-6 py-4 text-center">
+                                <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[9px] font-extrabold border uppercase ${stateBadge}`}>
+                                  {row.estado === 'completado' || row.estado === 'finalizado' ? 'Finalizado' : row.estado === 'anulado' ? 'Anulado' : 'Borrador'}
+                                </span>
+                              </td>
 
-                                {canEditar && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setEditingId(proto.id);
-                                      setFormMode('edit');
-                                      router.replace(`/${tenantSlug}/protocolos/puesta-a-tierra?edit=${proto.id}`);
-                                    }}
-                                    className="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-colors"
-                                    title="Editar Protocolo"
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </button>
-                                )}
+                              <td className="px-6 py-4">
+                                <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                                  {profile?.role === 'cliente' && (
+                                    <AppTooltip content="Ver detalle">
+                                      <AppButton
+                                        variant="ghost-table"
+                                        size="icon"
+                                        onClick={() => {
+                                          setEditingId(row.id);
+                                          setFormMode('view');
+                                          router.replace(`/${tenantSlug}/protocolos/puesta-a-tierra?view=${row.id}`);
+                                        }}
+                                      >
+                                        <Eye className="h-4.5 w-4.5" />
+                                      </AppButton>
+                                    </AppTooltip>
+                                  )}
 
-                                {canEliminar && (
-                                  <button
-                                    type="button"
-                                    onClick={() => setDeleteConfirm({ show: true, id: proto.id })}
-                                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                                    title="Eliminar Protocolo"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </button>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
+                                  <AppTooltip content="Descargar reporte PDF">
+                                    <AppButton
+                                      variant="document-table"
+                                      size="icon"
+                                      onClick={() => handleExportPdf(row, false)}
+                                    >
+                                      <FileText className="h-4.5 w-4.5" />
+                                    </AppButton>
+                                  </AppTooltip>
+
+                                  <AppTooltip content="Imprimir">
+                                    <AppButton
+                                      variant="document-table"
+                                      size="icon"
+                                      onClick={() => handleExportPdf(row, true)}
+                                    >
+                                      <Printer className="h-4.5 w-4.5" />
+                                    </AppButton>
+                                  </AppTooltip>
+
+                                  {profile?.role !== 'cliente' && canEditar && (
+                                    <AppTooltip content="Enviar por correo o WhatsApp">
+                                      <AppButton
+                                        variant="document-table"
+                                        size="icon"
+                                        onClick={() => openEmailModal(row)}
+                                      >
+                                        <Mail className="h-4.5 w-4.5" />
+                                      </AppButton>
+                                    </AppTooltip>
+                                  )}
+
+                                  {profile?.role !== 'cliente' && canCargar && (
+                                    <AppTooltip content="Duplicar borrador">
+                                      <AppButton
+                                        variant="document-table"
+                                        size="icon"
+                                        onClick={() => handleDuplicate(row)}
+                                      >
+                                        <Copy className="h-4.5 w-4.5" />
+                                      </AppButton>
+                                    </AppTooltip>
+                                  )}
+
+                                  {profile?.role !== 'cliente' && canEditar && row.estado !== 'anulado' && (
+                                    <AppTooltip content="Editar protocolo">
+                                      <AppButton
+                                        variant="edit-table"
+                                        size="icon"
+                                        onClick={() => {
+                                          setEditingId(row.id);
+                                          setFormMode('edit');
+                                          router.replace(`/${tenantSlug}/protocolos/puesta-a-tierra?edit=${row.id}`);
+                                        }}
+                                      >
+                                        <Edit className="h-4.5 w-4.5" />
+                                      </AppButton>
+                                    </AppTooltip>
+                                  )}
+
+                                  {profile?.role !== 'cliente' && canEliminar && (
+                                    <AppTooltip content="Eliminar protocolo">
+                                      <AppButton
+                                        variant="delete-table"
+                                        size="icon"
+                                        onClick={() => setDeleteConfirm({ show: true, id: row.id })}
+                                      >
+                                        <Trash2 className="h-4.5 w-4.5" />
+                                      </AppButton>
+                                    </AppTooltip>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>

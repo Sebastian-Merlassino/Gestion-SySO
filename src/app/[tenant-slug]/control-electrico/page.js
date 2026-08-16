@@ -19,6 +19,8 @@ import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import AITextHelper from '@/components/ui/AITextHelper';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import AppSortIcon from '@/components/ui/AppSortIcon';
+import AppSkeleton from '@/components/ui/AppSkeleton';
+import AppTooltip from '@/components/ui/AppTooltip';
 import { formatPdfFileName } from '@/lib/pdf/pdfFileName';
 import { 
   PlusCircle, 
@@ -1877,10 +1879,10 @@ export default function ControlElectricoPage({ params }) {
         />
 
         {loading ? (
-          <div className="flex-grow flex items-center justify-center p-8">
-            <div className="text-center space-y-4">
+          <div className="flex-1 flex flex-col items-center justify-center p-8">
+            <div className="text-center space-y-3">
               <Loader2 className="h-10 w-10 animate-spin text-[#468DFF] mx-auto" />
-              <p className="text-xs text-slate-500 font-medium">Cargando registros de control eléctrico...</p>
+              <p className="text-xs text-slate-500 font-medium">Cargando control de instalaciones eléctricas...</p>
             </div>
           </div>
         ) : (
@@ -2562,69 +2564,75 @@ export default function ControlElectricoPage({ params }) {
                                 </td>
                                 <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                                   <div className="flex items-center justify-end gap-2">
-                                    <AppButton
-                                       variant="document-table"
-                                       size="icon"
-                                       onClick={() => handleOpenPdf(c)}
-                                       title="Visualizar PDF"
-                                     >
-                                       <FileText className="h-4.5 w-4.5" />
-                                     </AppButton>
-                                     <AppButton
-                                       variant="document-table"
-                                       size="icon"
-                                       onClick={() => handleExportPdfReport(c, false, true)}
-                                       title="Descargar PDF"
-                                     >
-                                       <Download className="h-4.5 w-4.5" />
-                                     </AppButton>
-                                     {profile && profile.role !== 'cliente' && (
-                                       <AppButton
-                                         variant="document-table"
-                                         size="icon"
-                                         onClick={() => handleOpenEmailModal(c)}
-                                         title="Enviar por Correo"
-                                       >
-                                         <Mail className="h-4.5 w-4.5" />
-                                       </AppButton>
-                                     )}
-                                     {profile && profile.role !== 'cliente' && (
-                                       canEditar ? (
-                                         <AppButton
-                                           variant="edit-table"
-                                           size="icon"
-                                           onClick={() => {
-                                             setIsReadOnlyView(false);
-                                             handleEditClick(c);
-                                           }}
-                                           title="Editar"
-                                         >
-                                           <Edit className="h-4.5 w-4.5" />
-                                         </AppButton>
-                                       ) : (
-                                         <AppButton
-                                           variant="ghost-table"
-                                           size="icon"
-                                           onClick={() => {
-                                             setIsReadOnlyView(true);
-                                             handleEditClick(c);
-                                           }}
-                                           title="Ver Detalle"
-                                         >
-                                           <Eye className="h-4.5 w-4.5" />
-                                         </AppButton>
-                                       )
-                                     )}
-                                     {profile && profile.role !== 'cliente' && canEliminar && (
-                                       <AppButton
-                                         variant="delete-table"
-                                         size="icon"
-                                         onClick={() => handleDeleteClick(c.id)}
-                                         title="Eliminar"
-                                       >
-                                         <Trash2 className="h-4.5 w-4.5" />
-                                       </AppButton>
-                                     )}
+                                    <AppTooltip content="Visualizar PDF">
+                                      <AppButton
+                                        variant="document-table"
+                                        size="icon"
+                                        onClick={() => handleOpenPdf(c)}
+                                      >
+                                        <FileText className="h-4.5 w-4.5" />
+                                      </AppButton>
+                                    </AppTooltip>
+                                    <AppTooltip content="Descargar PDF">
+                                      <AppButton
+                                        variant="document-table"
+                                        size="icon"
+                                        onClick={() => handleExportPdfReport(c, false, true)}
+                                      >
+                                        <Download className="h-4.5 w-4.5" />
+                                      </AppButton>
+                                    </AppTooltip>
+                                    {profile && profile.role !== 'cliente' && (
+                                      <AppTooltip content="Enviar por correo">
+                                        <AppButton
+                                          variant="document-table"
+                                          size="icon"
+                                          onClick={() => handleOpenEmailModal(c)}
+                                        >
+                                          <Mail className="h-4.5 w-4.5" />
+                                        </AppButton>
+                                      </AppTooltip>
+                                    )}
+                                    {profile && profile.role !== 'cliente' && (
+                                      canEditar ? (
+                                        <AppTooltip content="Editar control eléctrico">
+                                          <AppButton
+                                            variant="edit-table"
+                                            size="icon"
+                                            onClick={() => {
+                                              setIsReadOnlyView(false);
+                                              handleEditClick(c);
+                                            }}
+                                          >
+                                            <Edit className="h-4.5 w-4.5" />
+                                          </AppButton>
+                                        </AppTooltip>
+                                      ) : (
+                                        <AppTooltip content="Ver detalle">
+                                          <AppButton
+                                            variant="ghost-table"
+                                            size="icon"
+                                            onClick={() => {
+                                              setIsReadOnlyView(true);
+                                              handleEditClick(c);
+                                            }}
+                                          >
+                                            <Eye className="h-4.5 w-4.5" />
+                                          </AppButton>
+                                        </AppTooltip>
+                                      )
+                                    )}
+                                    {profile && profile.role !== 'cliente' && canEliminar && (
+                                      <AppTooltip content="Eliminar registro">
+                                        <AppButton
+                                          variant="delete-table"
+                                          size="icon"
+                                          onClick={() => handleDeleteClick(c.id)}
+                                        >
+                                          <Trash2 className="h-4.5 w-4.5" />
+                                        </AppButton>
+                                      </AppTooltip>
+                                    )}
                                   </div>
                                 </td>
                               </tr>

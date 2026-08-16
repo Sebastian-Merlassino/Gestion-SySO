@@ -19,6 +19,8 @@ import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import AppSortIcon from '@/components/ui/AppSortIcon';
+import AppSkeleton from '@/components/ui/AppSkeleton';
+import AppTooltip from '@/components/ui/AppTooltip';
 import {
   Folder,
   FolderOpen,
@@ -1695,13 +1697,15 @@ export default function LegajoPage({ params }) {
                           </div>
 
                           {canCargar && (
-                            <button
+                            <AppButton
+                              variant="primary"
+                              size="sm"
                               onClick={handleAddNew}
-                              className="px-3 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0 text-center"
+                              className="shrink-0"
                             >
                               <PlusCircle className="h-3.5 w-3.5" />
-                              Cargar Registro
-                            </button>
+                              <span>Nuevo registro</span>
+                            </AppButton>
                           )}
                         </div>
 
@@ -1904,55 +1908,60 @@ export default function LegajoPage({ params }) {
                                       <div className="flex items-center justify-end gap-2">
                                         {doc.documento_url && (
                                           <>
-                                            <AppButton
-                                              variant="document-table"
-                                              size="icon"
-                                              onClick={() => handleViewPdf(doc.documento_url)}
-                                              title="Visualizar PDF"
-                                            >
-                                              <FileText className="h-4.5 w-4.5" />
-                                            </AppButton>
-                                            {!doc.documento_url.startsWith('http') && (
+                                            <AppTooltip content="Visualizar PDF">
                                               <AppButton
                                                 variant="document-table"
                                                 size="icon"
-                                                onClick={() => handleDownloadPdf(doc.documento_url, `${doc.documento_nombre}.pdf`)}
-                                                title="Descargar PDF"
+                                                onClick={() => handleViewPdf(doc.documento_url)}
                                               >
-                                                <Download className="h-4.5 w-4.5" />
+                                                <FileText className="h-4.5 w-4.5" />
                                               </AppButton>
+                                            </AppTooltip>
+                                            {!doc.documento_url.startsWith('http') && (
+                                              <AppTooltip content="Descargar PDF">
+                                                <AppButton
+                                                  variant="document-table"
+                                                  size="icon"
+                                                  onClick={() => handleDownloadPdf(doc.documento_url, `${doc.documento_nombre}.pdf`)}
+                                                >
+                                                  <Download className="h-4.5 w-4.5" />
+                                                </AppButton>
+                                              </AppTooltip>
                                             )}
                                           </>
                                         )}
                                         {doc.fotos_paths && doc.fotos_paths.length > 0 && (
-                                          <AppButton
-                                            variant="document-table"
-                                            size="icon"
-                                            onClick={() => handleEditClick(doc, true)}
-                                            title={`Visualizar Evidencia (${doc.fotos_paths.length} ${doc.fotos_paths.length === 1 ? 'imagen' : 'imágenes'})`}
-                                          >
-                                            <Image className="h-4.5 w-4.5" />
-                                          </AppButton>
+                                          <AppTooltip content={`Visualizar evidencia (${doc.fotos_paths.length} ${doc.fotos_paths.length === 1 ? 'imagen' : 'imágenes'})`}>
+                                            <AppButton
+                                              variant="document-table"
+                                              size="icon"
+                                              onClick={() => handleEditClick(doc, true)}
+                                            >
+                                              <Image className="h-4.5 w-4.5" />
+                                            </AppButton>
+                                          </AppTooltip>
                                         )}
                                         {canEditar && (
-                                          <AppButton
-                                            variant="edit-table"
-                                            size="icon"
-                                            onClick={() => handleEditClick(doc, false)}
-                                            title="Editar detalles"
-                                          >
-                                            <Edit className="h-4.5 w-4.5" />
-                                          </AppButton>
+                                          <AppTooltip content="Editar registro">
+                                            <AppButton
+                                              variant="edit-table"
+                                              size="icon"
+                                              onClick={() => handleEditClick(doc, false)}
+                                            >
+                                              <Edit className="h-4.5 w-4.5" />
+                                            </AppButton>
+                                          </AppTooltip>
                                         )}
                                         {canEliminar && (
-                                          <AppButton
-                                            variant="delete-table"
-                                            size="icon"
-                                            onClick={() => handleDelete(doc.id)}
-                                            title="Eliminar"
-                                          >
-                                            <Trash2 className="h-4.5 w-4.5" />
-                                          </AppButton>
+                                          <AppTooltip content="Eliminar registro">
+                                            <AppButton
+                                              variant="delete-table"
+                                              size="icon"
+                                              onClick={() => handleDelete(doc.id)}
+                                            >
+                                              <Trash2 className="h-4.5 w-4.5" />
+                                            </AppButton>
+                                          </AppTooltip>
                                         )}
                                       </div>
                                     </td>

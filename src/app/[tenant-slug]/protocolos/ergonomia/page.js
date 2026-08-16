@@ -19,6 +19,8 @@ import ProtocoloForm from './components/ProtocoloForm';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
 import AppSortIcon from '@/components/ui/AppSortIcon';
+import AppSkeleton from '@/components/ui/AppSkeleton';
+import AppTooltip from '@/components/ui/AppTooltip';
 import { generateErgonomyProtocolPdf } from './utils/pdfGenerator';
 import { 
   PlusCircle, 
@@ -191,7 +193,7 @@ export default function ProtocolosErgonomiaPage({ params }) {
 
       const { data: estsData } = await supabase
         .from('establecimientos')
-        .select('id, empresa_id, denominacion, sectores')
+        .select('*')
         .eq('tenant_id', ten.id)
         .order('denominacion');
       setAllEstablecimientos(estsData || []);
@@ -813,18 +815,19 @@ export default function ProtocolosErgonomiaPage({ params }) {
                   </div>
 
                   {canCargar && (
-                    <button
-                      type="button"
+                    <AppButton
+                      variant="primary"
+                      size="sm"
                       onClick={() => {
                         setEditingId(null);
                         setFormMode('create');
                         router.replace(`/${tenantSlug}/protocolos/ergonomia?action=nuevo`);
                       }}
-                      className="px-3 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0"
+                      className="shrink-0"
                     >
                       <PlusCircle className="h-3.5 w-3.5" />
-                      Nuevo Protocolo
-                    </button>
+                      <span>Nuevo protocolo</span>
+                    </AppButton>
                   )}
                 </div>
               </div>
@@ -980,90 +983,97 @@ export default function ProtocolosErgonomiaPage({ params }) {
                           <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                             {/* Ver Detalles (solo Cliente) */}
                             {profile?.role === 'cliente' && (
-                              <AppButton
-                                variant="ghost-table"
-                                size="icon"
-                                onClick={() => {
-                                  setEditingId(row.id);
-                                  setFormMode('view');
-                                  router.replace(`/${tenantSlug}/protocolos/ergonomia?id=${row.id}`);
-                                }}
-                                title="Ver Detalles"
-                              >
-                                <Eye className="h-4.5 w-4.5" />
-                              </AppButton>
+                              <AppTooltip content="Ver detalle">
+                                <AppButton
+                                  variant="ghost-table"
+                                  size="icon"
+                                  onClick={() => {
+                                    setEditingId(row.id);
+                                    setFormMode('view');
+                                    router.replace(`/${tenantSlug}/protocolos/ergonomia?id=${row.id}`);
+                                  }}
+                                >
+                                  <Eye className="h-4.5 w-4.5" />
+                                </AppButton>
+                              </AppTooltip>
                             )}
 
                             {/* Descargar PDF */}
-                            <AppButton
-                              variant="document-table"
-                              size="icon"
-                              onClick={() => handleExportPdf(row, false)}
-                              title="Descargar PDF"
-                            >
-                              <FileText className="h-4.5 w-4.5" />
-                            </AppButton>
-
-                            {/* Imprimir */}
-                            <AppButton
-                              variant="document-table"
-                              size="icon"
-                              onClick={() => handleExportPdf(row, true)}
-                              title="Imprimir"
-                            >
-                              <Printer className="h-4.5 w-4.5" />
-                            </AppButton>
-
-                            {/* Enviar por Correo / WhatsApp (solo no-cliente) */}
-                            {profile?.role !== 'cliente' && canEditar && (
+                            <AppTooltip content="Descargar PDF">
                               <AppButton
                                 variant="document-table"
                                 size="icon"
-                                onClick={() => openEmailModal(row)}
-                                title="Enviar Protocolo"
+                                onClick={() => handleExportPdf(row, false)}
                               >
-                                <Mail className="h-4.5 w-4.5" />
+                                <FileText className="h-4.5 w-4.5" />
                               </AppButton>
+                            </AppTooltip>
+
+                            {/* Imprimir */}
+                            <AppTooltip content="Imprimir">
+                              <AppButton
+                                variant="document-table"
+                                size="icon"
+                                onClick={() => handleExportPdf(row, true)}
+                              >
+                                <Printer className="h-4.5 w-4.5" />
+                              </AppButton>
+                            </AppTooltip>
+
+                            {/* Enviar por Correo / WhatsApp (solo no-cliente) */}
+                            {profile?.role !== 'cliente' && canEditar && (
+                              <AppTooltip content="Enviar por correo o WhatsApp">
+                                <AppButton
+                                  variant="document-table"
+                                  size="icon"
+                                  onClick={() => openEmailModal(row)}
+                                >
+                                  <Mail className="h-4.5 w-4.5" />
+                                </AppButton>
+                              </AppTooltip>
                             )}
 
                             {/* Duplicar Borrador (solo no-cliente) */}
                             {profile?.role !== 'cliente' && canEditar && (
-                              <AppButton
-                                variant="document-table"
-                                size="icon"
-                                onClick={() => handleDuplicate(row)}
-                                title="Duplicar borrador"
-                              >
-                                <Copy className="h-4.5 w-4.5" />
-                              </AppButton>
+                              <AppTooltip content="Duplicar borrador">
+                                <AppButton
+                                  variant="document-table"
+                                  size="icon"
+                                  onClick={() => handleDuplicate(row)}
+                                >
+                                  <Copy className="h-4.5 w-4.5" />
+                                </AppButton>
+                              </AppTooltip>
                             )}
 
                             {/* Editar (solo no-cliente) */}
                             {profile?.role !== 'cliente' && canEditar && row.estado !== 'anulado' && (
-                              <AppButton
-                                variant="edit-table"
-                                size="icon"
-                                onClick={() => {
-                                  setEditingId(row.id);
-                                  setFormMode('edit');
-                                  router.replace(`/${tenantSlug}/protocolos/ergonomia?id=${row.id}&action=editar`);
-                                }}
-                                title="Editar"
-                              >
-                                <Edit className="h-4.5 w-4.5" />
-                              </AppButton>
+                              <AppTooltip content="Editar protocolo">
+                                <AppButton
+                                  variant="edit-table"
+                                  size="icon"
+                                  onClick={() => {
+                                    setEditingId(row.id);
+                                    setFormMode('edit');
+                                    router.replace(`/${tenantSlug}/protocolos/ergonomia?id=${row.id}&action=editar`);
+                                  }}
+                                >
+                                  <Edit className="h-4.5 w-4.5" />
+                                </AppButton>
+                              </AppTooltip>
                             )}
 
                             {/* Eliminar (solo no-cliente) */}
                             {profile?.role !== 'cliente' && canEliminar && (
-                              <AppButton
-                                variant="delete-table"
-                                size="icon"
-                                onClick={() => setDeleteConfirm({ show: true, id: row.id })}
-                                title="Eliminar registro"
-                              >
-                                <Trash2 className="h-4.5 w-4.5" />
-                              </AppButton>
+                              <AppTooltip content="Eliminar protocolo">
+                                <AppButton
+                                  variant="delete-table"
+                                  size="icon"
+                                  onClick={() => setDeleteConfirm({ show: true, id: row.id })}
+                                >
+                                  <Trash2 className="h-4.5 w-4.5" />
+                                </AppButton>
+                              </AppTooltip>
                             )}
                           </div>
                         </td>

@@ -19,6 +19,8 @@ import AITextHelper from '@/components/ui/AITextHelper';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import AppSortIcon from '@/components/ui/AppSortIcon';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
+import AppSkeleton from '@/components/ui/AppSkeleton';
+import AppTooltip from '@/components/ui/AppTooltip';
 import { 
   Building, 
   Users, 
@@ -1851,7 +1853,7 @@ export default function EmpresasClientes({ params }) {
           <div className="flex-1 flex flex-col items-center justify-center p-8">
             <div className="text-center space-y-3">
               <Loader2 className="h-10 w-10 animate-spin text-[#468DFF] mx-auto" />
-              <p className="text-xs text-slate-500 font-medium">Cargando información comercial...</p>
+              <p className="text-xs text-slate-500 font-medium">Cargando clientes...</p>
             </div>
           </div>
         ) : (
@@ -1916,14 +1918,15 @@ export default function EmpresasClientes({ params }) {
 
                     {/* Botón de Agregar */}
                     {canCargar && (
-                      <button
-                        type="button"
+                      <AppButton
+                        variant="primary"
+                        size="sm"
                         onClick={handleAddNew}
-                        className="px-3 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0"
+                        className="shrink-0"
                       >
                         <PlusCircle className="h-3.5 w-3.5" />
-                        Agregar nueva empresa
-                      </button>
+                        <span>Nueva empresa</span>
+                      </AppButton>
                     )}
                   </div>
  
@@ -2039,33 +2042,36 @@ export default function EmpresasClientes({ params }) {
                                   <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                                     <div className="flex items-center justify-end gap-2">
                                       {canEditar ? (
-                                        <AppButton
-                                          variant="edit-table"
-                                          size="icon"
-                                          onClick={() => { setIsReadOnlyView(false); handleEdit(emp.id); }}
-                                          title="Editar ficha de cliente"
-                                        >
-                                          <Edit className="h-4.5 w-4.5" />
-                                        </AppButton>
+                                        <AppTooltip content="Editar cliente">
+                                          <AppButton
+                                            variant="edit-table"
+                                            size="icon"
+                                            onClick={() => { setIsReadOnlyView(false); handleEdit(emp.id); }}
+                                          >
+                                            <Edit className="h-4.5 w-4.5" />
+                                          </AppButton>
+                                        </AppTooltip>
                                       ) : (
-                                        <AppButton
-                                          variant="ghost-table"
-                                          size="icon"
-                                          onClick={() => { setIsReadOnlyView(true); handleEdit(emp.id); }}
-                                          title="Ver Detalle"
-                                        >
-                                          <Eye className="h-4.5 w-4.5" />
-                                        </AppButton>
+                                        <AppTooltip content="Ver detalle">
+                                          <AppButton
+                                            variant="ghost-table"
+                                            size="icon"
+                                            onClick={() => { setIsReadOnlyView(true); handleEdit(emp.id); }}
+                                          >
+                                            <Eye className="h-4.5 w-4.5" />
+                                          </AppButton>
+                                        </AppTooltip>
                                       )}
                                       {canEliminar && (
-                                        <AppButton
-                                          variant="delete-table"
-                                          size="icon"
-                                          onClick={() => handleDelete(emp.id, emp.razon_social)}
-                                          title="Borrar cliente"
-                                        >
-                                          <Trash2 className="h-4.5 w-4.5" />
-                                        </AppButton>
+                                        <AppTooltip content="Eliminar cliente">
+                                          <AppButton
+                                            variant="delete-table"
+                                            size="icon"
+                                            onClick={() => handleDelete(emp.id, emp.razon_social)}
+                                          >
+                                            <Trash2 className="h-4.5 w-4.5" />
+                                          </AppButton>
+                                        </AppTooltip>
                                       )}
                                     </div>
                                   </td>

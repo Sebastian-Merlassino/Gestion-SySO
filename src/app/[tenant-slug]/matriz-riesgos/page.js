@@ -20,6 +20,8 @@ import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
 import * as Dialog from '@radix-ui/react-dialog';
 import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import AppSortIcon from '@/components/ui/AppSortIcon';
+import AppSkeleton from '@/components/ui/AppSkeleton';
+import AppTooltip from '@/components/ui/AppTooltip';
 import { 
   PlusCircle, 
   Search, 
@@ -4401,13 +4403,15 @@ export default function MatrizRiesgosPage({ params }) {
                       </div>
 
                       {canCargar && (
-                        <button
+                        <AppButton
+                          variant="primary"
+                          size="sm"
                           onClick={handleOpenCreateForm}
-                          className="px-3 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0"
+                          className="shrink-0"
                         >
                           <PlusCircle className="h-3.5 w-3.5" />
-                          Nueva Matriz de Riesgos
-                        </button>
+                          <span>Nueva matriz</span>
+                        </AppButton>
                       )}
                     </div>
 
@@ -4610,33 +4614,36 @@ export default function MatrizRiesgosPage({ params }) {
                                 <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
                                   <div className="flex items-center justify-center gap-1.5">
                                     {isReadOnlyView ? (
-                                      <AppButton
-                                        variant="ghost-table"
-                                        size="icon"
-                                        onClick={() => { handleEditClick(row); }}
-                                        title="Ver detalles"
-                                      >
-                                        <Eye className="h-4.5 w-4.5" />
-                                      </AppButton>
+                                      <AppTooltip content="Ver detalles">
+                                        <AppButton
+                                          variant="ghost-table"
+                                          size="icon"
+                                          onClick={() => { handleEditClick(row); }}
+                                        >
+                                          <Eye className="h-4.5 w-4.5" />
+                                        </AppButton>
+                                      </AppTooltip>
                                     ) : (
                                       <>
-                                        <AppButton
-                                          variant="edit-table"
-                                          size="icon"
-                                          onClick={() => { setIsReadOnlyView(false); handleEditClick(row); }}
-                                          title="Editar evaluación"
-                                        >
-                                          <Edit className="h-4.5 w-4.5" />
-                                        </AppButton>
-                                        {canEliminar && (
+                                        <AppTooltip content="Editar evaluación">
                                           <AppButton
-                                            variant="delete-table"
+                                            variant="edit-table"
                                             size="icon"
-                                            onClick={() => handleDeleteClick(row.id)}
-                                            title="Eliminar registro"
+                                            onClick={() => { setIsReadOnlyView(false); handleEditClick(row); }}
                                           >
-                                            <Trash2 className="h-4.5 w-4.5" />
+                                            <Edit className="h-4.5 w-4.5" />
                                           </AppButton>
+                                        </AppTooltip>
+                                        {canEliminar && (
+                                          <AppTooltip content="Eliminar evaluación">
+                                            <AppButton
+                                              variant="delete-table"
+                                              size="icon"
+                                              onClick={() => handleDeleteClick(row.id)}
+                                            >
+                                              <Trash2 className="h-4.5 w-4.5" />
+                                            </AppButton>
+                                          </AppTooltip>
                                         )}
                                       </>
                                     )}

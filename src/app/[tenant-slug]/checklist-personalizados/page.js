@@ -18,6 +18,8 @@ import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import AITextHelper from '@/components/ui/AITextHelper';
 import AppSortIcon from '@/components/ui/AppSortIcon';
+import AppSkeleton from '@/components/ui/AppSkeleton';
+import AppTooltip from '@/components/ui/AppTooltip';
 import { 
   PlusCircle, 
   Search, 
@@ -1833,7 +1835,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
           <div className="flex-1 flex flex-col items-center justify-center p-8">
             <div className="text-center space-y-3">
               <Loader2 className="h-10 w-10 animate-spin text-[#468DFF] mx-auto" />
-              <p className="text-xs text-slate-500 font-medium">Cargando checklists personalizados...</p>
+              <p className="text-xs text-slate-500 font-medium">Cargando listas de verificación...</p>
             </div>
           </div>
         ) : (
@@ -1912,28 +1914,30 @@ export default function ChecklistPersonalizadosPage({ params }) {
                       </div>
 
                       {canCargar && (
-                        <button
-                          type="button"
+                        <AppButton
+                          variant="primary"
+                          size="sm"
                           onClick={handleOpenNewInspeccion}
-                          className="px-3 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0 border border-[#468DFF] hover:border-[#0511F2]"
+                          className="shrink-0"
                         >
                           <PlusCircle className="h-3.5 w-3.5" />
-                          Nueva Inspección
-                        </button>
+                          <span>Nueva inspección</span>
+                        </AppButton>
                       )}
                     </>
                   ) : (
                     <>
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider select-none">Configuración de Fichas de Checklist</span>
                       {canCargar && (
-                        <button
-                          type="button"
+                        <AppButton
+                          variant="primary"
+                          size="sm"
                           onClick={handleOpenNewTemplate}
-                          className="px-3 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0 border border-[#468DFF] hover:border-[#0511F2]"
+                          className="shrink-0"
                         >
                           <PlusCircle className="h-3.5 w-3.5" />
-                          Nueva Plantilla
-                        </button>
+                          <span>Nueva plantilla</span>
+                        </AppButton>
                       )}
                     </>
                   )}
@@ -2042,51 +2046,56 @@ export default function ChecklistPersonalizadosPage({ params }) {
                                 {insp.responsable_higiene_seguridad_nombre || 'N/A'}
                               </td>
                               <td className="px-6 py-4 flex items-center justify-end gap-1.5 h-full">
-                                 <AppButton
-                                   variant="document-table"
-                                   size="icon"
-                                   onClick={() => handleExportPdfReport(insp, true, false)}
-                                   title="Ver PDF"
-                                 >
-                                   <FileText className="h-4.5 w-4.5" />
-                                 </AppButton>
-                                 <AppButton
-                                   variant="document-table"
-                                   size="icon"
-                                   onClick={() => handleExportPdfReport(insp, false, true)}
-                                   title="Descargar PDF"
-                                 >
-                                   <Download className="h-4.5 w-4.5" />
-                                 </AppButton>
-                                 {!isReadOnlyView && (
+                                 <AppTooltip content="Visualizar PDF">
                                    <AppButton
                                      variant="document-table"
                                      size="icon"
-                                     onClick={() => handleOpenEmailModal(insp)}
-                                     title="Enviar por Correo"
+                                     onClick={() => handleExportPdfReport(insp, true, false)}
                                    >
-                                     <Mail className="h-4.5 w-4.5" />
+                                     <FileText className="h-4.5 w-4.5" />
                                    </AppButton>
+                                 </AppTooltip>
+                                 <AppTooltip content="Descargar PDF">
+                                   <AppButton
+                                     variant="document-table"
+                                     size="icon"
+                                     onClick={() => handleExportPdfReport(insp, false, true)}
+                                   >
+                                     <Download className="h-4.5 w-4.5" />
+                                   </AppButton>
+                                 </AppTooltip>
+                                 {!isReadOnlyView && (
+                                   <AppTooltip content="Enviar por correo">
+                                     <AppButton
+                                       variant="document-table"
+                                       size="icon"
+                                       onClick={() => handleOpenEmailModal(insp)}
+                                     >
+                                       <Mail className="h-4.5 w-4.5" />
+                                     </AppButton>
+                                   </AppTooltip>
                                  )}
                                  {canEditar && (
-                                   <AppButton
-                                     variant="edit-table"
-                                     size="icon"
-                                     onClick={() => handleOpenEditInspeccion(insp, false)}
-                                     title="Editar"
-                                   >
-                                     <Edit className="h-4.5 w-4.5" />
-                                   </AppButton>
+                                   <AppTooltip content="Editar inspección">
+                                     <AppButton
+                                       variant="edit-table"
+                                       size="icon"
+                                       onClick={() => handleOpenEditInspeccion(insp, false)}
+                                     >
+                                       <Edit className="h-4.5 w-4.5" />
+                                     </AppButton>
+                                   </AppTooltip>
                                  )}
                                  {canEliminar && (
-                                   <AppButton
-                                     variant="delete-table"
-                                     size="icon"
-                                     onClick={() => handleDeleteInspeccion(insp.id)}
-                                     title="Eliminar"
-                                   >
-                                     <Trash2 className="h-4.5 w-4.5" />
-                                   </AppButton>
+                                   <AppTooltip content="Eliminar inspección">
+                                     <AppButton
+                                       variant="delete-table"
+                                       size="icon"
+                                       onClick={() => handleDeleteInspeccion(insp.id)}
+                                     >
+                                       <Trash2 className="h-4.5 w-4.5" />
+                                     </AppButton>
+                                   </AppTooltip>
                                  )}
                               </td>
                             </tr>
@@ -2149,24 +2158,26 @@ export default function ChecklistPersonalizadosPage({ params }) {
                             </td>
                             <td className="px-6 py-4 flex items-center justify-end gap-1.5 h-full">
                                {canEditar && (
-                                 <AppButton
-                                   variant="edit-table"
-                                   size="icon"
-                                   onClick={() => handleOpenEditTemplate(tmpl)}
-                                   title="Editar Plantilla"
-                                 >
-                                   <Edit className="h-4.5 w-4.5" />
-                                 </AppButton>
+                                 <AppTooltip content="Editar plantilla">
+                                   <AppButton
+                                     variant="edit-table"
+                                     size="icon"
+                                     onClick={() => handleOpenEditTemplate(tmpl)}
+                                   >
+                                     <Edit className="h-4.5 w-4.5" />
+                                   </AppButton>
+                                 </AppTooltip>
                                )}
                                {canEliminar && (
-                                 <AppButton
-                                   variant="delete-table"
-                                   size="icon"
-                                   onClick={() => handleDeleteTemplate(tmpl.id, tmpl.nombre)}
-                                   title="Eliminar Plantilla"
-                                 >
-                                   <Trash2 className="h-4.5 w-4.5" />
-                                 </AppButton>
+                                 <AppTooltip content="Eliminar plantilla">
+                                   <AppButton
+                                     variant="delete-table"
+                                     size="icon"
+                                     onClick={() => handleDeleteTemplate(tmpl.id, tmpl.nombre)}
+                                   >
+                                     <Trash2 className="h-4.5 w-4.5" />
+                                   </AppButton>
+                                 </AppTooltip>
                                )}
                             </td>
                           </tr>
