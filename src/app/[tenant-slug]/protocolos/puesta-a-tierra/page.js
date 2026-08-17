@@ -13,6 +13,7 @@ import AppEmptyState from '@/components/ui/AppEmptyState';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import ProtocoloForm from './components/ProtocoloForm';
 import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
+import AppFormNavigator from '@/components/ui/AppFormNavigator';
 import AppSortIcon from '@/components/ui/AppSortIcon';
 import AppSkeleton from '@/components/ui/AppSkeleton';
 import AppTooltip from '@/components/ui/AppTooltip';
@@ -1229,6 +1230,25 @@ export default function ProtocolosPuestaATierraPage({ params }) {
           </div>
         </div>
       )}
+
+      {/* Navegador Lateral de registros (Anterior / Siguiente) */}
+      <AppFormNavigator
+        activeList={sortedProtocolos}
+        currentId={editingId}
+        onNavigate={(newRecord) => {
+          setIsFormDirty(false);
+          setEditingId(newRecord.id);
+          if (formMode === 'edit') {
+            setFormMode('edit');
+            router.replace(`/${tenantSlug}/protocolos/puesta-a-tierra?edit=${newRecord.id}`);
+          } else {
+            setFormMode('view');
+            router.replace(`/${tenantSlug}/protocolos/puesta-a-tierra?view=${newRecord.id}`);
+          }
+        }}
+        hasUnsavedChanges={isFormDirty}
+        isFormOpen={formMode === 'view' || formMode === 'edit'}
+      />
     </div>
   );
 }

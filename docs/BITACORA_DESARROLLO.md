@@ -1,6 +1,19 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-17] Incorporación de Botón "X" de Cierre en Ventana Emergente de Sincronización con Perfil de Establecimiento
+## [2026-08-17] Integración de Navegador Lateral de Protocolos (`AppFormNavigator`) en Puesta a Tierra
+
+### Resumen de Cambios
+- **Flechas de Navegación Lateral (Anterior / Siguiente):**
+  - Se incorporó el componente `<AppFormNavigator>` en `src/app/[tenant-slug]/protocolos/puesta-a-tierra/page.js` para permitir la navegación fluida entre protocolos tanto en modo lectura (`view`) como en edición (`edit`).
+  - Se configuró la lista activa ordenada (`activeList={sortedProtocolos}`), el identificador activo (`currentId={editingId}`), la detección de estado modificado (`hasUnsavedChanges={isFormDirty}`), soporte de gestos táctiles (swipe) y atajos de teclado (flechas izquierda/derecha).
+  - Al desplazarse, se actualiza de manera segura el query param en la URL (`?view=...` o `?edit=...`), alineándolo con el estándar de los demás módulos del sistema (`ruido`, `iluminacion`, `ergonomia`, etc.).
+- **Compilación de Producción:** Verificada con `npm.cmd run build` generando satisfactoriamente las 23/23 rutas con 0 errores.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
 
 ### Resumen de Cambios
 - **Botón "X" de Cierre Estandarizado:**
