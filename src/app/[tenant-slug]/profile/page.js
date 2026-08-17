@@ -15,6 +15,7 @@ import AppSelect from '@/components/ui/AppSelect';
 import AppCard from '@/components/ui/AppCard';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppDestructiveConfirmDialog from '@/components/ui/AppDestructiveConfirmDialog';
+import DeleteAccountModal from '@/components/ui/DeleteAccountModal';
 import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
 import AppLoadingSpinner from '@/components/ui/AppLoadingSpinner';
 import {
@@ -198,8 +199,7 @@ const [partidosList, setPartidosList] = useState([]);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Eliminación de cuenta
-  const [deletePassword, setDeletePassword] = useState('');
-  const [showDeletePassword, setShowDeletePassword] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Campos Opcionales - Sitio Web y Redes Sociales de la Empresa
@@ -214,7 +214,6 @@ const [partidosList, setPartidosList] = useState([]);
   // Plan
   const [selectedPlan, setSelectedPlan] = useState('free');
   const [showPlanModal, setShowPlanModal] = useState(false);
-  const [showDeleteSection, setShowDeleteSection] = useState(false);
 
   // Efecto para abrir el modal si viene desde una redirección por falta de plan
   useEffect(() => {
@@ -1160,21 +1159,19 @@ const [partidosList, setPartidosList] = useState([]);
     }
   };
 
-  const handleDeleteAccount = () => {
-    if (!deletePassword) {
+
+
+  const executeDeleteAccount = async (passwordInput) => {
+    if (!passwordInput) {
       triggerToast('Por favor, ingresá tu contraseña para confirmar.', 'error');
       return;
     }
-    setShowDeleteConfirmDialog(true);
-  };
-
-  const executeDeleteAccount = async () => {
     setDeleteLoading(true);
     try {
       // 1. Re-autenticar al usuario para validar su contraseña
       const { error: authError } = await supabase.auth.signInWithPassword({
         email: email,
-        password: deletePassword,
+        password: passwordInput,
       });
 
       if (authError) {
@@ -1185,13 +1182,14 @@ const [partidosList, setPartidosList] = useState([]);
       const { error: rpcError } = await supabase.rpc('delete_own_account');
       if (rpcError) {
         console.error('RPC Error:', rpcError);
-        throw new Error('No se pudo procesar la eliminación de la cuenta. Intente de nuevo.');
+        throw new Error(rpcError.message || 'No se pudo procesar la eliminación de la cuenta. Intente de nuevo.');
       }
 
       // 3. Cerrar sesión local
       await supabase.auth.signOut();
       localStorage.clear();
 
+      setShowDeleteModal(false);
       triggerToast('Tu cuenta ha sido eliminada correctamente.');
       setTimeout(() => {
         window.location.href = '/login';
@@ -2114,112 +2112,16 @@ const [partidosList, setPartidosList] = useState([]);
       )}
 
 
-                {/* ELIMINAR CUENTA (Disponible para todos los usuarios) */}
-                {profileData && profileData.role !== 'cliente' && showDeleteSection && (
-                  <div className="mt-6 border-t border-slate-100 pt-5">
-                    <div className="bg-white border border-red-150 rounded-2xl p-5 shadow-sm space-y-5 animate-scaleUp">
-                      <div className="flex items-center justify-between border-b border-red-100 pb-2">
-                        <h3 className="font-outfit text-sm font-bold text-red-600 flex items-center gap-2 uppercase tracking-wider">
-                          <AlertTriangle className="h-4 w-4 text-red-600" />
-                          {profileData?.role === 'admin' ? 'Eliminar Cuenta y Organización' : 'Eliminar Cuenta de Acceso'}
-                        </h3>
-                        <button
-                          type="button"
-                          onClick={() => { setShowDeleteSection(false); setDeletePassword(''); }}
-                          className="py-1.5 px-3 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-500 text-[10px] font-bold cursor-pointer transition-all active:scale-[0.98]"
-                        >
-                          Cancelar
-                        </button>
-                      </div>
-                      
-                      {profileData?.role === 'admin' ? (
-                        <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-red-800 text-sm space-y-3 leading-relaxed">
-                          <p className="font-bold">¡ADVERTENCIA DE SEGURIDAD CRÍTICA!</p>
-                          <p>
-                            Al eliminar tu cuenta, se borrará de forma permanente e irreversible toda la información asociada a tu organización/consultora (<strong>{tenantData?.name}</strong>), incluyendo:
-                          </p>
-                          <ul className="list-disc pl-5 space-y-1 text-xs">
-                            <li>Configuración y perfil del administrador y miembros de equipo.</li>
-                            <li>Todas las empresas clientes y sus establecimientos cargados.</li>
-                            <li>El historial completo de auditorías, capacitaciones, acciones correctivas y extintores.</li>
-                            <li>Firmas, logotipos y archivos digitales subidos al almacenamiento.</li>
-                          </ul>
-                          <p className="font-semibold text-xs">
-                            Esta acción no se puede deshacer y no habrá forma de recuperar los datos.
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-red-800 text-sm space-y-3 leading-relaxed">
-                          <p className="font-bold">¡ADVERTENCIA DE SEGURIDAD!</p>
-                          <p>
-                            Al confirmar, se elminará tu cuenta de usuario de forma permanente y ya no tendrás acceso a la organización/consultora <strong>{tenantData?.name}</strong>.
-                          </p>
-                          <p className="text-xs">
-                            Tu perfil y configuraciones personales serán borrados definitivamente. Sin embargo, las constancias de visita, capacitaciones y actividades del programa anual que hayas registrado o firmado seguirán guardadas para el historial de la organización.
-                          </p>
-                          <p className="font-semibold text-xs">
-                            Esta acción es irreversible y no podrás volver a ingresar con este usuario.
-                          </p>
-                        </div>
-                      )}
 
-                      <div className="space-y-4">
-                        <div className="max-w-md">
-                          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                            Para confirmar la eliminación, ingresá tu contraseña actual:
-                          </label>
-                          <div className="relative">
-                            <input
-                              type={showDeletePassword ? 'text' : 'password'}
-                              placeholder="Contraseña actual"
-                              value={deletePassword}
-                              onChange={(e) => setDeletePassword(e.target.value)}
-                              autoComplete="current-password"
-                              className="w-full border border-slate-200 rounded-xl py-2 pl-3.5 pr-12 text-sm focus:outline-none focus:border-red-500 bg-slate-50/50 transition-all text-slate-700"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setShowDeletePassword(!showDeletePassword)}
-                              className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700 cursor-pointer"
-                            >
-                              {showDeletePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="flex justify-start">
-                          <button
-                            type="button"
-                            onClick={handleDeleteAccount}
-                            disabled={deleteLoading || !deletePassword}
-                            className="py-3 px-6 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition-all flex items-center gap-2 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-lg shadow-red-500/10"
-                          >
-                            {deleteLoading ? (
-                              <>
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                                Eliminando cuenta y datos...
-                              </>
-                            ) : (
-                              <>
-                                <AlertTriangle className="h-4 w-4" />
-                                {profileData?.role === 'admin' ? 'Eliminar Cuenta y Organización Permanente' : 'Eliminar Mi Acceso Permanentemente'}
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* BARRA INFERIOR DE ACCIONES (SySO Compact Layout v2.0) */}
               <div className="bg-slate-50 border-t border-slate-200 p-3 sm:p-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 shrink-0 rounded-b-none md:rounded-b-2xl">
                 <div className="flex justify-center sm:justify-start">
-                  {profileData && profileData.role !== 'cliente' && !showDeleteSection && (
+                  {profileData && profileData.role !== 'cliente' && (
                     <button
                       type="button"
-                      onClick={() => setShowDeleteSection(true)}
+                      onClick={() => setShowDeleteModal(true)}
                       className="w-full sm:w-auto py-2 px-3 rounded-xl border border-red-200 hover:bg-red-50 text-red-600 text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-[0.98]"
                     >
                       <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
@@ -2455,16 +2357,13 @@ const [partidosList, setPartidosList] = useState([]);
         confirmText={confirmDialogConfig.confirmText}
       />
 
-      <AppDestructiveConfirmDialog
-        open={showDeleteConfirmDialog}
-        onOpenChange={setShowDeleteConfirmDialog}
-        title="Eliminar Cuenta Definitivamente"
-        description={profileData?.role === 'admin'
-          ? '¿Estás ABSOLUTAMENTE seguro de que deseas eliminar tu cuenta? Esta acción destruirá por completo tu organización y todos sus datos.'
-          : '¿Estás seguro de que deseas eliminar tu cuenta de usuario y revocar tu acceso a la organización?'}
-        requiredText={profileData?.role === 'admin' ? 'ELIMINAR MI CUENTA' : 'ELIMINAR MI ACCESO'}
+      <DeleteAccountModal
+        open={showDeleteModal}
+        onOpenChange={setShowDeleteModal}
+        isAdmin={profileData?.role === 'admin'}
+        tenantName={tenantData?.name || ''}
         onConfirm={executeDeleteAccount}
-        confirmText="Eliminar permanentemente"
+        loading={deleteLoading}
       />
 
       <AppUnsavedChangesDialog

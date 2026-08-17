@@ -1,3 +1,102 @@
+## [2026-08-17] Homologación de Formulario de Onboarding a Estándar SySO Compact Layout v2.0
+
+### Resumen de Cambios
+- **Diagnóstico y Contexto:**
+  - El formulario de registro y alta inicial de perfil/organización (`/onboarding`) presentaba una diagramación de tarjetas desarticuladas con scroll vertical global de ventana y botones de acción sin estandarizar.
+  - Se requería alinear la vista con el estándar **SySO Compact Layout v2.0** unificado con la sección de Perfil (`/[tenant-slug]/profile`), manteniendo a su vez la presencia del pie de página institucional (`PublicFooter`).
+- **Implementación de Layout Compacto (`src/app/onboarding/page.js`):**
+  - Se encapsuló todo el formulario en una tarjeta maestra compacta (`bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col w-full h-[calc(100vh-170px)] min-h-[580px] max-h-[860px]`).
+  - Se integró el encabezado ("Perfil de usuario" / "Ingresá tus datos para dar de alta tu perfil...") como cabecera fija dentro del contenedor (`bg-white border-b border-slate-200 py-3.5 sm:py-4 px-4 sm:px-6 shrink-0 text-center`).
+  - Se habilitó el scroll interno mediante `sidebar-scrollbar` en el contenedor `flex-1 overflow-y-auto p-3.5 sm:p-5 md:p-6 space-y-6`.
+  - Se homogeneizaron los paddings y bordes de las subsecciones temáticas ("Información del usuario", "Identidad de la empresa", "Plan suscrito") al estándar `p-3.5 sm:p-5 md:p-6`.
+  - Se incorporó la barra de acciones inferior estandarizada (`bg-slate-50 border-t border-slate-200 p-3 sm:p-4`), fijando los botones "Salir" (estilo botón blanco con borde y texto azul `#468DFF`) y "Guardar" (botón sólido azul `#468DFF` con hover `#0511F2` y spinner de carga).
+  - Se mantuvo intacta la integración de `<PublicFooter />` al pie del layout general.
+
+### Decisiones Clave
+- Alojar el encabezado de forma fija en la parte superior de la tarjeta contenedora para otorgar un encuadre visual más limpio, manteniendo siempre a la vista el contexto y propósito de la pantalla mientras solo el cuerpo del formulario se desplaza.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados
+- `[MODIFY] src/app/onboarding/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de Next.js validada mediante `cmd /c npm run build`.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. Todas las validaciones de datos, selección de planes y guardado en Supabase se preservaron íntegramente.
+
+---
+
+## [2026-08-17] Conversión de Eliminación de Cuenta a Modal Centrado en Pantalla
+
+### Resumen de Cambios
+- **Problema:** Al hacer clic en "Eliminar Cuenta y Organización", el formulario de confirmación se expandía inline dentro de la página (debajo del contenido existente), obligando al usuario a hacer scroll para encontrarlo. El flujo era confuso y la acción pasaba desapercibida.
+- **Solución:**
+  - Se creó el nuevo componente `DeleteAccountModal` (`src/components/ui/DeleteAccountModal.js`): un modal Radix UI centrado en pantalla con header rojo, advertencia de seguridad contextual (diferenciada para roles `admin` vs. miembros), input de contraseña con toggle mostrar/ocultar y botones Cancelar / Eliminar con estado de loading.
+  - Se refactorizó `src/app/[tenant-slug]/profile/page.js` eliminando el bloque inline `showDeleteSection` y todos sus estados asociados (`deletePassword`, `showDeletePassword`, `showDeleteSection`), reemplazándolos por `showDeleteModal`.
+  - El botón en la barra inferior ahora abre directamente el modal (`setShowDeleteModal(true)`).
+  - La función `executeDeleteAccount` fue actualizada para recibir la contraseña como argumento (`passwordInput`) directamente desde el modal, en lugar de leerla de un estado.
+  - Se eliminó también el segundo paso de confirmación redundante (`AppDestructiveConfirmDialog` con escritura de frase), consolidando todo el flujo en un único modal.
+
+### Decisiones Clave
+- Consolidar el flujo en un único modal mejora drásticamente la UX al evitar scroll y presentar la acción destructiva de forma prominente y centrada.
+- Pasar la contraseña como argumento a `executeDeleteAccount` en lugar de leerla de un estado global evita bugs de estado residual entre aperturas del modal.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+
+### Archivos Modificados / Creados
+- `[NEW] src/components/ui/DeleteAccountModal.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- `npm run build` exitoso: `✓ Compiled successfully`, 23/23 páginas estáticas generadas.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. El componente `AppDestructiveConfirmDialog` sigue disponible para otros usos en la app.
+
+---
+
+## [2026-08-17] Corrección de Eliminación de Cuenta y Organización (RPC delete_own_account y Trigger Security)
+
+### Resumen de Cambios
+- **Diagnóstico del Problema:**
+  - Al hacer clic en "Eliminar Cuenta y Organización Permanente", Supabase devolvía un error HTTP 400 Bad Request:
+    `RPC Error: {code: 'P0001', message: 'Operación no permitida: No puedes modificar tu vinculación de organización (tenant_id).'}`.
+  - La función RPC `delete_own_account()` borraba el registro en `public.tenants`. Dado que `public.profiles` posee una clave foránea `tenant_id REFERENCES public.tenants(id) ON DELETE SET NULL`, PostgreSQL intentaba hacer `UPDATE public.profiles SET tenant_id = NULL`.
+  - Este `UPDATE` disparaba el trigger `before_profile_update` (`public.check_profile_updates()`). Debido a que el trigger solo omitía la validación para `auth.role() = 'service_role'` (y no comprobaba `current_user = 'postgres'`), bloqueaba el cambio de `tenant_id` de UUID a NULL, abortando la transacción.
+- **Solución en Base de Datos (`supabase/migrations/20260830000000_fix_delete_own_account_trigger.sql`):**
+  - Se creó la migración para actualizar `check_profile_updates()`, añadiendo la condición `IF current_user = 'postgres' OR auth.role() = 'service_role' THEN RETURN NEW; END IF;`. Esto permite que funciones `SECURITY DEFINER` (ejecutadas por el usuario `postgres`) y cascadas del motor realicen actualizaciones del perfil sin ser bloqueadas.
+  - Se actualizó `public.delete_own_account()` para borrar de forma explícita los perfiles en `public.profiles` pertenecientes al tenant (`DELETE FROM public.profiles WHERE tenant_id = v_tenant_id;`) antes de borrar el tenant, y se incluyó el rol `'owner'` junto a `'admin'`.
+- **Mejora en Frontend (`src/app/[tenant-slug]/profile/page.js`):**
+  - Se ajustó `executeDeleteAccount` para capturar y presentar el mensaje de error original devuelto por la función RPC (`rpcError.message`) en lugar de mostrar una excepción genérica.
+
+### Decisiones Clave
+- Asegurar que los triggers de seguridad de PostgreSQL distingan correctamente las operaciones de mantenimiento interno / DB Admin (`current_user = 'postgres'`) de las mutaciones directas efectuadas por la API REST de PostgREST.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `supabase`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260830000000_fix_delete_own_account_trigger.sql`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación del proyecto frontend validada exitosamente mediante `npm run build`.
+
+### Riesgos Detectados / Remanentes
+- La migración SQL debe ejecutarse en el servidor Supabase de producción/staging (`supabase db push` o mediante el editor SQL de Supabase).
+
+---
+
 ## [2026-08-17] Corrección de Sincronización de Logos y Validación de Colores HEX en Perfil
 
 ### Resumen de Cambios

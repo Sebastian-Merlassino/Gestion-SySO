@@ -1015,23 +1015,28 @@ export default function OnboardingPage() {
       <div className="absolute top-[-10%] left-[-20%] w-[600px] h-[600px] rounded-full bg-[#468DFF]/5 blur-[150px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-20%] w-[600px] h-[600px] rounded-full bg-[#0511F2]/5 blur-[150px] pointer-events-none" />
 
-      <div className="w-full max-w-4xl z-10 py-12 px-4">
-        
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="font-outfit text-3xl font-extrabold tracking-tight text-slate-900">
-            Perfil de usuario
-          </h1>
-          <p className="text-sm text-slate-600 mt-2 font-medium">
-            Ingresá tus datos para dar de alta tu perfil o consultora en la plataforma
-          </p>
-        </div>
+      <div className="w-full max-w-5xl z-10 py-4 md:py-6 px-3 sm:px-4 flex-1 flex flex-col items-center min-h-0">
 
-        {/* Form Container */}
-        <form onSubmit={handleSaveData} className="space-y-6">
+        {/* Card Contenedora Compacta (SySO Compact Layout v2.0) */}
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col w-full h-[calc(100vh-170px)] min-h-[580px] max-h-[860px]">
           
-          {/* SECCIÓN 1: INFORMACIÓN DEL USUARIO */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 md:p-6 shadow-sm space-y-5">
+          {/* Header Fijo dentro del contenedor */}
+          <div className="bg-white border-b border-slate-200 py-3.5 sm:py-4 px-4 sm:px-6 shrink-0 text-center">
+            <h1 className="font-outfit text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900">
+              Perfil de usuario
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
+              Ingresá tus datos para dar de alta tu perfil o consultora en la plataforma
+            </p>
+          </div>
+
+          <form onSubmit={handleSaveData} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+            
+            {/* Contenido scrolleable interno */}
+            <div className="flex-1 overflow-y-auto sidebar-scrollbar p-3.5 sm:p-5 md:p-6 space-y-6">
+              
+              {/* SECCIÓN 1: INFORMACIÓN DEL USUARIO */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-5 md:p-6 shadow-sm space-y-5">
             <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 flex items-center gap-2 uppercase tracking-wider">
               <User className="text-[#468DFF] h-4 w-4" />
               Información del usuario
@@ -1372,7 +1377,7 @@ export default function OnboardingPage() {
           </div>
 
           {/* SECCIÓN 2: IDENTIDAD DE LA EMPRESA */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 md:p-6 shadow-sm space-y-5">
+          <div className="bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-5 md:p-6 shadow-sm space-y-5">
             <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 flex items-center gap-2 uppercase tracking-wider">
               <Building className="text-[#468DFF] h-4 w-4" />
               Identidad de la empresa
@@ -1723,7 +1728,7 @@ export default function OnboardingPage() {
           </div>
 
           {/* SECCIÓN 3: PLAN */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 md:p-6 shadow-sm space-y-5">
+          <div className="bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-5 md:p-6 shadow-sm space-y-5">
             <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 flex items-center gap-2 uppercase tracking-wider">
               <Award className="text-[#468DFF] h-4 w-4" />
               Plan Suscrito
@@ -1765,39 +1770,43 @@ export default function OnboardingPage() {
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Form Actions */}
-          <div className="flex justify-between items-center pt-6 border-t border-slate-100">
-            <button
-              type="button"
-              disabled={loading}
-              onClick={handleExitWithoutSaving}
-              className="px-5 py-2.5 bg-[#FFFFFF] text-[#468DFF] border border-[#468DFF] rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-[#FFFFFF] hover:border-[#FFFFFF] transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50"
-            >
-              Salir
-            </button>
+        {/* BARRA INFERIOR DE ACCIONES (SySO Compact Layout v2.0) */}
+          <div className="bg-slate-50 border-t border-slate-200 p-3 sm:p-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 shrink-0 rounded-b-2xl">
+            <div className="flex justify-center sm:justify-start">
+              <button
+                type="button"
+                disabled={loading}
+                onClick={handleExitWithoutSaving}
+                className="w-full sm:w-auto px-4 sm:px-5 py-2.5 bg-[#FFFFFF] text-[#468DFF] border border-[#468DFF] rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-[#FFFFFF] hover:border-[#FFFFFF] transition-all active:scale-[0.98] cursor-pointer text-center disabled:opacity-50"
+              >
+                Salir
+              </button>
+            </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Guardando...
-                </>
-              ) : (
-                <>
-                  Guardar
-                </>
-              )}
-            </button>
+            <div className="flex items-center gap-2 sm:gap-3 justify-end">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full sm:w-auto px-5 sm:px-6 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+                    <span>Guardando...</span>
+                  </>
+                ) : (
+                  <span>Guardar</span>
+                )}
+              </button>
+            </div>
           </div>
 
         </form>
-
       </div>
+
+    </div>
 
       {/* PLAN SELECTION MODAL */}
       {showPlanModal && (
