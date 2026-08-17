@@ -1,6 +1,27 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-17] Cálculo, Persistencia y Visualización del Resultado en Protocolo de Puesta a Tierra
+## [2026-08-17] Estandarización de Diseño y Funciones del Modal de Envío de Protocolo de Puesta a Tierra
+
+### Resumen de Cambios
+- **Modal de Envío (`ENVIAR PROTOCOLO (PDF)`):**
+  - Se unificó la ventana modal de envío en `puesta-a-tierra/page.js` siguiendo con exactitud el patrón de diseño y UX de Ruido e Iluminación.
+  - Pestaña **Correo Electrónico**:
+    - Listado de contactos de la Razón Social con checkboxes y estado vacío `No hay contactos registrados para esta empresa.`.
+    - Área de texto para correos manuales separados por comas.
+    - Botones estilizados `Cancelar` y `Enviar Correo` con icono de correo y spinner de carga.
+  - Pestaña **WhatsApp**:
+    - Listado de teléfonos de la empresa y campo de entrada `Número Manual (ej: 5491159969956)` con placeholder `Código de país + área + número (sin espacios ni guiones)`.
+    - Botón `Enviar por WhatsApp` en verde `#25D366` con hover `#1EBE5D` y enlace temporal seguro en Storage.
+- **Enrutador de Correo (`api/send-email/route.js`):**
+  - Se añadieron los tipos de documento y títulos correspondientes para `protocolo_puesta_a_tierra`, `protocolo_ruido` y `protocolo_ergonomia`.
+- **Compilación de Producción:** Verificada con `npm.cmd run build` generando satisfactoriamente las 23/23 rutas con 0 errores.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/page.js`
+- `[MODIFY] src/app/api/send-email/route.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
 
 ### Resumen de Cambios
 - **Evaluación y Cálculo Normativo de Puntos (`ProtocoloForm.js`):**

@@ -1059,23 +1059,19 @@ export default function ProtocolosPuestaATierraPage({ params }) {
         onCancel={() => setUnsavedDialogOpen(false)}
       />
 
-      {/* MODAL DIÁLOGO UNIFICADO CON TABS: DESPACHO POR EMAIL Y WHATSAPP */}
+      {/* MODAL DE ENVÍO DE REPORTE (CORREO / WHATSAPP) */}
       {isMailModalOpen && mailTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xl max-w-md w-full space-y-5 animate-scaleUp">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <Send className="h-5 w-5 text-[#468DFF]" />
-                <h3 className="font-outfit text-base font-bold text-slate-800">
-                  Despachar Protocolo (PDF)
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsMailModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
-              >
-                <X className="h-4 w-4" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div onClick={() => setIsMailModalOpen(false)} className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" />
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 max-w-md w-full z-10 shadow-2xl relative space-y-4 animate-scale-up">
+            
+            <div className="flex justify-between items-center">
+              <h4 className="font-outfit text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                <Send className="h-4.5 w-4.5 text-[#468DFF]" />
+                Enviar Protocolo (PDF)
+              </h4>
+              <button onClick={() => setIsMailModalOpen(false)} className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 cursor-pointer border border-slate-200">
+                <X className="h-4.5 w-4.5" />
               </button>
             </div>
 
@@ -1084,7 +1080,7 @@ export default function ProtocolosPuestaATierraPage({ params }) {
               <button
                 type="button"
                 onClick={() => setActiveTab('email')}
-                className={`flex-1 py-2 text-center text-xs font-bold border-b-2 transition-colors flex items-center justify-center gap-1.5 ${
+                className={`flex-1 pb-2 text-xs font-bold transition-all border-b-2 flex items-center justify-center gap-1.5 cursor-pointer ${
                   activeTab === 'email'
                     ? 'border-[#468DFF] text-[#468DFF]'
                     : 'border-transparent text-slate-400 hover:text-slate-600'
@@ -1096,9 +1092,9 @@ export default function ProtocolosPuestaATierraPage({ params }) {
               <button
                 type="button"
                 onClick={() => setActiveTab('whatsapp')}
-                className={`flex-1 py-2 text-center text-xs font-bold border-b-2 transition-colors flex items-center justify-center gap-1.5 ${
+                className={`flex-1 pb-2 text-xs font-bold transition-all border-b-2 flex items-center justify-center gap-1.5 cursor-pointer ${
                   activeTab === 'whatsapp'
-                    ? 'border-emerald-500 text-emerald-600'
+                    ? 'border-[#468DFF] text-[#468DFF]'
                     : 'border-transparent text-slate-400 hover:text-slate-600'
                 }`}
               >
@@ -1107,125 +1103,153 @@ export default function ProtocolosPuestaATierraPage({ params }) {
               </button>
             </div>
 
-            {/* Pestaña Correo Electrónico */}
-            {activeTab === 'email' && (
+            {activeTab === 'email' ? (
+              // PESTAÑA: CORREO ELECTRÓNICO
               <div className="space-y-4">
-                {availableEmails.length > 0 && (
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-700">Contactos de la Razón Social:</label>
-                    <div className="space-y-1.5">
-                      {availableEmails.map((item, idx) => (
-                        <label
-                          key={idx}
-                          className="flex items-center gap-2 p-2 bg-slate-50 hover:bg-blue-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 transition-all cursor-pointer"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={item.checked}
-                            onChange={(e) => {
-                              const copy = [...availableEmails];
-                              copy[idx].checked = e.target.checked;
-                              setAvailableEmails(copy);
-                            }}
-                            className="rounded border-slate-300 text-[#468DFF] focus:ring-[#468DFF]"
-                          />
-                          <span className="truncate">{item.descripcion}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <p className="text-[11px] text-slate-500 font-medium">
+                  Seleccione los contactos cargados de la Razón Social o ingrese correos electrónicos manualmente (separados por comas) para enviar el protocolo en PDF.
+                </p>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-700">O ingresar correo manual:</label>
-                  <input
-                    type="email"
-                    placeholder="ejemplo@empresa.com"
-                    value={manualEmail}
-                    onChange={(e) => setManualEmail(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#468DFF]"
-                  />
+                <div className="space-y-3">
+                  {/* Contactos de la Razón Social */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-600 block">Correos de la Razón Social:</label>
+                    {availableEmails.length === 0 ? (
+                      <p className="text-xs text-slate-400 italic font-semibold">No hay contactos registrados para esta empresa.</p>
+                    ) : (
+                      <div className="bg-slate-50 p-3 border border-slate-200 rounded-xl max-h-36 overflow-y-auto space-y-1.5">
+                        {availableEmails.map((e, idx) => (
+                          <label key={idx} className="flex items-center gap-2.5 text-xs font-semibold text-slate-700 cursor-pointer hover:bg-slate-100/50 py-1 rounded">
+                            <input
+                              type="checkbox"
+                              checked={e.checked}
+                              onChange={() => {
+                                setAvailableEmails(prev => prev.map((item, i) => i === idx ? { ...item, checked: !item.checked } : item));
+                              }}
+                              className="accent-[#468DFF] h-4 w-4"
+                            />
+                            {e.descripcion}
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Ingreso manual */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-slate-600">Correos Manuales:</label>
+                    <textarea
+                      rows="2"
+                      placeholder="ejemplo1@correo.com, ejemplo2@correo.com..."
+                      value={manualEmail}
+                      onChange={(e) => setManualEmail(e.target.value)}
+                      className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 resize-none font-medium"
+                    />
+                  </div>
                 </div>
 
-                <div className="pt-2 flex justify-end gap-2">
-                  <AppButton
-                    variant="outline"
-                    size="sm"
+                {/* Acciones Correo */}
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
                     onClick={() => setIsMailModalOpen(false)}
-                    disabled={mailLoading}
+                    className="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-100 cursor-pointer transition-all active:scale-98"
                   >
                     Cancelar
-                  </AppButton>
-                  <AppButton
-                    variant="primary"
-                    size="sm"
-                    onClick={handleSendEmail}
+                  </button>
+                  <button
+                    type="button"
                     disabled={mailLoading}
+                    onClick={handleSendEmail}
+                    className="px-4 py-2 bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold rounded-lg cursor-pointer transition-all flex items-center gap-1.5 shadow-md shadow-[#468DFF]/10 disabled:opacity-50 active:scale-98"
                   >
-                    {mailLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Enviar Correo'}
-                  </AppButton>
+                    {mailLoading ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        Enviando...
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="h-3.5 w-3.5" />
+                        Enviar Correo
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
-            )}
-
-            {/* Pestaña WhatsApp */}
-            {activeTab === 'whatsapp' && (
+            ) : (
+              // PESTAÑA: WHATSAPP
               <div className="space-y-4">
-                {availablePhones.length > 0 && (
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-700">Contactos Registrados:</label>
-                    <div className="space-y-1.5">
-                      {availablePhones.map((item, idx) => (
-                        <label
-                          key={idx}
-                          className="flex items-center gap-2 p-2 bg-emerald-50/50 hover:bg-emerald-100/60 border border-emerald-200 rounded-xl text-xs font-semibold text-emerald-800 transition-all cursor-pointer"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={item.checked}
-                            onChange={(e) => {
-                              const copy = [...availablePhones];
-                              copy[idx].checked = e.target.checked;
-                              setAvailablePhones(copy);
-                            }}
-                            className="rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
-                          />
-                          <span className="truncate">{item.descripcion}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <p className="text-[11px] text-slate-500 font-medium">
+                  Seleccione un contacto registrado o ingrese un número manualmente para compartir el protocolo. Se subirá el documento temporalmente a la nube de forma segura.
+                </p>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-700">O ingresar número de WhatsApp:</label>
-                  <input
-                    type="tel"
-                    placeholder="+54 9 11 1234-5678"
-                    value={manualPhone}
-                    onChange={(e) => setManualPhone(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-emerald-500"
-                  />
+                <div className="space-y-3">
+                  {/* Contactos de la empresa */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-600 block">Teléfonos de la Razón Social:</label>
+                    {availablePhones.length === 0 ? (
+                      <p className="text-xs text-slate-400 italic font-semibold">No hay contactos con teléfono registrados.</p>
+                    ) : (
+                      <div className="bg-slate-50 p-3 border border-slate-200 rounded-xl max-h-36 overflow-y-auto space-y-1.5">
+                        {availablePhones.map((p, idx) => (
+                          <label key={idx} className="flex items-center gap-2.5 text-xs font-semibold text-slate-700 cursor-pointer hover:bg-slate-100/50 py-1 rounded">
+                            <input
+                              type="checkbox"
+                              checked={p.checked}
+                              onChange={() => {
+                                // WhatsApp es uno a la vez
+                                setAvailablePhones(prev => prev.map((item, i) => i === idx ? { ...item, checked: !item.checked } : { ...item, checked: false }));
+                              }}
+                              className="accent-[#468DFF] h-4 w-4"
+                            />
+                            {p.descripcion}
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Ingreso manual */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-slate-600">Número Manual (ej: 5491159969956):</label>
+                    <input
+                      type="text"
+                      placeholder="Código de país + área + número (sin espacios ni guiones)"
+                      value={manualPhone}
+                      onChange={(e) => setManualPhone(e.target.value)}
+                      className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50 font-medium"
+                    />
+                  </div>
                 </div>
 
-                <div className="pt-2 flex justify-end gap-2">
-                  <AppButton
-                    variant="outline"
-                    size="sm"
+                {/* Acciones WhatsApp */}
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
                     onClick={() => setIsMailModalOpen(false)}
-                    disabled={whatsappLoading}
+                    className="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-100 cursor-pointer transition-all active:scale-98"
                   >
                     Cancelar
-                  </AppButton>
-                  <AppButton
-                    variant="primary"
-                    size="sm"
-                    onClick={handleSendWhatsApp}
+                  </button>
+                  <button
+                    type="button"
                     disabled={whatsappLoading}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white border-none"
+                    onClick={handleSendWhatsApp}
+                    className="px-4 py-2 bg-[#25D366] hover:bg-[#1EBE5D] text-white text-xs font-bold rounded-lg cursor-pointer transition-all flex items-center gap-1.5 shadow-md shadow-green-500/10 disabled:opacity-50 active:scale-98"
                   >
-                    {whatsappLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Abrir WhatsApp'}
-                  </AppButton>
+                    {whatsappLoading ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        Procesando...
+                      </>
+                    ) : (
+                      <>
+                        <MessageCircle className="h-3.5 w-3.5" />
+                        Enviar por WhatsApp
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
             )}

@@ -193,6 +193,9 @@ export async function POST(request) {
     const isControlElectrico = documentType === 'control_electrico';
     const isChecklistPersonalizado = documentType === 'checklist_personalizado';
     const isProtocoloIluminacion = documentType === 'protocolo_iluminacion';
+    const isProtocoloPuestaATierra = documentType === 'protocolo_puesta_a_tierra';
+    const isProtocoloRuido = documentType === 'protocolo_ruido';
+    const isProtocoloErgonomia = documentType === 'protocolo_ergonomia';
     const isCapacitacionOnline = documentType === 'capacitacion_online';
 
     const mailSubject = customSubject
@@ -205,6 +208,12 @@ export async function POST(request) {
       ? `${checklistName || 'Checklist'} - ${companyName || 'Cliente'}`
       : isProtocoloIluminacion
       ? `Protocolo para Medición de Iluminación - ${companyName || 'Cliente'}`
+      : isProtocoloPuestaATierra
+      ? `Protocolo de Medición de Puesta a Tierra - ${companyName || 'Cliente'}`
+      : isProtocoloRuido
+      ? `Protocolo de Medición de Ruido - ${companyName || 'Cliente'}`
+      : isProtocoloErgonomia
+      ? `Protocolo de Ergonomía - ${companyName || 'Cliente'}`
       : isCapacitacionOnline
       ? `Capacitación virtual de higiene y seguridad en el trabajo`
       : `Constancia de Visita de Higiene y Seguridad - ${companyName || 'Cliente'}`;
