@@ -1,6 +1,35 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-17] Integración de Navegador Lateral de Protocolos (`AppFormNavigator`) en Puesta a Tierra
+## [2026-08-17] Rediseño de Columnas y Formato Oficial en Hoja 4 (Hoja 2 SRT 900/15) del PDF de Puesta a Tierra
+
+### Resumen de Cambios
+- **Alineación con Plantilla Oficial Res. SRT 900/15 (Formato Vertical A4):**
+  - Se corrigió la generación de la Hoja de Medición en el generador de PDF de Puesta a Tierra (`src/app/[tenant-slug]/protocolos/puesta-a-tierra/utils/pdfGenerator.js`), configurándola en orientación vertical A4 (`portrait`) con márgenes exactos de 180 mm de ancho útil.
+  - **Encabezado Superior:** Mini-tabla con datos de Razón Social, C.U.I.T., Dirección, Localidad, C.P. y Provincia.
+  - **Estructura Exacta de 11 Columnas en Tabla de Mediciones:**
+    1. *Número de toma de tierra* (11 mm)
+    2. *Sector* (24 mm)
+    3. *Descripción de la condición del terreno al momento de la medición* (20 mm)
+    4. *Uso de la puesta a tierra* (23 mm)
+    5. *Esquema de conexión a tierra utilizado (TT / TN-S / TN-C / TN-C-S / IT)* (14 mm)
+    6. Grupo *Medición de la puesta a tierra* (22 mm):
+       - *Valor obtenido en la medición expresado en ohm [Ω]* (13 mm)
+       - *Cumple SI / NO* (9 mm)
+    7. Grupo *Continuidad de las masas* (28 mm):
+       - *El circuito de puesta a tierra es continuo y permanente SI / NO* (13 mm)
+       - *El circuito de puesta a tierra tiene la capacidad de carga para conducir la corriente de falla y una resistencia apropiada SI / NO* (15 mm)
+    8. *Para la protección contra contactos indirectos se utiliza: DD, IA o Fus* (20 mm)
+    9. *El dispositivo de protección empleado ¿puede desconectar en forma automática...?* (18 mm)
+  - **Filas de Datos:** 12 filas por página con numeración correlativa (mostrando puntos medidos o filas vacías numeradas del 1 al 12).
+  - **Cuadro de Información Adicional y Bloque de Firma:** Integrado en la parte inferior con firma digital/sello del profesional interviniente.
+  - **Hoja de Conclusiones y Recomendaciones (Hoja 3):** Estandarizada también en formato vertical A4 con textos oficiales de la Resolución 900/15.
+- **Compilación de Producción:** Verificada con `npm.cmd run build` generando satisfactoriamente las 23/23 rutas con 0 errores.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/utils/pdfGenerator.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
 
 ### Resumen de Cambios
 - **Flechas de Navegación Lateral (Anterior / Siguiente):**

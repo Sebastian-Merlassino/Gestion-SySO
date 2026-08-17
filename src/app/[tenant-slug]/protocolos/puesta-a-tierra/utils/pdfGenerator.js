@@ -746,132 +746,138 @@ export const generatePuestaATierraPdf = async (
   drawSignatureBlock(105, t3Y + t3H + 4, 90, 36);
 
   // ==========================================
-  // PAGINAS 3 Y SIGUIENTES: TABLA GENERAL DE MEDICIÓN (A4 Apaisado)
+  // HOJA 2: TABLA GENERAL DE MEDICIÓN (A4 Vertical - RES. SRT 900/15)
   // ==========================================
   const maxRowsPerPage = 12;
   const totalPoints = (puntosList || []).length;
   const totalTablePages = Math.max(1, Math.ceil(totalPoints / maxRowsPerPage));
 
   for (let pIdx = 0; pIdx < totalTablePages; pIdx++) {
-    doc.addPage('a4', 'landscape');
+    doc.addPage('a4', 'portrait');
     pageCounter++;
 
-    drawHeader(true);
-    drawProtocolTitleBar(true, { x: 15, y: 22, w: 267, h: 5.5 });
+    drawHeader(false);
+    drawProtocolTitleBar(false, { x: 15, y: 22, w: 180, h: 5.5 });
 
-    // Encabezado Establecimiento
+    // Encabezado Establecimiento (Mini tabla de datos)
     const eX = 15;
     const eY = 29;
-    const eW = 267;
+    const eW = 180;
 
     doc.setLineWidth(0.45);
     setDrawColor(doc, COLOR_NEGRO);
-    doc.rect(eX, eY, eW, 14, 'S');
+    doc.rect(eX, eY, eW, 13, 'S');
     doc.setLineWidth(0.25);
 
-    // Fila 1: Razón Social (164mm) | C.U.I.T. (103mm)
-    doc.rect(eX, eY, 164, 7, 'S');
-    drawCellText(doc, 'Razón social:', eX, eY, 22, 7, { fontStyle: 'bold', fontSize: 8 });
-    drawCellText(doc, razonSocial, eX + 22, eY, 142, 7, { fontSize: 8 });
+    // Fila 1: Razón Social (115mm) | C.U.I.T. (65mm)
+    doc.rect(eX, eY, 115, 6.5, 'S');
+    drawCellText(doc, 'Razón Social:', eX, eY, 24, 6.5, { fontStyle: 'bold', fontSize: 8 });
+    drawCellText(doc, razonSocial, eX + 24, eY, 91, 6.5, { fontSize: 8 });
 
-    doc.rect(eX + 164, eY, 103, 7, 'S');
-    drawCellText(doc, 'C.U.I.T.:', eX + 164, eY, 18, 7, { fontStyle: 'bold', fontSize: 8 });
-    drawCellText(doc, cuit, eX + 182, eY, 85, 7, { fontSize: 8 });
+    doc.rect(eX + 115, eY, 65, 6.5, 'S');
+    drawCellText(doc, 'C.U.I.T.:', eX + 115, eY, 18, 6.5, { fontStyle: 'bold', fontSize: 8 });
+    drawCellText(doc, cuit, eX + 133, eY, 47, 6.5, { fontSize: 8 });
 
-    // Fila 2: Dirección (135mm) | Localidad (55mm) | C.P. (25mm) | Provincia (52mm)
-    doc.rect(eX, eY + 7, 135, 7, 'S');
-    drawCellText(doc, 'Dirección:', eX, eY + 7, 18, 7, { fontStyle: 'bold', fontSize: 8 });
-    drawCellText(doc, direccion, eX + 18, eY + 7, 117, 7, { fontSize: 8 });
+    // Fila 2: Dirección (70mm) | Localidad (42mm) | CP (20mm) | Provincia (48mm)
+    doc.rect(eX, eY + 6.5, 70, 6.5, 'S');
+    drawCellText(doc, 'Dirección:', eX, eY + 6.5, 18, 6.5, { fontStyle: 'bold', fontSize: 8 });
+    drawCellText(doc, direccion, eX + 18, eY + 6.5, 52, 6.5, { fontSize: 8 });
 
-    doc.rect(eX + 135, eY + 7, 55, 7, 'S');
-    drawCellText(doc, 'Localidad:', eX + 135, eY + 7, 18, 7, { fontStyle: 'bold', fontSize: 8 });
-    drawCellText(doc, localidad, eX + 153, eY + 7, 37, 7, { fontSize: 8 });
+    doc.rect(eX + 70, eY + 6.5, 42, 6.5, 'S');
+    drawCellText(doc, 'Localidad:', eX + 70, eY + 6.5, 16, 6.5, { fontStyle: 'bold', fontSize: 8 });
+    drawCellText(doc, localidad, eX + 86, eY + 6.5, 26, 6.5, { fontSize: 8 });
 
-    doc.rect(eX + 190, eY + 7, 25, 7, 'S');
-    drawCellText(doc, 'C.P.:', eX + 190, eY + 7, 10, 7, { fontStyle: 'bold', fontSize: 8 });
-    drawCellText(doc, cp, eX + 200, eY + 7, 15, 7, { fontSize: 8 });
+    doc.rect(eX + 112, eY + 6.5, 20, 6.5, 'S');
+    drawCellText(doc, 'CP:', eX + 112, eY + 6.5, 8, 6.5, { fontStyle: 'bold', fontSize: 8 });
+    drawCellText(doc, cp, eX + 120, eY + 6.5, 12, 6.5, { fontSize: 8 });
 
-    doc.rect(eX + 215, eY + 7, 52, 7, 'S');
-    drawCellText(doc, 'Provincia:', eX + 215, eY + 7, 18, 7, { fontStyle: 'bold', fontSize: 8 });
-    drawCellText(doc, provincia, eX + 233, eY + 7, 34, 7, { fontSize: 8 });
+    doc.rect(eX + 132, eY + 6.5, 48, 6.5, 'S');
+    drawCellText(doc, 'Provincia:', eX + 132, eY + 6.5, 18, 6.5, { fontStyle: 'bold', fontSize: 8 });
+    drawCellText(doc, provincia, eX + 150, eY + 6.5, 30, 6.5, { fontSize: 8 });
 
-    // Tabla 4: Puntos de Muestreo (Encabezados estándar)
-    const colY = eY + 17;
-    const colH = 20;
+    // Header Tabla: Datos de la Medición
+    const tHeadY = eY + 14.5;
+    setFillColor(doc, COLOR_SLATE_200);
+    doc.rect(eX, tHeadY, eW, 5.5, 'FD');
+    drawCellText(doc, 'Datos de la Medición', eX, tHeadY, eW, 5.5, { align: 'center', fontStyle: 'bold', fontSize: 8.5 });
 
-    const drawHeaderBox = (x, y, w, h, text, opts = {}) => {
+    // Definición de Columnas (Total = 180mm)
+    const colY = tHeadY + 5.5;
+    const colH = 34;
+
+    const drawHBox = (x, y, w, h, text, opts = {}) => {
       setFillColor(doc, COLOR_SLATE_200);
       doc.rect(x, y, w, h, 'FD');
       drawCellText(doc, text, x, y, w, h, {
         align: 'center',
         fontStyle: 'bold',
-        fontSize: 6,
+        fontSize: 5,
         color: COLOR_NEGRO,
         ...opts
       });
     };
 
     let xPos = 15;
-    
-    // Col 1: Punto de medición (16mm)
-    drawHeaderBox(xPos, colY, 16, colH, 'Punto de medición', { fontSize: 6.5, maxLines: 3 });
-    xPos += 16;
 
-    // Col 2: Sector (36mm)
-    drawHeaderBox(xPos, colY, 36, colH, 'Sector', { fontSize: 7, maxLines: 2 });
-    xPos += 36;
+    // Col 1: Número de toma de tierra (11mm)
+    drawHBox(xPos, colY, 11, colH, 'Número\nde toma\nde tierra', { fontSize: 5.5, maxLines: 4 });
+    xPos += 11;
 
-    // Col 3: Puesto (38mm)
-    drawHeaderBox(xPos, colY, 38, colH, 'Puesto / Puesto tipo / Puesto móvil', { fontSize: 6.5, maxLines: 3 });
-    xPos += 38;
+    // Col 2: Sector (24mm)
+    drawHBox(xPos, colY, 24, colH, 'Sector', { fontSize: 7, maxLines: 2 });
+    xPos += 24;
 
-    // Col 4: Tiempo exposición (22mm)
-    drawHeaderBox(xPos, colY, 22, colH, 'Tiempo de exposición (Te en hs o min)', { fontSize: 6, maxLines: 5 });
+    // Col 3: Descripción de la condición del terreno... (20mm)
+    drawHBox(xPos, colY, 20, colH, 'Descripción de la condición del terreno al momento de la medición:\nLecho seco / Lecho húmedo / Arcilloso / Pantanoso / Lluvias recientes / Arenoso seco o húmedo / Otro', { fontSize: 4.2, maxLines: 12, padding: 0.6 });
+    xPos += 20;
+
+    // Col 4: Uso de la puesta a tierra... (23mm)
+    drawHBox(xPos, colY, 23, colH, 'Uso de la puesta a tierra: Toma de Tierra del neutro de Transformador / Toma de Tierra de Seguridad de las Masas / De Protección de equipos Electrónicos / De Informática / De Iluminación / De Pararrayos / Otros.', { fontSize: 4.2, maxLines: 12, padding: 0.6 });
+    xPos += 23;
+
+    // Col 5: Esquema de conexión a tierra utilizado... (14mm)
+    drawHBox(xPos, colY, 14, colH, 'Esquema de conexión a tierra utilizado: TT / TN-S / TN-C / TN-C-S / IT', { fontSize: 4.5, maxLines: 10, padding: 0.6 });
+    xPos += 14;
+
+    // Col 6 & 7 Group: Medición de la puesta a tierra (22mm)
+    drawHBox(xPos, colY, 22, 7.5, 'Medición de la puesta a tierra', { fontSize: 5.5, maxLines: 2 });
+    drawHBox(xPos, colY + 7.5, 13, colH - 7.5, 'Valor obtenido en la medición expresado en ohm [Ω]', { fontSize: 4.6, maxLines: 6, padding: 0.5 });
+    drawHBox(xPos + 13, colY + 7.5, 9, colH - 7.5, 'Cumple\nSI / NO', { fontSize: 5.2, maxLines: 3 });
     xPos += 22;
 
-    // Col 5: Tiempo integración (22mm)
-    drawHeaderBox(xPos, colY, 22, colH, 'Tiempo de integración (tiempo de medición)', { fontSize: 6, maxLines: 5 });
-    xPos += 22;
+    // Col 8 & 9 Group: Continuidad de las masas (28mm)
+    drawHBox(xPos, colY, 28, 7.5, 'Continuidad de las masas', { fontSize: 5.5, maxLines: 2 });
+    drawHBox(xPos, colY + 7.5, 13, colH - 7.5, 'El circuito de puesta a tierra es continuo y permanente SI / NO', { fontSize: 4.4, maxLines: 6, padding: 0.5 });
+    drawHBox(xPos + 13, colY + 7.5, 15, colH - 7.5, 'El circuito de puesta a tierra tiene la capacidad de carga para conducir la corriente de falla y una resistencia apropiada SI / NO', { fontSize: 4.1, maxLines: 8, padding: 0.5 });
+    xPos += 28;
 
-    // Col 6: Características del ruido (34mm)
-    drawHeaderBox(xPos, colY, 34, colH, 'Características generales del ruido a medir (continuo / intermitente / de impulso o de impacto)', { fontSize: 6, maxLines: 5 });
-    xPos += 34;
+    // Col 10: Para la protección contra contactos indirectos se utiliza... (20mm)
+    drawHBox(xPos, colY, 20, colH, 'Para la protección contra contactos indirectos se utiliza: dispositivo diferencial (DD), interruptor automático (IA) o fusible (Fus).', { fontSize: 4.2, maxLines: 10, padding: 0.6 });
+    xPos += 20;
 
-    // Col 7: RUIDO DE IMPULSO O DE IMPACTO (25mm)
-    drawHeaderBox(xPos, colY, 25, 7, 'RUIDO DE IMPULSO O DE IMPACTO', { fontSize: 5.5, maxLines: 2 });
-    drawHeaderBox(xPos, colY + 7, 25, 13, 'Nivel pico de presión acústica ponderado C (LC pico, en dBC)', { fontSize: 5.5, maxLines: 5 });
-    xPos += 25;
+    // Col 11: El dispositivo de protección empleado ¿puede desconectar...? (18mm)
+    drawHBox(xPos, colY, 18, colH, 'El dispositivo de protección empleado ¿puede desconectar en forma automática la alimentación para lograr la protección contra los contactos indirectos?', { fontSize: 4.1, maxLines: 10, padding: 0.6 });
 
-    // Col 8: SONIDO CONTINUO o INTERMITENTE (54mm)
-    drawHeaderBox(xPos, colY, 54, 7, 'SONIDO CONTINUO o INTERMITENTE', { fontSize: 6.5 });
-    drawHeaderBox(xPos, colY + 7, 19, 13, 'Nivel de presión acústica integrado (LAeq,Te en dBA)', { fontSize: 5.5, maxLines: 5 });
-    drawHeaderBox(xPos + 19, colY + 7, 18, 13, 'Resultado de la suma de las fracciones', { fontSize: 5.5, maxLines: 5 });
-    drawHeaderBox(xPos + 37, colY + 7, 17, 13, 'Dosis (en porcentaje %)', { fontSize: 5.5, maxLines: 4 });
-    xPos += 54;
-
-    // Col 9: Cumple (20mm)
-    drawHeaderBox(xPos, colY, 20, colH, 'Cumple con los valores de exposición diaria permitidos? (SI / NO)', { fontSize: 5.5, maxLines: 6 });
-
-    // Data Rows (12 filas por página)
+    // Table Data Rows
     const rowStartY = colY + colH;
-    const rowH = 5.8;
+    const rowH = 7.5;
 
     const startSlice = pIdx * maxRowsPerPage;
     const endSlice = startSlice + maxRowsPerPage;
     const pagePuntos = (puntosList || []).slice(startSlice, endSlice);
 
     const tableColsDef = [
-      { w: 16, key: 'punto' },
-      { w: 36, key: 'sector' },
-      { w: 38, key: 'puesto' },
-      { w: 22, key: 'tiempo_exp' },
-      { w: 22, key: 'tiempo_integ' },
-      { w: 34, key: 'caracteristica' },
-      { w: 25, key: 'lc_pico' },
-      { w: 19, key: 'laeq_te' },
-      { w: 18, key: 'suma_fracciones' },
-      { w: 17, key: 'dosis' },
-      { w: 20, key: 'cumple' }
+      { w: 11, key: 'num', align: 'center' },
+      { w: 24, key: 'sector', align: 'center' },
+      { w: 20, key: 'condicion', align: 'center' },
+      { w: 23, key: 'uso', align: 'center' },
+      { w: 14, key: 'esquema', align: 'center' },
+      { w: 13, key: 'valor', align: 'center' },
+      { w: 9, key: 'cumple', align: 'center' },
+      { w: 13, key: 'continuo', align: 'center' },
+      { w: 15, key: 'capacidad', align: 'center' },
+      { w: 20, key: 'dispositivo', align: 'center' },
+      { w: 18, key: 'desconexion', align: 'center' }
     ];
 
     for (let r = 0; r < maxRowsPerPage; r++) {
@@ -880,115 +886,118 @@ export const generatePuestaATierraPdf = async (
       let currXPos = 15;
 
       if (!pt) {
-        tableColsDef.forEach(c => {
-          setFillColor(doc, COLOR_SLATE_50);
-          doc.rect(currXPos, rowY, c.w, rowH, 'FD');
-          drawCellText(doc, '-', currXPos, rowY, c.w, rowH, { align: 'center', fontSize: 7, color: COLOR_SLATE_500 });
+        // Fila vacía numerada estándar
+        tableColsDef.forEach((c, cIdx) => {
+          doc.rect(currXPos, rowY, c.w, rowH, 'S');
+          if (cIdx === 0) {
+            drawCellText(doc, String(startSlice + r + 1), currXPos, rowY, c.w, rowH, { align: 'center', fontSize: 7, color: COLOR_NEGRO });
+          }
           currXPos += c.w;
         });
       } else {
-        const cal = getPuntoCalculos(pt);
-        const isImpulso = pt.caracteristicas_ruido === 'impulso_impacto';
-        const tipoContinuo = pt.tipo_carga_continuo || 'laeq';
+        const valOhm = pt.valor_medido_ohm ? String(pt.valor_medido_ohm).replace('.', ',') : '';
+        const formatSiNo = (val) => {
+          if (val === true || val === 'SI' || val === 'Si' || val === 'Cumple' || val === 'CUMPLE') return 'Si';
+          if (val === false || val === 'NO' || val === 'No' || val === 'No cumple' || val === 'NO CUMPLE') return 'No';
+          return val || '';
+        };
 
         const rowData = {
-          punto: String(pt.punto_muestreo || pt.orden || (r + 1)),
-          sector: pt.sector_text || pt.sector || pt.ubicacion || '-',
-          puesto: pt.puesto_text || pt.puesto || pt.tipo_toma_tierra || '-',
-          tiempo_exp: pt.tiempo_exposicion_hs ? `${pt.tiempo_exposicion_hs} hs` : '8 hs',
-          tiempo_integ: pt.tiempo_integracion || '15 min',
-          caracteristica: isImpulso ? 'Impulso / Impacto' : 'Continuo / Intermitente',
-          lc_pico: isImpulso ? (pt.nivel_pico_lc_pico_dbc ? `${pt.nivel_pico_lc_pico_dbc} dBC` : '—') : '—',
-          laeq_te: (!isImpulso && tipoContinuo === 'laeq' && pt.nivel_laeq_te_dba) ? `${pt.nivel_laeq_te_dba} dBA` : (pt.valor_medido_ohm ? `${pt.valor_medido_ohm} Ω` : '—'),
-          suma_fracciones: (!isImpulso && tipoContinuo === 'suma_fracciones' && pt.resultado_suma_fracciones) ? String(pt.resultado_suma_fracciones) : '—',
-          dosis: (!isImpulso && tipoContinuo === 'dosis' && pt.dosis_porcentaje) ? `${pt.dosis_porcentaje}%` : '—',
-          cumple: cal.resultado_punto === 'Cumple' ? 'SI' : (cal.resultado_punto === 'No cumple' ? 'NO' : '—')
+          num: String(pt.toma_tierra_num || pt.orden || (startSlice + r + 1)),
+          sector: pt.sector || pt.ubicacion || '',
+          condicion: pt.condicion_terreno || '',
+          uso: pt.uso_puesta_a_tierra || '',
+          esquema: pt.esquema_conexion || '',
+          valor: valOhm,
+          cumple: formatSiNo(pt.cumple_ohm),
+          continuo: formatSiNo(pt.continuidad_permanente),
+          capacidad: formatSiNo(pt.capacidad_carga),
+          dispositivo: pt.dispositivo_proteccion || '',
+          desconexion: formatSiNo(pt.desconexion_automatica)
         };
 
         tableColsDef.forEach(c => {
           doc.rect(currXPos, rowY, c.w, rowH, 'S');
-          const val = rowData[c.key] || '—';
-          const isFail = (c.key === 'cumple' && val === 'NO');
-          const isPass = (c.key === 'cumple' && val === 'SI');
-
+          const val = rowData[c.key] || '';
           drawCellText(doc, val, currXPos, rowY, c.w, rowH, {
-            align: 'center',
-            fontSize: 7,
-            fontStyle: (isFail || isPass) ? 'bold' : 'normal',
-            color: isFail ? COLOR_ROJO_NO_CUMPLE : (isPass ? COLOR_VERDE_CUMPLE : COLOR_NEGRO),
-            maxLines: 1
+            align: c.align || 'center',
+            fontSize: (c.key === 'sector' || c.key === 'uso' || c.key === 'condicion' || c.key === 'dispositivo') ? 6 : 7,
+            fontStyle: 'normal',
+            color: COLOR_NEGRO,
+            maxLines: 3,
+            padding: 0.5
           });
           currXPos += c.w;
         });
       }
     }
 
-    // Bottom Box: Información adicional
-    const infoY = rowStartY + (maxRowsPerPage * rowH);
-    const infoH = 20;
+    // Cuadro Información Adicional
+    const infoY = rowStartY + (maxRowsPerPage * rowH) + 1;
+    const infoH = 22;
     doc.setLineWidth(0.45);
-    doc.rect(15, infoY, 267, infoH, 'S');
+    doc.rect(15, infoY, 180, infoH, 'S');
     doc.setLineWidth(0.25);
 
-    drawCellText(doc, 'Información adicional:', 15, infoY, 267, 5, { fontStyle: 'bold', fontSize: 8, color: COLOR_NEGRO });
-    const addInfoText = proto.informacion_adicional || 'Sin información adicional registrada.';
-    drawCellText(doc, addInfoText, 15 + 2, infoY + 5, 267 - 4, 14, { fontSize: 8, valign: 'top', color: COLOR_NEGRO });
+    drawCellText(doc, 'Información adicional:', 15, infoY, 180, 5, { fontStyle: 'bold', fontSize: 8, color: COLOR_NEGRO });
+    const addInfoText = proto.informacion_adicional || 'Se probó disparo de disyuntores. Tipo y corriente de disparo, dentro de parámetros.';
+    drawCellText(doc, addInfoText, 15 + 2, infoY + 5, 180 - 4, 15, { fontSize: 8, valign: 'top', color: COLOR_NEGRO });
 
-    // Firma Profesional
-    drawSignatureBlock(185, infoY + infoH + 3, 90, 32);
+    // Firma Profesional (Alineada abajo a la derecha de la hoja)
+    drawSignatureBlock(105, infoY + infoH + 3, 90, 36);
   }
 
   // ==========================================
-  // PAGINA 6: ANÁLISIS Y MEJORAS (A4 Apaisado)
+  // HOJA 3: ANÁLISIS DE LOS DATOS Y MEJORAS A REALIZAR (A4 Vertical - RES. SRT 900/15)
   // ==========================================
-  doc.addPage('a4', 'landscape');
+  doc.addPage('a4', 'portrait');
   pageCounter++;
 
-  drawHeader(true);
-  drawProtocolTitleBar(true, { x: 18, y: 22, w: 263, h: 5.5 });
+  drawHeader(false);
+  drawProtocolTitleBar(false, { x: 15, y: 22, w: 180, h: 5.5 });
 
   // Encabezado Establecimiento
-  const aX = 18;
+  const aX = 15;
   const aY = 29;
-  const aW = 263;
+  const aW = 180;
 
   doc.setLineWidth(0.45);
   setDrawColor(doc, COLOR_NEGRO);
-  doc.rect(aX, aY, aW, 14, 'S');
+  doc.rect(aX, aY, aW, 13, 'S');
   doc.setLineWidth(0.25);
 
-  // Fila 1: Razón Social (160mm) | C.U.I.T. (103mm)
-  doc.rect(aX, aY, 160, 7, 'S');
-  drawCellText(doc, 'Razón Social:', aX, aY, 22, 7, { fontStyle: 'bold', fontSize: 8 });
-  drawCellText(doc, razonSocial, aX + 22, aY, 138, 7, { fontSize: 8 });
+  // Fila 1: Razón Social (115mm) | C.U.I.T. (65mm)
+  doc.rect(aX, aY, 115, 6.5, 'S');
+  drawCellText(doc, 'Razón Social:', aX, aY, 24, 6.5, { fontStyle: 'bold', fontSize: 8 });
+  drawCellText(doc, razonSocial, aX + 24, aY, 91, 6.5, { fontSize: 8 });
 
-  doc.rect(aX + 160, aY, 103, 7, 'S');
-  drawCellText(doc, 'C.U.I.T.:', aX + 160, aY, 18, 7, { fontStyle: 'bold', fontSize: 8 });
-  drawCellText(doc, cuit, aX + 178, aY, 85, 7, { fontSize: 8 });
+  doc.rect(aX + 115, aY, 65, 6.5, 'S');
+  drawCellText(doc, 'C.U.I.T.:', aX + 115, aY, 18, 6.5, { fontStyle: 'bold', fontSize: 8 });
+  drawCellText(doc, cuit, aX + 133, aY, 47, 6.5, { fontSize: 8 });
 
-  // Fila 2: Dirección (135mm) | Localidad (55mm) | C.P. (25mm) | Provincia (48mm)
-  doc.rect(aX, aY + 7, 135, 7, 'S');
-  drawCellText(doc, 'Dirección:', aX, aY + 7, 18, 7, { fontStyle: 'bold', fontSize: 8 });
-  drawCellText(doc, direccion, aX + 18, aY + 7, 117, 7, { fontSize: 8 });
+  // Fila 2: Dirección (70mm) | Localidad (42mm) | CP (20mm) | Provincia (48mm)
+  doc.rect(aX, aY + 6.5, 70, 6.5, 'S');
+  drawCellText(doc, 'Dirección:', aX, aY + 6.5, 18, 6.5, { fontStyle: 'bold', fontSize: 8 });
+  drawCellText(doc, direccion, aX + 18, aY + 6.5, 52, 6.5, { fontSize: 8 });
 
-  doc.rect(aX + 135, aY + 7, 55, 7, 'S');
-  drawCellText(doc, 'Localidad:', aX + 135, aY + 7, 18, 7, { fontStyle: 'bold', fontSize: 8 });
-  drawCellText(doc, localidad, aX + 153, aY + 7, 37, 7, { fontSize: 8 });
+  doc.rect(aX + 70, aY + 6.5, 42, 6.5, 'S');
+  drawCellText(doc, 'Localidad:', aX + 70, aY + 6.5, 16, 6.5, { fontStyle: 'bold', fontSize: 8 });
+  drawCellText(doc, localidad, aX + 86, aY + 6.5, 26, 6.5, { fontSize: 8 });
 
-  doc.rect(aX + 190, aY + 7, 25, 7, 'S');
-  drawCellText(doc, 'C.P.:', aX + 190, aY + 7, 10, 7, { fontStyle: 'bold', fontSize: 8 });
-  drawCellText(doc, cp, aX + 200, aY + 7, 15, 7, { fontSize: 8 });
+  doc.rect(aX + 112, aY + 6.5, 20, 6.5, 'S');
+  drawCellText(doc, 'CP:', aX + 112, aY + 6.5, 8, 6.5, { fontStyle: 'bold', fontSize: 8 });
+  drawCellText(doc, cp, aX + 120, aY + 6.5, 12, 6.5, { fontSize: 8 });
 
-  doc.rect(aX + 215, aY + 7, 48, 7, 'S');
-  drawCellText(doc, 'Provincia:', aX + 215, aY + 7, 16, 7, { fontStyle: 'bold', fontSize: 8 });
-  drawCellText(doc, provincia, aX + 231, aY + 7, 32, 7, { fontSize: 8 });
+  doc.rect(aX + 132, aY + 6.5, 48, 6.5, 'S');
+  drawCellText(doc, 'Provincia:', aX + 132, aY + 6.5, 18, 6.5, { fontStyle: 'bold', fontSize: 8 });
+  drawCellText(doc, provincia, aX + 150, aY + 6.5, 30, 6.5, { fontSize: 8 });
 
   // Tabla Análisis
-  const tAX = 18;
+  const tAX = 15;
   const tAY = 45;
-  const tAW = 263;
-  const contentH = 75;
-  const totalBoxH = 6 + 8 + contentH; // 89mm total height
+  const tAW = 180;
+  const contentH = 145;
+  const totalBoxH = 6 + 7 + contentH; // 158mm total height
 
   doc.setLineWidth(0.45);
   doc.rect(tAX, tAY, tAW, totalBoxH, 'S');
@@ -1001,28 +1010,27 @@ export const generatePuestaATierraPdf = async (
   // 2 Columns Subheader Titles
   const colW = tAW / 2;
   setFillColor(doc, COLOR_SLATE_200);
-  doc.rect(tAX, tAY + 6, colW, 8, 'FD');
-  doc.rect(tAX + colW, tAY + 6, colW, 8, 'FD');
+  doc.rect(tAX, tAY + 6, colW, 7, 'FD');
+  doc.rect(tAX + colW, tAY + 6, colW, 7, 'FD');
 
-  drawCellText(doc, 'Conclusiones', tAX, tAY + 6, colW, 8, { fontStyle: 'bold', fontSize: 8.5, color: COLOR_NEGRO });
-  drawCellText(doc, 'Recomendaciones para adecuar el nivel de ruido a la legislación vigente.', tAX + colW, tAY + 6, colW, 8, { fontStyle: 'bold', fontSize: 8.5, color: COLOR_NEGRO });
+  drawCellText(doc, 'Conclusiones', tAX, tAY + 6, colW, 7, { fontStyle: 'bold', fontSize: 8.5, color: COLOR_NEGRO });
+  drawCellText(doc, 'Recomendaciones', tAX + colW, tAY + 6, colW, 7, { fontStyle: 'bold', fontSize: 8.5, color: COLOR_NEGRO });
 
-  doc.rect(tAX, tAY + 14, colW, contentH, 'S');
-  doc.rect(tAX + colW, tAY + 14, colW, contentH, 'S');
+  doc.rect(tAX, tAY + 13, colW, contentH, 'S');
+  doc.rect(tAX + colW, tAY + 13, colW, contentH, 'S');
 
   // Conclusiones text
-  const rawConc = proto.conclusiones || "Los valores obtenidos en todos los puntos de muestreo, Cumplen con lo establecido en el ANEXO V - CAPITULO 13 (Acústica), del Decreto Nº 351/79.";
+  const rawConc = proto.conclusiones || "Los valores hallados de la medición de la puesta a tierra cumplen con lo establecido en la Resolución 900/15.";
   const concText = rawConc.trim().replace(/^[•\-\*\.\s]+/, '');
-  drawCellText(doc, concText, tAX, tAY + 14, colW, contentH, { fontSize: 8.5, valign: 'top', padding: 2 });
+  drawCellText(doc, concText, tAX, tAY + 13, colW, contentH, { fontSize: 8.5, valign: 'top', padding: 3 });
 
   // Recomendaciones text
-  const defaultRecomStr = `Cuando los niveles de exposición superen o se encuentren próximos a los valores establecidos en la legislación vigente, se recomienda:\n\n• Implementar controles de ingeniería sobre las instalaciones y equipos.\n• Evaluar la sustitución o adecuación técnica de materiales y esquemas de puesta a tierra.\n• Delimitar y señalizar los sectores e inspeccionar periódicamente la continuidad de las masas.\n• Capacitar al personal sobre los riesgos asociados y medidas preventivas.`;
-
+  const defaultRecomStr = `Es recomendable mantener limpio y libre de óxido las terminales de las jabalinas.\n\n• Inspeccionar periódicamente la continuidad de las masas y conductores de protección.\n• Verificar el correcto funcionamiento periódico de los dispositivos de corte diferencial (disyuntores).\n• Realizar el mantenimiento preventivo según lo establecido en la normativa vigente.`;
   const recomText = proto.recomendaciones || defaultRecomStr;
-  drawCellText(doc, recomText, tAX + colW, tAY + 14, colW, contentH, { fontSize: 7.5, valign: 'top', padding: 2 });
+  drawCellText(doc, recomText, tAX + colW, tAY + 13, colW, contentH, { fontSize: 8, valign: 'top', padding: 3 });
 
   // Firma Profesional
-  drawSignatureBlock(185, tAY + totalBoxH + 5, 95, 38);
+  drawSignatureBlock(105, tAY + totalBoxH + 4, 90, 36);
 
   // ==========================================
   // PLANOS Y CROQUIS DEL ESTABLECIMIENTO
