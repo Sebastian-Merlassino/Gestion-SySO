@@ -1,6 +1,20 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-17] Reincorporación del Contenedor "Documentación que se Adjuntará a la Medición" en Formulario de Puesta a Tierra
+## [2026-08-17] Separación del Contenedor "Información Adicional" en Formulario de Puesta a Tierra
+
+### Resumen de Cambios
+- **Independización de Sección en UI:**
+  - Se extrajo el campo `informacionAdicional` a una tarjeta visual independiente `<AppCard>` titulada *Información Adicional*, ubicada inmediatamente por encima del contenedor *Análisis de los Datos y Mejoras a Realizar*.
+  - El contenedor cuenta con su propio `<AITextHelper>` contextualizado y `<AppTextarea>`.
+  - El contenedor de *Análisis de los Datos y Mejoras a Realizar* conserva ahora exclusivamente los campos normativos de *Conclusiones* y *Recomendaciones para adecuar la instalación*.
+  - Se incluyó `informacionAdicional` en el cálculo de `getFormSnapshot` y en las dependencias de dirty-checking para control de cambios sin guardar.
+- **Compilación de Producción:** Verificada con `npm.cmd run build` generando satisfactoriamente las 23/23 rutas con 0 errores.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
 
 ### Resumen de Cambios
 - **Reestablecimiento de Sección en Formulario UI:**

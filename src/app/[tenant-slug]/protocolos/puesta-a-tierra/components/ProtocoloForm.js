@@ -453,8 +453,9 @@ export default function ProtocoloForm({
   const getFormSnapshot = () => JSON.stringify({
     empresaId, establecimientoId, instrumento, fechaCalibracion, metodologia,
     fechaMedicion, horaInicio, horaFinalizacion, observacionesGenerales,
-    documentacionAdjunta, conclusiones, recomendaciones, estado, profesionalNombre,
-    profesionalMatricula, firmaTipo, puntosCount: puntos.length, adjuntosCount: adjuntos.length
+    documentacionAdjunta, informacionAdicional, conclusiones, recomendaciones,
+    estado, profesionalNombre, profesionalMatricula, firmaTipo,
+    puntosCount: puntos.length, adjuntosCount: adjuntos.length
   });
 
   useEffect(() => {
@@ -468,8 +469,8 @@ export default function ProtocoloForm({
   }, [
     mode, isReady, empresaId, establecimientoId, instrumento, fechaCalibracion,
     metodologia, fechaMedicion, horaInicio, horaFinalizacion, observacionesGenerales,
-    documentacionAdjunta, conclusiones, recomendaciones, estado, profesionalNombre,
-    profesionalMatricula, firmaTipo, puntos, adjuntos, onDirtyChange
+    documentacionAdjunta, informacionAdicional, conclusiones, recomendaciones, estado,
+    profesionalNombre, profesionalMatricula, firmaTipo, puntos, adjuntos, onDirtyChange
   ]);
 
   const canEliminar = profile?.role === 'admin' || profile?.role === 'owner' || profile?.role === 'tecnico';
@@ -1809,34 +1810,43 @@ export default function ProtocoloForm({
           </div>
         </AppCard>
 
+        {/* CARD: INFORMACIÓN ADICIONAL */}
+        <AppCard className="p-4 sm:p-5 md:p-6 space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2">
+              <Info className="h-5 w-5 text-[#468DFF]" />
+              <h2 className="font-outfit text-base font-extrabold text-slate-800">
+                Información Adicional
+              </h2>
+            </div>
+            <AITextHelper
+              disabled={!canEdit}
+              value={informacionAdicional}
+              onChange={setInformacionAdicional}
+              context="Información adicional sobre el estado de la instalación y mediciones de puesta a tierra"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 col-span-full">
+            <AppTextarea
+              id="informacionAdicional"
+              disabled={!canEdit}
+              rows={3}
+              value={informacionAdicional}
+              onChange={(e) => setInformacionAdicional(e.target.value)}
+              placeholder="Se probó disparo de disyuntores. Tipo y corriente de disparo, dentro de parámetros."
+            />
+          </div>
+        </AppCard>
+
         {/* CARD: ANÁLISIS DE LOS DATOS Y MEJORAS A REALIZAR */}
-        <AppCard className="p-5 md:p-6 space-y-4">
+        <AppCard className="p-4 sm:p-5 md:p-6 space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-            <Info className="h-5 w-5 text-[#468DFF]" />
+            <CheckCircle2 className="h-5 w-5 text-[#468DFF]" />
             <h2 className="font-outfit text-base font-extrabold text-slate-800">Análisis de los Datos y Mejoras a Realizar</h2>
           </div>
 
           <div className="space-y-4">
-            <div className="flex flex-col gap-1 col-span-full">
-              <div className="flex items-center justify-between">
-                <AppLabel htmlFor="informacionAdicional">Información Adicional</AppLabel>
-                <AITextHelper
-                  disabled={!canEdit}
-                  value={informacionAdicional}
-                  onChange={setInformacionAdicional}
-                  context="Información adicional sobre el estado de la instalación y mediciones"
-                />
-              </div>
-              <AppTextarea
-                id="informacionAdicional"
-                disabled={!canEdit}
-                rows={2}
-                value={informacionAdicional}
-                onChange={(e) => setInformacionAdicional(e.target.value)}
-                placeholder="Se probó disparo de disyuntores. Tipo y corriente de disparo, dentro de parámetros."
-              />
-            </div>
-
             <div className="flex flex-col gap-1 col-span-full">
               <div className="flex items-center justify-between">
                 <AppLabel htmlFor="conclusiones">Conclusiones</AppLabel>
