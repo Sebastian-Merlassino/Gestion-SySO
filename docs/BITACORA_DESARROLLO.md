@@ -1,6 +1,27 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-17] Estandarización de Títulos y Subtítulos en PDF de Puesta a Tierra
+## [2026-08-17] Corrección y Blindaje de Persistencia de Puntos de Medición en Re-edición (Puesta a Tierra, Ruido e Iluminación)
+
+### Resumen de Cambios
+- **Carga Directa e Independiente de Adjuntos (`loadData`):**
+  - Se desacopló la consulta de adjuntos de los joins anidados en `protocolos_puesta_a_tierra`, implementando consultas directas a `protocolos_puesta_a_tierra_adjuntos`, `protocolos_ruido_adjuntos` y `protocolos_iluminacion_adjuntos` para evitar inconsistencias por caché de PostgREST o relaciones embebidas.
+- **Firma Integral de URLs de Almacenamiento:**
+  - `pathsToSign` ahora incluye tanto `storage_path` como `original_path`, permitiendo que la imagen base limpia original esté lista para su renderizado interactivo en el canvas sin retrasos ni fallas de visualización.
+- **Parseo Defensivo de Marcadores (`markers`):**
+  - Se agregó soporte robusto para parsear arreglos y strings JSON serializados previniendo que los marcadores se inicialicen en vacío.
+- **Modal de Marcadores (`MeasurementPointsEditorModal`):**
+  - Se implementó clonación profunda `[...initialPoints]` en el `useEffect` de apertura.
+  - Ordenamiento cronológico seguro `(Number(a.createdAt) || 0) - (Number(b.createdAt) || 0)`.
+  - Keys estables y resistentes a re-renders para el renderizado del DOM de los puntos (`key={p.createdAt ? ... : ...}`).
+- **Compilación de Producción:** Verificada con `npm.cmd run build` generando satisfactoriamente las 23/23 rutas con 0 errores.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
 
 ### Resumen de Cambios
 - **Hojas de Planos / Puntos de Muestreo:**

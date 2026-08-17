@@ -808,10 +808,17 @@ export default function ProtocoloForm({
             }
           }
 
+          // 2. Puntos de medición
+          const { data: ptsData, error: ptsErr } = await supabase
+            .from('protocolos_puesta_a_tierra_puntos')
+            .select('*')
+            .eq('protocolo_id', editingId)
+            .order('orden');
+          if (ptsErr) console.warn('Error cargando puntos:', ptsErr);
+
           let loadedPuntosList = [];
-          if (proto.protocolos_puesta_a_tierra_puntos?.length > 0) {
-            const rawPts = proto.protocolos_puesta_a_tierra_puntos;
-            loadedPuntosList = rawPts.map(p => ({
+          if (ptsData && ptsData.length > 0) {
+            loadedPuntosList = ptsData.map(p => ({
               ...p,
               evidencia_fotografica: Array.isArray(p.evidencia_fotografica) ? p.evidencia_fotografica : [],
               isCollapsed: false
@@ -819,65 +826,91 @@ export default function ProtocoloForm({
             loadedPuntosList.sort((a, b) => (a.orden || 0) - (b.orden || 0));
           }
 
-          if (proto.protocolos_puesta_a_tierra_adjuntos?.length > 0) {
-            const adjData = proto.protocolos_puesta_a_tierra_adjuntos;
-            const pathsToSign = adjData.map(ad => ad.storage_path).filter(p => p && !p.startsWith('http'));
-            let signedUrlsMap = {};
-            if (pathsToSign.length > 0) {
-              try {
-                const { data: signedData } = await supabase.storage
-                  .from('protocolos-puesta-a-tierra')
-                  .createSignedUrls(pathsToSign, 3600);
-                if (signedData) {
-                  signedData.forEach(item => {
-                    if (item.signedUrl) signedUrlsMap[item.path] = item.signedUrl;
-                  });
-                }
-              } catch (sErr) {
-                console.warn('Error firmando URLs de adjuntos:', sErr);
-              }
+          // 3. Adjuntos
+          const { data: adjData, error: adjErr } = await supabase
+            .from('protocolos_puesta_a_tierra_adjuntos')
+            .select('*')
+            .eq('protocolo_id', editingId);
+          if (adjErr) console.warn('Error cargando adjuntos:', adjErr);
+
+          const pathsToSign = [];
+          (adjData || []).forEach(ad => {
+            if (ad.storage_path && !ad.storage_path.startsWith('http') && !ad.storage_path.startsWith('data:')) {
+              pathsToSign.push(ad.storage_path);
             }
+            if (ad.original_path && !ad.original_path.startsWith('http') && !ad.original_path.startsWith('data:') && !pathsToSign.includes(ad.original_path)) {
+              pathsToSign.push(ad.original_path);
+            }
+          });
 
-            const generalAdjuntos = [];
-            const tomaPhotosMap = {};
-
-            adjData.forEach(ad => {
-              const prevUrl = ad.storage_path?.startsWith('http') ? ad.storage_path : (signedUrlsMap[ad.storage_path] || ad.public_url || '');
-              const item = {
-                id: ad.id,
-                tipo: ad.tipo || 'Otro',
-                name: ad.nombre_archivo || 'Archivo',
-                path: ad.storage_path,
-                preview: prevUrl,
-                originalPath: ad.original_path || ad.storage_path,
-                markers: Array.isArray(ad.markers) ? ad.markers : []
-              };
-
-              if (ad.tipo && ad.tipo.startsWith('Evidencia Fotográfica Toma N° ')) {
-                const num = parseInt(ad.tipo.replace('Evidencia Fotográfica Toma N° ', ''), 10);
-                if (!tomaPhotosMap[num]) tomaPhotosMap[num] = [];
-                tomaPhotosMap[num].push(item);
-              } else {
-                generalAdjuntos.push(item);
+          let signedUrlsMap = {};
+          if (pathsToSign.length > 0) {
+            try {
+              const { data: signedData } = await supabase.storage
+                .from('protocolos-puesta-a-tierra')
+                .createSignedUrls(pathsToSign, 3600);
+              if (signedData) {
+                signedData.forEach(item => {
+                  if (item.signedUrl) signedUrlsMap[item.path] = item.signedUrl;
+                });
               }
-            });
-
-            setAdjuntos(generalAdjuntos);
-
-            if (loadedPuntosList.length > 0) {
-              loadedPuntosList = loadedPuntosList.map((pt, idx) => {
-                const tNum = pt.toma_tierra_num || (idx + 1);
-                const extraEv = tomaPhotosMap[tNum] || [];
-                return {
-                  ...pt,
-                  evidencia_fotografica: [...(pt.evidencia_fotografica || []), ...extraEv]
-                };
-              });
+            } catch (sErr) {
+              console.warn('Error firmando URLs de adjuntos:', sErr);
             }
           }
 
+          const generalAdjuntos = [];
+          const tomaPhotosMap = {};
+
+          (adjData || []).forEach(ad => {
+            const prevUrl = ad.storage_path?.startsWith('http') ? ad.storage_path : (signedUrlsMap[ad.storage_path] || ad.public_url || '');
+            const origUrl = ad.original_path?.startsWith('http') ? ad.original_path : (signedUrlsMap[ad.original_path] || ad.original_path || ad.storage_path);
+
+            let parsedMarkers = [];
+            if (Array.isArray(ad.markers)) {
+              parsedMarkers = ad.markers;
+            } else if (typeof ad.markers === 'string' && ad.markers.trim().startsWith('[')) {
+              try {
+                parsedMarkers = JSON.parse(ad.markers);
+              } catch (e) {
+                parsedMarkers = [];
+              }
+            }
+
+            const item = {
+              id: ad.id,
+              tipo: ad.tipo || 'Otro',
+              name: ad.nombre_archivo || 'Archivo',
+              path: ad.storage_path,
+              preview: prevUrl,
+              originalPath: ad.original_path || ad.storage_path,
+              originalUrl: origUrl,
+              markers: parsedMarkers
+            };
+
+            if (ad.tipo && ad.tipo.startsWith('Evidencia Fotográfica Toma N° ')) {
+              const num = parseInt(ad.tipo.replace('Evidencia Fotográfica Toma N° ', ''), 10);
+              if (!tomaPhotosMap[num]) tomaPhotosMap[num] = [];
+              tomaPhotosMap[num].push(item);
+            } else {
+              generalAdjuntos.push(item);
+            }
+          });
+
+          setAdjuntos(generalAdjuntos);
+
           if (loadedPuntosList.length > 0) {
+            loadedPuntosList = loadedPuntosList.map((pt, idx) => {
+              const tNum = pt.toma_tierra_num || (idx + 1);
+              const extraEv = tomaPhotosMap[tNum] || [];
+              return {
+                ...pt,
+                evidencia_fotografica: [...(pt.evidencia_fotografica || []), ...extraEv]
+              };
+            });
             setPuntos(loadedPuntosList);
+          } else {
+            setPuntos([createNewPunto(1)]);
           }
         }
       }
@@ -2042,7 +2075,7 @@ export default function ProtocoloForm({
                         const targetPhoto = planoFotosAdjuntos[index];
                         if (targetPhoto) {
                           setEditPhotoIndex(index);
-                          let url = targetPhoto.originalPath || targetPhoto.path || targetPhoto.preview || targetPhoto.public_url;
+                          let url = targetPhoto.originalUrl || targetPhoto.originalPath || targetPhoto.path || targetPhoto.preview || targetPhoto.public_url;
                           if (!url.startsWith('http') && !url.startsWith('data:')) {
                             const { data, error } = await supabase.storage
                               .from('protocolos-puesta-a-tierra')
@@ -2496,7 +2529,7 @@ function MeasurementPointsEditorModal({ isOpen, onClose, imageUrl, initialPoints
 
   useEffect(() => {
     if (isOpen) {
-      setPoints(initialPoints || []);
+      setPoints(Array.isArray(initialPoints) ? [...initialPoints] : []);
     }
   }, [isOpen, initialPoints]);
 
@@ -2522,7 +2555,7 @@ function MeasurementPointsEditorModal({ isOpen, onClose, imageUrl, initialPoints
       ...otherImagesMarkers.map(m => ({ ...m, source: 'other' })),
       ...points.map(m => ({ ...m, source: 'current' }))
     ];
-    combined.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+    combined.sort((a, b) => (Number(a.createdAt) || 0) - (Number(b.createdAt) || 0));
     combined.forEach((m, index) => {
       m.number = index + 1;
     });
@@ -2622,9 +2655,9 @@ function MeasurementPointsEditorModal({ isOpen, onClose, imageUrl, initialPoints
                     alt="Evidencia a editar" 
                     className="max-w-full max-h-[50vh] object-contain pointer-events-none block"
                   />
-                  {currentNumberedPoints.map((p) => (
+                  {currentNumberedPoints.map((p, idx) => (
                     <div
-                      key={p.createdAt}
+                      key={p.createdAt ? `pt-${p.createdAt}` : `pt-idx-${idx}`}
                       style={{
                         position: 'absolute',
                         left: `${p.x}%`,
@@ -2633,7 +2666,7 @@ function MeasurementPointsEditorModal({ isOpen, onClose, imageUrl, initialPoints
                       }}
                       className="w-7 h-7 bg-[#468DFF] rounded-full border-2 border-white text-white font-extrabold text-xs flex items-center justify-center shadow-md select-none pointer-events-none"
                     >
-                      {p.number}
+                      {p.number || (idx + 1)}
                     </div>
                   ))}
                 </div>

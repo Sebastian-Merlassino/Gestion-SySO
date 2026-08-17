@@ -747,9 +747,17 @@ export default function ProtocoloForm({
       if (adjErr) throw adjErr;
 
       // Generar URL firmadas si los archivos no son urls completas
-      const pathsToSign = (adjData || []).map(ad => ad.storage_path).filter(p => !p.startsWith('http'));
-      let signedUrlsMap = {};
+      const pathsToSign = [];
+      (adjData || []).forEach(ad => {
+        if (ad.storage_path && !ad.storage_path.startsWith('http') && !ad.storage_path.startsWith('data:')) {
+          pathsToSign.push(ad.storage_path);
+        }
+        if (ad.original_path && !ad.original_path.startsWith('http') && !ad.original_path.startsWith('data:') && !pathsToSign.includes(ad.original_path)) {
+          pathsToSign.push(ad.original_path);
+        }
+      });
 
+      let signedUrlsMap = {};
       if (pathsToSign.length > 0) {
         const { data: signedData } = await supabase.storage
           .from('protocolos-ruido')
@@ -761,15 +769,31 @@ export default function ProtocoloForm({
         }
       }
 
-      setAdjuntos((adjData || []).map(ad => ({
-        id: ad.id,
-        tipo: ad.tipo || 'Otro',
-        name: ad.nombre_archivo || 'Archivo',
-        path: ad.storage_path,
-        preview: ad.storage_path.startsWith('http') ? ad.storage_path : (signedUrlsMap[ad.storage_path] || ''),
-        originalPath: ad.original_path || ad.storage_path,
-        markers: Array.isArray(ad.markers) ? ad.markers : []
-      })));
+      setAdjuntos((adjData || []).map(ad => {
+        let parsedMarkers = [];
+        if (Array.isArray(ad.markers)) {
+          parsedMarkers = ad.markers;
+        } else if (typeof ad.markers === 'string' && ad.markers.trim().startsWith('[')) {
+          try {
+            parsedMarkers = JSON.parse(ad.markers);
+          } catch (e) {
+            parsedMarkers = [];
+          }
+        }
+
+        const origUrl = ad.original_path?.startsWith('http') ? ad.original_path : (signedUrlsMap[ad.original_path] || ad.original_path || ad.storage_path);
+
+        return {
+          id: ad.id,
+          tipo: ad.tipo || 'Otro',
+          name: ad.nombre_archivo || 'Archivo',
+          path: ad.storage_path,
+          preview: ad.storage_path.startsWith('http') ? ad.storage_path : (signedUrlsMap[ad.storage_path] || ''),
+          originalPath: ad.original_path || ad.storage_path,
+          originalUrl: origUrl,
+          markers: parsedMarkers
+        };
+      }));
 
       setLoading(false);
       setTimeout(() => {
@@ -2847,7 +2871,7 @@ export default function ProtocoloForm({
                         const targetPhoto = planoFotosAdjuntos[index];
                         if (targetPhoto) {
                           setEditPhotoIndex(index);
-                          let url = targetPhoto.originalPath || targetPhoto.path;
+                          let url = targetPhoto.originalUrl || targetPhoto.originalPath || targetPhoto.path || targetPhoto.preview || targetPhoto.public_url;
                           if (!url.startsWith('http') && !url.startsWith('data:')) {
                             const { data, error } = await supabase.storage
                               .from('protocolos-ruido')
@@ -3320,7 +3344,7 @@ function MeasurementPointsEditorModal({ isOpen, onClose, imageUrl, initialPoints
 
   useEffect(() => {
     if (isOpen) {
-      setPoints(initialPoints || []);
+      setPoints(Array.isArray(initialPoints) ? [...initialPoints] : []);
     }
   }, [isOpen, initialPoints]);
 
@@ -3348,7 +3372,7 @@ function MeasurementPointsEditorModal({ isOpen, onClose, imageUrl, initialPoints
       ...otherImagesMarkers.map(m => ({ ...m, source: 'other' })),
       ...points.map(m => ({ ...m, source: 'current' }))
     ];
-    combined.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+    combined.sort((a, b) => (Number(a.createdAt) || 0) - (Number(b.createdAt) || 0));
     combined.forEach((m, index) => {
       m.number = index + 1;
     });
@@ -3453,9 +3477,9 @@ function MeasurementPointsEditorModal({ isOpen, onClose, imageUrl, initialPoints
                     className="max-w-full max-h-[50vh] object-contain pointer-events-none block"
                   />
                   {/* Puntos de medición */}
-                  {currentNumberedPoints.map((p) => (
+                  {currentNumberedPoints.map((p, idx) => (
                     <div
-                      key={p.createdAt}
+                      key={p.createdAt ? `pt-${p.createdAt}` : `pt-idx-${idx}`}
                       style={{
                         position: 'absolute',
                         left: `${p.x}%`,
@@ -3464,7 +3488,7 @@ function MeasurementPointsEditorModal({ isOpen, onClose, imageUrl, initialPoints
                       }}
                       className="w-7 h-7 bg-[#468DFF] rounded-full border-2 border-white text-white font-extrabold text-xs flex items-center justify-center shadow-md select-none pointer-events-none"
                     >
-                      {p.number}
+                      {p.number || (idx + 1)}
                     </div>
                   ))}
                 </div>
