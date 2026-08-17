@@ -21,7 +21,7 @@ export default function PublicFooter() {
             </span>
           </div>
           <p className="text-slate-400 text-[10px] leading-relaxed max-w-xs">
-            Gestión SySO es la plataforma SaaS que centraliza la gestión de Seguridad, Higiene y Salud Ocupacional. Administre clientes, inspecciones, checklists, programas, accidentes, acciones correctivas y documentación técnica desde un único lugar.
+            Gestión SySO es la plataforma web diseñada para centralizar y optimizar la Seguridad, Higiene y Salud Ocupacional. Gestione clientes, inspecciones, checklists, programas, siniestralidad, planes de acción y documentación técnica en un solo lugar.
           </p>
         </div>
 
