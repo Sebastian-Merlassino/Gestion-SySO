@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate, getEffectivePlan } from '@/lib/utils';
+import { printPdfDocument } from '@/lib/pdf/pdfPrintHelper';
 import AITextHelper from '@/components/ui/AITextHelper';
 import { useToast } from '@/components/providers/ToastProvider';
 import AppPageHeader from '@/components/ui/AppPageHeader';
@@ -819,6 +820,10 @@ export default function TenantDashboard({ params }) {
   };
 
   const handleDownloadPdfReport = async (shouldPrint = false) => {
+    let printWindow = null;
+    if (shouldPrint) {
+      printWindow = window.open('', '_blank');
+    }
     try {
       triggerToast('Generando reporte PDF...', 'info');
 
@@ -1191,16 +1196,17 @@ export default function TenantDashboard({ params }) {
       });
 
       if (shouldPrint) {
-        doc.autoPrint();
-        const blobUrl = doc.output('bloburl');
-        window.open(blobUrl, '_blank');
-        triggerToast('Vista previa abierta.');
+        printPdfDocument(doc, printWindow, 'Reporte de Siniestralidad');
+        triggerToast('Ventana de impresión abierta.');
       } else {
         const formattedEmpName = empName.replace(/\s+/g, '_');
         doc.save(`Reporte_Siniestralidad_${formattedEmpName}_${selectedYear}.pdf`);
         triggerToast('PDF descargado exitosamente.');
       }
     } catch (e) {
+      if (printWindow && !printWindow.closed) {
+        printWindow.close();
+      }
       console.error('Error al generar reporte PDF:', e);
       triggerToast('Error al generar el reporte PDF.', 'error');
     }

@@ -1698,8 +1698,9 @@ export const generateLightingProtocolPdf = async (
 
     doc.setLineWidth(0.45);
     setDrawColor(doc, COLOR_NEGRO);
-    doc.rect(kX, kY, kW, 6, 'S');
-    drawCellText(doc, 'Puntos de muestreo', kX, kY, kW, 6, { fontStyle: 'bold', fontSize: 9 });
+    setFillColor(doc, COLOR_BLANCO);
+    doc.rect(kX, kY, kW, 6, 'FD');
+    drawCellText(doc, 'Puntos de muestreo', kX, kY, kW, 6, { fontStyle: 'bold', fontSize: 9, align: 'center', color: COLOR_NEGRO });
 
     const mY = 37;
     const mH = 150;

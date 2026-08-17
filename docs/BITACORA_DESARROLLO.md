@@ -1,5 +1,118 @@
 # Bitácora de Desarrollo - Gestión SySO
 
+## [2026-08-17] Solución Integral de Impresión de PDF en Tablas (Pop-up de Impresión Nativo)
+
+### Resumen de Cambios
+- **Diagnóstico del Problema:**
+  - Se identificó que al presionar el botón de impresión (`Printer` / "Imprimir") en las diferentes tablas y secciones del sistema, el documento PDF se abría en una nueva pestaña del navegador, pero **no se desplegaba el cuadro de diálogo de impresión nativo del navegador (`Print Dialog`)**.
+  - Esto ocurría porque los visores PDF integrados en navegadores Chromium/Firefox/Safari deshabilitan por políticas de seguridad los scripts internos de auto-impresión de Acrobat (`doc.autoPrint()`) en URLs de tipo Blob (`blob:http://...`).
+- **Módulo Centralizado de Impresión (`src/lib/pdf/pdfPrintHelper.js`):**
+  - Se creó la función `printPdfDocument(docOrBlob, existingWindow, title)` que pre-abre/actualiza la ventana emergente, renderiza el Blob PDF dentro de un `<iframe>` e invoca programáticamente `frame.contentWindow.print()`.
+- **Refactorización de Secciones y Tablas Refactorizadas:**
+  1. **Protocolos de Ruido:** `src/app/[tenant-slug]/protocolos/ruido/page.js` y `ruido/[id]/pdf/page.js`
+  2. **Protocolos de Puesta a Tierra:** `src/app/[tenant-slug]/protocolos/puesta-a-tierra/page.js`
+  3. **Protocolos de Iluminación:** `src/app/[tenant-slug]/protocolos/iluminacion/page.js` y `iluminacion/[id]/pdf/page.js`
+  4. **Protocolos de Ergonomía:** `src/app/[tenant-slug]/protocolos/ergonomia/page.js` y `ergonomia/[id]/pdf/page.js`
+  5. **Programa de Gestión Anual:** `src/app/[tenant-slug]/programa/page.js`
+  6. **Matriz de Riesgos:** `src/app/[tenant-slug]/matriz-riesgos/page.js`
+  7. **Control de Extintores:** `src/app/[tenant-slug]/extintores/page.js`
+  8. **Acciones Correctivas:** `src/app/[tenant-slug]/correctivas/page.js`
+  9. **Control Eléctrico:** `src/app/[tenant-slug]/control-electrico/page.js`
+  10. **Checklist Personalizados / Inspecciones:** `src/app/[tenant-slug]/checklist-personalizados/page.js`
+  11. **Programa de Capacitación:** `src/app/[tenant-slug]/capacitacion/page.js`
+  12. **Dashboard / Reporte de Siniestralidad:** `src/app/[tenant-slug]/dashboard/page.js`
+  13. **Visitas:** `src/app/[tenant-slug]/visitas/page.js`
+  14. **Capacitaciones Online:** `src/app/[tenant-slug]/capacitaciones-online/page.js` y `utils/pdfGenerator.js`
+
+### Decisiones Clave
+- Pre-abrir la ventana emergente `window.open('', '_blank')` antes de realizar consultas asíncronas de base de datos para evitar bloqueos por políticas anti-popups de los navegadores.
+- Mantener la vista previa del PDF en la nueva pestaña tras la llamada de impresión para permitir que el usuario pueda visualizar, re-imprimir o descargar el PDF si lo desea.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+
+### Archivos Modificados
+- `[NEW] src/lib/pdf/pdfPrintHelper.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/[id]/pdf/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/[id]/pdf/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/[id]/pdf/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/matriz-riesgos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/utils/pdfGenerator.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-17] Solución de Error StorageApiError 400 (Invalid Key) al Subir Archivos con Acentos y Caracteres Especiales
+
+### Resumen de Cambios
+- **Utilidad General (`src/lib/utils.js`):**
+  - Se exportó la función `sanitizeFileName(name)` que descompone acentos Unicode (`normalize('NFD')`), remueve diacríticos y reemplaza símbolos no-ASCII/caracteres especiales (paréntesis, tildes, ñ, etc.) por guiones bajos.
+- **Formularios de Protocolos (`ProtocoloForm.js` de Ruido, Iluminación y Puesta a Tierra):**
+  - Se actualizó el guardado y carga de adjuntos y de imágenes procesadas (`baked`) para sanitizar los nombres de archivo antes de construir las claves de objeto en Supabase Storage (`storagePath`).
+  - Previene el fallo `400 Bad Request (Invalid key)` al subir documentos o certificados con tildes (ej: `Capacitación`, `Versión`) u otros símbolos.
+
+### Decisiones Clave
+- Sanitizar previamente todas las claves enviadas a Supabase Storage para evitar rechazos del API REST de S3 sin alterar el nombre amigable almacenado para el usuario.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `supabase`
+
+### Archivos Modificados
+- `[MODIFY] src/lib/utils.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-17] Centrado de Subtítulo y Fondo Blanco en Hojas de Puntos de Muestreo (PDF Ruido e Iluminación)
+
+### Resumen de Cambios
+- **Generador de PDF de Iluminación (`iluminacion/utils/pdfGenerator.js`):**
+  - Se añadió la propiedad `align: 'center'` a la llamada `drawCellText` del título `Puntos de muestreo` en las hojas de planos y croquis de medición.
+  - Se estableció el color de fondo a blanco (`COLOR_BLANCO` / `#FFFFFF`).
+- **Generador de PDF de Ruido (`ruido/utils/pdfGenerator.js`):**
+  - Se modificó la caja de subtítulo en las hojas de planos y croquis de medición de puntos de ruido (`planoAdjuntos`).
+  - Se fijó el título del cuadro a `Puntos de muestreo` centrado y con fondo blanco (`COLOR_BLANCO`).
+
+### Decisiones Clave
+- Unificación del estilo y alineación de subtítulos en las hojas de croquis/planos de los protocolos oficializados (Ruido, Iluminación y Puesta a Tierra).
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/utils/pdfGenerator.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/utils/pdfGenerator.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Decisiones Clave
+- Cumplimiento estricto del estándar de formato visual para el reporte oficial del protocolo de ruido.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/utils/pdfGenerator.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
 ## [2026-08-17] Estandarización de Diseño y Funciones del Modal de Envío de Protocolo de Puesta a Tierra
 
 ### Resumen de Cambios

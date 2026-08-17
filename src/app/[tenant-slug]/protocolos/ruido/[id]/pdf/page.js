@@ -3,6 +3,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { printPdfDocument } from '@/lib/pdf/pdfPrintHelper';
 import { generateNoiseProtocolPdf } from '../../utils/pdfGenerator';
 import { Loader2 } from 'lucide-react';
 
@@ -71,9 +72,7 @@ export default function ProtocoloRuidoPdfPage({ params }) {
           userProf
         );
 
-        doc.autoPrint();
-        const blobUrl = doc.output('bloburl');
-        window.location.replace(blobUrl);
+        printPdfDocument(doc, window, `Protocolo Ruido - ${proto.razon_social_text || 'Reporte'}`);
       } catch (err) {
         console.error(err);
         setError('Ocurrió un error al intentar generar la visualización del PDF.');

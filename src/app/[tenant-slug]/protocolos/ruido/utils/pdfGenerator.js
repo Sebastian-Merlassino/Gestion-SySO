@@ -1253,11 +1253,11 @@ export const generateNoiseProtocolPdf = async (
     doc.setLineWidth(0.45);
     setDrawColor(doc, COLOR_NEGRO);
     doc.rect(kX, kY, kW, 6, 'S');
-    setFillColor(doc, COLOR_SLATE_200);
+    setFillColor(doc, COLOR_BLANCO);
     doc.rect(kX, kY, kW, 6, 'FD');
     
-    const planoTitle = rawAdj.descripcion || rawAdj.nombre_archivo || rawAdj.nombre || `PLANO O CROQUIS DE MEDICIÓN (${cIdx + 1} de ${planoAdjuntos.length})`;
-    drawCellText(doc, planoTitle.toUpperCase(), kX, kY, kW, 6, { fontStyle: 'bold', fontSize: 9, align: 'center', color: COLOR_NEGRO });
+    const planoTitle = 'Puntos de muestreo';
+    drawCellText(doc, planoTitle, kX, kY, kW, 6, { fontStyle: 'bold', fontSize: 9, align: 'center', color: COLOR_NEGRO });
 
     const mY = 37;
     const mH = 150;

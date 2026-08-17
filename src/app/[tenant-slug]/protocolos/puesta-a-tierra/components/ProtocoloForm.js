@@ -45,7 +45,7 @@ import {
   Save,
   Camera
 } from 'lucide-react';
-import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
+import { formatDate, formatAsDateInput, convertToDbDate, sanitizeFileName } from '@/lib/utils';
 
 const CONDICION_TERRENO_OPTS = [
   'Lecho seco',
@@ -312,12 +312,6 @@ export default function ProtocoloForm({
     }
     setHasSignedProf(false);
     setFirmaProfSavedUrl('');
-  };
-
-  const sanitizeFileName = (name) => {
-    if (!name) return 'archivo';
-    const normalized = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    return normalized.replace(/[^a-zA-Z0-9._-]/g, '_').replace(/_+/g, '_');
   };
 
   // Upload attachment file
@@ -1304,11 +1298,12 @@ export default function ProtocoloForm({
           const bakedDataUrl = await bakeImageWithMarkers(resolvedUrl, ad.markers);
           if (bakedDataUrl) {
             const cleanName = ad.name || ad.nombre_archivo || `foto_${Date.now()}.jpg`;
+            const safeName = sanitizeFileName(cleanName);
             const blob = dataURLtoBlob(bakedDataUrl);
-            const file = new File([blob], `baked_${Date.now()}_${cleanName.replace(/\s+/g, '_')}`, { type: 'image/jpeg' });
+            const file = new File([blob], `baked_${Date.now()}_${safeName}`, { type: 'image/jpeg' });
             
             const uuid = editingId || protoId;
-            const filename = `${user.id}/${uuid}/adjuntos/${Date.now()}_baked_${cleanName.replace(/\s+/g, '_')}`;
+            const filename = `${user.id}/${uuid}/adjuntos/${Date.now()}_baked_${safeName}`;
             const { error: uploadErr } = await supabase.storage
               .from('protocolos-puesta-a-tierra')
               .upload(filename, file, { cacheControl: '3600', upsert: true });

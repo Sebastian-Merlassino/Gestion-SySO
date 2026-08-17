@@ -5,6 +5,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
+import { printPdfDocument } from '@/lib/pdf/pdfPrintHelper';
 import { useToast } from '@/components/providers/ToastProvider';
 import AppPageHeader from '@/components/ui/AppPageHeader';
 import AppButton from '@/components/ui/AppButton';
@@ -1190,6 +1191,10 @@ export default function ChecklistPersonalizadosPage({ params }) {
   };
 
   const handleExportPdfReport = async (c, shouldPrint = false, shouldDownload = true) => {
+    let printWindow = null;
+    if (shouldPrint) {
+      printWindow = window.open('', '_blank');
+    }
     try {
       triggerToast('Generando reporte PDF...', 'info');
 
@@ -1593,11 +1598,14 @@ export default function ChecklistPersonalizadosPage({ params }) {
         triggerToast('PDF descargado exitosamente.');
       }
       if (shouldPrint) {
-        window.open(doc.output('bloburl'), '_blank');
-        triggerToast('Vista previa abierta.');
+        printPdfDocument(doc, printWindow, `Checklist - ${tmpl?.nombre || 'Inspección'}`);
+        triggerToast('Ventana de impresión abierta.');
       }
       return doc;
     } catch (e) {
+      if (printWindow && !printWindow.closed) {
+        printWindow.close();
+      }
       console.error(e);
       triggerToast('Error al generar el reporte PDF.', 'error');
     }

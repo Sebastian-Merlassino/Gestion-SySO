@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
+import { printPdfDocument } from '@/lib/pdf/pdfPrintHelper';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import { useToast } from '@/components/providers/ToastProvider';
 import AppPageHeader from '@/components/ui/AppPageHeader';
@@ -664,6 +665,10 @@ export default function AccionesCorrectivasPage({ params }) {
   };
 
   const handleExportPdfReport = async (shouldPrint = false) => {
+    let printWindow = null;
+    if (shouldPrint) {
+      printWindow = window.open('', '_blank');
+    }
     try {
       triggerToast('Generando reporte PDF con imágenes...', 'info');
 
@@ -907,13 +912,14 @@ export default function AccionesCorrectivasPage({ params }) {
       });
 
       if (shouldPrint) {
-        doc.autoPrint();
-        const blobUrl = doc.output('bloburl');
-        window.open(blobUrl, '_blank');
+        printPdfDocument(doc, printWindow, 'Acciones Correctivas');
       } else {
         doc.save(`Acciones_Correctivas_${new Date().getFullYear()}.pdf`);
       }
     } catch (e) {
+      if (printWindow && !printWindow.closed) {
+        printWindow.close();
+      }
       console.error('Error generating PDF:', e);
     }
   };

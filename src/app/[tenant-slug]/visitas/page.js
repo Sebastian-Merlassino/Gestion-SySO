@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
+import { printPdfDocument } from '@/lib/pdf/pdfPrintHelper';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import AITextHelper from '@/components/ui/AITextHelper';
 import { useToast } from '@/components/providers/ToastProvider';
@@ -1573,13 +1574,19 @@ export default function VisitasPage({ params }) {
 
   // Previsualizar PDF en nueva pestaña sin descargar
   const handlePreviewPdf = async (v) => {
+    const printWindow = window.open('', '_blank');
     try {
       const blobUrl = await handleGeneratePdf(v, 'bloburl');
       if (blobUrl) {
-        window.open(blobUrl, '_blank');
-        triggerToast('Vista previa abierta.');
+        printPdfDocument(blobUrl, printWindow, 'Constancia de Visita');
+        triggerToast('Ventana de impresión abierta.');
+      } else if (printWindow && !printWindow.closed) {
+        printWindow.close();
       }
     } catch (e) {
+      if (printWindow && !printWindow.closed) {
+        printWindow.close();
+      }
       console.error('Error al abrir la vista previa:', e);
       triggerToast('Error al generar el reporte PDF.', 'error');
     }

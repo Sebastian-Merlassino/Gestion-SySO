@@ -23,6 +23,7 @@ import AppSkeleton from '@/components/ui/AppSkeleton';
 import AppTooltip from '@/components/ui/AppTooltip';
 import AppLoadingSpinner from '@/components/ui/AppLoadingSpinner';
 import { generateErgonomyProtocolPdf } from './utils/pdfGenerator';
+import { printPdfDocument } from '@/lib/pdf/pdfPrintHelper';
 import { 
   PlusCircle, 
   Search, 
@@ -432,21 +433,7 @@ export default function ProtocolosErgonomiaPage({ params }) {
       if (!doc) throw new Error('No se pudo generar el reporte PDF.');
 
       if (shouldPrint) {
-        doc.autoPrint();
-        const pdfBlob = doc.output('blob');
-        const blobUrl = URL.createObjectURL(pdfBlob);
-
-        if (printWindow && !printWindow.closed) {
-          printWindow.location.href = blobUrl;
-        } else {
-          const win = window.open(blobUrl, '_blank');
-          const safeName = (protoItem.razon_social_text || 'Ergonomia').replace(/\s+/g, '_');
-          const safeDate = protoItem.fecha_medicion || 'reciente';
-          if (!win) {
-            doc.save(`Protocolo_Ergonomia_${safeName}_${safeDate}.pdf`);
-            globalToast.toast('Se descargó el PDF directamente.', 'warning');
-          }
-        }
+        printPdfDocument(doc, printWindow, `Protocolo de Ergonomía - ${protoItem.razon_social_text || 'Reporte'}`);
         globalToast.toast('Ventana de impresión abierta.', 'success');
       } else {
         const safeName = (protoItem.razon_social_text || 'Ergonomia').replace(/\s+/g, '_');

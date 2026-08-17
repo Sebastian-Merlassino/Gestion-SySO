@@ -196,4 +196,16 @@ export function hasFeatureAccess(tenant, sectionId) {
   return features.includes(sectionId);
 }
 
+/**
+ * Normaliza y sanitiza nombres de archivos para almacenamiento en Supabase Storage / S3.
+ * Elimina acentos, caracteres especiales, paréntesis y espacios, dejando solo caracteres ASCII seguros.
+ * @param {string} name - Nombre de archivo original.
+ * @returns {string} - Nombre de archivo sanitizado y seguro para Storage API.
+ */
+export function sanitizeFileName(name) {
+  if (!name || typeof name !== 'string') return 'archivo';
+  const normalized = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return normalized.replace(/[^a-zA-Z0-9._-]/g, '_').replace(/_+/g, '_');
+}
+
 

@@ -19,6 +19,7 @@ import AppSkeleton from '@/components/ui/AppSkeleton';
 import AppTooltip from '@/components/ui/AppTooltip';
 import AppLoadingSpinner from '@/components/ui/AppLoadingSpinner';
 import { generatePuestaATierraPdf } from './utils/pdfGenerator';
+import { printPdfDocument } from '@/lib/pdf/pdfPrintHelper';
 import { 
   PlusCircle, 
   Search, 
@@ -411,21 +412,7 @@ export default function ProtocolosPuestaATierraPage({ params }) {
       if (!pdfDoc) throw new Error('No se pudo generar el reporte PDF.');
 
       if (shouldPrint) {
-        if (typeof pdfDoc.autoPrint === 'function') {
-          pdfDoc.autoPrint();
-        }
-        const pdfBlob = pdfDoc.output('blob');
-        const blobUrl = URL.createObjectURL(pdfBlob);
-
-        if (printWindow && !printWindow.closed) {
-          printWindow.location.href = blobUrl;
-        } else {
-          const win = window.open(blobUrl, '_blank');
-          if (!win) {
-            pdfDoc.save(`Protocolo_Puesta_A_Tierra_${(protoItem.razon_social_text || 'Cliente').replace(/\s+/g, '_')}_${protoItem.fecha_medicion || '2026'}.pdf`);
-            globalToast.toast('Se descargó el PDF directamente.', 'warning');
-          }
-        }
+        printPdfDocument(pdfDoc, printWindow, `Protocolo Puesta a Tierra - ${protoItem.razon_social_text || 'Reporte'}`);
         globalToast.toast('Ventana de impresión abierta.', 'success');
       } else {
         pdfDoc.save(`Protocolo_Puesta_A_Tierra_${(protoItem.razon_social_text || 'Cliente').replace(/\s+/g, '_')}_${protoItem.fecha_medicion || '2026'}.pdf`);

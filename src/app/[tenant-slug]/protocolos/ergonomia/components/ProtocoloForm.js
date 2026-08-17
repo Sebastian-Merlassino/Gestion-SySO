@@ -43,7 +43,7 @@ import {
   PenTool,
   RotateCcw
 } from 'lucide-react';
-import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
+import { formatDate, formatAsDateInput, convertToDbDate, sanitizeFileName } from '@/lib/utils';
 import Resolucion886Modal from './Resolucion886Modal';
 
 export const CUESTIONARIOS_PLANILLA2 = {
@@ -1929,11 +1929,12 @@ export default function ProtocoloForm({
           const bakedDataUrl = await bakeImageWithMarkers(resolvedUrl, ad.markers);
           if (bakedDataUrl) {
             const cleanName = ad.name || `foto_${Date.now()}.jpg`;
+            const safeName = sanitizeFileName(cleanName);
             const blob = dataURLtoBlob(bakedDataUrl);
-            const file = new File([blob], `baked_${Date.now()}_${cleanName.replace(/\s+/g, '_')}`, { type: 'image/jpeg' });
+            const file = new File([blob], `baked_${Date.now()}_${safeName}`, { type: 'image/jpeg' });
             
             const uuid = editingId || tempId;
-            const filename = `${userId}/${uuid}/adjuntos/${Date.now()}_baked_${cleanName.replace(/\s+/g, '_')}`;
+            const filename = `${userId}/${uuid}/adjuntos/${Date.now()}_baked_${safeName}`;
             const { error: uploadErr } = await supabase.storage
               .from('protocolos-ergonomia')
               .upload(filename, file, { cacheControl: '3600', upsert: true });

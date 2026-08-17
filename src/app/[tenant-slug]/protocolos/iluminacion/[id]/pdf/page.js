@@ -3,6 +3,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { printPdfDocument } from '@/lib/pdf/pdfPrintHelper';
 import { generateLightingProtocolPdf } from '../../utils/pdfGenerator';
 import { Loader2 } from 'lucide-react';
 
@@ -78,10 +79,7 @@ export default function ProtocoloPdfPage({ params }) {
           userProf
         );
 
-        // 7. Auto-print and open native viewer
-        doc.autoPrint();
-        const blobUrl = doc.output('bloburl');
-        window.location.replace(blobUrl);
+        printPdfDocument(doc, window, `Protocolo Iluminación - ${proto.razon_social_text || 'Reporte'}`);
       } catch (err) {
         console.error(err);
         setError('Ocurrió un error al intentar generar la visualización del PDF.');

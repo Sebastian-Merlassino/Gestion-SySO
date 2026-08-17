@@ -23,6 +23,7 @@ import AppSkeleton from '@/components/ui/AppSkeleton';
 import AppTooltip from '@/components/ui/AppTooltip';
 import AppLoadingSpinner from '@/components/ui/AppLoadingSpinner';
 import { generateLightingProtocolPdf } from './utils/pdfGenerator';
+import { printPdfDocument } from '@/lib/pdf/pdfPrintHelper';
 import { 
   PlusCircle, 
   Search, 
@@ -440,19 +441,7 @@ export default function ProtocolosIluminacionPage({ params }) {
       if (!doc) throw new Error('No se pudo generar el reporte PDF.');
 
       if (shouldPrint) {
-        doc.autoPrint();
-        const pdfBlob = doc.output('blob');
-        const blobUrl = URL.createObjectURL(pdfBlob);
-
-        if (printWindow && !printWindow.closed) {
-          printWindow.location.href = blobUrl;
-        } else {
-          const win = window.open(blobUrl, '_blank');
-          if (!win) {
-            doc.save(`Protocolo_Iluminacion_${protoItem.razon_social_text.replace(/\s+/g, '_')}_${protoItem.fecha_medicion}.pdf`);
-            globalToast.toast('Se descargó el PDF directamente.', 'warning');
-          }
-        }
+        printPdfDocument(doc, printWindow, `Protocolo de Iluminación - ${protoItem.razon_social_text || 'Reporte'}`);
         globalToast.toast('Ventana de impresión abierta.', 'success');
       } else {
         doc.save(`Protocolo_Iluminacion_${protoItem.razon_social_text.replace(/\s+/g, '_')}_${protoItem.fecha_medicion}.pdf`);

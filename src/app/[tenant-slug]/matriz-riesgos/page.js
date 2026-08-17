@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
+import { printPdfDocument } from '@/lib/pdf/pdfPrintHelper';
 import * as XLSX from 'xlsx';
 import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
 import AITextHelper from '@/components/ui/AITextHelper';
@@ -715,6 +716,10 @@ export default function MatrizRiesgosPage({ params }) {
   };
 
   const handleExportPdfReport = async (shouldPrint = false) => {
+    let printWindow = null;
+    if (shouldPrint) {
+      printWindow = window.open('', '_blank');
+    }
     try {
       const { jsPDF } = await import('jspdf');
       const { default: autoTable } = await import('jspdf-autotable');
@@ -878,13 +883,14 @@ export default function MatrizRiesgosPage({ params }) {
       });
 
       if (shouldPrint) {
-        doc.autoPrint();
-        const blobUrl = doc.output('bloburl');
-        window.open(blobUrl, '_blank');
+        printPdfDocument(doc, printWindow, 'Matriz de Riesgos');
       } else {
         doc.save(`Matriz_Riesgos_${new Date().getFullYear()}.pdf`);
       }
     } catch (e) {
+      if (printWindow && !printWindow.closed) {
+        printWindow.close();
+      }
       console.error('Error generating PDF:', e);
     }
   };

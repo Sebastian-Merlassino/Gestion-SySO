@@ -882,6 +882,7 @@ export default function CapacitacionesOnlinePage({ params }) {
   // Abrir e Imprimir PDF
   const handlePrintPdf = async (item, e) => {
     e?.stopPropagation();
+    const printWindow = window.open('', '_blank');
     globalToast.toast('Generando registro para imprimir...', 'info');
     try {
       const { data: registrosData } = await supabase
@@ -902,11 +903,15 @@ export default function CapacitacionesOnlinePage({ params }) {
         profile: profile,
         adminProfile: adminProf,
         supabase: supabase,
-        action: 'print'
+        action: 'print',
+        printWindow
       });
 
       globalToast.toast('Registro PDF abierto para imprimir.', 'success');
     } catch (err) {
+      if (printWindow && !printWindow.closed) {
+        printWindow.close();
+      }
       console.error('Error al abrir PDF de capacitación:', err);
       globalToast.toast('No se pudo abrir el registro PDF.', 'error');
     }

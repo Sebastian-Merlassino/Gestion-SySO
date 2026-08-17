@@ -43,7 +43,7 @@ import {
   PenTool,
   RotateCcw
 } from 'lucide-react';
-import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
+import { formatDate, formatAsDateInput, convertToDbDate, sanitizeFileName } from '@/lib/utils';
 import { TABLA_2_ILUMINACION } from '../utils/tablasAnexoIV';
 import Tabla1Modal from './Tabla1Modal';
 import MetodoCuadriculaModal from './MetodoCuadriculaModal';
@@ -1178,9 +1178,9 @@ Mejorar la distribución de la iluminación, procurando alcanzar una adecuada un
       if (!userId && !isDevMode) throw new Error('Usuario no autenticado.');
       if (!userId && isDevMode) userId = 'dev-user';
 
-      const fileExt = file.name.split('.').pop();
       const uuid = editingId || crypto.randomUUID();
-      const filename = `${userId}/${uuid}/adjuntos/${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
+      const safeName = sanitizeFileName(file.name);
+      const filename = `${userId}/${uuid}/adjuntos/${Date.now()}_${safeName}`;
 
       // Upload to private bucket
       const { error } = await supabase.storage
@@ -1714,11 +1714,12 @@ Mejorar la distribución de la iluminación, procurando alcanzar una adecuada un
           const bakedDataUrl = await bakeImageWithMarkers(resolvedUrl, ad.markers);
           if (bakedDataUrl) {
             const cleanName = ad.name || `foto_${Date.now()}.jpg`;
+            const safeName = sanitizeFileName(cleanName);
             const blob = dataURLtoBlob(bakedDataUrl);
-            const file = new File([blob], `baked_${Date.now()}_${cleanName.replace(/\s+/g, '_')}`, { type: 'image/jpeg' });
+            const file = new File([blob], `baked_${Date.now()}_${safeName}`, { type: 'image/jpeg' });
             
             const uuid = editingId || tempId;
-            const filename = `${userId}/${uuid}/adjuntos/${Date.now()}_baked_${cleanName.replace(/\s+/g, '_')}`;
+            const filename = `${userId}/${uuid}/adjuntos/${Date.now()}_baked_${safeName}`;
             const { error: uploadErr } = await supabase.storage
               .from('protocolos-iluminacion')
               .upload(filename, file, { cacheControl: '3600', upsert: true });

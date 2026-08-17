@@ -23,6 +23,7 @@ import AppSkeleton from '@/components/ui/AppSkeleton';
 import AppTooltip from '@/components/ui/AppTooltip';
 import AppLoadingSpinner from '@/components/ui/AppLoadingSpinner';
 import { formatPdfFileName } from '@/lib/pdf/pdfFileName';
+import { printPdfDocument } from '@/lib/pdf/pdfPrintHelper';
 import { 
   PlusCircle, 
   Search, 
@@ -1198,6 +1199,10 @@ export default function ControlElectricoPage({ params }) {
   };
 
   const handleExportPdfReport = async (c, shouldPrint = false, shouldDownload = true) => {
+    let printWindow = null;
+    if (shouldPrint) {
+      printWindow = window.open('', '_blank');
+    }
     try {
       triggerToast('Generando reporte PDF...', 'info');
 
@@ -1655,10 +1660,8 @@ export default function ControlElectricoPage({ params }) {
 
       // Acciones de salida
       if (shouldPrint) {
-        doc.autoPrint();
-        const blobUrl = doc.output('bloburl');
-        window.open(blobUrl, '_blank');
-        triggerToast('Vista previa abierta.');
+        printPdfDocument(doc, printWindow, 'Control Eléctrico');
+        triggerToast('Ventana de impresión abierta.');
       } else if (shouldDownload) {
         const fileName = formatPdfFileName({
           modulo: 'control-electrico',
@@ -1673,6 +1676,9 @@ export default function ControlElectricoPage({ params }) {
         return doc;
       }
     } catch (e) {
+      if (printWindow && !printWindow.closed) {
+        printWindow.close();
+      }
       console.error('Error al generar PDF:', e);
       triggerToast('Error al generar el reporte PDF.', 'error');
     }

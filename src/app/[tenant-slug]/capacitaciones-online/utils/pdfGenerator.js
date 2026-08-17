@@ -2,6 +2,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { formatDate } from '@/lib/utils';
+import { printPdfDocument } from '@/lib/pdf/pdfPrintHelper';
 import { getBase64ImageFromUrl } from '@/lib/pdf/pdfImages';
 
 function getImageDimensions(base64) {
@@ -22,7 +23,8 @@ export async function generateCapacitacionOnlinePdf({
   profile = null,
   adminProfile = null,
   supabase = null,
-  action = 'download' // 'download' | 'print' | 'open'
+  action = 'download', // 'download' | 'print' | 'open'
+  printWindow = null
 }) {
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -729,7 +731,10 @@ export async function generateCapacitacionOnlinePdf({
     .slice(0, 30);
   const fileName = `registro_capacitacion_${cleanTitle}.pdf`;
 
-  if (action === 'open' || action === 'print') {
+  if (action === 'print') {
+    printPdfDocument(doc, printWindow, `Registro Capacitación - ${capacitacion?.titulo || ''}`);
+    return doc.output('bloburl');
+  } else if (action === 'open') {
     const blobUrl = doc.output('bloburl');
     window.open(blobUrl, '_blank');
     return blobUrl;

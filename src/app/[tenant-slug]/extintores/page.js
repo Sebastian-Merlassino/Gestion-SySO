@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
+import { printPdfDocument } from '@/lib/pdf/pdfPrintHelper';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import { useToast } from '@/components/providers/ToastProvider';
 import AppPageHeader from '@/components/ui/AppPageHeader';
@@ -570,6 +571,10 @@ export default function ExtintoresPage({ params }) {
   };
 
   const handleExportPdfReport = async (shouldPrint = false) => {
+    let printWindow = null;
+    if (shouldPrint) {
+      printWindow = window.open('', '_blank');
+    }
     try {
       triggerToast('Generando reporte PDF...', 'info');
 
@@ -774,15 +779,16 @@ export default function ExtintoresPage({ params }) {
       });
 
       if (shouldPrint) {
-        doc.autoPrint();
-        const blobUrl = doc.output('bloburl');
-        window.open(blobUrl, '_blank');
-        triggerToast('Vista previa abierta.');
+        printPdfDocument(doc, printWindow, 'Control de Extintores');
+        triggerToast('Ventana de impresión abierta.');
       } else {
         doc.save(`Extintores_${new Date().getFullYear()}.pdf`);
         triggerToast('PDF descargado exitosamente.');
       }
     } catch (e) {
+      if (printWindow && !printWindow.closed) {
+        printWindow.close();
+      }
       console.error('Error generating PDF:', e);
       triggerToast('Error al generar el reporte PDF.', 'error');
     }
