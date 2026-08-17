@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import { supabase, fetchAllGeography } from '@/lib/supabase';
-import { formatDate, formatAsDateInput, convertToDbDate, getEffectivePlan, PLAN_FEATURES } from '@/lib/utils';
+import { formatDate, formatAsDateInput, convertToDbDate, getEffectivePlan, PLAN_FEATURES, toValidHexColor } from '@/lib/utils';
 import { useToast } from '@/components/providers/ToastProvider';
 import AppPageHeader from '@/components/ui/AppPageHeader';
 import AppButton from '@/components/ui/AppButton';
@@ -493,12 +493,12 @@ const [partidosList, setPartidosList] = useState([]);
         setTiktok(tenant.social_tiktok || '');
         setYoutube(tenant.social_youtube || '');
         setSocialX(tenant.social_x || '');
-        setPrimaryColor(tenant.primary_color || '#468DFF');
-        setPrimaryColorText(tenant.primary_color_text || '#FFFFFF');
-        setSecondaryColor(tenant.secondary_color || '#0D0D0D');
-        setSecondaryColorText(tenant.secondary_color_text || '#FFFFFF');
-        setHoverColor(tenant.hover_color || '#0511F2');
-        setHoverColorText(tenant.hover_color_text || '#FFFFFF');
+        setPrimaryColor(toValidHexColor(tenant.primary_color, '#468DFF'));
+        setPrimaryColorText(toValidHexColor(tenant.primary_color_text, '#FFFFFF'));
+        setSecondaryColor(toValidHexColor(tenant.secondary_color, '#0D0D0D'));
+        setSecondaryColorText(toValidHexColor(tenant.secondary_color_text, '#FFFFFF'));
+        setHoverColor(toValidHexColor(tenant.hover_color, '#0511F2'));
+        setHoverColorText(toValidHexColor(tenant.hover_color_text, '#FFFFFF'));
 
         // Guardar valores iniciales para dirty checking
         setInitialValues({
@@ -525,12 +525,12 @@ const [partidosList, setPartidosList] = useState([]);
           youtube: tenant.social_youtube || '',
           socialX: tenant.social_x || '',
           planId: tenant.plan_id || 'free',
-          primaryColor: tenant.primary_color || '#468DFF',
-          primaryColorText: tenant.primary_color_text || '#FFFFFF',
-          secondaryColor: tenant.secondary_color || '#0D0D0D',
-          secondaryColorText: tenant.secondary_color_text || '#FFFFFF',
-          hoverColor: tenant.hover_color || '#0511F2',
-          hoverColorText: tenant.hover_color_text || '#FFFFFF'
+          primaryColor: toValidHexColor(tenant.primary_color, '#468DFF'),
+          primaryColorText: toValidHexColor(tenant.primary_color_text, '#FFFFFF'),
+          secondaryColor: toValidHexColor(tenant.secondary_color, '#0D0D0D'),
+          secondaryColorText: toValidHexColor(tenant.secondary_color_text, '#FFFFFF'),
+          hoverColor: toValidHexColor(tenant.hover_color, '#0511F2'),
+          hoverColorText: toValidHexColor(tenant.hover_color_text, '#FFFFFF')
         });
 
         setInitialLoading(false);
@@ -611,8 +611,10 @@ const [partidosList, setPartidosList] = useState([]);
     const file = fileOrEvent?.target ? fileOrEvent.target.files[0] : fileOrEvent;
     if (!file) return;
 
-    if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
-      triggerToast('Por favor, selecciona una imagen en formato JPG o PNG.', 'error');
+    const fileType = (file.type || '').toLowerCase();
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+    if (!validTypes.includes(fileType)) {
+      triggerToast('Por favor, selecciona una imagen en formato JPG, PNG, WEBP o GIF.', 'error');
       return;
     }
 
@@ -625,7 +627,9 @@ const [partidosList, setPartidosList] = useState([]);
     setFile(file);
     const reader = new FileReader();
     reader.onloadend = () => {
-      setPreview(reader.result);
+      if (reader.result) {
+        setPreview(reader.result);
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -797,8 +801,8 @@ const [partidosList, setPartidosList] = useState([]);
 
       // Subir firma y logos
       let signatureUrl = signaturePath || '';
-      let logo1Url = tenantData?.logo_1_url || '';
-      let logo2Url = tenantData?.logo_2_url || '';
+      let logo1Url = logo1Preview || tenantData?.logo_1_url || '';
+      let logo2Url = logo2Preview || tenantData?.logo_2_url || '';
 
       const uploadPromises = [];
       const uploadKeys = [];
@@ -837,29 +841,47 @@ const [partidosList, setPartidosList] = useState([]);
 
       // 2. Actualizar Tenant
       if (tenantId && profileData?.role === 'admin') {
+        const tenantUpdatePayload = {
+          name: companyName || `${fullName} Consultora`,
+          logo_1_url: logo1Url,
+          logo_2_url: logo2Url,
+          website: website || null,
+          social_linkedin: linkedin || null,
+          social_instagram: instagram || null,
+          social_facebook: facebook || null,
+          social_tiktok: tiktok || null,
+          social_youtube: youtube || null,
+          social_x: socialX || null,
+          primary_color: primaryColor || '#468DFF',
+          primary_color_text: primaryColorText || '#FFFFFF',
+          secondary_color: secondaryColor || '#0D0D0D',
+          secondary_color_text: secondaryColorText || '#FFFFFF',
+          hover_color: hoverColor || '#0511F2',
+          hover_color_text: hoverColorText || '#FFFFFF',
+        };
+
         const { error: tenantErr } = await supabase
           .from('tenants')
-          .update({
-            name: companyName || `${fullName} Consultora`,
-            logo_1_url: logo1Url,
-            logo_2_url: logo2Url,
-            website: website || null,
-            social_linkedin: linkedin || null,
-            social_instagram: instagram || null,
-            social_facebook: facebook || null,
-            social_tiktok: tiktok || null,
-            social_youtube: youtube || null,
-            social_x: socialX || null,
-            primary_color: primaryColor || '#468DFF',
-            primary_color_text: primaryColorText || '#FFFFFF',
-            secondary_color: secondaryColor || '#0D0D0D',
-            secondary_color_text: secondaryColorText || '#FFFFFF',
-            hover_color: hoverColor || '#0511F2',
-            hover_color_text: hoverColorText || '#FFFFFF',
-          })
+          .update(tenantUpdatePayload)
           .eq('id', tenantId);
 
         if (tenantErr) throw tenantErr;
+
+        // Actualizar el estado local de tenantData para no perder los datos frescos en subsecuentes guardados
+        setTenantData(prev => ({
+          ...(prev || {}),
+          ...tenantUpdatePayload
+        }));
+
+        // Actualizar la caché de sessionStorage para Sidebar y la app
+        if (typeof window !== 'undefined' && tenantSlug) {
+          const cached = sessionStorage.getItem(`tenant-data-${tenantSlug}`);
+          const parsed = cached ? JSON.parse(cached) : {};
+          sessionStorage.setItem(`tenant-data-${tenantSlug}`, JSON.stringify({
+            ...parsed,
+            ...tenantUpdatePayload
+          }));
+        }
       }
 
       // 3. Actualizar Perfil (Fallback de la primera matrícula para retrocompatibilidad)
@@ -1828,7 +1850,7 @@ const [partidosList, setPartidosList] = useState([]);
                       <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm shrink-0 cursor-pointer">
                         <input
                           type="color"
-                          value={primaryColor}
+                          value={toValidHexColor(primaryColor, '#468DFF')}
                           onChange={(e) => setPrimaryColor(e.target.value.toUpperCase())}
                           disabled={profileData?.role === 'cliente'}
                           className="absolute inset-0 w-full h-full p-0 border-0 scale-[1.5] cursor-pointer disabled:cursor-not-allowed"
@@ -1856,7 +1878,7 @@ const [partidosList, setPartidosList] = useState([]);
                       <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm shrink-0 cursor-pointer">
                         <input
                           type="color"
-                          value={primaryColorText}
+                          value={toValidHexColor(primaryColorText, '#FFFFFF')}
                           onChange={(e) => setPrimaryColorText(e.target.value.toUpperCase())}
                           disabled={profileData?.role === 'cliente'}
                           className="absolute inset-0 w-full h-full p-0 border-0 scale-[1.5] cursor-pointer disabled:cursor-not-allowed"
@@ -1886,7 +1908,7 @@ const [partidosList, setPartidosList] = useState([]);
                       <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm shrink-0 cursor-pointer">
                         <input
                           type="color"
-                          value={secondaryColor}
+                          value={toValidHexColor(secondaryColor, '#0D0D0D')}
                           onChange={(e) => setSecondaryColor(e.target.value.toUpperCase())}
                           disabled={profileData?.role === 'cliente'}
                           className="absolute inset-0 w-full h-full p-0 border-0 scale-[1.5] cursor-pointer disabled:cursor-not-allowed"
@@ -1914,7 +1936,7 @@ const [partidosList, setPartidosList] = useState([]);
                       <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm shrink-0 cursor-pointer">
                         <input
                           type="color"
-                          value={secondaryColorText}
+                          value={toValidHexColor(secondaryColorText, '#FFFFFF')}
                           onChange={(e) => setSecondaryColorText(e.target.value.toUpperCase())}
                           disabled={profileData?.role === 'cliente'}
                           className="absolute inset-0 w-full h-full p-0 border-0 scale-[1.5] cursor-pointer disabled:cursor-not-allowed"
@@ -1944,7 +1966,7 @@ const [partidosList, setPartidosList] = useState([]);
                       <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm shrink-0 cursor-pointer">
                         <input
                           type="color"
-                          value={hoverColor}
+                          value={toValidHexColor(hoverColor, '#0511F2')}
                           onChange={(e) => setHoverColor(e.target.value.toUpperCase())}
                           disabled={profileData?.role === 'cliente'}
                           className="absolute inset-0 w-full h-full p-0 border-0 scale-[1.5] cursor-pointer disabled:cursor-not-allowed"
@@ -1972,7 +1994,7 @@ const [partidosList, setPartidosList] = useState([]);
                       <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm shrink-0 cursor-pointer">
                         <input
                           type="color"
-                          value={hoverColorText}
+                          value={toValidHexColor(hoverColorText, '#FFFFFF')}
                           onChange={(e) => setHoverColorText(e.target.value.toUpperCase())}
                           disabled={profileData?.role === 'cliente'}
                           className="absolute inset-0 w-full h-full p-0 border-0 scale-[1.5] cursor-pointer disabled:cursor-not-allowed"

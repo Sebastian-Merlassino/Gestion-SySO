@@ -528,8 +528,10 @@ export default function EquipoPage({ params }) {
     const file = fileOrEvent?.target ? fileOrEvent.target.files[0] : fileOrEvent;
     if (!file) return;
 
-    if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
-      triggerToast('Por favor, selecciona una imagen en formato JPG o PNG.', 'error');
+    const fileType = (file.type || '').toLowerCase();
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+    if (!validTypes.includes(fileType)) {
+      triggerToast('Por favor, selecciona una imagen en formato JPG, PNG, WEBP o GIF.', 'error');
       return;
     }
 
@@ -542,7 +544,9 @@ export default function EquipoPage({ params }) {
     setFile(file);
     const reader = new FileReader();
     reader.onloadend = () => {
-      setPreview(reader.result);
+      if (reader.result) {
+        setPreview(reader.result);
+      }
     };
     reader.readAsDataURL(file);
   };

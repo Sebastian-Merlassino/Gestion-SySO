@@ -1,4 +1,38 @@
-# Bitácora de Desarrollo - Gestión SySO
+## [2026-08-17] Corrección de Sincronización de Logos y Validación de Colores HEX en Perfil
+
+### Resumen de Cambios
+- **Diagnóstico del Problema:**
+  - Al editar el perfil de usuario o cambiar los colores de la marca, los logos cargados se revertían automáticamente al logo anterior guardado.
+  - Esto se debía a dos factores:
+    1. Un error DOM en `<input type="color">` por valores CSS de color con formato incompleto (ej. `#0D0D0` de 5 dígitos hex en lugar de `#0D0D0D` de 6 dígitos), interrumpiendo el ciclo de renderizado de React y descartando los estados temporales.
+    2. La falta de actualización del estado local `tenantData` y la caché `sessionStorage` tras guardar los cambios del tenant. En un guardado posterior (ej. al cambiar un color), al no haberse seleccionado un nuevo archivo de logo, el código leía la URL del logo de la variable obsoleta `tenantData.logo_1_url`, sobrescribiendo Supabase con la imagen vieja.
+- **Sanitización de Colores HEX (`src/lib/utils.js`):**
+  - Se implementó la función `toValidHexColor(val, fallback)` para validar y garantizar que los elementos `<input type="color">` reciban únicamente valores `#RRGGBB` de 7 caracteres válidos.
+- **Sincronización en `ProfilePage` (`src/app/[tenant-slug]/profile/page.js`):**
+  - Se envolvieron los valores de los selectores de color con `toValidHexColor`.
+  - Se modificó la inicialización de `logo1Url` y `logo2Url` en `handleSaveChanges` para priorizar las vistas previas actuales (`logo1Preview` / `logo2Preview`).
+  - Se agregaron las llamadas para actualizar `setTenantData` y la caché `sessionStorage` (`tenant-data-${tenantSlug}`) inmediatamente después de persistir en Supabase.
+- **Normalización Preventiva en Otros Módulos:**
+  - Se replicaron las protecciones en `src/app/onboarding/page.js` y `src/app/[tenant-slug]/equipo/page.js`.
+
+### Decisiones Clave
+- Asegurar que la sincronización del estado de React y la caché local sea atómica tras cada mutación exitosa en Supabase, impidiendo discrepancias entre la base de datos y la interfaz de usuario.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+
+### Archivos Modificados
+- `[MODIFY] src/lib/utils.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] src/app/onboarding/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Verificación del renderizado sin errores en consola nativos.
+- Compilación completa exitosa de producción mediante `npm run build` (`✓ Compiled successfully`).
+
+---
 
 ## [2026-08-17] Solución Integral de Impresión de PDF en Tablas (Pop-up de Impresión Nativo)
 

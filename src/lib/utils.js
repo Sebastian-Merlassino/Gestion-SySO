@@ -208,4 +208,19 @@ export function sanitizeFileName(name) {
   return normalized.replace(/[^a-zA-Z0-9._-]/g, '_').replace(/_+/g, '_');
 }
 
+/**
+ * Normaliza y valida un color en formato HEX de 7 caracteres (#RRGGBB).
+ * Si el formato no es válido o está truncado, retorna el valor por defecto seguro.
+ * @param {string} val - Color de entrada.
+ * @param {string} fallback - Color por defecto.
+ * @returns {string} - Color en formato #RRGGBB válido.
+ */
+export function toValidHexColor(val, fallback = '#000000') {
+  if (!val || typeof val !== 'string') return fallback;
+  let clean = val.trim();
+  if (!clean.startsWith('#')) clean = `#${clean}`;
+  if (/^#[0-9A-F]{6}$/i.test(clean)) return clean.toUpperCase();
+  return fallback;
+}
+
 

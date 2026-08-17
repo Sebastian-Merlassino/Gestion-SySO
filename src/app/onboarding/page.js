@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import { supabase, fetchAllGeography } from '@/lib/supabase';
-import { formatDate, formatAsDateInput, convertToDbDate, getEffectivePlan, PLAN_FEATURES } from '@/lib/utils';
+import { formatDate, formatAsDateInput, convertToDbDate, getEffectivePlan, PLAN_FEATURES, toValidHexColor } from '@/lib/utils';
 import AppCard from '@/components/ui/AppCard';
 import AppInput from '@/components/ui/AppInput';
 import AppSelect from '@/components/ui/AppSelect';
@@ -375,8 +375,10 @@ export default function OnboardingPage() {
     const file = fileOrEvent?.target ? fileOrEvent.target.files[0] : fileOrEvent;
     if (!file) return;
 
-    if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
-      triggerToast('Por favor, selecciona una imagen en formato JPG o PNG.', 'error');
+    const fileType = (file.type || '').toLowerCase();
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+    if (!validTypes.includes(fileType)) {
+      triggerToast('Por favor, selecciona una imagen en formato JPG, PNG, WEBP o GIF.', 'error');
       return;
     }
 
@@ -389,7 +391,9 @@ export default function OnboardingPage() {
     setFile(file);
     const reader = new FileReader();
     reader.onloadend = () => {
-      setPreview(reader.result);
+      if (reader.result) {
+        setPreview(reader.result);
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -1531,7 +1535,7 @@ export default function OnboardingPage() {
                       <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm shrink-0 cursor-pointer">
                         <input
                           type="color"
-                          value={primaryColor}
+                          value={toValidHexColor(primaryColor, '#468DFF')}
                           onChange={(e) => setPrimaryColor(e.target.value.toUpperCase())}
                           disabled={loading}
                           className="absolute inset-0 w-full h-full p-0 border-0 scale-[1.5] cursor-pointer disabled:cursor-not-allowed"
@@ -1559,7 +1563,7 @@ export default function OnboardingPage() {
                       <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm shrink-0 cursor-pointer">
                         <input
                           type="color"
-                          value={primaryColorText}
+                          value={toValidHexColor(primaryColorText, '#FFFFFF')}
                           onChange={(e) => setPrimaryColorText(e.target.value.toUpperCase())}
                           disabled={loading}
                           className="absolute inset-0 w-full h-full p-0 border-0 scale-[1.5] cursor-pointer disabled:cursor-not-allowed"
@@ -1589,7 +1593,7 @@ export default function OnboardingPage() {
                       <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm shrink-0 cursor-pointer">
                         <input
                           type="color"
-                          value={secondaryColor}
+                          value={toValidHexColor(secondaryColor, '#0D0D0D')}
                           onChange={(e) => setSecondaryColor(e.target.value.toUpperCase())}
                           disabled={loading}
                           className="absolute inset-0 w-full h-full p-0 border-0 scale-[1.5] cursor-pointer disabled:cursor-not-allowed"
@@ -1617,7 +1621,7 @@ export default function OnboardingPage() {
                       <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm shrink-0 cursor-pointer">
                         <input
                           type="color"
-                          value={secondaryColorText}
+                          value={toValidHexColor(secondaryColorText, '#FFFFFF')}
                           onChange={(e) => setSecondaryColorText(e.target.value.toUpperCase())}
                           disabled={loading}
                           className="absolute inset-0 w-full h-full p-0 border-0 scale-[1.5] cursor-pointer disabled:cursor-not-allowed"
@@ -1647,7 +1651,7 @@ export default function OnboardingPage() {
                       <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm shrink-0 cursor-pointer">
                         <input
                           type="color"
-                          value={hoverColor}
+                          value={toValidHexColor(hoverColor, '#0511F2')}
                           onChange={(e) => setHoverColor(e.target.value.toUpperCase())}
                           disabled={loading}
                           className="absolute inset-0 w-full h-full p-0 border-0 scale-[1.5] cursor-pointer disabled:cursor-not-allowed"
@@ -1675,7 +1679,7 @@ export default function OnboardingPage() {
                       <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-slate-200 shadow-sm shrink-0 cursor-pointer">
                         <input
                           type="color"
-                          value={hoverColorText}
+                          value={toValidHexColor(hoverColorText, '#FFFFFF')}
                           onChange={(e) => setHoverColorText(e.target.value.toUpperCase())}
                           disabled={loading}
                           className="absolute inset-0 w-full h-full p-0 border-0 scale-[1.5] cursor-pointer disabled:cursor-not-allowed"
