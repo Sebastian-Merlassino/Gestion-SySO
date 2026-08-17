@@ -941,8 +941,10 @@ export const generatePuestaATierraPdf = async (
     doc.setLineWidth(0.25);
 
     drawCellText(doc, 'Información adicional:', 15, infoY, infoW, 5, { fontStyle: 'bold', fontSize: 8, color: COLOR_NEGRO });
-    const addInfoText = proto.informacion_adicional || 'Se probó disparo de disyuntores. Tipo y corriente de disparo, dentro de parámetros.';
-    drawCellText(doc, addInfoText, 15 + 2, infoY + 5, infoW - 4, 19, { fontSize: 8, valign: 'top', color: COLOR_NEGRO });
+    const addInfoText = (proto.informacion_adicional !== undefined && proto.informacion_adicional !== null && String(proto.informacion_adicional).trim() !== '')
+      ? proto.informacion_adicional
+      : (proto.informacion_adicional === '' ? '' : 'Se probó disparo de disyuntores. Tipo y corriente de disparo, dentro de parámetros.');
+    drawCellText(doc, addInfoText, 15 + 2, infoY + 5.5, infoW - 4, infoH - 6.5, { fontSize: 7.5, valign: 'top', color: COLOR_NEGRO, padding: 0.5 });
 
     // Firma Profesional (Alineada a la derecha)
     drawSignatureBlock(188, infoY, 94, 38);

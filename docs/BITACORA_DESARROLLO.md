@@ -1,6 +1,24 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-17] Corrección y Blindaje de Persistencia de Puntos de Medición en Re-edición (Puesta a Tierra, Ruido e Iluminación)
+## [2026-08-17] Persistencia y Renderizado de Información Adicional en Protocolo y PDF de Puesta a Tierra
+
+### Resumen de Cambios
+- **Migración de Base de Datos:**
+  - Se agregó la columna `informacion_adicional TEXT NULL` a la tabla `public.protocolos_puesta_a_tierra` mediante la migración `20260831000000_add_informacion_adicional_to_protocolo_puesta_a_tierra.sql` y se ejecutó en la base de datos PostgreSQL de Supabase.
+- **Persistencia en Formulario (`ProtocoloForm.js`):**
+  - Se incluyó `informacion_adicional: informacionAdicional || null` en el payload de guardado `payloadProto` (`executeSave`).
+  - Se ajustó `loadData` para asignar el texto guardado de `proto.informacion_adicional` o mantener el valor por defecto si el registro aún no poseía datos.
+- **Renderizado en Reporte PDF (`pdfGenerator.js`):**
+  - Se vinculó `proto.informacion_adicional` al cuadro de "Información adicional:" en las páginas de medición del PDF con ajuste tipográfico de 7.5pt y alineación superior, permitiendo que tanto el texto por defecto como las observaciones personalizadas se impriman con total nitidez.
+- **Compilación de Producción:** Verificada con `npm.cmd run build` generando satisfactoriamente las 23/23 rutas con 0 errores.
+
+### Archivos Modificados
+- `[NEW] supabase/migrations/20260831000000_add_informacion_adicional_to_protocolo_puesta_a_tierra.sql`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/utils/pdfGenerator.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
 
 ### Resumen de Cambios
 - **Carga Directa e Independiente de Adjuntos (`loadData`):**

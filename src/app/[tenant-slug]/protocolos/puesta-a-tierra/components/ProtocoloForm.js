@@ -783,9 +783,9 @@ export default function ProtocoloForm({
           setHoraInicio(proto.hora_inicio || '');
           setHoraFinalizacion(proto.hora_finalizacion || '');
           setObservacionesGenerales(proto.observaciones || '');
-          setDocumentacionAdjunta(proto.documentacion_adjunta || '');
-          setInformacionAdicional(proto.informacion_adicional || '');
-          setConclusiones(proto.conclusiones || '');
+          setDocumentacionAdjunta(proto.documentacion_adjunta || 'Croquis de la instalación eléctrica y ubicación de las tomas de tierra medidas.\nCertificado de calibración del telurímetro utilizado.');
+          setInformacionAdicional(proto.informacion_adicional !== null && proto.informacion_adicional !== undefined ? proto.informacion_adicional : 'Se probó disparo de disyuntores. Tipo y corriente de disparo, dentro de parámetros.');
+          setConclusiones(proto.conclusiones || 'Los valores hallados de la medición de la puesta a tierra cumplen con lo establecido en la Resolución 900/15.');
           setRecomendaciones(proto.recomendaciones || '');
           setEstado(proto.estado || 'borrador');
           setProfesionalNombre(proto.profesional_nombre || '');
@@ -1182,6 +1182,7 @@ export default function ProtocoloForm({
         hora_finalizacion: horaFinalizacion || null,
         observaciones: observacionesGenerales || null,
         documentacion_adjunta: documentacionAdjunta,
+        informacion_adicional: informacionAdicional || null,
         conclusiones: conclusiones || null,
         recomendaciones: recomendaciones || null,
         profesional_nombre: profesionalNombre || null,
