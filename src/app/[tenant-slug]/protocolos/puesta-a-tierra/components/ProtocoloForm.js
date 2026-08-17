@@ -453,7 +453,7 @@ export default function ProtocoloForm({
   const getFormSnapshot = () => JSON.stringify({
     empresaId, establecimientoId, instrumento, fechaCalibracion, metodologia,
     fechaMedicion, horaInicio, horaFinalizacion, observacionesGenerales,
-    conclusiones, recomendaciones, estado, profesionalNombre,
+    documentacionAdjunta, conclusiones, recomendaciones, estado, profesionalNombre,
     profesionalMatricula, firmaTipo, puntosCount: puntos.length, adjuntosCount: adjuntos.length
   });
 
@@ -468,7 +468,7 @@ export default function ProtocoloForm({
   }, [
     mode, isReady, empresaId, establecimientoId, instrumento, fechaCalibracion,
     metodologia, fechaMedicion, horaInicio, horaFinalizacion, observacionesGenerales,
-    conclusiones, recomendaciones, estado, profesionalNombre,
+    documentacionAdjunta, conclusiones, recomendaciones, estado, profesionalNombre,
     profesionalMatricula, firmaTipo, puntos, adjuntos, onDirtyChange
   ]);
 
@@ -1518,6 +1518,7 @@ export default function ProtocoloForm({
               disabled={!canEdit}
               value={observacionesGenerales}
               onChange={setObservacionesGenerales}
+              context="Observaciones sobre la medición de puesta a tierra y continuidad de masas"
             />
           </div>
 
@@ -1529,6 +1530,35 @@ export default function ProtocoloForm({
               value={observacionesGenerales}
               onChange={(e) => setObservacionesGenerales(e.target.value)}
               placeholder="Describa las condiciones de trabajo al momento de la medición..."
+            />
+          </div>
+        </AppCard>
+
+        {/* CARD DOCUMENTACIÓN QUE SE ADJUNTARÁ */}
+        <AppCard className="p-4 sm:p-5 md:p-6 space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-[#468DFF]" />
+              <h2 className="font-outfit text-base font-extrabold text-slate-800">
+                Documentación que se Adjuntará a la Medición
+              </h2>
+            </div>
+            <AITextHelper
+              disabled={!canEdit}
+              value={documentacionAdjunta}
+              onChange={setDocumentacionAdjunta}
+              context="Listado de anexos técnicos y documentación adjunta a la medición de puesta a tierra (Res. SRT 900/15)"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 col-span-full">
+            <AppTextarea
+              id="documentacionAdjunta"
+              disabled={!canEdit}
+              rows={3}
+              value={documentacionAdjunta}
+              onChange={(e) => setDocumentacionAdjunta(e.target.value)}
+              placeholder="Certificado de Calibración.&#10;Plano o Croquis del establecimiento."
             />
           </div>
         </AppCard>

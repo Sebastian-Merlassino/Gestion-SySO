@@ -1,6 +1,19 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-17] Rediseño de Columnas y Formato Oficial en Hoja 4 (Hoja 2 SRT 900/15) del PDF de Puesta a Tierra
+## [2026-08-17] Reincorporación del Contenedor "Documentación que se Adjuntará a la Medición" en Formulario de Puesta a Tierra
+
+### Resumen de Cambios
+- **Reestablecimiento de Sección en Formulario UI:**
+  - Se incorporó la tarjeta visual `<AppCard>` de *Documentación que se Adjuntará a la Medición* en `src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js` ubicada inmediatamente debajo del contenedor de *Observaciones* y previo a la sección de *Datos de la medición*.
+  - Cuenta con asistente de IA y dictado por voz (`<AITextHelper>`) contextualizado en normativa Res. SRT 900/15, y campo de texto multilinea (`<AppTextarea>`) para anexos técnicos como Certificados de Calibración, Croquis o Planos.
+  - Se integró el campo `documentacionAdjunta` dentro del cálculo de instantánea de formulario (`getFormSnapshot`) y en las dependencias de detección de cambios sin guardar (`useEffect`), garantizando persistencia y dirty-checking confiables.
+- **Compilación de Producción:** Verificada con `npm.cmd run build` generando satisfactoriamente las 23/23 rutas con 0 errores.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
 
 ### Resumen de Cambios
 - **Alineación con Plantilla Oficial Res. SRT 900/15 (Formato Vertical A4):**
