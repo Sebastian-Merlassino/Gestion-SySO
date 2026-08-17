@@ -1,6 +1,25 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-17] Persistencia y Renderizado de Información Adicional en Protocolo y PDF de Puesta a Tierra
+## [2026-08-17] Cálculo, Persistencia y Visualización del Resultado en Protocolo de Puesta a Tierra
+
+### Resumen de Cambios
+- **Evaluación y Cálculo Normativo de Puntos (`ProtocoloForm.js`):**
+  - Se implementó `getPuntoCalculos` para evaluar cada toma de tierra individualmente contra la Res. SRT 900/15 (valor medido $\le$ 40 $\Omega$, continuidad permanente, capacidad de carga y desconexión automática).
+  - Se implementó `getResultadoGeneral` para determinar el estado normativo global del protocolo (`Cumple`, `No cumple`, `Parcial`, `Borrador`).
+- **Persistencia en Base de Datos y Actualización de Registros Previos:**
+  - Se integró `resultado_general: getResultadoGeneral()` en el payload de guardado `payloadProto` (`executeSave`).
+  - Se actualizaron los registros existentes en la base de datos PostgreSQL de Supabase evaluando sus puntos de medición.
+- **Tabla de Protocolos y Duplicación (`page.js`):**
+  - La tabla principal ahora refleja de forma fiel el resultado normativo con badges contextuales: verde (`CUMPLE`), rojo (`NO CUMPLE`), ámbar (`PARCIAL`) y gris (`BORRADOR`).
+  - La función de duplicar protocolo preserva `resultado_general` e `informacion_adicional`.
+- **Compilación de Producción:** Verificada con `npm.cmd run build` generando satisfactoriamente las 23/23 rutas con 0 errores.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
 
 ### Resumen de Cambios
 - **Migración de Base de Datos:**

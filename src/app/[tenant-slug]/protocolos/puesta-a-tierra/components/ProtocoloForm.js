@@ -442,6 +442,44 @@ export default function ProtocoloForm({
     }
   };
 
+  // Calcular resultado individual por toma de tierra
+  const getPuntoCalculos = useCallback((p) => {
+    if (!p) return { resultado_punto: 'Sin evaluar' };
+    const valNum = parseFloat(p.valor_medido_ohm);
+    
+    // Normalizar respuestas SI / NO
+    const formatSiNo = (val) => {
+      if (val === true || val === 'SI' || val === 'Si' || val === 'Cumple' || val === 'CUMPLE') return 'SI';
+      if (val === false || val === 'NO' || val === 'No' || val === 'No cumple' || val === 'NO CUMPLE') return 'NO';
+      return val || '';
+    };
+
+    const cOhm = formatSiNo(p.cumple_ohm || (!isNaN(valNum) ? (valNum <= 40 ? 'SI' : 'NO') : ''));
+    const cCont = formatSiNo(p.continuidad_permanente);
+    const cCap = formatSiNo(p.capacidad_carga);
+    const cDesc = formatSiNo(p.desconexion_automatica);
+
+    if (cOhm === 'NO' || cCont === 'NO' || cCap === 'NO' || cDesc === 'NO') {
+      return { resultado_punto: 'No cumple' };
+    }
+
+    if (cOhm === 'SI' || !isNaN(valNum)) {
+      return { resultado_punto: 'Cumple' };
+    }
+
+    return { resultado_punto: 'Sin evaluar' };
+  }, []);
+
+  // Calcular resultado general del protocolo
+  const getResultadoGeneral = useCallback(() => {
+    if (!puntos || puntos.length === 0) return 'Borrador';
+    const calculados = puntos.map(p => getPuntoCalculos(p));
+    if (calculados.some(c => c.resultado_punto === 'No cumple')) return 'No cumple';
+    if (calculados.every(c => c.resultado_punto === 'Cumple')) return 'Cumple';
+    if (calculados.some(c => c.resultado_punto === 'Cumple')) return 'Parcial';
+    return 'Borrador';
+  }, [puntos, getPuntoCalculos]);
+
   // Dirty state tracking & Sync Modal
   const initialSnapshotRef = useRef('');
   const [isReady, setIsReady] = useState(false);
@@ -1185,6 +1223,7 @@ export default function ProtocoloForm({
         informacion_adicional: informacionAdicional || null,
         conclusiones: conclusiones || null,
         recomendaciones: recomendaciones || null,
+        resultado_general: getResultadoGeneral(),
         profesional_nombre: profesionalNombre || null,
         profesional_matricula: profesionalMatricula || null,
         firma_tipo: firmaTipo,
@@ -1981,6 +2020,11 @@ export default function ProtocoloForm({
                 onChange={(e) => setRecomendaciones(e.target.value)}
                 placeholder="Ej: Mantener limpio y libre de óxido las terminales de las jabalinas, independizar descargas..."
               />
+              {getResultadoGeneral() === 'No cumple' && (
+                <span className="text-[10px] text-red-500 font-bold block mt-1">
+                  ⚠️ El resultado general del protocolo es &quot;No cumple&quot;. Es obligatorio completar las Conclusiones y Recomendaciones de adecuación.
+                </span>
+              )}
             </div>
           </div>
         </AppCard>
