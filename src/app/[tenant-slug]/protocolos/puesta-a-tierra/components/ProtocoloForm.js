@@ -849,7 +849,8 @@ export default function ProtocoloForm({
                 name: ad.nombre_archivo || 'Archivo',
                 path: ad.storage_path,
                 preview: prevUrl,
-                originalPath: ad.storage_path
+                originalPath: ad.original_path || ad.storage_path,
+                markers: Array.isArray(ad.markers) ? ad.markers : []
               };
 
               if (ad.tipo && ad.tipo.startsWith('Evidencia Fotográfica Toma N° ')) {
@@ -1210,6 +1211,52 @@ export default function ProtocoloForm({
         .insert(ptsPayload);
       if (ptsErr) throw ptsErr;
 
+      // 4. Procesar y guardar adjuntos (horneando marcadores sobre plano/croquis)
+      setSaveLoading(true);
+
+      const updatedAdjuntos = [...adjuntos];
+      for (let i = 0; i < updatedAdjuntos.length; i++) {
+        const ad = updatedAdjuntos[i];
+        if ((ad.tipo === 'Evidencia Fotográfica Plano' || ad.tipo === 'Foto Plano') && ad.markers && ad.markers.length > 0) {
+          let resolvedUrl = ad.originalPath || ad.path;
+          if (!resolvedUrl.startsWith('http') && !resolvedUrl.startsWith('data:')) {
+            const { data } = await supabase.storage
+              .from('protocolos-puesta-a-tierra')
+              .createSignedUrl(resolvedUrl, 3600);
+            if (data?.signedUrl) {
+              resolvedUrl = data.signedUrl;
+            }
+          }
+
+          const bakedDataUrl = await bakeImageWithMarkers(resolvedUrl, ad.markers);
+          if (bakedDataUrl) {
+            const cleanName = ad.name || ad.nombre_archivo || `foto_${Date.now()}.jpg`;
+            const blob = dataURLtoBlob(bakedDataUrl);
+            const file = new File([blob], `baked_${Date.now()}_${cleanName.replace(/\s+/g, '_')}`, { type: 'image/jpeg' });
+            
+            const uuid = editingId || protoId;
+            const filename = `${user.id}/${uuid}/adjuntos/${Date.now()}_baked_${cleanName.replace(/\s+/g, '_')}`;
+            const { error: uploadErr } = await supabase.storage
+              .from('protocolos-puesta-a-tierra')
+              .upload(filename, file, { cacheControl: '3600', upsert: true });
+              
+            if (!uploadErr) {
+              const { data: sData } = await supabase.storage
+                .from('protocolos-puesta-a-tierra')
+                .createSignedUrl(filename, 3600);
+
+              updatedAdjuntos[i] = {
+                ...ad,
+                path: filename,
+                preview: sData?.signedUrl || ad.preview
+              };
+            } else {
+              console.error('Error uploading baked image:', uploadErr);
+            }
+          }
+        }
+      }
+
       // Reemplazar Adjuntos (Adjuntos generales + Evidencia fotográfica por toma)
       if (editingId) {
         await supabase
@@ -1219,21 +1266,33 @@ export default function ProtocoloForm({
       }
 
       const allAdjuntosToSave = [
-        ...adjuntos.map(ad => ({
-          protocolo_id: protoId,
-          tipo: ad.tipo || 'fotografia',
-          nombre_archivo: ad.nombre_archivo || ad.name,
-          storage_path: ad.storage_path || ad.path,
-          public_url: ad.public_url || ad.preview,
-          created_by: user.id
-        })),
+        ...updatedAdjuntos.map(ad => {
+          const hasMarkers = ad.markers && ad.markers.length > 0;
+          let dbPreview = ad.preview;
+          if (dbPreview && dbPreview.startsWith('data:')) {
+            dbPreview = ''; // Evitar guardar base64 en la base de datos
+          }
+
+          return {
+            protocolo_id: protoId,
+            tipo: ad.tipo || 'fotografia',
+            nombre_archivo: ad.name || ad.nombre_archivo,
+            storage_path: hasMarkers ? ad.path : (ad.originalPath || ad.path || ad.storage_path),
+            public_url: hasMarkers ? dbPreview : (ad.originalPath && ad.originalPath.startsWith('http') ? ad.originalPath : dbPreview),
+            original_path: ad.originalPath || ad.path || ad.storage_path,
+            markers: ad.markers || [],
+            created_by: user.id
+          };
+        }),
         ...puntos.flatMap((p, i) =>
           (Array.isArray(p.evidencia_fotografica) ? p.evidencia_fotografica : []).map(ev => ({
             protocolo_id: protoId,
             tipo: `Evidencia Fotográfica Toma N° ${i + 1}`,
             nombre_archivo: ev.name || ev.nombre_archivo || 'Evidencia.jpg',
             storage_path: ev.path || ev.storage_path || ev.originalPath || '',
-            public_url: ev.preview || ev.public_url || '',
+            public_url: (ev.preview && ev.preview.startsWith('data:')) ? '' : (ev.preview || ev.public_url || ''),
+            original_path: ev.originalPath || ev.path || ev.storage_path || '',
+            markers: [],
             created_by: user.id
           }))
         )
@@ -1243,7 +1302,10 @@ export default function ProtocoloForm({
         const { error: adjErr } = await supabase
           .from('protocolos_puesta_a_tierra_adjuntos')
           .insert(allAdjuntosToSave);
-        if (adjErr) console.warn('Error guardando adjuntos:', adjErr);
+        if (adjErr) {
+          console.error('Error guardando adjuntos:', adjErr);
+          throw adjErr;
+        }
       }
 
       globalToast.toast(`Protocolo guardado como ${nuevoEstado} exitosamente.`, 'success');
@@ -2623,3 +2685,65 @@ function MeasurementPointsEditorModal({ isOpen, onClose, imageUrl, initialPoints
     </Dialog.Root>
   );
 }
+
+// Helpers de procesamiento de imágenes asíncronos y evasión de CSP
+const dataURLtoBlob = (dataUrl) => {
+  const arr = dataUrl.split(',');
+  const mime = arr[0].match(/:(.*?);/)[1];
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new Blob([u8arr], { type: mime });
+};
+
+const bakeImageWithMarkers = (imageUrl, markers) => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = imageUrl;
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+
+        const minDim = Math.min(img.naturalWidth, img.naturalHeight);
+        const radius = Math.max(16, minDim * 0.02);
+        
+        markers.forEach((p) => {
+          const pxX = (p.x / 100) * img.naturalWidth;
+          const pxY = (p.y / 100) * img.naturalHeight;
+
+          ctx.beginPath();
+          ctx.arc(pxX, pxY, radius, 0, 2 * Math.PI);
+          ctx.fillStyle = '#468DFF';
+          ctx.fill();
+          
+          ctx.lineWidth = Math.max(2, radius * 0.15);
+          ctx.strokeStyle = '#FFFFFF';
+          ctx.stroke();
+
+          ctx.fillStyle = '#FFFFFF';
+          const fontSize = Math.round(radius * 1.1);
+          ctx.font = `bold ${fontSize}px sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(p.number.toString(), pxX, pxY);
+        });
+
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      } catch (err) {
+        console.error('Error in bakeImageWithMarkers:', err);
+        resolve(null);
+      }
+    };
+    img.onerror = () => {
+      resolve(null);
+    };
+  });
+};

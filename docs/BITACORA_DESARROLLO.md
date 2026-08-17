@@ -1,6 +1,25 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-17] Orientación Apaisada (Landscape) para Hojas 2 y 3 (Páginas 4 y 5) en PDF de Puesta a Tierra
+## [2026-08-17] Persistencia y Horneado de Marcadores en Evidencia/Plano para Puesta a Tierra
+
+### Resumen de Cambios
+- **Migración de Base de Datos:**
+  - Se crearon las columnas `markers JSONB NULL` y `original_path TEXT NULL` en la tabla `public.protocolos_puesta_a_tierra_adjuntos` mediante la migración `20260830000000_add_markers_to_protocolo_puesta_a_tierra_adjuntos.sql`.
+  - Se ejecutó la migración exitosamente en Supabase PostgreSQL y se recargó la caché de PostgREST.
+- **Flujo de Horneado y Persistencia en Formulario:**
+  - Se agregaron las funciones auxiliares `dataURLtoBlob` y `bakeImageWithMarkers` en `src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`.
+  - **Carga de Datos (`loadData`):** Se asignan `markers` (array de puntos interactivos) y `originalPath` para permitir re-edición exacta en el modal `MeasurementPointsEditorModal`.
+  - **Guardado (`executeSave`):** Al detectar marcadores sobre planos o evidencias fotográficas (`Evidencia Fotográfica Plano` / `Foto Plano`), el sistema renderiza la imagen a resolución natural en Canvas, quema los círculos con sus números correspondientes, la sube al bucket de almacenamiento `protocolos-puesta-a-tierra` (`baked_${timestamp}_...`) y guarda los metadatos completos (`storage_path`, `public_url`, `original_path` y `markers`).
+  - Misma arquitectura y comportamiento que los módulos de **Ruido** e **Iluminación**.
+- **Compilación de Producción:** Verificada con `npm.cmd run build` generando satisfactoriamente las 23/23 rutas con 0 errores.
+
+### Archivos Modificados
+- `[NEW] supabase/migrations/20260830000000_add_markers_to_protocolo_puesta_a_tierra_adjuntos.sql`
+- `[NEW] scripts/run-puesta-a-tierra-markers-migration.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
 
 ### Resumen de Cambios
 - **Ajuste de Formato y Disposición Horizontal (Landscape A4):**
