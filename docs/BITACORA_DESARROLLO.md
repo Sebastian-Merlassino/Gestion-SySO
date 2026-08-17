@@ -1,6 +1,22 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-17] Persistencia y Horneado de Marcadores en Evidencia/Plano para Puesta a Tierra
+## [2026-08-17] Estandarización de Títulos y Subtítulos en PDF de Puesta a Tierra
+
+### Resumen de Cambios
+- **Hojas de Planos / Puntos de Muestreo:**
+  - El título de la cabecera sobre el plano/croquis se configuró siempre como **`Puntos de muestreo`** (reemplazando nombres de archivo o textos genéricos como `IMAGES.PNG`).
+  - El fondo del cuadro de subtítulo se estableció en color blanco (`#FFFFFF`) con borde perimetral negro.
+- **Hojas de Evidencia Fotográfica por Punto de Medición:**
+  - Se separaron claramente de los planos generales.
+  - El título de cabecera se genera dinámicamente como **`Evidencia fotográfica: Toma N° X`** según el punto de medición correspondiente (ej. `Evidencia fotográfica: Toma N° 1`).
+  - Fondo del cuadro de subtítulo en color blanco (`#FFFFFF`) con texto en negrita negro.
+- **Compilación de Producción:** Verificada con `npm.cmd run build` generando satisfactoriamente las 23/23 rutas con 0 errores.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/utils/pdfGenerator.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
 
 ### Resumen de Cambios
 - **Migración de Base de Datos:**

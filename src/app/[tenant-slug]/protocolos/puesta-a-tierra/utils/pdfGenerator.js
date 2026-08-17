@@ -1034,14 +1034,14 @@ export const generatePuestaATierraPdf = async (
   drawSignatureBlock(188, tAY + totalBoxH + 3, 94, 38);
 
   // ==========================================
-  // PLANOS Y CROQUIS DEL ESTABLECIMIENTO
+  // PUNTOS DE MUESTREO (PLANOS Y CROQUIS CON MARCADORES)
   // ==========================================
   const planoAdjuntos = (adjuntosList || []).filter(adj => 
     adj.tipo === 'Evidencia Fotográfica Plano' ||
     adj.tipo === 'Foto Plano' ||
     adj.tipo === 'Plano' ||
     adj.tipo === 'Croquis' ||
-    (adj.tipo !== 'Certificado de Calibración' && adj.tipo !== 'Certificado' && adj.tipo !== 'Certificado de Calibración del Instrumental')
+    (adj.markers && adj.markers.length > 0)
   );
 
   for (let cIdx = 0; cIdx < planoAdjuntos.length; cIdx++) {
@@ -1059,12 +1059,10 @@ export const generatePuestaATierraPdf = async (
 
     doc.setLineWidth(0.45);
     setDrawColor(doc, COLOR_NEGRO);
-    doc.rect(kX, kY, kW, 6, 'S');
-    setFillColor(doc, COLOR_SLATE_200);
+    setFillColor(doc, COLOR_BLANCO);
     doc.rect(kX, kY, kW, 6, 'FD');
     
-    const planoTitle = rawAdj.descripcion || rawAdj.nombre_archivo || rawAdj.nombre || `PLANO O CROQUIS DE MEDICIÓN (${cIdx + 1} de ${planoAdjuntos.length})`;
-    drawCellText(doc, planoTitle.toUpperCase(), kX, kY, kW, 6, { fontStyle: 'bold', fontSize: 9, align: 'center', color: COLOR_NEGRO });
+    drawCellText(doc, 'Puntos de muestreo', kX, kY, kW, 6, { fontStyle: 'bold', fontSize: 9, align: 'center', color: COLOR_NEGRO });
 
     const mY = 37;
     const mH = 150;
@@ -1106,13 +1104,136 @@ export const generatePuestaATierraPdf = async (
         setDrawColor(doc, COLOR_SLATE_300);
         doc.setLineWidth(0.3);
         doc.rect(kX + 10, mY + 14, kW - 20, mH - 20, 'S');
-        drawCellText(doc, `[ PLANO O CROQUIS DEL ESTABLECIMIENTO ]`, kX + 10, mY + 14, kW - 20, mH - 20, { align: 'center', fontStyle: 'bold', fontSize: 11, color: COLOR_SLATE_500 });
+        drawCellText(doc, `[ PUNTOS DE MUESTREO ]`, kX + 10, mY + 14, kW - 20, mH - 20, { align: 'center', fontStyle: 'bold', fontSize: 11, color: COLOR_SLATE_500 });
       }
     } else {
       setDrawColor(doc, COLOR_SLATE_300);
       doc.setLineWidth(0.3);
       doc.rect(kX + 10, mY + 14, kW - 20, mH - 20, 'S');
-      drawCellText(doc, `[ PLANO O CROQUIS DEL ESTABLECIMIENTO ]`, kX + 10, mY + 14, kW - 20, mH - 20, { align: 'center', fontStyle: 'bold', fontSize: 11, color: COLOR_SLATE_500 });
+      drawCellText(doc, `[ PUNTOS DE MUESTREO ]`, kX + 10, mY + 14, kW - 20, mH - 20, { align: 'center', fontStyle: 'bold', fontSize: 11, color: COLOR_SLATE_500 });
+    }
+  }
+
+  // ==========================================
+  // EVIDENCIA FOTOGRÁFICA POR PUNTO DE MEDICIÓN (TOMAS)
+  // ==========================================
+  const tomaFotos = [];
+
+  // 1. Recopilar desde adjuntosList (con tipo específico "Evidencia Fotográfica Toma N° X")
+  (adjuntosList || []).forEach(adj => {
+    if (adj.tipo && adj.tipo.startsWith('Evidencia Fotográfica Toma N° ')) {
+      const tomaStr = adj.tipo.replace('Evidencia Fotográfica ', '').trim();
+      tomaFotos.push({
+        title: `Evidencia fotográfica: ${tomaStr}`,
+        rawAdj: adj
+      });
+    } else if (
+      adj.tipo !== 'Evidencia Fotográfica Plano' &&
+      adj.tipo !== 'Foto Plano' &&
+      adj.tipo !== 'Plano' &&
+      adj.tipo !== 'Croquis' &&
+      adj.tipo !== 'Certificado de Calibración' &&
+      adj.tipo !== 'Certificado' &&
+      adj.tipo !== 'Certificado de Calibración del Instrumental' &&
+      (!adj.markers || adj.markers.length === 0)
+    ) {
+      let tomaLabel = 'Toma';
+      if (adj.tipo && adj.tipo.includes('Toma')) {
+        tomaLabel = adj.tipo.replace(/^Evidencia Fotogr[aá]fica\s*/i, '').trim();
+      }
+      tomaFotos.push({
+        title: `Evidencia fotográfica: ${tomaLabel}`,
+        rawAdj: adj
+      });
+    }
+  });
+
+  // 2. Recopilar desde puntosList (evidencia_fotografica cargada directamente en cada punto)
+  (puntosList || []).forEach((pt, pIdx) => {
+    const tNum = pt.toma_tierra_num || pt.orden || (pIdx + 1);
+    const evList = Array.isArray(pt.evidencia_fotografica) ? pt.evidencia_fotografica : [];
+    evList.forEach(ev => {
+      const alreadyIncluded = tomaFotos.some(tf => 
+        (ev.id && tf.rawAdj.id === ev.id) ||
+        (ev.path && (tf.rawAdj.storage_path === ev.path || tf.rawAdj.path === ev.path)) ||
+        (ev.storage_path && (tf.rawAdj.storage_path === ev.storage_path || tf.rawAdj.path === ev.storage_path))
+      );
+      if (!alreadyIncluded) {
+        tomaFotos.push({
+          title: `Evidencia fotográfica: Toma N° ${tNum}`,
+          rawAdj: ev
+        });
+      }
+    });
+  });
+
+  for (let tIdx = 0; tIdx < tomaFotos.length; tIdx++) {
+    const tItem = tomaFotos[tIdx];
+
+    doc.addPage('a4', 'landscape');
+    pageCounter++;
+
+    drawHeader(true);
+    drawProtocolTitleBar(true, { x: 15, y: 22, w: 267, h: 5.5 });
+
+    const kX = 15;
+    const kY = 29;
+    const kW = 267;
+
+    doc.setLineWidth(0.45);
+    setDrawColor(doc, COLOR_NEGRO);
+    setFillColor(doc, COLOR_BLANCO);
+    doc.rect(kX, kY, kW, 6, 'FD');
+    
+    drawCellText(doc, tItem.title, kX, kY, kW, 6, { fontStyle: 'bold', fontSize: 9, align: 'center', color: COLOR_NEGRO });
+
+    const mY = 37;
+    const mH = 150;
+    doc.rect(kX, mY, kW, mH, 'S');
+
+    let finalBase64 = '';
+    if (tItem.rawAdj) {
+      try {
+        const rawBase64 = await getAdjuntoBase64(tItem.rawAdj);
+        if (rawBase64) {
+          const resized = await resizeImageForPdf(rawBase64, 1200, 1200);
+          finalBase64 = resized || rawBase64;
+        }
+      } catch (err) {
+        console.error('Error al procesar base64 de evidencia:', err);
+      }
+    }
+
+    if (finalBase64 && finalBase64.startsWith('data:image/')) {
+      try {
+        const dims = await getImgDimensions(finalBase64);
+        const maxW = kW - 10;
+        const maxH = mH - 8;
+        const ratio = (dims.width && dims.height) ? (dims.width / dims.height) : 1.5;
+
+        let renderW = maxW;
+        let renderH = maxW / ratio;
+        if (renderH > maxH) {
+          renderH = maxH;
+          renderW = maxH * ratio;
+        }
+
+        const imgX = kX + (kW - renderW) / 2;
+        const imgY = mY + 4 + (maxH - renderH) / 2;
+
+        doc.addImage(finalBase64, 'PNG', imgX, imgY, renderW, renderH, undefined, 'FAST');
+      } catch (err) {
+        console.error('Error al insertar imagen de evidencia en PDF:', err);
+        setDrawColor(doc, COLOR_SLATE_300);
+        doc.setLineWidth(0.3);
+        doc.rect(kX + 10, mY + 14, kW - 20, mH - 20, 'S');
+        drawCellText(doc, `[ ${tItem.title.toUpperCase()} ]`, kX + 10, mY + 14, kW - 20, mH - 20, { align: 'center', fontStyle: 'bold', fontSize: 11, color: COLOR_SLATE_500 });
+      }
+    } else {
+      setDrawColor(doc, COLOR_SLATE_300);
+      doc.setLineWidth(0.3);
+      doc.rect(kX + 10, mY + 14, kW - 20, mH - 20, 'S');
+      drawCellText(doc, `[ ${tItem.title.toUpperCase()} ]`, kX + 10, mY + 14, kW - 20, mH - 20, { align: 'center', fontStyle: 'bold', fontSize: 11, color: COLOR_SLATE_500 });
     }
   }
 
