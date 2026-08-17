@@ -1,6 +1,26 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-16] Corrección de Formateo y Carga de Fechas en Formulario de Protocolo de Puesta a Tierra (`puesta-a-tierra/components/ProtocoloForm.js`)
+## [2026-08-17] Incorporación de Botón "X" de Cierre en Ventana Emergente de Sincronización con Perfil de Establecimiento
+
+### Resumen de Cambios
+- **Botón "X" de Cierre Estandarizado:**
+  - Se agregó el botón de cierre "X" en la esquina superior derecha (`absolute top-4 right-4 p-1.5 rounded-lg bg-slate-50 border border-slate-200`) dentro del modal emergente de *Sincronización con Perfil de Establecimiento*.
+  - Al pulsar la "X", se ejecuta la acción segura `handleSyncConfirm('skip')`, cerrando la ventana y persistiendo el protocolo sin sincronizar al perfil general del cliente.
+  - Se implementó de manera uniforme en los 4 protocolos del sistema:
+    1. **Puesta a Tierra:** `puesta-a-tierra/components/ProtocoloForm.js`
+    2. **Ruido:** `ruido/components/ProtocoloForm.js`
+    3. **Iluminación:** `iluminacion/components/ProtocoloForm.js`
+    4. **Ergonomía:** `ergonomia/components/ProtocoloForm.js`
+- **Compilación de Producción:** Verificada con `npm.cmd run build` generando satisfactoriamente las 23/23 rutas con 0 errores.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/components/ProtocoloForm.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
 
 ### Resumen de Cambios
 - **Corrección de Mutilación de Fechas en Modo Edición:**

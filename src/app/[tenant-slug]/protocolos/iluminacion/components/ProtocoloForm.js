@@ -3140,7 +3140,17 @@ Mejorar la distribución de la iluminación, procurando alcanzar una adecuada un
         />
         <div className="bg-white rounded-2xl border border-slate-200 p-6 max-w-lg w-full z-10 shadow-2xl relative space-y-4 animate-scale-up select-none">
           
-          <div className="flex items-start gap-3 border-b border-slate-100 pb-3">
+          {/* Botón X de Cierre en esquina superior derecha */}
+          <button 
+            type="button"
+            onClick={() => handleSyncConfirm('skip')}
+            className="absolute top-4 right-4 p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#468DFF] cursor-pointer"
+            aria-label="Cerrar"
+          >
+            <X className="h-4 w-4" />
+          </button>
+
+          <div className="flex items-start gap-3 border-b border-slate-100 pb-3 pr-8">
             <div className="p-2.5 bg-blue-50 text-[#468DFF] rounded-xl shrink-0">
               <HelpCircle className="h-6 w-6" />
             </div>
