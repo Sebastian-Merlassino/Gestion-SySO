@@ -1,6 +1,24 @@
 # Bitácora de Desarrollo - Gestión SySO
 
-## [2026-08-17] Separación del Contenedor "Información Adicional" en Formulario de Puesta a Tierra
+## [2026-08-17] Orientación Apaisada (Landscape) para Hojas 2 y 3 (Páginas 4 y 5) en PDF de Puesta a Tierra
+
+### Resumen de Cambios
+- **Ajuste de Formato y Disposición Horizontal (Landscape A4):**
+  - Se modificó la orientación a horizontal (`doc.addPage('a4', 'landscape')`) para la **Hoja 2 (Tabla General de Medición)** y la **Hoja 3 (Análisis de los Datos y Mejoras a Realizar)** en `src/app/[tenant-slug]/protocolos/puesta-a-tierra/utils/pdfGenerator.js`.
+  - **Hoja 2 (Tabla General de Medición):**
+    - Ancho total útil de 267 mm con mini tabla de establecimiento superior (Razón Social, CUIT, Dirección, Localidad, CP, Provincia).
+    - Distribución ampliada y de máxima legibilidad de las 11 columnas normativas (toma, sector, terreno, uso, esquema, valor ohm, cumple, continuidad, capacidad, protección indirectos, desconexión automática).
+    - Cuadro de Información Adicional y bloque de firma del profesional ubicados en la parte inferior sobre un ancho total de 267 mm.
+  - **Hoja 3 (Análisis de los Datos y Mejoras a Realizar):**
+    - Formato apaisado de 2 columnas amplias (133.5 mm c/u) para *Conclusiones* y *Recomendaciones para adecuar la instalación*, con bloque de firma profesional inferior.
+  - **Detección automática de encabezado y pie de página:** `drawFooter` y `drawHeader` se renderizan dinámicamente con detección de ancho de página (`isLandscape`).
+- **Compilación de Producción:** Verificada con `npm.cmd run build` generando satisfactoriamente las 23/23 rutas con 0 errores.
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/utils/pdfGenerator.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
 
 ### Resumen de Cambios
 - **Independización de Sección en UI:**
