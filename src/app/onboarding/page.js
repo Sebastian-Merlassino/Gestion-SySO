@@ -1174,10 +1174,9 @@ export default function OnboardingPage() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                  Partido <span className="text-[#468DFF]">*</span>
+                  Partido <span className="text-slate-400 font-normal lowercase">(opcional)</span>
                 </label>
                 <select
-                  required
                   disabled={!provincia || partidosList.length === 0}
                   value={partido}
                   onChange={(e) => {
@@ -1186,7 +1185,7 @@ export default function OnboardingPage() {
                   }}
                   className="w-full max-w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 cursor-pointer disabled:opacity-50"
                 >
-                  <option value="" disabled>{!provincia ? 'Primero selecciona una provincia' : 'Selecciona un partido'}</option>
+                  <option value="">{!provincia ? 'Primero selecciona una provincia' : 'Selecciona un partido (opcional)'}</option>
                   {partidosList.map((p) => (
                     <option key={p} value={p}>
                       {p}

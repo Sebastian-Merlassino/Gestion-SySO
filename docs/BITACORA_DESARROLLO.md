@@ -10,6 +10,7 @@
   - Se habilitó el scroll interno mediante `sidebar-scrollbar` en el contenedor `flex-1 overflow-y-auto p-3.5 sm:p-5 md:p-6 space-y-6`.
   - Se homogeneizaron los paddings y bordes de las subsecciones temáticas ("Información del usuario", "Identidad de la empresa", "Plan suscrito") al estándar `p-3.5 sm:p-5 md:p-6`.
   - Se incorporó la barra de acciones inferior estandarizada (`bg-slate-50 border-t border-slate-200 p-3 sm:p-4`), fijando los botones "Salir" (estilo botón blanco con borde y texto azul `#468DFF`) y "Guardar" (botón sólido azul `#468DFF` con hover `#0511F2` y spinner de carga).
+  - Se flexibilizó el campo "Partido" en el formulario de Onboarding haciéndolo opcional (`(opcional)`), en concordancia con el módulo de Perfil.
   - Se mantuvo intacta la integración de `<PublicFooter />` al pie del layout general.
 
 ### Decisiones Clave
