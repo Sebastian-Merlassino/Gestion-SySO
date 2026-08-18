@@ -1,3 +1,35 @@
+## [2026-08-18] Actualización y Refinamiento de la Política de Privacidad (Tratamiento de IA y Dictado por Voz)
+
+### Resumen de Cambios
+- **Diagnóstico y Contexto:**
+  - Se revisó la cláusula de Inteligencia Artificial (Google Gemini) incorporada en la web estática y en la aplicación Next.js (`src/app/privacidad/page.js`).
+  - Se optimizó la precisión técnica y jurídica del texto para reflejar adecuadamente la distinción entre el dictado por voz nativo (*Web Speech API*) y el refinamiento de textos técnicos mediante la API de Google Gemini (`SySO-AI-Voice-Helper`).
+- **Actualización de la Política de Privacidad (`src/app/privacidad/page.js`):**
+  - Se actualizó la fecha de vigencia a **18 de Agosto de 2026**.
+  - Se redenominó la Sección 4 a **"4. Tratamiento de Inteligencia Artificial (Google Gemini y Asistente de Voz)"**.
+  - Se precisó que la comunicación viaja bajo cifrado en tránsito seguro (**HTTPS/TLS**).
+  - Se ratificó el compromiso de que los datos procesados **no se utilizan para el entrenamiento de modelos públicos de IA** ni se comparten con terceros para fines comerciales o publicitarios.
+  - Se explicitó el alcance acotado exclusivamente a la corrección y estructuración de observaciones técnicas, desvíos y recomendaciones de higiene y seguridad laboral, excluyendo datos médicos sensibles o credenciales de acceso.
+
+### Decisiones Clave
+- Utilizar la denominación técnica exacta de cifrado en tránsito (HTTPS/TLS) para asegurar una coherencia inexpugnable ante revisiones y auditorías técnicas/legales.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `SySO-AI-Voice-Helper`
+
+### Archivos Modificados
+- `[MODIFY] src/app/privacidad/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción validada exitosamente mediante `cmd /c npm run build` (23/23 páginas estáticas generadas sin errores).
+
+### Riesgos Detectados / Remanentes
+- Ninguno. Replicar esta misma redacción en cualquier archivo HTML o landing page externa (`privacidad.html`) para mantener total sincronía.
+
+---
+
 ## [2026-08-17] Homologación de Formulario de Onboarding a Estándar SySO Compact Layout v2.0
 
 ### Resumen de Cambios

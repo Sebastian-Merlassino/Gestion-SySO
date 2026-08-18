@@ -32,7 +32,7 @@ export default function PrivacidadPage() {
         {/* Content */}
         <div className="p-8 sm:p-10 space-y-8">
           <div className="border-b border-slate-100 pb-4">
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Última actualización: 14 de Agosto de 2026</p>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Última actualización: 18 de Agosto de 2026</p>
           </div>
 
           <section className="space-y-3">
@@ -82,21 +82,24 @@ export default function PrivacidadPage() {
           <section className="space-y-3 p-4 bg-blue-50/50 border border-blue-100 rounded-2xl">
             <h2 className="font-outfit text-base font-bold text-slate-900 flex items-center gap-2">
               <Cpu className="h-4 w-4 text-[#468DFF] shrink-0" />
-              4. Procesamiento de Datos mediante Inteligencia Artificial (IA)
+              4. Tratamiento de Inteligencia Artificial (Google Gemini y Asistente de Voz)
             </h2>
             <p className="text-xs leading-relaxed text-slate-655 font-medium">
-              Gestión SySO incluye características avanzadas de dictado por voz y optimización de textos a través del componente unificado **`SySO-AI-Voice-Helper`** que utiliza modelos de Inteligencia Artificial (como Google Gemini).
+              Gestión SySO incluye características avanzadas de dictado por voz y optimización de textos a través del componente unificado **`SySO-AI-Voice-Helper`**, diseñado para facilitar el dictado por voz y el refinamiento técnico de observaciones de campo y recomendaciones de higiene y seguridad laboral mediante modelos de Inteligencia Artificial (Google Gemini).
             </p>
             <p className="text-xs leading-relaxed text-slate-655">
-              Al hacer uso del dictado o presionar el botón de pulido con IA en observaciones de campo o recomendaciones técnicas, usted consiente que la transcripción de su audio o el fragmento de texto redactado sea enviado a las APIs de procesamiento de lenguaje del proveedor de IA.
+              Al hacer uso del dictado o presionar el botón de pulido con IA, usted consiente que el fragmento de texto redactado sea procesado por las APIs de lenguaje del proveedor de IA bajo las siguientes garantías de confidencialidad:
             </p>
-            <p className="text-xs leading-relaxed text-slate-655">
-              **Garantías de la IA**:
-            </p>
-            <ul className="list-disc pl-5 text-xs text-slate-655 space-y-1 mt-1">
-              <li>Los textos y audios se envían de forma confidencial y segura mediante conexiones cifradas.</li>
-              <li>La información procesada **no se utiliza para entrenar modelos públicos de IA** ni es compartida de forma pública con terceros.</li>
-              <li>No se recopila ni se envía a la IA información confidencial de carácter médico, identidades sensibles ni contraseñas. El procesamiento se acota exclusivamente a pulir la redacción de observaciones técnicas.</li>
+            <ul className="list-disc pl-5 text-xs text-slate-655 space-y-1.5 mt-1">
+              <li>
+                **Cifrado y Seguridad**: Todas las comunicaciones y solicitudes viajan a través de canales estrictamente cifrados en tránsito mediante protocolos seguros (HTTPS/TLS).
+              </li>
+              <li>
+                **No Entrenamiento de Modelos Públicos**: La información procesada **no se utiliza para entrenar modelos públicos de IA** ni es compartida con terceros con fines publicitarios o comerciales.
+              </li>
+              <li>
+                **Ámbito Estrictamente Técnico**: El procesamiento se acota exclusivamente a la mejora sintáctica, ortográfica y terminológica de observaciones técnicas. No se recopilan ni envían a la IA datos médicos sensibles, credenciales de acceso ni información confidencial no relacionada.
+              </li>
             </ul>
           </section>
 
