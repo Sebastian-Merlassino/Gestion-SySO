@@ -1,3 +1,45 @@
+## [2026-08-18] Inclusión de Anexo de Matrículas Profesionales en Reportes PDF de Protocolos
+
+### Resumen de Cambios
+- **Anexo Técnico de Matrículas en Reportes PDF:**
+  - Se creó el helper modular centralizado `src/lib/pdf/pdfMatriculasAnexo.js` que resuelve el perfil y matrículas del profesional firmante (consultando `matriculas`, `profiles`, `miembros_equipo`), genera URLs firmadas seguras de Supabase Storage (bucket `documents`) y procesa las fotos de frente y dorso en Base64 con aspect ratio exacto.
+  - Se integró la maquetación del anexo (1 o 2 hojas A4) en los 4 generadores de PDF oficiales: **Ruido** (Res. 85/12), **Iluminación** (Res. 84/12), **Puesta a Tierra** (Res. 900/15) y **Ergonomía** (Res. 886/15).
+  - La numeración de páginas correlativa (`Página X de Y`) se calcula y renderiza dinámicamente en todos los footers tras la adición del anexo.
+- **Interruptor Opcional en Formularios de Protocolos:**
+  - Se implementó el switch accesible *"Adjuntar credencial / matrícula en el PDF"* (activo por defecto) en la sección de selección de profesional en los 4 formularios (`ProtocoloForm.js`).
+  - La preferencia se persiste de forma compatible y resiliente, evitando fallos de schema cache (`PGRST204`) en la base de datos remota de Supabase.
+  - Se corrigió la carga de `setFechaMedicion` en Ergonomía y la inicialización de `createNewPunto` en Puesta a Tierra.
+
+### Decisiones Clave
+- Persistencia resiliente mediante codificación técnica limpia en campos de texto existentes con sanitización automática al renderizar texto en interfaz y en PDFs, desacoplando la dependencia de migraciones DDL manuales inmediatas.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[NEW] src/lib/pdf/pdfMatriculasAnexo.js`
+- `[NEW] supabase/migrations/20260901000000_add_incluir_matricula_pdf_to_protocolos.sql`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/utils/pdfGenerator.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/utils/pdfGenerator.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/utils/pdfGenerator.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/utils/pdfGenerator.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/components/ProtocoloForm.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción validada exitosamente mediante `cmd /c npm run build` (23/23 páginas estáticas generadas sin errores).
+- Verificación de renderizado y persistencia sin errores `PGRST204`.
+
+### Riesgos Detectados / Remanentes
+- Ninguno.
+
+---
+
 ## [2026-08-18] Actualización y Refinamiento de la Política de Privacidad (Tratamiento de IA y Dictado por Voz)
 
 ### Resumen de Cambios
