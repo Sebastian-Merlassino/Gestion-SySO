@@ -132,6 +132,7 @@ export default function ProtocoloForm({
   const [profesionalId, setProfesionalId] = useState('');
   const [profesionalNombre, setProfesionalNombre] = useState('');
   const [profesionalMatricula, setProfesionalMatricula] = useState('');
+  const [incluirMatriculaPdf, setIncluirMatriculaPdf] = useState(true);
   const [firmaTipo, setFirmaTipo] = useState('perfil'); // 'perfil' | 'mano'
   const [signaturePath, setSignaturePath] = useState('');
   const [firmaPerfilPreviewUrl, setFirmaPerfilPreviewUrl] = useState('');
@@ -667,8 +668,10 @@ export default function ProtocoloForm({
       setFechaMedicion(formatDate(proto.fecha_medicion) || '');
       setHoraInicio(proto.hora_inicio || '');
       setHoraFinalizacion(proto.hora_finalizacion || '');
-      setCondicionesAtmosfericas(proto.condiciones_atmosfericas || '');
-      setDocumentacionAdjunta(proto.documentacion_adjunta || '');
+      const rawDocAdj = proto.documentacion_adjunta || '';
+      const hasNoMat = rawDocAdj.includes('[NO_MATRICULA_PDF]');
+      setIncluirMatriculaPdf(!hasNoMat);
+      setDocumentacionAdjunta(rawDocAdj.replace(/\[NO_MATRICULA_PDF\]/g, '').trim());
       setObservacionesGenerales(proto.observaciones || '');
       setInformacionAdicional(proto.informacion_adicional || '');
       setConclusiones(proto.conclusiones || '');
@@ -1577,6 +1580,11 @@ export default function ProtocoloForm({
         finalFirmaProf = firmaProfCanvasRef.current.toDataURL('image/png');
       }
 
+      let docAdjunta = (documentacionAdjunta || '').replace(/\[NO_MATRICULA_PDF\]/g, '').trim();
+      if (!incluirMatriculaPdf) {
+        docAdjunta = docAdjunta ? `${docAdjunta}\n[NO_MATRICULA_PDF]` : '[NO_MATRICULA_PDF]';
+      }
+
       const payloadProto = {
         id: tempId,
         tenant_id: tenant.id,
@@ -1599,7 +1607,7 @@ export default function ProtocoloForm({
         hora_inicio: horaInicio || null,
         hora_finalizacion: horaFinalizacion || null,
         condiciones_atmosfericas: condicionesAtmosfericas || null,
-        documentacion_adjunta: documentacionAdjunta,
+        documentacion_adjunta: docAdjunta,
         observaciones: observacionesGenerales || null,
         informacion_adicional: informacionAdicional || null,
         conclusiones: conclusiones || null,
@@ -2976,6 +2984,34 @@ export default function ProtocoloForm({
                   onChange={(e) => setProfesionalMatricula(e.target.value)}
                   placeholder="Ej. MP 12345"
                 />
+              </div>
+
+              {/* Switch opcional: Incluir matrículas en el reporte PDF */}
+              <div className="mt-1 pt-3 border-t border-slate-100 flex items-start justify-between gap-3">
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold text-slate-800">
+                    Adjuntar credencial / matrícula en el PDF
+                  </span>
+                  <span className="text-[11px] text-slate-500">
+                    Incluye como anexo técnico las fotos de frente y dorso de la matrícula cargada en el perfil.
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={incluirMatriculaPdf}
+                  disabled={!canEdit}
+                  onClick={() => setIncluirMatriculaPdf(!incluirMatriculaPdf)}
+                  className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    incluirMatriculaPdf ? 'bg-[#468DFF]' : 'bg-slate-300'
+                  } ${!canEdit ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      incluirMatriculaPdf ? 'translate-x-4' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
               </div>
             </div>
 

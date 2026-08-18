@@ -381,6 +381,7 @@ export default function ProtocoloForm({
   const [profesionalId, setProfesionalId] = useState('');
   const [profesionalNombre, setProfesionalNombre] = useState('');
   const [profesionalMatricula, setProfesionalMatricula] = useState('');
+  const [incluirMatriculaPdf, setIncluirMatriculaPdf] = useState(true);
   const [firmaTipo, setFirmaTipo] = useState('perfil'); // 'perfil' | 'mano'
   const [signaturePath, setSignaturePath] = useState('');
   const [firmaPerfilPreviewUrl, setFirmaPerfilPreviewUrl] = useState('');
@@ -931,7 +932,10 @@ export default function ProtocoloForm({
       setLocalidadText(proto.localidad_text || '');
       setCpText(proto.cp_text || '');
       setFechaMedicion(formatDate(proto.fecha_medicion) || '');
-      setObservacionesGenerales(proto.observaciones || '');
+      const rawObs = proto.observaciones || '';
+      const hasNoMat = rawObs.includes('[NO_MATRICULA_PDF]');
+      setIncluirMatriculaPdf(!hasNoMat);
+      setObservacionesGenerales(rawObs.replace(/\[NO_MATRICULA_PDF\]/g, '').trim());
       setEstado(proto.estado || 'borrador');
       setProfesionalNombre(proto.profesional_nombre || '');
       setProfesionalMatricula(proto.profesional_matricula || '');
@@ -1781,6 +1785,11 @@ export default function ProtocoloForm({
         finalFirmaMedicina = firmaMedicinaCanvasRef.current.toDataURL('image/png');
       }
 
+      let obsGen = (observacionesGenerales || '').replace(/\[NO_MATRICULA_PDF\]/g, '').trim();
+      if (!incluirMatriculaPdf) {
+        obsGen = obsGen ? `${obsGen}\n[NO_MATRICULA_PDF]` : '[NO_MATRICULA_PDF]';
+      }
+
       const payloadProto = {
         id: tempId,
         tenant_id: tenant.id,
@@ -1797,7 +1806,7 @@ export default function ProtocoloForm({
         localidad_text: localidadText,
         cp_text: cpText,
         fecha_medicion: convertToDbDate(fechaMedicion) || null,
-        observaciones: observacionesGenerales || null,
+        observaciones: obsGen || null,
         resultado_general: resultadoGeneralVal,
         profesional_nombre: profesionalNombre || null,
         profesional_matricula: profesionalMatricula || null,
@@ -3751,6 +3760,34 @@ export default function ProtocoloForm({
                   onChange={(e) => setProfesionalMatricula(e.target.value)}
                   placeholder="Ej. MP 12345"
                 />
+              </div>
+
+              {/* Switch opcional: Incluir matrículas en el reporte PDF */}
+              <div className="mt-1 pt-3 border-t border-slate-100 flex items-start justify-between gap-3">
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold text-slate-800">
+                    Adjuntar credencial / matrícula en el PDF
+                  </span>
+                  <span className="text-[11px] text-slate-500">
+                    Incluye como anexo técnico las fotos de frente y dorso de la matrícula cargada en el perfil.
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={incluirMatriculaPdf}
+                  disabled={!canEdit}
+                  onClick={() => setIncluirMatriculaPdf(!incluirMatriculaPdf)}
+                  className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    incluirMatriculaPdf ? 'bg-[#468DFF]' : 'bg-slate-300'
+                  } ${!canEdit ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      incluirMatriculaPdf ? 'translate-x-4' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
               </div>
             </div>
 

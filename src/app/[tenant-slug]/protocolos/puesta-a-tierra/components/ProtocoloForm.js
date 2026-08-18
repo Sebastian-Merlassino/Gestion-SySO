@@ -82,6 +82,25 @@ const DISPOSITIVO_PROTECCION_OPTS = [
   'Otro'
 ];
 
+const createNewPunto = (num = 1) => ({
+  id: `temp-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+  orden: num,
+  toma_tierra_num: num,
+  sector: '',
+  condicion_terreno: '',
+  uso_puesta_a_tierra: '',
+  esquema_conexion: '',
+  valor_medido_ohm: '',
+  cumple_ohm: '',
+  continuidad_permanente: '',
+  capacidad_carga: '',
+  dispositivo_proteccion: '',
+  desconexion_automatica: '',
+  observaciones_punto: '',
+  evidencia_fotografica: [],
+  isCollapsed: false
+});
+
 export default function ProtocoloForm({
   tenantSlug,
   profile,
@@ -135,25 +154,7 @@ export default function ProtocoloForm({
   const [estado, setEstado] = useState('borrador');
 
   // Puntos
-  const [puntos, setPuntos] = useState([
-    {
-      id: 'temp-1',
-      orden: 1,
-      toma_tierra_num: 1,
-      sector: '',
-      condicion_terreno: '',
-      uso_puesta_a_tierra: '',
-      esquema_conexion: '',
-      valor_medido_ohm: '',
-      cumple_ohm: '',
-      continuidad_permanente: '',
-      capacidad_carga: '',
-      dispositivo_proteccion: '',
-      desconexion_automatica: '',
-      observaciones_punto: '',
-      isCollapsed: false
-    }
-  ]);
+  const [puntos, setPuntos] = useState([createNewPunto(1)]);
 
   // Adjuntos
   const [adjuntos, setAdjuntos] = useState([]);
@@ -163,6 +164,7 @@ export default function ProtocoloForm({
   const [profesionalId, setProfesionalId] = useState('__custom__');
   const [profesionalNombre, setProfesionalNombre] = useState(profile?.full_name || '');
   const [profesionalMatricula, setProfesionalMatricula] = useState(profile?.matricula || '');
+  const [incluirMatriculaPdf, setIncluirMatriculaPdf] = useState(true);
   const [signaturePath, setSignaturePath] = useState('');
   const [firmaProfSavedUrl, setFirmaProfSavedUrl] = useState('');
   const [firmaPerfilPreviewUrl, setFirmaPerfilPreviewUrl] = useState('');
@@ -815,7 +817,10 @@ export default function ProtocoloForm({
           setHoraInicio(proto.hora_inicio || '');
           setHoraFinalizacion(proto.hora_finalizacion || '');
           setObservacionesGenerales(proto.observaciones || '');
-          setDocumentacionAdjunta(proto.documentacion_adjunta || 'Croquis de la instalación eléctrica y ubicación de las tomas de tierra medidas.\nCertificado de calibración del telurímetro utilizado.');
+          const rawDocAdj = proto.documentacion_adjunta || 'Croquis de la instalación eléctrica y ubicación de las tomas de tierra medidas.\nCertificado de calibración del telurímetro utilizado.';
+          const hasNoMat = rawDocAdj.includes('[NO_MATRICULA_PDF]');
+          setIncluirMatriculaPdf(!hasNoMat);
+          setDocumentacionAdjunta(rawDocAdj.replace(/\[NO_MATRICULA_PDF\]/g, '').trim());
           setInformacionAdicional(proto.informacion_adicional !== null && proto.informacion_adicional !== undefined ? proto.informacion_adicional : 'Se probó disparo de disyuntores. Tipo y corriente de disparo, dentro de parámetros.');
           setConclusiones(proto.conclusiones || 'Los valores hallados de la medición de la puesta a tierra cumplen con lo establecido en la Resolución 900/15.');
           setRecomendaciones(proto.recomendaciones || '');
@@ -1016,24 +1021,7 @@ export default function ProtocoloForm({
     const nextNum = puntos.length > 0 ? Math.max(...puntos.map(p => p.toma_tierra_num)) + 1 : 1;
     setPuntos([
       ...puntos,
-      {
-        id: `temp-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-        orden: nextNum,
-        toma_tierra_num: nextNum,
-        sector: '',
-        condicion_terreno: '',
-        uso_puesta_a_tierra: '',
-        esquema_conexion: '',
-        valor_medido_ohm: '',
-        cumple_ohm: '',
-        continuidad_permanente: '',
-        capacidad_carga: '',
-        dispositivo_proteccion: '',
-        desconexion_automatica: '',
-        observaciones_punto: '',
-        evidencia_fotografica: [],
-        isCollapsed: false
-      }
+      createNewPunto(nextNum)
     ]);
   };
 
@@ -1192,6 +1180,11 @@ export default function ProtocoloForm({
         finalFirmaProf = firmaProfCanvasRef.current.toDataURL('image/png');
       }
 
+      let docAdjunta = (documentacionAdjunta || '').replace(/\[NO_MATRICULA_PDF\]/g, '').trim();
+      if (!incluirMatriculaPdf) {
+        docAdjunta = docAdjunta ? `${docAdjunta}\n[NO_MATRICULA_PDF]` : '[NO_MATRICULA_PDF]';
+      }
+
       const payloadProto = {
         tenant_id: tenant.id,
         user_id: user.id,
@@ -1213,7 +1206,7 @@ export default function ProtocoloForm({
         hora_inicio: horaInicio || null,
         hora_finalizacion: horaFinalizacion || null,
         observaciones: observacionesGenerales || null,
-        documentacion_adjunta: documentacionAdjunta,
+        documentacion_adjunta: docAdjunta,
         informacion_adicional: informacionAdicional || null,
         conclusiones: conclusiones || null,
         recomendaciones: recomendaciones || null,
@@ -2219,6 +2212,34 @@ export default function ProtocoloForm({
                   onChange={(e) => setProfesionalMatricula(e.target.value)}
                   placeholder="Ej. MP 12345"
                 />
+              </div>
+
+              {/* Switch opcional: Incluir matrículas en el reporte PDF */}
+              <div className="mt-1 pt-3 border-t border-slate-100 flex items-start justify-between gap-3">
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold text-slate-800">
+                    Adjuntar credencial / matrícula en el PDF
+                  </span>
+                  <span className="text-[11px] text-slate-500">
+                    Incluye como anexo técnico las fotos de frente y dorso de la matrícula cargada en el perfil.
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={incluirMatriculaPdf}
+                  disabled={!canEdit}
+                  onClick={() => setIncluirMatriculaPdf(!incluirMatriculaPdf)}
+                  className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    incluirMatriculaPdf ? 'bg-[#468DFF]' : 'bg-slate-300'
+                  } ${!canEdit ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      incluirMatriculaPdf ? 'translate-x-4' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
               </div>
             </div>
 

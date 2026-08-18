@@ -3,6 +3,7 @@ import { formatDate } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 import { setFillColor, setDrawColor, setTextColor, hexToRgb, PDF_THEME } from '@/lib/pdf/pdfTheme';
 import { getBase64ImageFromUrl } from '@/lib/pdf/pdfImages';
+import { fetchProfessionalMatriculasWithImages, renderMatriculasAnexoPages } from '@/lib/pdf/pdfMatriculasAnexo';
 
 // Helper de cálculo de límites y estado para compatibilidad de puntos
 const getLimiteDbaForTe = (teHours) => {
@@ -739,7 +740,7 @@ export const generatePuestaATierraPdf = async (
   doc.rect(t3X, t3Y, t3W, 6, 'FD');
   drawCellText(doc, 'Documentación que se adjuntará a la medición', t3X, t3Y, t3W, 6, { align: 'center', fontStyle: 'bold', fontSize: 9 });
 
-  const docAdjText = proto.documentacion_adjunta || 'Certificado de Calibración.\nPlano o Croquis del establecimiento.';
+  const docAdjText = (proto.documentacion_adjunta || 'Certificado de Calibración.\nPlano o Croquis del establecimiento.').replace(/\[NO_MATRICULA_PDF\]/g, '').trim();
   drawCellText(doc, docAdjText, t3X + 3, t3Y + 6.5, t3W - 6, 12, { fontSize: 8.5, valign: 'top' });
 
   // Firma Profesional (Alineada abajo a la derecha de la hoja 1)
@@ -1319,6 +1320,32 @@ export const generatePuestaATierraPdf = async (
       }
     } catch (e) {
       console.error('Error procesando certificado de calibración en PDF:', e);
+    }
+  }
+
+  // ==========================================
+  // PAGINAS FINALES: ANEXO MATRÍCULAS / CREDENCIALES PROFESIONALES
+  // ==========================================
+  const shouldIncludeMatricula = proto.incluir_matricula_pdf !== false && !((proto.documentacion_adjunta || proto.observaciones || '').includes('[NO_MATRICULA_PDF]'));
+  if (shouldIncludeMatricula) {
+    try {
+      const profMatriculas = await fetchProfessionalMatriculasWithImages({
+        profNombre,
+        profMatricula,
+        userProfile,
+        tenantId: tenant?.id,
+        profesionalId: proto.profesional_id
+      });
+      if (profMatriculas.length > 0) {
+        renderMatriculasAnexoPages(doc, {
+          matriculas: profMatriculas,
+          profNombre,
+          drawHeader,
+          drawProtocolTitleBar
+        });
+      }
+    } catch (mAnexoErr) {
+      console.warn('[PDF PAT] Error renderizando anexo de matrículas:', mAnexoErr);
     }
   }
 

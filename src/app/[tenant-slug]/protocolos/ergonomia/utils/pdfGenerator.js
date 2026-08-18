@@ -3,6 +3,7 @@ import { formatDate } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 import { setFillColor, setDrawColor, setTextColor, hexToRgb, PDF_THEME } from '@/lib/pdf/pdfTheme';
 import { getBase64ImageFromUrl } from '@/lib/pdf/pdfImages';
+import { fetchProfessionalMatriculasWithImages, renderMatriculasAnexoPages } from '@/lib/pdf/pdfMatriculasAnexo';
 import { FANGER_CHART_BASE64 } from './fangerChartBase64';
 
 // Helper Base64 getter for signature/logo images
@@ -1680,8 +1681,39 @@ export const generateProtocoloErgonomiaPdf = async (arg1, arg2, arg3, arg4, arg5
     });
 
     drawTripleSignatureBlock(248);
-    drawFooter(pageCounter, totalPagesCount);
   });
+
+  // ==========================================
+  // PAGINAS FINALES: ANEXO MATRÍCULAS / CREDENCIALES PROFESIONALES
+  // ==========================================
+  const shouldIncludeMatricula = proto.incluir_matricula_pdf !== false && !((proto.observaciones || '').includes('[NO_MATRICULA_PDF]'));
+  if (shouldIncludeMatricula) {
+    try {
+      const profMatriculas = await fetchProfessionalMatriculasWithImages({
+        profNombre,
+        profMatricula,
+        userProfile,
+        tenantId: tenantObj?.id || proto.tenant_id,
+        profesionalId: proto.profesional_id
+      });
+      if (profMatriculas.length > 0) {
+        renderMatriculasAnexoPages(doc, {
+          matriculas: profMatriculas,
+          profNombre,
+          drawHeader: drawHeaderLogo
+        });
+      }
+    } catch (mAnexoErr) {
+      console.warn('[PDF Ergonomía] Error renderizando anexo de matrículas:', mAnexoErr);
+    }
+  }
+
+  // Draw or update footers across all content and annex pages with real total page count
+  const realTotalPages = doc.internal.getNumberOfPages();
+  for (let p = 2; p <= realTotalPages; p++) {
+    doc.setPage(p);
+    drawFooter(p, realTotalPages);
+  }
 
   return doc;
 };
