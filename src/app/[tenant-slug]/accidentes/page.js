@@ -801,11 +801,13 @@ export default function AccidentesPage({ params }) {
   const handleDenunciaFileChange = (file) => {
     setDenunciaFile(file);
     setDenunciaFileName(file ? file.name : '');
+    if (file) setDenunciaDeleted(false);
   };
 
   const handleInformeFileChange = (file) => {
     setInformeFile(file);
     setInformeFileName(file ? file.name : '');
+    if (file) setInformeDeleted(false);
   };
 
   const handleClearDenuncia = () => {
@@ -2730,11 +2732,13 @@ export default function AccidentesPage({ params }) {
         console.log('DEBUG executeSaveTechnicalReportToSiniestro - setting informeUrl state to:', finalPath);
         setInformeUrl(finalPath);
         setInformeFileName(pdfName);
+        setInformeDeleted(false);
         triggerToast('Informe técnico guardado en el siniestro con éxito.');
       } else {
         setInformeFile(pdfFile);
         setInformeFileName(pdfName);
         setInformeUrl(URL.createObjectURL(pdfBlob));
+        setInformeDeleted(false);
         triggerToast('Informe preparado. Se guardará automáticamente al registrar el siniestro.');
       }
     } catch (err) {
@@ -3576,11 +3580,12 @@ export default function AccidentesPage({ params }) {
                             file={denunciaFile}
                             fileName={denunciaFileName}
                             url={denunciaUrl}
-                            signedUrl={editingId ? accidentes.find(a => a.id === editingId)?.denuncia_signed_url : ''}
+                            signedUrl={(!denunciaDeleted && denunciaUrl) ? (editingId ? accidentes.find(a => a.id === editingId)?.denuncia_signed_url : '') : ''}
                             onFileChange={handleDenunciaFileChange}
                             onDriveImportSuccess={(filePath) => {
                               setDenunciaUrl(filePath);
                               setDenunciaFileName('Archivo de Drive importado');
+                              setDenunciaDeleted(false);
                             }}
                             onViewPdf={handleViewPdf}
                             onDelete={handleClearDenuncia}
@@ -3597,11 +3602,12 @@ export default function AccidentesPage({ params }) {
                             file={informeFile}
                             fileName={informeFileName}
                             url={informeUrl}
-                            signedUrl={editingId ? accidentes.find(a => a.id === editingId)?.informe_signed_url : ''}
+                            signedUrl={(!informeDeleted && informeUrl) ? (editingId ? accidentes.find(a => a.id === editingId)?.informe_signed_url : '') : ''}
                             onFileChange={handleInformeFileChange}
                             onDriveImportSuccess={(filePath) => {
                               setInformeUrl(filePath);
                               setInformeFileName('Archivo de Drive importado');
+                              setInformeDeleted(false);
                             }}
                             onViewPdf={handleViewPdf}
                             onDelete={handleClearInforme}

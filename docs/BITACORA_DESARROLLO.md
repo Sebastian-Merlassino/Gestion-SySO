@@ -1,3 +1,35 @@
+## [2026-08-18] Corrección de Eliminación de PDF en Edición de Siniestros y Auditoría de Módulos de Archivos
+
+### Resumen de Cambios
+- **Corrección en Módulo de Accidentes / Siniestros (`src/app/[tenant-slug]/accidentes/page.js`):**
+  - Se corrigió el error donde al presionar "Eliminar" en el modal de confirmación del Informe de Investigación de Accidente (o Denuncia de Accidente), el archivo parecía no eliminarse en la interfaz gráfica.
+  - Causa raíz: La propiedad `signedUrl` que recibía `DocumentUploadZone` leía directamente la URL prefirmada incondicional del array de siniestros (`accidentes.find(...)`), lo cual mantenía `fileUrl` como verdadero tras vaciar los estados de archivo y URL.
+  - Solución: Se condicionó `signedUrl` verificando que el archivo no haya sido marcado como eliminado y posea URL activa (`!informeDeleted && Boolean(informeUrl)` / `!denunciaDeleted && Boolean(denunciaUrl)`).
+  - Se configuró el restablecimiento del flag `setInformeDeleted(false)` y `setDenunciaDeleted(false)` cuando el usuario sube un nuevo archivo, importa desde Google Drive o genera un reporte técnico de investigación con IA.
+- **Auditoría Integral de Archivos en Otros Módulos:**
+  - Se verificó el funcionamiento de eliminación y subida de archivos en: *Programa de Gestión Anual*, *Legajo Técnico*, *Capacitaciones*, *Capacitaciones Online*, *Protocolos SRT (Puesta a Tierra, Ruido, Iluminación, Ergonomía)*, *Matriz de Riesgos*, *Nómina*, *Visitas*, *Extintores* y *Acciones Correctivas*.
+  - Todos los módulos gestionan correctamente la limpieza y persistencia de sus adjuntos e imágenes.
+
+### Decisiones Clave
+- Mantener la arquitectura de URLs prefirmadas en `accidentes` asegurando que el estado reactivo del formulario tenga prioridad sobre las propiedades cacheadas en memoria del registro original.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Validación de compilación exitosa mediante `cmd /c npm run build` (23/23 páginas compiladas sin errores).
+
+### Riesgos Detectados / Remanentes
+- Ninguno.
+
+---
+
 ## [2026-08-18] Inclusión de Anexo de Matrículas Profesionales en Reportes PDF de Protocolos
 
 ### Resumen de Cambios
