@@ -36,6 +36,10 @@ export function PostHogProvider({ children }) {
         capture_pageview: false, // Controlado manualmente arriba para SPA
         capture_pageleave: true,
         autocapture: true,
+        // Deshabilita features opcionales que intentan cargar assets externos
+        // desde el CDN de PostHog y generan 404s en consola:
+        disable_web_experiments: true,
+        __preview_remote_config: false,
         session_recording: {
           maskAllInputs: true,
           maskInputOptions: {
@@ -43,6 +47,10 @@ export function PostHogProvider({ children }) {
           },
         },
         loaded: (ph) => {
+          // Deshabilita plugins que cargan assets externos y causan 404s
+          ph.set_config({
+            disable_surveys: true,
+          });
           if (process.env.NODE_ENV === 'development') {
             console.log('[PostHog] Inicializado correctamente.');
           }
