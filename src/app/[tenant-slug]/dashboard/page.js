@@ -48,7 +48,12 @@ import {
   Trash2,
   Printer,
   Check,
-  CheckCircle2
+  CheckCircle2,
+  Tag,
+  Percent,
+  Gift,
+  Clock,
+  Crown
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -106,6 +111,23 @@ export default function TenantDashboard({ params }) {
 
   // Estados para el Modal de Selección de Plan
   const [showPlanModal, setShowPlanModal] = useState(false);
+  const [planPrices, setPlanPrices] = useState({ basic_5: 25000, standard_25: 35000, libre: 45000 });
+
+  useEffect(() => {
+    fetch('/api/pricing')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.plans) {
+          const pricesMap = {};
+          data.plans.forEach((p) => {
+            pricesMap[p.id] = p.currentPrice;
+          });
+          setPlanPrices((prev) => ({ ...prev, ...pricesMap }));
+        }
+      })
+      .catch((err) => console.error('[Pricing Fetch Error]:', err));
+  }, []);
+
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [confirmDialogConfig, setConfirmDialogConfig] = useState({
     title: '',
@@ -1945,6 +1967,9 @@ export default function TenantDashboard({ params }) {
   };
 
   const activePlan = tenant ? getEffectivePlan(tenant) : 'free';
+  const isGiftActive = Boolean(tenant?.gift_plan_id && tenant?.gift_ends_at && new Date(tenant.gift_ends_at) > new Date());
+  const isDiscountActive = Boolean(tenant?.discount_percentage > 0 && (!tenant?.discount_ends_at || new Date(tenant.discount_ends_at) > new Date()));
+  const isExempt = Boolean(tenant?.is_exempt);
 
   return (
     <div className="h-screen overflow-hidden bg-syso-bg text-slate-700 flex font-sans">
@@ -1966,7 +1991,7 @@ export default function TenantDashboard({ params }) {
           title="Dashboard"
           icon={Building}
           tenantName={tenant?.name || 'Cargando...'}
-          planId={tenant?.plan_id}
+          planId={activePlan}
           showPlanBadge={profile && profile.role !== 'cliente'}
           setIsMobileMenuOpen={setIsMobileMenuOpen}
         />
@@ -2636,34 +2661,96 @@ export default function TenantDashboard({ params }) {
                   </div>
                 </div>
 
-                {/* Sidebar info plan */}
-                <div className="bg-white border-b border-slate-200 md:border md:rounded-2xl p-6 flex flex-col justify-between space-y-6 shadow-sm">
+                {/* Sidebar info plan & beneficios */}
+                <div className="bg-white border-b border-slate-200 md:border md:rounded-2xl p-6 flex flex-col justify-between space-y-5 shadow-sm">
                   <div className="space-y-4">
                     <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                       <Award className="h-4.5 w-4.5 text-[#468DFF]" />
-                      Tu plan contratado
+                      Tu plan y beneficios
                     </h3>
 
-                    <div className="rounded-xl border border-blue-500/15 bg-blue-50/40 p-4 space-y-3">
-                      <span className="px-2 py-0.5 rounded-full bg-blue-500/15 text-[#468DFF] text-[8px] font-bold uppercase tracking-wider">
-                        Suscripción Activa
-                      </span>
-                      <h4 className="text-sm font-bold text-slate-800">{planNames[activePlan] || 'Plan Gratis'}</h4>
-                      <p className="text-[10px] text-slate-600 leading-normal">
-                        {activePlan === 'free' && 'El Plan Gratis te permite cargar 1 empresa cliente para evaluar las herramientas del SaaS.'}
-                        {activePlan === 'basic_5' && 'Tienes habilitado el soporte de hasta 5 empresas en simultáneo.'}
-                        {activePlan === 'standard_25' && 'Tienes habilitado el soporte de hasta 25 empresas en simultáneo.'}
-                        {activePlan === 'libre' && 'Tienes empresas e inspectores ilimitados habilitados.'}
-                      </p>
+                    {/* Tarjeta Principal del Plan */}
+                    <div className={`rounded-xl border p-4 space-y-3 transition-all ${
+                      isGiftActive 
+                        ? 'border-indigo-200 bg-gradient-to-br from-indigo-50/80 via-blue-50/40 to-purple-50/30 shadow-xs' 
+                        : (isExempt 
+                            ? 'border-amber-200 bg-amber-50/40' 
+                            : 'border-blue-500/15 bg-blue-50/40')
+                    }`}>
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        {isGiftActive ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-indigo-600 text-white text-[9px] font-bold uppercase tracking-wider shadow-xs">
+                            <Gift className="h-3 w-3" />
+                            Regalo Bonificado
+                          </span>
+                        ) : isExempt ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500 text-white text-[9px] font-bold uppercase tracking-wider">
+                            <Crown className="h-3 w-3" />
+                            Plan Owner
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full bg-blue-500/15 text-[#468DFF] text-[8px] font-bold uppercase tracking-wider">
+                            Suscripción Activa
+                          </span>
+                        )}
+
+                        {isGiftActive && tenant?.gift_ends_at && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-700 bg-indigo-100/80 px-2 py-0.5 rounded-md">
+                            <Clock className="h-3 w-3" />
+                            {Math.max(1, Math.ceil((new Date(tenant.gift_ends_at) - new Date()) / (1000 * 60 * 60 * 24)))} días restantes
+                          </span>
+                        )}
+                      </div>
+
+                      <div>
+                        <h4 className="text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
+                          {isExempt ? 'Plan Full (Ilimitado)' : (isGiftActive ? `${planNames[activePlan] || 'Plan Full'} (Bonificado)` : (planNames[activePlan] || 'Plan Gratis'))}
+                        </h4>
+                        <p className="text-[11px] text-slate-600 leading-relaxed mt-1">
+                          {isExempt && 'Acceso total e ilimitado de por vida como dueño de la aplicación.'}
+                          {isGiftActive && `Tu consultora cuenta con acceso completo a todas las funcionalidades del ${planNames[activePlan]} hasta el ${formatDate(tenant.gift_ends_at.slice(0, 10))}.`}
+                          {!isExempt && !isGiftActive && (
+                            <>
+                              {activePlan === 'free' && 'El Plan Gratis te permite cargar hasta 1 empresa cliente para evaluar las herramientas del SaaS.'}
+                              {activePlan === 'basic_5' && 'Tienes habilitado el soporte de hasta 5 empresas en simultáneo.'}
+                              {activePlan === 'standard_25' && 'Tienes habilitado el soporte de hasta 25 empresas en simultáneo.'}
+                              {activePlan === 'libre' && 'Tienes empresas e inspectores ilimitados habilitados.'}
+                            </>
+                          )}
+                        </p>
+                      </div>
                     </div>
+
+                    {/* Banner de Descuento Activo si existe */}
+                    {isDiscountActive && (
+                      <div className="rounded-xl border border-amber-300/80 bg-gradient-to-r from-amber-500/10 via-amber-50 to-orange-500/10 p-3 flex items-start gap-2.5">
+                        <div className="p-1.5 rounded-lg bg-amber-500 text-white shrink-0 mt-0.5 shadow-xs">
+                          <Percent className="h-3.5 w-3.5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-xs font-extrabold text-amber-900">
+                              ¡{tenant.discount_percentage}% OFF Bonificado!
+                            </span>
+                            <span className="text-[10px] font-bold text-amber-700 bg-amber-200/70 px-1.5 py-0.2 rounded">
+                              Especial
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-amber-800 leading-tight mt-0.5">
+                            Descuento activo en Mercado Pago para tu próxima suscripción o renovación
+                            {tenant.discount_ends_at ? ` (Válido hasta el ${formatDate(tenant.discount_ends_at.slice(0, 10))})` : ''}.
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <button
                     onClick={() => setShowPlanModal(true)}
-                    className="w-full py-2.5 px-4 rounded-xl border border-[#468DFF]/40 hover:bg-[#468DFF] hover:text-white text-center text-[#468DFF] font-semibold text-xs transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+                    className="w-full py-2.5 px-4 rounded-xl border border-[#468DFF]/40 hover:bg-[#468DFF] hover:text-white text-center text-[#468DFF] font-semibold text-xs transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer shadow-xs active:scale-[0.99]"
                   >
                     <Sparkles className="h-3.5 w-3.5" />
-                    Cambiar / Subir de Plan
+                    {isGiftActive || isDiscountActive ? 'Ver / Contratar Plan' : 'Cambiar / Subir de Plan'}
                   </button>
                 </div>
 
@@ -2808,158 +2895,191 @@ export default function TenantDashboard({ params }) {
                 </h3>
               </div>
 
-              {/* Grid of Plans */}
-              <div className="grid md:grid-cols-4 gap-6 items-stretch pb-2">
-                
-                {/* Plan Free */}
-                <div className={`rounded-2xl border p-5 flex flex-col justify-between transition-all ${activePlan === 'free' ? 'border-[#468DFF] bg-[#468DFF]/5 ring-2 ring-[#468DFF]/20 shadow-md' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
-                  <div>
-                    <h4 className="text-base font-bold text-slate-900">Plan Gratis</h4>
-                    <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">Ideal para probar la herramienta.</p>
-                    <span className="font-outfit text-2xl font-extrabold text-[#468DFF] mt-3 block">$0 <span className="text-xs text-slate-500 font-normal">/ permanente</span></span>
-                    <ul className="text-[11px] text-slate-600 mt-4 space-y-1.5 border-t border-slate-200 pt-4 font-semibold leading-relaxed">
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 1 cliente</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 1 miembro equipo</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Gestión Anual</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Capacitación Anual</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Capacitaciones online</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Acciones Correctivas</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Protocolo de Iluminación</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Protocolo de Ruido</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Protocolo de Ergonomía</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Protocolo de Puesta a Tierra</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Accidentes + Informe IA</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Matriz de Riesgos</li>
-                    </ul>
-                  </div>
-                  <button
-                    type="button"
-                    disabled={activePlan === 'free'}
-                    onClick={() => {
-                      showAlert(
-                        'Cancelar Suscripción',
-                        'Para dar de baja tu plan activo y regresar al Plan Gratis, debes cancelar la suscripción desde tu panel de Mercado Pago. Al confirmarse la cancelación, tu organización se actualizará automáticamente a Gratis sin cargos adicionales.',
-                        'info',
-                        () => {
-                          window.open('https://www.mercadopago.com.ar/subscriptions', '_blank');
-                        },
-                        'Ir a Mercado Pago'
-                      );
-                      setShowPlanModal(false);
-                    }}
-                    className={`w-full py-2.5 rounded-xl mt-6 text-xs font-bold transition-all ${activePlan === 'free' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer'}`}
-                  >
-                    {activePlan === 'free' ? 'Activo' : 'Elegir'}
-                  </button>
-                </div>
+              {(() => {
+                const currentActivePlan = tenant ? getEffectivePlan(tenant) : 'free';
+                const isDiscountActive = tenant?.discount_percentage > 0 && (!tenant?.discount_ends_at || new Date(tenant.discount_ends_at) > new Date());
+                const discountPct = isDiscountActive ? Number(tenant.discount_percentage) : 0;
 
-                {/* Plan Básico */}
-                <div className={`rounded-2xl border p-5 flex flex-col justify-between transition-all ${activePlan === 'basic_5' ? 'border-[#468DFF] bg-[#468DFF]/5 ring-2 ring-[#468DFF]/20 shadow-md' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
-                  <div>
-                    <h4 className="text-base font-bold text-slate-900">Plan Básico</h4>
-                    <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">Para profesionales de campo.</p>
-                    <span className="font-outfit text-2xl font-extrabold text-[#468DFF] mt-3 block">$25.000 <span className="text-xs text-slate-500 font-normal">/ mes</span></span>
-                    <ul className="text-[11px] text-slate-600 mt-4 space-y-1.5 border-t border-slate-200 pt-4 font-semibold leading-relaxed">
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 5 clientes</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 5 miembros equipo</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Gestión Anual</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Capacitación Anual</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Capacitaciones online</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Acciones Correctivas</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Protocolo de Iluminación</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Protocolo de Ruido</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Protocolo de Ergonomía</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Protocolo de Puesta a Tierra</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Accidentes + Informe IA</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Matriz de Riesgos</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Extintores + PDF</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Eléctrico + PDF</li>
-                    </ul>
-                  </div>
-                  <button
-                    type="button"
-                    disabled={activePlan === 'basic_5'}
-                    onClick={() => handleUpgradePlan('basic_5')}
-                    className={`w-full py-2.5 rounded-xl mt-6 text-xs font-bold transition-all ${activePlan === 'basic_5' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-[#468DFF] hover:bg-[#0511F2] text-white cursor-pointer'}`}
-                  >
-                    {activePlan === 'basic_5' ? 'Activo' : 'Contratar'}
-                  </button>
-                </div>
+                const renderPrice = (planKey, defaultPrice) => {
+                  const basePrice = planPrices[planKey] || defaultPrice;
+                  const finalPrice = discountPct > 0 ? Math.round(basePrice * (1 - discountPct / 100)) : basePrice;
 
-                {/* Plan Estándar */}
-                <div className={`rounded-2xl border p-5 flex flex-col justify-between transition-all ${activePlan === 'standard_25' ? 'border-[#468DFF] bg-[#468DFF]/5 ring-2 ring-[#468DFF]/20 shadow-md' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
-                  <div>
-                    <h4 className="text-base font-bold text-slate-900">Plan Estándar</h4>
-                    <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">Para consultoras medianas.</p>
-                    <span className="font-outfit text-2xl font-extrabold text-[#468DFF] mt-3 block">$35.000 <span className="text-xs text-slate-500 font-normal">/ mes</span></span>
-                    <ul className="text-[11px] text-slate-600 mt-4 space-y-1.5 border-t border-slate-200 pt-4 font-semibold leading-relaxed">
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 25 clientes</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 25 miembros equipo</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Gestión Anual</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Capacitación Anual</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Capacitaciones online</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Acciones Correctivas</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Protocolo de Iluminación</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Protocolo de Ruido</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Protocolo de Ergonomía</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Protocolo de Puesta a Tierra</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Accidentes + Informe IA</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Matriz de Riesgos</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Extintores + PDF</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Eléctrico + PDF</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Constancias de Visita</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Avisos de Riesgo</li>
-                    </ul>
-                  </div>
-                  <button
-                    type="button"
-                    disabled={activePlan === 'standard_25'}
-                    onClick={() => handleUpgradePlan('standard_25')}
-                    className={`w-full py-2.5 rounded-xl mt-6 text-xs font-bold transition-all ${activePlan === 'standard_25' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-[#468DFF] hover:bg-[#0511F2] text-white cursor-pointer'}`}
-                  >
-                    {activePlan === 'standard_25' ? 'Activo' : 'Contratar'}
-                  </button>
-                </div>
+                  return (
+                    <div className="mt-3">
+                      <div className="flex items-baseline gap-2">
+                        <span className="font-outfit text-2xl font-extrabold text-[#468DFF]">
+                          ${finalPrice.toLocaleString('es-AR')}
+                          <span className="text-xs text-slate-500 font-normal"> / mes</span>
+                        </span>
+                        {discountPct > 0 && (
+                          <span className="line-through text-xs font-semibold text-slate-400">
+                            ${basePrice.toLocaleString('es-AR')}
+                          </span>
+                        )}
+                      </div>
+                      {discountPct > 0 && (
+                        <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                          🏷️ {discountPct}% OFF BONIFICADO
+                        </span>
+                      )}
+                    </div>
+                  );
+                };
 
-                {/* Plan Full */}
-                <div className={`rounded-2xl border p-5 flex flex-col justify-between transition-all ${activePlan === 'libre' ? 'border-[#468DFF] bg-[#468DFF]/5 ring-2 ring-[#468DFF]/20 shadow-md' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
-                  <div>
-                    <h4 className="text-base font-bold text-slate-900">Plan Full</h4>
-                    <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">Constructoras y corporaciones.</p>
-                    <span className="font-outfit text-2xl font-extrabold text-[#468DFF] mt-3 block">$45.000 <span className="text-xs text-slate-500 font-normal">/ mes</span></span>
-                    <ul className="text-[11px] text-slate-600 mt-4 space-y-1.5 border-t border-slate-200 pt-4 font-semibold leading-relaxed">
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Clientes ilimitados</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Equipo de trabajo ilimitado</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Gestión Anual</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Capacitación Anual</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Capacitaciones online</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Acciones Correctivas</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Protocolo de Iluminación</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Protocolo de Ruido</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Protocolo de Ergonomía</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Protocolo de Puesta a Tierra</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Accidentes + Informe IA</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Matriz de Riesgos</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Extintores + PDF</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Eléctrico + PDF</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Constancias de Visita</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Avisos de Riesgo</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Check list personalizados</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Legajo técnico online</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Portal de clientes</li>
-                    </ul>
-                  </div>
-                  <button
-                    type="button"
-                    disabled={activePlan === 'libre'}
-                    onClick={() => handleUpgradePlan('libre')}
-                    className={`w-full py-2.5 rounded-xl mt-6 text-xs font-bold transition-all ${activePlan === 'libre' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-[#468DFF] hover:bg-[#0511F2] text-white cursor-pointer'}`}
-                  >
-                    {activePlan === 'libre' ? 'Activo' : 'Contratar'}
-                  </button>
-                </div>
+                return (
+                  <div className="grid md:grid-cols-4 gap-6 items-stretch pb-2">
+                    
+                    {/* Plan Free */}
+                    <div className={`rounded-2xl border p-5 flex flex-col justify-between transition-all ${currentActivePlan === 'free' ? 'border-[#468DFF] bg-[#468DFF]/5 ring-2 ring-[#468DFF]/20 shadow-md' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
+                      <div>
+                        <h4 className="text-base font-bold text-slate-900">Plan Gratis</h4>
+                        <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">Ideal para probar la herramienta.</p>
+                        <span className="font-outfit text-2xl font-extrabold text-[#468DFF] mt-3 block">$0 <span className="text-xs text-slate-500 font-normal">/ permanente</span></span>
+                        <ul className="text-[11px] text-slate-600 mt-4 space-y-1.5 border-t border-slate-200 pt-4 font-semibold leading-relaxed">
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 1 cliente</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 1 miembro equipo</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Gestión Anual</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Capacitación Anual</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Capacitaciones online</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Acciones Correctivas</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Protocolo de Iluminación</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Protocolo de Ruido</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Protocolo de Ergonomía</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Protocolo de Puesta a Tierra</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Accidentes + Informe IA</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Matriz de Riesgos</li>
+                        </ul>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={currentActivePlan === 'free'}
+                        onClick={() => {
+                          showAlert(
+                            'Cancelar Suscripción',
+                            'Para dar de baja tu plan activo y regresar al Plan Gratis, debes cancelar la suscripción desde tu panel de Mercado Pago. Al confirmarse la cancelación, tu organización se actualizará automáticamente a Gratis sin cargos adicionales.',
+                            'info',
+                            () => {
+                              window.open('https://www.mercadopago.com.ar/subscriptions', '_blank');
+                            },
+                            'Ir a Mercado Pago'
+                          );
+                          setShowPlanModal(false);
+                        }}
+                        className={`w-full py-2.5 rounded-xl mt-6 text-xs font-bold transition-all ${currentActivePlan === 'free' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer'}`}
+                      >
+                        {currentActivePlan === 'free' ? 'Activo' : 'Elegir'}
+                      </button>
+                    </div>
 
-              </div>
+                    {/* Plan Básico */}
+                    <div className={`rounded-2xl border p-5 flex flex-col justify-between transition-all ${currentActivePlan === 'basic_5' ? 'border-[#468DFF] bg-[#468DFF]/5 ring-2 ring-[#468DFF]/20 shadow-md' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
+                      <div>
+                        <h4 className="text-base font-bold text-slate-900">Plan Básico</h4>
+                        <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">Para profesionales de campo.</p>
+                        {renderPrice('basic_5', 25000)}
+                        <ul className="text-[11px] text-slate-600 mt-4 space-y-1.5 border-t border-slate-200 pt-4 font-semibold leading-relaxed">
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 5 clientes</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 5 miembros equipo</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Gestión Anual</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Capacitación Anual</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Capacitaciones online</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Acciones Correctivas</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Protocolo de Iluminación</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Protocolo de Ruido</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Protocolo de Ergonomía</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Protocolo de Puesta a Tierra</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Accidentes + Informe IA</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Matriz de Riesgos</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Extintores + PDF</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Eléctrico + PDF</li>
+                        </ul>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={currentActivePlan === 'basic_5'}
+                        onClick={() => handleUpgradePlan('basic_5')}
+                        className={`w-full py-2.5 rounded-xl mt-6 text-xs font-bold transition-all ${currentActivePlan === 'basic_5' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-[#468DFF] hover:bg-[#0511F2] text-white cursor-pointer'}`}
+                      >
+                        {currentActivePlan === 'basic_5' ? 'Activo' : 'Contratar'}
+                      </button>
+                    </div>
+
+                    {/* Plan Estándar */}
+                    <div className={`rounded-2xl border p-5 flex flex-col justify-between transition-all ${currentActivePlan === 'standard_25' ? 'border-[#468DFF] bg-[#468DFF]/5 ring-2 ring-[#468DFF]/20 shadow-md' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
+                      <div>
+                        <h4 className="text-base font-bold text-slate-900">Plan Estándar</h4>
+                        <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">Para consultoras medianas.</p>
+                        {renderPrice('standard_25', 35000)}
+                        <ul className="text-[11px] text-slate-600 mt-4 space-y-1.5 border-t border-slate-200 pt-4 font-semibold leading-relaxed">
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 25 clientes</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 25 miembros equipo</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Gestión Anual</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Capacitación Anual</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Capacitaciones online</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Acciones Correctivas</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Protocolo de Iluminación</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Protocolo de Ruido</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Protocolo de Ergonomía</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Protocolo de Puesta a Tierra</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Accidentes + Informe IA</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Matriz de Riesgos</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Extintores + PDF</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Eléctrico + PDF</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Constancias de Visita</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Avisos de Riesgo</li>
+                        </ul>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={currentActivePlan === 'standard_25'}
+                        onClick={() => handleUpgradePlan('standard_25')}
+                        className={`w-full py-2.5 rounded-xl mt-6 text-xs font-bold transition-all ${currentActivePlan === 'standard_25' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-[#468DFF] hover:bg-[#0511F2] text-white cursor-pointer'}`}
+                      >
+                        {currentActivePlan === 'standard_25' ? 'Activo' : 'Contratar'}
+                      </button>
+                    </div>
+
+                    {/* Plan Full */}
+                    <div className={`rounded-2xl border p-5 flex flex-col justify-between transition-all ${currentActivePlan === 'libre' ? 'border-[#468DFF] bg-[#468DFF]/5 ring-2 ring-[#468DFF]/20 shadow-md' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
+                      <div>
+                        <h4 className="text-base font-bold text-slate-900">Plan Full</h4>
+                        <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">Constructoras y corporaciones.</p>
+                        {renderPrice('libre', 45000)}
+                        <ul className="text-[11px] text-slate-600 mt-4 space-y-1.5 border-t border-slate-200 pt-4 font-semibold leading-relaxed">
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Clientes ilimitados</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Equipo de trabajo ilimitado</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Gestión Anual</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Prog. Capacitación Anual</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Capacitaciones online</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Acciones Correctivas</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Protocolo de Iluminación</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Protocolo de Ruido</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Protocolo de Ergonomía</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Protocolo de Puesta a Tierra</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Accidentes + Informe IA</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Matriz de Riesgos</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Extintores + PDF</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Eléctrico + PDF</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Constancias de Visita</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Avisos de Riesgo</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Check list personalizados</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Legajo técnico online</li>
+                          <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Portal de clientes</li>
+                        </ul>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={currentActivePlan === 'libre'}
+                        onClick={() => handleUpgradePlan('libre')}
+                        className={`w-full py-2.5 rounded-xl mt-6 text-xs font-bold transition-all ${currentActivePlan === 'libre' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-[#468DFF] hover:bg-[#0511F2] text-white cursor-pointer'}`}
+                      >
+                        {currentActivePlan === 'libre' ? 'Activo' : 'Contratar'}
+                      </button>
+                    </div>
+
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>

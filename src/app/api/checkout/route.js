@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 import { PreApproval } from 'mercadopago';
 import { client as mpClient } from '../../../config/mpConfig';
 import { PLAN_FEATURES } from '../../../lib/utils';
+import { getDynamicPlanFeatures } from '../../../lib/planPricing';
 
 export async function POST(request) {
   try {
@@ -65,7 +66,8 @@ export async function POST(request) {
       return NextResponse.json({ error: 'No autorizado para gestionar otro tenant.' }, { status: 403 });
     }
 
-    const planConfig = PLAN_FEATURES[planId];
+    const dynamicPlans = await getDynamicPlanFeatures(serverClient);
+    const planConfig = dynamicPlans[planId] || PLAN_FEATURES[planId];
     if (!planConfig || planId === 'free') {
       return NextResponse.json({ error: 'Plan seleccionado inválido.' }, { status: 400 });
     }

@@ -3,6 +3,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ToastProvider } from '../components/providers/ToastProvider';
+import { PostHogProvider } from '../components/providers/PostHogProvider';
 
 const ThemeContext = createContext({
   theme: 'light',
@@ -33,9 +34,11 @@ export default function Providers({ children }) {
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
       <div className={theme === 'dark' ? 'dark' : ''}>
-        <ToastProvider>
-          {children}
-        </ToastProvider>
+        <PostHogProvider>
+          <ToastProvider>
+            {children}
+          </ToastProvider>
+        </PostHogProvider>
       </div>
     </ThemeContext.Provider>
   );

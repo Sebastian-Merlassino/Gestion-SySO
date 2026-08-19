@@ -251,13 +251,18 @@ export async function middleware(request) {
     return NextResponse.redirect(url);
   }
 
+  // Permitir acceso a consola /admin (la autenticación y autorización se validan en la ruta y API)
+  if (pathname.startsWith('/admin')) {
+    return withRateLimit(response);
+  }
+
   // Validar accesos cruzados entre Tenants en rutas del tipo /[tenant_slug]/*
   const pathSegments = pathname.split('/').filter(Boolean);
   if (pathSegments.length > 0) {
     const routeTenantSlug = pathSegments[0];
     
     // Lista de rutas raíz reservadas de Next.js
-    const reservedRoutes = ['login', 'register', 'onboarding', 'reset-password', 'api', 'brand', 'assets', 'capacitar', 'terminos', 'privacidad', 'cookies'];
+    const reservedRoutes = ['login', 'register', 'onboarding', 'reset-password', 'api', 'brand', 'assets', 'capacitar', 'terminos', 'privacidad', 'cookies', 'admin'];
     
     if (!reservedRoutes.includes(routeTenantSlug) && !routeTenantSlug.includes('.')) {
       // Si el slug en la URL no coincide con el slug del tenant del usuario, redirigir a su propio dashboard
@@ -273,7 +278,7 @@ export async function middleware(request) {
     const routeTenantSlug = pathSegments[0];
     const section = pathSegments[1];
     
-    const reservedRoutes = ['login', 'register', 'onboarding', 'reset-password', 'api', 'brand', 'assets', 'capacitar', 'terminos', 'privacidad', 'cookies'];
+    const reservedRoutes = ['login', 'register', 'onboarding', 'reset-password', 'api', 'brand', 'assets', 'capacitar', 'terminos', 'privacidad', 'cookies', 'admin'];
     if (!reservedRoutes.includes(routeTenantSlug) && !routeTenantSlug.includes('.')) {
       const tenant = profile.tenants;
       

@@ -14,11 +14,12 @@ export default function AppPageHeader({
   className = '',
 }) {
   const getPlanLabel = (pid) => {
-    if (!pid) return 'Plan Pro';
-    const cleanId = pid.toLowerCase();
+    if (!pid) return 'Plan Gratis';
+    const cleanId = String(pid).toLowerCase();
     if (cleanId === 'libre') return 'Plan Full';
-    if (cleanId.startsWith('standard')) return 'Plan Standard';
-    if (cleanId.startsWith('basic')) return 'Plan Basic';
+    if (cleanId.startsWith('standard')) return 'Plan Estándar';
+    if (cleanId.startsWith('basic')) return 'Plan Básico';
+    if (cleanId === 'free' || cleanId === 'gratis') return 'Plan Gratis';
     return `Plan ${pid}`;
   };
 

@@ -20,6 +20,7 @@ import {
   ChevronDown, 
   X,
   ShieldAlert,
+  ShieldCheck,
   Zap,
   Lock,
   Share2,
@@ -28,6 +29,9 @@ import {
   PersonStanding
 } from 'lucide-react';
 import { useToast } from '@/components/providers/ToastProvider';
+import { identifyUser, resetAnalytics } from '@/lib/analytics';
+import { setSentryUserContext } from '@/lib/sentryUser';
+import { checkIsSuperAdmin } from '@/lib/adminAuth';
 
 let isHydratedGlobal = false;
 let cachedTenantGlobal = null;
@@ -47,6 +51,22 @@ export default function Sidebar({
   const [mounted, setMounted] = useState(isHydratedGlobal);
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null });
   const [tenantData, setTenantData] = useState(cachedTenantGlobal);
+  const [currentUserEmail, setCurrentUserEmail] = useState(
+    profile?.email || (typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem('user-profile') || '{}')?.email : null)
+  );
+
+  // Sincronizar email del usuario autenticado para privilegios SuperAdmin
+  useEffect(() => {
+    if (profile?.email) {
+      setCurrentUserEmail(profile.email);
+    } else {
+      supabase.auth.getUser().then(({ data }) => {
+        if (data?.user?.email) {
+          setCurrentUserEmail(data.user.email);
+        }
+      }).catch(() => {});
+    }
+  }, [profile]);
 
   // Estado del submenú desplegable de Capacitación
   const [isCapacitacionOpen, setIsCapacitacionOpen] = useState(
@@ -60,6 +80,8 @@ export default function Sidebar({
   }, [currentSection]);
 
   const onLogoutClick = async () => {
+    resetAnalytics();
+    setSentryUserContext(null);
     if (typeof handleLogout === 'function') {
       try {
         await handleLogout();
@@ -79,6 +101,14 @@ export default function Sidebar({
       window.location.href = '/login';
     }
   };
+
+  // Contextualizar usuario en Sentry y PostHog de forma reactiva
+  useEffect(() => {
+    if (mounted && profile) {
+      identifyUser(profile, tenantData);
+      setSentryUserContext(profile, tenantData);
+    }
+  }, [mounted, profile, tenantData]);
 
   const handleShareApp = async () => {
     const shareMessage = 'Te comparto Gestión SySO, la plataforma web para organizar y digitalizar toda la gestión de Seguridad, Higiene y Salud Ocupacional. Probala gratis acá: https://app.gestionsyso.com/';
@@ -156,7 +186,15 @@ export default function Sidebar({
     fetchTenantData();
   }, [tenantSlug]);
 
-  
+  const isSuperAdmin = Boolean(
+    mounted && (
+      checkIsSuperAdmin(currentUserEmail || profile?.email, profile) ||
+      (currentUserEmail && currentUserEmail.toLowerCase() === 'sebastian.merlassino@gestionsyso.com') ||
+      (profile?.email && profile.email.toLowerCase() === 'sebastian.merlassino@gestionsyso.com') ||
+      profile?.is_superadmin === true
+    )
+  );
+
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', path: `/${tenantSlug}/dashboard`, icon: Building },
     { id: 'empresas', label: 'Clientes', path: `/${tenantSlug}/empresas`, icon: Users, adminOnly: true },
@@ -188,7 +226,8 @@ export default function Sidebar({
     { id: 'legajo', label: 'Legajo Técnico', path: `/${tenantSlug}/legajo`, icon: Folder },
     { id: 'nomina', label: 'Nómina de Personal', path: `/${tenantSlug}/nomina`, icon: Users },
     { id: 'divider-2', type: 'divider' },
-    { id: 'profile', label: 'Editar Perfil', path: `/${tenantSlug}/profile`, icon: Settings, shrink: true }
+    { id: 'profile', label: 'Editar Perfil', path: `/${tenantSlug}/profile`, icon: Settings, shrink: true },
+    ...(isSuperAdmin ? [{ id: 'superadmin', label: 'SuperAdmin Console', path: '/admin', icon: ShieldCheck, isSuperAdminItem: true, shrink: true }] : [])
   ];
 
   // Obtener plan efectivo del tenant
@@ -207,16 +246,16 @@ export default function Sidebar({
   }
 
   const planFeatures = {
-    free: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'empresas', 'equipo', 'protocolo-iluminacion', 'protocolo-ruido', 'protocolo-ergonomia', 'protocolo-puesta-a-tierra'],
-    basic_5: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'protocolo-iluminacion', 'protocolo-ruido', 'protocolo-ergonomia', 'protocolo-puesta-a-tierra', 'empresas', 'equipo'],
-    standard_25: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'protocolo-iluminacion', 'protocolo-ruido', 'protocolo-ergonomia', 'protocolo-puesta-a-tierra', 'visitas', 'avisos', 'empresas', 'equipo'],
-    libre: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'extintores', 'control-electrico', 'protocolo-iluminacion', 'protocolo-ruido', 'protocolo-ergonomia', 'protocolo-puesta-a-tierra', 'visitas', 'avisos', 'checklist-personalizados', 'legajo', 'portal-clientes', 'empresas', 'equipo']
+    free: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'superadmin', 'empresas', 'equipo', 'protocolo-iluminacion', 'protocolo-ruido', 'protocolo-ergonomia', 'protocolo-puesta-a-tierra'],
+    basic_5: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'superadmin', 'extintores', 'control-electrico', 'protocolo-iluminacion', 'protocolo-ruido', 'protocolo-ergonomia', 'protocolo-puesta-a-tierra', 'empresas', 'equipo'],
+    standard_25: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'superadmin', 'extintores', 'control-electrico', 'protocolo-iluminacion', 'protocolo-ruido', 'protocolo-ergonomia', 'protocolo-puesta-a-tierra', 'visitas', 'avisos', 'empresas', 'equipo'],
+    libre: ['programa', 'capacitacion', 'capacitaciones-online', 'correctivas', 'accidentes', 'matriz-riesgos', 'nomina', 'dashboard', 'profile', 'superadmin', 'extintores', 'control-electrico', 'protocolo-iluminacion', 'protocolo-ruido', 'protocolo-ergonomia', 'protocolo-puesta-a-tierra', 'visitas', 'avisos', 'checklist-personalizados', 'legajo', 'portal-clientes', 'empresas', 'equipo']
   };
 
   const allowedFeatures = planFeatures[effectivePlan] || planFeatures.free;
 
   const handleLinkClick = (e, item) => {
-    if (item.type === 'divider') return;
+    if (item.type === 'divider' || item.isSuperAdminItem || item.id === 'superadmin') return;
 
     if (!allowedFeatures.includes(item.id)) {
       e.preventDefault();
@@ -237,6 +276,28 @@ export default function Sidebar({
   };
 
   const renderLink = (item, isMobile = false) => {
+    if (item.isSuperAdminItem) {
+      const isCollapsed = !isMobile && isSidebarCollapsed;
+      return (
+        <a
+          key={item.id}
+          href="/admin"
+          title="SuperAdmin Console"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (isMobile) setIsMobileMenuOpen(false);
+            window.location.href = '/admin';
+          }}
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-xs transition-all shrink-0 bg-indigo-950/60 text-indigo-300 border border-indigo-500/50 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 shadow-md shadow-indigo-500/10 active:scale-[0.98] cursor-pointer ${
+            isCollapsed ? 'justify-center' : ''
+          }`}
+        >
+          <ShieldCheck className="h-4 w-4 shrink-0 text-indigo-400" />
+          {!isCollapsed && <span className="leading-tight">SuperAdmin Console</span>}
+        </a>
+      );
+    }
+
     if (item.adminOnly) {
       if (!mounted) return null;
       if (profile && profile.role === 'cliente') {
@@ -394,6 +455,7 @@ export default function Sidebar({
               <LogOut className="h-4 w-4" />
             </button>
           </div>
+
           {/* Botón Compartir App */}
           {!isSidebarCollapsed ? (
             <button
@@ -469,6 +531,7 @@ export default function Sidebar({
                   <LogOut className="h-4 w-4" />
                 </button>
               </div>
+
               {/* Botón Compartir App */}
               <button
                 onClick={handleShareApp}

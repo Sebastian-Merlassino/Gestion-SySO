@@ -214,6 +214,22 @@ const [partidosList, setPartidosList] = useState([]);
   // Plan
   const [selectedPlan, setSelectedPlan] = useState('free');
   const [showPlanModal, setShowPlanModal] = useState(false);
+  const [planPrices, setPlanPrices] = useState({ basic_5: 25000, standard_25: 35000, libre: 45000 });
+
+  useEffect(() => {
+    fetch('/api/pricing')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.plans) {
+          const pricesMap = {};
+          data.plans.forEach((p) => {
+            pricesMap[p.id] = p.currentPrice;
+          });
+          setPlanPrices((prev) => ({ ...prev, ...pricesMap }));
+        }
+      })
+      .catch((err) => console.error('[Pricing Fetch Error]:', err));
+  }, []);
 
   // Efecto para abrir el modal si viene desde una redirección por falta de plan
   useEffect(() => {
@@ -2186,7 +2202,35 @@ const [partidosList, setPartidosList] = useState([]);
               {/* Grid of Plans */}
               {(() => {
                 const currentActivePlan = tenantData ? getEffectivePlan(tenantData) : 'free';
-                
+                const isDiscountActive = tenantData?.discount_percentage > 0 && (!tenantData?.discount_ends_at || new Date(tenantData.discount_ends_at) > new Date());
+                const discountPct = isDiscountActive ? Number(tenantData.discount_percentage) : 0;
+
+                const renderPrice = (planKey, defaultPrice) => {
+                  const basePrice = planPrices[planKey] || defaultPrice;
+                  const finalPrice = discountPct > 0 ? Math.round(basePrice * (1 - discountPct / 100)) : basePrice;
+
+                  return (
+                    <div className="mt-3">
+                      <div className="flex items-baseline gap-2">
+                        <span className="font-outfit text-2xl font-extrabold text-[#468DFF]">
+                          ${finalPrice.toLocaleString('es-AR')}
+                          <span className="text-xs text-slate-500 font-normal"> / mes</span>
+                        </span>
+                        {discountPct > 0 && (
+                          <span className="line-through text-xs font-semibold text-slate-400">
+                            ${basePrice.toLocaleString('es-AR')}
+                          </span>
+                        )}
+                      </div>
+                      {discountPct > 0 && (
+                        <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                          🏷️ {discountPct}% OFF BONIFICADO
+                        </span>
+                      )}
+                    </div>
+                  );
+                };
+
                 return (
                   <div className="grid md:grid-cols-4 gap-6 items-stretch pb-2">
                     
@@ -2232,12 +2276,12 @@ const [partidosList, setPartidosList] = useState([]);
                       </button>
                     </div>
 
-                    {/* Plan 25000 */}
+                    {/* Plan Básico */}
                     <div className={`rounded-2xl border p-5 flex flex-col justify-between transition-all ${currentActivePlan === 'basic_5' ? 'border-[#468DFF] bg-[#468DFF]/5 ring-2 ring-[#468DFF]/20 shadow-md' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
                       <div>
                         <h4 className="text-base font-bold text-slate-900">Plan Básico</h4>
                         <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">Para profesionales de campo.</p>
-                        <span className="font-outfit text-2xl font-extrabold text-[#468DFF] mt-3 block">$25.000 <span className="text-xs text-slate-500 font-normal">/ mes</span></span>
+                        {renderPrice('basic_5', 25000)}
                         <ul className="text-[11px] text-slate-600 mt-4 space-y-1.5 border-t border-slate-200 pt-4 font-semibold leading-relaxed">
                           <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 5 clientes</li>
                           <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 5 miembros equipo</li>
@@ -2265,12 +2309,12 @@ const [partidosList, setPartidosList] = useState([]);
                       </button>
                     </div>
 
-                    {/* Plan 35000 */}
+                    {/* Plan Estándar */}
                     <div className={`rounded-2xl border p-5 flex flex-col justify-between transition-all ${currentActivePlan === 'standard_25' ? 'border-[#468DFF] bg-[#468DFF]/5 ring-2 ring-[#468DFF]/20 shadow-md' : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'}`}>
                       <div>
                         <h4 className="text-base font-bold text-slate-900">Plan Estándar</h4>
                         <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">Para consultoras medianas.</p>
-                        <span className="font-outfit text-2xl font-extrabold text-[#468DFF] mt-3 block">$35.000 <span className="text-xs text-slate-500 font-normal">/ mes</span></span>
+                        {renderPrice('standard_25', 35000)}
                         <ul className="text-[11px] text-slate-600 mt-4 space-y-1.5 border-t border-slate-200 pt-4 font-semibold leading-relaxed">
                           <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 25 clientes</li>
                           <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> hasta 25 miembros equipo</li>
@@ -2305,7 +2349,7 @@ const [partidosList, setPartidosList] = useState([]);
                       <div>
                         <h4 className="text-base font-bold text-slate-900">Plan Full</h4>
                         <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">Constructoras y corporaciones.</p>
-                        <span className="font-outfit text-2xl font-extrabold text-[#468DFF] mt-3 block">$45.000 <span className="text-xs text-slate-500 font-normal">/ mes</span></span>
+                        {renderPrice('libre', 45000)}
                         <ul className="text-[11px] text-slate-600 mt-4 space-y-1.5 border-t border-slate-200 pt-4 font-semibold leading-relaxed">
                           <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Clientes ilimitados</li>
                           <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Equipo de trabajo ilimitado</li>
