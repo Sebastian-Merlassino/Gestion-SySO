@@ -23,13 +23,14 @@ export async function middleware(request) {
 
   const cspValue = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://www.youtube.com https://s.ytimg.com",
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://www.youtube.com https://s.ytimg.com https://*.posthog.com https://*.i.posthog.com https://us-assets.i.posthog.com https://eu-assets.i.posthog.com https://us.i.posthog.com https://eu.i.posthog.com https://*.sentry.io https://browser.sentry-cdn.com https://js.sentry-cdn.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "font-src 'self' https://fonts.gstatic.com",
-    `img-src 'self' data: blob: ${supabaseUrl ? supabaseUrl : ''} https://*.appsheet.com https://www.appsheet.com`,
-    `connect-src 'self' ${supabaseUrl ? supabaseUrl : ''} ${supabaseWsUrl ? supabaseWsUrl : ''} https://*.appsheet.com https://www.appsheet.com`,
+    "font-src 'self' data: https://fonts.gstatic.com",
+    `img-src 'self' data: blob: ${supabaseUrl ? supabaseUrl : ''} https://*.supabase.co https://*.appsheet.com https://www.appsheet.com https://*.posthog.com https://*.i.posthog.com https://us-assets.i.posthog.com https://eu-assets.i.posthog.com https://*.sentry.io`,
+    `connect-src 'self' ${supabaseUrl ? supabaseUrl : ''} ${supabaseWsUrl ? supabaseWsUrl : ''} https://*.supabase.co wss://*.supabase.co https://*.appsheet.com https://www.appsheet.com https://*.sentry.io https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io https://*.posthog.com https://*.i.posthog.com https://us.i.posthog.com https://eu.i.posthog.com https://us-assets.i.posthog.com https://eu-assets.i.posthog.com`,
     `frame-src 'self' ${supabaseUrl ? supabaseUrl : ''} https://*.supabase.co https://docs.google.com https://drive.google.com https://www.youtube.com https://*.youtube.com blob:`,
-    "worker-src blob: 'self'",
+    "worker-src blob: 'self' https://*.posthog.com https://*.i.posthog.com https://us-assets.i.posthog.com https://eu-assets.i.posthog.com",
+    "child-src blob: 'self' https://*.posthog.com",
     "frame-ancestors 'self'"
   ].filter(Boolean).join('; ');
 

@@ -1,3 +1,33 @@
+## [2026-08-19] Actualización de Directivas CSP para Sentry y PostHog Analytics
+
+### Resumen de Cambios
+- **Corrección de Bloqueos por Content Security Policy (CSP):**
+  - Se detectaron advertencias y errores en consola del navegador debido a que la directiva CSP bloqueaba las llamadas de telemetría y error tracking a Sentry (`https://*.ingest.us.sentry.io`, `https://*.sentry.io`) y la carga dinámica de scripts/peticiones de PostHog (`https://*.posthog.com`, `https://*.i.posthog.com`, `https://us-assets.i.posthog.com`, `https://eu-assets.i.posthog.com`, `https://us.i.posthog.com`, `https://eu.i.posthog.com`).
+  - Se actualizaron las directivas `script-src`, `connect-src` e `img-src` en `src/middleware.js` y `vercel.json` para permitir la comunicación fluida con la infraestructura de Sentry y PostHog sin comprometer la seguridad.
+
+### Decisiones Clave
+- Mantener en estricta sincronía los headers de seguridad declarados en `src/middleware.js` (generados dinámicamente) y en `vercel.json` (definidos a nivel de plataforma de despliegue).
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/middleware.js`
+- `[MODIFY] vercel.json`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción validada exitosamente mediante `cmd /c npm run build` (25/25 páginas estáticas y dinámicas compiladas con éxito, middleware de 92.9 kB sin errores).
+
+### Riesgos Detectados / Remanentes
+- Ninguno.
+
+### Próximo Paso Recomendado
+- Desplegar o recargar la aplicación en el navegador y verificar que la consola no arroje más violaciones de Content Security Policy.
+
+---
+
 ## [2026-08-18] Corrección de Eliminación de PDF en Edición de Siniestros y Auditoría de Módulos de Archivos
 
 ### Resumen de Cambios
