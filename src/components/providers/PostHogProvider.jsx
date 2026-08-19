@@ -39,6 +39,9 @@ export function PostHogProvider({ children }) {
         autocapture: true,
         capture_performance: false, // Evita descargas externas de web-vitals.js que dan 404
         capture_dead_clicks: false, // Evita descargas externas de dead-clicks.js que dan 404
+        capture_heatmaps: false, // Evita que heatmaps instancie dead-clicks-autocapture
+        enable_heatmaps: false,
+        disable_toolbar: true,
         disable_web_experiments: true,
         disable_surveys: true,
         __preview_remote_config: false,
