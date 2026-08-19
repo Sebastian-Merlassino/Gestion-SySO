@@ -15,6 +15,27 @@ export const useTheme = () => useContext(ThemeContext);
 export default function Providers({ children }) {
   const [theme, setTheme] = useState('light');
 
+  // Cargar tema persistido de localStorage al iniciar
+  useEffect(() => {
+    try {
+      const savedTheme = localStorage.getItem('syso_theme');
+      if (savedTheme === 'dark' || savedTheme === 'light') {
+        setTheme(savedTheme);
+        document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+      }
+    } catch (err) {
+      console.warn('[ThemeProvider] No se pudo leer localStorage:', err);
+    }
+  }, []);
+
+  // Sincronizar clase dark en el elemento raíz (html) y registrar SW
+  useEffect(() => {
+    try {
+      document.documentElement.classList.toggle('dark', theme === 'dark');
+      localStorage.setItem('syso_theme', theme);
+    } catch (err) {}
+  }, [theme]);
+
   useEffect(() => {
     if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
       navigator.serviceWorker.register('/sw.js')
