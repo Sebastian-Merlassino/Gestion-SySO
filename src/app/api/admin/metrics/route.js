@@ -122,6 +122,21 @@ export async function GET(request) {
       exempt: 0,
     };
 
+    let adminsCount = 0;
+    let miembrosCount = 0;
+    let clientesCount = 0;
+
+    profiles.forEach((p) => {
+      const role = (p.role || '').toLowerCase().trim();
+      if (role === 'cliente' || role === 'client') {
+        clientesCount++;
+      } else if (role === 'miembro' || role === 'member' || role === 'tecnico') {
+        miembrosCount++;
+      } else {
+        adminsCount++;
+      }
+    });
+
     const enrichedTenants = tenants.map((t) => {
       if (t.status === 'active') {
         activeTenantsCount++;
@@ -203,6 +218,11 @@ export async function GET(request) {
       totalTenants: tenants.length,
       activeTenants: activeTenantsCount,
       totalUsers: profiles.length,
+      usersByRole: {
+        admins: adminsCount,
+        miembros: miembrosCount,
+        clientes: clientesCount,
+      },
       totalEmpresasClientes: totalEmpresas,
       mrrEstimate,
       monthlyRevenue: monthlyApprovedSum,

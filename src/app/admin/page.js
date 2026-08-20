@@ -55,6 +55,7 @@ export default function AdminDashboardPage() {
       totalTenants: 0,
       activeTenants: 0,
       totalUsers: 0,
+      usersByRole: { admins: 0, miembros: 0, clientes: 0 },
       totalEmpresasClientes: 0,
       mrrEstimate: 0,
       monthlyRevenue: 0,
@@ -200,11 +201,28 @@ export default function AdminDashboardPage() {
     const approvedPayments = paymentsInPeriod.filter(p => p.status === 'approved');
     const revenueInPeriod = approvedPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
 
-    // Nuevas organizaciones creadas en el período
+    // Nuevos usuarios admin / organizaciones creadas en el período
     const newTenantsInPeriod = (data.tenants || []).filter(t => matchesPeriod(t.created_at));
 
     // Nuevos usuarios creados en el período
     const newUsersInPeriod = (data.profiles || []).filter(u => matchesPeriod(u.created_at));
+
+    // Desglose de roles en el período (o total si no está filtrado)
+    const targetProfiles = isFiltered ? newUsersInPeriod : (data.profiles || []);
+    let periodAdmins = 0;
+    let periodMiembros = 0;
+    let periodClientes = 0;
+
+    targetProfiles.forEach((p) => {
+      const role = (p.role || '').toLowerCase().trim();
+      if (role === 'cliente' || role === 'client') {
+        periodClientes++;
+      } else if (role === 'miembro' || role === 'member' || role === 'tecnico') {
+        periodMiembros++;
+      } else {
+        periodAdmins++;
+      }
+    });
 
     // Texto descriptivo del período
     let periodLabel = 'Histórico Total';
@@ -226,6 +244,11 @@ export default function AdminDashboardPage() {
       revenueInPeriod,
       newTenantsCount: newTenantsInPeriod.length,
       newUsersCount: newUsersInPeriod.length,
+      usersByRole: {
+        admins: periodAdmins,
+        miembros: periodMiembros,
+        clientes: periodClientes,
+      },
     };
   }, [data, selectedYear, selectedMonth]);
 
@@ -427,7 +450,7 @@ export default function AdminDashboardPage() {
             Panel de Control Global
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Monitoreo en tiempo real de organizaciones, planes, ingresos y usuarios del SaaS.
+            Monitoreo en tiempo real de usuarios administradores, planes, ingresos y usuarios del SaaS.
           </p>
         </div>
 
@@ -573,11 +596,11 @@ export default function AdminDashboardPage() {
           </p>
         </div>
 
-        {/* KPI 3: Organizaciones / Nuevas en el período */}
+        {/* KPI 3: Usuarios Administradores (Cuentas/Tenants) */}
         <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 shadow-sm relative overflow-hidden group">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              {periodData.isFiltered ? `Nuevas Consultoras (${periodData.periodLabel})` : 'Organizaciones'}
+              {periodData.isFiltered ? `Nuevos Admins (${periodData.periodLabel})` : 'Usuarios (Admins)'}
             </span>
             <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400">
               <Building2 className="w-5 h-5" />
@@ -588,15 +611,15 @@ export default function AdminDashboardPage() {
               {periodData.isFiltered ? periodData.newTenantsCount : kpis.totalTenants}
             </span>
             <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60">
-              {periodData.isFiltered ? `${kpis.totalTenants} total histórico` : `${kpis.activeTenants} activas`}
+              {periodData.isFiltered ? `${kpis.totalTenants} total histórico` : `${kpis.activeTenants} activos`}
             </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-            {kpis.totalEmpresasClientes} clientes gestionados en total
+            Cuentas y consultoras creadas
           </p>
         </div>
 
-        {/* KPI 4: Usuarios Registrados */}
+        {/* KPI 4: Usuarios Registrados Totales y Desglose */}
         <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 shadow-sm relative overflow-hidden group">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -614,9 +637,16 @@ export default function AdminDashboardPage() {
               {periodData.isFiltered ? `${kpis.totalUsers} total acumulado` : `${conversionRate}% conversión`}
             </span>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-            Admins, miembros y clientes
-          </p>
+          <div className="text-xs text-slate-500 dark:text-slate-400 mt-2 flex flex-wrap items-center gap-1.5 font-medium">
+            <span className="text-slate-800 dark:text-slate-200 font-semibold">{periodData.usersByRole.admins}</span>
+            <span className="text-slate-500 dark:text-slate-400">admins</span>
+            <span className="text-slate-300 dark:text-slate-600 font-normal">·</span>
+            <span className="text-slate-800 dark:text-slate-200 font-semibold">{periodData.usersByRole.miembros}</span>
+            <span className="text-slate-500 dark:text-slate-400">equipo</span>
+            <span className="text-slate-300 dark:text-slate-600 font-normal">·</span>
+            <span className="text-slate-800 dark:text-slate-200 font-semibold">{periodData.usersByRole.clientes}</span>
+            <span className="text-slate-500 dark:text-slate-400">clientes</span>
+          </div>
         </div>
 
       </div>
@@ -642,7 +672,7 @@ export default function AdminDashboardPage() {
               : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
           }`}
         >
-          <span>Organizaciones (Tenants)</span>
+          <span>Usuarios (Tenants)</span>
           <span className="px-2 py-0.5 text-xs rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
             {data.tenants.length}
           </span>
@@ -686,7 +716,7 @@ export default function AdminDashboardPage() {
                 Distribución de Planes Comerciales
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Desglose de organizaciones según su plan actual contratado o asignado.
+                Desglose de usuarios según su plan actual contratado o asignado.
               </p>
             </div>
 
@@ -708,7 +738,7 @@ export default function AdminDashboardPage() {
                       </span>
                       <div className="flex items-center gap-2">
                         <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${plan.badge}`}>
-                          {plan.count} empresas
+                          {plan.count} {plan.count === 1 ? 'usuario' : 'usuarios'}
                         </span>
                         <span className="text-xs text-slate-500 dark:text-slate-400 w-12 text-right">
                           {percentage}%
@@ -1163,7 +1193,7 @@ export default function AdminDashboardPage() {
                       <div>
                         <span className="text-slate-500 dark:text-slate-400 block text-[11px]">En este Plan</span>
                         <span className="font-bold text-slate-900 dark:text-white text-sm">
-                          {plan.totalTenants} consultoras
+                          {plan.totalTenants} {plan.totalTenants === 1 ? 'usuario' : 'usuarios'}
                         </span>
                       </div>
                       <div>

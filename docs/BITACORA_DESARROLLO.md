@@ -1,3 +1,42 @@
+## [2026-08-20] Ajuste de Terminología y Desglose de Usuarios en Panel de Control Global (SuperAdmin)
+
+### Resumen de Cambios
+- **Reetiquetado del Contenedor de Organizaciones a Usuarios Administradores (`/admin`):**
+  - Se modificó la tercera tarjeta KPI del panel de control global para reflejar "Usuarios (Admins)" (o "Nuevos Admins (Período)" al filtrar), indicando con precisión que dicho dato representa las cuentas de profesionales y administradores que contratan y gestionan las consultoras.
+  - Se actualizó el badge secundario a "activos" en concordancia de género.
+  - Se eliminó el dato irrelevante de "clientes gestionados en total" del pie de la tarjeta, sustituyéndolo por "Cuentas y consultoras creadas".
+- **Desglose Dinámico de Roles en Tarjeta de Usuarios Totales (`/admin`):**
+  - Se actualizó la API `/api/admin/metrics` para calcular y retornar el objeto `usersByRole: { admins, miembros, clientes }` clasificando los perfiles de la base de datos según sus roles (`admin`, `miembro`/`tecnico`/`member`, `cliente`).
+  - Se implementó en el cliente el cálculo y renderizado dinámico en el pie de la tarjeta KPI de Usuarios Totales con la desagregación exacta: `X admins · Y equipo · Z clientes` (soportando tanto la vista histórica total como los filtros por mes y año).
+- **Adecuación Semántica en Pestañas y Distribución de Planes Comerciales:**
+  - Se actualizó la pestaña de navegación de la tabla a **"Usuarios (Tenants)"** (anteriormente *"Organizaciones (Tenants)"*).
+  - En la sección "Distribución de Planes Comerciales", se sustituyó el término "empresas" por "usuarios" tanto en el subtítulo descriptivo (*"Desglose de usuarios según su plan actual contratado o asignado"*) como en las etiquetas de cada nivel de plan (`{count} usuarios`).
+  - Se unificó también la métrica de suscriptores en las tarjetas de planes de la pestaña de Gestión de Precios.
+
+### Decisiones Clave
+- Realizar el cálculo del desglose de roles tanto a nivel API en el backend como reactivamente en el frontend al aplicar los filtros temporales de `selectedYear` y `selectedMonth`, manteniendo coherencia inmediata sin requerir roundtrips adicionales al servidor.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/admin/page.js`
+- `[MODIFY] src/app/api/admin/metrics/route.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación del proyecto ejecutada con `npm.cmd run build` para asegurar integridad sintáctica y compatibilidad con SSR/Next.js.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. Cambios puramente visuales y de agregación en la capa SuperAdmin.
+
+### Próximo Paso Recomendado
+- Revisar en el navegador la visualización de los 4 KPIs principales en el panel SuperAdmin (`/admin`).
+
+---
+
 ## [2026-08-20] Títulos Completos y Botón de Aclaración con Modal Informativo en Carpetas de Legajo Técnico
 
 ### Resumen de Cambios
