@@ -3286,29 +3286,51 @@ export default function AccidentesPage({ params }) {
                         {/* Partido */}
                         <div>
                           <label className="block text-xs font-bold text-slate-600 mb-1.5">Partido</label>
-                          <select
-                            value={partidoOcurrencia}
-                            onChange={e => { setPartidoOcurrencia(e.target.value); setLocalidadBarrioOcurrencia(''); }}
-                            disabled={isFormDisabled || domicilioOcurrenciaSelect !== 'Otro' || !provinciaOcurrencia}
-                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
-                          >
-                            <option value="">Seleccionar Partido...</option>
-                            {partidosOcurrencia.map(p => <option key={p} value={p}>{p}</option>)}
-                          </select>
+                          {domicilioOcurrenciaSelect && domicilioOcurrenciaSelect !== 'Otro' ? (
+                            <input
+                              type="text"
+                              value={partidoOcurrencia || ''}
+                              readOnly
+                              disabled
+                              placeholder="Seleccionar Partido..."
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-700 bg-slate-100 text-slate-400 cursor-not-allowed"
+                            />
+                          ) : (
+                            <select
+                              value={partidoOcurrencia}
+                              onChange={e => { setPartidoOcurrencia(e.target.value); setLocalidadBarrioOcurrencia(''); }}
+                              disabled={isFormDisabled || !provinciaOcurrencia}
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+                            >
+                              <option value="">Seleccionar Partido...</option>
+                              {partidosOcurrencia.map(p => <option key={p} value={p}>{p}</option>)}
+                            </select>
+                          )}
                         </div>
 
                         {/* Localidad/Barrio */}
                         <div>
                           <label className="block text-xs font-bold text-slate-600 mb-1.5">Localidad/Barrio</label>
-                          <select
-                            value={localidadBarrioOcurrencia}
-                            onChange={e => setLocalidadBarrioOcurrencia(e.target.value)}
-                            disabled={isFormDisabled || domicilioOcurrenciaSelect !== 'Otro' || !partidoOcurrencia}
-                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
-                          >
-                            <option value="">Seleccionar Localidad/Barrio...</option>
-                            {localidadesOcurrencia.map(l => <option key={l} value={l}>{l}</option>)}
-                          </select>
+                          {domicilioOcurrenciaSelect && domicilioOcurrenciaSelect !== 'Otro' ? (
+                            <input
+                              type="text"
+                              value={localidadBarrioOcurrencia || ''}
+                              readOnly
+                              disabled
+                              placeholder="Seleccionar Localidad/Barrio..."
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-700 bg-slate-100 text-slate-400 cursor-not-allowed"
+                            />
+                          ) : (
+                            <select
+                              value={localidadBarrioOcurrencia}
+                              onChange={e => setLocalidadBarrioOcurrencia(e.target.value)}
+                              disabled={isFormDisabled || !partidoOcurrencia}
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+                            >
+                              <option value="">Seleccionar Localidad/Barrio...</option>
+                              {localidadesOcurrencia.map(l => <option key={l} value={l}>{l}</option>)}
+                            </select>
+                          )}
                         </div>
 
                         {/* Tipo de accidente y Gravedad en la misma fila */}

@@ -1,3 +1,33 @@
+## [2026-08-20] Corrección de Poblado de Partido y Localidad al Seleccionar Domicilio de Establecimiento en Siniestros
+
+### Resumen de Cambios
+- **Formulario de Registro / Edición de Siniestros (`/[tenant-slug]/accidentes`):**
+  - **Causa raíz:** Cuando se seleccionaba un establecimiento existente en "Domicilio de ocurrencia del accidente", la función `handleDomicilioSelectChange` actualizaba correctamente los estados `partidoOcurrencia` y `localidadBarrioOcurrencia`. Sin embargo, los campos se renderizaban como `<select>` cuyas listas de opciones dependían de llamadas API geográficas que solo se disparaban cuando `domicilioOcurrenciaSelect === 'Otro'`. Al estar vacías las listas de opciones de los `<select>`, no coincidían con el valor seleccionado y la interfaz mostraba los selectores en blanco.
+  - **Solución:** Cuando `domicilioOcurrenciaSelect` corresponde a un establecimiento de la empresa (distinto de "Otro"), los campos Partido y Localidad/Barrio se renderizan como `<input type="text" readOnly disabled />` reflejando de inmediato los datos del establecimiento seleccionado, manteniendo el comportamiento dinámico con selects cascada solo cuando el usuario elige "Otro".
+
+### Decisiones Clave
+- Presentar los datos geográficos del establecimiento como campos de solo lectura (`readOnly disabled`) para evitar estados de select vacíos sin necesidad de realizar fetches innecesarios de toda la geografía provincial/municipal cuando el dato ya viene precargado con el establecimiento.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `next-best-practices`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción validada exitosamente mediante `npm run build` (25/25 rutas estáticas y dinámicas compiladas sin errores).
+
+### Riesgos Detectados / Remanentes
+- Ninguno. Cambio seguro y localizado en la capa de interfaz sin impacto en la sesión ni estado global de usuarios logueados.
+
+### Próximo Paso Recomendado
+- Monitorear el funcionamiento en producción del registro de siniestros.
+
+---
+
 ## [2026-08-20] Corrección de Scroll Vertical y Responsividad Móvil en Panel de Control Global (SuperAdmin)
 
 ### Resumen de Cambios
