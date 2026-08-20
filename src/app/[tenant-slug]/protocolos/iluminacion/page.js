@@ -304,6 +304,7 @@ export default function ProtocolosIluminacionPage({ params }) {
             protocolo_id: newProto.id,
             orden: pt.orden,
             punto_muestreo: pt.punto_muestreo,
+            hora: pt.hora || null,
             sector_id: pt.sector_id,
             sector_text: pt.sector_text,
             largo_m: pt.largo_m,

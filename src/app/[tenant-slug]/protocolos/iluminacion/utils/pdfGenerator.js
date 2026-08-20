@@ -473,9 +473,19 @@ export const generateLightingProtocolPdf = async (
   const marcaModeloNser = proto.instrumento_marca_modelo_serie || 'Luxómetro marca Amprobe, modelo LM 100, N° de serie 12093081';
   const fechaCalib = proto.fecha_calibracion ? formatDate(proto.fecha_calibracion) : '';
   const metodologia = proto.metodologia_utilizada || 'Método de la Cuadrícula';
+  const formatDisplayTime = (timeVal) => {
+    if (!timeVal) return '';
+    const str = String(timeVal).trim();
+    const parts = str.split(':');
+    if (parts.length >= 2) {
+      return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
+    }
+    return str;
+  };
+
   const fechaMedicion = proto.fecha_medicion ? formatDate(proto.fecha_medicion) : '17/07/26';
-  const horaInicio = proto.hora_inicio || '13:30';
-  const horaFin = proto.hora_finalizacion || '';
+  const horaInicio = formatDisplayTime(proto.hora_inicio) || '13:30';
+  const horaFin = formatDisplayTime(proto.hora_finalizacion) || formatDisplayTime(puntosList?.[puntosList.length - 1]?.hora) || '';
   const condAtmos = proto.condiciones_atmosfericas || 'Parcialmente nublado\nTemperatura: 8 °C\nNubosidad: 80%\nHumedad: 96 %\nVisibilidad: 10 Km';
 
   const profNombre = proto.profesional_nombre || userProfile?.full_name || '';
@@ -1222,7 +1232,7 @@ export const generateLightingProtocolPdf = async (
 
         const rowValues = {
           punto: String(pt.punto_muestreo),
-          hora: pt.hora || horaInicio,
+          hora: formatDisplayTime(pt.hora) || horaInicio || '-',
           sector: pt.sector_text || pt.sector || '-',
           puesto: pt.puesto_text || pt.puesto || '-',
           tipo_ilum: pt.tipo_iluminacion || 'Artificial',
@@ -1316,8 +1326,9 @@ export const generateLightingProtocolPdf = async (
   const tAX = 18;
   const tAY = 45;
   const tAW = 263;
-  const contentH = 75;
-  const totalBoxH = 6 + 8 + contentH; // 89mm total height (49 a 138mm)
+  const colW = tAW / 2;
+  const contentH = 88;
+  const totalBoxH = 6 + 7 + contentH; // 101mm total height (45 a 146mm)
 
   doc.setLineWidth(0.45);
   doc.rect(tAX, tAY, tAW, totalBoxH, 'S');
@@ -1328,48 +1339,62 @@ export const generateLightingProtocolPdf = async (
   drawCellText(doc, 'Análisis de los Datos y Mejoras a Realizar', tAX, tAY, tAW, 6, { align: 'center', fontStyle: 'bold', fontSize: 9, color: COLOR_NEGRO });
 
   // 2 Columns Subheader Titles
-  const colW = tAW / 2;
   setFillColor(doc, COLOR_SLATE_200);
-  doc.rect(tAX, tAY + 6, colW, 8, 'FD');
-  doc.rect(tAX + colW, tAY + 6, colW, 8, 'FD');
+  doc.rect(tAX, tAY + 6, colW, 7, 'FD');
+  doc.rect(tAX + colW, tAY + 6, colW, 7, 'FD');
 
-  drawCellText(doc, 'Conclusiones.', tAX, tAY + 6, colW, 8, { fontStyle: 'bold', fontSize: 8.5, color: COLOR_NEGRO });
-  drawCellText(doc, 'Recomendaciones para adecuar el nivel de iluminación a la legislación vigente.', tAX + colW, tAY + 6, colW, 8, { fontStyle: 'bold', fontSize: 8.5, color: COLOR_NEGRO });
+  drawCellText(doc, 'Conclusiones.', tAX, tAY + 6, colW, 7, { fontStyle: 'bold', fontSize: 8.5, color: COLOR_NEGRO });
+  drawCellText(doc, 'Recomendaciones para adecuar el nivel de iluminación a la legislación vigente.', tAX + colW, tAY + 6, colW, 7, { fontStyle: 'bold', fontSize: 8.5, color: COLOR_NEGRO });
 
-  doc.rect(tAX, tAY + 14, colW, contentH, 'S');
-  doc.rect(tAX + colW, tAY + 14, colW, contentH, 'S');
+  doc.rect(tAX, tAY + 13, colW, contentH, 'S');
+  doc.rect(tAX + colW, tAY + 13, colW, contentH, 'S');
 
   // Conclusiones text
   const concText = proto.conclusiones || "Indicar puntos que no cumplen valores mínimos de iluminación y puntos que no cumplen relación de uniformidad.";
-  drawCellText(doc, concText, tAX, tAY + 14, colW, contentH, { fontSize: 8.5, valign: 'top', padding: 2 });
+  drawCellText(doc, concText, tAX, tAY + 13, colW, contentH, { fontSize: 7.8, valign: 'top', padding: 2.5 });
 
   // Recomendaciones text
   const defaultRecom = [
-    "Limpiar y reparar luminarias defectuosas.",
-    "Implementar plan de mantenimiento preventivo.",
-    "Bajar la altura de luminarias instaladas si corresponde.",
-    "Incorporar nuevas luminarias.",
-    "Agregar iluminación localizada en puestos fijos si corresponde."
+    "En los sectores donde los valores de iluminancia obtenidos sean inferiores a los mínimos establecidos en el Anexo IV, Capítulo 12 —Iluminación y Color— del Decreto N.º 351/79, o donde no se verifique la relación de uniformidad de iluminancia, se recomienda, según corresponda:",
+    "Limpiar, reparar o reemplazar las luminarias defectuosas, verificando el estado de lámparas, difusores, reflectores, conexiones y sistemas de encendido.",
+    "Implementar un programa de mantenimiento preventivo, que contemple la limpieza periódica, el control del funcionamiento y la reposición de los componentes deteriorados.",
+    "Revisar la altura y ubicación de las luminarias, evaluando su descenso, redistribución o reorientación para mejorar los niveles de iluminación y reducir las zonas de sombra.",
+    "Incorporar luminarias adicionales en aquellos sectores donde la iluminación general resulte insuficiente.",
+    "Instalar iluminación localizada en puestos fijos, cuando las características de la tarea requieran mayores niveles de iluminancia, evitando deslumbramientos, sombras y contrastes excesivos.",
+    "Mejorar la distribución de la iluminación, procurando alcanzar una adecuada uniformidad sobre toda la superficie o plano de trabajo evaluado."
   ];
 
-  let recomItems = [];
-  if (proto.recomendaciones) {
-    recomItems = proto.recomendaciones.split('\n').filter(Boolean);
-  } else {
-    recomItems = defaultRecom;
-  }
+  let rawRecom = proto.recomendaciones ? proto.recomendaciones.split('\n').filter(s => s.trim().length > 0) : defaultRecom;
 
-  let recY = tAY + 16;
-  recomItems.forEach(item => {
-    const cleanItem = item.replace(/^[•\-\*\s]+/, '');
-    const fullItem = `•  ${cleanItem}`;
-    const lines = doc.splitTextToSize(fullItem, colW - 4);
-    drawCellText(doc, fullItem, tAX + colW, recY, colW, (lines.length * 4), { fontSize: 8.5, valign: 'top' });
-    recY += (lines.length * 4) + 2;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  setTextColor(doc, COLOR_NEGRO);
+
+  const recomPadding = 2.5;
+  const availW = colW - (recomPadding * 2);
+  const lineH = 3.1;
+  let currRecY = tAY + 13 + recomPadding + (lineH * 0.75);
+
+  rawRecom.forEach((item, idx) => {
+    const trimmed = item.trim();
+    const cleanText = trimmed.replace(/^[•\-\*\d\.\)\s]+/, '').trim();
+    const isIntro = idx === 0 && (trimmed.endsWith(':') || (!trimmed.startsWith('•') && !trimmed.startsWith('-')));
+
+    const displayText = isIntro ? cleanText : `•  ${cleanText}`;
+    const lines = doc.splitTextToSize(displayText, availW);
+
+    lines.forEach(line => {
+      if (currRecY <= (tAY + 13 + contentH - 2)) {
+        doc.text(line, tAX + colW + recomPadding, currRecY);
+        currRecY += lineH;
+      }
+    });
+
+    currRecY += 1.2; // Espaciado entre párrafos
   });
 
   // Firma Profesional (Ubicada debajo del cuadro de análisis alineada a la derecha)
-  drawSignatureBlock(185, tAY + totalBoxH + 5, 95, 38);
+  drawSignatureBlock(185, tAY + totalBoxH + 3, 95, 36);
 
   // ==========================================
   // PAGINAS 7 A N: FICHAS DE CÁLCULO POR PUNTO DE MUESTREO (A4 Vertical)

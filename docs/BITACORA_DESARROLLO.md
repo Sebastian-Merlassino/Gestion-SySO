@@ -1,3 +1,52 @@
+## [2026-08-20] Incorporación de Selector de Hora por Punto de Medición y Secuencia Temporal Automática en Protocolo de Iluminación
+
+### Resumen de Cambios
+- **Migración de Base de Datos en Supabase (`supabase/migrations/20260904000000_add_hora_to_protocolos_iluminacion_puntos.sql`):**
+  - Se agregó la columna `hora TIME NULL` en la tabla `public.protocolos_iluminacion_puntos` para almacenar de forma independiente la hora de medición de cada punto de muestreo.
+- **Selector de Hora y Progresión Temporal Inteligente en Formulario (`ProtocoloForm.js`):**
+  - Se implementó la función auxiliar `addMinutesToTime(timeStr, minutesToAdd = 10)` para cálculos de progresión temporal con control de ciclo de 24 horas.
+  - **Punto #1 inicial:** Inicializa su selector de hora automáticamente con el valor cargado en *Hora de Inicio* de los datos generales del protocolo.
+  - **Propagación al modificar Hora de Inicio:** Al ingresar o cambiar la *Hora de Inicio* en los datos generales, los puntos de muestreo se actualizan automáticamente en secuencia progresiva (+10 minutos por punto subsiguiente) y se sincroniza la *Hora de Fin* con el horario del último punto.
+  - **Adición y duplicación de puntos:** Al hacer clic en *"Agregar punto de muestreo"* o *"Duplicar punto"*, el nuevo punto calcula automáticamente su hora sumando 10 minutos respecto del punto previo, actualizando a su vez la *Hora de Fin* del protocolo.
+  - **Eliminación de puntos y ajuste de hora de fin:** Al eliminar un punto, la *Hora de Fin* del protocolo se actualiza automáticamente con la hora del nuevo último punto.
+  - **Edición manual por punto:** Cada tarjeta de punto de muestreo cuenta con un selector de hora (`<AppInput type="time" />`) en su primera fila junto a *Sector* y *Puesto / Sección*. Si el usuario modifica la hora del último punto, se sincroniza en tiempo real con la *Hora de Fin*.
+- **Generación y Visualización de PDF (`pdfGenerator.js`):**
+  - Se incorporó la función helper `formatDisplayTime` para presentar las horas en formato limpio `HH:mm` sin segundos residuales.
+  - En la tabla de datos de la medición apaisada (Páginas 4 y 5), la columna **Hora** ahora muestra con exactitud la hora individual de cada punto de muestreo en lugar de replicar una hora estática.
+  - En la página 3 (Datos del instrumental), se renderizan limpiamente la *Hora de Inicio* y la *Hora de Finalización*.
+  - En la página de *Análisis de los Datos y Mejoras a Realizar* (Página 6), se amplió la altura del contenedor a `88 mm` (altura total de tabla `101 mm`) y se optimizó el cálculo tipográfico e interlineado (`fontSize: 7.5`, línea `3.1 mm`, espaciado `1.2 mm`) de la columna de *Recomendaciones* y *Conclusiones*, evitando que los párrafos y viñetas se desborden por fuera del recuadro.
+- **Duplicación de Protocolos en Lista (`page.js`):**
+  - Se incluyó el campo `hora: pt.hora` al clonar los puntos de muestreo en la acción de duplicar protocolo.
+
+### Decisiones Clave
+- Establecer un grid responsive de 12 columnas (`Sector: 5 cols`, `Puesto: 5 cols`, `Hora: 2 cols`) en cada punto de muestreo para maximizar la legibilidad en pantallas de escritorio y apilado ordenado en mobile.
+- Sincronizar bidireccionalmente la *Hora de Fin* con el último punto de muestreo manteniendo coherencia total con la duración de la medición en campo.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `supabase`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260904000000_add_hora_to_protocolos_iluminacion_puntos.sql`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/utils/pdfGenerator.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Verificación de esquema SQL y funciones de tiempo (`addMinutesToTime`).
+- Validación de persistencia en payload de Supabase y visualización en PDF.
+
+### Riesgos Detectados / Remanentes
+- Ninguno. La migración utiliza `ADD COLUMN IF NOT EXISTS` preservando retrocompatibilidad total con protocolos creados previamente (los cuales hacen fallback a la hora de inicio).
+
+### Próximo Paso Recomendado
+- Probar en la interfaz la creación de un nuevo protocolo de iluminación con 8 puntos para verificar la progresión horaria automática y la exportación a PDF.
+
+---
+
 ## [2026-08-20] Ajuste de Terminología y Desglose de Usuarios en Panel de Control Global (SuperAdmin)
 
 ### Resumen de Cambios

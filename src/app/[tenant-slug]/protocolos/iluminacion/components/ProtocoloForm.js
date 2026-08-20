@@ -68,6 +68,30 @@ const isValidUuid = (val) => {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val);
 };
 
+export const addMinutesToTime = (timeStr, minutesToAdd = 10) => {
+  if (!timeStr || typeof timeStr !== 'string') return '';
+  const parts = timeStr.split(':');
+  if (parts.length < 2) return '';
+  const hours = parseInt(parts[0], 10);
+  const minutes = parseInt(parts[1], 10);
+  if (isNaN(hours) || isNaN(minutes)) return '';
+
+  const totalMinutes = hours * 60 + minutes + minutesToAdd;
+  const wrappedMinutes = ((totalMinutes % 1440) + 1440) % 1440;
+  const newHours = Math.floor(wrappedMinutes / 60);
+  const newMins = wrappedMinutes % 60;
+  return `${String(newHours).padStart(2, '0')}:${String(newMins).padStart(2, '0')}`;
+};
+
+export const normalizeTimeInput = (timeStr) => {
+  if (!timeStr) return '';
+  const parts = String(timeStr).split(':');
+  if (parts.length >= 2) {
+    return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
+  }
+  return String(timeStr);
+};
+
 export default function ProtocoloForm({
   tenantSlug,
   profile,
@@ -705,8 +729,10 @@ Mejorar la distribución de la iluminación, procurando alcanzar una adecuada un
       setFechaCalibracion(formatDate(proto.fecha_calibracion) || '');
       setMetodologia(proto.metodologia_utilizada || '');
       setFechaMedicion(formatDate(proto.fecha_medicion) || '');
-      setHoraInicio(proto.hora_inicio || '');
-      setHoraFinalizacion(proto.hora_finalizacion || '');
+      const rawHoraInicio = proto.hora_inicio ? normalizeTimeInput(proto.hora_inicio) : '';
+      const rawHoraFin = proto.hora_finalizacion ? normalizeTimeInput(proto.hora_finalizacion) : '';
+      setHoraInicio(rawHoraInicio);
+      setHoraFinalizacion(rawHoraFin);
       setCondicionesAtmosfericas(proto.condiciones_atmosfericas || '');
       const rawDocAdj = proto.documentacion_adjunta || '';
       const hasNoMat = rawDocAdj.includes('[NO_MATRICULA_PDF]');
@@ -760,6 +786,7 @@ Mejorar la distribución de la iluminación, procurando alcanzar una adecuada un
         id: p.id,
         orden: p.orden,
         punto_muestreo: p.punto_muestreo,
+        hora: p.hora ? normalizeTimeInput(p.hora) : (rawHoraInicio || ''),
         sector_id: p.sector_id || '',
         sector_text: p.sector_text || '',
         largo_m: p.largo_m !== null ? String(p.largo_m) : '',
@@ -777,7 +804,12 @@ Mejorar la distribución de la iluminación, procurando alcanzar una adecuada un
         mediciones: (p.mediciones || []).map(m => ({ id: m.id, valor_lux: String(m.valor_lux) }))
       }));
 
-      setPuntos(loadedPuntos.length > 0 ? loadedPuntos : [createNewPunto(1)]);
+      if (!rawHoraFin && loadedPuntos.length > 0) {
+        const lastP = loadedPuntos[loadedPuntos.length - 1];
+        if (lastP?.hora) setHoraFinalizacion(lastP.hora);
+      }
+
+      setPuntos(loadedPuntos.length > 0 ? loadedPuntos : [createNewPunto(1, rawHoraInicio)]);
 
       // 3. Adjuntos
       const { data: adjData, error: adjErr } = await supabase
@@ -920,29 +952,69 @@ Mejorar la distribución de la iluminación, procurando alcanzar una adecuada un
     }
   };
 
-  const createNewPunto = (num) => ({
-    id: 'temp-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
-    orden: num,
-    punto_muestreo: num,
-    sector_id: '',
-    sector_text: '',
-    largo_m: '',
-    ancho_m: '',
-    altura_m: '',
-    puesto_id: '',
-    puesto_text: '',
-    tipo_iluminacion: 'Artificial',
-    tipo_fuente_luminica: 'Led',
-    iluminacion: 'General',
-    mediciones: [
-      { id: 'm-' + Date.now() + '-1', valor_lux: '' }
-    ],
-    valor_requerido_legal_lux: '',
-    observaciones_punto: '',
-    aplicaVerificacionUniformidad: true,
-    isCollapsed: false,
-    selectedActividadIndex: ''
-  });
+  const handleHoraInicioChange = (newHora) => {
+    setHoraInicio(newHora);
+    if (!newHora) return;
+
+    // Actualizar puntos secuencialmente si existen
+    setPuntos(prevPuntos => {
+      if (!prevPuntos || prevPuntos.length === 0) return prevPuntos;
+      let currHora = newHora;
+      const updated = prevPuntos.map((p, idx) => {
+        if (idx === 0) {
+          currHora = newHora;
+        } else {
+          currHora = addMinutesToTime(currHora, 10);
+        }
+        return { ...p, hora: currHora };
+      });
+
+      if (updated.length > 0) {
+        const lastPointHora = updated[updated.length - 1].hora;
+        if (lastPointHora) {
+          setHoraFinalizacion(lastPointHora);
+        }
+      }
+      return updated;
+    });
+  };
+
+  const createNewPunto = (num, defaultHora = '') => {
+    let calculatedHora = defaultHora;
+    if (!calculatedHora) {
+      if (num === 1) {
+        calculatedHora = horaInicio || '';
+      } else if (puntos && puntos.length > 0) {
+        const lastHora = puntos[puntos.length - 1]?.hora || horaInicio;
+        calculatedHora = lastHora ? addMinutesToTime(lastHora, 10) : '';
+      }
+    }
+
+    return {
+      id: 'temp-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+      orden: num,
+      punto_muestreo: num,
+      hora: calculatedHora,
+      sector_id: '',
+      sector_text: '',
+      largo_m: '',
+      ancho_m: '',
+      altura_m: '',
+      puesto_id: '',
+      puesto_text: '',
+      tipo_iluminacion: 'Artificial',
+      tipo_fuente_luminica: 'Led',
+      iluminacion: 'General',
+      mediciones: [
+        { id: 'm-' + Date.now() + '-1', valor_lux: '' }
+      ],
+      valor_requerido_legal_lux: '',
+      observaciones_punto: '',
+      aplicaVerificacionUniformidad: true,
+      isCollapsed: false,
+      selectedActividadIndex: ''
+    };
+  };
 
   // Handle company change
   const handleEmpresaChange = (val) => {
@@ -992,19 +1064,43 @@ Mejorar la distribución de la iluminación, procurando alcanzar una adecuada un
   // Points manipulation
   const handleAddPunto = () => {
     const nextNum = puntos.length > 0 ? Math.max(...puntos.map(p => p.punto_muestreo)) + 1 : 1;
-    setPuntos([...puntos, createNewPunto(nextNum)]);
+    const lastPoint = puntos.length > 0 ? puntos[puntos.length - 1] : null;
+    const baseHora = lastPoint?.hora || horaInicio || '';
+    const newHora = baseHora ? addMinutesToTime(baseHora, 10) : '';
+
+    const newPunto = {
+      ...createNewPunto(nextNum, newHora),
+      hora: newHora
+    };
+
+    const newPuntosList = [...puntos, newPunto];
+    setPuntos(newPuntosList);
+    if (newHora) {
+      setHoraFinalizacion(newHora);
+    }
   };
 
   const handleDuplicatePunto = (p) => {
     const nextNum = puntos.length > 0 ? Math.max(...puntos.map(p => p.punto_muestreo)) + 1 : 1;
-    setPuntos([...puntos, {
+    const lastPoint = puntos.length > 0 ? puntos[puntos.length - 1] : null;
+    const baseHora = lastPoint?.hora || p.hora || horaInicio || '';
+    const newHora = baseHora ? addMinutesToTime(baseHora, 10) : (p.hora || '');
+
+    const duplicatedPunto = {
       ...p,
       id: 'temp-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
       punto_muestreo: nextNum,
       orden: puntos.length + 1,
+      hora: newHora,
       isCollapsed: false,
       mediciones: p.mediciones.map((m, idx) => ({ id: 'm-' + Date.now() + '-' + idx, valor_lux: m.valor_lux }))
-    }]);
+    };
+
+    const newPuntosList = [...puntos, duplicatedPunto];
+    setPuntos(newPuntosList);
+    if (newHora) {
+      setHoraFinalizacion(newHora);
+    }
     globalToast.toast(`Punto de Muestreo ${p.punto_muestreo} duplicado con éxito.`);
   };
 
@@ -1013,7 +1109,25 @@ Mejorar la distribución de la iluminación, procurando alcanzar una adecuada un
       globalToast.toast('Debe cargar al menos un punto de muestreo.', 'warning');
       return;
     }
-    setPuntos(puntos.filter(p => p.id !== id));
+    const filtered = puntos.filter(p => p.id !== id);
+    setPuntos(filtered);
+    if (filtered.length > 0) {
+      const lastP = filtered[filtered.length - 1];
+      if (lastP?.hora) {
+        setHoraFinalizacion(lastP.hora);
+      }
+    }
+  };
+
+  const handlePuntoHoraChange = (puntoId, newHora) => {
+    setPuntos(prev => {
+      const updated = prev.map(p => p.id === puntoId ? { ...p, hora: newHora } : p);
+      const isLast = updated.length > 0 && updated[updated.length - 1].id === puntoId;
+      if (isLast && newHora) {
+        setHoraFinalizacion(newHora);
+      }
+      return updated;
+    });
   };
 
   const handleToggleCollapsePunto = (id) => {
@@ -1644,6 +1758,7 @@ Mejorar la distribución de la iluminación, procurando alcanzar una adecuada un
           protocolo_id: tempId,
           orden: idx + 1,
           punto_muestreo: p.punto_muestreo,
+          hora: p.hora || null,
           sector_id: isValidUuid(p.sector_id) ? p.sector_id : null,
           sector_text: p.sector_text || null,
           largo_m: parseFloat(p.largo_m) || null,
@@ -2066,7 +2181,7 @@ Mejorar la distribución de la iluminación, procurando alcanzar una adecuada un
                   type="time"
                   disabled={!canEdit}
                   value={horaInicio}
-                  onChange={(e) => setHoraInicio(e.target.value)}
+                  onChange={(e) => handleHoraInicioChange(e.target.value)}
                 />
               </div>
               <div className="flex flex-col gap-1">
@@ -2247,9 +2362,9 @@ Mejorar la distribución de la iluminación, procurando alcanzar una adecuada un
                   {!p.isCollapsed && (
                     <div className="space-y-4 pt-1 animate-scale-up">
                       
-                      {/* Fila 1: Sector y Puesto */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="flex flex-col gap-1">
+                      {/* Fila 1: Sector, Puesto y Hora */}
+                      <div className="grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4">
+                        <div className="flex flex-col gap-1 md:col-span-5">
                           <AppLabel htmlFor={`sector-sel-${p.id}`} required={estado === 'completado'}>Sector</AppLabel>
                           {isReadOnly ? (
                             <AppInput id={`sector-sel-${p.id}`} disabled value={p.sector_text} />
@@ -2285,7 +2400,7 @@ Mejorar la distribución de la iluminación, procurando alcanzar una adecuada un
                           )}
                         </div>
 
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col gap-1 md:col-span-5">
                           <AppLabel htmlFor={`puesto-sel-${p.id}`}>Puesto / Sección</AppLabel>
                           {isReadOnly ? (
                             <AppInput id={`puesto-sel-${p.id}`} disabled value={p.puesto_text} />
@@ -2319,6 +2434,17 @@ Mejorar la distribución de la iluminación, procurando alcanzar una adecuada un
                               onChange={(e) => setPuntos(puntos.map(x => x.id === p.id ? { ...x, puesto_text: e.target.value } : x))}
                             />
                           )}
+                        </div>
+
+                        <div className="flex flex-col gap-1 md:col-span-2">
+                          <AppLabel htmlFor={`hora-punto-${p.id}`}>Hora</AppLabel>
+                          <AppInput
+                            id={`hora-punto-${p.id}`}
+                            type="time"
+                            disabled={!canEdit}
+                            value={p.hora || ''}
+                            onChange={(e) => handlePuntoHoraChange(p.id, e.target.value)}
+                          />
                         </div>
                       </div>
 
