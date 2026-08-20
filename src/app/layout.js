@@ -34,7 +34,7 @@ export default function RootLayout({ children }) {
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Audiowide&display=swap" rel="stylesheet" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
-      <body className="min-h-screen bg-background font-sans text-foreground antialiased selection:bg-slate-500/30">
+      <body className="bg-background font-sans text-foreground antialiased selection:bg-slate-500/30">
         <Providers>
           <div className="relative flex min-h-screen flex-col">
             {children}

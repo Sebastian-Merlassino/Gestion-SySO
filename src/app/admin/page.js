@@ -622,10 +622,10 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex border-b border-slate-200 dark:border-slate-800 gap-6">
+      <div className="flex overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 border-b border-slate-200 dark:border-slate-800 gap-1 sm:gap-6 pb-px scrollbar-none">
         <button
           onClick={() => setActiveTab('overview')}
-          className={`pb-3 text-sm font-semibold border-b-2 transition-all ${
+          className={`pb-3 px-2 sm:px-0 text-sm font-semibold border-b-2 transition-all whitespace-nowrap flex-shrink-0 ${
             activeTab === 'overview'
               ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
               : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
@@ -636,7 +636,7 @@ export default function AdminDashboardPage() {
 
         <button
           onClick={() => setActiveTab('tenants')}
-          className={`pb-3 text-sm font-semibold border-b-2 transition-all flex items-center gap-2 ${
+          className={`pb-3 px-2 sm:px-0 text-sm font-semibold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap flex-shrink-0 ${
             activeTab === 'tenants'
               ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
               : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
@@ -650,7 +650,7 @@ export default function AdminDashboardPage() {
 
         <button
           onClick={() => setActiveTab('payments')}
-          className={`pb-3 text-sm font-semibold border-b-2 transition-all flex items-center gap-2 ${
+          className={`pb-3 px-2 sm:px-0 text-sm font-semibold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap flex-shrink-0 ${
             activeTab === 'payments'
               ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
               : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
@@ -664,7 +664,7 @@ export default function AdminDashboardPage() {
 
         <button
           onClick={() => setActiveTab('pricing')}
-          className={`pb-3 text-sm font-semibold border-b-2 transition-all flex items-center gap-2 ${
+          className={`pb-3 px-2 sm:px-0 text-sm font-semibold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap flex-shrink-0 ${
             activeTab === 'pricing'
               ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
               : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
@@ -1336,10 +1336,10 @@ export default function AdminDashboardPage() {
       {/* Modal de Gestión de Tenant */}
       {isModalOpen && selectedTenant && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="w-full max-w-lg rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden">
+          <div className="w-full max-w-lg max-h-[90vh] flex flex-col rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden">
             
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 shrink-0">
               <div>
                 <h3 className="font-bold text-slate-900 dark:text-white text-base">
                   Gestionar {selectedTenant.name}
@@ -1355,7 +1355,7 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSaveTenantChanges} className="p-6 space-y-5">
+            <form onSubmit={handleSaveTenantChanges} className="p-6 space-y-5 overflow-y-auto flex-1">
               
               {modalFeedback && (
                 <div className={`p-3 rounded-xl text-xs font-medium ${
@@ -1545,10 +1545,10 @@ export default function AdminDashboardPage() {
       {/* Modal de Confirmación de Actualización de Precios */}
       {confirmPriceModal && confirmPriceModal.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden">
-            <div className="p-6 space-y-4">
+          <div className="w-full max-w-md max-h-[90vh] flex flex-col rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden">
+            <div className="p-6 space-y-4 overflow-y-auto flex-1">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400">
+                <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 shrink-0">
                   <AlertTriangle className="w-5 h-5" />
                 </div>
                 <div>

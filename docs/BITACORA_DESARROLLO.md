@@ -1,3 +1,40 @@
+## [2026-08-20] Corrección de Scroll Vertical y Responsividad Móvil en Panel de Control Global (SuperAdmin)
+
+### Resumen de Cambios
+- **Corrección de Bloqueo de Scroll Vertical en Mobile/Tablet (`/admin`):**
+  - Causa raíz: En `src/app/globals.css`, la media query `@media (max-width: 767px)` aplicaba `height: 100vh !important; max-height: 100vh !important; overflow: hidden !important;` de forma genérica a todos los elementos `<main>`, pensada originalmente solo para los módulos del shell de tenant. Esto impedía por completo el scroll vertical del panel SuperAdmin en pantallas angostas o con DevTools abierto.
+  - Solución: Se aisló el panel de administración asignando la clase `admin-main` a `<main>` en `src/app/admin/layout.js`, y se añadieron selectores de exclusión `:not(.admin-main)` a las reglas globales restrictivas en `src/app/globals.css`. Se estableció para `.admin-main` altura automática (`height: auto !important; overflow: visible !important; display: block !important;`).
+- **Mejoras de Responsividad en `/admin`:**
+  - Pestañas de navegación con scroll horizontal limpio (`overflow-x-auto scrollbar-none whitespace-nowrap`).
+  - Scroll interno protegido en modales de gestión de tenant y actualización de precios (`max-h-[90vh] flex flex-col overflow-y-auto`).
+  - Eliminación de bloqueos de altura en `html` y `body` para permitir el scroll natural del documento.
+
+### Decisiones Clave
+- Desacoplar las reglas CSS móviles de los módulos con sidebar fija (tenant app) de las páginas administrativas y públicas globales mediante selectores específicos.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/globals.css`
+- `[MODIFY] src/app/admin/layout.js`
+- `[MODIFY] src/app/admin/page.js`
+- `[MODIFY] src/app/layout.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Verificación de estilos CSS, desbordes, media queries y jerarquía de scroll en el DOM.
+
+### Riesgos Detectados / Remanentes
+- Ninguno.
+
+### Próximo Paso Recomendado
+- Proceder al push de cambios al repositorio remoto.
+
+---
+
 ## [2026-08-19] Actualización de Directivas CSP para Sentry y PostHog Analytics
 
 ### Resumen de Cambios

@@ -103,6 +103,19 @@
   * {
     border-color: hsl(var(--border));
   }
+  /* Scroll vertical natural sin restricciones de altura fija */
+  html {
+    min-height: 100%;
+  }
+  body {
+    min-height: 100vh;
+  }
+  .admin-main {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    display: block !important;
+  }
   /* Refuerzo visual de delineado nítido para todos los contenedores y formularios de carga (Mobile, Tablet y PC) */
   .border-slate-200,
   input,
@@ -142,6 +155,23 @@
 }
 
 /* Scrollbar Customization */
+/* Hide scrollbar utility (keeps scroll functionality) */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Narrower scrollbars on mobile */
+@media (max-width: 640px) {
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+}
+
 ::-webkit-scrollbar {
   width: 12px;
   height: 12px;
@@ -186,15 +216,15 @@
   scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
 }
 
-/* Estandarización de cabeceras fijas y visualización a pantalla completa exclusivamente en móviles (< 768px) */
+/* Estandarización de cabeceras fijas y visualización a pantalla completa exclusivamente en módulos de tenant (< 768px) */
 @media (max-width: 767px) {
-  main:not(.overflow-hidden) {
+  main:not(.overflow-hidden):not(.admin-main) {
     position: relative !important;
     padding-top: 4rem !important; /* Altura de la cabecera */
     box-sizing: border-box !important;
   }
   
-  main:not(.overflow-hidden) > header {
+  main:not(.overflow-hidden):not(.admin-main) > header {
     position: fixed !important;
     top: 0;
     left: 0;
@@ -204,7 +234,7 @@
   }
 
   /* Quitar márgenes, anchos máximos y paddings del Content Body en móviles/tablets */
-  main > div.w-full.flex-grow.flex.flex-col {
+  main:not(.admin-main) > div.w-full.flex-grow.flex.flex-col {
     max-width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -214,14 +244,14 @@
   }
 
   /* Si el main tiene la clase overflow-hidden, el Content Body de adentro no debe tener scroll */
-  main.overflow-hidden > div.w-full.flex-grow.flex.flex-col {
+  main.overflow-hidden:not(.admin-main) > div.w-full.flex-grow.flex.flex-col {
     overflow: hidden !important;
   }
 
-  /* Hacer que las tarjetas de filtros y de tablas vayan de borde a borde y sin rounded en móviles/tablets */
-  main > div.w-full.flex-grow.flex.flex-col div.space-y-6 > div,
-  main > div.w-full.flex-grow.flex.flex-col div.space-y-4 > div,
-  main > div.w-full.flex-grow.flex.flex-col div.space-y-0 > div {
+  /* Hacer que las tarjetas de filtros y de tablas vayan de borde a borde y sin rounded en módulos de tenant */
+  main:not(.admin-main) > div.w-full.flex-grow.flex.flex-col div.space-y-6 > div,
+  main:not(.admin-main) > div.w-full.flex-grow.flex.flex-col div.space-y-4 > div,
+  main:not(.admin-main) > div.w-full.flex-grow.flex.flex-col div.space-y-0 > div {
     border-left: 0 !important;
     border-right: 0 !important;
     border-radius: 0 !important;
@@ -229,7 +259,7 @@
   }
 
   /* Pegar elementos en space-y-0 y anular el borde superior doble entre filtros y tabla */
-  main > div.w-full.flex-grow.flex.flex-col div.space-y-0 > :not([hidden]) ~ :not([hidden]) {
+  main:not(.admin-main) > div.w-full.flex-grow.flex.flex-col div.space-y-0 > :not([hidden]) ~ :not([hidden]) {
     margin-top: 0px !important;
     border-top-width: 0px !important;
   }
@@ -242,19 +272,19 @@
     text-decoration: none !important;
   }
 
-  /* Juntar grillas y tarjetas en Dashboard y Legajo Técnico (EXCLUYENDO formularios de carga con inputs/selects) */
-  main div.grid[class*="gap-4"]:not(:has(input, select, textarea, label)):not(form),
-  main div.grid[class*="gap-6"]:not(:has(input, select, textarea, label)):not(form),
-  main div.grid[class*="gap-3"]:not(:has(input, select, textarea, label)):not(form) {
+  /* Juntar grillas y tarjetas en Dashboard y Legajo Técnico (EXCLUYENDO formularios de carga y panel admin) */
+  main:not(.admin-main) div.grid[class*="gap-4"]:not(:has(input, select, textarea, label)):not(form),
+  main:not(.admin-main) div.grid[class*="gap-6"]:not(:has(input, select, textarea, label)):not(form),
+  main:not(.admin-main) div.grid[class*="gap-3"]:not(:has(input, select, textarea, label)):not(form) {
     gap: 0px !important;
     row-gap: 0px !important;
     column-gap: 0px !important;
   }
 
-  /* Modificar tarjetas dentro de grillas para ser continuas (EXCLUYENDO campos de formularios) */
-  main div.grid[class*="gap-4"]:not(:has(input, select, textarea, label)):not(form) > div,
-  main div.grid[class*="gap-6"]:not(:has(input, select, textarea, label)):not(form) > div,
-  main div.grid[class*="gap-3"]:not(:has(input, select, textarea, label)):not(form) > div {
+  /* Modificar tarjetas dentro de grillas para ser continuas en módulos de tenant */
+  main:not(.admin-main) div.grid[class*="gap-4"]:not(:has(input, select, textarea, label)):not(form) > div,
+  main:not(.admin-main) div.grid[class*="gap-6"]:not(:has(input, select, textarea, label)):not(form) > div,
+  main:not(.admin-main) div.grid[class*="gap-3"]:not(:has(input, select, textarea, label)):not(form) > div {
     border-left-width: 0px !important;
     border-right-width: 0px !important;
     border-top-width: 0px !important;
@@ -275,9 +305,8 @@
     min-height: 0px !important;
   }
 
-  /* Desactivar scroll del main en móviles/tablets y forzar flex vertical */
-
-  main {
+  /* Desactivar scroll del main en móviles/tablets y forzar flex vertical en módulos de tenant */
+  main:not(.admin-main) {
     height: 100vh !important;
     max-height: 100vh !important;
     overflow: hidden !important;
