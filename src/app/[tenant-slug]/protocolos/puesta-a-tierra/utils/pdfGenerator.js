@@ -896,30 +896,35 @@ export const generatePuestaATierraPdf = async (
           currXPos += c.w;
         });
       } else {
-        const valOhm = pt.valor_medido_ohm ? String(pt.valor_medido_ohm).replace('.', ',') : '';
+        const rawValOhm = (pt.valor_medido_ohm !== undefined && pt.valor_medido_ohm !== null) ? String(pt.valor_medido_ohm).trim() : '';
+        const valOhm = (rawValOhm !== '' && rawValOhm !== 'NaN') ? rawValOhm.replace('.', ',') : '-';
         const formatSiNo = (val) => {
-          if (val === true || val === 'SI' || val === 'Si' || val === 'Cumple' || val === 'CUMPLE') return 'Si';
-          if (val === false || val === 'NO' || val === 'No' || val === 'No cumple' || val === 'NO CUMPLE') return 'No';
-          return val || '';
+          if (val === true || val === 'SI' || val === 'Si' || val === 'Cumple' || val === 'CUMPLE') return 'SI';
+          if (val === false || val === 'NO' || val === 'No' || val === 'No cumple' || val === 'NO CUMPLE') return 'NO';
+          if (val !== undefined && val !== null && String(val).trim() !== '') return String(val).trim();
+          return '-';
         };
 
         const rowData = {
           num: String(pt.toma_tierra_num || pt.orden || (startSlice + r + 1)),
-          sector: pt.sector || pt.ubicacion || '',
-          condicion: pt.condicion_terreno || '',
-          uso: pt.uso_puesta_a_tierra || '',
-          esquema: pt.esquema_conexion || '',
+          sector: (pt.sector || pt.ubicacion || '').trim() || '-',
+          condicion: (pt.condicion_terreno || '').trim() || '-',
+          uso: (pt.uso_puesta_a_tierra || '').trim() || '-',
+          esquema: (pt.esquema_conexion || '').trim() || '-',
           valor: valOhm,
           cumple: formatSiNo(pt.cumple_ohm),
           continuo: formatSiNo(pt.continuidad_permanente),
           capacidad: formatSiNo(pt.capacidad_carga),
-          dispositivo: pt.dispositivo_proteccion || '',
+          dispositivo: (pt.dispositivo_proteccion || '').trim() || '-',
           desconexion: formatSiNo(pt.desconexion_automatica)
         };
 
         tableColsDef.forEach(c => {
           doc.rect(currXPos, rowY, c.w, rowH, 'S');
-          const val = rowData[c.key] || '';
+          const rawVal = rowData[c.key];
+          const val = (rawVal !== undefined && rawVal !== null && String(rawVal).trim() !== '') 
+            ? String(rawVal).trim() 
+            : '-';
           drawCellText(doc, val, currXPos, rowY, c.w, rowH, {
             align: c.align || 'center',
             fontSize: (c.key === 'sector' || c.key === 'uso' || c.key === 'condicion' || c.key === 'dispositivo') ? 6.5 : 7.5,

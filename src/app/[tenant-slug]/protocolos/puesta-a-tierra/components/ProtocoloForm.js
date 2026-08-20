@@ -1257,7 +1257,7 @@ export default function ProtocoloForm({
         condicion_terreno: p.condicion_terreno || null,
         uso_puesta_a_tierra: p.uso_puesta_a_tierra || null,
         esquema_conexion: p.esquema_conexion || null,
-        valor_medido_ohm: parseFloat(p.valor_medido_ohm) || 0,
+        valor_medido_ohm: (p.valor_medido_ohm !== '' && p.valor_medido_ohm !== null && p.valor_medido_ohm !== undefined && !isNaN(parseFloat(p.valor_medido_ohm))) ? parseFloat(p.valor_medido_ohm) : null,
         cumple_ohm: p.cumple_ohm || null,
         continuidad_permanente: p.continuidad_permanente || null,
         capacidad_carga: p.capacidad_carga || null,
@@ -1831,7 +1831,7 @@ export default function ProtocoloForm({
                           type="number"
                           step="0.01"
                           disabled={!canEdit}
-                          value={p.valor_medido_ohm !== undefined ? p.valor_medido_ohm : ''}
+                          value={p.valor_medido_ohm !== undefined && p.valor_medido_ohm !== null ? p.valor_medido_ohm : ''}
                           onChange={(e) => handlePuntoChange(p.id, 'valor_medido_ohm', e.target.value)}
                         />
                       </div>

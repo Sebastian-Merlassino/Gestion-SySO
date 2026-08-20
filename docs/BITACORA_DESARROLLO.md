@@ -1,3 +1,35 @@
+## [2026-08-20] Formato de Celdas No Seleccionadas con Guión en PDF de Protocolo de Puesta a Tierra (Res. SRT 900/15)
+
+### Resumen de Cambios
+- **Visualización de Celdas Vacías con Guión (`-`) en PDF (`src/app/[tenant-slug]/protocolos/puesta-a-tierra/utils/pdfGenerator.js`):**
+  - Se corrigió la generación de la tabla de *Datos de la Medición* para que, cuando un punto registrado no tenga valores seleccionados o cargados en los campos de *Esquema de Conexión*, *Valor Medido en Ohm*, *Cumple Res. 900/15*, *Continuidad Permanente*, *Capacidad de Carga*, *Protección Contactos Indirectos* o *Desconexión Automática Efectiva*, se dibuje un guión central (`-`) en lugar de dejar la celda en blanco.
+  - Se homogeneizó la función `formatSiNo` para retornar consistentemente `'SI'`, `'NO'` o `'-'`.
+  - Las filas vacías complementarias de la plantilla oficial (hasta completar las 10 filas reglamentarias por hoja) mantienen su formato estándar numerado.
+- **Persistencia de Valor Medido en Formulario (`ProtocoloForm.js`):**
+  - Se ajustó el guardado del punto para que cuando `valor_medido_ohm` esté vacío se almacene como `null` en lugar de forzarse a `0`, evitando que se confunda un campo no medido con un valor de 0 Ω.
+  - Se aseguró el correcto binding en `<AppInput>` cuando el valor es `null` o `undefined`.
+
+### Decisiones Clave
+- Utilizar el caracter de guión (`-`) universal para datos no aplicables o no especificados en mediciones técnicas de Res. SRT 900/15, garantizando claridad en la auditoría sin alterar el formato de filas vacías complementarias de la página.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/utils/pdfGenerator.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Verificación de la renderización de celdas y lógica de fallback para strings vacíos, `null` y `undefined`.
+- Validación de persistencia en Supabase sin coerción espuria a `0`.
+
+### Próximo Paso Recomendado
+- Generar e imprimir un PDF de prueba de puesta a tierra con puntos parciales para verificar visualmente que todas las celdas sin datos muestran el guión `-`.
+
+---
+
 ## [2026-08-20] Incorporación de Selector de Hora por Punto de Medición y Secuencia Temporal Automática en Protocolo de Iluminación
 
 ### Resumen de Cambios
