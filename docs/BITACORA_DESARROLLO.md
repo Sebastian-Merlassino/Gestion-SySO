@@ -1,3 +1,43 @@
+## [2026-08-20] Títulos Completos y Botón de Aclaración con Modal Informativo en Carpetas de Legajo Técnico
+
+### Resumen de Cambios
+- **Visualización Completa de Títulos y Altura Elástica en Legajo Técnico (`/[tenant-slug]/legajo`):**
+  - Se eliminó la clase `truncate` que cortaba los títulos largos con elipsis (`...`) en las tarjetas de carpetas y subcarpetas.
+  - Se configuró la grilla con `items-stretch` y tarjetas con `min-h-[160px] h-full flex flex-col justify-between`, eliminando alturas fijas rígidas (`md:h-[155px]`) que provocaban desbordes en subcarpetas de nombres extensos como *"Plan de acción ante emergencia y evacuación / Sistema de Autoprotección"*. Ahora las tarjetas de cada fila se adaptan elásticamente a la misma altura sin permitir ningún desborde de texto ni del contador de registros.
+  - Se optimizó la tipografía con `break-words` y `leading-snug` para nombres extensos.
+- **Pictograma / Botón de Aclaración Informativa:**
+  - Se integró en la esquina superior derecha de cada tarjeta de carpeta y subcarpeta un botón discreto con el icono `HelpCircle` (`text-slate-400 hover:text-[#468DFF] hover:bg-blue-50/80`) con `e.stopPropagation()` para abrir una ventana emergente de aclaración sin activar la navegación de la tarjeta.
+- **Modal de Contenido y Tipos de Documentos Permitidos:**
+  - Se implementó un modal interactivo (`infoModalFolder` / `infoModalSubfolder`) que detalla la estructura jerárquica, las subcarpetas contenidas y la lista exacta de documentos, estudios, protocolos y certificados admisibles para cada carpeta.
+  - Incluye botones de acción: botón secundario *"Cerrar"* y botón primario corporativo *"Abrir carpeta"* / *"Abrir subcarpeta"*.
+- **Incorporación de Tipo de Registro de EPP y Sincronización de Catálogo:**
+  - Se incorporó formalmente el tipo de documento `"Registro de entrega de elementos de protección personal (EPP´s)"` al catálogo de la carpeta EPP.
+  - Se implementó la función helper `getAllStandardDocTypes()` que fusiona automáticamente todos los tipos de registros definidos en la estructura estándar con los registros de la base de datos, garantizando que aparezcan como opciones directas seleccionables en el selector `<select>` sin derivar en "Otro (ingreso manual)...".
+
+### Decisiones Clave
+- Aislar el evento de apertura del modal de aclaración mediante `e.stopPropagation()` para mantener la fluidez de navegación al hacer clic en el resto de la tarjeta.
+- Enriquecer el catálogo estático con la totalidad de la normativa argentina aplicable (Res. SRT, protocolos, AFIP, certificados técnicos) para brindar una guía clara a profesionales y clientes.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción validada exitosamente mediante `npm run build` (25/25 rutas estáticas y dinámicas compiladas en Next.js sin errores).
+
+### Riesgos Detectados / Remanentes
+- Ninguno. Cambio visual y funcional 100% retrocompatible y contenido dentro del módulo de Legajo Técnico.
+
+### Próximo Paso Recomendado
+- Validar visualmente en el entorno local la interacción con el modal de cada carpeta.
+
+---
+
 ## [2026-08-20] Corrección de Poblado de Partido y Localidad al Seleccionar Domicilio de Establecimiento en Siniestros
 
 ### Resumen de Cambios

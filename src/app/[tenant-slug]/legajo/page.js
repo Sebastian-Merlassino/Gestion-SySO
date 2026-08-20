@@ -119,7 +119,10 @@ const LEGAJO_FOLDERS = [
     id: 'epp',
     name: 'Elementos de protección personal (EPP´s)',
     icon: 'ShieldAlert',
-    docTypes: ['Entrega de elementos de protección personal (EPP´s)']
+    docTypes: [
+      'Registro de entrega de elementos de protección personal (EPP´s)',
+      'Constancias de entrega de ropa de trabajo y EPP'
+    ]
   },
   {
     id: 'incendios',
@@ -127,7 +130,7 @@ const LEGAJO_FOLDERS = [
     icon: 'Flame',
     subfolders: [
       { id: 'carga_fuego', name: 'Carga de fuego', docTypes: ['Estudio de Carga de Fuego'] },
-      { id: 'instalaciones_incendio', name: 'Instalaciones de protección contra incendios', docTypes: ['Informe Antisiniestral'] },
+      { id: 'instalaciones_incendio', name: 'Instalaciones de protección contra incendios', docTypes: ['Informe Antisiniestral', 'Memoria de cálculo y plan de mantenimiento de red de incendios'] },
       { id: 'tratamiento_ignifugo', name: 'Tratamiento ignífugo', docTypes: ['Certificado de aplicación de retardante de llamas - tratamiento ignífugo'] },
       { id: 'campanas_conductos', name: 'Campanas, Conductos y Afines', docTypes: ['Certificado de limpieza de campanas, conductos y afines', 'Registro de Campanas, Conductos y Afines'] }
     ]
@@ -140,7 +143,7 @@ const LEGAJO_FOLDERS = [
       { id: 'normas_seguridad', name: 'Normas generales de seguridad', docTypes: ['Manual de procedimientos del Servicio de Higiene y Seguridad', 'Política del establecimiento en materia de Seguridad y Salud en el Trabajo'] },
       { id: 'emergencia_evacuacion', name: 'Plan de acción ante emergencia y evacuación / Sistema de Autoprotección', docTypes: ['Plan de Evacuación', 'Planos generales de evacuación', 'Sistema de Autoprotección'] },
       { id: 'simulacros', name: 'Simulacros', docTypes: ['Informe de simulacro de derrame de producto químico', 'Informe de simulacro de evacuación', 'Informe de simulacro'] },
-      { id: 'procedimientos_trabajo', name: 'Procedimientos de trabajo seguro', docTypes: ['Procedimientos de trabajo seguro'] }
+      { id: 'procedimientos_trabajo', name: 'Procedimientos de trabajo seguro', docTypes: ['Procedimientos de trabajo seguro (PTS)'] }
     ]
   },
   {
@@ -171,35 +174,35 @@ const LEGAJO_FOLDERS = [
     id: 'accidentes_enfermedades',
     name: 'Accidentes de Trabajo y Enfermedades Profesionales',
     icon: 'HeartHandshake',
-    docTypes: ['Informe de investigación accidente de trabajo', 'Exámenes médicos periódicos']
+    docTypes: ['Informe de investigación accidente de trabajo', 'Exámenes médicos periódicos', 'Denuncias de siniestros / Formularios de ART']
   },
   {
     id: 'matriz_cumplimiento',
     name: 'Matriz de cumplimiento legal',
     icon: 'Scale',
-    docTypes: ['Matríz de cumplimiento legal']
+    docTypes: ['Matríz de cumplimiento legal', 'Auditoría de cumplimiento normativo']
   },
   {
     id: 'programa_seguridad',
     name: 'Programa de seguridad (Res. 51/97 - Res.35/98 - Res. 319/99)',
     icon: 'FolderLock',
-    docTypes: ['Programa de Seguridad (Res. 51/97)', 'Programa de Seguridad (Res. 35/98)', 'Programa de Seguridad (Res. 319/99)']
+    docTypes: ['Programa de Seguridad (Res. 51/97)', 'Programa de Seguridad (Res. 35/98)', 'Programa de Seguridad (Res. 319/99)', 'Aviso de inicio de obra']
   },
   {
     id: 'fichas_seguridad',
     name: 'Fichas de Seguridad de productos químicos',
     icon: 'FileSpreadsheet',
-    docTypes: ['Ficha de seguridad']
+    docTypes: ['Ficha de Datos de Seguridad (FDS / MSDS)', 'Hojas de seguridad de sustancias químicas']
   },
   {
     id: 'habilitaciones_inspecciones',
     name: 'Habilitaciones e Inspecciones de Equipos e Instalaciones',
     icon: 'Wrench',
     subfolders: [
-      { id: 'izaje_cargas', name: 'Equipos de izaje de cargas', docTypes: ['Habilitación / Renovación de los Aparatos Sometidos a Presión', 'Inspección anual, Habilitación / renovación de A.S.P.'] },
-      { id: 'elevacion_personas', name: 'Equipos de elevación de personas', docTypes: [] },
-      { id: 'equipos_termicos', name: 'Equipos térmicos (no ASP)', docTypes: ['Registro de Instalaciones Térmicas (RIT)'] },
-      { id: 'instalaciones_tecnicas', name: 'Instalaciones técnicas (Gas, Electricidad, Otras)', docTypes: [] }
+      { id: 'izaje_cargas', name: 'Equipos de izaje de cargas', docTypes: ['Habilitación / Renovación de los Aparatos Sometidos a Presión', 'Inspección anual, Habilitación / renovación de A.S.P.', 'Certificados de operatividad y ensayos de grúas/autoelevadores'] },
+      { id: 'elevacion_personas', name: 'Equipos de elevación de personas', docTypes: ['Certificado de inspección y habilitación de plataformas elevadoras / andamios'] },
+      { id: 'equipos_termicos', name: 'Equipos térmicos (no ASP)', docTypes: ['Registro de Instalaciones Térmicas (RIT)', 'Certificados de mantenimiento térmico'] },
+      { id: 'instalaciones_tecnicas', name: 'Instalaciones técnicas (Gas, Electricidad, Otras)', docTypes: ['Certificados de instalaciones eléctricas, gas y termomecánicas', 'Habilitación municipal / provincial'] }
     ]
   },
   {
@@ -207,9 +210,9 @@ const LEGAJO_FOLDERS = [
     name: 'Aparatos sometidos a presión (ASP)',
     icon: 'Gauge',
     subfolders: [
-      { id: 'calderas', name: 'Calderas', docTypes: ['Habilitación / Renovación de los Aparatos Sometidos a Presión'] },
-      { id: 'compresores', name: 'Compresores', docTypes: ['Habilitación / Renovación de los Aparatos Sometidos a Presión'] },
-      { id: 'otros_equipos_asp', name: 'Otros equipos a presión', docTypes: ['Habilitación / Renovación de los Aparatos Sometidos a Presión'] }
+      { id: 'calderas', name: 'Calderas', docTypes: ['Habilitación / Renovación de los Aparatos Sometidos a Presión', 'Prueba hidráulica y espesores de calderas'] },
+      { id: 'compresores', name: 'Compresores', docTypes: ['Habilitación / Renovación de los Aparatos Sometidos a Presión', 'Medición de espesores y prueba hidráulica de compresores'] },
+      { id: 'otros_equipos_asp', name: 'Otros equipos a presión', docTypes: ['Habilitación / Renovación de los Aparatos Sometidos a Presión', 'Ensayos no destructivos (END)'] }
     ]
   },
   {
@@ -217,7 +220,7 @@ const LEGAJO_FOLDERS = [
     name: 'Sedronar',
     icon: 'FileText',
     subfolders: [
-      { id: 'renpre', name: 'Registro Nacional de Precursores Químicos (RENPRE)', docTypes: ['Informe trimestral del RENPRE', 'Renovación anual del RENPRE (Sedronar)'] }
+      { id: 'renpre', name: 'Registro Nacional de Precursores Químicos (RENPRE)', docTypes: ['Informe trimestral del RENPRE', 'Renovación anual del RENPRE (Sedronar)', 'Certificado de inscripción RENPRE'] }
     ]
   },
   {
@@ -225,7 +228,7 @@ const LEGAJO_FOLDERS = [
     name: 'Secretaría de Energía',
     icon: 'Zap',
     subfolders: [
-      { id: 'almacenamiento_hidrocarburos', name: 'Certificado de instalaciónes de almacenamiento de hidrocarburos', docTypes: ['Certificado de instalaciónes de almacenamiento de hidrocarburos'] },
+      { id: 'almacenamiento_hidrocarburos', name: 'Certificado de instalaciónes de almacenamiento de hidrocarburos', docTypes: ['Certificado de instalaciónes de almacenamiento de hidrocarburos (Res. 1102/04)'] },
       { id: 'aptitud_tecnica_glp', name: 'Certificado de aptitud técnica y de seguridad (GLP)', docTypes: ['Certificado de aptitud técnica y de seguridad (GLP)'] }
     ]
   },
@@ -233,31 +236,52 @@ const LEGAJO_FOLDERS = [
     id: 'contratistas',
     name: 'Contratistas',
     icon: 'Contact',
-    docTypes: []
+    docTypes: [
+      'Nómina de personal de empresas contratistas',
+      'Certificados de cobertura de ART con cláusula de no repetición',
+      'Pólizas y constancias de Seguro de Accidentes Personales (AP)',
+      'Constancias de entrega de Elementos de Protección Personal (EPP)',
+      'Habilitaciones, aptos médicos y permisos de trabajo'
+    ]
   },
   {
     id: 'comite_mixto',
     name: 'Comité Mixto de Higiene y Seguridad en el Trabajo',
     icon: 'Users',
-    docTypes: ['Minuta del Comité Mixto de Higiene y Seguridad en el Trabajo']
+    docTypes: [
+      'Acta de constitución del Comité Mixto',
+      'Minuta del Comité Mixto de Higiene y Seguridad en el Trabajo',
+      'Recomendaciones e informes de gestión conjunta'
+    ]
   },
   {
     id: 'desinfeccion_desinsectacion',
     name: 'Desinfección, desinsectación, desratización',
     icon: 'Bug',
-    docTypes: []
+    docTypes: [
+      'Certificado de Desinfección, Desinsectación y Desratización (DDD)',
+      'Habilitación y carnet de aplicador de la empresa de control de plagas',
+      'Fichas técnicas y de seguridad de productos domisanitarios aplicados'
+    ]
   },
   {
     id: 'actas_inspeccion',
     name: 'Actas de inspección',
     icon: 'FileCheck',
-    docTypes: []
+    docTypes: [
+      'Actas de inspección de la Superintendencia de Riesgos del Trabajo (SRT)',
+      'Actas de inspección del Ministerio o Secretaría de Trabajo',
+      'Inspecciones municipales, bomberos y organismos de control'
+    ]
   },
   {
     id: 'nomina_personal',
     name: 'Nómina de Personal',
     icon: 'Users',
-    docTypes: ['Nómina de Personal']
+    docTypes: [
+      'Nómina de Personal de la Empresa (Altas / Bajas AFIP)',
+      'Listado de personal afectado a tareas con riesgos específicos'
+    ]
   }
 ];
 
@@ -269,6 +293,23 @@ const FolderIconHelper = ({ name, className }) => {
   };
   const Comp = icons[name] || Folder;
   return <Comp className={className} />;
+};
+
+const getAllStandardDocTypes = () => {
+  const types = new Set();
+  LEGAJO_FOLDERS.forEach(folder => {
+    if (folder.docTypes) {
+      folder.docTypes.forEach(dt => types.add(dt));
+    }
+    if (folder.subfolders) {
+      folder.subfolders.forEach(sub => {
+        if (sub.docTypes) {
+          sub.docTypes.forEach(dt => types.add(dt));
+        }
+      });
+    }
+  });
+  return Array.from(types);
 };
 
 const MONTHS_OPTS = [
@@ -400,6 +441,8 @@ export default function LegajoPage({ params }) {
   const [unsavedDialogOpen, setUnsavedDialogOpen] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState(null);
   const [showIndexModal, setShowIndexModal] = useState(false);
+  const [infoModalFolder, setInfoModalFolder] = useState(null);
+  const [infoModalSubfolder, setInfoModalSubfolder] = useState(null);
 
   // Estados de ordenamiento
   const [sortField, setSortField] = useState('fecha');
@@ -488,14 +531,12 @@ export default function LegajoPage({ params }) {
       { id: 'mock-est-2', empresa_id: 'mock-empresa-1', denominacion: 'Oficinas Belgrano', direccion: 'Av. Cabildo 1540' },
       { id: 'mock-est-3', empresa_id: 'mock-empresa-2', denominacion: 'Único', direccion: 'Ruta 8 Km 54' }
     ]);
-    setRegistrosList([
-      { id: 'mock-reg-1', nombre: 'Relevamiento General de Riesgos Laborales' },
-      { id: 'mock-reg-2', nombre: 'Relevamiento de Agentes de Riesgos' },
-      { id: 'mock-reg-3', nombre: 'Declaración jurada para informar la presencia de Sustancias y Agentes Cancerígenos (S.V.C.C.)' },
-      { id: 'mock-reg-4', nombre: 'Constancia de visita' },
-      { id: 'mock-reg-5', nombre: 'Anexo - Resolución 85/12 (Protocolo de ruido)' },
-      { id: 'mock-reg-6', nombre: 'Estudio de ruido' }
-    ]);
+    const standardTypes = getAllStandardDocTypes();
+    const mockCombinedMap = new Map();
+    standardTypes.forEach(name => {
+      mockCombinedMap.set(name.trim().toLowerCase(), { id: name.trim(), nombre: name.trim() });
+    });
+    setRegistrosList(Array.from(mockCombinedMap.values()).sort((a, b) => a.nombre.localeCompare(b.nombre)));
     setDocuments([
       {
         id: 'mock-doc-1',
@@ -583,13 +624,27 @@ export default function LegajoPage({ params }) {
       if (estErr) throw estErr;
       setAllEstablecimientos(ests || []);
 
-      // Cargar Catálogo de Registros
+      // Cargar Catálogo de Registros y fusionar con tipos estándar
       const { data: regs, error: regsErr } = await supabase
         .from('registros')
         .select('id, nombre')
         .order('nombre');
       if (regsErr) throw regsErr;
-      setRegistrosList(regs || []);
+
+      const standardDocTypes = getAllStandardDocTypes();
+      const combinedMap = new Map();
+      (regs || []).forEach(r => {
+        if (r.nombre) {
+          combinedMap.set(r.nombre.trim().toLowerCase(), { id: r.id || r.nombre.trim(), nombre: r.nombre.trim() });
+        }
+      });
+      standardDocTypes.forEach(name => {
+        if (!combinedMap.has(name.trim().toLowerCase())) {
+          combinedMap.set(name.trim().toLowerCase(), { id: name.trim(), nombre: name.trim() });
+        }
+      });
+      const mergedRegistros = Array.from(combinedMap.values()).sort((a, b) => a.nombre.localeCompare(b.nombre));
+      setRegistrosList(mergedRegistros);
 
       // Cargar Documentos del Legajo
       let docsQuery = supabase
@@ -828,7 +883,7 @@ export default function LegajoPage({ params }) {
     setEstablecimientoId(doc.establecimiento_id || '');
     setFecha(formatDate(doc.fecha) || '');
 
-    const regMatch = registrosList.find(r => r.nombre === doc.documento_nombre);
+    const regMatch = registrosList.find(r => r.nombre.toLowerCase() === (doc.documento_nombre || '').toLowerCase());
     let finalRegId = '';
     let finalDocName = '';
     let finalDocCustom = '';
@@ -1532,29 +1587,43 @@ export default function LegajoPage({ params }) {
                 {/* 1. VISTA DE RAÍZ: MUESTRA LAS CARPETAS PRINCIPALES */}
                 {!currentFolder && (
                   <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-0 md:gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-0 md:gap-4 items-stretch">
                       {LEGAJO_FOLDERS.map((folder) => {
                         const fileCount = getFileCountForFolder(folder);
                         return (
                           <div
                             key={folder.id}
                             onClick={() => navigateToFolder(folder)}
-                            className="bg-white border-b border-slate-200 md:border md:border-slate-200 md:rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-[#468DFF]/40 cursor-pointer transition-all flex flex-col justify-between group"
+                            className="bg-white border-b border-slate-200 md:border md:border-slate-200 md:rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md hover:border-[#468DFF]/40 cursor-pointer transition-all flex flex-col justify-between group min-h-[160px] h-full"
                           >
-                            <div className="flex items-center gap-4">
-                              <div className="p-3.5 rounded-xl bg-slate-100 text-[#468DFF] group-hover:bg-[#468DFF]/10 transition-colors shrink-0">
-                                <FolderIconHelper name={folder.icon} className="h-6 w-6" />
+                            <div className="flex items-start justify-between gap-2.5">
+                              <div className="flex items-start gap-3 min-w-0">
+                                <div className="p-2.5 rounded-xl bg-slate-100 text-[#468DFF] group-hover:bg-[#468DFF]/10 transition-colors shrink-0 mt-0.5">
+                                  <FolderIconHelper name={folder.icon} className="h-5 w-5" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <h3 className="font-bold text-slate-900 text-xs sm:text-sm leading-snug group-hover:text-[#468DFF] transition-colors break-words">
+                                    {folder.name}
+                                  </h3>
+                                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mt-1">
+                                    {folder.subfolders ? `${folder.subfolders.length} subcarpetas` : 'Carpeta directa'}
+                                  </p>
+                                </div>
                               </div>
-                              <div className="min-w-0">
-                                <h3 className="font-bold text-slate-900 text-sm leading-tight truncate group-hover:text-[#468DFF] transition-colors">
-                                  {folder.name}
-                                </h3>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mt-1">
-                                  {folder.subfolders ? `${folder.subfolders.length} subcarpetas` : 'Carpeta directa'}
-                                </p>
-                              </div>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setInfoModalFolder(folder);
+                                  setInfoModalSubfolder(null);
+                                }}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-[#468DFF] hover:bg-blue-50/80 transition-all cursor-pointer shrink-0 -mt-1 -mr-1"
+                                title={`Ver contenido y requisitos de ${folder.name}`}
+                              >
+                                <HelpCircle className="h-4 w-4" />
+                              </button>
                             </div>
-                            <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-400">
+                            <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-2.5 text-xs text-slate-400">
                               <span>Total registros</span>
                               <span className="font-bold text-slate-700 bg-slate-100 py-0.5 px-2 rounded-full text-[10px]">
                                 {fileCount}
@@ -1584,26 +1653,40 @@ export default function LegajoPage({ params }) {
                       </h2>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-0 md:gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-0 md:gap-4 items-stretch">
                       {currentFolder.subfolders.map((sub) => {
                         const fileCount = getFileCountForSubfolder(currentFolder, sub);
                         return (
                           <div
                             key={sub.id}
                             onClick={() => setCurrentSubfolder(sub)}
-                            className="bg-white border-b border-slate-200 md:border md:border-slate-200 md:rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-[#468DFF]/40 cursor-pointer transition-all flex flex-col justify-between group"
+                            className="bg-white border-b border-slate-200 md:border md:border-slate-200 md:rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md hover:border-[#468DFF]/40 cursor-pointer transition-all flex flex-col justify-between group min-h-[160px] h-full"
                           >
-                            <div className="flex items-center gap-4">
-                              <div className="p-3.5 rounded-xl bg-slate-100 text-[#468DFF] group-hover:bg-[#468DFF]/10 transition-colors shrink-0">
-                                <Folder className="h-6 w-6" />
+                            <div className="flex items-start justify-between gap-2.5">
+                              <div className="flex items-start gap-3 min-w-0">
+                                <div className="p-2.5 rounded-xl bg-slate-100 text-[#468DFF] group-hover:bg-[#468DFF]/10 transition-colors shrink-0 mt-0.5">
+                                  <Folder className="h-5 w-5" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <h3 className="font-bold text-slate-900 text-xs sm:text-sm leading-snug group-hover:text-[#468DFF] transition-colors break-words">
+                                    {sub.name}
+                                  </h3>
+                                </div>
                               </div>
-                              <div className="min-w-0">
-                                <h3 className="font-bold text-slate-900 text-xs leading-snug group-hover:text-[#468DFF] transition-colors">
-                                  {sub.name}
-                                </h3>
-                              </div>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setInfoModalFolder(currentFolder);
+                                  setInfoModalSubfolder(sub);
+                                }}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-[#468DFF] hover:bg-blue-50/80 transition-all cursor-pointer shrink-0 -mt-1 -mr-1"
+                                title={`Ver documentos permitidos en ${sub.name}`}
+                              >
+                                <HelpCircle className="h-4 w-4" />
+                              </button>
                             </div>
-                            <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-400">
+                            <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-2.5 text-xs text-slate-400">
                               <span>Registros</span>
                               <span className="font-bold text-slate-700 bg-slate-100 py-0.5 px-2 rounded-full text-[10px]">
                                 {fileCount}
@@ -2075,6 +2158,177 @@ export default function LegajoPage({ params }) {
                 className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer shadow-md"
               >
                 Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE INFORMACIÓN Y ACLARACIÓN DE CONTENIDO DE CARPETA / SUBCARPETA */}
+      {infoModalFolder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xl max-w-2xl w-full animate-scale-up flex flex-col max-h-[85vh]">
+            {/* Header del Modal */}
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 shrink-0">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="p-2.5 rounded-xl bg-blue-50 text-[#468DFF] shrink-0">
+                  {infoModalSubfolder ? (
+                    <Folder className="h-6 w-6" />
+                  ) : (
+                    <FolderIconHelper name={infoModalFolder.icon} className="h-6 w-6" />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-outfit text-base md:text-lg font-bold text-slate-900 leading-tight">
+                    {infoModalSubfolder ? infoModalSubfolder.name : infoModalFolder.name}
+                  </h3>
+                  <p className="text-xs text-slate-400 font-semibold mt-0.5">
+                    {infoModalSubfolder
+                      ? `Subcarpeta de: ${infoModalFolder.name}`
+                      : infoModalFolder.subfolders
+                        ? `${infoModalFolder.subfolders.length} subcarpetas configuradas`
+                        : 'Carpeta de carga directa'
+                    }
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setInfoModalFolder(null);
+                  setInfoModalSubfolder(null);
+                }}
+                className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 cursor-pointer transition-colors shrink-0"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Contenido / Cuerpo del Modal */}
+            <div className="overflow-y-auto py-4 flex-1 space-y-4 pr-1 scrollbar-thin">
+              <div className="p-3.5 bg-blue-50/60 rounded-xl border border-blue-100/80 flex items-start gap-2.5 text-xs text-slate-600">
+                <HelpCircle className="h-4 w-4 text-[#468DFF] shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold text-slate-800">Contenido permitido para cargar: </span>
+                  <span>
+                    {infoModalSubfolder
+                      ? 'A continuación se listan los documentos, estudios, protocolos y certificados que se pueden cargar y consultar en esta subcarpeta:'
+                      : 'A continuación se detalla la estructura y los tipos de documentos reglamentarios que corresponden a esta carpeta del Legajo Técnico:'
+                    }
+                  </span>
+                </div>
+              </div>
+
+              {/* Vista para subcarpeta específica */}
+              {infoModalSubfolder ? (
+                <div className="border border-slate-200 rounded-xl p-4 bg-slate-50/50 space-y-2">
+                  <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                    <FileText className="h-3.5 w-3.5 text-[#468DFF]" />
+                    Tipos de Documentos y Registros Habilitados:
+                  </h4>
+                  {infoModalSubfolder.docTypes && infoModalSubfolder.docTypes.length > 0 ? (
+                    <ul className="pl-5 space-y-1.5 list-disc text-slate-700 text-xs">
+                      {infoModalSubfolder.docTypes.map((docType, idx) => (
+                        <li key={idx} className="leading-relaxed font-medium">
+                          {docType}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-xs text-slate-500 italic pl-1">
+                      Documentación general del rubro, informes técnicos, memorias y habilitaciones aplicables.
+                    </p>
+                  )}
+                </div>
+              ) : (
+                /* Vista para carpeta principal */
+                infoModalFolder.subfolders ? (
+                  <div className="space-y-3">
+                    <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider">
+                      Estructura de Subcarpetas y Documentos:
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {infoModalFolder.subfolders.map((sub) => (
+                        <div key={sub.id} className="border border-slate-200 rounded-xl p-3.5 bg-slate-50/50 flex flex-col justify-between">
+                          <div>
+                            <div className="flex items-center gap-2 font-bold text-slate-900 text-xs">
+                              <Folder className="h-4 w-4 text-[#468DFF] shrink-0" />
+                              <span className="leading-tight">{sub.name}</span>
+                            </div>
+                            {sub.docTypes && sub.docTypes.length > 0 ? (
+                              <ul className="mt-2 pl-5 space-y-1 list-disc text-slate-600 text-[11px]">
+                                {sub.docTypes.map((dt, idx) => (
+                                  <li key={idx} className="leading-snug">
+                                    {dt}
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="mt-2 text-[11px] text-slate-400 italic pl-5">
+                                Informes técnicos y certificados aplicables.
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  /* Vista para carpeta directa */
+                  <div className="border border-slate-200 rounded-xl p-4 bg-slate-50/50 space-y-2">
+                    <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                      <FileText className="h-3.5 w-3.5 text-[#468DFF]" />
+                      Documentos y Registros que se pueden cargar:
+                    </h4>
+                    {infoModalFolder.docTypes && infoModalFolder.docTypes.length > 0 ? (
+                      <ul className="pl-5 space-y-1.5 list-disc text-slate-700 text-xs">
+                        {infoModalFolder.docTypes.map((docType, idx) => (
+                          <li key={idx} className="leading-relaxed font-medium">
+                            {docType}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-xs text-slate-500 italic pl-1">
+                        Documentación general e informes técnicos vinculados a este rubro.
+                      </p>
+                    )}
+                  </div>
+                )
+              )}
+            </div>
+
+            {/* Footer de Acciones */}
+            <div className="pt-4 border-t border-slate-100 shrink-0 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setInfoModalFolder(null);
+                  setInfoModalSubfolder(null);
+                }}
+                className="px-4 py-2.5 bg-white text-[#468DFF] border border-[#468DFF] rounded-xl text-xs font-bold hover:bg-[#468DFF] hover:text-white transition-all active:scale-[0.98] cursor-pointer"
+              >
+                Cerrar
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const targetFolder = infoModalFolder;
+                  const targetSubfolder = infoModalSubfolder;
+                  setInfoModalFolder(null);
+                  setInfoModalSubfolder(null);
+                  if (targetSubfolder) {
+                    setCurrentFolder(targetFolder);
+                    setCurrentSubfolder(targetSubfolder);
+                  } else {
+                    navigateToFolder(targetFolder);
+                  }
+                }}
+                className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer shadow-md shadow-[#468DFF]/20 flex items-center gap-1.5"
+              >
+                <FolderOpen className="h-3.5 w-3.5" />
+                <span>{infoModalSubfolder ? 'Abrir subcarpeta' : 'Abrir carpeta'}</span>
               </button>
             </div>
           </div>
