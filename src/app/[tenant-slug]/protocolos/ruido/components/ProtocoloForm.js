@@ -45,7 +45,6 @@ import {
 } from 'lucide-react';
 import { formatDate, formatAsDateInput, convertToDbDate, sanitizeFileName } from '@/lib/utils';
 import { getLimiteDbaForTe, getPuntoCalculos } from '../utils/tablasAnexoV';
-import Tabla1Modal from './Tabla1Modal';
 import Tabla1RuidoModal from './Tabla1RuidoModal';
 import MetodoCuadriculaModal from './MetodoCuadriculaModal';
 
@@ -75,9 +74,7 @@ export default function ProtocoloForm({
   const [saveLoading, setSaveLoading] = useState(false);
   const [isDevMode, setIsDevMode] = useState(false);
   
-  // Tabla 1 & Método Cuadrícula Modal State
-  const [isTabla1Open, setIsTabla1Open] = useState(false);
-  const [targetPuntoIdForTabla1, setTargetPuntoIdForTabla1] = useState(null);
+  // Normative Modal State
   const [isMetodoCuadriculaOpen, setIsMetodoCuadriculaOpen] = useState(false);
   
   // Lookups data
@@ -148,15 +145,6 @@ export default function ProtocoloForm({
   const [editorImageUrl, setEditorImageUrl] = useState('');
   const [editPhotoIndex, setEditPhotoIndex] = useState(null);
   const [estSectoresLocal, setEstSectoresLocal] = useState([]);
-
-  const handleSelectLuxFromTabla1 = (luxValue) => {
-    if (!targetPuntoIdForTabla1) return;
-    setPuntos(prev => prev.map(p => p.id === targetPuntoIdForTabla1 ? {
-      ...p,
-      valor_requerido_legal_lux: String(luxValue)
-    } : p));
-    setTargetPuntoIdForTabla1(null);
-  };
 
   const canEdit = mode !== 'view' && estado !== 'anulado';
   const isReadOnly = mode === 'view';
@@ -1089,96 +1077,6 @@ export default function ProtocoloForm({
     };
   };
 
-  // Specific Activity selection (Table 2 lookup)
-  const handleActividadSelect = (puntoId, idx) => {
-    setPuntos(puntos.map(p => {
-      if (p.id === puntoId) {
-        const item = ACTIVIDADES_ILUMINACION[idx];
-        return {
-          ...p,
-          selectedActividadIndex: idx,
-          valor_requerido_legal_lux: item ? String(item.lux) : p.valor_requerido_legal_lux
-        };
-      }
-      return p;
-    }));
-  };
-
-  // Handle geometry change (auto recalculates minimum measurement points)
-  const handlePuntoGeometriaChange = (puntoId, field, val) => {
-    setPuntos(puntos.map(p => {
-      if (p.id !== puntoId) return p;
-      const updatedPunto = { ...p, [field]: val };
-
-      const largo = parseFloat(field === 'largo_m' ? val : updatedPunto.largo_m);
-      const ancho = parseFloat(field === 'ancho_m' ? val : updatedPunto.ancho_m);
-      const altura = parseFloat(field === 'altura_m' ? val : updatedPunto.altura_m);
-
-      if (largo > 0 && ancho > 0 && altura > 0) {
-        const indice_local = (largo * ancho) / (altura * (largo + ancho));
-        const indice_local_corregido = indice_local >= 3 ? 4 : Math.ceil(indice_local);
-        const numero_minimo_puntos_medicion = Math.pow(indice_local_corregido + 2, 2);
-
-        let currentMediciones = [...updatedPunto.mediciones];
-        if (currentMediciones.length < numero_minimo_puntos_medicion) {
-          const needed = numero_minimo_puntos_medicion - currentMediciones.length;
-          for (let i = 0; i < needed; i++) {
-            currentMediciones.push({
-              id: 'm-' + Date.now() + '-' + i + '-' + Math.random().toString(36).substr(2, 4),
-              valor_lux: ''
-            });
-          }
-          updatedPunto.mediciones = currentMediciones;
-        }
-      }
-
-      return updatedPunto;
-    }));
-  };
-
-  // Add/remove measurement to point
-  const handleAddMedicion = (puntoId) => {
-    setPuntos(puntos.map(p => {
-      if (p.id === puntoId) {
-        return {
-          ...p,
-          mediciones: [...p.mediciones, { id: 'm-' + Date.now() + '-' + p.mediciones.length, valor_lux: '' }]
-        };
-      }
-      return p;
-    }));
-  };
-
-  const handleRemoveMedicion = (puntoId, medId) => {
-    setPuntos(puntos.map(p => {
-      if (p.id === puntoId) {
-        if (p.mediciones.length <= 1) {
-          globalToast.toast('El punto debe tener al menos una medición lux.', 'warning');
-          return p;
-        }
-        return {
-          ...p,
-          mediciones: p.mediciones.filter(m => m.id !== medId)
-        };
-      }
-      return p;
-    }));
-  };
-
-  const handleMedicionValueChange = (puntoId, medId, val) => {
-    // Keep positive numeric values
-    const cleanVal = val.replace(/[^0-9]/g, '');
-    setPuntos(puntos.map(p => {
-      if (p.id === puntoId) {
-        return {
-          ...p,
-          mediciones: p.mediciones.map(m => m.id === medId ? { ...m, valor_lux: cleanVal } : m)
-        };
-      }
-      return p;
-    }));
-  };
-
   // Upload attachment file
   const handleUploadFile = async (file, type) => {
     try {
@@ -1350,23 +1248,43 @@ export default function ProtocoloForm({
             return;
           }
 
-          const cal = getPuntoCalculos(p);
-          if (cal.cantidad_mediciones_cargadas === 0) {
-            globalToast.toast(`Debe cargar al menos una medición lux en el punto #${i + 1}.`, 'error');
-            return;
-          }
+          if (p.caracteristicas_ruido === 'impulso_impacto') {
+            if (p.nivel_pico_lc_pico_dbc === '' || p.nivel_pico_lc_pico_dbc === null || isNaN(parseFloat(p.nivel_pico_lc_pico_dbc))) {
+              globalToast.toast(`Debe ingresar el Nivel Pico (LCpico en dBC) en el punto #${i + 1}.`, 'error');
+              return;
+            }
+          } else {
+            // Continuo / Intermitente
+            if (p.tiempo_exposicion_hs === '' || p.tiempo_exposicion_hs === null || isNaN(parseFloat(p.tiempo_exposicion_hs)) || parseFloat(p.tiempo_exposicion_hs) <= 0) {
+              globalToast.toast(`Debe definir el tiempo de exposición del trabajador (en horas) en el punto #${i + 1}.`, 'error');
+              return;
+            }
 
-          if (isNaN(parseFloat(p.valor_requerido_legal_lux)) || parseFloat(p.valor_requerido_legal_lux) <= 0) {
-            globalToast.toast(`Debe definir el valor legal requerido en el punto #${i + 1}.`, 'error');
-            return;
+            const tipoContinuo = p.tipo_carga_continuo || 'laeq';
+            if (tipoContinuo === 'laeq') {
+              if (p.nivel_laeq_te_dba === '' || p.nivel_laeq_te_dba === null || isNaN(parseFloat(p.nivel_laeq_te_dba))) {
+                globalToast.toast(`Debe ingresar el Nivel Integrado (LAeq,Te en dBA) en el punto #${i + 1}.`, 'error');
+                return;
+              }
+            } else if (tipoContinuo === 'suma_fracciones') {
+              if (p.resultado_suma_fracciones === '' || p.resultado_suma_fracciones === null || isNaN(parseFloat(p.resultado_suma_fracciones))) {
+                globalToast.toast(`Debe ingresar el resultado de la suma de fracciones en el punto #${i + 1}.`, 'error');
+                return;
+              }
+            } else if (tipoContinuo === 'dosis') {
+              if (p.dosis_porcentaje === '' || p.dosis_porcentaje === null || isNaN(parseFloat(p.dosis_porcentaje))) {
+                globalToast.toast(`Debe ingresar la dosis diaria de ruido (en porcentaje %) en el punto #${i + 1}.`, 'error');
+                return;
+              }
+            }
           }
+        }
 
-          // Si el resultado general es No cumple, debe requerir conclusiones y recomendaciones
-          const generalRes = getResultadoGeneral();
-          if (generalRes === 'No cumple' && (!concStr || !recStr)) {
-            globalToast.toast('Al detectarse puntos que NO CUMPLEN, es obligatorio completar las Conclusiones y Recomendaciones.', 'error');
-            return;
-          }
+        // Si el resultado general es No cumple, debe requerir conclusiones y recomendaciones
+        const generalRes = getResultadoGeneral();
+        if (generalRes === 'No cumple' && (!concStr || !recStr)) {
+          globalToast.toast('Al detectarse puntos que NO CUMPLEN, es obligatorio completar las Conclusiones y Recomendaciones.', 'error');
+          return;
         }
       }
 
@@ -2747,7 +2665,7 @@ export default function ProtocoloForm({
                   disabled={!canEdit}
                   value={conclusiones}
                   onChange={setConclusiones}
-                  context="Conclusiones sobre el cumplimiento legal y de uniformidad de la iluminación en el ambiente de trabajo"
+                  context="Conclusiones sobre el cumplimiento normativo de los niveles de ruido laboral según el Decreto Nº 351/79 Anexo V"
                 />
               </div>
               <AppTextarea
@@ -2767,7 +2685,7 @@ export default function ProtocoloForm({
                   disabled={!canEdit}
                   value={recomendaciones}
                   onChange={setRecommendations => setRecomendaciones(setRecommendations)}
-                  context="Recomendaciones para adecuar el nivel de ruido a la legislación vigente"
+                  context="Recomendaciones y medidas de ingeniería/EPP para mitigar el nivel de ruido laboral según el Decreto Nº 351/79 Anexo V"
                 />
               </div>
               <AppTextarea
@@ -2776,7 +2694,7 @@ export default function ProtocoloForm({
                 rows={3}
                 value={recomendaciones}
                 onChange={(e) => setRecomendaciones(e.target.value)}
-                placeholder="Ej: Reubicar puestos de trabajo, añadir luminarias localizadas, realizar limpieza del instrumental, etc."
+                placeholder="Ej: Implementar protectores auditivos tipo copa o endoaurales, mantenimiento de maquinaria, apantallamiento acústico, rotación de personal, etc."
               />
               {getResultadoGeneral() === 'No cumple' && (
                 <span className="text-[10px] text-red-500 font-bold block mt-1">
@@ -3346,20 +3264,10 @@ export default function ProtocoloForm({
       </div>
     )}
 
-    {/* MODAL MÉTODO DE LA CUADRÍCULA Y CRITERIO DE UNIFORMIDAD (Res. SRT 84/12 & Dec. 351/79) */}
+    {/* MODAL MÉTODO Y MARCO NORMATIVO RUIDO (Dec. 351/79 ANEXO V) */}
     <MetodoCuadriculaModal
       isOpen={isMetodoCuadriculaOpen}
       onClose={() => setIsMetodoCuadriculaOpen(false)}
-    />
-
-    {/* MODAL ANEXO IV DEC 351/79 TABLA 1 (Buscador y Selección de Lux) */}
-    <Tabla1Modal
-      isOpen={isTabla1Open}
-      onClose={() => {
-        setIsTabla1Open(false);
-        setTargetPuntoIdForTabla1(null);
-      }}
-      onSelectLux={handleSelectLuxFromTabla1}
     />
 
     {/* MODAL TABLA 1 VALORES LIMITE RUIDO (RES. 295/03 ANEXO V) */}

@@ -291,14 +291,14 @@ export default function ProtocolosRuidoPage({ params }) {
 
       if (insErr) throw insErr;
 
-      // Duplicate Points and measurements
+      // Duplicate Points
       const { data: origPoints } = await supabase
         .from('protocolos_ruido_puntos')
-        .select('*, mediciones:protocolos_ruido_mediciones(*)')
+        .select('*')
         .eq('protocolo_id', proto.id);
 
       for (const pt of (origPoints || [])) {
-        const { data: newPt } = await supabase
+        await supabase
           .from('protocolos_ruido_puntos')
           .insert({
             protocolo_id: newProto.id,
@@ -306,43 +306,21 @@ export default function ProtocolosRuidoPage({ params }) {
             punto_muestreo: pt.punto_muestreo,
             sector_id: pt.sector_id,
             sector_text: pt.sector_text,
-            largo_m: pt.largo_m,
-            ancho_m: pt.ancho_m,
-            altura_m: pt.altura_m,
             puesto_id: pt.puesto_id,
             puesto_text: pt.puesto_text,
-            tipo_iluminacion: pt.tipo_iluminacion,
-            tipo_fuente_luminica: pt.tipo_fuente_luminica,
-            iluminacion: pt.iluminacion,
-            indice_local: pt.indice_local,
-            indice_local_corregido: pt.indice_local_corregido,
-            numero_minimo_puntos_medicion: pt.numero_minimo_puntos_medicion,
-            cantidad_mediciones_cargadas: pt.cantidad_mediciones_cargadas,
-            iluminancia_media: pt.iluminancia_media,
-            iluminancia_minima: pt.iluminancia_minima,
-            uniformidad_requerida: pt.uniformidad_requerida,
-            valor_uniformidad_iluminancia: pt.valor_uniformidad_iluminancia,
-            valor_medido_lux: pt.valor_medido_lux,
-            valor_requerido_legal_lux: pt.valor_requerido_legal_lux,
-            verificacion_uniformidad: pt.verificacion_uniformidad,
-            verificacion_legal: pt.verificacion_legal,
+            tiempo_exposicion_hs: pt.tiempo_exposicion_hs,
+            tiempo_integracion: pt.tiempo_integracion,
+            caracteristicas_ruido: pt.caracteristicas_ruido,
+            nivel_pico_lc_pico_dbc: pt.nivel_pico_lc_pico_dbc,
+            tipo_carga_continuo: pt.tipo_carga_continuo,
+            nivel_laeq_te_dba: pt.nivel_laeq_te_dba,
+            modo_suma_fracciones: pt.modo_suma_fracciones,
+            fracciones: pt.fracciones,
+            resultado_suma_fracciones: pt.resultado_suma_fracciones,
+            dosis_porcentaje: pt.dosis_porcentaje,
             resultado_punto: pt.resultado_punto,
             observaciones_punto: pt.observaciones_punto
-          })
-          .select('id')
-          .single();
-
-        const medsPayload = (pt.mediciones || []).map(m => ({
-          punto_id: newPt.id,
-          orden: m.orden,
-          valor_lux: m.valor_lux
-        }));
-
-        if (medsPayload.length > 0) {
-          await supabase
-            .from('protocolos_ruido_mediciones')
-            .insert(medsPayload);
-        }
+          });
       }
 
       // Clone attachments references

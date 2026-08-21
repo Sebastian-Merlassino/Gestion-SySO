@@ -1,3 +1,40 @@
+## [2026-08-21] Corrección de Validación al Guardar Protocolo de Ruido como Completado y Limpieza de Remanentes de Iluminación
+
+### Resumen de Cambios
+- **Corrección de Validación de Puntos de Muestreo de Ruido (`src/app/[tenant-slug]/protocolos/ruido/components/ProtocoloForm.js`):**
+  - Se eliminó la validación errónea que exigía un valor legal de lux (`valor_requerido_legal_lux`) y mediciones de cuadrícula de iluminación en el protocolo de ruido al guardar con estado "Completado".
+  - Se implementó la validación técnica correspondiente al Decreto Nº 351/79 Anexo V:
+    - Verificación del sector en cada punto.
+    - Para ruido de impulso/impacto: validación obligatoria del valor numérico de Nivel Pico ($LC_{pico}$ en dBC, límite 140 dBC).
+    - Para ruido continuo/intermitente: validación obligatoria del tiempo de exposición ($T_e$ en horas) y del parámetro medido según la modalidad de carga seleccionada ($LA_{eq,Te}$ en dBA, Suma de Fracciones $\Sigma C_i/T_i$, o Dosis %).
+    - Validación de conclusiones y recomendaciones obligatorias si el resultado general es "No cumple".
+- **Limpieza de Remanentes de Iluminación (`src/app/[tenant-slug]/protocolos/ruido/components/ProtocoloForm.js`):**
+  - Se removieron componentes, estados y funciones no utilizadas provenientes del protocolo de iluminación (`Tabla1Modal` de lux, selector de actividades de iluminación, cálculo de puntos mínimos por geometría de local y mediciones lux).
+  - Se actualizaron los contextos de los asistentes de IA (`AITextHelper`) y los placeholders de conclusiones y recomendaciones para referenciar las medidas de mitigación de ruido acústico según la normativa laboral argentina.
+- **Corrección en Duplicación de Protocolo de Ruido (`src/app/[tenant-slug]/protocolos/ruido/page.js`):**
+  - Se actualizaron las columnas persistidas al duplicar un protocolo para clonar los campos acústicos reales (`tiempo_exposicion_hs`, `tiempo_integracion`, `caracteristicas_ruido`, `nivel_pico_lc_pico_dbc`, `tipo_carga_continuo`, `nivel_laeq_te_dba`, `modo_suma_fracciones`, `fracciones`, `resultado_suma_fracciones`, `dosis_porcentaje`, etc.).
+
+### Decisiones Clave
+- En el Protocolo de Ruido, los límites normativos no se ingresan manualmente por punto, sino que se determinan automáticamente en base a la legislación (Decreto Nº 351/79 Anexo V / Res. MTEySS Nº 295/03) según el tiempo de exposición ($T_e$). La validación para marcar el protocolo como "Completado" ahora verifica la presencia de las mediciones acústicas requeridas para cada tipo de ruido.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción completa de Next.js (`npm run build`) finalizada con éxito sin advertencias ni errores (`Exit code: 0`).
+
+### Próximo Paso Recomendado
+- Probar el flujo de guardado como completado en el formulario de edición de ruido para validar el guardado sin alertas erróneas.
+
+---
+
 ## [2026-08-21] Implementación de Doble Confirmación y Detector de Errores de Tipeo en Registro
 
 ### Resumen de Cambios
