@@ -1,3 +1,37 @@
+## [2026-08-21] Implementación de Doble Confirmación y Detector de Errores de Tipeo en Registro
+
+### Resumen de Cambios
+- **Doble Confirmación de Correo Electrónico (`src/app/register/page.js`):**
+  - Se agregó el campo obligatorio *"Confirmar Correo Electrónico"* en el formulario de registro con validación visual en tiempo real de coincidencia (`Coinciden` / `No coinciden`) y feedback cromático en los bordes del input.
+  - Se implementó la validación estricta pre-submit que verifica que ambos correos sean idénticos tras sanitizar espacios y pasar a minúsculas (`trim().toLowerCase()`).
+- **Detector Inteligente de Errores Tipográficos en Dominios (`src/app/register/page.js`):**
+  - Se añadió un algoritmo helper que identifica errores frecuentes en dominios populares (ej: `@gmail.co`, `@gmai.com`, `@gmial.com`, `@hotmial.com`, `@outlok.com`, `@yahoo.con`, etc.).
+  - Muestra una alerta interactiva con sugerencia: *¿Quisiste decir **usuario@gmail.com**?* junto a un botón de *"Corregir"* que actualiza ambos campos de correo con un solo clic.
+- **Mejora de UX y Rescate en Pantalla de Verificación (`src/app/register/page.js`):**
+  - Se resaltó la casilla de destino en una tarjeta informativa destacada con icono de correo.
+  - Se agregó el botón *"¿Escribiste mal tu correo? Volver a registrarte"* que permite al usuario reiniciar el formulario de inmediato sin quedar bloqueado en caso de error involuntario.
+
+### Decisiones Clave
+- Resolver la problemática de rebotes de correos de activación (DSN failures) 100% desde la capa de UI / frontend, sin requerir migraciones de base de datos ni afectar a usuarios ya existentes.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/register/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción completa de Next.js (`npm run build` / `next build`) finalizada exitosamente con código de salida 0.
+- Verificación de estados del formulario, normalización de strings y consistencia estética con las directrices de marca de Gestión SySO.
+
+### Próximo Paso Recomendado
+- Monitorear los nuevos registros para verificar la reducción a 0 de rebotes de activación por errores de tipeo.
+
+---
+
 ## [2026-08-21] Ajuste de UI y Edición Condicional en Campo de Descripción del Programa Anual
 
 ### Resumen de Cambios
