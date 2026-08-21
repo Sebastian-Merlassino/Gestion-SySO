@@ -1,3 +1,33 @@
+## [2026-08-21] Ajuste de UI y Edición Condicional en Campo de Descripción del Programa Anual
+
+### Resumen de Cambios
+- **Limpieza de Placeholder en Selector de Catálogo (`src/app/[tenant-slug]/programa/page.js`):**
+  - Se modificó la opción inicial del dropdown de catálogo de `-- Selecciona del catálogo --` a `Selecciona del catálogo`, unificando el estilo con el resto de selectores (`Selecciona un cliente`, `Selecciona un establecimiento`, etc.).
+- **Unificación de Altura y Edición Condicional del Campo de Descripción (`src/app/[tenant-slug]/programa/page.js`):**
+  - Se reemplazó el elemento `<textarea>` de altura fija `h-20` por un `<input type="text">` estándar con las mismas clases (`px-3.5 py-2 text-sm rounded-xl`) para igualar visualmente la altura de todos los inputs y controles del formulario.
+  - Se configuró el atributo `readOnly` e interactividad para que el campo de descripción solo esté habilitado para escritura manual cuando el usuario selecciona la opción *"Otra actividad (cargar manualmente)..."*.
+  - En caso de seleccionar un ítem del catálogo o no haber seleccionado ninguno aún, el campo permanece en modo de solo lectura (`readOnly`, fondo `bg-slate-100` y cursor `not-allowed`), mostrando el texto cargado automáticamente desde el catálogo.
+
+### Decisiones Clave
+- Restringir la edición del campo de texto de descripción a la opción manual para evitar inconsistencias entre el ítem seleccionado del catálogo y el texto persistido, manteniendo consistencia visual en la grilla del formulario con inputs de altura unificada.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Verificación del comportamiento del selector con opciones de catálogo, estado vacío y selección de "Otra actividad".
+- Comprobación visual y dimensional de las clases de Tailwind CSS aplicadas (`py-2`, `px-3.5`, `rounded-xl`, `text-sm`).
+
+### Próximo Paso Recomendado
+- Probar en entorno local o staging la creación de actividades tanto desde catálogo como mediante carga manual personalizada.
+
+---
+
 ## [2026-08-20] Formato de Celdas No Seleccionadas con Guión en PDF de Protocolo de Puesta a Tierra (Res. SRT 900/15)
 
 ### Resumen de Cambios

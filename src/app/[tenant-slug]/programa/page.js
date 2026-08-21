@@ -1693,20 +1693,26 @@ export default function ProgramaGestion({ params }) {
                         onChange={(e) => handleDescripcionChange(e.target.value)}
                         className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer mb-2"
                       >
-                        <option value="">-- Selecciona del catálogo --</option>
+                        <option value="">Selecciona del catálogo</option>
                         {catalogo.map(c => (
                           <option key={c.id} value={c.id}>{c.descripcion}</option>
                         ))}
                         <option value="__custom__">Otra actividad (cargar manualmente)...</option>
                       </select>
 
-                      {/* Textarea: siempre visible; pre-cargada desde catálogo o editable manualmente */}
-                      <textarea
+                      {/* Input de descripción: misma altura que los demás controles; editable solo al seleccionar 'Otra actividad' */}
+                      <input
+                        type="text"
                         required
-                        placeholder="Detalla la actividad a realizar..."
+                        placeholder={catalogoId && catalogoId !== '__custom__' ? "Completado automáticamente desde catálogo..." : "Detalla la actividad a realizar..."}
                         value={descripcion}
                         onChange={(e) => setDescripcion(e.target.value)}
-                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all h-20 resize-none"
+                        readOnly={catalogoId !== '__custom__'}
+                        className={
+                          catalogoId !== '__custom__'
+                            ? "w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm bg-slate-100 text-slate-500 outline-none cursor-not-allowed"
+                            : "w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
+                        }
                       />
                       {formErrors.descripcion && <p className="text-[10px] text-red-500 font-bold mt-1">{formErrors.descripcion}</p>}
                     </div>
