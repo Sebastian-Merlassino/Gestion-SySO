@@ -690,7 +690,7 @@ export default function ProtocoloForm({
 
       // Cargar sectores del establecimiento seleccionado
       if (proto.establecimiento_id) {
-        const activeEst = allEstablecimientos.find(e => e.id === proto.establecimiento_id);
+        const activeEst = ests.find(e => e.id === proto.establecimiento_id);
         if (activeEst) {
           setEstSectoresLocal(activeEst.sectores || []);
         }
@@ -918,11 +918,29 @@ export default function ProtocoloForm({
   };
 
   // Handle establishment change
-  const handleEstablecimientoChange = (val) => {
+  const handleEstablecimientoChange = async (val) => {
     setEstablecimientoId(val);
-    const est = allEstablecimientos.find(e => e.id === val);
+    let est = allEstablecimientos.find(e => e.id === val);
+    if (val && !isDevMode) {
+      try {
+        const { data: freshEst } = await supabase
+          .from('establecimientos')
+          .select('*')
+          .eq('id', val)
+          .single();
+        if (freshEst) {
+          est = freshEst;
+          setAllEstablecimientos(prev => {
+            const exists = prev.some(e => e.id === freshEst.id);
+            return exists ? prev.map(e => e.id === freshEst.id ? freshEst : e) : [...prev, freshEst];
+          });
+        }
+      } catch (err) {
+        console.warn('Error refrescando establecimiento en ruido:', err);
+      }
+    }
     if (est) {
-      setEstablecimientoText(est.denominacion);
+      setEstablecimientoText(est.denominacion || '');
       setDireccionText(est.direccion || '');
       setProvinciaText(est.provincia || '');
       setLocalidadText(est.localidad_barrio || '');
@@ -1363,7 +1381,7 @@ export default function ProtocoloForm({
         setIsSyncOpen(true);
       } else {
         // No hay sincronizaciones pendientes, guardar directamente
-        await executeSave(localSectors);
+        await executeSave();
       }
     } catch (err) {
       console.error('Error al enviar formulario:', err);
@@ -1373,70 +1391,110 @@ export default function ProtocoloForm({
 
   // Handle Wizard action buttons (Sincronización en 1 solo clic)
   const handleSyncConfirm = async (action) => {
-    let updatedSectors = [...estSectoresLocal];
+    setIsSyncOpen(false);
 
-    if (action === 'save_profile') {
-      for (const item of syncQueue) {
-        if (item.type === 'new_sector') {
-          const existingIdx = updatedSectors.findIndex(s => (s.denominacion || '').toLowerCase() === item.sectorName.toLowerCase());
-          if (existingIdx === -1) {
-            const newSec = {
-              id: 'sec-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
-              denominacion: item.sectorName,
-              descripcion: '',
-              largo: item.largo || '',
-              ancho: item.ancho || '',
-              altura: item.altura || '',
-              puestos: item.puestoName ? [{
-                id: 'pst-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
-                denominacion: item.puestoName,
-                descripcion: ''
-              }] : []
-            };
-            updatedSectors.push(newSec);
-          } else if (item.puestoName) {
-            const puestos = [...(updatedSectors[existingIdx].puestos || [])];
-            if (!puestos.some(pst => (pst.denominacion || '').toLowerCase() === item.puestoName.toLowerCase())) {
-              puestos.push({
-                id: 'pst-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
-                denominacion: item.puestoName,
-                descripcion: ''
-              });
-              updatedSectors[existingIdx] = { ...updatedSectors[existingIdx], puestos };
+    if (action === 'save_profile' && syncQueue.length > 0 && establecimientoId) {
+      try {
+        let currentDbSectores = [];
+        if (!isDevMode) {
+          const { data: freshEst, error: fetchErr } = await supabase
+            .from('establecimientos')
+            .select('sectores')
+            .eq('id', establecimientoId)
+            .single();
+          if (fetchErr) throw fetchErr;
+          currentDbSectores = Array.isArray(freshEst?.sectores) ? [...freshEst.sectores] : [];
+        } else {
+          currentDbSectores = [...estSectoresLocal];
+        }
+
+        for (const item of syncQueue) {
+          const secName = (item.sectorName || '').trim();
+          if (!secName) continue;
+
+          let existingIdx = currentDbSectores.findIndex(s => 
+            (typeof s === 'string' ? s : s.denominacion || s.nombre || '').trim().toLowerCase() === secName.toLowerCase()
+          );
+
+          if (item.type === 'new_sector') {
+            if (existingIdx === -1) {
+              const newSec = {
+                id: 'sec-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+                denominacion: secName,
+                descripcion: '',
+                largo: item.largo || '',
+                ancho: item.ancho || '',
+                altura: item.altura || '',
+                puestos: item.puestoName ? [{
+                  id: 'pst-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+                  denominacion: item.puestoName.trim(),
+                  descripcion: ''
+                }] : []
+              };
+              currentDbSectores.push(newSec);
+            } else if (item.puestoName) {
+              const existingSec = currentDbSectores[existingIdx];
+              const puestos = Array.isArray(existingSec.puestos) ? [...existingSec.puestos] : [];
+              if (!puestos.some(pst => (pst.denominacion || '').trim().toLowerCase() === item.puestoName.trim().toLowerCase())) {
+                puestos.push({
+                  id: 'pst-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+                  denominacion: item.puestoName.trim(),
+                  descripcion: ''
+                });
+                currentDbSectores[existingIdx] = { ...existingSec, puestos };
+              }
             }
-          }
-        } else if (item.type === 'modify_dimensions') {
-          if (updatedSectors[item.sectorIndex]) {
-            updatedSectors[item.sectorIndex] = {
-              ...updatedSectors[item.sectorIndex],
-              largo: item.largo,
-              ancho: item.ancho,
-              altura: item.altura
-            };
-          }
-        } else if (item.type === 'new_puesto') {
-          if (updatedSectors[item.sectorIndex]) {
-            const puestos = [...(updatedSectors[item.sectorIndex].puestos || [])];
-            if (!puestos.some(pst => (pst.denominacion || '').toLowerCase() === item.puestoName.toLowerCase())) {
-              puestos.push({
-                id: 'pst-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
-                denominacion: item.puestoName,
-                descripcion: ''
-              });
-              updatedSectors[item.sectorIndex] = { ...updatedSectors[item.sectorIndex], puestos };
+          } else if (item.type === 'modify_dimensions') {
+            if (existingIdx !== -1) {
+              const existingSec = currentDbSectores[existingIdx];
+              currentDbSectores[existingIdx] = {
+                ...existingSec,
+                largo: item.largo || existingSec.largo || '',
+                ancho: item.ancho || existingSec.ancho || '',
+                altura: item.altura || existingSec.altura || ''
+              };
+            }
+          } else if (item.type === 'new_puesto') {
+            if (existingIdx !== -1 && item.puestoName) {
+              const existingSec = currentDbSectores[existingIdx];
+              const puestos = Array.isArray(existingSec.puestos) ? [...existingSec.puestos] : [];
+              if (!puestos.some(pst => (pst.denominacion || '').trim().toLowerCase() === item.puestoName.trim().toLowerCase())) {
+                puestos.push({
+                  id: 'pst-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+                  denominacion: item.puestoName.trim(),
+                  descripcion: ''
+                });
+                currentDbSectores[existingIdx] = { ...existingSec, puestos };
+              }
             }
           }
         }
+
+        if (!isDevMode) {
+          const { error: estUpdErr } = await supabase
+            .from('establecimientos')
+            .update({ sectores: currentDbSectores })
+            .eq('id', establecimientoId);
+          if (estUpdErr) throw estUpdErr;
+        }
+
+        setEstSectoresLocal(currentDbSectores);
+        setAllEstablecimientos(prev => prev.map(est =>
+          est.id === establecimientoId ? { ...est, sectores: currentDbSectores } : est
+        ));
+        globalToast.toast('Perfil de establecimiento actualizado correctamente.', 'success');
+      } catch (err) {
+        console.error('Error al sincronizar sectores con perfil:', err);
+        globalToast.toast('Error al sincronizar datos con el perfil.', 'error');
       }
-      setEstSectoresLocal(updatedSectors);
     }
 
-    setIsSyncOpen(false);
-    await executeSave(action === 'save_profile' ? updatedSectors : estSectoresLocal);
+    setSyncQueue([]);
+    await executeSave();
   };
 
   // FINAL SAVE DATABASE WRITER
-  const executeSave = async (sectorsToSave) => {
+  const executeSave = async () => {
     setSaveLoading(true);
     try {
       let userId = profile?.id;
@@ -1458,14 +1516,10 @@ export default function ProtocoloForm({
       }
       if (!userId && !isDevMode) throw new Error('No autorizado');
 
-      // 1. Si se actualizaron sectores, localidad, cp o horarios en el perfil del establecimiento, guardarlos en BD
+      // 1. Si faltan datos generales en el establecimiento (localidad, cp, horario), completarlos en BD si están presentes
       if (!isDevMode && establecimientoId) {
         const selectedEst = allEstablecimientos.find(e => e.id === establecimientoId);
         const updateData = {};
-        
-        if (sectorsToSave && sectorsToSave.length > 0) {
-          updateData.sectores = sectorsToSave;
-        }
         
         if (selectedEst) {
           if (!selectedEst.localidad_barrio && localidadText) {

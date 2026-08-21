@@ -1,3 +1,76 @@
+## [2026-08-21] Implementación de Listas Desplegables de Sectores y Puestos en Acciones Correctivas
+
+### Resumen de Cambios
+- **Carga de Sectores en Establecimientos (`src/app/[tenant-slug]/correctivas/page.js`):**
+  - Se extendió la consulta de Supabase para incluir la columna `sectores` de la tabla `establecimientos`.
+- **Selectores Dinámicos de Área / Sector y Puesto / Operación (`src/app/[tenant-slug]/correctivas/page.js`):**
+  - Se reemplazaron los inputs de texto plano por selectores desplegables dinámicos dependientes de la selección del Cliente y Establecimiento:
+    - **Área / Sector:** Muestra la lista de sectores cargados en el perfil del establecimiento seleccionado. Permite seleccionar un sector existente o elegir *"+ Ingresar sector manual..."* para ingresar un sector nuevo.
+    - **Puesto / Operación:** Muestra la lista de puestos de trabajo configurados dentro del sector seleccionado. Permite seleccionar un puesto existente o ingresar uno manual.
+- **Ajuste de Políticas RLS para Sincronización Multi-Módulo (`supabase/migrations/20260830000000_allow_protocol_correctivas_sync_establecimientos.sql`):**
+  - La política `establecimientos_tenant_update` requería exclusivamente permiso de edición en el módulo de empresas (`empresas: editar`). Se actualizó la política para permitir actualizaciones en los establecimientos a los miembros del equipo que cuenten con permisos de edición/carga en **Acciones Correctivas, Protocolos (Iluminación, Ruido, Puesta a Tierra, Ergonomía), Matriz de Riesgos y Visitas**.
+  - Esto garantiza que las sincronizaciones aditivas de nuevos sectores y puestos desde cualquiera de estos módulos persistan en la base de datos de Supabase sin ser bloqueadas por el control de acceso a nivel de fila (RLS).
+
+### Decisiones Clave
+- Mantener compatibilidad total con entradas manuales y con el formato de almacenamiento existente (`area_sector` y `puesto_operacion`), permitiendo a los usuarios tanto una selección rápida asistida como la libertad de tipear sectores o puestos especiales cuando sea necesario.
+- Autorizar la actualización de la estructura de sectores a los profesionales asignados a los módulos técnicos que relevan información en campo.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `gestion-syso-multitenant-security`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[NEW] supabase/migrations/20260830000000_allow_protocol_correctivas_sync_establecimientos.sql`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js (`npm run build`), finalizada con éxito (`Exit code: 0`).
+
+---
+
+## [2026-08-21] Corrección Crítica: Sincronización No Destructiva y Carga Reactiva de Sectores en Protocolos y Matriz de Riesgos
+
+### Resumen de Cambios
+- **Corrección de Carga Asíncrona de Sectores (`loadData` y `handleEstablecimientoChange`):**
+  - En los formularios de protocolos (`puesta-a-tierra`, `iluminacion`, `ruido`, `ergonomia`), se corrigió el acceso al estado desfasado `allEstablecimientos` dentro de `loadData`, inicializando `estSectoresLocal` con los datos frescos devueltos por la consulta directa (`ests`).
+  - Se actualizó el handler `handleEstablecimientoChange` para consultar y refrescar en tiempo real los datos del establecimiento seleccionado desde Supabase, garantizando que el formulario siempre conozca los sectores existentes y evitando falsas alertas de sincronización.
+- **Eliminación de Sobreescritura Destructiva en Guardado General (`executeSave`):**
+  - Se removió la asignación incondicional `updateData.sectores = sectorsToSave` en los protocolos de Iluminación, Ruido y Ergonomía. El guardado regular del protocolo ahora nunca muta la columna `sectores` de la tabla `establecimientos`, evitando que un protocolo con copia local antigua sobreescriba los sectores creados en otros protocolos.
+- **Fusión Aditiva y Segura en Sincronización con Perfil (`handleSyncConfirm` y `handleConfirmSaveProfile`):**
+  - En todos los protocolos (`puesta-a-tierra`, `iluminacion`, `ruido`, `ergonomia`) y en la `matriz-riesgos`, al confirmar *"Guardar todos en el perfil"*, el sistema consulta en tiempo real los sectores actuales directamente desde Supabase y realiza un merge aditivo y no destructivo:
+    - Agrega los nuevos sectores con sus identificadores únicos y estructura completa (`id`, `denominacion`, `descripcion`, `largo`, `ancho`, `altura`, `puestos`).
+    - Preserva intactos todos los sectores preexistentes, sus dimensiones y sus listas de puestos de trabajo.
+    - Agrega puestos nuevos a sectores existentes sin duplicar ni eliminar los ya existentes.
+
+### Decisiones Clave
+- Aislar por completo la mutación del perfil de clientes/establecimientos del flujo de guardado rutinario de los protocolos. Las actualizaciones a los sectores de un establecimiento solo se ejecutan cuando el usuario lo aprueba explícitamente mediante el modal de sincronización, y siempre contra el estado vivo de la base de datos para prevenir cualquier condición de carrera o sobreescritura entre múltiples pestañas/protocolos.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/matriz-riesgos/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Revisión de lógica de merge no destructivo en todos los módulos de protocolos y matriz de riesgos.
+- Compilación de producción con Next.js (`npm run build`).
+
+### Próximo Paso Recomendado
+- Validar el flujo de prueba creando sectores en Iluminación y abriendo Puesta a Tierra para constatar que los sectores se reconocen de inmediato y no se eliminan al guardar.
+
+---
+
 ## [2026-08-21] Corrección de Validación al Guardar Protocolo de Ruido como Completado y Limpieza de Remanentes de Iluminación
 
 ### Resumen de Cambios

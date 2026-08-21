@@ -2030,19 +2030,61 @@ export default function MatrizRiesgosPage({ params }) {
   const handleConfirmSaveProfile = async () => {
     setSaveLoading(true);
     try {
-      // 1. Guardar perfiles de establecimientos
+      // 1. Guardar perfiles de establecimientos de forma aditiva y segura
       for (const update of pendingEstUpdates) {
+        let currentDbSectores = [];
+        if (!isDevMode) {
+          const { data: freshEst, error: fetchErr } = await supabase
+            .from('establecimientos')
+            .select('sectores')
+            .eq('id', update.id)
+            .single();
+          if (fetchErr) throw fetchErr;
+          currentDbSectores = Array.isArray(freshEst?.sectores) ? [...freshEst.sectores] : [];
+        } else {
+          currentDbSectores = update.sectores || [];
+        }
+
+        // Fusionar aditivamente los sectores de update.sectores en currentDbSectores
+        for (const updateSec of update.sectores) {
+          const targetSecName = (updateSec.denominacion || updateSec.nombre || '').trim();
+          if (!targetSecName) continue;
+
+          let existingSec = currentDbSectores.find(s => 
+            (typeof s === 'string' ? s : s.denominacion || s.nombre || '').trim().toLowerCase() === targetSecName.toLowerCase()
+          );
+
+          if (!existingSec) {
+            currentDbSectores.push(updateSec);
+          } else {
+            // Fusionar puestos
+            const existingPuestos = Array.isArray(existingSec.puestos) ? [...existingSec.puestos] : [];
+            const newPuestos = Array.isArray(updateSec.puestos) ? updateSec.puestos : [];
+            for (const nPst of newPuestos) {
+              const pstName = (nPst.denominacion || '').trim();
+              if (!pstName) continue;
+              const foundPst = existingPuestos.find(p => (p.denominacion || '').trim().toLowerCase() === pstName.toLowerCase());
+              if (!foundPst) {
+                existingPuestos.push(nPst);
+              } else if (!foundPst.descripcion && nPst.descripcion) {
+                foundPst.descripcion = nPst.descripcion;
+              }
+            }
+            existingSec.puestos = existingPuestos;
+          }
+        }
+
         if (!isDevMode) {
           const { error } = await supabase
             .from('establecimientos')
-            .update({ sectores: update.sectores })
+            .update({ sectores: currentDbSectores })
             .eq('id', update.id);
           if (error) throw error;
         }
         
         // Actualizar el estado local allEstablecimientos para mantenerlo en sincronía
         setAllEstablecimientos(prev => 
-          prev.map(e => e.id === update.id ? { ...e, sectores: update.sectores } : e)
+          prev.map(e => e.id === update.id ? { ...e, sectores: currentDbSectores } : e)
         );
       }
       

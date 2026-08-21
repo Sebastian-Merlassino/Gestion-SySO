@@ -240,7 +240,9 @@ export default function AccionesCorrectivasPage({ params }) {
   const [fuenteOtra, setFuenteOtra] = useState('');
   const [fecha, setFecha] = useState('');
   const [areaSector, setAreaSector] = useState('');
+  const [areaSectorIsManual, setAreaSectorIsManual] = useState(false);
   const [puestoOperacion, setPuestoOperacion] = useState('');
+  const [puestoOperacionIsManual, setPuestoOperacionIsManual] = useState(false);
   const [tipoHallazgo, setTipoHallazgo] = useState('');
   const [tipoHallazgoOtro, setTipoHallazgoOtro] = useState('');
   const [descripcionHallazgo, setDescripcionHallazgo] = useState('');
@@ -281,6 +283,8 @@ export default function AccionesCorrectivasPage({ params }) {
   const globalToast = useToast();
   const [modalAlert, setModalAlert] = useState({ show: false, title: '', message: '', onConfirm: null, confirmText: 'Confirmar' });
   const [unsavedDialogOpen, setUnsavedDialogOpen] = useState(false);
+  const [isSyncOpen, setIsSyncOpen] = useState(false);
+  const [syncQueue, setSyncQueue] = useState([]);
   const [pendingNavigation, setPendingNavigation] = useState(null);
   const [saveLoading, setSaveLoading] = useState(false);
 
@@ -467,7 +471,7 @@ export default function AccionesCorrectivasPage({ params }) {
       // 4. Establecimientos
       let estsQuery = supabase
         .from('establecimientos')
-        .select('id, empresa_id, denominacion')
+        .select('id, empresa_id, denominacion, sectores')
         .eq('tenant_id', ten.id);
       if (prof.role === 'cliente') {
         estsQuery = estsQuery.eq('empresa_id', prof.empresa_id);
@@ -560,9 +564,31 @@ export default function AccionesCorrectivasPage({ params }) {
       { id: 'mock-empresa-2', razon_social: 'Argento Via Publica' }
     ]);
     setAllEstablecimientos([
-      { id: 'mock-est-1', empresa_id: 'mock-empresa-1', denominacion: 'Callao 727' },
-      { id: 'mock-est-2', empresa_id: 'mock-empresa-1', denominacion: 'Cordoba 2045' },
-      { id: 'mock-est-3', empresa_id: 'mock-empresa-2', denominacion: 'Único' }
+      { 
+        id: 'mock-est-1', 
+        empresa_id: 'mock-empresa-1', 
+        denominacion: 'Callao 727',
+        sectores: [
+          { id: 's-1', denominacion: 'Cocina', puestos: [{ id: 'p-1', denominacion: 'Preparación' }, { id: 'p-2', denominacion: 'Bachero' }] },
+          { id: 's-2', denominacion: 'Salón Principal', puestos: [{ id: 'p-3', denominacion: 'Mozo' }] }
+        ]
+      },
+      { 
+        id: 'mock-est-2', 
+        empresa_id: 'mock-empresa-1', 
+        denominacion: 'Cordoba 2045',
+        sectores: [
+          { id: 's-3', denominacion: 'Depósito', puestos: [{ id: 'p-4', denominacion: 'Operador de autoelevador' }] }
+        ]
+      },
+      { 
+        id: 'mock-est-3', 
+        empresa_id: 'mock-empresa-2', 
+        denominacion: 'Único',
+        sectores: [
+          { id: 's-4', denominacion: 'Taller', puestos: [{ id: 'p-5', denominacion: 'Mecánico' }] }
+        ]
+      }
     ]);
     setMiembrosList([
       { id: 'mock-miembro-1', full_name: 'Gonzalo Merlo' },
@@ -938,6 +964,23 @@ export default function AccionesCorrectivasPage({ params }) {
     (est) => est.empresa_id === empresaId
   );
 
+  // Obtener sectores y puestos dependientes del establecimiento y sector seleccionado
+  const selectedEstablecimientoObj = allEstablecimientos.find((e) => e.id === establecimientoId);
+  const availableSectores = Array.isArray(selectedEstablecimientoObj?.sectores)
+    ? selectedEstablecimientoObj.sectores
+        .map((s) => (typeof s === 'string' ? { id: s, denominacion: s, puestos: [] } : { id: s.id || s.denominacion, denominacion: s.denominacion || s.nombre || '', puestos: s.puestos || [] }))
+        .filter((s) => s.denominacion && s.denominacion.trim() !== '')
+    : [];
+
+  const selectedSectorObj = availableSectores.find(
+    (s) => (s.denominacion || '').trim().toLowerCase() === (areaSector || '').trim().toLowerCase()
+  );
+  const availablePuestos = Array.isArray(selectedSectorObj?.puestos)
+    ? selectedSectorObj.puestos
+        .map((p) => (typeof p === 'string' ? { id: p, denominacion: p } : { id: p.id || p.denominacion, denominacion: p.denominacion || p.nombre || '' }))
+        .filter((p) => p.denominacion && p.denominacion.trim() !== '')
+    : [];
+
   // Manejo de carga de imagen
   const handleImagenChange = (e) => {
     const file = e.target.files?.[0];
@@ -1001,14 +1044,166 @@ export default function AccionesCorrectivasPage({ params }) {
     }
   };
 
-  // Guardado de Hallazgo
+  // Guardado de Hallazgo (Validación y Detección de Sincronización)
   const handleSaveHallazgo = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     if (!empresaId || !establecimientoId || !fuente || !fecha || !tipoHallazgo || !nivelRiesgo) {
       triggerToast('Por favor completa todos los campos obligatorios.', 'error');
       return;
     }
 
+    try {
+      const targetEst = allEstablecimientos.find(e => e.id === establecimientoId);
+      const currentSectores = Array.isArray(targetEst?.sectores) ? targetEst.sectores : [];
+
+      const secName = (areaSector || '').trim();
+      const pstName = (puestoOperacion || '').trim();
+      const queue = [];
+
+      if (secName) {
+        const existingSecIdx = currentSectores.findIndex(s => 
+          (typeof s === 'string' ? s : s.denominacion || s.nombre || '').trim().toLowerCase() === secName.toLowerCase()
+        );
+
+        if (existingSecIdx === -1) {
+          queue.push({
+            type: 'new_sector',
+            sectorName: secName,
+            puestoName: pstName,
+            message: pstName 
+              ? `El sector "${secName}" y el puesto "${pstName}" ingresados no se encuentran cargados en el perfil del establecimiento. ¿Desea guardarlos para futuras acciones y protocolos?`
+              : `El sector "${secName}" ingresado no se encuentra cargado en el perfil del establecimiento. ¿Desea guardarlo para futuras acciones y protocolos?`
+          });
+        } else if (pstName) {
+          const existingSec = currentSectores[existingSecIdx];
+          const existingPuestos = Array.isArray(existingSec.puestos) ? existingSec.puestos : [];
+          const puestoExists = existingPuestos.some(p => 
+            (typeof p === 'string' ? p : p.denominacion || p.nombre || '').trim().toLowerCase() === pstName.toLowerCase()
+          );
+
+          if (!puestoExists) {
+            queue.push({
+              type: 'new_puesto',
+              sectorName: secName,
+              puestoName: pstName,
+              message: `El puesto "${pstName}" ingresado no se encuentra cargado en el sector "${secName}" del cliente. ¿Desea guardarlo para futuras acciones y protocolos?`
+            });
+          }
+        }
+      }
+
+      if (queue.length > 0) {
+        setSyncQueue(queue);
+        setIsSyncOpen(true);
+      } else {
+        await executeSaveHallazgo();
+      }
+    } catch (err) {
+      console.error('Error al validar hallazgo:', err);
+      triggerToast('Ocurrió un error al procesar el hallazgo.', 'error');
+    }
+  };
+
+  // Manejo de confirmación de sincronización
+  const handleSyncConfirm = async (action) => {
+    setIsSyncOpen(false);
+
+    if (action === 'save_profile' && syncQueue.length > 0 && establecimientoId) {
+      try {
+        let currentDbSectores = [];
+        if (!isDevMode) {
+          const { data: freshEst, error: fetchErr } = await supabase
+            .from('establecimientos')
+            .select('sectores')
+            .eq('id', establecimientoId)
+            .single();
+          if (fetchErr) throw fetchErr;
+          currentDbSectores = Array.isArray(freshEst?.sectores) ? [...freshEst.sectores] : [];
+        } else {
+          const targetEst = allEstablecimientos.find(e => e.id === establecimientoId);
+          currentDbSectores = Array.isArray(targetEst?.sectores) ? [...targetEst.sectores] : [];
+        }
+
+        for (const item of syncQueue) {
+          const secName = (item.sectorName || '').trim();
+          if (!secName) continue;
+
+          let existingIdx = currentDbSectores.findIndex(s => 
+            (typeof s === 'string' ? s : s.denominacion || s.nombre || '').trim().toLowerCase() === secName.toLowerCase()
+          );
+
+          if (item.type === 'new_sector') {
+            if (existingIdx === -1) {
+              const newSec = {
+                id: 'sec-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+                denominacion: secName,
+                descripcion: '',
+                largo: '',
+                ancho: '',
+                altura: '',
+                isCollapsed: false,
+                puestos: item.puestoName ? [{
+                  id: 'pst-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+                  denominacion: item.puestoName.trim(),
+                  descripcion: '',
+                  isCollapsed: false
+                }] : []
+              };
+              currentDbSectores.push(newSec);
+            } else if (item.puestoName) {
+              const existingSec = currentDbSectores[existingIdx];
+              const puestos = Array.isArray(existingSec.puestos) ? [...existingSec.puestos] : [];
+              if (!puestos.some(pst => (pst.denominacion || '').trim().toLowerCase() === item.puestoName.trim().toLowerCase())) {
+                puestos.push({
+                  id: 'pst-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+                  denominacion: item.puestoName.trim(),
+                  descripcion: '',
+                  isCollapsed: false
+                });
+                currentDbSectores[existingIdx] = { ...existingSec, puestos };
+              }
+            }
+          } else if (item.type === 'new_puesto') {
+            if (existingIdx !== -1 && item.puestoName) {
+              const existingSec = currentDbSectores[existingIdx];
+              const puestos = Array.isArray(existingSec.puestos) ? [...existingSec.puestos] : [];
+              if (!puestos.some(pst => (pst.denominacion || '').trim().toLowerCase() === item.puestoName.trim().toLowerCase())) {
+                puestos.push({
+                  id: 'pst-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+                  denominacion: item.puestoName.trim(),
+                  descripcion: '',
+                  isCollapsed: false
+                });
+                currentDbSectores[existingIdx] = { ...existingSec, puestos };
+              }
+            }
+          }
+        }
+
+        if (!isDevMode) {
+          const { error: estUpdErr } = await supabase
+            .from('establecimientos')
+            .update({ sectores: currentDbSectores })
+            .eq('id', establecimientoId);
+          if (estUpdErr) throw estUpdErr;
+        }
+
+        setAllEstablecimientos(prev => prev.map(est =>
+          est.id === establecimientoId ? { ...est, sectores: currentDbSectores } : est
+        ));
+        triggerToast('Perfil de establecimiento actualizado correctamente.', 'success');
+      } catch (err) {
+        console.error('Error al sincronizar sectores con perfil:', err);
+        triggerToast('Error al sincronizar datos con el perfil.', 'error');
+      }
+    }
+
+    setSyncQueue([]);
+    await executeSaveHallazgo();
+  };
+
+  // Guardado definitivo en base de datos
+  const executeSaveHallazgo = async () => {
     setSaveLoading(true);
     try {
       // Procesar y subir todas las fotos en fotosFiles
@@ -1155,6 +1350,16 @@ export default function AccionesCorrectivasPage({ params }) {
     setAreaSector(acc.area_sector || '');
     setPuestoOperacion(acc.puesto_operacion || '');
 
+    const targetEst = allEstablecimientos.find(e => e.id === acc.establecimiento_id);
+    const estSectores = Array.isArray(targetEst?.sectores) ? targetEst.sectores : [];
+    const hasSec = estSectores.some(s => (typeof s === 'string' ? s : s.denominacion || s.nombre || '').trim().toLowerCase() === (acc.area_sector || '').trim().toLowerCase());
+    setAreaSectorIsManual(Boolean(acc.area_sector && !hasSec));
+
+    const targetSecObj = estSectores.find(s => (typeof s === 'string' ? s : s.denominacion || s.nombre || '').trim().toLowerCase() === (acc.area_sector || '').trim().toLowerCase());
+    const estPuestos = Array.isArray(targetSecObj?.puestos) ? targetSecObj.puestos : [];
+    const hasPst = estPuestos.some(p => (typeof p === 'string' ? p : p.denominacion || p.nombre || '').trim().toLowerCase() === (acc.puesto_operacion || '').trim().toLowerCase());
+    setPuestoOperacionIsManual(Boolean(acc.puesto_operacion && !hasPst));
+
     // Si el tipo de hallazgo no está en la lista de opciones, se asume "Otro"
     let finalTipo = '';
     let finalTipoOtro = '';
@@ -1297,7 +1502,9 @@ export default function AccionesCorrectivasPage({ params }) {
     setFuenteOtra('');
     setFecha('');
     setAreaSector('');
+    setAreaSectorIsManual(false);
     setPuestoOperacion('');
+    setPuestoOperacionIsManual(false);
     setTipoHallazgo('');
     setTipoHallazgoOtro('');
     setDescripcionHallazgo('');
@@ -1473,6 +1680,10 @@ export default function AccionesCorrectivasPage({ params }) {
                           onChange={(e) => {
                             setEmpresaId(e.target.value);
                             setEstablecimientoId('');
+                            setAreaSector('');
+                            setPuestoOperacion('');
+                            setAreaSectorIsManual(false);
+                            setPuestoOperacionIsManual(false);
                           }}
                           className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
                         >
@@ -1491,7 +1702,13 @@ export default function AccionesCorrectivasPage({ params }) {
                           required
                           disabled={!empresaId}
                           value={establecimientoId}
-                          onChange={(e) => setEstablecimientoId(e.target.value)}
+                          onChange={(e) => {
+                            setEstablecimientoId(e.target.value);
+                            setAreaSector('');
+                            setPuestoOperacion('');
+                            setAreaSectorIsManual(false);
+                            setPuestoOperacionIsManual(false);
+                          }}
                           className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer disabled:opacity-50"
                         >
                           <option value="" disabled>
@@ -1555,13 +1772,13 @@ export default function AccionesCorrectivasPage({ params }) {
                               onChange={(e) => {
                                 const val = e.target.value;
                                 if (val) {
-    const parts = val.split('-');
-    if (parts.length === 3) {
-      setFecha(`${parts[2]}/${parts[1]}/${parts[0]}`);
-    }
-  } else {
-    setFecha('');
-  }
+                                  const parts = val.split('-');
+                                  if (parts.length === 3) {
+                                    setFecha(`${parts[2]}/${parts[1]}/${parts[0]}`);
+                                  }
+                                } else {
+                                  setFecha('');
+                                }
                               }}
                             />
                           </div>
@@ -1603,26 +1820,114 @@ export default function AccionesCorrectivasPage({ params }) {
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-4">
+                      {/* ÁREA / SECTOR */}
                       <div className="space-y-1">
                         <label className="text-xs font-bold text-slate-600 block mb-1">Área / Sector</label>
-                        <input
-                          type="text"
-                          placeholder="Ej: Depósito de Materiales"
-                          value={areaSector}
-                          onChange={(e) => setAreaSector(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
-                        />
+                        {!establecimientoId ? (
+                          <select
+                            disabled
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm bg-slate-100 text-slate-400 cursor-not-allowed"
+                          >
+                            <option>Primero selecciona un establecimiento</option>
+                          </select>
+                        ) : availableSectores.length > 0 ? (
+                          <div className="space-y-2">
+                            <select
+                              value={areaSectorIsManual ? 'MANUAL' : (availableSectores.some(s => (s.denominacion || '').toLowerCase() === (areaSector || '').toLowerCase()) ? (availableSectores.find(s => (s.denominacion || '').toLowerCase() === (areaSector || '').toLowerCase())?.denominacion || areaSector) : (areaSector ? 'MANUAL' : ''))}
+                              onChange={(e) => {
+                                if (e.target.value === 'MANUAL') {
+                                  setAreaSectorIsManual(true);
+                                  setAreaSector('');
+                                  setPuestoOperacion('');
+                                  setPuestoOperacionIsManual(false);
+                                } else {
+                                  setAreaSectorIsManual(false);
+                                  setAreaSector(e.target.value);
+                                  setPuestoOperacion('');
+                                  setPuestoOperacionIsManual(false);
+                                }
+                              }}
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer font-medium"
+                            >
+                              <option value="">Selecciona sector...</option>
+                              {availableSectores.map((sec) => (
+                                <option key={sec.id} value={sec.denominacion}>{sec.denominacion}</option>
+                              ))}
+                              <option value="MANUAL">+ Ingresar sector manual...</option>
+                            </select>
+
+                            {(areaSectorIsManual || (areaSector && !availableSectores.some(s => (s.denominacion || '').toLowerCase() === (areaSector || '').toLowerCase()))) && (
+                              <input
+                                type="text"
+                                placeholder="Escribir sector manual..."
+                                value={areaSector}
+                                onChange={(e) => setAreaSector(e.target.value)}
+                                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
+                              />
+                            )}
+                          </div>
+                        ) : (
+                          <input
+                            type="text"
+                            placeholder="Ej: Depósito de Materiales"
+                            value={areaSector}
+                            onChange={(e) => setAreaSector(e.target.value)}
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
+                          />
+                        )}
                       </div>
 
+                      {/* PUESTO / OPERACIÓN */}
                       <div className="space-y-1">
                         <label className="text-xs font-bold text-slate-600 block mb-1">Puesto / Operación</label>
-                        <input
-                          type="text"
-                          placeholder="Ej: Operador de autoelevador"
-                          value={puestoOperacion}
-                          onChange={(e) => setPuestoOperacion(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
-                        />
+                        {!establecimientoId ? (
+                          <select
+                            disabled
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm bg-slate-100 text-slate-400 cursor-not-allowed"
+                          >
+                            <option>Primero selecciona un establecimiento</option>
+                          </select>
+                        ) : availablePuestos.length > 0 ? (
+                          <div className="space-y-2">
+                            <select
+                              value={puestoOperacionIsManual ? 'MANUAL' : (availablePuestos.some(p => (p.denominacion || '').toLowerCase() === (puestoOperacion || '').toLowerCase()) ? (availablePuestos.find(p => (p.denominacion || '').toLowerCase() === (puestoOperacion || '').toLowerCase())?.denominacion || puestoOperacion) : (puestoOperacion ? 'MANUAL' : ''))}
+                              onChange={(e) => {
+                                if (e.target.value === 'MANUAL') {
+                                  setPuestoOperacionIsManual(true);
+                                  setPuestoOperacion('');
+                                } else {
+                                  setPuestoOperacionIsManual(false);
+                                  setPuestoOperacion(e.target.value);
+                                }
+                              }}
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer font-medium"
+                            >
+                              <option value="">Selecciona puesto...</option>
+                              {availablePuestos.map((pst) => (
+                                <option key={pst.id} value={pst.denominacion}>{pst.denominacion}</option>
+                              ))}
+                              <option value="MANUAL">+ Ingresar puesto manual...</option>
+                            </select>
+
+                            {(puestoOperacionIsManual || (puestoOperacion && !availablePuestos.some(p => (p.denominacion || '').toLowerCase() === (puestoOperacion || '').toLowerCase()))) && (
+                              <input
+                                type="text"
+                                placeholder="Escribir puesto manual..."
+                                value={puestoOperacion}
+                                onChange={(e) => setPuestoOperacion(e.target.value)}
+                                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
+                              />
+                            )}
+                          </div>
+                        ) : (
+                          <input
+                            type="text"
+                            placeholder="Ej: Operador de autoelevador"
+                            value={puestoOperacion}
+                            onChange={(e) => setPuestoOperacion(e.target.value)}
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
+                          />
+                        )}
                       </div>
                     </div>
                   </div>
@@ -2448,6 +2753,74 @@ export default function AccionesCorrectivasPage({ params }) {
         onOpenChange={setUnsavedDialogOpen}
         onLeave={executeUnsavedLeave}
       />
+
+      {/* MODAL DE SINCRONIZACIÓN DE PERFIL DEL ESTABLECIMIENTO */}
+      {isSyncOpen && syncQueue.length > 0 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div 
+            onClick={() => handleSyncConfirm('skip')} 
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" 
+          />
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 max-w-lg w-full z-10 shadow-2xl relative space-y-4 animate-scale-up select-none">
+            
+            {/* Botón X de Cierre */}
+            <button 
+              type="button"
+              onClick={() => handleSyncConfirm('skip')}
+              className="absolute top-4 right-4 p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#468DFF] cursor-pointer"
+              aria-label="Cerrar"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            <div className="flex items-start gap-3 border-b border-slate-100 pb-3 pr-8">
+              <div className="p-2.5 bg-blue-50 text-[#468DFF] rounded-xl shrink-0">
+                <HelpCircle className="h-6 w-6" />
+              </div>
+              <div className="space-y-0.5">
+                <h3 className="font-outfit text-base font-extrabold text-slate-900">
+                  Sincronización con Perfil de Establecimiento
+                </h3>
+                <p className="text-xs text-slate-500 font-semibold">
+                  {syncQueue.length} {syncQueue.length === 1 ? 'elemento nuevo' : 'elementos nuevos'}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-slate-600">
+                Se detectaron los siguientes datos no registrados en el perfil del establecimiento. ¿Desea guardarlos para futuras acciones y protocolos?
+              </p>
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 leading-relaxed max-h-48 overflow-y-auto space-y-1.5 font-medium">
+                {syncQueue.map((item, idx) => (
+                  <div key={idx} className="flex items-start gap-2">
+                    <span className="text-[#468DFF] font-bold">•</span>
+                    <span>{item.message}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => handleSyncConfirm('skip')}
+                className="px-4 py-2.5 border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-bold rounded-xl transition-all cursor-pointer text-center"
+              >
+                Solo guardar en este hallazgo
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSyncConfirm('save_profile')}
+                className="px-4 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold rounded-xl shadow-md shadow-[#468DFF]/10 transition-all cursor-pointer text-center"
+              >
+                Guardar todos en el perfil ({syncQueue.length})
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Notificación Toast flotante removido - consumido globalmente */}
       <AppFormNavigator

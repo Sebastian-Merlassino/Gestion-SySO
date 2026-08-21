@@ -553,7 +553,7 @@ export default function ProtocoloForm({
     const queue = [];
     const customSectores = puntos
       .map(p => (p.sector || '').trim())
-      .filter(s => s !== '' && !estSectoresLocal.some(sec => sec.denominacion.toLowerCase() === s.toLowerCase()));
+      .filter(s => s !== '' && !estSectoresLocal.some(sec => (sec.denominacion || sec.nombre || sec.id || '').trim().toLowerCase() === s.toLowerCase()));
     
     const uniqueCustomSectores = Array.from(new Set(customSectores));
 
@@ -577,18 +577,35 @@ export default function ProtocoloForm({
     setIsSyncOpen(false);
     if (action === 'save_profile' && syncQueue.length > 0 && establecimientoId) {
       try {
-        const currentSectoresObj = Array.isArray(activeEstablecimiento?.sectores) ? activeEstablecimiento.sectores : [];
-        const existingNames = currentSectoresObj.map(s => (typeof s === 'string' ? s : s.denominacion || s.nombre || '').toLowerCase());
+        // Consultar sectores frescos directamente desde Supabase para evitar sobreescritura con estado en memoria desactualizado
+        const { data: freshEst, error: fetchErr } = await supabase
+          .from('establecimientos')
+          .select('sectores')
+          .eq('id', establecimientoId)
+          .single();
+
+        if (fetchErr) throw fetchErr;
+
+        const currentDbSectores = Array.isArray(freshEst?.sectores) ? [...freshEst.sectores] : [];
+        const existingNames = currentDbSectores.map(s => {
+          if (typeof s === 'string') return s.trim().toLowerCase();
+          return (s.denominacion || s.nombre || s.id || '').trim().toLowerCase();
+        });
         
-        const newSectorNames = Array.from(new Set(syncQueue.map(item => item.sectorName)));
+        const newSectorNames = Array.from(new Set(syncQueue.map(item => (item.sectorName || '').trim()))).filter(Boolean);
         const toAdd = newSectorNames.filter(name => !existingNames.includes(name.toLowerCase()));
         
         if (toAdd.length > 0) {
           const newObjs = toAdd.map(secName => ({
             id: `sec-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-            denominacion: secName
+            denominacion: secName,
+            descripcion: '',
+            largo: '',
+            ancho: '',
+            altura: '',
+            puestos: []
           }));
-          const updatedSectoresObj = [...currentSectoresObj, ...newObjs];
+          const updatedSectoresObj = [...currentDbSectores, ...newObjs];
 
           const { error: estErr } = await supabase
             .from('establecimientos')
@@ -599,11 +616,12 @@ export default function ProtocoloForm({
             setAllEstablecimientos(prev => prev.map(est =>
               est.id === establecimientoId ? { ...est, sectores: updatedSectoresObj } : est
             ));
-            globalToast.toast('Nuevos sectores guardados en el perfil del establecimiento.', 'success');
+            globalToast.toast('Nuevos sectores guardados en el perfil del cliente.', 'success');
           }
         }
       } catch (err) {
         console.error('Error guardando sectores en perfil:', err);
+        globalToast.toast('Error al actualizar los sectores en el perfil del cliente.', 'error');
       }
     }
     setSyncQueue([]);
@@ -627,27 +645,23 @@ export default function ProtocoloForm({
     try {
       if (!tenant) return;
 
-      if (initialEmpresas && initialEmpresas.length > 0) {
-        setEmpresas(initialEmpresas);
-      } else {
-        const { data: empsData } = await supabase
-          .from('empresas')
-          .select('id, razon_social, cuit, contactos_correos, contactos_telefonos')
-          .eq('tenant_id', tenant.id)
-          .order('razon_social', { ascending: true });
-        setEmpresas(empsData || []);
-      }
+      let currentEmps = [];
+      const { data: empsData } = await supabase
+        .from('empresas')
+        .select('id, razon_social, cuit, contactos_correos, contactos_telefonos')
+        .eq('tenant_id', tenant.id)
+        .order('razon_social', { ascending: true });
+      currentEmps = empsData || initialEmpresas || [];
+      setEmpresas(currentEmps);
 
-      if (initialEstablecimientos && initialEstablecimientos.length > 0) {
-        setAllEstablecimientos(initialEstablecimientos);
-      } else {
-        const { data: estsData } = await supabase
-          .from('establecimientos')
-          .select('*')
-          .eq('tenant_id', tenant.id)
-          .order('denominacion', { ascending: true });
-        setAllEstablecimientos(estsData || []);
-      }
+      let currentEsts = [];
+      const { data: estsData } = await supabase
+        .from('establecimientos')
+        .select('*')
+        .eq('tenant_id', tenant.id)
+        .order('denominacion', { ascending: true });
+      currentEsts = estsData || initialEstablecimientos || [];
+      setAllEstablecimientos(currentEsts);
 
       // Fetch team members / profiles of the organization
       let mems = [];
@@ -987,9 +1001,27 @@ export default function ProtocoloForm({
     }
   };
 
-  const handleEstablecimientoChange = (val) => {
+  const handleEstablecimientoChange = async (val) => {
     setEstablecimientoId(val);
-    const est = allEstablecimientos.find(e => e.id === val);
+    let est = allEstablecimientos.find(e => e.id === val);
+    if (val) {
+      try {
+        const { data: freshEst } = await supabase
+          .from('establecimientos')
+          .select('*')
+          .eq('id', val)
+          .single();
+        if (freshEst) {
+          est = freshEst;
+          setAllEstablecimientos(prev => {
+            const exists = prev.some(e => e.id === freshEst.id);
+            return exists ? prev.map(e => e.id === freshEst.id ? freshEst : e) : [...prev, freshEst];
+          });
+        }
+      } catch (err) {
+        console.warn('Error refrescando establecimiento:', err);
+      }
+    }
     if (est) {
       setEstablecimientoText(est.denominacion || est.nombre || '');
       setDireccionText(est.direccion || est.domicilio || est.direccion_calle || '');
