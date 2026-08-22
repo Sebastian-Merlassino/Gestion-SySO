@@ -4,6 +4,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ToastProvider } from '../components/providers/ToastProvider';
 import { PostHogProvider } from '../components/providers/PostHogProvider';
+import { ContextualHelpProvider } from '../components/providers/ContextualHelpProvider';
 
 const ThemeContext = createContext({
   theme: 'light',
@@ -57,7 +58,9 @@ export default function Providers({ children }) {
       <div className={theme === 'dark' ? 'dark' : ''}>
         <PostHogProvider>
           <ToastProvider>
-            {children}
+            <ContextualHelpProvider>
+              {children}
+            </ContextualHelpProvider>
           </ToastProvider>
         </PostHogProvider>
       </div>

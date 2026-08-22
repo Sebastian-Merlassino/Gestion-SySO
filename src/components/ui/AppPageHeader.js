@@ -2,6 +2,7 @@
 import React from 'react';
 import { Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import ContextualHelpTrigger from '@/components/ui/ContextualHelpTrigger';
 
 export default function AppPageHeader({
   title,
@@ -12,6 +13,8 @@ export default function AppPageHeader({
   setIsMobileMenuOpen,
   actions,
   className = '',
+  helpKey = null,
+  showHelp = true,
 }) {
   const getPlanLabel = (pid) => {
     if (!pid) return 'Plan Gratis';
@@ -40,9 +43,12 @@ export default function AppPageHeader({
         <h1 className="font-outfit text-base md:text-lg font-bold text-slate-900 truncate leading-none">
           {title}
         </h1>
+        {showHelp && (
+          <ContextualHelpTrigger helpKey={helpKey} variant="inline" className="text-slate-400 hover:text-[#468DFF]" />
+        )}
       </div>
 
-      <div className="flex items-center gap-3 shrink-0">
+      <div className="flex items-center gap-2.5 shrink-0">
         {tenantName && (
           <span className="text-xs font-semibold text-slate-500 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-200 hidden sm:inline-block">
             {tenantName}

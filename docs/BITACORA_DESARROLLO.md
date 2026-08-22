@@ -1,3 +1,110 @@
+## [2026-08-22] Implementación Completa: Sistema de Ayuda Contextual In-App (Slide-Over)
+
+### Resumen de Cambios
+- **Componentes Visuales Enriquecidos (`src/components/help/HelpComponents.js`):**
+  - Implementación de `<HelpPurpose>`, `<HelpStep>`, `<HelpTip>`, `<HelpWarning>`, `<HelpFaq>`, `<HelpSection>`, `<HelpBadge>`, `<HelpVisualReference>` y `<HelpShortcut>`.
+  - Diseño responsive y tipografía corporativa Outfit con paleta institucional `#468DFF`, bordes pulidos, badges circulares numerados y acordeones colapsables para preguntas frecuentes.
+- **Catálogo Centralizado de Artículos de Ayuda (`src/content/help/` y `src/lib/helpContent.js`):**
+  - Creación de artículos especializados paso a paso para todos los módulos de la plataforma: *Dashboard, Clientes/Empresas (Establecimientos, Sectores y Puestos), Acciones Correctivas, Accidentes (Árbol de Causas), Constancias de Visita, Matriz de Riesgos, Extintores, Control Eléctrico, Avisos de Riesgo, Checklist Personalizados, Programa de Gestión Anual, Capacitación Anual, Capacitaciones Online, Protocolos SRT (Iluminación 84/12, Ruido 85/12, Ergonomía 886/15, Puesta a Tierra 900/15), Legajo Técnico, Nómina de Personal, Equipo de Trabajo, Perfil y Firma Digital, Onboarding, Autenticación y Consola SuperAdmin*.
+  - Función de resolución inteligente de ruta `resolveHelpKeyFromPath` para sincronizar automáticamente la ayuda con el módulo activo en pantalla, además de buscador temático en tiempo real `searchHelpArticles`.
+- **Panel Lateral Slide-Over (`src/components/ui/ContextualHelpPanel.js`):**
+  - Panel deslizante de 420px (ancho completo en móviles) con cabecera oscura Slate-900 `#0F172A`, icono temático, botón de cierre `X`, barra de búsqueda integrada con cambio dinámico de guía, scrollbar personalizada y cierre automático con tecla `Escape` o clic en backdrop.
+- **Disparador y Proveedor Reactivo (`src/components/ui/ContextualHelpTrigger.js` y `src/components/providers/ContextualHelpProvider.js`):**
+  - Botón disparador con icono `HelpCircle` y variantes `header`, `inline` y `button`.
+  - Provider global integrado en `src/app/providers.js` con hook `useContextualHelp()`.
+- **Integración Universal en `AppPageHeader` (`src/components/ui/AppPageHeader.js`):**
+  - Inyección automática del botón `?` en todas las cabeceras de la aplicación respetando el layout, badges de plan y acciones existentes.
+
+### Decisiones Clave
+- **Sin bloqueo de interfaz:** El panel Slide-Over permite al usuario consultar el instructivo paso a paso mientras interactúa simultáneamente con el formulario o tabla de fondo.
+- **Acceso universal:** El botón de ayuda está siempre disponible para todos los roles (administradores, técnicos y clientes en modo solo lectura).
+- **Cero dependencias pesadas:** Construido 100% sobre React, Tailwind CSS y Lucide Icons, garantizando óptimo rendimiento y cero sobrecarga de bundle en producción.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+- `shadcn`
+
+### Archivos Creados / Modificados
+- `[NEW] src/components/help/HelpComponents.js`
+- `[NEW] src/components/ui/ContextualHelpTrigger.js`
+- `[NEW] src/components/ui/ContextualHelpPanel.js`
+- `[NEW] src/components/providers/ContextualHelpProvider.js`
+- `[NEW] src/lib/helpContent.js`
+- `[NEW] src/content/help/index.js`
+- `[NEW] src/content/help/articles/dashboard.js`
+- `[NEW] src/content/help/articles/empresas.js`
+- `[NEW] src/content/help/articles/correctivas.js`
+- `[NEW] src/content/help/articles/accidentes.js`
+- `[NEW] src/content/help/articles/visitas.js`
+- `[NEW] src/content/help/articles/matrizRiesgos.js`
+- `[NEW] src/content/help/articles/extintores.js`
+- `[NEW] src/content/help/articles/controlElectrico.js`
+- `[NEW] src/content/help/articles/avisos.js`
+- `[NEW] src/content/help/articles/checklistPersonalizados.js`
+- `[NEW] src/content/help/articles/programa.js`
+- `[NEW] src/content/help/articles/capacitacion.js`
+- `[NEW] src/content/help/articles/capacitacionesOnline.js`
+- `[NEW] src/content/help/articles/protocolos.js`
+- `[NEW] src/content/help/articles/legajo.js`
+- `[NEW] src/content/help/articles/nomina.js`
+- `[NEW] src/content/help/articles/equipo.js`
+- `[NEW] src/content/help/articles/profile.js`
+- `[NEW] src/content/help/articles/onboarding.js`
+- `[NEW] src/content/help/articles/auth.js`
+- `[NEW] src/content/help/articles/admin.js`
+- `[MODIFY] src/app/providers.js`
+- `[MODIFY] src/components/ui/AppPageHeader.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js (`npm run build` / `cmd /c npm run build`), finalizada con éxito (`Exit code: 0`, 25/25 páginas generadas).
+- Verificación de consistencia visual con el Design System (`#468DFF`, Slate-900, Outfit typography).
+
+---
+
+## [2026-08-22] Plan de Implementación: Ayuda Contextual In-App (Contextual Help)
+
+### Resumen de Cambios
+- **Creación del Plan de Implementación Estratégico (`docs/support/IN_APP_CONTEXTUAL_HELP_PLAN.md`):**
+  - Se realizó un escaneo exhaustivo de las 40+ rutas y vistas de la aplicación (`src/app/`) mapeando el 100% de las pantallas, formularios, listados, protocolos y vistas públicas.
+  - Se diseñó la arquitectura UX/UI para la inyección del sistema de ayuda contextual: disparador (`?` vía `HelpCircle` en `AppPageHeader`), panel lateral Slide-Over de 420px y resolución dinámica de contenido MDX.
+  - Se elaboró el **Índice Maestro de 37 nodos de ayuda de página** y ~120 sub-nodos con anclajes internos, cubriendo todas las secciones del SaaS.
+  - Se definió la **Plantilla Estándar de Contenido** (estructura MDX con componentes `Step`, `Tip`, `Warning`, `FAQ`, `HelpImage`, `HelpGif`).
+  - Se establecieron **Directrices Gráficas** estrictas: especificaciones de capturas (760px, WebP, ≤80KB), estilo de anotaciones (flechas/recuadros en `#468DFF`), reglas para GIFs animados (≤8s, ≤500KB) y tabla de datos ficticios estándar para privacidad.
+  - Se definió la **Hoja de Ruta en 5 fases** con un cronograma de ~16 semanas desde la arquitectura base hasta el lanzamiento.
+
+### Decisiones Clave
+- Se eligió el formato **Slide-Over (Panel lateral derecho)** en lugar de Modal para permitir lectura de la guía mientras el usuario interactúa con el formulario de fondo.
+- Se eligió **MDX como formato de contenido** por su soporte nativo de Markdown + componentes React, versionado en Git, y code splitting automático de Next.js.
+- Se decidió **no reemplazar** el `AppInfoModal` existente (para consultas normativas puntuales), sino crear un sistema complementario dedicado a instrucciones paso a paso.
+- La ayuda será **siempre visible para todos los roles** (admin, técnico, auditor, modo solo lectura), sin condicionamiento por permisos.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines` (colores, tipografía, diseño)
+- `next-best-practices`
+
+### Archivos Creados
+- `[NEW] docs/support/IN_APP_CONTEXTUAL_HELP_PLAN.md`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Auditoría completa de rutas en `src/app/` (12 subdirectorios raíz, 19 subdirectorios del tenant, 4 subrutas de protocolos con `nuevo`, `[id]`, `[id]/editar`, `[id]/pdf`).
+- Revisión del Design System actual: `AppPageHeader`, `AppInfoModal`, `Sidebar` (menuItems), Tailwind config, componentes UI, brand guidelines.
+- Verificación de coherencia con estándares existentes: `EXPLANATORY_MODALS_STANDARD.md`, `ALERTS_AND_FEEDBACK_STANDARD.md`.
+
+### Riesgos Detectados
+- Ningún riesgo de seguridad, RLS o código: este entregable es exclusivamente documental.
+- Riesgo operativo: la producción de ~60-80 capturas y ~15 GIFs requerirá un entorno de demostración con datos ficticios.
+
+### Siguiente Paso Recomendado
+- **Revisión del plan por el Product Owner** para aprobar la arquitectura, el índice y la priorización de fases.
+- Una vez aprobado → iniciar **Fase 1** (desarrollo de `<ContextualHelpTrigger />`, `<ContextualHelpPanel />` y configuración MDX en Next.js).
+
+---
+
 ## [2026-08-21] Implementación de Listas Desplegables de Sectores y Puestos en Acciones Correctivas
 
 ### Resumen de Cambios
