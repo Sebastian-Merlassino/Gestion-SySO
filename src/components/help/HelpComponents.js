@@ -160,8 +160,9 @@ export function HelpSection({ title, id, icon: Icon = Bookmark, children, classN
 export function HelpBadge({ label, variant = 'primary', className = '' }) {
   const styles = {
     primary: 'bg-[#468DFF]/15 border-[#468DFF]/30 text-[#468DFF]',
-    amber: 'bg-amber-100/80 border-amber-300 text-amber-800',
-    green: 'bg-emerald-100/80 border-emerald-300 text-emerald-800',
+    amber: 'bg-[#FF9900]/15 border-[#FF9900]/35 text-[#D97706]',
+    green: 'bg-[#00B050]/15 border-[#00B050]/35 text-[#00B050]',
+    red: 'bg-[#FF0000]/15 border-[#FF0000]/35 text-[#DC2626]',
     slate: 'bg-slate-100 border-slate-200 text-slate-700',
   };
 

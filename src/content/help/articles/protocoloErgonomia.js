@@ -133,23 +133,24 @@ export const protocoloErgonomiaHelp = {
 
         <HelpStep
           number={4}
-          title="Evaluación de Riesgo Específica y Métodos Ergonómicos (Res. MTEySS 295/03)"
+          title="Evaluación de Riesgo Específica y Métodos Ergonómicos (Res. MTEySS 295/03 y Res. SRT 3345/15)"
         >
           Cuando un factor resulte <em>No Tolerable</em> en la Planilla 2, se debe consignar el método de evaluación ergonómica reconocido aplicado:
-          <div className="my-2 p-2.5 bg-slate-50 border border-slate-200 rounded-lg space-y-1">
-            <p className="font-semibold text-slate-800">Métodos Ergonómicos Estándar:</p>
-            <ul className="list-disc pl-4 space-y-0.5 text-[11px] text-slate-600">
-              <li><strong>Ecuación NIOSH / Tablas Levantamiento Res. 295/03:</strong> Cargas sin traslado.</li>
-              <li><strong>Nivel de Actividad Manual (NAM / ACGIH):</strong> Movimientos repetitivos mano-muñeca.</li>
-              <li><strong>Método RULA / REBA:</strong> Posturas forzadas y sobrecarga postural estática/dinámica.</li>
-              <li><strong>Check-List OCRA / JSI:</strong> Extremidades superiores y alta repetitividad.</li>
-              <li><strong>Tablas de Snook y Ciriello:</strong> Fuerzas de empuje, arrastre y transporte.</li>
+          <div className="my-2 p-2.5 bg-slate-50 border border-slate-200 rounded-lg space-y-1.5">
+            <p className="font-semibold text-slate-800">Métodos Ergonómicos y Normativa Aplicable:</p>
+            <ul className="list-disc pl-4 space-y-1 text-[11px] text-slate-600">
+              <li><strong>Resolución SRT Nº 3345/15 (Límites de Empuje, Arrastre y Traslado de Cargas):</strong> Establece las fuerzas máximas iniciales y de mantenimiento para traslado, empuje o arrastre manual de cargas según normas <strong>ISO 11228-1 e ISO 11228-2</strong> (medidas con dinamómetro).</li>
+              <li><strong>Ecuación NIOSH / Tablas Levantamiento Res. MTEySS 295/03:</strong> Manipulación manual de cargas sin traslado.</li>
+              <li><strong>Nivel de Actividad Manual (NAM / ACGIH):</strong> Movimientos repetitivos del segmento mano-muñeca-antebrazo.</li>
+              <li><strong>Método RULA / REBA:</strong> Posturas forzadas, sobrecarga biomecánica de miembros superiores y cuerpo entero.</li>
+              <li><strong>Check-List OCRA / JSI:</strong> Alta repetitividad y ciclos de trabajo intensivos.</li>
+              <li><strong>Tablas de Snook y Ciriello:</strong> Evaluación psicofísica de fuerzas y capacidades de transporte.</li>
             </ul>
           </div>
           <div className="flex flex-wrap gap-1.5 pt-1">
             <HelpBadge label="Nivel 1: Tolerable (Verde)" variant="green" />
             <HelpBadge label="Nivel 2: Moderado (Amarillo)" variant="amber" />
-            <HelpBadge label="Nivel 3: No Aceptable (Rojo)" variant="primary" />
+            <HelpBadge label="Nivel 3: No Aceptable (Rojo)" variant="red" />
           </div>
         </HelpStep>
 
