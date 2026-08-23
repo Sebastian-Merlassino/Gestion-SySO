@@ -1,3 +1,33 @@
+## [2026-08-23] Corrección Crítica de Scope en Carga de Protocolos Guardados (Ergonomía, Ruido, Iluminación)
+
+### Resumen de Cambios
+- **Resolución de `ReferenceError: ests is not defined` en Carga de Protocolos:**
+  - **Causa Raíz:** En una refactorización previa del blindaje de establecimientos/sectores, dentro de `loadLookups()` se utilizaba la variable local `ests`, pero al invocar `loadExistingRecord()` dicha función separada intentaba acceder a `ests` directamente fuera de su scope léxico. Esto abortaba el flujo asíncrono con excepción en tiempo de ejecución (`ReferenceError`), impidiendo que se cargaran los puntos de muestreo, tareas y evaluaciones del protocolo guardado (mostrando solo cabecera/firmas cargadas parcialmente).
+  - **Corrección en Ergonomía (`src/app/[tenant-slug]/protocolos/ergonomia/components/ProtocoloForm.js`):**
+    - Se actualizó la firma de `loadExistingRecord(session, memsList, empresasList, dbActsList, estsList)` para recibir `ests` explícitamente como argumento y acceder a `estsList.find(e => e.id === proto.establecimiento_id)`.
+  - **Corrección Preventiva en Ruido e Iluminación (`src/app/[tenant-slug]/protocolos/ruido/components/ProtocoloForm.js` y `src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`):**
+    - Se aplicó idéntica corrección passando `ests` a `loadExistingRecord` y recibiendo `estsList`, blindando la carga de sectores asociados al establecimiento.
+  - **Auditoría General de Módulos:**
+    - Se auditó el resto de los módulos de la aplicación (Accidentes, Correctivas, Visitas, Capacitaciones, Legajo Técnico, Programa Anual, Matriz de Riesgos, Extintores, Checklists, Control Eléctrico, Nómina, etc.), confirmando que implementan el patrón seguro con variables locales autocontenidas y actualización inmediata del estado.
+  - **Regla de Prevención Persistente (`.agents/rules/variable-scope-refactoring.md`):**
+    - Se documentó la regla obligatoria de verificación de scope léxico para futuros refactors en formularios complejos con subfunciones asíncronas.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+- `[NEW] .agents/rules/variable-scope-refactoring.md`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js (`cmd /c npx next build`), exitosa con código 0.
+
+---
+
 ## [2026-08-23] Ampliación Integral del Instructivo de Ergonomía según Res. SRT 886/15
 
 ### Resumen de Cambios

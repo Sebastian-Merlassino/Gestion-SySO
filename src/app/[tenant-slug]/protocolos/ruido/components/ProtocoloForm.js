@@ -599,7 +599,7 @@ export default function ProtocoloForm({
 
         // Load existing record if editing
         if (editingId) {
-          await loadExistingRecord(session, mems);
+          await loadExistingRecord(session, mems, ests);
         } else {
           // Initialize with 1 default sampling point
           setPuntos([createNewPunto(1)]);
@@ -619,7 +619,7 @@ export default function ProtocoloForm({
   }, [editingId, tenant]);
 
   // Load existing record
-  const loadExistingRecord = async (session, memsList = []) => {
+  const loadExistingRecord = async (session, memsList = [], estsList = []) => {
     try {
       if (!session) {
         // Dev Mock Record
@@ -690,7 +690,7 @@ export default function ProtocoloForm({
 
       // Cargar sectores del establecimiento seleccionado
       if (proto.establecimiento_id) {
-        const activeEst = ests.find(e => e.id === proto.establecimiento_id);
+        const activeEst = estsList.find(e => e.id === proto.establecimiento_id);
         if (activeEst) {
           setEstSectoresLocal(activeEst.sectores || []);
         }
