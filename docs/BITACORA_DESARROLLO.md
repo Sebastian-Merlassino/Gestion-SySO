@@ -1,3 +1,30 @@
+## [2026-08-23] Ampliación Integral del Instructivo de Iluminación según Res. SRT 84/12, Dec. 351/79 y Método de la Cuadrícula
+
+### Resumen de Cambios
+- **Instructivo de Iluminación Especializado (`src/content/help/articles/protocoloIluminacion.js` y `src/content/help/articles/protocolos.js`):**
+  - Se incorporó la guía técnica y legal completa basada en la **Resolución SRT Nº 84/12**, el **Capítulo 12 (Anexo IV) del Decreto 351/79** y la **Norma IRAM-AADL J 20-06**.
+  - **Tabla 1 del Decreto 351/79:** Resumen exhaustivo de las clases de tarea visual y sus exigencias lumínicas en Lux (desde visión ocasional de 100 lux hasta tareas de alta precisión de 3000 lux y quirúrgicas de 10000 lux).
+  - **Método de la Cuadrícula Normalizado:**
+    - Explicación y desglose de las fórmulas de *Índice de Local* $I = (L \times A) / [H \times (L + A)]$ y *Número Mínimo de Puntos* $N = (x + 2)^2$ (con $x = 1 \rightarrow 9$ mediciones, $x = 2 \rightarrow 16$ mediciones, $x = 3 \rightarrow 25$ mediciones, $x = 4 \rightarrow 36$ mediciones).
+    - Criterio oficial de *Verificación de Uniformidad de Iluminancia* ($E_{\text{mín}} \ge E_{\text{media}} / 2$).
+  - **Instructivo Paso a Paso de Carga en la App:** Guía para seleccionar cliente, cargar luxómetro con fecha de calibración, ingresar dimensiones del recinto para cálculo automático de la cuadrícula, cargar mediciones en lux, evaluar resultados (Cumple / Parcial / No Cumple) y emitir el PDF oficial con firma digital.
+  - **Preguntas Frecuentes:** Altura estándar de medición (0,75 m), prevención de sombras sobre la celda fotoeléctrica y vigencia recomendada.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Creados / Modificados
+- `[NEW] src/content/help/articles/protocoloIluminacion.js`
+- `[MODIFY] src/content/help/articles/protocolos.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js (`cmd /c npm run build`), finalizada con éxito (`Exit code: 0`, 25/25 páginas generadas sin errores).
+
+---
+
 ## [2026-08-23] Corrección Crítica de Scope en Carga de Protocolos Guardados (Ergonomía, Ruido, Iluminación)
 
 ### Resumen de Cambios

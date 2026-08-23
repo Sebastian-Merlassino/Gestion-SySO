@@ -10,55 +10,7 @@ import {
 } from '@/components/help/HelpComponents';
 import { Sun, Volume2, PersonStanding, Zap, CheckCircle2, Sliders, FileText } from 'lucide-react';
 
-export const protocoloIluminacionHelp = {
-  key: 'protocolo-iluminacion',
-  title: 'Protocolo de Iluminación (Res. SRT 84/12)',
-  subtitle: 'Medición de lux en puestos de trabajo y cálculo de uniformidad',
-  icon: Sun,
-  tags: ['iluminacion', 'luxometro', 'srt-84-12', 'protocolos', 'uniformidad', 'eav', 'decreto-351'],
-  render: () => (
-    <div className="space-y-5">
-      <HelpPurpose>
-        El **Protocolo de Medición de Iluminación en el Ambiente Laboral** da estricto cumplimiento a la **Resolución SRT 84/12**. Permite registrar los puntos de medición en cada puesto/sector, contrastar el valor medio obtenido (E_med) contra la exigencia mínima visual (E_req) del Decreto 351/79 y determinar la uniformidad lumínica.
-      </HelpPurpose>
-
-      <HelpSection title="1. Datos Generales y del Instrumental" id="instrumental">
-        <HelpStep
-          number={1}
-          title="Instrumento Luxómetro y Certificado de Calibración"
-        >
-          Cargá la marca, modelo, número de serie del luxómetro utilizado y la fecha de vigencia de su certificado de calibración en laboratorio acreditado (SAC/INTI).
-        </HelpStep>
-
-        <HelpStep
-          number={2}
-          title="Condiciones de Medición y Turno"
-        >
-          Indicá fecha, hora, turno de trabajo (diurno/nocturno), tipo de alumbrado (LED, fluorescente, natural) y estado del tiempo.
-        </HelpStep>
-      </HelpSection>
-
-      <HelpSection title="2. Puntos de Medición y Evaluación" id="puntos">
-        <HelpStep
-          number={3}
-          title="Carga de Puntos y Valores de Iluminancia"
-        >
-          Para cada punto, seleccioná el Sector y Puesto, la tarea visual desarrollada, y cargá los valores medidos en Lux. El sistema coteja automáticamente con la tabla legal y clasifica el punto en <em>CUMPLE / NO CUMPLE</em>.
-          <HelpTip>
-            Si detectás no conformidades, el sistema sugerirá medidas correctivas estandarizadas (ej. <em>limpieza de luminarias, reubicación de planos de trabajo, incorporación de luminarias LED puntuales</em>).
-          </HelpTip>
-        </HelpStep>
-
-        <HelpStep
-          number={4}
-          title="Emisión del Protocolo SRT 84/12 en PDF"
-        >
-          Descargá el anexo legal oficial con las tablas de puntos de medición, cálculos de uniformidad, conclusiones técnicas y firma del profesional actuante.
-        </HelpStep>
-      </HelpSection>
-    </div>
-  )
-};
+export { protocoloIluminacionHelp } from './protocoloIluminacion';
 
 export const protocoloRuidoHelp = {
   key: 'protocolo-ruido',
