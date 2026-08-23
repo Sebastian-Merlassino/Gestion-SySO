@@ -98,36 +98,7 @@ export const protocoloRuidoHelp = {
   )
 };
 
-export const protocoloErgonomiaHelp = {
-  key: 'protocolo-ergonomia',
-  title: 'Protocolo de Ergonomía (Res. SRT 886/15)',
-  subtitle: 'Evaluación de factores de riesgo ergonómico, posturas y movimientos repetitivos',
-  icon: PersonStanding,
-  tags: ['ergonomia', 'srt-886-15', 'planilla-1', 'planilla-2', 'posturas', 'esfuerzos', 'repetitividad'],
-  render: () => (
-    <div className="space-y-5">
-      <HelpPurpose>
-        El **Protocolo de Ergonomía Laboral** aplica las planillas de la **Resolución SRT 886/15** para identificar y ponderar factores de riesgo biomecánicos: levantamiento/descenso manual de cargas, empuje/arrastre, movimientos repetitivos de miembros superiores, posturas forzadas y bipedestación prolongada.
-      </HelpPurpose>
-
-      <HelpSection title="1. Identificación y Planilla 1 / 2" id="ergo-planillas">
-        <HelpStep
-          number={1}
-          title="Identificación de Factores de Riesgo (Planilla 1)"
-        >
-          Elegí el puesto de trabajo y completá el screening inicial de factores presentes.
-        </HelpStep>
-
-        <HelpStep
-          number={2}
-          title="Evaluación Detallada (Planilla 2) y Conclusiones"
-        >
-          Analizá la frecuencia, duración y condición ergonómica para clasificar el nivel de riesgo en <em>Nivel 1 (Tolerable), Nivel 2 (Riesgo Moderado) o Nivel 3 (Riesgo No Aceptable)</em> y plasmar las adecuaciones en el puesto.
-        </HelpStep>
-      </HelpSection>
-    </div>
-  )
-};
+export { protocoloErgonomiaHelp } from './protocoloErgonomia';
 
 export const protocoloPuestaATierraHelp = {
   key: 'protocolo-puesta-a-tierra',

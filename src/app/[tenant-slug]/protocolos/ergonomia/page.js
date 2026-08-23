@@ -901,10 +901,10 @@ export default function ProtocolosErgonomiaPage({ params }) {
                         <AppSortIcon field="razon_social_text" sortField={sortField} sortOrder={sortOrder} />
                       </div>
                     </th>
-                    <th onClick={() => toggleSort('instrumento_marca_modelo_serie')} className="px-6 py-4 cursor-pointer select-none hover:text-slate-700 w-[25%]">
+                    <th onClick={() => toggleSort('profesional_nombre')} className="px-6 py-4 cursor-pointer select-none hover:text-slate-700 w-[25%]">
                       <div className="flex items-center gap-1.5">
-                        Sonómetro / Dosímetro
-                        <AppSortIcon field="instrumento_marca_modelo_serie" sortField={sortField} sortOrder={sortOrder} />
+                        Profesional SySO
+                        <AppSortIcon field="profesional_nombre" sortField={sortField} sortOrder={sortOrder} />
                       </div>
                     </th>
                     <th onClick={() => toggleSort('fecha_medicion')} className="px-6 py-4 cursor-pointer select-none hover:text-slate-700 w-[15%]">
@@ -946,8 +946,8 @@ export default function ProtocolosErgonomiaPage({ params }) {
                             {row.establecimiento_text}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-slate-500 max-w-[180px] truncate" title={row.instrumento_marca_modelo_serie}>
-                          {row.instrumento_marca_modelo_serie || '-'}
+                        <td className="px-6 py-4 text-slate-500 max-w-[180px] truncate" title={row.profesional_nombre}>
+                          {row.profesional_nombre || '-'}
                         </td>
                         <td className="px-6 py-4 text-slate-500 font-medium">
                           {row.fecha_medicion ? formatDate(row.fecha_medicion) : '-'}

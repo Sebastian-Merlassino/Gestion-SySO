@@ -1,3 +1,37 @@
+## [2026-08-23] Ampliación Integral del Instructivo de Ergonomía según Res. SRT 886/15
+
+### Resumen de Cambios
+- **Instructivo de Ergonomía Especializado (`src/content/help/articles/protocoloErgonomia.js` y `src/content/help/articles/protocolos.js`):**
+  - Se incorporó la guía normativa y técnica completa basada en la **Resolución SRT Nº 886/15 (Anexo I Protocolo de Ergonomía)** y **Res. MTEySS 295/03**.
+  - **Marco Normativo y Criterios de Evaluación:** Explicación detallada de cuándo evaluar *por Puesto de Trabajo* (tareas idénticas bajo condiciones similares) vs. *por Trabajador Individual* (tareas diferenciadas, denuncia de enfermedad profesional, manifestaciones tempranas de fatiga/dolor).
+  - **Estructura Oficial de las 4 Planillas:**
+    - *Planilla Nº 1:* Identificación inicial de factores de riesgo en hasta 3 tareas habituales por puesto (Levantamiento/Descenso, Empuje/Arrastre, Transporte, Bipedestación, Movimientos Repetitivos, Posturas Forzadas, Vibraciones mano-brazo/cuerpo entero, Confort térmico / Estrés de contacto).
+    - *Planilla Nº 2 (Subplanillas 2.A a 2.I):* Cuestionarios específicos de screening en dos fases (Paso 1: límites elementales / Paso 2: condiciones críticas y asimetrías).
+    - *Planilla Nº 3 (Medidas Preventivas Generales y Específicas):* Medidas administrativas y de ingeniería.
+    - *Planilla Nº 4 (Matriz de Seguimiento):* Fechas de compromiso y verificación de eficacia obligatoria a los 30 días posteriores.
+  - **Métodos de Evaluación Específica Reconocidos:** Integración de referencias para Ecuación NIOSH, Nivel de Actividad Manual (NAM / ACGIH), RULA, REBA, OWAS, OCRA y Tablas de Snook & Ciriello.
+  - **Niveles de Riesgo:** Nivel 1 (Tolerable - Verde), Nivel 2 (Moderado - Amarillo), Nivel 3 (No Aceptable - Rojo).
+  - **Plazos y Vigencia:** Vigencia legal de 1 año calendario y causales de reevaluación anticipada.
+  - **Firmas Obligatorias:** Responsable SySO + Responsable Medicina Laboral + Empleador / Representante Legal.
+- **Corrección de Encabezado en Listado de Ergonomía (`src/app/[tenant-slug]/protocolos/ergonomia/page.js`):**
+  - Se corrigió la columna de la tabla que decía *"Sonómetro / Dosímetro"* (remanente de copia de ruido) reemplazándola por *"Profesional SySO"* con su campo correspondiente (`row.profesional_nombre`).
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Creados / Modificados
+- `[NEW] src/content/help/articles/protocoloErgonomia.js`
+- `[MODIFY] src/content/help/articles/protocolos.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js (`cmd /c npm run build`), finalizada con éxito (`Exit code: 0`, 25/25 páginas generadas sin errores).
+
+---
+
 ## [2026-08-22] Implementación Completa: Sistema de Ayuda Contextual In-App (Slide-Over)
 
 ### Resumen de Cambios
