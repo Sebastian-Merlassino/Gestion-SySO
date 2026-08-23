@@ -167,9 +167,9 @@ export const protocoloErgonomiaHelp = {
 
         <HelpStep
           number={6}
-          title="Conclusiones, Fotos, Croquis y Firmas Digitales"
+          title="Conclusiones Técnicas y Firmas Digitales"
         >
-          Adjuntá fotografías de las posturas relevadas, subí el croquis del puesto y completá las conclusiones técnicas. El sistema estampará las firmas digitales del Responsable SySO, Médico Laboral y Empleador.
+          Completá las conclusiones técnicas y recomendaciones globales del estudio. Al finalizar, el sistema estampará las firmas digitales de los 3 responsables requeridos por la normativa: Responsable del Servicio de Higiene y Seguridad, Responsable del Servicio de Medicina Laboral y Representante Legal / Empleador.
         </HelpStep>
       </HelpSection>
 

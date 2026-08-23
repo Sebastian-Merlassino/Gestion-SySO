@@ -53,7 +53,7 @@ export const protocoloIluminacionHelp = {
           number={4}
           title="Emisión del Protocolo SRT 84/12 en PDF"
         >
-          Descargá el anexo legal oficial con las tablas de puntos, conclusiones, plano de croquis esquemático y firma del profesional actuante.
+          Descargá el anexo legal oficial con las tablas de puntos de medición, cálculos de uniformidad, conclusiones técnicas y firma del profesional actuante.
         </HelpStep>
       </HelpSection>
     </div>
