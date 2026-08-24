@@ -196,9 +196,6 @@ export const protocoloIluminacionHelp = {
           title="Datos del Instrumental (Luxómetro)"
         >
           Cargá la <strong>Marca, Modelo y Número de Serie</strong> del luxómetro utilizado, junto con la <strong>Fecha del Certificado de Calibración</strong> emitido por laboratorio autorizado.
-          <HelpTip>
-            El instrumento debe haber sido calibrado en laboratorio acreditado (SAC/INTI) y contar con calibración vigente según las recomendaciones del fabricante y SRT.
-          </HelpTip>
         </HelpStep>
 
         <HelpStep

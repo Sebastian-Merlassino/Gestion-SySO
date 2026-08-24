@@ -169,9 +169,6 @@ export const protocoloRuidoHelp = {
             <li><strong>Sonómetro / Dosímetro:</strong> Marca, Modelo, Número de Serie y Fecha de Certificado de Calibración en laboratorio autorizado.</li>
             <li><strong>Calibrador Acústico (Pistófono):</strong> Marca, Modelo, Número de Serie y nivel de calibración de referencia (ej. 94 dB / 114 dB a 1000 Hz).</li>
           </ul>
-          <HelpTip>
-            La norma exige verificar la calibración del equipo antes de iniciar las mediciones y al finalizar la jornada de muestreo.
-          </HelpTip>
         </HelpStep>
 
         <HelpStep
