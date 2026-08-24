@@ -36,6 +36,7 @@ import {
   Printer, 
   FileText, 
   Mail, 
+  Download,
   Copy, 
   Sliders, 
   ChevronUp, 
@@ -395,14 +396,14 @@ export default function ProtocolosIluminacionPage({ params }) {
     }
   };
 
-  // Export PDF Report Download/Print
-  const handleExportPdf = async (protoItem, shouldPrint = false) => {
-    let printWindow = null;
-    if (shouldPrint) {
+  // Export PDF Report Download/Print/Preview
+  const handleExportPdf = async (protoItem, mode = 'download') => {
+    let targetWindow = null;
+    if (mode === 'print') {
       // Abre la ventana de forma síncrona en la interacción del usuario para evitar bloqueos del navegador
-      printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(`
+      targetWindow = window.open('', '_blank');
+      if (targetWindow) {
+        targetWindow.document.write(`
           <!DOCTYPE html>
           <html>
             <head>
@@ -423,6 +424,8 @@ export default function ProtocolosIluminacionPage({ params }) {
           </html>
         `);
       }
+    } else if (mode === 'preview') {
+      targetWindow = window.open('', '_blank');
     }
 
     try {
@@ -441,16 +444,25 @@ export default function ProtocolosIluminacionPage({ params }) {
       const doc = await generateLightingProtocolPdf(protoItem, tenant, empresas, allEstablecimientos, pts || [], adjs || [], isDevMode, profile);
       if (!doc) throw new Error('No se pudo generar el reporte PDF.');
 
-      if (shouldPrint) {
-        printPdfDocument(doc, printWindow, `Protocolo de Iluminación - ${protoItem.razon_social_text || 'Reporte'}`);
+      if (mode === 'print') {
+        printPdfDocument(doc, targetWindow, `Protocolo de Iluminación - ${protoItem.razon_social_text || 'Reporte'}`);
         globalToast.toast('Ventana de impresión abierta.', 'success');
+      } else if (mode === 'preview') {
+        const blob = doc.output('blob');
+        const blobUrl = URL.createObjectURL(blob);
+        if (targetWindow) {
+          targetWindow.location.href = blobUrl;
+        } else {
+          window.open(blobUrl, '_blank');
+        }
+        globalToast.toast('Vista previa abierta.', 'success');
       } else {
-        doc.save(`Protocolo_Iluminacion_${protoItem.razon_social_text.replace(/\s+/g, '_')}_${protoItem.fecha_medicion}.pdf`);
+        doc.save(`Protocolo_Iluminacion_${(protoItem.razon_social_text || 'Reporte').replace(/\s+/g, '_')}_${protoItem.fecha_medicion}.pdf`);
         globalToast.toast('PDF descargado con éxito.', 'success');
       }
     } catch (err) {
-      if (printWindow && !printWindow.closed) {
-        printWindow.close();
+      if (targetWindow && !targetWindow.closed) {
+        targetWindow.close();
       }
       console.error('Error al exportar PDF:', err);
       globalToast.toast('No se pudo generar el reporte PDF.', 'error');
@@ -763,7 +775,11 @@ export default function ProtocolosIluminacionPage({ params }) {
               onDirtyChange={setIsFormDirty}
               onExportPdf={() => {
                 const proto = protocolos.find(p => p.id === editingId);
-                if (proto) handleExportPdf(proto, false);
+                if (proto) handleExportPdf(proto, 'download');
+              }}
+              onPrintPdf={() => {
+                const proto = protocolos.find(p => p.id === editingId);
+                if (proto) handleExportPdf(proto, 'print');
               }}
               onSendPdf={() => {
                 const proto = protocolos.find(p => p.id === editingId);
@@ -1008,12 +1024,12 @@ export default function ProtocolosIluminacionPage({ params }) {
                               </AppTooltip>
                             )}
 
-                            {/* Descargar PDF */}
-                            <AppTooltip content="Descargar PDF">
+                            {/* Visualizar PDF */}
+                            <AppTooltip content="Visualizar PDF">
                               <AppButton
                                 variant="document-table"
                                 size="icon"
-                                onClick={() => handleExportPdf(row, false)}
+                                onClick={() => handleExportPdf(row, 'preview')}
                               >
                                 <FileText className="h-4.5 w-4.5" />
                               </AppButton>
@@ -1024,9 +1040,20 @@ export default function ProtocolosIluminacionPage({ params }) {
                               <AppButton
                                 variant="document-table"
                                 size="icon"
-                                onClick={() => handleExportPdf(row, true)}
+                                onClick={() => handleExportPdf(row, 'print')}
                               >
                                 <Printer className="h-4.5 w-4.5" />
+                              </AppButton>
+                            </AppTooltip>
+
+                            {/* Descargar PDF */}
+                            <AppTooltip content="Descargar PDF">
+                              <AppButton
+                                variant="document-table"
+                                size="icon"
+                                onClick={() => handleExportPdf(row, 'download')}
+                              >
+                                <Download className="h-4.5 w-4.5" />
                               </AppButton>
                             </AppTooltip>
 

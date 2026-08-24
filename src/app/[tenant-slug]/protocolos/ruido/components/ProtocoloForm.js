@@ -30,7 +30,8 @@ import {
   FileText, 
   Mail,
   Download,
-  Copy,
+  Printer,
+  Copy, 
   Info,
   Calendar,
   Zap,
@@ -64,6 +65,7 @@ export default function ProtocoloForm({
   onEdit = null,
   onDirtyChange = null,
   onSendPdf = null,
+  onPrintPdf = null,
   onExportPdf = null
 }) {
   const router = useRouter();
@@ -3126,6 +3128,7 @@ export default function ProtocoloForm({
               <>
                 {profile?.role !== 'cliente' && onSendPdf && (
                   <AppButton
+                    type="button"
                     variant="secondary"
                     onClick={onSendPdf}
                     className="flex items-center gap-1.5 shadow-sm"
@@ -3134,8 +3137,20 @@ export default function ProtocoloForm({
                     Enviar PDF
                   </AppButton>
                 )}
+                {onPrintPdf && (
+                  <AppButton
+                    type="button"
+                    variant="secondary"
+                    onClick={onPrintPdf}
+                    className="flex items-center gap-1.5 shadow-sm"
+                  >
+                    <Printer className="h-4 w-4" />
+                    Imprimir
+                  </AppButton>
+                )}
                 {onExportPdf && (
                   <AppButton
+                    type="button"
                     variant="primary"
                     onClick={onExportPdf}
                     className="flex items-center gap-1.5 shadow-md shadow-[#468DFF]/10"
@@ -3155,7 +3170,7 @@ export default function ProtocoloForm({
                     if (onEdit) {
                       onEdit();
                     } else {
-                      router.push(`/${tenantSlug}/protocolos/iluminacion/${editingId}/editar`);
+                      router.push(`/${tenantSlug}/protocolos/ruido/${editingId}/editar`);
                     }
                   }}
                   className="bg-amber-500 hover:bg-amber-600 border-amber-500 hover:border-amber-600 text-white shadow-lg shadow-amber-500/10 text-center"

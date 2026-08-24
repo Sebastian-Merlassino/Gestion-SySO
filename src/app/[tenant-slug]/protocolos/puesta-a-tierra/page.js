@@ -32,6 +32,7 @@ import {
   Printer, 
   FileText, 
   Mail, 
+  Download,
   Copy, 
   Sliders, 
   ChevronUp, 
@@ -353,14 +354,13 @@ export default function ProtocolosPuestaATierraPage({ params }) {
     }
   };
 
-  // Exportar / Previsualizar PDF Reporte
-  const handleExportPdf = async (protoItem, shouldPrint = false) => {
-    let printWindow = null;
-    if (shouldPrint) {
-      // Abre la ventana de forma síncrona en la interacción del usuario para evitar bloqueos de ventanas emergentes del navegador
-      printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(`
+  // Exportar / Previsualizar / Imprimir PDF Reporte
+  const handleExportPdf = async (protoItem, mode = 'download') => {
+    let targetWindow = null;
+    if (mode === 'print') {
+      targetWindow = window.open('', '_blank');
+      if (targetWindow) {
+        targetWindow.document.write(`
           <!DOCTYPE html>
           <html>
             <head>
@@ -381,6 +381,8 @@ export default function ProtocolosPuestaATierraPage({ params }) {
           </html>
         `);
       }
+    } else if (mode === 'preview') {
+      targetWindow = window.open('', '_blank');
     }
 
     try {
@@ -411,16 +413,25 @@ export default function ProtocolosPuestaATierraPage({ params }) {
 
       if (!pdfDoc) throw new Error('No se pudo generar el reporte PDF.');
 
-      if (shouldPrint) {
-        printPdfDocument(pdfDoc, printWindow, `Protocolo Puesta a Tierra - ${protoItem.razon_social_text || 'Reporte'}`);
+      if (mode === 'print') {
+        printPdfDocument(pdfDoc, targetWindow, `Protocolo Puesta a Tierra - ${protoItem.razon_social_text || 'Reporte'}`);
         globalToast.toast('Ventana de impresión abierta.', 'success');
+      } else if (mode === 'preview') {
+        const blob = pdfDoc.output('blob');
+        const blobUrl = URL.createObjectURL(blob);
+        if (targetWindow) {
+          targetWindow.location.href = blobUrl;
+        } else {
+          window.open(blobUrl, '_blank');
+        }
+        globalToast.toast('Vista previa abierta.', 'success');
       } else {
         pdfDoc.save(`Protocolo_Puesta_A_Tierra_${(protoItem.razon_social_text || 'Cliente').replace(/\s+/g, '_')}_${protoItem.fecha_medicion || '2026'}.pdf`);
         globalToast.toast('PDF descargado con éxito.', 'success');
       }
     } catch (err) {
-      if (printWindow && !printWindow.closed) {
-        printWindow.close();
+      if (targetWindow && !targetWindow.closed) {
+        targetWindow.close();
       }
       console.error('Error al exportar PDF:', err);
       globalToast.toast('No se pudo generar el reporte PDF.', 'error');
@@ -693,7 +704,11 @@ export default function ProtocolosPuestaATierraPage({ params }) {
               onDirtyChange={setIsFormDirty}
               onExportPdf={() => {
                 const proto = protocolos.find(p => p.id === editingId);
-                if (proto) handleExportPdf(proto, false);
+                if (proto) handleExportPdf(proto, 'download');
+              }}
+              onPrintPdf={() => {
+                const proto = protocolos.find(p => p.id === editingId);
+                if (proto) handleExportPdf(proto, 'print');
               }}
               onSendPdf={() => {
                 const proto = protocolos.find(p => p.id === editingId);
@@ -940,25 +955,35 @@ export default function ProtocolosPuestaATierraPage({ params }) {
                                     </AppTooltip>
                                   )}
 
-                                  <AppTooltip content="Descargar reporte PDF">
-                                    <AppButton
-                                      variant="document-table"
-                                      size="icon"
-                                      onClick={() => handleExportPdf(row, false)}
-                                    >
-                                      <FileText className="h-4.5 w-4.5" />
-                                    </AppButton>
-                                  </AppTooltip>
+                                   <AppTooltip content="Visualizar PDF">
+                                     <AppButton
+                                       variant="document-table"
+                                       size="icon"
+                                       onClick={() => handleExportPdf(row, 'preview')}
+                                     >
+                                       <FileText className="h-4.5 w-4.5" />
+                                     </AppButton>
+                                   </AppTooltip>
 
-                                  <AppTooltip content="Imprimir">
-                                    <AppButton
-                                      variant="document-table"
-                                      size="icon"
-                                      onClick={() => handleExportPdf(row, true)}
-                                    >
-                                      <Printer className="h-4.5 w-4.5" />
-                                    </AppButton>
-                                  </AppTooltip>
+                                   <AppTooltip content="Imprimir">
+                                     <AppButton
+                                       variant="document-table"
+                                       size="icon"
+                                       onClick={() => handleExportPdf(row, 'print')}
+                                     >
+                                       <Printer className="h-4.5 w-4.5" />
+                                     </AppButton>
+                                   </AppTooltip>
+
+                                   <AppTooltip content="Descargar PDF">
+                                     <AppButton
+                                       variant="document-table"
+                                       size="icon"
+                                       onClick={() => handleExportPdf(row, 'download')}
+                                     >
+                                       <Download className="h-4.5 w-4.5" />
+                                     </AppButton>
+                                   </AppTooltip>
 
                                   {profile?.role !== 'cliente' && canEditar && (
                                     <AppTooltip content="Enviar por correo o WhatsApp">

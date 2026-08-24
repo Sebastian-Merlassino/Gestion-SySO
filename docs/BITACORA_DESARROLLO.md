@@ -1,3 +1,69 @@
+## [2026-08-24] Estandarización de la Tríada de PDF (Visualizar, Imprimir y Descargar) en los 4 Protocolos Técnicos (Iluminación, Ruido, Puesta a Tierra y Ergonomía)
+
+### Resumen de Cambios
+- **Estandarización de Visualizar, Imprimir y Descargar PDF en Tablas de Protocolos:**
+  - Se actualizaron las vistas principales de los 4 protocolos normativos (`iluminacion/page.js`, `ruido/page.js`, `puesta-a-tierra/page.js` y `ergonomia/page.js`).
+  - **Visualizar PDF (`FileText`):** Ahora genera el documento y abre la vista previa limpia en una pestaña nueva asignando el Blob URL directamente a `targetWindow.location.href`, con notificación toast `"Vista previa abierta."`, sin descargar ni abrir el diálogo de impresión.
+  - **Imprimir (`Printer`):** Pre-abre ventana con el spinner de carga HTML oficial, genera el PDF y ejecuta `printPdfDocument` para lanzar el cuadro de impresión nativo del navegador, con toast `"Ventana de impresión abierta."`.
+  - **Descargar PDF (`Download`):** Genera y descarga el archivo `.pdf` mediante `doc.save(...)` con la nomenclatura oficial, emitiendo toast `"PDF descargado con éxito."`.
+- **Integración del Botón Imprimir en Formularios (`ProtocoloForm`):**
+  - Se incorporó la prop `onPrintPdf` y el botón **Imprimir** (`Printer`, `variant="secondary"`) en los componentes `ProtocoloForm.js` de Iluminación, Ruido, Puesta a Tierra y Ergonomía, ubicado junto a *Enviar PDF* y *Descargar PDF* cuando se visualiza o edita un protocolo guardado.
+
+### Decisiones Clave
+- Consistencia del 100% en la experiencia de usuario y arquitectura de reportes PDF entre Constancias de Visita, Avisos de Riesgo, Control Eléctrico y los 4 Protocolos Normativos (Res. SRT 84/12, Res. SRT 85/12, Res. SRT 900/15, Res. MTEySS 295/03).
+- Apertura síncrona de ventanas emergentes para prevenir bloqueadores de popups en navegadores móviles y de escritorio.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/components/ProtocoloForm.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js (`cmd /c npm run build`), finalizada con éxito (`Exit code: 0`, 25/25 páginas generadas sin errores).
+
+---
+
+## [2026-08-24] Corrección de Visualización de PDF e Incorporación de Botón de Impresión en Constancias de Visita
+
+### Resumen de Cambios
+- **Corrección de Visualización de PDF (`handlePreviewPdf`):**
+  - Se corrigió el flujo del botón "Visualizar PDF" (`FileText`), el cual anteriormente ejecutaba `printPdfDocument` disparando indebidamente el diálogo nativo de impresión del navegador.
+  - Ahora abre limpiamente el documento en una nueva pestaña asignando el `blobUrl` directamente (`previewWindow.location.href = blobUrl`), permitiendo la previsualización sin abrir la ventana de impresión.
+  - Se configuró la notificación toast informativa correspondiente: `"Vista previa abierta."`.
+- **Incorporación de Botón y Handler de Impresión (`handlePrintPdf`):**
+  - Se agregó la función `handlePrintPdf` que pre-abre la ventana con el loader HTML oficial de espera e invoca `printPdfDocument` para lanzar el cuadro de impresión nativo del navegador.
+  - Se incorporó el botón con ícono `Printer` de Lucide (`variant="document-table"`) en la tabla de constancias de visita y en el pie del formulario (modo edición/detalle).
+  - Se configuraron los tooltips accesibles con `AppTooltip` en todas las acciones de la tabla.
+
+### Decisiones Clave
+- Mantener la apertura síncrona inicial de la ventana emergente (`window.open('', '_blank')`) previo al cálculo asíncrono del PDF para evitar que los bloqueadores de popups de los navegadores impidan la previsualización o impresión.
+- Respetar la paleta de colores (`variant="document-table"`, `#468DFF`, `bg-blue-50`, `hover:bg-blue-100`) y los mensajes de toast fijados en las directrices de diseño (`gestion-syso-brand-guidelines`).
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js (`cmd /c npm run build`), finalizada con éxito (`Exit code: 0`, 25/25 páginas generadas sin errores).
+
+---
+
 ## [2026-08-23] Ampliación Integral del Instructivo de Puesta a Tierra según Res. SRT 900/15, Dec. 351/79 (Cap. 14) y AEA 90364
 
 ### Resumen de Cambios

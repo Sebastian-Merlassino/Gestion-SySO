@@ -30,6 +30,7 @@ import {
   FileText,
   Mail,
   Download,
+  Printer,
   Copy,
   Info,
   Calendar,
@@ -114,6 +115,7 @@ export default function ProtocoloForm({
   onEdit = null,
   onDirtyChange = null,
   onSendPdf = null,
+  onPrintPdf = null,
   onExportPdf = null
 }) {
   const router = useRouter();
@@ -2421,6 +2423,17 @@ export default function ProtocoloForm({
                   >
                     <Mail className="h-4 w-4" />
                     Enviar PDF
+                  </AppButton>
+                )}
+                {onPrintPdf && (
+                  <AppButton
+                    type="button"
+                    variant="secondary"
+                    onClick={onPrintPdf}
+                    className="flex items-center gap-1.5 shadow-sm"
+                  >
+                    <Printer className="h-4 w-4" />
+                    Imprimir
                   </AppButton>
                 )}
                 {onExportPdf && (

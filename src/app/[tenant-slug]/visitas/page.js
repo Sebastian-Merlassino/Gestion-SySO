@@ -71,7 +71,8 @@ import {
   MessageCircle,
   CheckSquare,
   Square,
-  RotateCcw
+  RotateCcw,
+  Printer
 } from 'lucide-react';
 // Opciones de Mediciones
 const MEDICIONES_OPTS = [
@@ -1572,9 +1573,56 @@ export default function VisitasPage({ params }) {
     });
   };
 
-  // Previsualizar PDF en nueva pestaña sin descargar
+  // Previsualizar PDF en nueva pestaña sin descargar ni imprimir
   const handlePreviewPdf = async (v) => {
+    const previewWindow = window.open('', '_blank');
+    try {
+      const blobUrl = await handleGeneratePdf(v, 'bloburl');
+      if (blobUrl) {
+        if (previewWindow) {
+          previewWindow.location.href = blobUrl;
+        } else {
+          window.open(blobUrl, '_blank');
+        }
+        triggerToast('Vista previa abierta.');
+      } else if (previewWindow && !previewWindow.closed) {
+        previewWindow.close();
+      }
+    } catch (e) {
+      if (previewWindow && !previewWindow.closed) {
+        previewWindow.close();
+      }
+      console.error('Error al abrir la vista previa:', e);
+      triggerToast('Error al generar el reporte PDF.', 'error');
+    }
+  };
+
+  // Imprimir PDF mediante ventana nativa de impresión
+  const handlePrintPdf = async (v) => {
     const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Imprimiendo Constancia de Visita...</title>
+            <style>
+              body { margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: system-ui, -apple-system, sans-serif; background: #f8fafc; color: #475569; }
+              .loader { text-align: center; }
+              .spinner { width: 36px; height: 36px; border: 3px solid #cbd5e1; border-top-color: #468DFF; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+              @keyframes spin { to { transform: rotate(360deg); } }
+            </style>
+          </head>
+          <body>
+            <div class="loader">
+              <div class="spinner"></div>
+              <p style="font-weight: 600; margin: 0;">Generando vista de impresión...</p>
+            </div>
+          </body>
+        </html>
+      `);
+    }
+
     try {
       const blobUrl = await handleGeneratePdf(v, 'bloburl');
       if (blobUrl) {
@@ -1587,7 +1635,7 @@ export default function VisitasPage({ params }) {
       if (printWindow && !printWindow.closed) {
         printWindow.close();
       }
-      console.error('Error al abrir la vista previa:', e);
+      console.error('Error al imprimir constancia de visita:', e);
       triggerToast('Error al generar el reporte PDF.', 'error');
     }
   };
@@ -2183,62 +2231,77 @@ export default function VisitasPage({ params }) {
                                 <td className="px-6 py-4 text-slate-500">{v.responsable_presente}</td>
                                 <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                                   <div className="flex items-center justify-end gap-2">
-                                    <AppButton 
-                                      variant="document-table"
-                                      size="icon"
-                                      onClick={() => handlePreviewPdf(v)}
-                                      title="Visualizar PDF"
-                                    >
-                                      <FileText className="h-4.5 w-4.5" />
-                                    </AppButton>
-                                    <AppButton 
-                                      variant="document-table"
-                                      size="icon"
-                                      onClick={() => handleGeneratePdf(v)}
-                                      title="Descargar PDF"
-                                    >
-                                      <Download className="h-4.5 w-4.5" />
-                                    </AppButton>
-                                    {profile && profile.role !== 'cliente' && (
+                                    <AppTooltip content="Visualizar PDF">
                                       <AppButton 
                                         variant="document-table"
                                         size="icon"
-                                        onClick={() => handleOpenMailModal(v)}
-                                        title="Enviar por Correo"
+                                        onClick={() => handlePreviewPdf(v)}
                                       >
-                                        <Mail className="h-4.5 w-4.5" />
+                                        <FileText className="h-4.5 w-4.5" />
                                       </AppButton>
+                                    </AppTooltip>
+                                    <AppTooltip content="Imprimir">
+                                      <AppButton 
+                                        variant="document-table"
+                                        size="icon"
+                                        onClick={() => handlePrintPdf(v)}
+                                      >
+                                        <Printer className="h-4.5 w-4.5" />
+                                      </AppButton>
+                                    </AppTooltip>
+                                    <AppTooltip content="Descargar PDF">
+                                      <AppButton 
+                                        variant="document-table"
+                                        size="icon"
+                                        onClick={() => handleGeneratePdf(v)}
+                                      >
+                                        <Download className="h-4.5 w-4.5" />
+                                      </AppButton>
+                                    </AppTooltip>
+                                    {profile && profile.role !== 'cliente' && (
+                                      <AppTooltip content="Enviar por correo o WhatsApp">
+                                        <AppButton 
+                                          variant="document-table"
+                                          size="icon"
+                                          onClick={() => handleOpenMailModal(v)}
+                                        >
+                                          <Mail className="h-4.5 w-4.5" />
+                                        </AppButton>
+                                      </AppTooltip>
                                     )}
                                     {profile && profile.role !== 'cliente' && (
                                       canEditar ? (
-                                        <AppButton 
-                                          variant="edit-table"
-                                          size="icon"
-                                          onClick={() => { setIsReadOnlyView(false); handleEditClick(v); }}
-                                          title="Editar Constancia"
-                                        >
-                                          <Edit className="h-4.5 w-4.5" />
-                                        </AppButton>
+                                        <AppTooltip content="Editar Constancia">
+                                          <AppButton 
+                                            variant="edit-table"
+                                            size="icon"
+                                            onClick={() => { setIsReadOnlyView(false); handleEditClick(v); }}
+                                          >
+                                            <Edit className="h-4.5 w-4.5" />
+                                          </AppButton>
+                                        </AppTooltip>
                                       ) : (
-                                        <AppButton 
-                                          variant="ghost-table"
-                                          size="icon"
-                                          onClick={() => { setIsReadOnlyView(true); handleEditClick(v); }}
-                                          title="Ver Detalle"
-                                        >
-                                          <Eye className="h-4.5 w-4.5" />
-                                        </AppButton>
+                                        <AppTooltip content="Ver Detalle">
+                                          <AppButton 
+                                            variant="ghost-table"
+                                            size="icon"
+                                            onClick={() => { setIsReadOnlyView(true); handleEditClick(v); }}
+                                          >
+                                            <Eye className="h-4.5 w-4.5" />
+                                          </AppButton>
+                                        </AppTooltip>
                                       )
                                     )}
                                     {profile && profile.role !== 'cliente' && canEliminar && (
-                                      <AppButton 
-                                        variant="delete-table"
-                                        size="icon"
-                                        onClick={() => handleDeleteClick(v.id)}
-                                        title="Eliminar Constancia"
-                                      >
-                                        <Trash2 className="h-4.5 w-4.5" />
-                                      </AppButton>
+                                      <AppTooltip content="Eliminar Constancia">
+                                        <AppButton 
+                                          variant="delete-table"
+                                          size="icon"
+                                          onClick={() => handleDeleteClick(v.id)}
+                                        >
+                                          <Trash2 className="h-4.5 w-4.5" />
+                                        </AppButton>
+                                      </AppTooltip>
                                     )}
                                   </div>
                                 </td>
@@ -3241,6 +3304,17 @@ export default function VisitasPage({ params }) {
                           >
                             <Mail className="h-4 w-4" />
                             Enviar PDF
+                          </AppButton>
+                          <AppButton
+                            variant="secondary"
+                            onClick={() => {
+                              const v = visitas.find(x => x.id === editingId);
+                              if (v) handlePrintPdf(v);
+                            }}
+                            className="w-full sm:w-auto flex items-center gap-1.5 shadow-sm"
+                          >
+                            <Printer className="h-4 w-4" />
+                            Imprimir
                           </AppButton>
                           <AppButton
                             variant="primary"
