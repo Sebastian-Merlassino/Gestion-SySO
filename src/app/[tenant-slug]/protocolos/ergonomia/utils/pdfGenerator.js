@@ -1,7 +1,7 @@
-import jsPDF from 'jspdf';
+// jsPDF se importa dinámicamente dentro de generateErgonomiaPDF()
 import { formatDate } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
-import { setFillColor, setDrawColor, setTextColor, hexToRgb, PDF_THEME } from '@/lib/pdf/pdfTheme';
+import { setFillColor, setDrawColor, setTextColor, hexToRgb, PDF_THEME, getPdfPrimaryColor } from '@/lib/pdf/pdfTheme';
 import { getBase64ImageFromUrl } from '@/lib/pdf/pdfImages';
 import { fetchProfessionalMatriculasWithImages, renderMatriculasAnexoPages } from '@/lib/pdf/pdfMatriculasAnexo';
 import { FANGER_CHART_BASE64 } from './fangerChartBase64';
@@ -399,13 +399,14 @@ export const generateProtocoloErgonomiaPdf = async (arg1, arg2, arg3, arg4, arg5
     userProfile = arg8 || {};
   }
 
+  const { default: jsPDF } = await import('jspdf');
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
     format: 'a4'
   });
 
-  const COLOR_AZUL_PRINCIPAL = PDF_THEME.primary; // [70, 141, 255]
+  const COLOR_AZUL_PRINCIPAL = getPdfPrimaryColor(tenantObj); // Tenant primary_color or default [70, 141, 255]
   const COLOR_SLATE_900 = PDF_THEME.textDark; // [13, 13, 13]
   const COLOR_SLATE_700 = [51, 65, 85];
   const COLOR_SLATE_600 = [71, 85, 105];

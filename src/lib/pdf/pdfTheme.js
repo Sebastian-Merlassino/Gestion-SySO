@@ -54,3 +54,33 @@ export function setTextColor(doc, color) {
   const rgb = Array.isArray(color) ? color : hexToRgb(color);
   doc.setTextColor(rgb[0], rgb[1], rgb[2]);
 }
+
+/**
+ * Resuelve el color principal personalizado del tenant para PDFs.
+ * Acepta un objeto tenant (con primary_color) o un string hex directo.
+ * Retorna un arreglo RGB [r, g, b]. Fallback: PDF_THEME.primary [70, 141, 255].
+ */
+export function getPdfPrimaryColor(tenantOrHex) {
+  const hex = typeof tenantOrHex === 'string'
+    ? tenantOrHex
+    : tenantOrHex?.primary_color;
+  if (hex && typeof hex === 'string' && /^#?[0-9A-Fa-f]{6}$/.test(hex.replace('#', ''))) {
+    return hexToRgb(hex);
+  }
+  return PDF_THEME.primary;
+}
+
+/**
+ * Resuelve el color principal personalizado del tenant para PDFs (formato Hex).
+ * Acepta un objeto tenant (con primary_color) o un string hex directo.
+ * Retorna un string hex (ej. '#468DFF'). Fallback: '#468DFF'.
+ */
+export function getPdfPrimaryColorHex(tenantOrHex) {
+  const hex = typeof tenantOrHex === 'string'
+    ? tenantOrHex
+    : tenantOrHex?.primary_color;
+  if (hex && typeof hex === 'string' && /^#?[0-9A-Fa-f]{6}$/.test(hex.replace('#', ''))) {
+    return hex.startsWith('#') ? hex : `#${hex}`;
+  }
+  return '#468DFF';
+}

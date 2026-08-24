@@ -1102,6 +1102,8 @@ export default function PublicCapacitacionPage({ params }) {
                                       } else {
                                         setDni(emp.cuil);
                                       }
+                                    } else if (emp.dni) {
+                                      setDni(emp.dni);
                                     }
                                     if (emp.puesto) {
                                       setPuesto(emp.puesto);

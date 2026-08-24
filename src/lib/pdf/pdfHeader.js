@@ -14,12 +14,14 @@ export function drawPdfHeader(doc, options = {}) {
     codigo = '',
     fecha = '',
     logoBase64 = null,
-    orientation = 'portrait'
+    orientation = 'portrait',
+    tenantPrimaryColor = null
   } = options;
 
   const specs = PAGE_SPECS[orientation] || PAGE_SPECS.portrait;
   const { marginLeft, marginRight, printableWidth, width: pageWidth } = specs;
   const startY = 30;
+  const accentColor = tenantPrimaryColor || PDF_THEME.primary;
 
   // 1. Logotipo (Esquina superior izquierda)
   if (logoBase64) {
@@ -35,7 +37,7 @@ export function drawPdfHeader(doc, options = {}) {
   
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(13);
-  setTextColor(doc, PDF_THEME.primary);
+  setTextColor(doc, accentColor);
   doc.text(title.toUpperCase(), titleX, startY + 5, { align: 'right' });
 
   if (codigo) {
@@ -66,7 +68,7 @@ export function drawPdfHeader(doc, options = {}) {
   }
 
   // 4. Línea Divisoria Institucional
-  setDrawColor(doc, PDF_THEME.primary);
+  setDrawColor(doc, accentColor);
   doc.setLineWidth(1.25);
   doc.line(marginLeft, currentY, pageWidth - marginRight, currentY);
 

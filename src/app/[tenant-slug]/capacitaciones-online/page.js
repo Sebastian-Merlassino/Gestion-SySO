@@ -225,7 +225,7 @@ export default function CapacitacionesOnlinePage({ params }) {
     const targetUrl = urlToView || documentUrl;
     if (!targetUrl) return;
 
-    if (targetUrl.startsWith('http://') || targetUrl.startsWith('https://')) {
+    if (targetUrl.startsWith('http://') || targetUrl.startsWith('https://') || targetUrl.startsWith('blob:')) {
       window.open(targetUrl, '_blank');
       return;
     }
@@ -562,7 +562,9 @@ export default function CapacitacionesOnlinePage({ params }) {
       return;
     }
 
-    if (!videoUrl && !documentUrl) {
+    const trimmedVideoUrl = videoUrl?.trim() || '';
+
+    if (!trimmedVideoUrl && !documentUrl && !documentoFile) {
       globalToast.toast('Debe incluir al menos un video de YouTube o un documento PDF/PPT.', 'warning');
       return;
     }
@@ -587,7 +589,7 @@ export default function CapacitacionesOnlinePage({ params }) {
         finalDocUrl = filePath;
       }
 
-      if (!videoUrl && !finalDocUrl) {
+      if (!trimmedVideoUrl && !finalDocUrl) {
         globalToast.toast('Debe incluir al menos un video de YouTube o un documento PDF/PPT.', 'warning');
         setSaving(false);
         return;
@@ -599,6 +601,25 @@ export default function CapacitacionesOnlinePage({ params }) {
 
       const duracionFinal = duracionValor?.trim() ? `${duracionValor.trim()} ${duracionUnidad}` : `45 min`;
 
+      // Si es asignación por puesto, asociar automáticamente los empleados de la nómina que tengan ese puesto
+      let finalEmpleadosAsignados = [];
+      if (asignacionTipo === 'nomina') {
+        finalEmpleadosAsignados = selectedEmpleados;
+      } else {
+        if (!targetPuestoFormatted || targetPuestoFormatted.toLowerCase() === 'todo el personal') {
+          finalEmpleadosAsignados = availableEmpleados;
+        } else {
+          const targetPuestosList = targetPuestoFormatted
+            .split(',')
+            .map(p => p.trim().toLowerCase())
+            .filter(Boolean);
+          finalEmpleadosAsignados = availableEmpleados.filter(emp => {
+            if (!emp.puesto) return false;
+            return targetPuestosList.includes(emp.puesto.trim().toLowerCase());
+          });
+        }
+      }
+
       const payload = {
         tenant_id: profile.tenant_id,
         empresa_id: empresaId,
@@ -609,9 +630,9 @@ export default function CapacitacionesOnlinePage({ params }) {
         duracion: duracionFinal,
         asignacion_tipo: asignacionTipo,
         target_puesto: targetPuestoFormatted || null,
-        empleados_asignados: asignacionTipo === 'nomina' ? selectedEmpleados : [],
-        material_tipo: (videoUrl && finalDocUrl) ? 'mixto' : (videoUrl ? 'video' : 'pdf'),
-        video_url: videoUrl?.trim() || null,
+        empleados_asignados: finalEmpleadosAsignados,
+        material_tipo: (trimmedVideoUrl && finalDocUrl) ? 'mixto' : (trimmedVideoUrl ? 'video' : 'pdf'),
+        video_url: trimmedVideoUrl || null,
         document_url: finalDocUrl || null,
         estado: 'activa',
         created_by: profile.id
@@ -2328,11 +2349,14 @@ export default function CapacitacionesOnlinePage({ params }) {
 
       {/* Diálogo de Confirmación de Eliminación */}
       <AppConfirmDialog
-        isOpen={deleteConfirm.show}
+        open={deleteConfirm.show}
+        onOpenChange={(open) => !open && setDeleteConfirm({ show: false, id: null, title: '' })}
+        type="destructive"
         title="¿Eliminar Capacitación Online?"
-        message={`¿Está seguro de que desea eliminar la capacitación "${deleteConfirm.title}"? Esta acción no se puede deshacer y borrará permanentemente sus registros de firma.`}
+        description={`¿Está seguro de que desea eliminar la capacitación "${deleteConfirm.title}"? Esta acción no se puede deshacer y borrará permanentemente sus registros de firma.`}
+        confirmText="Eliminar"
+        cancelText="Cancelar"
         onConfirm={handleDelete}
-        onCancel={() => setDeleteConfirm({ show: false, id: null, title: '' })}
       />
 
       {/* Modal Unificado de Compartir Capacitación (WhatsApp / Email / Enlace) */}

@@ -236,14 +236,15 @@ export function renderMatriculasAnexoPages(doc, {
   matriculas = [],
   profNombre = '',
   drawHeader = null,
-  drawProtocolTitleBar = null
+  drawProtocolTitleBar = null,
+  tenantPrimaryColor = null
 }) {
   if (!doc || !matriculas || matriculas.length === 0) {
     return 0;
   }
 
   // Paleta estándar de colores
-  const COLOR_AZUL_PRINCIPAL = [70, 141, 255];
+  const COLOR_AZUL_PRINCIPAL = tenantPrimaryColor || [70, 141, 255];
   const COLOR_SLATE_700 = [51, 65, 85];
   const COLOR_SLATE_500 = [100, 116, 139];
   const COLOR_SLATE_300 = [203, 213, 225];

@@ -1,5 +1,6 @@
 // src/app/[tenant-slug]/visitas/utils/pdfGenerator.js
 import { formatPdfFileName } from '@/lib/pdf/pdfFileName';
+import { getPdfPrimaryColor } from '@/lib/pdf/pdfTheme';
 
 const MEDICIONES_OPTS = ['Ruido (Res. 85/12)', 'Iluminación (Res. 84/12)', 'Evaluación ergonómica', 'Puesta a tierra (Res. 900/15)'];
 
@@ -115,6 +116,7 @@ export const generateVisitaPdf = async (
     });
 
     let logoBase64 = '';
+    const TENANT_PRIMARY = getPdfPrimaryColor(tenant); // Tenant primary_color or default [70, 141, 255]
     try {
       if (tenant && tenant.logo_1_url) {
         logoBase64 = await getBase64ImageFromUrl(tenant.logo_1_url);
@@ -145,7 +147,7 @@ export const generateVisitaPdf = async (
       }
 
       // Footer: Línea Azul Corporativo
-      doc.setDrawColor(70, 141, 255);
+      doc.setDrawColor(...TENANT_PRIMARY);
       doc.setLineWidth(1);
       doc.line(42.1, 735.63, 567.85, 735.63);
 
@@ -180,7 +182,7 @@ export const generateVisitaPdf = async (
     // PAGINA 1
     drawHeaderAndFooter(1);
 
-    doc.setFillColor(70, 141, 255);
+    doc.setFillColor(...TENANT_PRIMARY);
     doc.rect(61.6, 116.71, 486.75, 25.5, 'F');
 
     doc.setFont('helvetica', 'bold');

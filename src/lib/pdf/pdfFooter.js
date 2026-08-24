@@ -12,19 +12,21 @@ export function drawPdfFooter(doc, options = {}) {
     telefono = '',
     email = '',
     codigo = '',
-    orientation = 'portrait'
+    orientation = 'portrait',
+    tenantPrimaryColor = null
   } = options;
 
   const totalPages = doc.internal.getNumberOfPages();
   const specs = PAGE_SPECS[orientation] || PAGE_SPECS.portrait;
   const { marginLeft, marginRight, width: pageWidth, height: pageHeight } = specs;
   const footerY = pageHeight - 25;
+  const accentColor = tenantPrimaryColor || PDF_THEME.primary;
 
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
 
     // 1. Línea Superior de Acento (espesor 0.35 mm o ~1 pt)
-    setDrawColor(doc, PDF_THEME.primary);
+    setDrawColor(doc, accentColor);
     doc.setLineWidth(0.35);
     doc.line(marginLeft, footerY - 10, pageWidth - marginRight, footerY - 10);
 

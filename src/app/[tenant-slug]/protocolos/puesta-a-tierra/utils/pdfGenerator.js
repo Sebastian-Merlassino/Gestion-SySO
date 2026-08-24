@@ -1,7 +1,7 @@
 import { PDFDocument, PDFName } from 'pdf-lib';
 import { formatDate } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
-import { setFillColor, setDrawColor, setTextColor, hexToRgb, PDF_THEME } from '@/lib/pdf/pdfTheme';
+import { setFillColor, setDrawColor, setTextColor, hexToRgb, PDF_THEME, getPdfPrimaryColorHex } from '@/lib/pdf/pdfTheme';
 import { getBase64ImageFromUrl } from '@/lib/pdf/pdfImages';
 import { fetchProfessionalMatriculasWithImages, renderMatriculasAnexoPages } from '@/lib/pdf/pdfMatriculasAnexo';
 
@@ -257,7 +257,7 @@ export const generatePuestaATierraPdf = async (
   }
 
   // Color Tokens (Gestión SySO Brand & PDF standard)
-  const COLOR_AZUL_PRINCIPAL = '#468DFF';
+  const COLOR_AZUL_PRINCIPAL = getPdfPrimaryColorHex(tenant); // Tenant primary_color or default '#468DFF'
   const COLOR_AZUL_SECUNDARIO = '#4F81BD';
   const COLOR_SLATE_900 = '#0F172A';
   const COLOR_SLATE_700 = '#334155';

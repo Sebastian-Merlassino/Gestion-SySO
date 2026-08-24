@@ -4,11 +4,11 @@ import { PDF_THEME } from './pdfTheme';
 /**
  * Configuraciones y opciones predefinidas de autotable para jsPDF
  */
-export function getPdfTableOptions(customOptions = {}) {
+export function getPdfTableOptions(customOptions = {}, primaryColor = null) {
   return {
     theme: 'grid',
     headStyles: {
-      fillColor: PDF_THEME.primary,
+      fillColor: primaryColor || PDF_THEME.primary,
       textColor: [255, 255, 255],
       fontSize: 8.5,
       fontStyle: 'bold',

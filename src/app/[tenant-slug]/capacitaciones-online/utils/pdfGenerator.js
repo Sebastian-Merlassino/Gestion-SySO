@@ -1,9 +1,9 @@
 // src/app/[tenant-slug]/capacitaciones-online/utils/pdfGenerator.js
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+// jsPDF y autoTable se importan dinámicamente dentro de generateCapacitacionOnlinePDF()
 import { formatDate } from '@/lib/utils';
 import { printPdfDocument } from '@/lib/pdf/pdfPrintHelper';
 import { getBase64ImageFromUrl } from '@/lib/pdf/pdfImages';
+import { getPdfPrimaryColor } from '@/lib/pdf/pdfTheme';
 
 function getImageDimensions(base64) {
   return new Promise((resolve) => {
@@ -26,6 +26,8 @@ export async function generateCapacitacionOnlinePdf({
   action = 'download', // 'download' | 'print' | 'open'
   printWindow = null
 }) {
+  const { default: jsPDF } = await import('jspdf');
+  const { default: autoTable } = await import('jspdf-autotable');
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -84,7 +86,7 @@ export async function generateCapacitacionOnlinePdf({
   };
 
   // Colores del diseño base
-  const COLOR_HEADER_BLUE = [70, 141, 255]; // #468DFF (Barra de título y acentos)
+  const COLOR_HEADER_BLUE = getPdfPrimaryColor(tenant); // Tenant primary_color or default [70, 141, 255]
   const COLOR_TEXT_MAIN = [15, 23, 42]; // Slate-900 / #0D0D0D
   const COLOR_TEXT_MUTED = [51, 65, 85]; // Slate-700
   const COLOR_BORDER = [0, 0, 0]; // Bordes negros exactos del diseño base

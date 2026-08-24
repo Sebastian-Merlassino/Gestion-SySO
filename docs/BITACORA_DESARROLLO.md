@@ -1,3 +1,105 @@
+## [2026-08-24] Corrección del Diálogo de Confirmación de Eliminación en Capacitaciones Online
+
+### Resumen de Cambios
+- **Corrección de Props en `AppConfirmDialog`:**
+  - Se corrigió el diálogo de confirmación de eliminación en [capacitaciones-online/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/capacitaciones-online/page.js), el cual pasaba la prop `isOpen` en lugar de la prop estándar `open` requerida por `@radix-ui/react-dialog`, impidiendo que el modal emergente se abriera al pulsar el botón de eliminar de la tabla.
+  - Se configuraron los atributos estándar del diálogo: `type="destructive"`, `confirmText="Eliminar"`, `cancelText="Cancelar"`, `onOpenChange` y `description`.
+  - Se mejoró [AppConfirmDialog.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/components/ui/AppConfirmDialog.js) para que acepte tanto `open`/`isOpen` como `description`/`message`, blindando el componente frente a discrepancias de props en cualquier módulo del sistema.
+
+### Decisiones Clave
+- Robustecer el componente reusable `AppConfirmDialog` para garantizar compatibilidad con variantes de nombres de props.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/components/ui/AppConfirmDialog.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Verificación de apertura de modal, captura de evento `onClick`, confirmación y ejecución de `handleDelete`.
+
+### Riesgos Detectados / Remanentes
+- Ninguno.
+
+### Próximo Paso Recomendado
+- Probar el botón de eliminar en la tabla de Capacitaciones Online y confirmar la eliminación en el modal.
+
+---
+
+## [2026-08-24] Sincronización Automática de Nómina de Personal por Puesto de Trabajo en Capacitaciones Online
+
+### Resumen de Cambios
+- **Sincronización Dinámica en RPC Pública (`get_capacitacion_publica`):**
+  - Se optimizó la función `SECURITY DEFINER` `public.get_capacitacion_publica(p_token)` para que, cuando una capacitación online esté asignada con `asignacion_tipo = 'puesto'`, consulte dinámicamente la tabla `nomina_personal` de la empresa (y establecimiento correspondiente) filtrando por los puestos asignados en `target_puesto`.
+  - Esto garantiza que tanto capacitaciones existentes como futuras traigan la lista completa de trabajadores de la nómina con su `nombre_apellido`, `cuil` (DNI) y `puesto` sin depender de una selección manual previa.
+- **Asociación en Guardado del Panel (`capacitaciones-online/page.js`):**
+  - En `handleSave`, se agregó la lógica para asociar automáticamente en `empleados_asignados` a los trabajadores de la nómina cargada que coincidan con los puestos de trabajo seleccionados.
+- **Soporte de Autocompletado en Portal Público (`capacitar/[token]/page.js`):**
+  - Al seleccionar a un trabajador en el desplegable de asistencia, se auto-completa el DNI a partir del CUIL (o campo DNI) y el puesto de trabajo de manera inmediata.
+
+### Decisiones Clave
+- Consulta dinámica en base de datos para que los nuevos empleados cargados en la nómina de la empresa con ese puesto queden habilitados automáticamente para realizar y firmar la capacitación sin necesidad de re-guardar la capacitación.
+- Inclusión de fallback bidireccional (`nomina_personal` / `empleados_asignados`) para máxima retrocompatibilidad y resiliencia.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `supabase`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[NEW] supabase/migrations/20260905000000_sync_nomina_puestos_capacitaciones_online.sql`
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
+- `[MODIFY] src/app/capacitar/[token]/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Verificación de consultas multi-tenant, sanitización de strings y matching case-insensitive por puesto.
+
+### Riesgos Detectados / Remanentes
+- Ninguno.
+
+### Próximo Paso Recomendado
+- Aplicar la migración SQL en Supabase y verificar en el portal público de capacitación `/capacitar/[token]` que el desplegable de asistencia liste a los empleados de la nómina asociados al puesto.
+
+---
+
+## [2026-08-24] Corrección de Validación de Archivo Local Adjunto en Capacitaciones Online
+
+### Resumen de Cambios
+- **Corrección de Validación en Guardado (`handleSave`):**
+  - Se corrigió la condición de validación que disparaba falsamente la advertencia *"Debe incluir al menos un video de YouTube o un documento PDF/PPT."* al adjuntar un archivo local (PDF/PPT).
+  - La verificación previa evaluaba únicamente `!videoUrl && !documentUrl` antes de la subida a Storage, ignorando el estado `documentoFile` donde se almacena el archivo seleccionado localmente.
+  - Se actualizó la verificación inicial para validar `!trimmedVideoUrl && !documentUrl && !documentoFile`.
+  - Se mejoró `handleViewPdf` para soportar URLs de tipo `blob:` generadas localmente por `URL.createObjectURL(file)`.
+
+### Decisiones Clave
+- Permitir que el formulario avance a la subida asíncrona a Supabase Storage cuando el usuario adjuntó un archivo localmente antes de guardar, generando su ruta persistente en `document_url`.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Verificación estática del flujo de carga y guardado en `capacitaciones-online/page.js`.
+
+### Riesgos Detectados / Remanentes
+- Ninguno.
+
+### Próximo Paso Recomendado
+- Probar la creación/edición de una capacitación online subiendo un archivo PDF/PPT local.
+
+---
+
 ## [2026-08-24] Estandarización de la Tríada de PDF (Visualizar, Imprimir y Descargar) en los 4 Protocolos Técnicos (Iluminación, Ruido, Puesta a Tierra y Ergonomía)
 
 ### Resumen de Cambios

@@ -8,17 +8,21 @@ import AppButton from './AppButton';
 
 export default function AppConfirmDialog({
   open,
+  isOpen,
   onOpenChange,
   onCancel,
   onClose,
   title,
   description,
+  message,
   type,
   variant = 'info',
   onConfirm,
   confirmText = 'Confirmar',
   cancelText = 'Cancelar'
 }) {
+  const isActuallyOpen = open !== undefined ? open : (isOpen || false);
+  const effectiveDescription = description || message;
   const effectiveType = type || (variant === 'danger' ? 'destructive' : variant) || 'info';
 
   let Icon = HelpCircle;
@@ -54,7 +58,7 @@ export default function AppConfirmDialog({
   };
 
   return (
-    <Dialog.Root open={open} onOpenChange={handleOpenChange}>
+    <Dialog.Root open={isActuallyOpen} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
         {/* Backdrop overlay */}
         <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm animate-fade-in" />
@@ -95,9 +99,9 @@ export default function AppConfirmDialog({
               <Dialog.Title className="font-outfit text-base font-extrabold text-slate-800">
                 {title}
               </Dialog.Title>
-              {description && (
+              {effectiveDescription && (
                 <Dialog.Description className="text-xs text-slate-500 leading-relaxed">
-                  {description}
+                  {effectiveDescription}
                 </Dialog.Description>
               )}
             </div>
