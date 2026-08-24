@@ -70,9 +70,9 @@ export function HelpStep({ number, title, children, isLast = false, id, classNam
 }
 
 /**
- * Tarjeta de Consejo / Recomendación Práctica (Tip)
+ * Tarjeta de Recomendación Práctica (Tip)
  */
-export function HelpTip({ title = 'Consejo práctico', children, className = '' }) {
+export function HelpTip({ title = 'Recomendación', children, className = '' }) {
   return (
     <div className={cn("flex gap-2.5 p-3.5 rounded-xl bg-blue-50/90 border border-blue-200/70 text-blue-950 text-xs shadow-2xs leading-relaxed", className)}>
       <Lightbulb className="h-4 w-4 text-[#468DFF] shrink-0 mt-0.5" />
