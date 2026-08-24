@@ -7,6 +7,7 @@ import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate, getEffectivePlan } from '@/lib/utils';
 import { printPdfDocument } from '@/lib/pdf/pdfPrintHelper';
+import { getPdfPrimaryColor, getPdfHoverColor } from '@/lib/pdf/pdfTheme';
 import AITextHelper from '@/components/ui/AITextHelper';
 import { useToast } from '@/components/providers/ToastProvider';
 import AppPageHeader from '@/components/ui/AppPageHeader';
@@ -866,6 +867,8 @@ export default function TenantDashboard({ params }) {
         compress: true
       });
 
+      const TENANT_PRIMARY = getPdfPrimaryColor(tenant);
+
       // Cargar Logo
       let logoBase64 = '';
       try {
@@ -918,8 +921,8 @@ export default function TenantDashboard({ params }) {
         d.line(50, 70, 791, 70);
 
         // Línea divisora pie
-        // Línea divisora pie (espesor 1 pt, Azul Corporativo)
-        d.setDrawColor(70, 141, 255); // COLOR_AZUL_PRINCIPAL RGB
+        // Línea divisora pie (espesor 1 pt, Color Principal)
+        d.setDrawColor(...TENANT_PRIMARY);
         d.setLineWidth(1);
         d.line(50, 545, 791, 545);
 
@@ -1002,16 +1005,17 @@ export default function TenantDashboard({ params }) {
           d.text(gridVal.toFixed(1), chartX - 5, gridY + 2, { align: 'right' });
         }
 
+        const TENANT_HOVER = getPdfHoverColor(tenant);
         const bars = [
           { label: chartData.prevYear.label, value: chartData.prevYear.value, color: [200, 200, 200], x: 191, width: 28 },
-          { label: chartData.ytd.label, value: chartData.ytd.value, color: [5, 17, 242], x: 239, width: 28 }
+          { label: chartData.ytd.label, value: chartData.ytd.value, color: TENANT_HOVER, x: 239, width: 28 }
         ];
 
         chartData.months.forEach((m, idx) => {
           bars.push({
             label: m.label,
             value: m.value,
-            color: [70, 141, 255],
+            color: TENANT_PRIMARY,
             x: 285 + idx * 44,
             width: 26
           });
@@ -1077,7 +1081,7 @@ export default function TenantDashboard({ params }) {
 
         const rowsCount = rowTitles.length + 1;
 
-        d.setFillColor(60, 120, 216);
+        d.setFillColor(...TENANT_PRIMARY);
         d.rect(xStart, sY, 741, rowHeight, 'F');
 
         d.setDrawColor(217, 217, 217);

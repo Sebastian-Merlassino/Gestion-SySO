@@ -24,6 +24,7 @@ import AppTooltip from '@/components/ui/AppTooltip';
 import AppLoadingSpinner from '@/components/ui/AppLoadingSpinner';
 import { formatPdfFileName } from '@/lib/pdf/pdfFileName';
 import { printPdfDocument } from '@/lib/pdf/pdfPrintHelper';
+import { getPdfPrimaryColor } from '@/lib/pdf/pdfTheme';
 import { 
   PlusCircle, 
   Search, 
@@ -1217,6 +1218,7 @@ export default function ControlElectricoPage({ params }) {
         compress: true
       });
 
+      const TENANT_PRIMARY = getPdfPrimaryColor(tenant);
       const emp = empresas.find(e => e.id === c.empresa_id);
       const est = allEstablecimientos.find(e => e.id === c.establecimiento_id);
 
@@ -1365,7 +1367,7 @@ export default function ControlElectricoPage({ params }) {
       drawHeaderLogo(doc);
 
       // Barra de Título
-      doc.setFillColor(60, 120, 216); // #3C78D8
+      doc.setFillColor(...TENANT_PRIMARY);
       doc.rect(36, 75.2, 522.75, 18, 'F');
       doc.setDrawColor(0, 0, 0);
       doc.setLineWidth(1);
@@ -1422,7 +1424,7 @@ export default function ControlElectricoPage({ params }) {
       doc.text(formatDate(c.fecha), 444, 138);
 
       // Tabla de Inspección - Encabezado
-      doc.setFillColor(60, 120, 216); // #3C78D8
+      doc.setFillColor(...TENANT_PRIMARY);
       doc.rect(36, 158.3, 522.5, 26.2, 'F');
       
       doc.setDrawColor(0, 0, 0);
@@ -1493,7 +1495,7 @@ export default function ControlElectricoPage({ params }) {
 
       // Bloque de Observaciones
       // Barra de Título
-      doc.setFillColor(60, 120, 216); // #3C78D8
+      doc.setFillColor(...TENANT_PRIMARY);
       doc.rect(36, 89, 523, 24.75, 'F');
       doc.setDrawColor(0, 0, 0);
       doc.setLineWidth(1);
@@ -1616,8 +1618,8 @@ export default function ControlElectricoPage({ params }) {
       const totalPages = doc.internal.getNumberOfPages();
       
       const drawFooter = (d, pageNum) => {
-        // Línea divisora pie (espesor 1 pt, Azul Corporativo)
-        d.setDrawColor(70, 141, 255); // COLOR_AZUL_PRINCIPAL RGB
+        // Línea divisora pie (espesor 1 pt, Color Principal)
+        d.setDrawColor(...TENANT_PRIMARY);
         d.setLineWidth(1);
         d.line(34.5, 785.9, 552.75, 785.9);
 

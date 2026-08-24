@@ -24,6 +24,7 @@ import AppSkeleton from '@/components/ui/AppSkeleton';
 import AppTooltip from '@/components/ui/AppTooltip';
 import AppLoadingSpinner from '@/components/ui/AppLoadingSpinner';
 import { formatPdfFileName } from '@/lib/pdf/pdfFileName';
+import { getPdfPrimaryColor } from '@/lib/pdf/pdfTheme';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import {
   ShieldAlert,
@@ -1134,6 +1135,8 @@ export default function AccidentesPage({ params }) {
         format: 'a4'
       });
 
+      const TENANT_PRIMARY = getPdfPrimaryColor(tenant);
+
       // Intentar cargar logo del tenant
       let logoBase64 = '';
       try {
@@ -1208,7 +1211,7 @@ export default function AccidentesPage({ params }) {
       }
 
       // Titulo Principal (Y=64)
-      doc.setFillColor(60, 120, 216); // #3C78D8
+      doc.setFillColor(...TENANT_PRIMARY); // #3C78D8
       doc.rect(14, 64, 567, 13, 'F');
       doc.setFont('Helvetica', 'bold');
       doc.setFontSize(8);
@@ -1234,7 +1237,7 @@ export default function AccidentesPage({ params }) {
       doc.text(accData.tipo || '', 465, 101);
 
       // SECCIÓN 1: Datos del empleador (Y=118)
-      doc.setFillColor(60, 120, 216);
+      doc.setFillColor(...TENANT_PRIMARY);
       doc.setLineDashPattern([], 0);
       doc.rect(14, 118, 567, 13, 'F');
       doc.setTextColor(255, 255, 255);
@@ -1280,7 +1283,7 @@ export default function AccidentesPage({ params }) {
       doc.text(estab.provincia || '', 454, 176);
 
       // SECCIÓN 2: Datos del trabajador (Y=195)
-      doc.setFillColor(60, 120, 216);
+      doc.setFillColor(...TENANT_PRIMARY);
       doc.setLineDashPattern([], 0);
       doc.rect(14, 195, 567, 13, 'F');
       doc.setTextColor(255, 255, 255);
@@ -1344,7 +1347,7 @@ export default function AccidentesPage({ params }) {
       doc.text(antiguedadPuesto || '', 415, 302);
 
       // SECCIÓN 3: Información sobre el siniestro (Y=323)
-      doc.setFillColor(60, 120, 216);
+      doc.setFillColor(...TENANT_PRIMARY);
       doc.setLineDashPattern([], 0);
       doc.rect(14, 323, 567, 13, 'F');
       doc.setTextColor(255, 255, 255);
@@ -1439,7 +1442,7 @@ export default function AccidentesPage({ params }) {
       doc.text(agenteNombre, 127, 544);
 
       // SECCIÓN IMÁGENES (Y=565)
-      doc.setFillColor(60, 120, 216);
+      doc.setFillColor(...TENANT_PRIMARY);
       doc.setLineDashPattern([], 0);
       doc.rect(14, 565, 567, 13, 'F');
       doc.setTextColor(255, 255, 255);
@@ -1491,7 +1494,7 @@ export default function AccidentesPage({ params }) {
       doc.addPage();
 
       // Barra azul "Acciones preventivas" (Y=64)
-      doc.setFillColor(60, 120, 216);
+      doc.setFillColor(...TENANT_PRIMARY);
       doc.rect(14, 64, 567, 13, 'F');
       doc.setTextColor(255, 255, 255);
       doc.setFont('Helvetica', 'bold');
@@ -1543,7 +1546,7 @@ export default function AccidentesPage({ params }) {
       
       // Barra azul "Análisis de la causa raíz" (Y=229)
       const rootCauseY = 229;
-      doc.setFillColor(60, 120, 216);
+      doc.setFillColor(...TENANT_PRIMARY);
       doc.rect(14, rootCauseY, 567, 13, 'F');
       doc.setTextColor(255, 255, 255);
       doc.setFont('Helvetica', 'bold');
@@ -1635,7 +1638,7 @@ export default function AccidentesPage({ params }) {
 
       // Barra azul "Acciones correctivas" (Y=603)
       const correctY = 603;
-      doc.setFillColor(60, 120, 216);
+      doc.setFillColor(...TENANT_PRIMARY);
       doc.rect(14, correctY, 567, 13, 'F');
       doc.setTextColor(255, 255, 255);
       doc.setFont('Helvetica', 'bold');
@@ -2037,6 +2040,8 @@ export default function AccidentesPage({ params }) {
       format: 'a4'
     });
 
+    const TENANT_PRIMARY = getPdfPrimaryColor(tenant);
+
     let logoBase64 = '';
     try {
       if (tenant && tenant.logo_1_url) {
@@ -2074,8 +2079,8 @@ export default function AccidentesPage({ params }) {
       doc.setLineWidth(0.5);
       doc.line(14, 53, 581, 53);
 
-      // Línea divisora pie (espesor 1 pt, Azul Corporativo)
-      doc.setDrawColor(70, 141, 255); // COLOR_AZUL_PRINCIPAL RGB
+      // Línea divisora pie (espesor 1 pt, Color Principal)
+      doc.setDrawColor(...TENANT_PRIMARY);
       doc.setLineWidth(1);
       doc.line(14, 815, 581, 815);
 
@@ -2116,7 +2121,7 @@ export default function AccidentesPage({ params }) {
     // ==========================================
     drawHeaderAndFooter(1);
 
-    doc.setFillColor(60, 120, 216);
+    doc.setFillColor(...TENANT_PRIMARY);
     doc.rect(14, 64, 567, 13, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFont('Helvetica', 'bold');
@@ -2161,7 +2166,7 @@ export default function AccidentesPage({ params }) {
     doc.setFont('Helvetica', 'normal');
     doc.text(estabLocalidad, 455, 122);
 
-    doc.setFillColor(60, 120, 216);
+    doc.setFillColor(...TENANT_PRIMARY);
     doc.rect(14, 143, 567, 13, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFont('Helvetica', 'bold');
@@ -2213,7 +2218,7 @@ export default function AccidentesPage({ params }) {
     doc.setFont('Helvetica', 'normal');
     doc.text(accData.area_sector || '—', 330, 216);
 
-    doc.setFillColor(60, 120, 216);
+    doc.setFillColor(...TENANT_PRIMARY);
     doc.rect(14, 237, 567, 13, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFont('Helvetica', 'bold');
@@ -2317,7 +2322,7 @@ export default function AccidentesPage({ params }) {
       const evidenciasTitleY = Math.max(530, 429 + descHechosHeight + 15);
       const fotosY = evidenciasTitleY + 22;
 
-      doc.setFillColor(60, 120, 216);
+      doc.setFillColor(...TENANT_PRIMARY);
       doc.rect(14, evidenciasTitleY, 567, 13, 'F');
       doc.setTextColor(255, 255, 255);
       doc.setFont('Helvetica', 'bold');
@@ -2366,7 +2371,7 @@ export default function AccidentesPage({ params }) {
     doc.addPage();
     drawHeaderAndFooter(2);
 
-    doc.setFillColor(60, 120, 216);
+    doc.setFillColor(...TENANT_PRIMARY);
     doc.rect(14, 64, 567, 13, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFont('Helvetica', 'bold');
@@ -2408,7 +2413,7 @@ export default function AccidentesPage({ params }) {
 
     const ishikawaY = doc.lastAutoTable.finalY + 15;
 
-    doc.setFillColor(60, 120, 216);
+    doc.setFillColor(...TENANT_PRIMARY);
     doc.rect(14, ishikawaY, 567, 13, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFont('Helvetica', 'bold');
@@ -2449,7 +2454,7 @@ export default function AccidentesPage({ params }) {
 
     const porquesY = doc.lastAutoTable.finalY + 15;
 
-    doc.setFillColor(60, 120, 216);
+    doc.setFillColor(...TENANT_PRIMARY);
     doc.rect(14, porquesY, 567, 13, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFont('Helvetica', 'bold');
@@ -2491,7 +2496,7 @@ export default function AccidentesPage({ params }) {
     }
 
     const causaRaizY = porquesY + 30 + maxPorqueHeight + 12 + 15;
-    doc.setFillColor(60, 120, 216);
+    doc.setFillColor(...TENANT_PRIMARY);
     doc.rect(14, causaRaizY, 567, 13, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFont('Helvetica', 'bold');
@@ -2507,7 +2512,7 @@ export default function AccidentesPage({ params }) {
     doc.addPage();
     drawHeaderAndFooter(3);
 
-    doc.setFillColor(60, 120, 216);
+    doc.setFillColor(...TENANT_PRIMARY);
     doc.rect(14, 64, 567, 13, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFont('Helvetica', 'bold');

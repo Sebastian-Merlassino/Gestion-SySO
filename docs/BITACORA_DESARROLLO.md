@@ -1,3 +1,41 @@
+## [2026-08-24] Corrección de Inicialización de `tenantObj` y Generación de PDF en Protocolo de Ergonomía
+
+### Resumen de Cambios
+- **Corrección de Temporal Dead Zone (TDZ) en `pdfGenerator.js`:**
+  - Se corrigió el error `ReferenceError: Cannot access 'tenantObj' before initialization` en [pdfGenerator.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/protocolos/ergonomia/utils/pdfGenerator.js), el cual ocurría al invocar `getPdfPrimaryColor(tenantObj)` antes de la declaración léxica de `tenantObj`.
+  - Se movió la inicialización de `tenantObj` al inicio de `generateProtocoloErgonomiaPdf`, soportando tanto la llamada por objeto `{ protocolo, tenant, empresa, ... }` como la llamada posicional `(proto, tenant, empresas, ...)`.
+  - Se normalizó el matching de empresa utilizando `protocolo.empresa_id || protocolo.razon_social_id`.
+  - Se corrigió el fallback de color de texto seguro a `PDF_THEME.textPrimary || [13, 13, 13]`.
+  - Se ajustaron los fallbacks de `companyName`, `phoneVal` y `emailVal` para resolver datos desde `tenantObj` o `userProfile` de manera consistente.
+- **Normalización de Consultas en Envíos (`page.js`):**
+  - Se actualizaron las funciones `openWhatsAppModal` y `handleSendEmail` en [protocolos/ergonomia/page.js](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/src/app/[tenant-slug]/protocolos/ergonomia/page.js) reemplazando la subconsulta obsoleta `.select('*, mediciones:protocolos_ergonomia_mediciones(*)')` por `.select('*')`, evitando excepciones en tiempo de ejecución.
+
+### Decisiones Clave
+- Resolver `tenantObj` de manera unificada y temprana en el generador de PDF para asegurar que tanto la paleta cromática personalizada como la búsqueda de logos y anexos funcionen de manera fluida y tolerante a fallos.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/utils/pdfGenerator.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Verificación del orden léxico de variables en `pdfGenerator.js`.
+- Verificación de la no existencia de variables no inicializadas o accesos fuera de scope.
+- Verificación de consultas en `page.js` para los 3 flujos: exportar/imprimir/previsualizar, enviar por WhatsApp y enviar por Email.
+
+### Riesgos Detectados / Remanentes
+- Ninguno.
+
+### Próximo Paso Recomendado
+- Probar las acciones de descarga, impresión y vista previa del PDF en la tabla de Protocolos de Ergonomía en la aplicación.
+
+---
+
 ## [2026-08-24] Corrección del Diálogo de Confirmación de Eliminación en Capacitaciones Online
 
 ### Resumen de Cambios

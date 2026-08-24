@@ -6,6 +6,7 @@ import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import { printPdfDocument } from '@/lib/pdf/pdfPrintHelper';
+import { getPdfPrimaryColor } from '@/lib/pdf/pdfTheme';
 import { useToast } from '@/components/providers/ToastProvider';
 import AppPageHeader from '@/components/ui/AppPageHeader';
 import AppButton from '@/components/ui/AppButton';
@@ -1208,6 +1209,8 @@ export default function ChecklistPersonalizadosPage({ params }) {
         compress: true
       });
 
+      const TENANT_PRIMARY = getPdfPrimaryColor(tenant);
+
       const tmpl = templates.find(t => t.id === c.template_id);
       const emp = empresas.find(e => e.id === c.empresa_id);
       const est = allEstablecimientos.find(e => e.id === c.establecimiento_id);
@@ -1273,7 +1276,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
       drawHeaderLogo(doc);
 
       // Título azul
-      doc.setFillColor(60, 120, 216); // #3C78D8
+      doc.setFillColor(...TENANT_PRIMARY);
       doc.rect(36, 75.2, 522.75, 18, 'F');
       doc.setDrawColor(0, 0, 0);
       doc.setLineWidth(1);
@@ -1367,7 +1370,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
           lineWidth: 0.5
         },
         headStyles: {
-          fillColor: [60, 120, 216],
+          fillColor: TENANT_PRIMARY,
           textColor: [255, 255, 255],
           fontStyle: 'bold',
           halign: 'center'
@@ -1503,7 +1506,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
           doc.addPage();
           drawHeaderLogo(doc);
 
-          doc.setFillColor(60, 120, 216);
+          doc.setFillColor(...TENANT_PRIMARY);
           doc.rect(36, 75.2, 522.75, 18, 'F');
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(12);
@@ -1551,8 +1554,8 @@ export default function ChecklistPersonalizadosPage({ params }) {
       const companyName = tenant?.name || 'Gestión SySO';
       
       const drawFooter = (d, pageNum) => {
-        // Línea divisora pie (espesor 1 pt, Azul Corporativo)
-        d.setDrawColor(70, 141, 255); // COLOR_AZUL_PRINCIPAL RGB
+        // Línea divisora pie (espesor 1 pt, Color Principal)
+        d.setDrawColor(...TENANT_PRIMARY);
         d.setLineWidth(1);
         d.line(34.5, 785.9, 552.75, 785.9);
 

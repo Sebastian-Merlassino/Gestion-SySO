@@ -23,6 +23,7 @@ import AppSkeleton from '@/components/ui/AppSkeleton';
 import AppTooltip from '@/components/ui/AppTooltip';
 import AppLoadingSpinner from '@/components/ui/AppLoadingSpinner';
 import { formatPdfFileName } from '@/lib/pdf/pdfFileName';
+import { getPdfPrimaryColor } from '@/lib/pdf/pdfTheme';
 import { 
   PlusCircle, 
   AlertCircle,
@@ -1194,6 +1195,8 @@ export default function AvisosRiesgoPage({ params }) {
         compress: true
       });
 
+      const TENANT_PRIMARY = getPdfPrimaryColor(tenant);
+
       // 3. Obtener Logotipo principal
       let logoBase64 = '';
       try {
@@ -1283,7 +1286,7 @@ export default function AvisosRiesgoPage({ params }) {
 
         if (pageNum <= 3) {
           // Barra de título (Páginas 1 a 3)
-          doc.setFillColor(68, 114, 196); // #4472C4
+          doc.setFillColor(...TENANT_PRIMARY); // #4472C4
           doc.rect(27.89, 82.27, 539.22, 14.5, 'F');
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(11.78);
@@ -1320,7 +1323,7 @@ export default function AvisosRiesgoPage({ params }) {
         } else {
           // Página 4
           // Barra de título
-          doc.setFillColor(68, 114, 196); // #4472C4
+          doc.setFillColor(...TENANT_PRIMARY); // #4472C4
           doc.rect(27.93, 77.58, 539.14, 13.24, 'F');
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(10.76);
@@ -1350,8 +1353,8 @@ export default function AvisosRiesgoPage({ params }) {
           doc.text(String(av.aviso_numero || 'N/A'), 443.77, 116.0);
         }
 
-        // Footer: Línea Azul Corporativo de 1pt
-        doc.setDrawColor(70, 141, 255); // COLOR_AZUL_PRINCIPAL RGB
+        // Footer: Línea divisora pie
+        doc.setDrawColor(...TENANT_PRIMARY);
         doc.setLineWidth(1);
         doc.line(27.89, 790, 567.11, 790);
 
@@ -1588,7 +1591,7 @@ export default function AvisosRiesgoPage({ params }) {
       // 1. Referencias Table
       const refY = 128.48;
       // Título "Referencias" (Se extiende para cubrir la brecha hasta la cabecera)
-      doc.setFillColor(68, 114, 196);
+      doc.setFillColor(...TENANT_PRIMARY);
       doc.rect(27.93, refY, 539.14, 17.38, 'F');
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(7.53);
@@ -1688,7 +1691,7 @@ export default function AvisosRiesgoPage({ params }) {
       // 2. Observaciones Block (Reducido a una altura de 300.0 pt, finaliza en y=549.3 pt)
       const obsY = 239.78;
       // Título "Observaciones"
-      doc.setFillColor(68, 114, 196);
+      doc.setFillColor(...TENANT_PRIMARY);
       doc.rect(27.93, obsY, 539.14, 9.52, 'F');
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(7.53);

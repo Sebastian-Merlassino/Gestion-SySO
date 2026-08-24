@@ -499,7 +499,7 @@ export default function ProtocolosErgonomiaPage({ params }) {
       
       const { data: pts } = await supabase
         .from('protocolos_ergonomia_puntos')
-        .select('*, mediciones:protocolos_ergonomia_mediciones(*)')
+        .select('*')
         .eq('protocolo_id', mailTarget.id)
         .order('orden');
       
@@ -576,7 +576,7 @@ export default function ProtocolosErgonomiaPage({ params }) {
     try {
       const { data: pts } = await supabase
         .from('protocolos_ergonomia_puntos')
-        .select('*, mediciones:protocolos_ergonomia_mediciones(*)')
+        .select('*')
         .eq('protocolo_id', mailTarget.id)
         .order('orden');
       

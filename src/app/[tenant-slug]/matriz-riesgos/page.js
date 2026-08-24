@@ -7,6 +7,7 @@ import Sidebar from '@/components/Sidebar';
 import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import { printPdfDocument } from '@/lib/pdf/pdfPrintHelper';
+import { getPdfPrimaryColor } from '@/lib/pdf/pdfTheme';
 import * as XLSX from 'xlsx';
 import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
 import AITextHelper from '@/components/ui/AITextHelper';
@@ -731,6 +732,8 @@ export default function MatrizRiesgosPage({ params }) {
         compress: true
       });
 
+      const TENANT_PRIMARY = getPdfPrimaryColor(tenant);
+
       let logoBase64 = '';
       try {
         if (tenant && tenant.logo_1_url) {
@@ -839,14 +842,14 @@ export default function MatrizRiesgosPage({ params }) {
         startY: 90,
         margin: { top: 90, bottom: 65, left: 40, right: 40 },
         theme: 'grid',
-        headStyles: { fillColor: [68, 114, 196], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
+        headStyles: { fillColor: TENANT_PRIMARY, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
         bodyStyles: { fontSize: 7, textColor: [50, 50, 50] },
         columnStyles: colStyles,
         didDrawPage: function(data) {
           drawHeader(doc);
           
-          // Línea divisora pie (espesor 1 pt, Azul Corporativo)
-          doc.setDrawColor(70, 141, 255); // COLOR_AZUL_PRINCIPAL RGB
+          // Línea divisora pie (espesor 1 pt, Color Principal)
+          doc.setDrawColor(...TENANT_PRIMARY);
           doc.setLineWidth(1);
           doc.line(40, 545, 801, 545);
           

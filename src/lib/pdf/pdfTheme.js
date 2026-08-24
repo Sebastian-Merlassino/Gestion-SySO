@@ -84,3 +84,34 @@ export function getPdfPrimaryColorHex(tenantOrHex) {
   }
   return '#468DFF';
 }
+
+/**
+ * Resuelve el color hover / resaltado personalizado del tenant para PDFs.
+ * Acepta un objeto tenant (con hover_color) o un string hex directo.
+ * Retorna un arreglo RGB [r, g, b]. Fallback: PDF_THEME.primaryDark [5, 17, 242].
+ */
+export function getPdfHoverColor(tenantOrHex) {
+  const hex = typeof tenantOrHex === 'string'
+    ? tenantOrHex
+    : tenantOrHex?.hover_color;
+  if (hex && typeof hex === 'string' && /^#?[0-9A-Fa-f]{6}$/.test(hex.replace('#', ''))) {
+    return hexToRgb(hex);
+  }
+  return PDF_THEME.primaryDark; // [5, 17, 242]
+}
+
+/**
+ * Resuelve el color secundario personalizado del tenant para PDFs.
+ * Acepta un objeto tenant (con secondary_color) o un string hex directo.
+ * Retorna un arreglo RGB [r, g, b]. Fallback: PDF_THEME.textPrimary [13, 13, 13].
+ */
+export function getPdfSecondaryColor(tenantOrHex) {
+  const hex = typeof tenantOrHex === 'string'
+    ? tenantOrHex
+    : tenantOrHex?.secondary_color;
+  if (hex && typeof hex === 'string' && /^#?[0-9A-Fa-f]{6}$/.test(hex.replace('#', ''))) {
+    return hexToRgb(hex);
+  }
+  return PDF_THEME.textPrimary; // [13, 13, 13]
+}
+

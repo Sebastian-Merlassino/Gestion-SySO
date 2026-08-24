@@ -379,24 +379,26 @@ const sumExposureTimes = (tList, factorKey) => {
 };
 
 export const generateProtocoloErgonomiaPdf = async (arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) => {
-  let protocolo, empresa, establecimiento, userProfile, puntos, adjuntos;
+  let protocolo, empresa, establecimiento, userProfile, puntos, adjuntos, tenantObj;
 
-  if (arg1 && typeof arg1 === 'object' && ('protocolo' in arg1 || 'puntos' in arg1 || 'userProfile' in arg1)) {
+  if (arg1 && typeof arg1 === 'object' && ('protocolo' in arg1 || 'puntos' in arg1 || 'userProfile' in arg1 || 'tenant' in arg1)) {
     protocolo = arg1.protocolo || {};
     empresa = arg1.empresa || {};
     establecimiento = arg1.establecimiento || {};
     userProfile = arg1.userProfile || {};
     puntos = arg1.puntos || [];
     adjuntos = arg1.adjuntos || [];
+    tenantObj = arg1.tenant || (typeof arg2 === 'object' && !Array.isArray(arg2) ? arg2 : {});
   } else {
     protocolo = arg1 || {};
+    tenantObj = (typeof arg2 === 'object' && !Array.isArray(arg2)) ? arg2 : {};
     const empList = Array.isArray(arg3) ? arg3 : [];
-    empresa = empList.find(e => e.id === protocolo.empresa_id) || empList[0] || {};
+    empresa = empList.find(e => e.id === (protocolo.empresa_id || protocolo.razon_social_id)) || empList[0] || {};
     const estList = Array.isArray(arg4) ? arg4 : [];
     establecimiento = estList.find(e => e.id === protocolo.establecimiento_id) || estList[0] || {};
     puntos = Array.isArray(arg5) ? arg5 : [];
     adjuntos = Array.isArray(arg6) ? arg6 : [];
-    userProfile = arg8 || {};
+    userProfile = arg8 || (typeof arg7 === 'object' && !Array.isArray(arg7) ? arg7 : {});
   }
 
   const { default: jsPDF } = await import('jspdf');
@@ -407,7 +409,7 @@ export const generateProtocoloErgonomiaPdf = async (arg1, arg2, arg3, arg4, arg5
   });
 
   const COLOR_AZUL_PRINCIPAL = getPdfPrimaryColor(tenantObj); // Tenant primary_color or default [70, 141, 255]
-  const COLOR_SLATE_900 = PDF_THEME.textDark; // [13, 13, 13]
+  const COLOR_SLATE_900 = PDF_THEME.textPrimary || [13, 13, 13];
   const COLOR_SLATE_700 = [51, 65, 85];
   const COLOR_SLATE_600 = [71, 85, 105];
   const COLOR_SLATE_300 = [203, 213, 225];
@@ -418,11 +420,9 @@ export const generateProtocoloErgonomiaPdf = async (arg1, arg2, arg3, arg4, arg5
   const proto = protocolo || {};
   const emp = empresa || {};
   const est = establecimiento || {};
-  const companyName = userProfile?.company_name || 'GESTIÓN SYSO';
-  const phoneVal = userProfile?.phone || empresa?.telefono || '-';
-  const emailVal = userProfile?.email || empresa?.email || '-';
-
-  const tenantObj = (typeof arg2 === 'object' && !Array.isArray(arg2)) ? arg2 : {};
+  const companyName = tenantObj?.razon_social || tenantObj?.nombre || tenantObj?.name || userProfile?.company_name || userProfile?.empresa || 'GESTIÓN SYSO';
+  const phoneVal = userProfile?.phone || userProfile?.telefono || tenantObj?.phone || tenantObj?.telefono || empresa?.telefono || '-';
+  const emailVal = userProfile?.email || tenantObj?.email || tenantObj?.correo || empresa?.email || '-';
 
   // Safe logo fetch (Prioritize Admin/Owner Profile & Tenant Primary Logo)
   let logoBase64 = '';
