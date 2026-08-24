@@ -1,3 +1,32 @@
+## [2026-08-23] Ampliación Integral del Instructivo de Puesta a Tierra según Res. SRT 900/15, Dec. 351/79 (Cap. 14) y AEA 90364
+
+### Resumen de Cambios
+- **Instructivo de Puesta a Tierra Especializado (`src/content/help/articles/protocoloPuestaATierra.js` y `src/content/help/articles/protocolos.js`):**
+  - Se incorporó la guía técnica y legal completa basada en la **Resolución SRT Nº 900/15**, el **Capítulo 14 (Anexo VI) del Decreto 351/79**, la **Reglamentación AEA 90364** y la **Norma IRAM 2281**.
+  - **Valores Límite de Resistencia de Puesta a Tierra ($R_A$):**
+    - $\le 40\ \Omega$ en circuitos con interruptor diferencial ($I_{\Delta n} \le 30\text{ mA}$) en esquema TT.
+    - $\le 10\ \Omega$ en circuitos sin protección diferencial o neutro de transformador.
+    - $\le 10\ \Omega$ (preferentemente $\le 5\ \Omega$) para sistemas de pararrayos (Norma IRAM 2184).
+    - $\le 5\ \Omega$ para equipamiento informático o electrónico sensible.
+  - **Verificación de Continuidad de Masas Eléctricas:** Comprobación de unión permanente de baja resistencia ($< 0,2\ \Omega$) entre carcasas y el conductor de protección (PE).
+  - **Vigencia Legal Obligatoria:** Recordatorio del plazo máximo de **UN (1) AÑO** calendario fijado por el Art. 2 de la Res. SRT 900/15.
+  - **Instructivo Paso a Paso:** Carga de telurímetro con método de 3 picas (IRAM 2281 Parte II), carga de tomas de tierra / jabalinas, prueba de disparo de disyuntores, evidencia fotográfica y generación de PDF oficial.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Creados / Modificados
+- `[NEW] src/content/help/articles/protocoloPuestaATierra.js`
+- `[MODIFY] src/content/help/articles/protocolos.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js (`cmd /c npm run build`), finalizada con éxito (`Exit code: 0`, 25/25 páginas generadas sin errores).
+
+---
+
 ## [2026-08-23] Ampliación Integral del Instructivo de Ruido según Res. SRT 85/12, Dec. 351/79 (Cap. 13) y Res. MTEySS 295/03
 
 ### Resumen de Cambios
