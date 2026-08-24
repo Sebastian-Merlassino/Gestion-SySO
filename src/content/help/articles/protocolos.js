@@ -12,43 +12,7 @@ import { Sun, Volume2, PersonStanding, Zap, CheckCircle2, Sliders, FileText } fr
 
 export { protocoloIluminacionHelp } from './protocoloIluminacion';
 
-export const protocoloRuidoHelp = {
-  key: 'protocolo-ruido',
-  title: 'Protocolo de Ruido (Res. SRT 85/12)',
-  subtitle: 'Medición de nivel sonoro continuo equivalente (NSCE) y dosis de ruido',
-  icon: Volume2,
-  tags: ['ruido', 'decibeles', 'srt-85-12', 'dosimetria', 'sonometro', 'dosis', 'nsce'],
-  render: () => (
-    <div className="space-y-5">
-      <HelpPurpose>
-        El **Protocolo de Medición de Ruido en el Ambiente Laboral** da cumplimiento a la **Resolución SRT 85/12**. Permite evaluar la exposición sonora del personal mediante mediciones con decibelímetro/sonómetro integrador (dBA) o dosímetro, calculando el Nivel Sonoro Continuo Equivalente y la Dosis de exposición diaria respecto al límite permisible de 85 dBA para 8 horas.
-      </HelpPurpose>
-
-      <HelpSection title="1. Instrumental y Puntos de Medición" id="ruido-puntos">
-        <HelpStep
-          number={1}
-          title="Datos del Decibelímetro o Dosímetro"
-        >
-          Registrá el equipo, calibrador acústico empleado antes/después de la medición y vigencia del certificado de calibración.
-        </HelpStep>
-
-        <HelpStep
-          number={2}
-          title="Puntos de Muestreo y Tiempo de Exposición"
-        >
-          Cargá el sector, puesto, tiempo de permanencia diaria (horas) y el valor en dBA o dosis obtenida.
-        </HelpStep>
-
-        <HelpStep
-          number={3}
-          title="Atenuación de Protectores Auditivos (EPP)"
-        >
-          Si el nivel supera los 85 dBA, seleccioná el tipo de protector auditivo provisto (copa, endoaural) y su valor NRR para evaluar el nivel efectivo recibido en el oído del trabajador.
-        </HelpStep>
-      </HelpSection>
-    </div>
-  )
-};
+export { protocoloRuidoHelp } from './protocoloRuido';
 
 export { protocoloErgonomiaHelp } from './protocoloErgonomia';
 

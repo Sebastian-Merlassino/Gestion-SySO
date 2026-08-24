@@ -1,3 +1,32 @@
+## [2026-08-23] Ampliación Integral del Instructivo de Ruido según Res. SRT 85/12, Dec. 351/79 (Cap. 13) y Res. MTEySS 295/03
+
+### Resumen de Cambios
+- **Instructivo de Ruido Especializado (`src/content/help/articles/protocoloRuido.js` y `src/content/help/articles/protocolos.js`):**
+  - Se incorporó la guía técnica y legal completa basada en la **Resolución SRT Nº 85/12**, el **Capítulo 13 (Anexo V) del Decreto 351/79** y la **Resolución MTEySS Nº 295/03 (Anexo V - Ruido)**.
+  - **Límites Permisibles y Tasa de Intercambio (3 dBA):** Detalle de la tabla normativa de tiempos máximos diarios de permanencia según el nivel en dBA ($8\text{ hs} \rightarrow 85\text{ dBA}$, $4\text{ hs} \rightarrow 88\text{ dBA}$, $2\text{ hs} \rightarrow 91\text{ dBA}$, hasta $139\text{ dBA} \rightarrow 0,11\text{ seg}$).
+  - **Límite Techo de Impulso/Impacto:** Prohibición estricta de exposiciones no protegidas superiores a **140 dBC (Pico)**.
+  - **Criterios de Evaluación y Dosis Acústica:**
+    - Nivel Sonoro Continuo Equivalente ($L_{\text{Aeq,Te}}$) vs. límite calculado $L_{\text{límite}} = 85 + 3 \times \log_2(8 / T_e)$.
+    - Método de Suma de Fracciones de Exposición para niveles variables ($D = \sum C_i/T_i \le 1,00$).
+    - Criterio de Dosis Dosimétrica Diaria ($D \le 100\%$).
+  - **Atenuación de Protectores Auditivos (EPP):** Cálculo del nivel efectivo al canal auditivo mediante factor de reducción de ruido ($L_{\text{efectivo}} = L_{\text{Aeq}} - (\text{NRR} - 7)$).
+  - **Instructivo Paso a Paso de Carga en la App:** Calibración de sonómetro/dosímetro con pistófono acústico, carga de puntos/sectores, evaluación automática de cumplimiento, conclusiones con jerarquía de control (fuente, medio, receptor) y emisión del PDF oficial SRT 85/12.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Creados / Modificados
+- `[NEW] src/content/help/articles/protocoloRuido.js`
+- `[MODIFY] src/content/help/articles/protocolos.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción con Next.js (`cmd /c npm run build`), finalizada con éxito (`Exit code: 0`, 25/25 páginas generadas sin errores).
+
+---
+
 ## [2026-08-23] Ampliación Integral del Instructivo de Iluminación según Res. SRT 84/12, Dec. 351/79 y Método de la Cuadrícula
 
 ### Resumen de Cambios
