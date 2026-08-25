@@ -14,8 +14,11 @@ import AppButton from '@/components/ui/AppButton';
 import AppLabel from '@/components/ui/AppLabel';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
+import AppSendModal from '@/components/ui/AppSendModal';
+import AppPhotoGalleryModal from '@/components/ui/AppPhotoGalleryModal';
 import AppPageHeader from '@/components/ui/AppPageHeader';
 import AppInput from '@/components/ui/AppInput';
+import AppDatePicker from '@/components/ui/AppDatePicker';
 import AppSelect from '@/components/ui/AppSelect';
 import AppTextarea from '@/components/ui/AppTextarea';
 import AppEmptyState from '@/components/ui/AppEmptyState';
@@ -2402,38 +2405,13 @@ export default function VisitasPage({ params }) {
                       />
 
                       {/* Fecha de visita */}
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600">Fecha *</label>
-                        <div className="relative">
-                          <input
-                            type="text"
-                            placeholder="DD/MM/YYYY"
-                            maxLength={10}
-                            value={fecha}
-                            onChange={(e) => setFecha(formatAsDateInput(e.target.value))}
-                            required
-                            className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 font-mono"
-                          />
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
-                            <Calendar className="h-4 w-4" />
-                            <input
-                              type="date"
-                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (val) {
-    const parts = val.split('-');
-    if (parts.length === 3) {
-      setFecha(`${parts[2]}/${parts[1]}/${parts[0]}`);
-    }
-  } else {
-    setFecha('');
-  }
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </div>
+                      <AppDatePicker
+                        label="Fecha"
+                        required
+                        value={fecha}
+                        onChange={(e) => setFecha(e.target.value)}
+                        disabled={isReadOnlyView}
+                      />
 
                       {/* Profesional Interviniente */}
                       <div className="flex flex-col gap-1.5">
@@ -3366,235 +3344,39 @@ export default function VisitasPage({ params }) {
         )}
       </main>
 
-      {/* MODAL DE ENVÍO DE REPORTE (CORREO / WHATSAPP) */}
-      {isMailModalOpen && mailTargetVisita && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div onClick={() => setIsMailModalOpen(false)} className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 max-w-md w-full z-10 shadow-2xl relative space-y-4 animate-fade-in">
-            
-            <div className="flex justify-between items-center">
-              <h4 className="font-outfit text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                <Send className="h-4.5 w-4.5 text-[#468DFF]" />
-                Enviar Constancia (PDF)
-              </h4>
-              <button onClick={() => setIsMailModalOpen(false)} className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 cursor-pointer">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
+      {/* DIÁLOGO ESTÁNDAR: ENVÍO DE REPORTE (EMAIL / WHATSAPP) */}
+      <AppSendModal
+        isOpen={isMailModalOpen && Boolean(mailTargetVisita)}
+        onClose={() => setIsMailModalOpen(false)}
+        title="Enviar Constancia (PDF)"
+        subtitle={mailTargetVisita ? `${empresas.find(e => e.id === mailTargetVisita.empresa_id)?.razon_social || 'Cliente'} — ${formatDate(mailTargetVisita.fecha)}` : undefined}
+        availableEmails={availableEmails}
+        setAvailableEmails={setAvailableEmails}
+        manualEmail={manualEmail}
+        setManualEmail={setManualEmail}
+        onSendEmail={handleSendEmail}
+        isEmailLoading={mailLoading}
+        availablePhones={availablePhones}
+        setAvailablePhones={setAvailablePhones}
+        manualPhone={manualPhone}
+        setManualPhone={setManualPhone}
+        onSendWhatsApp={handleSendWhatsApp}
+        isWhatsappLoading={whatsappLoading}
+      />
 
-            {/* Pestañas (Tabs) */}
-            <div className="flex border-b border-slate-200">
-              <button
-                type="button"
-                onClick={() => setActiveTab('email')}
-                className={`flex-1 pb-2 text-xs font-bold transition-all border-b-2 flex items-center justify-center gap-1.5 cursor-pointer ${
-                  activeTab === 'email'
-                    ? 'border-[#468DFF] text-[#468DFF]'
-                    : 'border-transparent text-slate-400 hover:text-slate-600'
-                }`}
-              >
-                <Mail className="h-3.5 w-3.5" />
-                Correo Electrónico
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('whatsapp')}
-                className={`flex-1 pb-2 text-xs font-bold transition-all border-b-2 flex items-center justify-center gap-1.5 cursor-pointer ${
-                  activeTab === 'whatsapp'
-                    ? 'border-[#468DFF] text-[#468DFF]'
-                    : 'border-transparent text-slate-400 hover:text-slate-600'
-                }`}
-              >
-                <MessageCircle className="h-3.5 w-3.5" />
-                WhatsApp
-              </button>
-            </div>
-
-            {activeTab === 'email' ? (
-              // PESTAÑA: CORREO ELECTRÓNICO
-              <div className="space-y-4">
-                <p className="text-[11px] text-slate-500 font-medium">
-                  Seleccione los contactos registrados de la empresa o ingrese correos electrónicos manualmente (separados por comas) para enviar la constancia en PDF.
-                </p>
-
-                <div className="space-y-3">
-                  {/* Contactos de la empresa */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-600 block">Correos de la Empresa:</label>
-                    {availableEmails.length === 0 ? (
-                      <p className="text-xs text-slate-400 italic font-semibold">No hay contactos registrados para esta empresa.</p>
-                    ) : (
-                      <div className="bg-slate-50 p-3 border border-slate-200 rounded-xl max-h-36 overflow-y-auto space-y-1.5">
-                        {availableEmails.map((e, idx) => (
-                          <label key={idx} className="flex items-center gap-2.5 text-xs font-semibold text-slate-700 cursor-pointer hover:bg-slate-100/50 py-1 rounded">
-                            <input
-                              type="checkbox"
-                              checked={e.checked}
-                              onChange={() => {
-                                setAvailableEmails(prev => prev.map((item, i) => i === idx ? { ...item, checked: !item.checked } : item));
-                              }}
-                              className="accent-[#468DFF] h-4 w-4"
-                            />
-                            {e.descripcion}
-                          </label>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Ingreso manual */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-slate-600">Correos Manuales:</label>
-                    <textarea
-                      rows="2"
-                      placeholder="ejemplo1@correo.com, ejemplo2@correo.com..."
-                      value={manualEmail}
-                      onChange={(e) => setManualEmail(e.target.value)}
-                      className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50"
-                    />
-                  </div>
-                </div>
-
-                {/* Acciones Correo */}
-                <div className="flex justify-end gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsMailModalOpen(false)}
-                    className="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-100 cursor-pointer transition-all"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="button"
-                    disabled={mailLoading}
-                    onClick={handleSendEmail}
-                    className="px-4 py-2 bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold rounded-lg cursor-pointer transition-all flex items-center gap-1.5 shadow-md shadow-[#468DFF]/10 disabled:bg-slate-400"
-                  >
-                    {mailLoading ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Send className="h-3.5 w-3.5" />
-                    )}
-                    Enviar Correo
-                  </button>
-                </div>
-              </div>
-            ) : (
-              // PESTAÑA: WHATSAPP
-              <div className="space-y-4">
-                <p className="text-[11px] text-slate-500 font-medium">
-                  Seleccione un contacto registrado de la empresa o ingrese un número manualmente para compartir la constancia. Se subirá el documento temporalmente a la nube de forma segura.
-                </p>
-
-                <div className="space-y-3">
-                  {/* Contactos de la empresa */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-600 block">Teléfonos de la Empresa:</label>
-                    {availablePhones.length === 0 ? (
-                      <p className="text-xs text-slate-400 italic font-semibold">No hay contactos con teléfono registrados.</p>
-                    ) : (
-                      <div className="bg-slate-50 p-3 border border-slate-200 rounded-xl max-h-36 overflow-y-auto space-y-1.5">
-                        {availablePhones.map((p, idx) => (
-                          <label key={idx} className="flex items-center gap-2.5 text-xs font-semibold text-slate-700 cursor-pointer hover:bg-slate-100/50 py-1 rounded">
-                            <input
-                              type="checkbox"
-                              checked={p.checked}
-                              onChange={() => {
-                                // WhatsApp es uno a la vez, por lo que desmarcamos los demás al marcar uno
-                                setAvailablePhones(prev => prev.map((item, i) => i === idx ? { ...item, checked: !item.checked } : { ...item, checked: false }));
-                              }}
-                              className="accent-[#468DFF] h-4 w-4"
-                            />
-                            {p.descripcion}
-                          </label>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Ingreso manual */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-slate-600">Número Manual (ej: 5491159969956):</label>
-                    <input
-                      type="text"
-                      placeholder="Código de país + área + número (sin espacios ni guiones)"
-                      value={manualPhone}
-                      onChange={(e) => setManualPhone(e.target.value)}
-                      className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50"
-                    />
-                  </div>
-                </div>
-
-                {/* Acciones WhatsApp */}
-                <div className="flex justify-end gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsMailModalOpen(false)}
-                    className="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-100 cursor-pointer transition-all"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="button"
-                    disabled={whatsappLoading}
-                    onClick={handleSendWhatsApp}
-                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-lg cursor-pointer transition-all flex items-center gap-1.5 shadow-md shadow-green-500/10 disabled:bg-slate-400"
-                  >
-                    {whatsappLoading ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <MessageCircle className="h-3.5 w-3.5" />
-                    )}
-                    Enviar por WhatsApp
-                  </button>
-                </div>
-              </div>
-            )}
-
-          </div>
-        </div>
-      )}
-
-      {/* MODAL DE VISUALIZACIÓN DE FOTOS DE REGISTRO */}
-      {viewingFotosVisita && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div onClick={() => setViewingFotosVisita(null)} className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 max-w-4xl w-full z-10 shadow-2xl relative space-y-4 animate-fade-in flex flex-col max-h-[85vh]">
-            <div className="flex justify-between items-center shrink-0">
-              <div>
-                <h4 className="font-outfit text-sm font-bold text-slate-900 uppercase tracking-wider">Registros de Visita</h4>
-                <p className="text-[10px] text-slate-500 font-semibold mt-0.5">{viewingFotosVisita.profesional_nombre} - {formatDate(viewingFotosVisita.fecha)}</p>
-              </div>
-              <button onClick={() => setViewingFotosVisita(null)} className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 cursor-pointer">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto min-h-0">
-              {viewingFotosUrls.length === 0 ? (
-                <div className="text-center py-12 text-slate-400 font-medium italic">Resolviendo imágenes del servidor...</div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {viewingFotosUrls.map((url, i) => (
-                    <div key={i} className="border border-slate-200 rounded-xl overflow-hidden shadow-sm aspect-video bg-slate-50 relative group">
-                      <img src={url} alt={`Registro ${i + 1}`} className="w-full h-full object-contain" />
-                      <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/60 text-white text-[10px] font-bold rounded">
-                        Registro #{i + 1}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            
-            <div className="flex justify-end pt-2 shrink-0">
-              <button onClick={() => setViewingFotosVisita(null)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-lg cursor-pointer transition-all">
-                Cerrar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* MODAL UNIVERSAL DE VISUALIZACIÓN DE FOTOS DE REGISTRO */}
+      <AppPhotoGalleryModal
+        open={Boolean(viewingFotosVisita)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setViewingFotosVisita(null);
+            setViewingFotosUrls([]);
+          }
+        }}
+        title="Registros de visita"
+        subtitle={viewingFotosVisita ? `${viewingFotosVisita.profesional_nombre || ''} - ${formatDate(viewingFotosVisita.fecha)}` : ''}
+        photos={viewingFotosUrls}
+      />
 
       {/* MODAL DE CONFIRMACIÓN */}
       <AppConfirmDialog

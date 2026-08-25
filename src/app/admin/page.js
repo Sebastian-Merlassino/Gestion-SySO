@@ -28,6 +28,8 @@ import {
 } from 'lucide-react';
 import { formatDate } from '../../lib/utils';
 import { supabase } from '../../lib/supabase';
+import AppButton from '@/components/ui/AppButton';
+import AppLabel from '@/components/ui/AppLabel';
 
 const MONTHS = [
   { value: 'all', label: 'Todo el año' },
@@ -427,12 +429,13 @@ export default function AdminDashboardPage() {
         <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-3" />
         <h2 className="text-xl font-bold text-red-900 dark:text-red-300">Acceso Restringido o Error</h2>
         <p className="text-sm text-red-700 dark:text-red-400 mt-2 mb-6">{error}</p>
-        <button
+        <AppButton
           onClick={() => fetchMetrics()}
-          className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium text-sm transition-all"
+          variant="destructive"
+          size="sm"
         >
           Reintentar
-        </button>
+        </AppButton>
       </div>
     );
   }
@@ -455,14 +458,15 @@ export default function AdminDashboardPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button
+          <AppButton
             onClick={() => fetchMetrics(true)}
             disabled={refreshing}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 transition-all shadow-sm disabled:opacity-50 cursor-pointer"
+            variant="outline"
+            size="sm"
           >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-indigo-500' : ''}`} />
+            <RefreshCw className={`w-4 h-4 mr-1.5 ${refreshing ? 'animate-spin text-[#468DFF]' : ''}`} />
             <span>{refreshing ? 'Actualizando...' : 'Actualizar'}</span>
-          </button>
+          </AppButton>
         </div>
       </div>
 
@@ -992,13 +996,15 @@ export default function AdminDashboardPage() {
 
                           {/* Action Button */}
                           <td className="px-4 py-3.5 text-right">
-                            <button
+                            <AppButton
                               onClick={() => handleOpenEditModal(t)}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-all shadow-xs"
+                              variant="outline"
+                              size="xs"
+                              className="gap-1 font-semibold"
                             >
-                              <Settings className="w-3.5 h-3.5 text-indigo-500" />
+                              <Settings className="w-3.5 h-3.5 text-[#468DFF]" />
                               <span>Gestionar</span>
-                            </button>
+                            </AppButton>
                           </td>
                         </tr>
                       );
@@ -1335,8 +1341,11 @@ export default function AdminDashboardPage() {
 
                   {/* Botón de Actualización */}
                   <div className="pt-3">
-                    <button
+                    <AppButton
                       type="button"
+                      variant="primary"
+                      size="sm"
+                      className="w-full gap-2"
                       disabled={parsedNewPrice <= 0 || (!form.updateCheckouts && !form.updateMP)}
                       onClick={() => {
                         setConfirmPriceModal({
@@ -1350,11 +1359,10 @@ export default function AdminDashboardPage() {
                           mpCount: plan.mpSubscribersCount,
                         });
                       }}
-                      className="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-sm transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
                     >
                       <Tag className="w-3.5 h-3.5" />
                       <span>Actualizar {plan.name}</span>
-                    </button>
+                    </AppButton>
                   </div>
                 </div>
               );
@@ -1551,20 +1559,22 @@ export default function AdminDashboardPage() {
 
               {/* Actions */}
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
-                <button
+                <AppButton
                   type="button"
+                  variant="outline"
+                  size="sm"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
                 >
                   Cancelar
-                </button>
-                <button
+                </AppButton>
+                <AppButton
                   type="submit"
-                  disabled={savingTenant}
-                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm transition-all disabled:opacity-50"
+                  variant="primary"
+                  size="sm"
+                  loading={savingTenant}
                 >
-                  {savingTenant ? 'Guardando...' : 'Guardar Cambios'}
-                </button>
+                  Guardar cambios
+                </AppButton>
               </div>
 
             </form>
@@ -1583,7 +1593,7 @@ export default function AdminDashboardPage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 dark:text-white text-base">
-                    Confirmar Actualización de Precios
+                    Confirmar actualización de precios
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
                     Plan: <strong className="text-slate-800 dark:text-slate-200">{confirmPriceModal.planName}</strong>
@@ -1621,29 +1631,25 @@ export default function AdminDashboardPage() {
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
-                <button
+                <AppButton
                   type="button"
                   disabled={executingPriceUpdate}
+                  variant="outline"
+                  size="sm"
                   onClick={() => setConfirmPriceModal(null)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
                 >
                   Cancelar
-                </button>
-                <button
+                </AppButton>
+                <AppButton
                   type="button"
                   disabled={executingPriceUpdate}
+                  loading={executingPriceUpdate}
+                  variant="primary"
+                  size="sm"
                   onClick={handleExecutePriceUpdate}
-                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm transition-all disabled:opacity-50 cursor-pointer flex items-center gap-2"
                 >
-                  {executingPriceUpdate ? (
-                    <>
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      <span>Ejecutando en Mercado Pago...</span>
-                    </>
-                  ) : (
-                    <span>Confirmar y Ejecutar</span>
-                  )}
-                </button>
+                  Confirmar y ejecutar
+                </AppButton>
               </div>
             </div>
           </div>

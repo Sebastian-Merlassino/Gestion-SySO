@@ -12,6 +12,7 @@ import { useToast } from '@/components/providers/ToastProvider';
 import AppPageHeader from '@/components/ui/AppPageHeader';
 import AppButton from '@/components/ui/AppButton';
 import AppInput from '@/components/ui/AppInput';
+import AppDatePicker from '@/components/ui/AppDatePicker';
 import AppSelect from '@/components/ui/AppSelect';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
@@ -1396,40 +1397,12 @@ export default function LegajoPage({ params }) {
                     </div>
 
                     {/* Fecha */}
-                    <div>
-                      <label className="text-xs font-bold text-slate-600 block mb-1.5">
-                        Fecha del Registro <span className="text-[#468DFF]">*</span>
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          placeholder="DD/MM/YYYY"
-                          maxLength={10}
-                          value={fecha}
-                          onChange={(e) => setFecha(formatAsDateInput(e.target.value))}
-                          required
-                          className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono"
-                        />
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
-                          <Calendar className="h-4 w-4" />
-                          <input
-                            type="date"
-                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              if (val) {
-                                const parts = val.split('-');
-                                if (parts.length === 3) {
-                                  setFecha(`${parts[2]}/${parts[1]}/${parts[0]}`);
-                                }
-                              } else {
-                                setFecha('');
-                              }
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
+                    <AppDatePicker
+                      label="Fecha del Registro"
+                      required
+                      value={fecha}
+                      onChange={(e) => setFecha(e.target.value)}
+                    />
                   </fieldset>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2129,13 +2102,14 @@ export default function LegajoPage({ params }) {
             </div>
 
             <div className="pt-4 border-t border-slate-100 shrink-0 flex justify-end">
-              <button
+              <AppButton
                 type="button"
+                variant="primary"
+                size="md"
                 onClick={() => setShowIndexModal(false)}
-                className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer shadow-md"
               >
                 Cerrar
-              </button>
+              </AppButton>
             </div>
           </div>
         </div>
@@ -2277,19 +2251,23 @@ export default function LegajoPage({ params }) {
 
             {/* Footer de Acciones */}
             <div className="pt-4 border-t border-slate-100 shrink-0 flex items-center justify-between gap-3">
-              <button
+              <AppButton
                 type="button"
+                variant="secondary"
+                size="md"
                 onClick={() => {
                   setInfoModalFolder(null);
                   setInfoModalSubfolder(null);
                 }}
-                className="px-4 py-2.5 bg-white text-[#468DFF] border border-[#468DFF] rounded-xl text-xs font-bold hover:bg-[#468DFF] hover:text-white transition-all active:scale-[0.98] cursor-pointer"
               >
                 Cerrar
-              </button>
+              </AppButton>
 
-              <button
+              <AppButton
                 type="button"
+                variant="primary"
+                size="md"
+                icon={FolderOpen}
                 onClick={() => {
                   const targetFolder = infoModalFolder;
                   const targetSubfolder = infoModalSubfolder;
@@ -2302,11 +2280,9 @@ export default function LegajoPage({ params }) {
                     navigateToFolder(targetFolder);
                   }
                 }}
-                className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer shadow-md shadow-[#468DFF]/20 flex items-center gap-1.5"
               >
-                <FolderOpen className="h-3.5 w-3.5" />
-                <span>{infoModalSubfolder ? 'Abrir subcarpeta' : 'Abrir carpeta'}</span>
-              </button>
+                {infoModalSubfolder ? 'Abrir subcarpeta' : 'Abrir carpeta'}
+              </AppButton>
             </div>
           </div>
         </div>

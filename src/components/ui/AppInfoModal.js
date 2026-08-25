@@ -5,6 +5,7 @@ import React from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { X, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import AppButton from './AppButton';
 
 export default function AppInfoModal({
   isOpen,
@@ -62,13 +63,14 @@ export default function AppInfoModal({
 
             {/* Pie de Página del Modal */}
             <div className="h-16 px-6 bg-slate-50 border-t border-slate-200 flex items-center justify-end shrink-0">
-              <button
+              <AppButton
                 type="button"
+                variant="primary"
+                size="md"
                 onClick={onClose}
-                className="px-5 py-2 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer shadow-md shadow-[#468DFF]/20"
               >
                 {closeButtonText}
-              </button>
+              </AppButton>
             </div>
           </Dialog.Content>
         </div>

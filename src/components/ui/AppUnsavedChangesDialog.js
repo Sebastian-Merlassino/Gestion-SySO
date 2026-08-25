@@ -4,6 +4,7 @@
 import React from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { AlertTriangle, X } from 'lucide-react';
+import AppButton from './AppButton';
 
 export default function AppUnsavedChangesDialog({
   open,
@@ -40,7 +41,7 @@ export default function AppUnsavedChangesDialog({
         <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm animate-fade-in" />
         
         {/* Modal content container */}
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <Dialog.Content 
             onPointerDownOutside={(e) => {
               e.preventDefault();
@@ -50,10 +51,10 @@ export default function AppUnsavedChangesDialog({
               e.preventDefault();
               handleClose();
             }}
-            className="relative w-full max-w-sm p-6 bg-white border border-slate-200 rounded-2xl shadow-2xl animate-scale-up focus:outline-none flex flex-col items-center text-center"
+            className="relative w-full max-w-sm p-6 bg-white border border-slate-200 rounded-t-2xl sm:rounded-2xl shadow-2xl animate-scale-up focus:outline-none flex flex-col items-center text-center"
           >
             
-            {/* Close button at top right (matching standard AppConfirmDialog and ruido) */}
+            {/* Close button at top right */}
             <Dialog.Close asChild>
               <button 
                 type="button"
@@ -80,31 +81,35 @@ export default function AppUnsavedChangesDialog({
               </Dialog.Description>
             )}
 
-            {/* Action buttons (vertical stack matching reference image) */}
+            {/* Action buttons */}
             <div className="flex flex-col gap-2.5 w-full">
               {/* Secondary button: Salir sin guardar */}
               {handleLeaveAction && (
-                <button
+                <AppButton
                   type="button"
+                  variant="secondary"
+                  size="md"
                   onClick={() => {
                     handleLeaveAction();
                     handleClose();
                   }}
-                  className="w-full py-2.5 px-4 bg-white text-[#468DFF] border border-[#468DFF] rounded-xl text-xs font-bold hover:bg-[#468DFF] hover:text-white transition-all active:scale-[0.99] cursor-pointer"
+                  className="w-full"
                 >
                   {leaveText}
-                </button>
+                </AppButton>
               )}
 
               {/* Primary button: Quedarse y editar */}
               <Dialog.Close asChild>
-                <button
+                <AppButton
                   type="button"
+                  variant="primary"
+                  size="md"
                   onClick={handleClose}
-                  className="w-full py-2.5 px-4 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-xs font-bold transition-all active:scale-[0.99] cursor-pointer shadow-md shadow-[#468DFF]/20"
+                  className="w-full"
                 >
                   {stayText}
-                </button>
+                </AppButton>
               </Dialog.Close>
             </div>
             

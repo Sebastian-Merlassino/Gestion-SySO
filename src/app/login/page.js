@@ -476,12 +476,14 @@ export default function LoginPage() {
             <p className="text-xs text-slate-600 leading-relaxed mb-6">
               {errorMessage}
             </p>
-            <button
+            <AppButton
+              variant="destructive"
+              size="md"
               onClick={() => setShowErrorModal(false)}
-              className="w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold transition-all cursor-pointer"
+              className="w-full"
             >
               Aceptar
-            </button>
+            </AppButton>
           </div>
         </div>
       )}
@@ -499,7 +501,7 @@ export default function LoginPage() {
 
             <div className="text-center mb-6">
               <h3 className="font-outfit text-lg font-bold text-slate-900 mb-2">
-                {activeTab === 'profesional' ? 'Recuperar Contraseña' : 'Recuperar Clave de Cliente'}
+                {activeTab === 'profesional' ? 'Recuperar contraseña' : 'Recuperar clave de cliente'}
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
                 {activeTab === 'profesional'
@@ -516,13 +518,15 @@ export default function LoginPage() {
                 <p className="text-xs text-slate-600 leading-relaxed">
                   ¡Enlace enviado! Revisá tu bandeja de entrada y spam para restablecer tu clave.
                 </p>
-                <button
+                <AppButton
                   type="button"
+                  variant="outline"
+                  size="md"
                   onClick={() => setShowForgotModal(false)}
-                  className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-xs font-semibold transition-all mt-4 cursor-pointer"
+                  className="w-full mt-4"
                 >
-                  Cerrar Ventana
-                </button>
+                  Cerrar ventana
+                </AppButton>
               </div>
             ) : (
               <form onSubmit={handleForgotPassword} className="space-y-4">
@@ -533,10 +537,11 @@ export default function LoginPage() {
                 )}
                 {activeTab === 'profesional' ? (
                   <div className="text-left">
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-                      Correo de Usuario
-                    </label>
+                    <AppLabel size="xs" htmlFor="forgot-email">
+                      Correo de usuario
+                    </AppLabel>
                     <input
+                      id="forgot-email"
                       type="email"
                       required
                       placeholder="ejemplo@correo.com"
@@ -547,10 +552,11 @@ export default function LoginPage() {
                   </div>
                 ) : (
                   <div className="text-left">
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                    <AppLabel size="xs" htmlFor="forgot-cuit">
                       Número de CUIT
-                    </label>
+                    </AppLabel>
                     <input
+                      id="forgot-cuit"
                       type="text"
                       required
                       placeholder="30712345678"
@@ -560,20 +566,15 @@ export default function LoginPage() {
                     />
                   </div>
                 )}
-                <button
+                <AppButton
                   type="submit"
-                  disabled={forgotLoading}
-                  className="w-full py-2.5 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  variant="primary"
+                  size="md"
+                  loading={forgotLoading}
+                  className="w-full"
                 >
-                  {forgotLoading ? (
-                    <>
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      Enviando enlace...
-                    </>
-                  ) : (
-                    <>Enviar enlace de recuperación</>
-                  )}
-                </button>
+                  Enviar enlace de recuperación
+                </AppButton>
               </form>
             )}
           </div>

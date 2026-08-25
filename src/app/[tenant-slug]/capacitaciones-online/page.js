@@ -17,6 +17,7 @@ import AppSkeleton from '@/components/ui/AppSkeleton';
 import AppTooltip from '@/components/ui/AppTooltip';
 import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
 import AppLoadingSpinner from '@/components/ui/AppLoadingSpinner';
+import AppSendModal from '@/components/ui/AppSendModal';
 import { generateCapacitacionOnlinePdf } from './utils/pdfGenerator';
 import {
   GraduationCap,
@@ -116,6 +117,16 @@ export default function CapacitacionesOnlinePage({ params }) {
 
   // Modal Firmantes / Registros
   const [viewRegistrosModal, setViewRegistrosModal] = useState({ show: false, capacitacion: null, registros: [], loading: false });
+
+  // Modal de Enviar Reporte / Registro de Capacitación (PDF) por Email y WhatsApp
+  const [isSendPdfModalOpen, setIsSendPdfModalOpen] = useState(false);
+  const [sendPdfTarget, setSendPdfTarget] = useState(null);
+  const [availableEmails, setAvailableEmails] = useState([]);
+  const [manualEmail, setManualEmail] = useState('');
+  const [availablePhones, setAvailablePhones] = useState([]);
+  const [manualPhone, setManualPhone] = useState('');
+  const [sendPdfEmailLoading, setSendPdfEmailLoading] = useState(false);
+  const [sendPdfWhatsappLoading, setSendPdfWhatsappLoading] = useState(false);
 
   // Modal Unificado de Compartir (WhatsApp / Email / Enlace)
   const [shareModal, setShareModal] = useState({
@@ -935,6 +946,207 @@ export default function CapacitacionesOnlinePage({ params }) {
       }
       console.error('Error al abrir PDF de capacitación:', err);
       globalToast.toast('No se pudo abrir el registro PDF.', 'error');
+    }
+  };
+
+  // Abrir Modal de Envío del Registro de Capacitación (PDF)
+  const handleOpenSendPdfModal = (item, e) => {
+    e?.stopPropagation();
+    setSendPdfTarget(item);
+    const emp = empresas.find(e => e.id === item.empresa_id);
+
+    // Correos de la empresa
+    const emails = emp?.contactos_correos || [];
+    setAvailableEmails(emails.map(c => ({
+      descripcion: `${c.contacto || 'Contacto'}: ${c.valor}`,
+      valor: c.valor,
+      checked: false
+    })));
+    setManualEmail('');
+
+    // Teléfonos de la empresa
+    const phones = emp?.contactos_telefonos || [];
+    setAvailablePhones(phones.map(c => ({
+      descripcion: `${c.contacto || 'Contacto'}: ${c.valor}`,
+      valor: c.valor,
+      checked: false
+    })));
+    setManualPhone('');
+
+    setIsSendPdfModalOpen(true);
+  };
+
+  // Enviar Registro PDF por Email
+  const handleSendPdfEmail = async () => {
+    if (!sendPdfTarget) return;
+    const checked = availableEmails.filter(e => e.checked).map(e => e.valor);
+    const manuals = manualEmail.split(',').map(e => e.trim()).filter(Boolean);
+    const recipients = [...new Set([...checked, ...manuals])];
+
+    if (recipients.length === 0) {
+      globalToast.toast('Ingrese o seleccione al menos un destinatario.', 'error');
+      return;
+    }
+
+    setSendPdfEmailLoading(true);
+    try {
+      const { data: registrosData } = await supabase
+        .from('capacitaciones_online_registros')
+        .select('*')
+        .eq('capacitacion_id', sendPdfTarget.id)
+        .eq('tenant_id', profile.tenant_id)
+        .order('registrado_at', { ascending: true });
+
+      const emp = empresas.find(e => e.id === sendPdfTarget.empresa_id);
+      const adminProf = await fetchAdminProfileIfNeeded();
+
+      const pdfBlob = await generateCapacitacionOnlinePdf({
+        capacitacion: sendPdfTarget,
+        registros: registrosData || [],
+        tenant: tenant,
+        empresa: emp,
+        profile: profile,
+        adminProfile: adminProf,
+        supabase: supabase,
+        action: 'blob'
+      });
+
+      if (!pdfBlob) throw new Error('No se pudo generar el documento PDF.');
+
+      const fileId = crypto.randomUUID();
+      const filePath = `${profile?.id || 'anonymous'}/capacitacion_online_${sendPdfTarget.id}_${fileId}.pdf`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, pdfBlob, {
+          contentType: 'application/pdf',
+          upsert: true
+        });
+
+      if (uploadError) {
+        throw new Error(`Error al subir el archivo a Storage: ${uploadError.message}`);
+      }
+
+      const est = allEstablecimientos.find(e => e.id === sendPdfTarget.establecimiento_id);
+
+      const res = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          emails: recipients,
+          filePath: filePath,
+          companyName: emp ? emp.razon_social : 'Cliente',
+          establishmentName: est ? est.denominacion : 'Establecimiento',
+          date: formatDate(sendPdfTarget.created_at),
+          tenantLogoBase64: tenant?.logo_1_url || null,
+          tenantName: tenant?.name || tenant?.razon_social || 'Gestión SySO',
+          documentType: 'capacitacion_online'
+        })
+      });
+
+      const responseData = await res.json();
+      if (!res.ok) {
+        throw new Error(responseData.error || 'Error al enviar el correo electrónico.');
+      }
+
+      globalToast.toast('Registro de capacitación enviado exitosamente por correo electrónico.', 'success');
+      setIsSendPdfModalOpen(false);
+    } catch (err) {
+      console.error('Error al enviar correo del registro:', err);
+      globalToast.toast(err.message || 'Error al enviar el correo.', 'error');
+    } finally {
+      setSendPdfEmailLoading(false);
+    }
+  };
+
+  // Enviar Registro PDF por WhatsApp
+  const handleSendPdfWhatsApp = async () => {
+    if (!sendPdfTarget) return;
+    setSendPdfWhatsappLoading(true);
+    try {
+      const checkedPhones = availablePhones.filter(p => p.checked).map(p => p.valor);
+      const manualVal = manualPhone.trim();
+
+      let targetPhone = '';
+      if (checkedPhones.length > 0) {
+        targetPhone = checkedPhones[0];
+      } else if (manualVal) {
+        targetPhone = manualVal;
+      }
+
+      let cleanPhone = targetPhone.replace(/[^0-9]/g, '');
+
+      const { data: registrosData } = await supabase
+        .from('capacitaciones_online_registros')
+        .select('*')
+        .eq('capacitacion_id', sendPdfTarget.id)
+        .eq('tenant_id', profile.tenant_id)
+        .order('registrado_at', { ascending: true });
+
+      const emp = empresas.find(e => e.id === sendPdfTarget.empresa_id);
+      const adminProf = await fetchAdminProfileIfNeeded();
+
+      const pdfBlob = await generateCapacitacionOnlinePdf({
+        capacitacion: sendPdfTarget,
+        registros: registrosData || [],
+        tenant: tenant,
+        empresa: emp,
+        profile: profile,
+        adminProfile: adminProf,
+        supabase: supabase,
+        action: 'blob'
+      });
+
+      if (!pdfBlob) throw new Error('No se pudo generar el documento PDF.');
+
+      const fileId = crypto.randomUUID();
+      const filePath = `${profile?.id || 'anonymous'}/capacitacion_online_${sendPdfTarget.id}_${fileId}.pdf`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, pdfBlob, {
+          contentType: 'application/pdf',
+          upsert: true
+        });
+
+      if (uploadError) {
+        throw new Error(`Error al subir el reporte a Storage: ${uploadError.message}`);
+      }
+
+      const { data: signData, error: signError } = await supabase.storage
+        .from('documents')
+        .createSignedUrl(filePath, 604800);
+
+      if (signError || !signData?.signedUrl) {
+        throw new Error(`Error al generar enlace seguro de descarga: ${signError?.message || 'Enlace nulo'}`);
+      }
+
+      const pdfUrl = signData.signedUrl;
+      const est = allEstablecimientos.find(e => e.id === sendPdfTarget.establecimiento_id);
+      const empName = emp ? emp.razon_social : 'N/A';
+      const estName = est ? est.denominacion : 'N/A';
+      const tName = tenant ? (tenant.razon_social || tenant.nombre || 'Gestión SySO') : 'Gestión SySO';
+      const temaName = sendPdfTarget.titulo || 'Capacitación de Higiene y Seguridad';
+
+      const textMessage = `Estimado cliente de *${empName}* (Establecimiento: *${estName}*),\n\nLe adjuntamos el *Registro Oficial de Capacitación Virtual* ("*${temaName}*") del día *${formatDate(sendPdfTarget.created_at)}* generado desde *${tName}*.\n\nPuede ver y descargar el documento PDF con las firmas correspondientes ingresando al siguiente enlace seguro:\n${pdfUrl}`;
+
+      const encodedMsg = encodeURIComponent(textMessage);
+
+      let waUrl = '';
+      if (cleanPhone) {
+        waUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodedMsg}`;
+      } else {
+        waUrl = `https://api.whatsapp.com/send?text=${encodedMsg}`;
+      }
+
+      window.open(waUrl, '_blank');
+      globalToast.toast('Redirigiendo a WhatsApp...', 'success');
+      setIsSendPdfModalOpen(false);
+    } catch (e) {
+      console.error('Error al enviar registro por WhatsApp:', e);
+      globalToast.toast(e.message || 'Error al intentar enviar por WhatsApp.', 'error');
+    } finally {
+      setSendPdfWhatsappLoading(false);
     }
   };
 
@@ -2049,7 +2261,7 @@ export default function CapacitacionesOnlinePage({ params }) {
                         )}
                       />
                     ) : (
-                      <table className="w-full border-collapse text-left text-xs min-w-[850px]">
+                      <table className="w-full border-collapse text-left text-xs min-w-[900px]">
                         <thead>
                           <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wider sticky top-0 z-10">
                             <th onClick={() => handleSort('cliente')} className="px-6 py-4 cursor-pointer select-none">
@@ -2072,7 +2284,7 @@ export default function CapacitacionesOnlinePage({ params }) {
                             </th>
                             <th className="px-6 py-4 text-center">RECURSOS MULTIMEDIA</th>
                             <th className="px-6 py-4 text-center">ASISTENCIA</th>
-                            <th className="px-6 py-4 text-right w-36">ACCIONES</th>
+                            <th className="px-6 py-4 text-right w-48">ACCIONES</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -2200,6 +2412,19 @@ export default function CapacitacionesOnlinePage({ params }) {
                                       </AppButton>
                                     </AppTooltip>
 
+                                    {/* Enviar por Correo o WhatsApp (solo no-cliente) */}
+                                    {profile?.role !== 'cliente' && canEditar && (
+                                      <AppTooltip content="Enviar por correo o WhatsApp">
+                                        <AppButton
+                                          variant="document-table"
+                                          size="icon"
+                                          onClick={(e) => handleOpenSendPdfModal(item, e)}
+                                        >
+                                          <Mail className="h-4.5 w-4.5" />
+                                        </AppButton>
+                                      </AppTooltip>
+                                    )}
+
                                     {/* Editar */}
                                     {canEditar && (
                                       <AppTooltip content="Editar capacitación">
@@ -2311,22 +2536,35 @@ export default function CapacitacionesOnlinePage({ params }) {
                 Total Firmantes: {viewRegistrosModal.registros.length}
               </span>
               <div className="flex items-center gap-2">
-                <button
+                {profile?.role !== 'cliente' && canEditar && (
+                  <AppButton
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => handleOpenSendPdfModal(viewRegistrosModal.capacitacion)}
+                    icon={Mail}
+                  >
+                    Enviar registro
+                  </AppButton>
+                )}
+                <AppButton
                   type="button"
+                  variant="secondary"
+                  size="sm"
                   onClick={() => handlePrintPdf(viewRegistrosModal.capacitacion)}
-                  className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border border-slate-200"
+                  icon={Printer}
                 >
-                  <Printer className="h-4 w-4 text-[#468DFF]" />
-                  Imprimir Registro
-                </button>
-                <button
+                  Imprimir registro
+                </AppButton>
+                <AppButton
                   type="button"
+                  variant="primary"
+                  size="sm"
                   onClick={() => handleDownloadPdf(viewRegistrosModal.capacitacion)}
-                  className="px-3.5 py-2 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md shadow-[#468DFF]/20 cursor-pointer"
+                  icon={Download}
                 >
-                  <Download className="h-4 w-4" />
                   Descargar PDF
-                </button>
+                </AppButton>
               </div>
             </div>
           </div>
@@ -2348,7 +2586,7 @@ export default function CapacitacionesOnlinePage({ params }) {
         open={deleteConfirm.show}
         onOpenChange={(open) => !open && setDeleteConfirm({ show: false, id: null, title: '' })}
         type="destructive"
-        title="¿Eliminar Capacitación Online?"
+        title="¿Eliminar capacitación online?"
         description={`¿Está seguro de que desea eliminar la capacitación "${deleteConfirm.title}"? Esta acción no se puede deshacer y borrará permanentemente sus registros de firma.`}
         confirmText="Eliminar"
         cancelText="Cancelar"
@@ -2367,7 +2605,7 @@ export default function CapacitacionesOnlinePage({ params }) {
                   <Send className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-[#0D0D0D]">Compartir Capacitación</h3>
+                  <h3 className="text-base font-bold text-[#0D0D0D]">Compartir capacitación</h3>
                   <p className="text-xs text-slate-500 font-medium truncate max-w-[340px]">
                     Capacitación virtual de Higiene y Seguridad
                   </p>
@@ -2393,7 +2631,7 @@ export default function CapacitacionesOnlinePage({ params }) {
                   }`}
               >
                 <Mail className="h-3.5 w-3.5" />
-                Correo Electrónico
+                Correo electrónico
               </button>
 
               <button
@@ -2417,7 +2655,7 @@ export default function CapacitacionesOnlinePage({ params }) {
                   }`}
               >
                 <Link className="h-3.5 w-3.5" />
-                Enlace Directo
+                Enlace directo
               </button>
             </div>
 
@@ -2458,7 +2696,7 @@ export default function CapacitacionesOnlinePage({ params }) {
 
                   {/* Ingreso manual */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-slate-600">Correos Manuales:</label>
+                    <label className="text-xs font-bold text-slate-600">Correos manuales:</label>
                     <textarea
                       rows="2"
                       placeholder="ejemplo1@correo.com, ejemplo2@correo.com..."
@@ -2470,7 +2708,7 @@ export default function CapacitacionesOnlinePage({ params }) {
 
                   {/* Asunto del Correo */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-slate-600">Asunto del Correo:</label>
+                    <label className="text-xs font-bold text-slate-600">Asunto del correo:</label>
                     <input
                       type="text"
                       value={shareModal.subject}
@@ -2481,7 +2719,7 @@ export default function CapacitacionesOnlinePage({ params }) {
 
                   {/* Cuerpo del Mensaje */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-slate-600">Cuerpo del Mensaje:</label>
+                    <label className="text-xs font-bold text-slate-600">Cuerpo del mensaje:</label>
                     <textarea
                       rows="4"
                       value={shareModal.message}
@@ -2493,31 +2731,25 @@ export default function CapacitacionesOnlinePage({ params }) {
 
                 {/* Acciones Correo */}
                 <div className="flex justify-end gap-3 pt-2">
-                  <button
+                  <AppButton
                     type="button"
+                    variant="secondary"
+                    size="md"
                     onClick={() => setShareModal({ ...shareModal, show: false })}
-                    className="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-100 cursor-pointer transition-all active:scale-98"
                   >
                     Cancelar
-                  </button>
-                  <button
+                  </AppButton>
+                  <AppButton
                     type="button"
+                    variant="primary"
+                    size="md"
                     disabled={shareModal.sendingEmail}
+                    loading={shareModal.sendingEmail}
                     onClick={handleSendEmailFromShareModal}
-                    className="px-4 py-2 bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold rounded-lg cursor-pointer transition-all flex items-center gap-1.5 shadow-md shadow-[#468DFF]/10 disabled:opacity-50 active:scale-98"
+                    icon={Mail}
                   >
-                    {shareModal.sendingEmail ? (
-                      <>
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        Enviando...
-                      </>
-                    ) : (
-                      <>
-                        <Mail className="h-3.5 w-3.5" />
-                        Enviar Correo
-                      </>
-                    )}
-                  </button>
+                    Enviar correo
+                  </AppButton>
                 </div>
               </div>
             )}
@@ -2559,7 +2791,7 @@ export default function CapacitacionesOnlinePage({ params }) {
 
                   {/* Ingreso manual */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-slate-600">Número Manual (ej: 5491159969956):</label>
+                    <label className="text-xs font-bold text-slate-600">Número manual (ej: 5491159969956):</label>
                     <input
                       type="text"
                       placeholder="Código de país + área + número (sin espacios ni guiones)"
@@ -2583,21 +2815,23 @@ export default function CapacitacionesOnlinePage({ params }) {
 
                 {/* Acciones WhatsApp */}
                 <div className="flex justify-end gap-3 pt-2">
-                  <button
+                  <AppButton
                     type="button"
+                    variant="secondary"
+                    size="md"
                     onClick={() => setShareModal({ ...shareModal, show: false })}
-                    className="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-100 cursor-pointer transition-all active:scale-98"
                   >
                     Cancelar
-                  </button>
-                  <button
+                  </AppButton>
+                  <AppButton
                     type="button"
+                    variant="success"
+                    size="md"
                     onClick={handleSendWhatsAppFromShareModal}
-                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg cursor-pointer transition-all flex items-center gap-1.5 shadow-md shadow-emerald-500/10 active:scale-98"
+                    icon={MessageCircle}
                   >
-                    <MessageCircle className="h-3.5 w-3.5" />
                     Enviar por WhatsApp
-                  </button>
+                  </AppButton>
                 </div>
               </div>
             )}
@@ -2610,7 +2844,7 @@ export default function CapacitacionesOnlinePage({ params }) {
                 </p>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-slate-600">Enlace Público para Empleados:</label>
+                  <label className="text-xs font-bold text-slate-600">Enlace público para empleados:</label>
                   <input
                     type="text"
                     readOnly
@@ -2620,24 +2854,26 @@ export default function CapacitacionesOnlinePage({ params }) {
                 </div>
 
                 <div className="flex justify-end gap-3 pt-2">
-                  <button
+                  <AppButton
                     type="button"
+                    variant="secondary"
+                    size="md"
                     onClick={() => setShareModal({ ...shareModal, show: false })}
-                    className="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-100 cursor-pointer transition-all active:scale-98"
                   >
                     Cancelar
-                  </button>
-                  <button
+                  </AppButton>
+                  <AppButton
                     type="button"
+                    variant="primary"
+                    size="md"
                     onClick={() => {
                       handleCopyPublicLink(shareModal.publicUrl);
                       setShareModal({ ...shareModal, show: false });
                     }}
-                    className="px-4 py-2 bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold rounded-lg cursor-pointer transition-all flex items-center gap-1.5 shadow-md shadow-[#468DFF]/10 active:scale-98"
+                    icon={Copy}
                   >
-                    <Copy className="h-3.5 w-3.5" />
-                    Copiar Enlace
-                  </button>
+                    Copiar enlace
+                  </AppButton>
                 </div>
               </div>
             )}
@@ -2687,6 +2923,28 @@ export default function CapacitacionesOnlinePage({ params }) {
           </div>
         </div>
       )}
+
+      {/* DIÁLOGO ESTÁNDAR: ENVÍO DE REGISTRO DE CAPACITACIÓN (EMAIL / WHATSAPP) */}
+      <AppSendModal
+        isOpen={isSendPdfModalOpen && Boolean(sendPdfTarget)}
+        onClose={() => setIsSendPdfModalOpen(false)}
+        title="Enviar Registro de Capacitación (PDF)"
+        subtitle={sendPdfTarget ? `${empresas.find(e => e.id === sendPdfTarget.empresa_id)?.razon_social || 'Cliente'} — ${sendPdfTarget.titulo}` : undefined}
+        availableEmails={availableEmails}
+        setAvailableEmails={setAvailableEmails}
+        manualEmail={manualEmail}
+        setManualEmail={setManualEmail}
+        onSendEmail={handleSendPdfEmail}
+        isEmailLoading={sendPdfEmailLoading}
+        availablePhones={availablePhones}
+        setAvailablePhones={setAvailablePhones}
+        manualPhone={manualPhone}
+        setManualPhone={setManualPhone}
+        onSendWhatsApp={handleSendPdfWhatsApp}
+        isWhatsappLoading={sendPdfWhatsappLoading}
+        emailInfoText="Seleccione los contactos registrados de la empresa o ingrese correos electrónicos manualmente (separados por comas) para enviar el registro oficial de capacitación y asistencia en PDF."
+        whatsappInfoText="Seleccione un contacto registrado de la empresa o ingrese un número manualmente para compartir el registro de capacitación. Se generará un enlace seguro de descarga del PDF con las firmas."
+      />
     </div>
   );
 }

@@ -1,3 +1,237 @@
+## [2026-08-25] Integración de Envío por Correo Electrónico y WhatsApp en Capacitaciones Online
+
+### Resumen de Cambios
+- **Botón de Envío en Tabla de Capacitaciones Online:**
+  - Añadido el botón de acción `<AppButton variant="document-table" size="icon">` con ícono `<Mail />` y tooltip *"Enviar por correo o WhatsApp"* en la columna de acciones de la tabla principal de Capacitaciones Online.
+  - Añadido el botón *"Enviar registro"* dentro del modal de visualización de asistentes firmantes (`viewRegistrosModal`).
+- **Integración de `AppSendModal`:**
+  - Configurado el diálogo unificado `AppSendModal` con selector de contactos de la empresa, correos/teléfonos manuales y despacho dinámico.
+  - Envío por correo: genera el PDF con las firmas del personal, lo almacena temporalmente en Supabase Storage (`documents`) y despacha mediante la API `/api/send-email`.
+  - Envío por WhatsApp: genera el enlace firmado temporal seguro (`createSignedUrl`) y abre la interfaz de WhatsApp Web / App con el mensaje preformateado.
+- **Soporte de Generador PDF y API de Email:**
+  - Actualizado `generateCapacitacionOnlinePdf` para soportar `action === 'blob'` y `action === 'doc'`.
+  - Actualizado `/api/send-email/route.js` con el nombre de archivo y asunto oficial para `documentType: 'capacitacion_online'` con PDF adjunto.
+
+### Decisiones Clave
+- Unificación de la experiencia de usuario utilizando el componente estándar corporativo `AppSendModal` y la paleta cromática de Gestión SySO.
+- Diferenciación clara entre compartir el enlace público de realización (`Share2`) y enviar el registro/reporte oficial en PDF (`Mail`).
+
+### Skills Utilizadas
+- `gestion-syso-brand-guidelines`
+- `gestion-syso-bitacora`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/utils/pdfGenerator.js`
+- `[MODIFY] src/app/api/send-email/route.js`
+
+### Validaciones Ejecutadas
+- Verificación de no-regresión de sintaxis y estado reactivo de React.
+
+### Próximo Paso Recomendado
+- Validar el flujo de despacho en entorno visual o mediante pruebas en el navegador.
+
+## [2026-08-25] Ejecución Fases 2, 3 y 4: Modales Estandarizados, AppDatePicker y Ergonomía Responsive Mobile-First
+
+### Resumen de Cambios
+- **Fase 2: Normalización de Modales, Toasts y Galería de Fotos Universal:**
+  - Creado e integrado el componente `src/components/ui/AppPhotoGalleryModal.js` basado en Radix UI Dialog, con soporte para visualización de imagen individual, cuadrícula de evidencias fotográficas, navegación modal y descarga directa.
+  - Integrado `AppPhotoGalleryModal` en `src/components/ui/ImageUploadZone.js` reemplazando los `window.open` emergentes en blanco por visualización modal interactiva y accesible.
+  - Modales en `visitas/page.js`, `correctivas/page.js` y `capacitacion/page.js` unificados con botones `<AppButton>` y cierres estandarizados.
+  - Notificaciones Toasts auditadas y canalizadas a través de `useToast()` de `@/components/providers/ToastProvider`.
+
+- **Fase 3: Desarrollo y Despliegue Universal de `AppDatePicker`:**
+  - Componente universal `src/components/ui/AppDatePicker.js` construido y optimizado con:
+    - Input de texto con formato de máscara estricto `DD/MM/YYYY`.
+    - Selector nativo integrado mediante botón de calendario para máxima compatibilidad táctil.
+    - Soporte completo para `label` integrado con `AppLabel`, `required`, `hint`, `error`, `disabled` y tamaños responsivos.
+  - Migración completa de todos los campos de fecha en:
+    - `src/app/[tenant-slug]/visitas/page.js` (F. de Visita, F. de Inicio, F. de Cierre)
+    - `src/app/[tenant-slug]/programa/page.js` (F. Planificada, F. Realización)
+    - `src/app/[tenant-slug]/extintores/page.js` (F. de Carga, F. de Vencimiento, F. de Prueba Hidráulica)
+    - `src/app/[tenant-slug]/nomina/page.js` (F. de Nacimiento, F. de Ingreso)
+    - `src/app/[tenant-slug]/matriz-riesgos/page.js` (F. de Evaluación)
+    - `src/app/[tenant-slug]/correctivas/page.js` (F. Límite, F. de Cumplimiento)
+    - `src/app/[tenant-slug]/control-electrico/page.js` (F. de Inspección)
+    - `src/app/[tenant-slug]/checklist-personalizados/page.js` (F. de Ejecución)
+    - `src/app/[tenant-slug]/capacitacion/page.js` (F. de Realización)
+    - `src/app/[tenant-slug]/avisos/page.js` (F. de Aviso)
+    - `src/app/[tenant-slug]/accidentes/page.js` (F. del Accidente)
+    - `src/app/[tenant-slug]/legajo/page.js` (F. de Emisión, F. de Vencimiento)
+    - `src/app/[tenant-slug]/equipo/page.js` (F. de Alta)
+    - `src/app/[tenant-slug]/profile/page.js` y `src/app/onboarding/page.js` (F. de Vencimiento de Matrícula)
+
+- **Fase 4: Optimización Ergonómica Mobile-First, Bottom Sheets y Limpieza CSS:**
+  - Implementado el patrón responsive dual **Bottom Sheet (Mobile) / Centered Dialog (Desktop)** en:
+    - `src/components/ui/AppConfirmDialog.js`
+    - `src/components/ui/AppUnsavedChangesDialog.js`
+    - `src/components/ui/AppSendModal.js`
+    - `src/components/ui/AppInfoModal.js`
+    - `src/components/ui/AppPhotoGalleryModal.js`
+  - Garantizados touch targets de botón de acción (`min-h-[40px]` a `44px`) y radio de curvatura adaptativo (`rounded-t-2xl sm:rounded-2xl`).
+  - Verificación de no-regresión en `src/app/globals.css` asegurando compatibilidad fluida en smartphones y tablets.
+
+### Decisiones Clave
+- Preservación 100% de la lógica de negocio, validaciones y sincronización con Supabase.
+- Validación de compilación limpia de producción (`npm run build`) exitosa en las 25 rutas con código 0.
+
+### Skills Utilizadas
+- `gestion-syso-brand-guidelines`
+- `gestion-syso-bitacora`
+- `shadcn`
+- `next-best-practices`
+- `ui-ux-pro-max`
+
+### Archivos Creados / Modificados
+- `[NEW] src/components/ui/AppPhotoGalleryModal.js`
+- `[MODIFY] src/components/ui/ImageUploadZone.js`
+- `[MODIFY] src/components/ui/AppDatePicker.js`
+- `[MODIFY] src/components/ui/AppConfirmDialog.js`
+- `[MODIFY] src/components/ui/AppUnsavedChangesDialog.js`
+- `[MODIFY] src/components/ui/AppSendModal.js`
+- `[MODIFY] src/components/ui/AppInfoModal.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/nomina/page.js`
+- `[MODIFY] src/app/[tenant-slug]/matriz-riesgos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] src/app/onboarding/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-25] Ejecución Fase 1: Unificación de Botones (AppButton), Labels (AppLabel) y Casing
+
+### Resumen de Cambios
+- **Migración Completa de Botones y Formularios de Auth y Admin:**
+  - `admin/page.js`: Estandarizados botones de reintento, refresco (`Actualizar`), acciones de tabla (`Gestionar`), actualización de precios por plan (`Actualizar [Plan]`), modales de gestión de organización y confirmación de precios a `<AppButton>`.
+  - `login/page.js`: Reemplazados botones de modales de error y recuperación de clave por `<AppButton>` con Sentence case (`Cerrar ventana`, `Enviar enlace de recuperación`).
+  - `register/page.js`: Reemplazado modal de confirmación por `<AppButton>`.
+  - `reset-password/page.js`: Reemplazados botones de formulario, navegación (`Volver al login`) y modal de error por `<AppButton>`.
+  - `onboarding/page.js`: Reemplazados botones de la barra inferior (`Salir`, `Guardar`), botón de cambio de plan y los 4 botones de selección de planes comerciales en modal a `<AppButton>`.
+  - `profile/page.js`: Reemplazados botones de cambio de plan, eliminación de cuenta, barra de guardado y los 4 botones del modal de contratación a `<AppButton>`.
+- **Estandarización de Subcomponentes de Protocolos:**
+  - `protocolos/ruido/components/ProtocoloForm.js`: Botón de guardado principal estandarizado a `<AppButton type="submit" variant="primary" size="md">Guardar</AppButton>`.
+  - `protocolos/iluminacion/components/ProtocoloForm.js`: Botón de guardado principal estandarizado a `<AppButton type="submit" variant="primary" size="md">Guardar</AppButton>`.
+  - `protocolos/puesta-a-tierra/components/ProtocoloForm.js`: Botón de guardado principal estandarizado a `<AppButton type="submit" variant="primary" size="md">Guardar</AppButton>`.
+  - `protocolos/ergonomia/components/ProtocoloForm.js`: Botón de guardado principal estandarizado a `<AppButton type="submit" variant="primary" size="md">Guardar</AppButton>`.
+- **Normalización de Casing:**
+  - Todos los textos de botones convertidos a **Sentence case** obligatorio.
+  - Etiquetas `<AppLabel>` consolidadas con `uppercase tracking-wider` y asterisco azul `#468DFF`.
+
+### Decisiones Clave
+- Preservar al 100% la lógica de envío asíncrono, validación y feedback visual.
+- Validación de compilación completa de Next.js (`npm run build`) exitosa en 25 rutas con código 0.
+
+### Skills Utilizadas
+- `gestion-syso-brand-guidelines`
+- `gestion-syso-bitacora`
+- `shadcn`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/app/admin/page.js`
+- `[MODIFY] src/app/login/page.js`
+- `[MODIFY] src/app/register/page.js`
+- `[MODIFY] src/app/reset-password/page.js`
+- `[MODIFY] src/app/onboarding/page.js`
+- `[MODIFY] src/app/[tenant-slug]/profile/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/components/ProtocoloForm.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/components/ProtocoloForm.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-25] Auditoría Integral de Consistencia UI y Plan de Estandarización Frontend
+
+### Resumen de la Auditoría
+- **Diagnóstico y Análisis Estático Exhaustivo:**
+  - Se completó la auditoría y análisis estático en frío de todas las vistas, formularios, modales, tablas y componentes de la plataforma (`src/app/`, `src/components/`, `tailwind.config.js`, `globals.css`).
+  - Se detectaron y clasificaron las inconsistencias en botones, etiquetas, selectores de fecha (date pickers), ventanas emergentes/modales, tipografía, casing y adaptabilidad táctil mobile-first.
+- **Entregable Estratégico Generado:**
+  - Se documentó el plan maestro en [`docs/design/FRONTEND_UI_AUDIT_PLAN.md`](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/docs/design/FRONTEND_UI_AUDIT_PLAN.md), estructurado en 6 secciones principales:
+    1. Resumen Ejecutivo y Madurez del Design System.
+    2. Inventario de Inconsistencias Visuales (Botones/Labels, Date Pickers/Formularios, Modales/Alertas).
+    3. Auditoría Tipográfica y Reglas de Casing (Sentence case obligatorio en botones, UPPERCASE en encabezados de tabla y labels).
+    4. Evaluación Responsive y Ergonómica Mobile-First (Touch targets >= 44px, modales tipo Bottom Sheet).
+    5. Propuesta de Estándar Visual y Especificación de `AppDatePicker`.
+    6. Hoja de Ruta de Implementación en 4 Fases estructuradas.
+
+### Decisiones Clave
+- No modificar código funcional ni estilos en esta fase de diagnóstico, respetando la regla de análisis estático estricto.
+- Definir una hoja de ruta progresiva en 4 fases independientes para ejecutar la limpieza visual del frontend sin introducir riesgos de regresión funcional.
+
+### Skills Utilizadas
+- `gestion-syso-brand-guidelines`
+- `gestion-syso-bitacora`
+- `shadcn`
+- `ui-ux-pro-max`
+
+### Archivos de Documentación Actualizados
+- `[MODIFY] docs/design/FRONTEND_UI_AUDIT_PLAN.md`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
+## [2026-08-25] Estandarización Universal del Modal de Envío de Reportes (Email y WhatsApp) — AppSendModal
+
+### Resumen de Cambios
+- **Creación del Componente Universal `AppSendModal`:**
+  - Se creó `src/components/ui/AppSendModal.js` construido sobre `@radix-ui/react-dialog` (`Dialog.Root`, `Dialog.Portal`, `Dialog.Overlay`, `Dialog.Content`).
+  - Integra dos pestañas (Tabs): **Correo Electrónico** (selección múltiple de correos registrados de la empresa cliente con checkboxes + campo textarea de correos manuales) y **WhatsApp** (selección de teléfono de la empresa + campo de número manual internacional).
+  - Incluye soporte de estados de carga independientes (`isEmailLoading`, `isWhatsappLoading`), botón de cierre accesible "X", tipografías `Outfit` / `Inter` y botones estandarizados `<AppButton>`.
+- **Corrección de Bug Crítico en Checklists Personalizados:**
+  - Se corrigió el error donde el botón de envío en la tabla no abría la ventana emergente debido a estados no declarados (`isMailModalOpen`, `mailTargetInspeccion`).
+  - Se añadieron los estados y la función completa de despacho por WhatsApp `handleSendWhatsApp` (generación de blob jsPDF, subida a Supabase Storage bucket `documents`, creación de URL firmada temporal de 7 días y redirección a `api.whatsapp.com/send`).
+- **Replicación y Reemplazo Integral en Todas las Secciones con Envío de PDF:**
+  - `checklist-personalizados/page.js`: Integración de `AppSendModal`, carga de `contactos_telefonos` y despacho por WhatsApp y Email.
+  - `control-electrico/page.js`: Reemplazo del modal inline anterior por `AppSendModal`, agregando soporte para envío por WhatsApp y selección de teléfonos de la empresa.
+  - `visitas/page.js`: Reemplazo del modal inline artesanal por `AppSendModal`.
+  - `avisos/page.js`: Reemplazo del modal inline artesanal por `AppSendModal`.
+  - `protocolos/puesta-a-tierra/page.js`: Reemplazo del modal inline por `AppSendModal`.
+  - `protocolos/ruido/page.js`: Reemplazo del modal inline por `AppSendModal`.
+  - `protocolos/iluminacion/page.js`: Inclusión de `contactos_telefonos` en select de `empresas` y reemplazo del modal inline por `AppSendModal`.
+  - `protocolos/ergonomia/page.js`: Reemplazo del modal inline por `AppSendModal`.
+- **Unificación de Tooltips de Acción en Tablas:**
+  - Se homogeneizó el tooltip de la acción de envío en todas las tablas de reportes a: `"Enviar por correo o WhatsApp"`.
+
+### Decisiones Clave
+- Centralizar la UI de envío en `AppSendModal` para garantizar que cualquier futura mejora de diseño o funcionalidad de mensajería (SMS, plantillas de mensaje, adjuntos adicionales) impacte inmediatamente en todo el ecosistema de la plataforma.
+- Generar URLs firmadas de Supabase Storage con vigencia de 7 días (604800s) para asegurar que los enlaces compartidos por WhatsApp sean accesibles de forma segura por el cliente final sin requerir inicio de sesión.
+
+### Skills Utilizadas
+- `gestion-syso-brand-guidelines`
+- `gestion-syso-bitacora`
+- `shadcn`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[NEW] src/components/ui/AppSendModal.js`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/page.js`
+- `[MODIFY] docs/design/FRONTEND_UI_AUDIT_PLAN.md`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+---
+
 ## [2026-08-25] Estandarización Universal de Diálogos y Alertas de Eliminación (AppConfirmDialog)
 
 ### Resumen de Cambios

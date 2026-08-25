@@ -274,23 +274,16 @@ export default function ResetPasswordPage() {
                   </div>
                 </div>
 
-                <button
+                <AppButton
                   type="submit"
-                  disabled={loading}
-                  className="w-full py-3 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/10 hover:shadow-blue-500/25 active:scale-[0.98] disabled:opacity-50"
+                  variant="primary"
+                  size="lg"
+                  loading={loading}
+                  className="w-full"
                 >
-                  {loading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Actualizando contraseña...
-                    </>
-                  ) : (
-                    <>
-                      Actualizar Contraseña
-                      <ArrowRight className="h-4 w-4" />
-                    </>
-                  )}
-                </button>
+                  Actualizar contraseña
+                  <ArrowRight className="h-4 w-4" />
+                </AppButton>
               </form>
             </>
           ) : (
@@ -298,17 +291,20 @@ export default function ResetPasswordPage() {
               <div className="h-12 w-12 rounded-full bg-red-50 border border-red-100 flex items-center justify-center text-red-500 mx-auto">
                 <ShieldAlert className="h-6 w-6" />
               </div>
-              <h3 className="font-outfit text-lg font-bold text-slate-900">Enlace No Válido</h3>
+              <h3 className="font-outfit text-lg font-bold text-slate-900">Enlace no válido</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
                 El enlace de restablecimiento es inválido, ha expirado o ya fue utilizado. Por favor, solicitá uno nuevo.
               </p>
-              <button
+              <AppButton
+                type="button"
+                variant="primary"
+                size="lg"
                 onClick={() => { window.location.href = '/login'; }}
-                className="w-full py-3 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white font-semibold text-sm transition-all flex items-center justify-center gap-2 mt-4"
+                className="w-full mt-4"
               >
-                Volver al Login
+                Volver al login
                 <ArrowRight className="h-4 w-4" />
-              </button>
+              </AppButton>
             </div>
           )}
         </div>
@@ -328,16 +324,19 @@ export default function ResetPasswordPage() {
             <div className="h-12 w-12 rounded-full bg-red-50 border border-red-100 flex items-center justify-center text-red-500 mx-auto mb-4">
               <ShieldAlert className="h-6 w-6" />
             </div>
-            <h3 className="font-outfit text-lg font-bold text-slate-900 mb-2">Error de Validación</h3>
+            <h3 className="font-outfit text-lg font-bold text-slate-900 mb-2">Error de validación</h3>
             <p className="text-xs text-slate-600 leading-relaxed mb-6">
               {error}
             </p>
-            <button
+            <AppButton
+              type="button"
+              variant="destructive"
+              size="md"
               onClick={() => setShowErrorModal(false)}
-              className="w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold transition-all"
+              className="w-full"
             >
               Cerrar
-            </button>
+            </AppButton>
           </div>
         </div>
       )}

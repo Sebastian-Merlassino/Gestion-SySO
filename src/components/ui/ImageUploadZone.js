@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Camera, Upload, Trash2, Image as ImageIcon, Loader2, Eye, PlusCircle, Edit } from 'lucide-react';
 import { useToast } from '../providers/ToastProvider';
+import AppPhotoGalleryModal from './AppPhotoGalleryModal';
 
 /**
  * Validates file size and format for images
@@ -52,6 +53,8 @@ export default function ImageUploadZone({
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showSourceSelector, setShowSourceSelector] = useState(false);
+  const [viewingImageModal, setViewingImageModal] = useState(false);
+  const [currentModalImage, setCurrentModalImage] = useState(null);
   const fileRef = useRef(null);
   const cameraRef = useRef(null);
 
@@ -65,26 +68,8 @@ export default function ImageUploadZone({
 
   const handleViewImage = (url) => {
     if (!url) return;
-    if (url.startsWith('data:')) {
-      const newTab = window.open();
-      if (newTab) {
-        newTab.document.body.style.margin = '0';
-        newTab.document.body.style.background = '#0e1117';
-        newTab.document.body.style.display = 'flex';
-        newTab.document.body.style.alignItems = 'center';
-        newTab.document.body.style.justifyContent = 'center';
-        newTab.document.body.style.height = '100vh';
-        const img = newTab.document.createElement('img');
-        img.src = url;
-        img.style.maxWidth = '100%';
-        img.style.maxHeight = '100%';
-        img.style.objectFit = 'contain';
-        newTab.document.body.appendChild(img);
-        newTab.document.title = 'Visualizar Evidencia';
-      }
-    } else {
-      window.open(url, '_blank');
-    }
+    setCurrentModalImage(url);
+    setViewingImageModal(true);
   };
 
   const handleDragOver = (e) => {
@@ -378,6 +363,14 @@ export default function ImageUploadZone({
         className="absolute opacity-0 w-0 h-0 pointer-events-none"
         disabled={disabled}
         onChange={handleFileChangeInternal}
+      />
+
+      {/* Modal universal de visualización de fotos */}
+      <AppPhotoGalleryModal
+        open={viewingImageModal}
+        onOpenChange={setViewingImageModal}
+        title={label || 'Evidencia fotográfica'}
+        currentPhoto={currentModalImage}
       />
     </div>
   );

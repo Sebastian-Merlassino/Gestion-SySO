@@ -11,6 +11,7 @@ import { useToast } from '@/components/providers/ToastProvider';
 import AppPageHeader from '@/components/ui/AppPageHeader';
 import AppButton from '@/components/ui/AppButton';
 import AppInput from '@/components/ui/AppInput';
+import AppDatePicker from '@/components/ui/AppDatePicker';
 import AppSelect from '@/components/ui/AppSelect';
 import AppCard from '@/components/ui/AppCard';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
@@ -1343,40 +1344,12 @@ const [partidosList, setPartidosList] = useState([]);
               </div>
 
               {profileData?.role !== 'cliente' && (
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                    Fecha de Nacimiento <span className="text-[#468DFF]">*</span>
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      required
-                      placeholder="DD/MM/YYYY"
-                      maxLength={10}
-                      value={birthDate}
-                      onChange={(e) => setBirthDate(formatAsDateInput(e.target.value))}
-                      className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono text-slate-700"
-                    />
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center" onClick={(e) => e.stopPropagation()}>
-                      <Calendar className="h-4 w-4" />
-                      <input
-                        type="date"
-                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (val) {
-                            const parts = val.split('-');
-                            if (parts.length === 3) {
-                              setBirthDate(`${parts[2]}/${parts[1]}/${parts[0]}`);
-                            }
-                          } else {
-                            setBirthDate('');
-                          }
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
+                <AppDatePicker
+                  label="Fecha de Nacimiento"
+                  required
+                  value={birthDate}
+                  onChange={(e) => setBirthDate(e.target.value)}
+                />
               )}
             </div>
 
@@ -1498,40 +1471,12 @@ const [partidosList, setPartidosList] = useState([]);
                         className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700"
                       />
                     </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                        Vencimiento
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          placeholder="DD/MM/YYYY"
-                          maxLength={10}
-                          value={m.vencimiento}
-                          onChange={(e) => handleMatriculaChange(index, 'vencimiento', formatAsDateInput(e.target.value))}
-                          className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono text-slate-700"
-                          disabled={profileData?.role === 'cliente'}
-                        />
-                        {profileData?.role !== 'cliente' && (
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center" onClick={(e) => e.stopPropagation()}>
-                            <Calendar className="h-4 w-4" />
-                            <input
-                              type="date"
-                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (val) {
-                                  const parts = val.split('-');
-                                  if (parts.length === 3) {
-                                    handleMatriculaChange(index, 'vencimiento', `${parts[2]}/${parts[1]}/${parts[0]}`);
-                                  }
-                                }
-                              }}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    <AppDatePicker
+                      label="Vencimiento"
+                      value={m.vencimiento}
+                      onChange={(e) => handleMatriculaChange(index, 'vencimiento', e.target.value)}
+                      disabled={profileData?.role === 'cliente'}
+                    />
                   </div>
 
                   {/* Uploads de la matrícula actual */}
@@ -2110,14 +2055,16 @@ const [partidosList, setPartidosList] = useState([]);
                       )}
                     </div>
                     {!isExempt && (
-                      <button
+                      <AppButton
                         type="button"
+                        variant="secondary"
+                        size="sm"
                         onClick={() => setShowPlanModal(true)}
-                        className="py-2.5 px-4 rounded-xl border border-[#468DFF]/40 hover:bg-[#468DFF]/5 text-[#468DFF] font-semibold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
+                        className="gap-2 font-semibold"
                       >
                         <Sparkles className="h-3.5 w-3.5" />
-                        Cambiar / Subir Plan
-                      </button>
+                        <span>Cambiar / subir plan</span>
+                      </AppButton>
                     )}
                   </div>
                 </div>
@@ -2135,41 +2082,40 @@ const [partidosList, setPartidosList] = useState([]);
               <div className="bg-slate-50 border-t border-slate-200 p-3 sm:p-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 shrink-0 rounded-b-none md:rounded-b-2xl">
                 <div className="flex justify-center sm:justify-start">
                   {profileData && profileData.role !== 'cliente' && (
-                    <button
+                    <AppButton
                       type="button"
+                      variant="destructive"
+                      size="sm"
                       onClick={() => setShowDeleteModal(true)}
-                      className="w-full sm:w-auto py-2 px-3 rounded-xl border border-red-200 hover:bg-red-50 text-red-600 text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-[0.98]"
+                      className="w-full sm:w-auto gap-1.5"
                     >
                       <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                      <span>{profileData?.role === 'admin' ? 'Eliminar Cuenta y Organización' : 'Eliminar Cuenta de Acceso'}</span>
-                    </button>
+                      <span>{profileData?.role === 'admin' ? 'Eliminar cuenta y organización' : 'Eliminar cuenta de acceso'}</span>
+                    </AppButton>
                   )}
                 </div>
 
                 <div className="flex items-center gap-2 sm:gap-3 justify-end">
-                  <button
+                  <AppButton
                     type="button"
+                    variant="secondary"
+                    size="md"
                     onClick={handleExitWithoutSave}
-                    className="flex-1 sm:flex-none px-4 sm:px-5 py-2.5 bg-[#FFFFFF] text-[#468DFF] border border-[#468DFF] rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-[#FFFFFF] hover:border-[#FFFFFF] transition-all active:scale-[0.98] cursor-pointer text-center"
+                    className="flex-1 sm:flex-none"
                   >
                     Salir
-                  </button>
+                  </AppButton>
 
                   {profileData?.role !== 'cliente' && (
-                    <button
+                    <AppButton
                       type="submit"
-                      disabled={loading}
-                      className="flex-1 sm:flex-none px-4 sm:px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
+                      variant="primary"
+                      size="md"
+                      loading={loading}
+                      className="flex-1 sm:flex-none"
                     >
-                      {loading ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin shrink-0" />
-                          <span>Guardando...</span>
-                        </>
-                      ) : (
-                        <span>Guardar Cambios</span>
-                      )}
-                    </button>
+                      Guardar cambios
+                    </AppButton>
                   )}
                 </div>
               </div>
@@ -2255,8 +2201,11 @@ const [partidosList, setPartidosList] = useState([]);
                           <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Matriz de Riesgos</li>
                         </ul>
                       </div>
-                      <button
+                      <AppButton
                         type="button"
+                        variant={currentActivePlan === 'free' ? 'primary' : 'outline'}
+                        size="md"
+                        className="w-full mt-6"
                         disabled={currentActivePlan === 'free'}
                         onClick={() => {
                           showAlert(
@@ -2270,10 +2219,9 @@ const [partidosList, setPartidosList] = useState([]);
                           );
                           setShowPlanModal(false);
                         }}
-                        className={`w-full py-2.5 rounded-xl mt-6 text-xs font-bold transition-all ${currentActivePlan === 'free' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer'}`}
                       >
                         {currentActivePlan === 'free' ? 'Activo' : 'Elegir'}
-                      </button>
+                      </AppButton>
                     </div>
 
                     {/* Plan Básico */}
@@ -2299,14 +2247,16 @@ const [partidosList, setPartidosList] = useState([]);
                           <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Eléctrico + PDF</li>
                         </ul>
                       </div>
-                      <button
+                      <AppButton
                         type="button"
+                        variant={currentActivePlan === 'basic_5' ? 'primary' : 'outline'}
+                        size="md"
+                        className="w-full mt-6"
                         disabled={currentActivePlan === 'basic_5'}
                         onClick={() => handleUpgradePlan('basic_5')}
-                        className={`w-full py-2.5 rounded-xl mt-6 text-xs font-bold transition-all ${currentActivePlan === 'basic_5' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-[#468DFF] hover:bg-[#0511F2] text-white cursor-pointer'}`}
                       >
                         {currentActivePlan === 'basic_5' ? 'Activo' : 'Contratar'}
-                      </button>
+                      </AppButton>
                     </div>
 
                     {/* Plan Estándar */}
@@ -2334,14 +2284,16 @@ const [partidosList, setPartidosList] = useState([]);
                           <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Avisos de Riesgo</li>
                         </ul>
                       </div>
-                      <button
+                      <AppButton
                         type="button"
+                        variant={currentActivePlan === 'standard_25' ? 'primary' : 'outline'}
+                        size="md"
+                        className="w-full mt-6"
                         disabled={currentActivePlan === 'standard_25'}
                         onClick={() => handleUpgradePlan('standard_25')}
-                        className={`w-full py-2.5 rounded-xl mt-6 text-xs font-bold transition-all ${currentActivePlan === 'standard_25' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-[#468DFF] hover:bg-[#0511F2] text-white cursor-pointer'}`}
                       >
                         {currentActivePlan === 'standard_25' ? 'Activo' : 'Contratar'}
-                      </button>
+                      </AppButton>
                     </div>
 
                     {/* Plan Full */}
@@ -2372,14 +2324,16 @@ const [partidosList, setPartidosList] = useState([]);
                           <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Portal de clientes</li>
                         </ul>
                       </div>
-                      <button
+                      <AppButton
                         type="button"
+                        variant={currentActivePlan === 'libre' ? 'primary' : 'outline'}
+                        size="md"
+                        className="w-full mt-6"
                         disabled={currentActivePlan === 'libre'}
                         onClick={() => handleUpgradePlan('libre')}
-                        className={`w-full py-2.5 rounded-xl mt-6 text-xs font-bold transition-all ${currentActivePlan === 'libre' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-[#468DFF] hover:bg-[#0511F2] text-white cursor-pointer'}`}
                       >
                         {currentActivePlan === 'libre' ? 'Activo' : 'Contratar'}
-                      </button>
+                      </AppButton>
                     </div>
 
                   </div>

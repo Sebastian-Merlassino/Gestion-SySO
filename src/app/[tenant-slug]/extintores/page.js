@@ -13,6 +13,7 @@ import { useToast } from '@/components/providers/ToastProvider';
 import AppPageHeader from '@/components/ui/AppPageHeader';
 import AppButton from '@/components/ui/AppButton';
 import AppInput from '@/components/ui/AppInput';
+import AppDatePicker from '@/components/ui/AppDatePicker';
 import AppSelect from '@/components/ui/AppSelect';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
@@ -1385,68 +1386,22 @@ export default function ExtintoresPage({ params }) {
                     </div>
 
                     <div className="grid md:grid-cols-3 gap-4">
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600">Vencimiento de Recarga</label>
-                        <div className="relative">
-                          <input
-                            type="text"
-                            placeholder="DD/MM/YYYY"
-                            maxLength={10}
-                            value={vencRecarga}
-                            onChange={(e) => setVencRecarga(formatAsDateInput(e.target.value))}
-                            className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono"
-                          />
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
-                            <Calendar className="h-4 w-4" />
-                            <input
-                              type="date"
-                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (val) {
-    const parts = val.split('-');
-    if (parts.length === 3) {
-      setVencRecarga(`${parts[2]}/${parts[1]}/${parts[0]}`);
-    }
-  } else {
-    setVencRecarga('');
-  }
-                              }}
-                            />
-                          </div>
-                        </div>
+                      <div>
+                        <AppDatePicker
+                          id="vencRecarga"
+                          label="Vencimiento de Recarga"
+                          value={vencRecarga}
+                          onChange={(e) => setVencRecarga(e.target.value)}
+                        />
                       </div>
 
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600">Vencimiento P.H. (Prueba Hidráulica)</label>
-                        <div className="relative">
-                          <input
-                            type="text"
-                            placeholder="DD/MM/YYYY"
-                            maxLength={10}
-                            value={vencPh}
-                            onChange={(e) => setVencPh(formatAsDateInput(e.target.value))}
-                            className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono"
-                          />
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
-                            <Calendar className="h-4 w-4" />
-                            <input
-                              type="date"
-                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (val) {
-    const parts = val.split('-');
-    if (parts.length === 3) {
-      setVencPh(`${parts[2]}/${parts[1]}/${parts[0]}`);
-    }
-  } else {
-    setVencPh('');
-  }
-                              }}
-                            />
-                          </div>
-                        </div>
+                      <div>
+                        <AppDatePicker
+                          id="vencPh"
+                          label="Vencimiento P.H. (Prueba Hidráulica)"
+                          value={vencPh}
+                          onChange={(e) => setVencPh(e.target.value)}
+                        />
                       </div>
                     </div>
                   </div>
@@ -1540,36 +1495,13 @@ export default function ExtintoresPage({ params }) {
                     </h3>
                     
                     <div className="grid md:grid-cols-2 gap-4">
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600">Fecha de Control</label>
-                        <div className="relative">
-                          <input
-                            type="text"
-                            placeholder="DD/MM/YYYY"
-                            maxLength={10}
-                            value={fechaControl}
-                            onChange={(e) => setFechaControl(formatAsDateInput(e.target.value))}
-                            className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono"
-                          />
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
-                            <Calendar className="h-4 w-4" />
-                            <input
-                              type="date"
-                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (val) {
-    const parts = val.split('-');
-    if (parts.length === 3) {
-      setFechaControl(`${parts[2]}/${parts[1]}/${parts[0]}`);
-    }
-  } else {
-    setFechaControl('');
-  }
-                              }}
-                            />
-                          </div>
-                        </div>
+                      <div>
+                        <AppDatePicker
+                          id="fechaControl"
+                          label="Fecha de Control"
+                          value={fechaControl}
+                          onChange={(e) => setFechaControl(e.target.value)}
+                        />
                       </div>
                     </div>
 

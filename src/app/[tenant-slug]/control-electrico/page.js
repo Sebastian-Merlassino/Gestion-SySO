@@ -10,9 +10,11 @@ import { useToast } from '@/components/providers/ToastProvider';
 import AppPageHeader from '@/components/ui/AppPageHeader';
 import AppButton from '@/components/ui/AppButton';
 import AppInput from '@/components/ui/AppInput';
+import AppDatePicker from '@/components/ui/AppDatePicker';
 import AppSelect from '@/components/ui/AppSelect';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
+import AppSendModal from '@/components/ui/AppSendModal';
 import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
@@ -22,6 +24,7 @@ import AppSortIcon from '@/components/ui/AppSortIcon';
 import AppSkeleton from '@/components/ui/AppSkeleton';
 import AppTooltip from '@/components/ui/AppTooltip';
 import AppLoadingSpinner from '@/components/ui/AppLoadingSpinner';
+import { getBase64ImageFromUrl, resizeImageForPdf } from '@/lib/pdf/pdfImages';
 import { formatPdfFileName } from '@/lib/pdf/pdfFileName';
 import { printPdfDocument } from '@/lib/pdf/pdfPrintHelper';
 import { getPdfPrimaryColor } from '@/lib/pdf/pdfTheme';
@@ -235,12 +238,15 @@ export default function ControlElectricoPage({ params }) {
     return originalDataRef.current !== currentData;
   };
 
-  // Estados de Envío por Correo (Fase 3)
+  // Estados de Envío por Correo / WhatsApp
   const [isMailModalOpen, setIsMailModalOpen] = useState(false);
   const [mailTargetControl, setMailTargetControl] = useState(null);
   const [availableEmails, setAvailableEmails] = useState([]);
   const [manualEmail, setManualEmail] = useState('');
+  const [availablePhones, setAvailablePhones] = useState([]);
+  const [manualPhone, setManualPhone] = useState('');
   const [mailLoading, setMailLoading] = useState(false);
+  const [whatsappLoading, setWhatsappLoading] = useState(false);
 
   // Cargar datos
   useEffect(() => {
@@ -431,7 +437,7 @@ export default function ControlElectricoPage({ params }) {
       // Clientes
       let empresasQuery = supabase
         .from('empresas')
-        .select('id, razon_social, cuit')
+        .select('id, razon_social, cuit, contactos_correos, contactos_telefonos')
         .eq('tenant_id', ten.id);
       if (prof.role === 'cliente') {
         empresasQuery = empresasQuery.eq('id', prof.empresa_id);
@@ -1703,9 +1709,16 @@ export default function ControlElectricoPage({ params }) {
 
   const handleOpenEmailModal = (c) => {
     setMailTargetControl(c);
+    setManualEmail('');
+    setManualPhone('');
+    setMailLoading(false);
+    setWhatsappLoading(false);
+
     const emp = empresas.find(e => e.id === c.empresa_id);
+
+    // Cargar Correos
     if (emp && emp.contactos_correos && emp.contactos_correos.length > 0) {
-      const formatted = emp.contactos_correos.map((cont, i) => {
+      const formattedEmails = emp.contactos_correos.map((cont, i) => {
         const mailStr = (typeof cont === 'object') ? (cont.correo || cont.valor || '') : String(cont);
         const nameStr = (typeof cont === 'object' && cont.nombre) ? cont.nombre : 'Contacto';
         const cargoStr = (typeof cont === 'object' && cont.cargo) ? cont.cargo : '';
@@ -1717,12 +1730,106 @@ export default function ControlElectricoPage({ params }) {
           checked: i === 0
         };
       }).filter(item => item.valor);
-      setAvailableEmails(formatted);
+      setAvailableEmails(formattedEmails);
     } else {
       setAvailableEmails([]);
     }
-    setManualEmail('');
+
+    // Cargar Teléfonos
+    if (emp && emp.contactos_telefonos && emp.contactos_telefonos.length > 0) {
+      const formattedPhones = emp.contactos_telefonos.map((t, i) => {
+        const phoneStr = (typeof t === 'object') ? (t.telefono || t.valor || '') : String(t);
+        const nameStr = (typeof t === 'object' && t.nombre) ? t.nombre : 'Contacto';
+        const cargoStr = (typeof t === 'object' && t.cargo) ? t.cargo : '';
+        return {
+          valor: phoneStr,
+          descripcion: nameStr 
+            ? `${nameStr}${cargoStr ? ` - ${cargoStr}` : ''} (${phoneStr})` 
+            : phoneStr,
+          checked: i === 0
+        };
+      }).filter(item => item.valor);
+      setAvailablePhones(formattedPhones);
+    } else {
+      setAvailablePhones([]);
+    }
+
     setIsMailModalOpen(true);
+  };
+
+  const handleSendWhatsApp = async () => {
+    if (!mailTargetControl) return;
+    setWhatsappLoading(true);
+    try {
+      const checkedPhones = availablePhones.filter(p => p.checked).map(p => p.valor);
+      const manualVal = manualPhone.trim();
+      
+      let targetPhone = '';
+      if (checkedPhones.length > 0) {
+        targetPhone = checkedPhones[0];
+      } else if (manualVal) {
+        targetPhone = manualVal;
+      }
+      
+      let cleanPhone = targetPhone.replace(/[^0-9]/g, '');
+
+      const doc = await handleExportPdfReport(mailTargetControl, false, false);
+      if (!doc) throw new Error('No se pudo generar el PDF del control eléctrico.');
+
+      const pdfBlob = doc.output('blob');
+      const fileId = crypto.randomUUID();
+      const filePath = `${profile?.id || 'anonymous'}/control_electrico_${mailTargetControl.id}_${fileId}.pdf`;
+
+      if (!isDevMode) {
+        const { error: uploadError } = await supabase.storage
+          .from('documents')
+          .upload(filePath, pdfBlob, {
+            contentType: 'application/pdf',
+            upsert: true
+          });
+        if (uploadError) throw new Error(`Error al subir el adjunto a Storage: ${uploadError.message}`);
+      }
+
+      let pdfUrl = '';
+      if (!isDevMode) {
+        const { data: signData, error: signError } = await supabase.storage
+          .from('documents')
+          .createSignedUrl(filePath, 604800);
+        if (signError || !signData?.signedUrl) {
+          throw new Error(`Error al generar enlace seguro de descarga: ${signError?.message || 'Enlace nulo'}`);
+        }
+        pdfUrl = signData.signedUrl;
+      } else {
+        pdfUrl = 'https://ejemplo.com/control_electrico.pdf';
+      }
+
+      const emp = empresas.find(e => e.id === mailTargetControl.empresa_id);
+      const est = allEstablecimientos.find(e => e.id === mailTargetControl.establecimiento_id);
+      const empName = emp ? emp.razon_social : 'N/A';
+      const estName = est ? est.denominacion : 'N/A';
+      const tName = tenant ? (tenant.razon_social || tenant.nombre || 'Gestión SySO') : 'Gestión SySO';
+      const docDate = formatDate(mailTargetControl.fecha);
+      const inspectorName = mailTargetControl.profesional_nombre || 'Profesional SySO';
+
+      const textMessage = `Estimado cliente de *${empName}* (Establecimiento: *${estName}*),\n\nLe adjuntamos el reporte de *Inspección Visual de Instalaciones Eléctricas* del día *${docDate}* realizada por el profesional *${inspectorName}* de *${tName}*.\n\nPuede ver y descargar el documento PDF ingresando al siguiente enlace seguro:\n${pdfUrl}`;
+      const encodedMsg = encodeURIComponent(textMessage);
+
+      let waUrl = '';
+      if (cleanPhone) {
+        waUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodedMsg}`;
+      } else {
+        waUrl = `https://api.whatsapp.com/send?text=${encodedMsg}`;
+      }
+
+      window.open(waUrl, '_blank');
+      triggerToast('Redirigiendo a WhatsApp...');
+      setIsMailModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      triggerToast(err.message || 'Error al intentar enviar por WhatsApp.', 'error');
+    } finally {
+      setWhatsappLoading(false);
+    }
   };
 
   const handleSendEmail = async (e) => {
@@ -1748,15 +1855,17 @@ export default function ControlElectricoPage({ params }) {
       const fileId = crypto.randomUUID();
       const filePath = `${profile?.id || 'anonymous'}/control_electrico_${mailTargetControl.id}_${fileId}.pdf`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('documents')
-        .upload(filePath, pdfBlob, {
-          contentType: 'application/pdf',
-          upsert: true
-        });
+      if (!isDevMode) {
+        const { error: uploadError } = await supabase.storage
+          .from('documents')
+          .upload(filePath, pdfBlob, {
+            contentType: 'application/pdf',
+            upsert: true
+          });
 
-      if (uploadError) {
-        throw new Error(`Error al subir el adjunto a Storage: ${uploadError.message}`);
+        if (uploadError) {
+          throw new Error(`Error al subir el adjunto a Storage: ${uploadError.message}`);
+        }
       }
 
       const emp = empresas.find(emp => emp.id === mailTargetControl.empresa_id);
@@ -1993,40 +2102,15 @@ export default function ControlElectricoPage({ params }) {
                       </div>
 
                       {/* Fecha */}
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600">Fecha *</label>
-                        <div className="relative">
-                          <input
-                            type="text"
-                            placeholder="DD/MM/YYYY"
-                            maxLength={10}
-                            value={fecha}
-                            onChange={(e) => setFecha(formatAsDateInput(e.target.value))}
-                            required
-                            disabled={isFormDisabled}
-                            className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 font-mono disabled:bg-slate-100 disabled:text-slate-450"
-                          />
-                          {!isFormDisabled && (
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
-                              <Calendar className="h-4 w-4" />
-                              <input
-                                type="date"
-                                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  if (val) {
-    const parts = val.split('-');
-    if (parts.length === 3) {
-      setFecha(`${parts[2]}/${parts[1]}/${parts[0]}`);
-    }
-  } else {
-    setFecha('');
-  }
-                                }}
-                              />
-                            </div>
-                          )}
-                        </div>
+                      <div>
+                        <AppDatePicker
+                          id="fecha"
+                          label="Fecha"
+                          required
+                          value={fecha}
+                          onChange={(e) => setFecha(e.target.value)}
+                          disabled={isFormDisabled}
+                        />
                       </div>
 
                     </div>
@@ -2588,7 +2672,7 @@ export default function ControlElectricoPage({ params }) {
                                       </AppButton>
                                     </AppTooltip>
                                     {profile && profile.role !== 'cliente' && (
-                                      <AppTooltip content="Enviar por correo">
+                                      <AppTooltip content="Enviar por correo o WhatsApp">
                                         <AppButton
                                           variant="document-table"
                                           size="icon"
@@ -2657,93 +2741,25 @@ export default function ControlElectricoPage({ params }) {
 
       </main>
 
-      {/* Modal de Envío de Email */}
-      {isMailModalOpen && mailTargetControl && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div onClick={() => setIsMailModalOpen(false)} className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 max-w-md w-full z-10 shadow-2xl relative space-y-4 animate-fade-in">
-            
-            <div className="flex justify-between items-center">
-              <h4 className="font-outfit text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                <Mail className="h-4.5 w-4.5 text-[#468DFF]" />
-                Enviar Control Eléctrico por Correo
-              </h4>
-              <button onClick={() => setIsMailModalOpen(false)} className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 cursor-pointer">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <p className="text-xs text-slate-500 font-medium">
-              Seleccione los contactos registrados de la empresa o ingrese correos electrónicos manualmente (separados por comas) para enviar el reporte de control eléctrico en PDF.
-            </p>
-
-            <div className="space-y-3">
-              
-              {/* Contactos de la empresa */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-600 block">Correos de la Empresa:</label>
-                {availableEmails.length === 0 ? (
-                  <p className="text-xs text-slate-400 italic font-semibold">No hay contactos registrados para esta empresa.</p>
-                ) : (
-                  <div className="bg-slate-50 p-3 border border-slate-200 rounded-xl max-h-36 overflow-y-auto space-y-1.5">
-                    {availableEmails.map((e, idx) => (
-                      <label key={idx} className="flex items-center gap-2.5 text-xs font-semibold text-slate-700 cursor-pointer hover:bg-slate-100/50 py-1 rounded">
-                        <input
-                          type="checkbox"
-                          checked={e.checked}
-                          onChange={() => {
-                            setAvailableEmails(prev => prev.map((item, i) => i === idx ? { ...item, checked: !item.checked } : item));
-                          }}
-                          className="accent-[#468DFF] h-4 w-4"
-                        />
-                        {e.descripcion}
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Ingreso manual */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-slate-600">Correos Manuales:</label>
-                <textarea
-                  rows="2"
-                  placeholder="ejemplo1@correo.com, ejemplo2@correo.com..."
-                  value={manualEmail}
-                  onChange={(e) => setManualEmail(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#468DFF] bg-slate-50/50"
-                />
-              </div>
-
-            </div>
-
-            {/* Acciones */}
-            <div className="flex justify-end gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setIsMailModalOpen(false)}
-                className="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-100 cursor-pointer transition-all"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                disabled={mailLoading}
-                onClick={handleSendEmail}
-                className="px-4 py-2 bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold rounded-lg cursor-pointer transition-all flex items-center gap-1.5 shadow-md shadow-[#468DFF]/10 disabled:bg-slate-400"
-              >
-                {mailLoading ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Send className="h-3.5 w-3.5" />
-                )}
-                Enviar Correo
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
+      {/* DIÁLOGO ESTÁNDAR: ENVÍO DE REPORTE (EMAIL / WHATSAPP) */}
+      <AppSendModal
+        isOpen={isMailModalOpen && Boolean(mailTargetControl)}
+        onClose={() => setIsMailModalOpen(false)}
+        title="Enviar Control Eléctrico (PDF)"
+        subtitle={mailTargetControl ? `${empresas.find(e => e.id === mailTargetControl.empresa_id)?.razon_social || 'Cliente'} — ${formatDate(mailTargetControl.fecha)}` : undefined}
+        availableEmails={availableEmails}
+        setAvailableEmails={setAvailableEmails}
+        manualEmail={manualEmail}
+        setManualEmail={setManualEmail}
+        onSendEmail={handleSendEmail}
+        isEmailLoading={mailLoading}
+        availablePhones={availablePhones}
+        setAvailablePhones={setAvailablePhones}
+        manualPhone={manualPhone}
+        setManualPhone={setManualPhone}
+        onSendWhatsApp={handleSendWhatsApp}
+        isWhatsappLoading={whatsappLoading}
+      />
 
       {/* TOAST FEEDBACK removidos - consumidos globalmente */}
 

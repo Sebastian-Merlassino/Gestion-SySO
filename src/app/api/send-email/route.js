@@ -161,6 +161,7 @@ export async function POST(request) {
       const isProtocoloRuido = documentType === 'protocolo_ruido';
       const isProtocoloErgonomia = documentType === 'protocolo_ergonomia';
       const isProtocoloPuestaATierra = documentType === 'protocolo_puesta_a_tierra';
+      const isCapacitacionOnline = documentType === 'capacitacion_online';
 
       attachments.push({
         filename: isAvisoRiesgo
@@ -177,6 +178,8 @@ export async function POST(request) {
           ? `Protocolo_Ergonomia_${(companyName || 'Cliente').replace(/\s+/g, '_')}_${date || 'ergonomia'}.pdf`
           : isProtocoloPuestaATierra
           ? `Protocolo_Puesta_A_Tierra_${(companyName || 'Cliente').replace(/\s+/g, '_')}_${date || 'puesta_a_tierra'}.pdf`
+          : isCapacitacionOnline
+          ? `Registro_Capacitacion_${(companyName || 'Cliente').replace(/\s+/g, '_')}_${date || 'capacitacion'}.pdf`
           : `Constancia_Visita_${(companyName || 'Cliente').replace(/\s+/g, '_')}_${date || 'visita'}.pdf`,
         content: pdfBuffer,
         contentType: 'application/pdf'
@@ -215,7 +218,7 @@ export async function POST(request) {
       : isProtocoloErgonomia
       ? `Protocolo de Ergonomía - ${companyName || 'Cliente'}`
       : isCapacitacionOnline
-      ? `Capacitación virtual de higiene y seguridad en el trabajo`
+      ? (filePath ? `Registro de Capacitación Virtual - ${companyName || 'Cliente'}` : `Capacitación virtual de higiene y seguridad en el trabajo`)
       : `Constancia de Visita de Higiene y Seguridad - ${companyName || 'Cliente'}`;
 
     console.log(`[API Send-Email] Tenant: ${profile.tenant_id} | Sender: ${user.email} | To: ${emailList.join(', ')} | Subject: ${mailSubject}`);
@@ -319,7 +322,7 @@ export async function POST(request) {
                 <tr>
                   <td style="padding: 32px 32px 0 32px; text-align: center;">
                     <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em;">
-                      ${isCapacitacionOnline ? 'Capacitación Virtual de Higiene y Seguridad' : isAvisoRiesgo ? 'Aviso de Riesgo' : isControlElectrico ? 'Inspección Visual de Instalaciones Eléctricas' : isChecklistPersonalizado ? (checklistNameEscaped || 'Checklist Personalizado') : isProtocoloIluminacion ? 'Protocolo de Medición de Iluminación' : isProtocoloRuido ? 'Protocolo de Medición de Ruido' : isProtocoloErgonomia ? 'Protocolo de Ergonomía' : isProtocoloPuestaATierra ? 'Protocolo de Medición de Puesta a Tierra' : 'Constancia de Visita Técnica'}
+                      ${isCapacitacionOnline ? (filePath ? 'Registro de Capacitación Virtual' : 'Capacitación Virtual de Higiene y Seguridad') : isAvisoRiesgo ? 'Aviso de Riesgo' : isControlElectrico ? 'Inspección Visual de Instalaciones Eléctricas' : isChecklistPersonalizado ? (checklistNameEscaped || 'Checklist Personalizado') : isProtocoloIluminacion ? 'Protocolo de Medición de Iluminación' : isProtocoloRuido ? 'Protocolo de Medición de Ruido' : isProtocoloErgonomia ? 'Protocolo de Ergonomía' : isProtocoloPuestaATierra ? 'Protocolo de Medición de Puesta a Tierra' : 'Constancia de Visita Técnica'}
                     </h1>
                     <p style="margin: 6px 0 0 0; font-size: 13px; font-weight: 600; color: #468DFF; text-transform: uppercase; letter-spacing: 0.06em;">
                       ${companyNameEscaped ? companyNameEscaped : 'Notificación Oficial de Servicio'}

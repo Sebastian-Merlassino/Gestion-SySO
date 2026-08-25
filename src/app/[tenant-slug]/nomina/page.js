@@ -13,6 +13,7 @@ import AppPageHeader from '@/components/ui/AppPageHeader';
 import AppButton from '@/components/ui/AppButton';
 import AppLabel from '@/components/ui/AppLabel';
 import AppInput from '@/components/ui/AppInput';
+import AppDatePicker from '@/components/ui/AppDatePicker';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
 import AppTextarea from '@/components/ui/AppTextarea';
@@ -1110,38 +1111,14 @@ export default function NominaPage({ params }) {
 
                     {/* Fecha de Carga */}
                     <div>
-                      <label className="text-xs font-bold text-slate-600 block mb-1.5">
-                        Fecha de Carga <span className="text-[#468DFF]">*</span>
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          placeholder="DD/MM/YYYY"
-                          maxLength={10}
-                          required
-                          value={fechaCarga}
-                          onChange={(e) => setFechaCarga(formatAsDateInput(e.target.value))}
-                          className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-white text-slate-700 transition-all font-mono disabled:text-slate-800 disabled:bg-slate-50 disabled:opacity-100"
-                        />
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
-                          <Calendar className="h-4 w-4" />
-                          <input
-                            type="date"
-                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              if (val) {
-    const parts = val.split('-');
-    if (parts.length === 3) {
-      setFechaCarga(`${parts[2]}/${parts[1]}/${parts[0]}`);
-    }
-  } else {
-    setFechaCarga('');
-  }
-                            }}
-                          />
-                        </div>
-                      </div>
+                      <AppDatePicker
+                        id="fechaCarga"
+                        label="Fecha de Carga"
+                        required
+                        value={fechaCarga}
+                        onChange={(e) => setFechaCarga(e.target.value)}
+                        disabled={isReadOnlyView}
+                      />
                     </div>
 
                   </div>
@@ -1220,34 +1197,14 @@ export default function NominaPage({ params }) {
                             />
                           </div>
                           <div className="md:col-span-2">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Fecha de alta *</label>
-                            <div className="relative">
-                              <input
-                                type="text"
-                                required
-                                placeholder="DD/MM/YYYY"
-                                maxLength={10}
-                                value={row.fecha_alta}
-                                onChange={(e) => handleUpdateManualRow(row.id, 'fecha_alta', formatAsDateInput(e.target.value))}
-                                className="w-full border border-slate-200 rounded-lg pl-3 pr-8 py-1.5 text-xs font-semibold text-slate-700 focus:outline-none focus:border-[#468DFF] bg-white transition-all disabled:text-slate-800 disabled:bg-slate-50 disabled:opacity-100"
-                              />
-                              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
-                                <Calendar className="h-3.5 w-3.5" />
-                                <input
-                                  type="date"
-                                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                                  onChange={(e) => {
-                                    const val = e.target.value;
-                                    if (val) {
-                                      const parts = val.split('-');
-                                      if (parts.length === 3) {
-                                        handleUpdateManualRow(row.id, 'fecha_alta', `${parts[2]}/${parts[1]}/${parts[0]}`);
-                                      }
-                                    }
-                                  }}
-                                />
-                              </div>
-                            </div>
+                            <AppDatePicker
+                              id={`fecha_alta_${row.id}`}
+                              label="Fecha de alta"
+                              required
+                              value={row.fecha_alta}
+                              onChange={(e) => handleUpdateManualRow(row.id, 'fecha_alta', e.target.value)}
+                              disabled={isReadOnlyView}
+                            />
                           </div>
                           <div className="md:col-span-2">
                             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Área / Sector</label>

@@ -16,6 +16,7 @@ import AppPageHeader from '@/components/ui/AppPageHeader';
 import AppButton from '@/components/ui/AppButton';
 import AppLabel from '@/components/ui/AppLabel';
 import AppInput from '@/components/ui/AppInput';
+import AppDatePicker from '@/components/ui/AppDatePicker';
 import AppSelect from '@/components/ui/AppSelect';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
@@ -1778,76 +1779,20 @@ export default function ProgramaGestion({ params }) {
                     {/* 6 y 7. Fechas y Progreso */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       {/* F. Planificada */}
-                      <div>
-                        <label className="text-xs font-bold text-slate-600 block mb-1.5">
-                          F. Planificada
-                        </label>
-                        <div className="relative">
-                          <input
-                            type="text"
-                            placeholder="DD/MM/YYYY"
-                            maxLength={10}
-                            value={fechaPlanificada}
-                            onChange={(e) => setFechaPlanificada(formatAsDateInput(e.target.value))}
-                            className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono"
-                          />
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
-                            <Calendar className="h-4 w-4" />
-                            <input
-                              type="date"
-                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (val) {
-    const parts = val.split('-');
-    if (parts.length === 3) {
-      setFechaPlanificada(`${parts[2]}/${parts[1]}/${parts[0]}`);
-    }
-  } else {
-    setFechaPlanificada('');
-  }
-                              }}
-                            />
-                          </div>
-                        </div>
-                        <p className="text-[9px] text-slate-400 mt-1 italic">Opcional. Si no se carga, el estado será "En análisis".</p>
-                      </div>
+                      <AppDatePicker
+                        label="F. Planificada"
+                        value={fechaPlanificada}
+                        onChange={(e) => setFechaPlanificada(e.target.value)}
+                        hint='Opcional. Si no se carga, el estado será "En análisis".'
+                      />
 
                       {/* F. Realización */}
-                      <div>
-                        <label className="text-xs font-bold text-slate-600 block mb-1.5">
-                          F. Realización
-                        </label>
-                        <div className="relative">
-                          <input
-                            type="text"
-                            placeholder="DD/MM/YYYY"
-                            maxLength={10}
-                            value={fechaRealizacion}
-                            onChange={(e) => handleRealizacionChange(formatAsDateInput(e.target.value))}
-                            className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono"
-                          />
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
-                            <Calendar className="h-4 w-4" />
-                            <input
-                              type="date"
-                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (val) {
-    const parts = val.split('-');
-    if (parts.length === 3) {
-      handleRealizacionChange(`${parts[2]}/${parts[1]}/${parts[0]}`);
-    }
-  } else {
-    handleRealizacionChange('');
-  }
-                              }}
-                            />
-                          </div>
-                        </div>
-                        <p className="text-[9px] text-slate-400 mt-1 italic">Si se carga, el progreso se fija al 100% y el estado a Vigente.</p>
-                      </div>
+                      <AppDatePicker
+                        label="F. Realización"
+                        value={fechaRealizacion}
+                        onChange={(e) => handleRealizacionChange(e.target.value)}
+                        hint="Si se carga, el progreso se fija al 100% y el estado a Vigente."
+                      />
 
                       {/* Progreso del Avance */}
                       <div>

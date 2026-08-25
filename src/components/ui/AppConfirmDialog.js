@@ -64,7 +64,7 @@ export default function AppConfirmDialog({
         <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm animate-fade-in" />
         
         {/* Modal content container */}
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <Dialog.Content 
             onPointerDownOutside={(e) => {
               e.preventDefault();
@@ -74,7 +74,7 @@ export default function AppConfirmDialog({
               e.preventDefault();
               handleClose();
             }}
-            className="relative w-full max-w-sm p-6 bg-white border border-slate-200 rounded-2xl shadow-2xl animate-scale-up focus:outline-none space-y-4 text-center"
+            className="relative w-full max-w-sm p-6 bg-white border border-slate-200 rounded-t-2xl sm:rounded-2xl shadow-2xl animate-scale-up focus:outline-none space-y-4 text-center"
           >
             
             {/* Close button at top right */}

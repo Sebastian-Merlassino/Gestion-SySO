@@ -13,6 +13,8 @@ import { useToast } from '@/components/providers/ToastProvider';
 import AppPageHeader from '@/components/ui/AppPageHeader';
 import AppButton from '@/components/ui/AppButton';
 import AppInput from '@/components/ui/AppInput';
+import AppDatePicker from '@/components/ui/AppDatePicker';
+import AppLabel from '@/components/ui/AppLabel';
 import AppSelect from '@/components/ui/AppSelect';
 import AppTextarea from '@/components/ui/AppTextarea';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
@@ -1754,38 +1756,13 @@ export default function AccionesCorrectivasPage({ params }) {
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-600 block mb-1">
-                          Fecha del Registro <span className="text-[#468DFF]">*</span>
-                        </label>
-                        <div className="relative">
-                          <input
-                            type="text"
-                            required
-                            placeholder="DD/MM/YYYY"
-                            maxLength={10}
-                            value={fecha}
-                            onChange={(e) => setFecha(formatAsDateInput(e.target.value))}
-                            className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono"
-                          />
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
-                            <Calendar className="h-4 w-4" />
-                            <input
-                              type="date"
-                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (val) {
-                                  const parts = val.split('-');
-                                  if (parts.length === 3) {
-                                    setFecha(`${parts[2]}/${parts[1]}/${parts[0]}`);
-                                  }
-                                } else {
-                                  setFecha('');
-                                }
-                              }}
-                            />
-                          </div>
-                        </div>
+                        <AppDatePicker
+                          id="fechaRegistro"
+                          label="Fecha del Registro"
+                          required
+                          value={fecha}
+                          onChange={(e) => setFecha(e.target.value)}
+                        />
                       </div>
 
                       <div className="space-y-1">
@@ -2124,67 +2101,21 @@ export default function AccionesCorrectivasPage({ params }) {
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-600 block mb-1">Fecha Planificada (Plazo)</label>
-                        <div className="relative">
-                          <input
-                            type="text"
-                            placeholder="DD/MM/YYYY"
-                            maxLength={10}
-                            value={fechaPlanificada}
-                            onChange={(e) => setFechaPlanificada(formatAsDateInput(e.target.value))}
-                            className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono"
-                          />
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
-                            <Calendar className="h-4 w-4" />
-                            <input
-                              type="date"
-                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (val) {
-    const parts = val.split('-');
-    if (parts.length === 3) {
-      setFechaPlanificada(`${parts[2]}/${parts[1]}/${parts[0]}`);
-    }
-  } else {
-    setFechaPlanificada('');
-  }
-                              }}
-                            />
-                          </div>
-                        </div>
+                        <AppDatePicker
+                          id="fechaPlanificada"
+                          label="Fecha Planificada (Plazo)"
+                          value={fechaPlanificada}
+                          onChange={(e) => setFechaPlanificada(e.target.value)}
+                        />
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-600 block mb-1">Fecha de Realización / Implementación</label>
-                        <div className="relative">
-                          <input
-                            type="text"
-                            placeholder="DD/MM/YYYY"
-                            maxLength={10}
-                            value={fechaImplementacion}
-                            onChange={(e) => setFechaImplementacion(formatAsDateInput(e.target.value))}
-                            className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono"
-                          />
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
-                            <Calendar className="h-4 w-4" />
-                            <input
-                              type="date"
-                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (val) {
-    const parts = val.split('-');
-    if (parts.length === 3) {
-      setFechaImplementacion(`${parts[2]}/${parts[1]}/${parts[0]}`);
-    }
-  } else {
-    setFechaImplementacion('');
-  }
-                              }}
-                            />
-                          </div>
-                        </div>
+                        <AppDatePicker
+                          id="fechaImplementacion"
+                          label="Fecha de Realización / Implementación"
+                          value={fechaImplementacion}
+                          onChange={(e) => setFechaImplementacion(e.target.value)}
+                        />
                       </div>
                     </div>
 
@@ -2707,13 +2638,14 @@ export default function AccionesCorrectivasPage({ params }) {
             
             {/* Pie de página */}
             <div className="px-6 py-3 bg-slate-50 border-t border-slate-200 flex justify-end shrink-0">
-              <button
+              <AppButton
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={() => setShowRiskMatrix(false)}
-                className="px-4 py-2 bg-slate-200 hover:bg-slate-350 text-slate-700 font-bold text-xs rounded-xl transition-all active:scale-[0.98] cursor-pointer"
               >
                 Cerrar
-              </button>
+              </AppButton>
             </div>
           </div>
         </div>
@@ -2737,7 +2669,7 @@ export default function AccionesCorrectivasPage({ params }) {
             
             {/* Botón X de Cierre */}
             <button 
-              type="button"
+              type="button" 
               onClick={() => handleSyncConfirm('skip')}
               className="absolute top-4 right-4 p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#468DFF] cursor-pointer"
               aria-label="Cerrar"
@@ -2751,7 +2683,7 @@ export default function AccionesCorrectivasPage({ params }) {
               </div>
               <div className="space-y-0.5">
                 <h3 className="font-outfit text-base font-extrabold text-slate-900">
-                  Sincronización con Perfil de Establecimiento
+                  Sincronización con perfil de establecimiento
                 </h3>
                 <p className="text-xs text-slate-500 font-semibold">
                   {syncQueue.length} {syncQueue.length === 1 ? 'elemento nuevo' : 'elementos nuevos'}
@@ -2774,21 +2706,23 @@ export default function AccionesCorrectivasPage({ params }) {
             </div>
 
             <div className="flex flex-col sm:flex-row justify-end gap-2.5 pt-2">
-              <button
+              <AppButton
                 type="button"
+                variant="secondary"
+                size="md"
                 onClick={() => handleSyncConfirm('skip')}
-                className="px-4 py-2.5 border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-bold rounded-xl transition-all cursor-pointer text-center"
               >
                 Solo guardar en este hallazgo
-              </button>
+              </AppButton>
 
-              <button
+              <AppButton
                 type="button"
+                variant="primary"
+                size="md"
                 onClick={() => handleSyncConfirm('save_profile')}
-                className="px-4 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold rounded-xl shadow-md shadow-[#468DFF]/10 transition-all cursor-pointer text-center"
               >
                 Guardar todos en el perfil ({syncQueue.length})
-              </button>
+              </AppButton>
             </div>
           </div>
         </div>

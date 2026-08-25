@@ -513,17 +513,15 @@ export default function RegisterPage() {
             <p className="text-sm text-slate-600 mb-6 leading-relaxed">
               {modal.message}
             </p>
-            <button
+            <AppButton
               type="button"
+              variant={modal.type === 'error' ? 'destructive' : 'primary'}
+              size="md"
               onClick={() => setModal({ show: false, message: '', type: 'success' })}
-              className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs transition-all active:scale-[0.98] cursor-pointer ${
-                modal.type === 'error'
-                  ? 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-500/10'
-                  : 'bg-[#468DFF] hover:bg-[#0511F2] text-white shadow-lg shadow-blue-500/10'
-              }`}
+              className="w-full"
             >
               Aceptar
-            </button>
+            </AppButton>
           </div>
         </div>
       )}

@@ -12,6 +12,7 @@ import { useToast } from '@/components/providers/ToastProvider';
 import AppPageHeader from '@/components/ui/AppPageHeader';
 import AppButton from '@/components/ui/AppButton';
 import AppInput from '@/components/ui/AppInput';
+import AppDatePicker from '@/components/ui/AppDatePicker';
 import AppSelect from '@/components/ui/AppSelect';
 import AppTextarea from '@/components/ui/AppTextarea';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
@@ -3056,39 +3057,12 @@ export default function AccidentesPage({ params }) {
                         </div>
 
                         {/* Fecha de ingreso a la empresa */}
-                        <div>
-                          <label className="block text-xs font-bold text-slate-600 mb-1.5">Fecha de ingreso a la empresa</label>
-                          <div className="relative">
-                            <input
-                              type="text"
-                              placeholder="DD/MM/YYYY"
-                              maxLength={10}
-                              value={fechaIngreso}
-                              onChange={e => setFechaIngreso(formatAsDateInput(e.target.value))}
-                              disabled={isFormDisabled}
-                              className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all disabled:opacity-70 disabled:bg-slate-50/50 font-mono"
-                            />
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
-                              <Calendar className="h-4 w-4" />
-                              <input
-                                type="date"
-                                disabled={isFormDisabled}
-                                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                                onChange={e => {
-                                  const val = e.target.value;
-                                  if (val) {
-    const parts = val.split('-');
-    if (parts.length === 3) {
-      setFechaIngreso(`${parts[2]}/${parts[1]}/${parts[0]}`);
-    }
-  } else {
-    setFechaIngreso('');
-  }
-                                }}
-                              />
-                            </div>
-                          </div>
-                        </div>
+                        <AppDatePicker
+                          label="Fecha de ingreso a la empresa"
+                          value={fechaIngreso}
+                          onChange={e => setFechaIngreso(e.target.value)}
+                          disabled={isFormDisabled}
+                        />
 
                         {/* Turno de trabajo habitual */}
                         <div>
@@ -3149,40 +3123,13 @@ export default function AccidentesPage({ params }) {
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                         {/* Fecha siniestro / reingreso */}
-                        <div>
-                          <label className="block text-xs font-bold text-slate-600 mb-1.5">Fecha siniestro / reingreso <span className="text-red-500">*</span></label>
-                          <div className="relative">
-                            <input
-                              type="text"
-                              required
-                              placeholder="DD/MM/YYYY"
-                              maxLength={10}
-                              value={fechaSiniestro}
-                              onChange={e => setFechaSiniestro(formatAsDateInput(e.target.value))}
-                              disabled={isFormDisabled}
-                              className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all disabled:opacity-70 disabled:bg-slate-50/50 font-mono"
-                            />
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
-                              <Calendar className="h-4 w-4" />
-                              <input
-                                type="date"
-                                disabled={isFormDisabled}
-                                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                                onChange={e => {
-                                  const val = e.target.value;
-                                  if (val) {
-    const parts = val.split('-');
-    if (parts.length === 3) {
-      setFechaSiniestro(`${parts[2]}/${parts[1]}/${parts[0]}`);
-    }
-  } else {
-    setFechaSiniestro('');
-  }
-                                }}
-                              />
-                            </div>
-                          </div>
-                        </div>
+                        <AppDatePicker
+                          label="Fecha siniestro / reingreso"
+                          required
+                          value={fechaSiniestro}
+                          onChange={e => setFechaSiniestro(e.target.value)}
+                          disabled={isFormDisabled}
+                        />
 
                         {/* Hora */}
                         <div>
@@ -3197,39 +3144,12 @@ export default function AccidentesPage({ params }) {
                         </div>
 
                         {/* Fecha de denuncia */}
-                        <div>
-                          <label className="block text-xs font-bold text-slate-600 mb-1.5">Fecha de denuncia</label>
-                          <div className="relative">
-                            <input
-                              type="text"
-                              placeholder="DD/MM/YYYY"
-                              maxLength={10}
-                              value={fechaDenuncia}
-                              onChange={e => setFechaDenuncia(formatAsDateInput(e.target.value))}
-                              disabled={isFormDisabled}
-                              className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all disabled:opacity-70 disabled:bg-slate-50/50 font-mono"
-                            />
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
-                              <Calendar className="h-4 w-4" />
-                              <input
-                                type="date"
-                                disabled={isFormDisabled}
-                                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                                onChange={e => {
-                                  const val = e.target.value;
-                                  if (val) {
-    const parts = val.split('-');
-    if (parts.length === 3) {
-      setFechaDenuncia(`${parts[2]}/${parts[1]}/${parts[0]}`);
-    }
-  } else {
-    setFechaDenuncia('');
-  }
-                                }}
-                              />
-                            </div>
-                          </div>
-                        </div>
+                        <AppDatePicker
+                          label="Fecha de denuncia"
+                          value={fechaDenuncia}
+                          onChange={e => setFechaDenuncia(e.target.value)}
+                          disabled={isFormDisabled}
+                        />
 
                         {/* N° de siniestro (ART) */}
                         <div>
@@ -3522,39 +3442,12 @@ export default function AccidentesPage({ params }) {
                       
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {/* Fecha de alta / rechazo */}
-                        <div>
-                          <label className="block text-xs font-bold text-slate-600 mb-1.5">Fecha de alta / rechazo</label>
-                          <div className="relative">
-                            <input
-                              type="text"
-                              placeholder="DD/MM/YYYY"
-                              maxLength={10}
-                              value={fechaAltaRechazo}
-                              onChange={e => setFechaAltaRechazo(formatAsDateInput(e.target.value))}
-                              disabled={isFormDisabled}
-                              className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm text-slate-700 focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all disabled:opacity-70 disabled:bg-slate-50/50 font-mono"
-                            />
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
-                              <Calendar className="h-4 w-4" />
-                              <input
-                                type="date"
-                                disabled={isFormDisabled}
-                                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                                onChange={e => {
-                                  const val = e.target.value;
-                                  if (val) {
-    const parts = val.split('-');
-    if (parts.length === 3) {
-      setFechaAltaRechazo(`${parts[2]}/${parts[1]}/${parts[0]}`);
-    }
-  } else {
-    setFechaAltaRechazo('');
-  }
-                                }}
-                              />
-                            </div>
-                          </div>
-                        </div>
+                        <AppDatePicker
+                          label="Fecha de alta / rechazo"
+                          value={fechaAltaRechazo}
+                          onChange={e => setFechaAltaRechazo(e.target.value)}
+                          disabled={isFormDisabled}
+                        />
 
                         {/* Días de baja (calculado) */}
                         <div>
@@ -4317,12 +4210,14 @@ export default function AccidentesPage({ params }) {
               ))}
             </div>
             <div className="px-6 py-4 border-t border-slate-100 flex justify-end">
-              <button
+              <AppButton
+                type="button"
+                variant="primary"
+                size="md"
                 onClick={() => setShowGravedadGuide(false)}
-                className="px-5 py-2 text-sm font-semibold text-white bg-[#468DFF] rounded-xl hover:bg-[#0511F2] transition-colors"
               >
                 Cerrar
-              </button>
+              </AppButton>
             </div>
           </div>
         </div>
@@ -4362,31 +4257,25 @@ export default function AccidentesPage({ params }) {
             </div>
 
             <div className="flex gap-2 pt-2 justify-end">
-              <button
+              <AppButton
                 type="button"
+                variant="secondary"
+                size="md"
                 onClick={() => setIsAiCommentsModalOpen(false)}
-                className="px-4 py-2 bg-white text-[#468DFF] border border-[#468DFF] rounded-xl text-xs font-bold hover:bg-[#468DFF] hover:text-white transition-all active:scale-[0.98] cursor-pointer"
               >
                 Cancelar
-              </button>
-              <button
+              </AppButton>
+              <AppButton
                 type="button"
+                variant="primary"
+                size="md"
                 disabled={aiReportLoading}
+                loading={aiReportLoading}
                 onClick={() => handleCallGenerateReportApi(aiTargetAccident, aiAdditionalComments)}
-                className="px-4 py-2 bg-[#468DFF] hover:bg-[#0511F2] text-white border border-transparent rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer shadow-md shadow-[#468DFF]/10"
+                icon={Sparkles}
               >
-                {aiReportLoading ? (
-                  <>
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    Analizando...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-3.5 w-3.5" />
-                    Generar análisis
-                  </>
-                )}
-              </button>
+                Generar análisis
+              </AppButton>
             </div>
           </div>
         </div>
@@ -4431,7 +4320,7 @@ export default function AccidentesPage({ params }) {
                     }}
                     className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-[10px] font-bold transition-all cursor-pointer"
                   >
-                    + Añadir Acción
+                    + Añadir acción
                   </button>
                 </div>
                 <div className="space-y-3">
@@ -4633,7 +4522,7 @@ export default function AccidentesPage({ params }) {
                     }}
                     className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-[10px] font-bold transition-all cursor-pointer"
                   >
-                    + Añadir Acción
+                    + Añadir acción
                   </button>
                 </div>
                 <div className="space-y-3">
@@ -4753,42 +4642,37 @@ export default function AccidentesPage({ params }) {
 
             {/* Botonera de Acción */}
             <div className="px-6 py-4 border-t border-slate-100 flex justify-between bg-slate-50/50">
-              <button
+              <AppButton
                 type="button"
+                variant="secondary"
+                size="md"
                 onClick={() => setIsAiReportModalOpen(false)}
-                className="px-5 py-2 bg-white border border-slate-350 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all cursor-pointer"
               >
                 Cerrar
-              </button>
+              </AppButton>
               <div className="flex items-center gap-3">
                 {!isReadOnlyView && (
-                  <button
+                  <AppButton
                     type="button"
+                    variant="outline"
+                    size="md"
                     disabled={saveReportLoading}
+                    loading={saveReportLoading}
                     onClick={() => handleSaveTechnicalReportToSiniestro(aiReportDataEdit, aiTargetAccident)}
-                    className="px-5 py-2 bg-white text-[#468DFF] border border-[#468DFF] rounded-xl text-xs font-bold hover:bg-[#468DFF] hover:text-white transition-all cursor-pointer flex items-center gap-1.5 shadow-sm disabled:opacity-50"
+                    icon={Save}
                   >
-                    {saveReportLoading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Guardando...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="h-4 w-4" />
-                        Guardar informe
-                      </>
-                    )}
-                  </button>
+                    Guardar informe
+                  </AppButton>
                 )}
-                <button
+                <AppButton
                   type="button"
+                  variant="primary"
+                  size="md"
                   onClick={() => handleExportTechnicalReportPdf(aiReportDataEdit, aiTargetAccident)}
-                  className="px-5 py-2 bg-[#468DFF] hover:bg-[#0511F2] text-white border border-transparent rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-md shadow-[#468DFF]/10"
+                  icon={Download}
                 >
-                  <Download className="h-4 w-4" />
                   Descargar PDF
-                </button>
+                </AppButton>
               </div>
             </div>
 

@@ -15,6 +15,7 @@ import { useToast } from '@/components/providers/ToastProvider';
 import AppPageHeader from '@/components/ui/AppPageHeader';
 import AppButton from '@/components/ui/AppButton';
 import AppInput from '@/components/ui/AppInput';
+import AppDatePicker from '@/components/ui/AppDatePicker';
 import AppSelect from '@/components/ui/AppSelect';
 import AppCard from '@/components/ui/AppCard';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
@@ -3575,64 +3576,22 @@ export default function MatrizRiesgosPage({ params }) {
 
                                             {/* Fechas con Selector Estándar y Evaluación Residual */}
                                             <div className="grid md:grid-cols-4 gap-4 pt-2 border-t border-slate-100">
-                                              <div className="flex flex-col gap-1">
-                                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Fecha Planificada</label>
-                                                <div className="relative">
-                                                  <input
-                                                    type="text"
-                                                    placeholder="DD/MM/YYYY"
-                                                    maxLength={10}
-                                                    value={pst.fecha_planificada}
-                                                    onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'fecha_planificada', formatAsDateInput(e.target.value))}
-                                                    className="w-full border border-slate-200 rounded-xl pl-2.5 pr-8 py-1 text-xs focus:outline-none font-mono"
-                                                  />
-                                                  <div className="absolute right-2.5 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center font-sans">
-                                                    <Calendar className="h-3.5 w-3.5" />
-                                                    <input
-                                                      type="date"
-                                                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                                                      onChange={(e) => {
-                                                        const val = e.target.value;
-                                                        if (val) {
-                                                          const parts = val.split('-');
-                                                          if (parts.length === 3) {
-                                                            handleUpdateBulkPuesto(sec.id, pst.id, 'fecha_planificada', `${parts[2]}/${parts[1]}/${parts[0]}`);
-                                                          }
-                                                        }
-                                                      }}
-                                                    />
-                                                  </div>
-                                                </div>
+                                              <div>
+                                                <AppDatePicker
+                                                  id={`fecha-planificada-${sec.id}-${pst.id}`}
+                                                  label="Fecha Planificada"
+                                                  value={pst.fecha_planificada}
+                                                  onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'fecha_planificada', e.target.value)}
+                                                />
                                               </div>
 
-                                              <div className="flex flex-col gap-1">
-                                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Fecha Realización</label>
-                                                <div className="relative">
-                                                  <input
-                                                    type="text"
-                                                    placeholder="DD/MM/YYYY"
-                                                    maxLength={10}
-                                                    value={pst.fecha_realizacion}
-                                                    onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'fecha_realizacion', formatAsDateInput(e.target.value))}
-                                                    className="w-full border border-slate-200 rounded-xl pl-2.5 pr-8 py-1 text-xs focus:outline-none font-mono"
-                                                  />
-                                                  <div className="absolute right-2.5 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center font-sans">
-                                                    <Calendar className="h-3.5 w-3.5" />
-                                                    <input
-                                                      type="date"
-                                                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                                                      onChange={(e) => {
-                                                        const val = e.target.value;
-                                                        if (val) {
-                                                          const parts = val.split('-');
-                                                          if (parts.length === 3) {
-                                                            handleUpdateBulkPuesto(sec.id, pst.id, 'fecha_realizacion', `${parts[2]}/${parts[1]}/${parts[0]}`);
-                                                          }
-                                                        }
-                                                      }}
-                                                    />
-                                                  </div>
-                                                </div>
+                                              <div>
+                                                <AppDatePicker
+                                                  id={`fecha-realizacion-${sec.id}-${pst.id}`}
+                                                  label="Fecha Realización"
+                                                  value={pst.fecha_realizacion}
+                                                  onChange={(e) => handleUpdateBulkPuesto(sec.id, pst.id, 'fecha_realizacion', e.target.value)}
+                                                />
                                               </div>
 
                                               <div className="flex flex-col gap-1 bg-[#468DFF]/5 p-2 rounded-xl border border-[#468DFF]/15">
@@ -4169,68 +4128,22 @@ export default function MatrizRiesgosPage({ params }) {
                           </div>
 
                           <div className="grid md:grid-cols-4 gap-4 pt-2 border-t border-slate-100">
-                            <div className="flex flex-col gap-1.5">
-                              <label className="text-xs font-bold text-slate-600">Fecha Planificada</label>
-                              <div className="relative">
-                                <input
-                                  type="text"
-                                  placeholder="DD/MM/YYYY"
-                                  maxLength={10}
-                                  value={singleFechaPlanificada}
-                                  onChange={(e) => setSingleFechaPlanificada(formatAsDateInput(e.target.value))}
-                                  className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none font-mono"
-                                />
-                                <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
-                                  <Calendar className="h-4 w-4" />
-                                  <input
-                                    type="date"
-                                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                                    onChange={(e) => {
-                                      const val = e.target.value;
-                                      if (val) {
-    const parts = val.split('-');
-    if (parts.length === 3) {
-      setSingleFechaPlanificada(`${parts[2]}/${parts[1]}/${parts[0]}`);
-    }
-  } else {
-    setSingleFechaPlanificada('');
-  }
-                                    }}
-                                  />
-                                </div>
-                              </div>
+                            <div>
+                              <AppDatePicker
+                                id="singleFechaPlanificada"
+                                label="Fecha Planificada"
+                                value={singleFechaPlanificada}
+                                onChange={(e) => setSingleFechaPlanificada(e.target.value)}
+                              />
                             </div>
 
-                            <div className="flex flex-col gap-1.5">
-                              <label className="text-xs font-bold text-slate-600">Fecha Realización</label>
-                              <div className="relative">
-                                <input
-                                  type="text"
-                                  placeholder="DD/MM/YYYY"
-                                  maxLength={10}
-                                  value={singleFechaRealizacion}
-                                  onChange={(e) => setSingleFechaRealizacion(formatAsDateInput(e.target.value))}
-                                  className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none font-mono"
-                                />
-                                <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
-                                  <Calendar className="h-4 w-4" />
-                                  <input
-                                    type="date"
-                                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                                    onChange={(e) => {
-                                      const val = e.target.value;
-                                      if (val) {
-    const parts = val.split('-');
-    if (parts.length === 3) {
-      setSingleFechaRealizacion(`${parts[2]}/${parts[1]}/${parts[0]}`);
-    }
-  } else {
-    setSingleFechaRealizacion('');
-  }
-                                    }}
-                                  />
-                                </div>
-                              </div>
+                            <div>
+                              <AppDatePicker
+                                id="singleFechaRealizacion"
+                                label="Fecha Realización"
+                                value={singleFechaRealizacion}
+                                onChange={(e) => setSingleFechaRealizacion(e.target.value)}
+                              />
                             </div>
 
                             <div className="flex flex-col gap-1.5 bg-[#468DFF]/5 p-3 rounded-xl border border-[#468DFF]/15">
@@ -4896,13 +4809,14 @@ export default function MatrizRiesgosPage({ params }) {
             )}
 
             <div className="mt-6 flex justify-end">
-              <button
+              <AppButton
                 type="button"
+                variant="primary"
+                size="md"
                 onClick={() => setHelpModal({ show: false, type: '' })}
-                className="px-4 py-2 bg-[#468DFF] text-white rounded-xl text-xs font-bold hover:bg-[#0511F2] cursor-pointer"
               >
-                Cerrar Guía
-              </button>
+                Cerrar guía
+              </AppButton>
             </div>
           </div>
         </div>
@@ -4945,49 +4859,56 @@ export default function MatrizRiesgosPage({ params }) {
               </div>
 
               <div className="space-y-2">
-                <Dialog.Title className="font-outfit text-base font-extrabold text-slate-800">
-                  Nuevos Sectores o Puestos Detectados
+                <Dialog.Title className="font-outfit text-base font-bold text-slate-900">
+                  ¿Actualizar Información en Perfil del Cliente?
                 </Dialog.Title>
                 <Dialog.Description className="text-xs text-slate-500 leading-relaxed">
-                  Se detectaron áreas/sectores, puestos de trabajo o descripciones de tareas que no están registrados en el perfil del cliente. ¿Deseas agregarlos automáticamente a su perfil antes de guardar la matriz?
+                  Se han detectado cambios en la <strong>superficie</strong>, <strong>capataces</strong> o <strong>tareas</strong> del establecimiento seleccionado.
+                  <br /><br />
+                  ¿Desea sincronizar y actualizar automáticamente estos datos en la ficha del Perfil del Cliente?
                 </Dialog.Description>
               </div>
 
-              <div className="flex flex-col gap-2 pt-2 sm:flex-row">
-                <Dialog.Close asChild>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPendingSaveData([]);
-                      setPendingEstUpdates([]);
-                    }}
-                    className="flex-1 py-2.5 px-3 border border-slate-350 text-slate-600 hover:bg-slate-50 rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer focus:outline-none focus:ring-2 focus:ring-slate-400"
-                  >
-                    Volver
-                  </button>
-                </Dialog.Close>
-
-                <button
+              <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                <AppButton
                   type="button"
+                  variant="secondary"
+                  size="md"
+                  onClick={() => {
+                    setShowProfileConfirmOpen(false);
+                    setPendingSaveData([]);
+                    setPendingEstUpdates([]);
+                  }}
+                  className="flex-1 justify-center"
+                >
+                  Cancelar
+                </AppButton>
+
+                <AppButton
+                  type="button"
+                  variant="outline"
+                  size="md"
                   onClick={() => {
                     setShowProfileConfirmOpen(false);
                     handleCancelSaveProfile();
                   }}
-                  className="flex-1 py-2.5 px-3 border border-[#468DFF] text-[#468DFF] hover:bg-[#468DFF]/5 rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#468DFF]"
+                  className="flex-1 justify-center"
                 >
-                  Sólo matriz
-                </button>
+                  Solo matriz
+                </AppButton>
 
-                <button
+                <AppButton
                   type="button"
+                  variant="primary"
+                  size="md"
                   onClick={() => {
                     setShowProfileConfirmOpen(false);
                     handleConfirmSaveProfile();
                   }}
-                  className="flex-1 py-2.5 px-3 bg-[#468DFF] hover:bg-[#0511F2] text-white shadow-lg shadow-blue-500/10 rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#468DFF]"
+                  className="flex-1 justify-center"
                 >
                   Guardar en perfil
-                </button>
+                </AppButton>
               </div>
               
             </Dialog.Content>

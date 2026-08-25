@@ -26,8 +26,10 @@ export async function generateCapacitacionOnlinePdf({
   action = 'download', // 'download' | 'print' | 'open'
   printWindow = null
 }) {
-  const { default: jsPDF } = await import('jspdf');
-  const { default: autoTable } = await import('jspdf-autotable');
+  const jspdfModule = await import('jspdf');
+  const jsPDF = jspdfModule.jsPDF || jspdfModule.default;
+  const autoTableModule = await import('jspdf-autotable');
+  const autoTable = autoTableModule.default || autoTableModule.autoTable || autoTableModule;
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -740,6 +742,10 @@ export async function generateCapacitacionOnlinePdf({
     const blobUrl = doc.output('bloburl');
     window.open(blobUrl, '_blank');
     return blobUrl;
+  } else if (action === 'blob') {
+    return doc.output('blob');
+  } else if (action === 'doc') {
+    return doc;
   } else {
     doc.save(fileName);
     return fileName;

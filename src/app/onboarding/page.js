@@ -7,6 +7,7 @@ import { supabase, fetchAllGeography } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate, getEffectivePlan, PLAN_FEATURES, toValidHexColor } from '@/lib/utils';
 import AppCard from '@/components/ui/AppCard';
 import AppInput from '@/components/ui/AppInput';
+import AppDatePicker from '@/components/ui/AppDatePicker';
 import AppSelect from '@/components/ui/AppSelect';
 import AppButton from '@/components/ui/AppButton';
 import { 
@@ -1116,35 +1117,13 @@ export default function OnboardingPage() {
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                   Fecha de Nacimiento <span className="text-[#468DFF]">*</span>
                 </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    required
-                    placeholder="DD/MM/YYYY"
-                    maxLength={10}
-                    value={birthDate}
-                    onChange={(e) => setBirthDate(formatAsDateInput(e.target.value))}
-                    className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono text-slate-700"
-                  />
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center" onClick={(e) => e.stopPropagation()}>
-                    <Calendar className="h-4 w-4" />
-                    <input
-                      type="date"
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val) {
-    const parts = val.split('-');
-    if (parts.length === 3) {
-      setBirthDate(`${parts[2]}/${parts[1]}/${parts[0]}`);
-    }
-  } else {
-    setBirthDate('');
-  }
-                      }}
-                    />
-                  </div>
-                </div>
+                <AppDatePicker
+                  id="birthDate"
+                  label="Fecha de Nacimiento"
+                  required
+                  value={birthDate}
+                  onChange={(e) => setBirthDate(e.target.value)}
+                />
               </div>
             </div>
 
@@ -1268,35 +1247,12 @@ export default function OnboardingPage() {
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                            Vencimiento
-                          </label>
-                          <div className="relative">
-                            <input
-                              type="text"
-                              placeholder="DD/MM/YYYY"
-                              maxLength={10}
-                              value={mat.vencimiento}
-                              onChange={(e) => handleMatriculaChange(index, 'vencimiento', formatAsDateInput(e.target.value))}
-                              className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono text-slate-700"
-                            />
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center" onClick={(e) => e.stopPropagation()}>
-                              <Calendar className="h-4 w-4" />
-                              <input
-                                type="date"
-                                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  if (val) {
-                                    const parts = val.split('-');
-                                    if (parts.length === 3) {
-                                      handleMatriculaChange(index, 'vencimiento', `${parts[2]}/${parts[1]}/${parts[0]}`);
-                                    }
-                                  }
-                                }}
-                              />
-                            </div>
-                          </div>
+                          <AppDatePicker
+                            id={`matricula-vencimiento-${index}`}
+                            label="Vencimiento"
+                            value={mat.vencimiento}
+                            onChange={(e) => handleMatriculaChange(index, 'vencimiento', e.target.value)}
+                          />
                         </div>
                       </div>
 
@@ -1758,14 +1714,16 @@ export default function OnboardingPage() {
                     {selectedPlan === 'free' ? '$0' : `$${(PLAN_FEATURES[selectedPlan]?.price || 0).toLocaleString()}`}
                   </span>
                 </div>
-                <button
+                <AppButton
                   type="button"
+                  variant="secondary"
+                  size="sm"
                   onClick={() => setShowPlanModal(true)}
-                  className="py-2.5 px-4 rounded-xl border border-[#468DFF]/40 hover:bg-[#468DFF]/5 text-[#468DFF] font-semibold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="gap-2 font-semibold"
                 >
                   <Sparkles className="h-3.5 w-3.5" />
-                  Cambiar / Subir Plan
-                </button>
+                  <span>Cambiar / subir plan</span>
+                </AppButton>
               </div>
             </div>
           </div>
@@ -1774,31 +1732,28 @@ export default function OnboardingPage() {
         {/* BARRA INFERIOR DE ACCIONES (SySO Compact Layout v2.0) */}
           <div className="bg-slate-50 border-t border-slate-200 p-3 sm:p-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 shrink-0 rounded-b-2xl">
             <div className="flex justify-center sm:justify-start">
-              <button
+              <AppButton
                 type="button"
+                variant="secondary"
+                size="md"
                 disabled={loading}
                 onClick={handleExitWithoutSaving}
-                className="w-full sm:w-auto px-4 sm:px-5 py-2.5 bg-[#FFFFFF] text-[#468DFF] border border-[#468DFF] rounded-xl text-sm font-bold hover:bg-[#468DFF] hover:text-[#FFFFFF] hover:border-[#FFFFFF] transition-all active:scale-[0.98] cursor-pointer text-center disabled:opacity-50"
+                className="w-full sm:w-auto"
               >
                 Salir
-              </button>
+              </AppButton>
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3 justify-end">
-              <button
+              <AppButton
                 type="submit"
-                disabled={loading}
-                className="w-full sm:w-auto px-5 sm:px-6 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
+                variant="primary"
+                size="md"
+                loading={loading}
+                className="w-full sm:w-auto"
               >
-                {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin shrink-0" />
-                    <span>Guardando...</span>
-                  </>
-                ) : (
-                  <span>Guardar</span>
-                )}
-              </button>
+                Guardar
+              </AppButton>
             </div>
           </div>
 
@@ -1854,16 +1809,18 @@ export default function OnboardingPage() {
                       <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Matriz de Riesgos</li>
                     </ul>
                   </div>
-                  <button
+                  <AppButton
                     type="button"
+                    variant={selectedPlan === 'free' ? 'primary' : 'outline'}
+                    size="md"
+                    className="w-full mt-6"
                     onClick={() => {
                       setSelectedPlan('free');
                       setShowPlanModal(false);
                     }}
-                    className={`w-full py-2.5 rounded-xl mt-6 text-xs font-bold transition-all ${selectedPlan === 'free' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer'}`}
                   >
                     {selectedPlan === 'free' ? 'Seleccionado' : 'Elegir'}
-                  </button>
+                  </AppButton>
                 </div>
 
                 {/* Plan Básico */}
@@ -1889,16 +1846,18 @@ export default function OnboardingPage() {
                       <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Eléctrico + PDF</li>
                     </ul>
                   </div>
-                  <button
+                  <AppButton
                     type="button"
+                    variant={selectedPlan === 'basic_5' ? 'primary' : 'outline'}
+                    size="md"
+                    className="w-full mt-6"
                     onClick={() => {
                       setSelectedPlan('basic_5');
                       setShowPlanModal(false);
                     }}
-                    className={`w-full py-2.5 rounded-xl mt-6 text-xs font-bold transition-all ${selectedPlan === 'basic_5' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-[#468DFF] hover:bg-[#0511F2] text-white cursor-pointer'}`}
                   >
                     {selectedPlan === 'basic_5' ? 'Seleccionado' : 'Elegir'}
-                  </button>
+                  </AppButton>
                 </div>
 
                 {/* Plan Profesional */}
@@ -1926,16 +1885,18 @@ export default function OnboardingPage() {
                       <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Avisos de Riesgo</li>
                     </ul>
                   </div>
-                  <button
+                  <AppButton
                     type="button"
+                    variant={selectedPlan === 'standard_25' ? 'primary' : 'outline'}
+                    size="md"
+                    className="w-full mt-6"
                     onClick={() => {
                       setSelectedPlan('standard_25');
                       setShowPlanModal(false);
                     }}
-                    className={`w-full py-2.5 rounded-xl mt-6 text-xs font-bold transition-all ${selectedPlan === 'standard_25' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-[#468DFF] hover:bg-[#0511F2] text-white cursor-pointer'}`}
                   >
                     {selectedPlan === 'standard_25' ? 'Seleccionado' : 'Elegir'}
-                  </button>
+                  </AppButton>
                 </div>
 
                 {/* Plan Full */}
@@ -1966,16 +1927,18 @@ export default function OnboardingPage() {
                       <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Portal de clientes</li>
                     </ul>
                   </div>
-                  <button
+                  <AppButton
                     type="button"
+                    variant={selectedPlan === 'libre' ? 'primary' : 'outline'}
+                    size="md"
+                    className="w-full mt-6"
                     onClick={() => {
                       setSelectedPlan('libre');
                       setShowPlanModal(false);
                     }}
-                    className={`w-full py-2.5 rounded-xl mt-6 text-xs font-bold transition-all ${selectedPlan === 'libre' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-[#468DFF] hover:bg-[#0511F2] text-white cursor-pointer'}`}
                   >
                     {selectedPlan === 'libre' ? 'Seleccionado' : 'Elegir'}
-                  </button>
+                  </AppButton>
                 </div>
 
             </div>

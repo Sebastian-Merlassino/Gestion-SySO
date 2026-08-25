@@ -14,6 +14,7 @@ import AppPageHeader from '@/components/ui/AppPageHeader';
 import AppButton from '@/components/ui/AppButton';
 import AppCard from '@/components/ui/AppCard';
 import AppInput from '@/components/ui/AppInput';
+import AppDatePicker from '@/components/ui/AppDatePicker';
 import AppSelect from '@/components/ui/AppSelect';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppSkeleton from '@/components/ui/AppSkeleton';
@@ -2369,33 +2370,14 @@ export default function TenantDashboard({ params }) {
                             allowExpand={true}
                           />
                         </div>
-                        <div className="relative sm:col-span-1 w-full">
-                          <AppInput
-                            placeholder="DD/MM/AAAA"
-                            maxLength={10}
+                        <div className="sm:col-span-1 w-full">
+                          <AppDatePicker
+                            id="newTaskFecha"
                             value={newTaskFecha}
-                            onChange={(e) => setNewTaskFecha(formatAsDateInput(e.target.value))}
-                            className="font-mono text-sm pr-10 w-full"
-                            containerClassName="w-full"
+                            onChange={(e) => setNewTaskFecha(e.target.value)}
+                            placeholder="DD/MM/AAAA"
+                            className="w-full"
                           />
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center" onClick={(e) => e.stopPropagation()}>
-                            <Calendar className="h-4 w-4" />
-                            <input
-                              type="date"
-                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (val) {
-                                  const parts = val.split('-');
-                                  if (parts.length === 3) {
-                                    setNewTaskFecha(`${parts[2]}/${parts[1]}/${parts[0]}`);
-                                  }
-                                } else {
-                                  setNewTaskFecha('');
-                                }
-                              }}
-                            />
-                          </div>
                         </div>
                       </div>
 
@@ -2867,12 +2849,14 @@ export default function TenantDashboard({ params }) {
 
             {/* Pie de modal */}
             <div className="p-4 border-t border-slate-200 bg-slate-50/50 flex justify-end">
-              <button
+              <AppButton
+                type="button"
+                variant="primary"
+                size="md"
                 onClick={() => setShowIndicesGuide(false)}
-                className="px-5 py-2 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white font-bold text-xs transition-colors cursor-pointer"
               >
                 Entendido
-              </button>
+              </AppButton>
             </div>
 
           </div>
@@ -2886,6 +2870,7 @@ export default function TenantDashboard({ params }) {
             <button 
               onClick={() => setShowPlanModal(false)}
               className="absolute top-4 right-4 p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors border border-slate-200 cursor-pointer z-10"
+              aria-label="Cerrar"
             >
               <X className="h-5 w-5" />
             </button>
@@ -2954,25 +2939,29 @@ export default function TenantDashboard({ params }) {
                           <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Matriz de Riesgos</li>
                         </ul>
                       </div>
-                      <button
-                        type="button"
-                        disabled={currentActivePlan === 'free'}
-                        onClick={() => {
-                          showAlert(
-                            'Cancelar Suscripción',
-                            'Para dar de baja tu plan activo y regresar al Plan Gratis, debes cancelar la suscripción desde tu panel de Mercado Pago. Al confirmarse la cancelación, tu organización se actualizará automáticamente a Gratis sin cargos adicionales.',
-                            'info',
-                            () => {
-                              window.open('https://www.mercadopago.com.ar/subscriptions', '_blank');
-                            },
-                            'Ir a Mercado Pago'
-                          );
-                          setShowPlanModal(false);
-                        }}
-                        className={`w-full py-2.5 rounded-xl mt-6 text-xs font-bold transition-all ${currentActivePlan === 'free' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer'}`}
-                      >
-                        {currentActivePlan === 'free' ? 'Activo' : 'Elegir'}
-                      </button>
+                      <div className="mt-6">
+                        <AppButton
+                          type="button"
+                          variant={currentActivePlan === 'free' ? 'primary' : 'secondary'}
+                          size="md"
+                          className="w-full justify-center"
+                          disabled={currentActivePlan === 'free'}
+                          onClick={() => {
+                            showAlert(
+                              'Cancelar Suscripción',
+                              'Para dar de baja tu plan activo y regresar al Plan Gratis, debes cancelar la suscripción desde tu panel de Mercado Pago. Al confirmarse la cancelación, tu organización se actualizará automáticamente a Gratis sin cargos adicionales.',
+                              'info',
+                              () => {
+                                window.open('https://www.mercadopago.com.ar/subscriptions', '_blank');
+                              },
+                              'Ir a Mercado Pago'
+                            );
+                            setShowPlanModal(false);
+                          }}
+                        >
+                          {currentActivePlan === 'free' ? 'Activo' : 'Elegir'}
+                        </AppButton>
+                      </div>
                     </div>
 
                     {/* Plan Básico */}
@@ -2998,14 +2987,18 @@ export default function TenantDashboard({ params }) {
                           <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Control Eléctrico + PDF</li>
                         </ul>
                       </div>
-                      <button
-                        type="button"
-                        disabled={currentActivePlan === 'basic_5'}
-                        onClick={() => handleUpgradePlan('basic_5')}
-                        className={`w-full py-2.5 rounded-xl mt-6 text-xs font-bold transition-all ${currentActivePlan === 'basic_5' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-[#468DFF] hover:bg-[#0511F2] text-white cursor-pointer'}`}
-                      >
-                        {currentActivePlan === 'basic_5' ? 'Activo' : 'Contratar'}
-                      </button>
+                      <div className="mt-6">
+                        <AppButton
+                          type="button"
+                          variant="primary"
+                          size="md"
+                          className="w-full justify-center"
+                          disabled={currentActivePlan === 'basic_5'}
+                          onClick={() => handleUpgradePlan('basic_5')}
+                        >
+                          {currentActivePlan === 'basic_5' ? 'Activo' : 'Contratar'}
+                        </AppButton>
+                      </div>
                     </div>
 
                     {/* Plan Estándar */}
@@ -3033,14 +3026,18 @@ export default function TenantDashboard({ params }) {
                           <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Avisos de Riesgo</li>
                         </ul>
                       </div>
-                      <button
-                        type="button"
-                        disabled={currentActivePlan === 'standard_25'}
-                        onClick={() => handleUpgradePlan('standard_25')}
-                        className={`w-full py-2.5 rounded-xl mt-6 text-xs font-bold transition-all ${currentActivePlan === 'standard_25' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-[#468DFF] hover:bg-[#0511F2] text-white cursor-pointer'}`}
-                      >
-                        {currentActivePlan === 'standard_25' ? 'Activo' : 'Contratar'}
-                      </button>
+                      <div className="mt-6">
+                        <AppButton
+                          type="button"
+                          variant="primary"
+                          size="md"
+                          className="w-full justify-center"
+                          disabled={currentActivePlan === 'standard_25'}
+                          onClick={() => handleUpgradePlan('standard_25')}
+                        >
+                          {currentActivePlan === 'standard_25' ? 'Activo' : 'Contratar'}
+                        </AppButton>
+                      </div>
                     </div>
 
                     {/* Plan Full */}
@@ -3071,14 +3068,18 @@ export default function TenantDashboard({ params }) {
                           <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-[#468DFF] shrink-0" /> Portal de clientes</li>
                         </ul>
                       </div>
-                      <button
-                        type="button"
-                        disabled={currentActivePlan === 'libre'}
-                        onClick={() => handleUpgradePlan('libre')}
-                        className={`w-full py-2.5 rounded-xl mt-6 text-xs font-bold transition-all ${currentActivePlan === 'libre' ? 'bg-[#468DFF] text-white opacity-80 cursor-default' : 'bg-[#468DFF] hover:bg-[#0511F2] text-white cursor-pointer'}`}
-                      >
-                        {currentActivePlan === 'libre' ? 'Activo' : 'Contratar'}
-                      </button>
+                      <div className="mt-6">
+                        <AppButton
+                          type="button"
+                          variant="primary"
+                          size="md"
+                          className="w-full justify-center"
+                          disabled={currentActivePlan === 'libre'}
+                          onClick={() => handleUpgradePlan('libre')}
+                        >
+                          {currentActivePlan === 'libre' ? 'Activo' : 'Contratar'}
+                        </AppButton>
+                      </div>
                     </div>
 
                   </div>

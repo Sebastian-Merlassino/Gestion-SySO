@@ -12,9 +12,11 @@ import { useToast } from '@/components/providers/ToastProvider';
 import AppPageHeader from '@/components/ui/AppPageHeader';
 import AppButton from '@/components/ui/AppButton';
 import AppInput from '@/components/ui/AppInput';
+import AppDatePicker from '@/components/ui/AppDatePicker';
 import AppSelect from '@/components/ui/AppSelect';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
+import AppPhotoGalleryModal from '@/components/ui/AppPhotoGalleryModal';
 import AppCard from '@/components/ui/AppCard';
 import AppEmptyState from '@/components/ui/AppEmptyState';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
@@ -1686,75 +1688,19 @@ export default function CapacitacionPage({ params }) {
                     </span>
                     
                     <div className="grid md:grid-cols-3 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-600 block mb-1">
-                          Fecha Inicio Planificada <span className="text-[#468DFF]">*</span>
-                        </label>
-                        <div className="relative">
-                          <input
-                            type="text"
-                            required
-                            placeholder="DD/MM/YYYY"
-                            maxLength={10}
-                            value={fechaInicioPlanificada}
-                            onChange={(e) => setFechaInicioPlanificada(formatAsDateInput(e.target.value))}
-                            className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 font-mono"
-                          />
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
-                            <Calendar className="h-4 w-4" />
-                            <input
-                              type="date"
-                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (val) {
-    const parts = val.split('-');
-    if (parts.length === 3) {
-      setFechaInicioPlanificada(`${parts[2]}/${parts[1]}/${parts[0]}`);
-    }
-  } else {
-    setFechaInicioPlanificada('');
-  }
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </div>
+                      <AppDatePicker
+                        label="Fecha Inicio Planificada"
+                        required
+                        value={fechaInicioPlanificada}
+                        onChange={(e) => setFechaInicioPlanificada(e.target.value)}
+                      />
 
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-600 block mb-1">
-                          Fecha Fin Planificada <span className="text-[#468DFF]">*</span>
-                        </label>
-                        <div className="relative">
-                          <input
-                            type="text"
-                            required
-                            placeholder="DD/MM/YYYY"
-                            maxLength={10}
-                            value={fechaFinPlanificada}
-                            onChange={(e) => setFechaFinPlanificada(formatAsDateInput(e.target.value))}
-                            className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all text-slate-700 font-mono"
-                          />
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
-                            <Calendar className="h-4 w-4" />
-                            <input
-                              type="date"
-                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (val) {
-    const parts = val.split('-');
-    if (parts.length === 3) {
-      setFechaFinPlanificada(`${parts[2]}/${parts[1]}/${parts[0]}`);
-    }
-  } else {
-    setFechaFinPlanificada('');
-  }
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </div>
+                      <AppDatePicker
+                        label="Fecha Fin Planificada"
+                        required
+                        value={fechaFinPlanificada}
+                        onChange={(e) => setFechaFinPlanificada(e.target.value)}
+                      />
 
                       <div className="space-y-1">
                         <div className="flex justify-between items-center mb-1">
@@ -2459,99 +2405,19 @@ export default function CapacitacionPage({ params }) {
         cancelText="Cancelar"
       />
 
-      {/* MODAL DE VISUALIZACIÓN DE FOTOS DE REGISTRO */}
-      {viewingFotosCap && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xl max-w-2xl w-full space-y-4 flex flex-col max-h-[85vh]">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-              <div>
-                <h4 className="font-outfit text-base font-extrabold text-slate-900">Registros de Capacitación</h4>
-                <p className="text-[10px] text-slate-500 font-semibold mt-0.5">{viewingFotosCap.tema} - {viewingFotosCap.puesto || 'General'}</p>
-              </div>
-              <button 
-                onClick={() => { setViewingFotosCap(null); setViewingFotosUrls([]); }} 
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            
-            <div className="overflow-y-auto flex-1 p-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {viewingFotosUrls.length === 0 ? (
-                <div className="col-span-full py-12 text-center text-slate-400 italic text-xs">
-                  Cargando registros...
-                </div>
-              ) : (
-                viewingFotosUrls.map((url, i) => {
-                  const isPdf = url.toLowerCase().includes('.pdf') || url.toLowerCase().includes('pdf') || url.includes('/documents/');
-                  const isDrive = url.toLowerCase().includes('drive.google.com') || (url.startsWith('http') && !isPdf && !url.match(/\.(jpeg|jpg|gif|png|webp)/i));
-
-                  if (isPdf) {
-                    return (
-                      <div key={i} className="relative group rounded-xl border border-slate-200 bg-white p-4 flex flex-col items-center justify-center text-center shadow-sm aspect-video gap-2">
-                        <FileText className="h-10 w-10 text-red-500" />
-                        <span className="text-xs font-bold text-slate-700">Documento PDF Adjunto</span>
-                        <a 
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-2 py-1 px-3 bg-[#468DFF]/15 hover:bg-[#468DFF]/25 text-[#468DFF] rounded-lg text-xs font-bold transition-all flex items-center gap-1.5"
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                          Abrir PDF
-                        </a>
-                      </div>
-                    );
-                  }
-
-                  if (isDrive) {
-                    return (
-                      <div key={i} className="relative group rounded-xl border border-slate-200 bg-white p-4 flex flex-col items-center justify-center text-center shadow-sm aspect-video gap-2">
-                        <ExternalLink className="h-10 w-10 text-[#468DFF]" />
-                        <span className="text-xs font-bold text-slate-700">Google Drive Compartido</span>
-                        <a 
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-2 py-1 px-3 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1.5"
-                        >
-                          <ExternalLink className="h-3.5 w-3.5" />
-                           Ir a Drive
-                        </a>
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <div key={i} className="relative group rounded-xl overflow-hidden border border-slate-200 bg-slate-50 aspect-video flex items-center justify-center shadow-sm">
-                      <img src={url} alt={`Registro ${i+1}`} className="max-h-full max-w-full object-contain" />
-                      <a 
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-xs font-bold gap-1.5"
-                      >
-                        <Eye className="h-4 w-4" />
-                        Ampliar Imagen
-                      </a>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-            
-            <div className="flex justify-end pt-3 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => { setViewingFotosCap(null); setViewingFotosUrls([]); }}
-                className="py-2 px-6 rounded-xl border border-slate-300 text-slate-700 font-bold text-xs hover:bg-slate-100 transition-colors bg-white cursor-pointer"
-              >
-                Cerrar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* MODAL DE VISUALIZACIÓN DE FOTOS Y REGISTROS */}
+      <AppPhotoGalleryModal
+        open={!!viewingFotosCap}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            setViewingFotosCap(null);
+            setViewingFotosUrls([]);
+          }
+        }}
+        title="Registros de capacitación"
+        subtitle={viewingFotosCap ? `${viewingFotosCap.tema || ''} - ${viewingFotosCap.puesto || 'General'}` : ''}
+        photos={viewingFotosUrls}
+      />
 
       {/* DIÁLOGO ESTÁNDAR SALIR SIN GUARDAR */}
       <AppUnsavedChangesDialog

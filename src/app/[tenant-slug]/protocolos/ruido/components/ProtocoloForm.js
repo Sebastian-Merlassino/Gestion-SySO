@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/providers/ToastProvider';
 import AppButton from '@/components/ui/AppButton';
 import AppInput from '@/components/ui/AppInput';
+import AppDatePicker from '@/components/ui/AppDatePicker';
 import AppSelect from '@/components/ui/AppSelect';
 import AppCard from '@/components/ui/AppCard';
 import AppTextarea from '@/components/ui/AppTextarea';
@@ -1943,79 +1944,27 @@ export default function ProtocoloForm({
               />
             </div>
 
-            <div className="flex flex-col gap-1 relative md:col-span-1">
-              <AppLabel htmlFor="fechaCalibracion" className="min-h-[2.5rem] flex items-center mb-1" required={estado === 'completado'}>
-                Fecha de Calibración del Instrumental
-              </AppLabel>
-              <div className="relative">
-                <AppInput
-                  id="fechaCalibracion"
-                  disabled={!canEdit}
-                  placeholder="DD/MM/AAAA"
-                  value={fechaCalibracion}
-                  onChange={(e) => setFechaCalibracion(formatAsDateInput(e.target.value))}
-                />
-                {canEdit && (
-                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
-                    <Calendar className="h-4 w-4" />
-                    <input
-                      type="date"
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val) {
-                          const parts = val.split('-');
-                          if (parts.length === 3) {
-                            setFechaCalibracion(`${parts[2]}/${parts[1]}/${parts[0]}`);
-                          }
-                        } else {
-                          setFechaCalibracion('');
-                        }
-                      }}
-                    />
-                  </div>
-                )}
-                {!canEdit && (
-                  <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                )}
-              </div>
+            <div className="flex flex-col relative md:col-span-1">
+              <AppDatePicker
+                id="fechaCalibracion"
+                label="Fecha de Calibración del Instrumental"
+                required={estado === 'completado'}
+                disabled={!canEdit}
+                value={fechaCalibracion}
+                onChange={(e) => setFechaCalibracion(e.target.value)}
+              />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 col-span-full">
-              <div className="flex flex-col gap-1">
-                <AppLabel htmlFor="fechaMedicion" required>Fecha Medición</AppLabel>
-                <div className="relative">
-                  <AppInput
-                    id="fechaMedicion"
-                    disabled={!canEdit}
-                    placeholder="DD/MM/AAAA"
-                    value={fechaMedicion}
-                    onChange={(e) => setFechaMedicion(formatAsDateInput(e.target.value))}
-                  />
-                  {canEdit && (
-                    <div className="absolute right-3.5 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center">
-                      <Calendar className="h-4 w-4" />
-                      <input
-                        type="date"
-                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (val) {
-                            const parts = val.split('-');
-                            if (parts.length === 3) {
-                              setFechaMedicion(`${parts[2]}/${parts[1]}/${parts[0]}`);
-                            }
-                          } else {
-                            setFechaMedicion('');
-                          }
-                        }}
-                      />
-                    </div>
-                  )}
-                  {!canEdit && (
-                    <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                  )}
-                </div>
+              <div className="flex flex-col">
+                <AppDatePicker
+                  id="fechaMedicion"
+                  label="Fecha Medición"
+                  required
+                  disabled={!canEdit}
+                  value={fechaMedicion}
+                  onChange={(e) => setFechaMedicion(e.target.value)}
+                />
               </div>
               <div className="flex flex-col gap-1">
                 <AppLabel htmlFor="horaInicio">Hora de Inicio</AppLabel>
@@ -3193,21 +3142,15 @@ export default function ProtocoloForm({
                 )}
 
                 {canEdit && (
-                  <button
+                  <AppButton
                     type="submit"
                     onClick={handleSubmit}
-                    disabled={saveLoading}
-                    className="px-5 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-[#468DFF]/10 disabled:opacity-50"
+                    loading={saveLoading}
+                    variant="primary"
+                    size="md"
                   >
-                    {saveLoading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin mr-1" />
-                        Guardando...
-                      </>
-                    ) : (
-                      'Guardar'
-                    )}
-                  </button>
+                    Guardar
+                  </AppButton>
                 )}
               </>
             )}
@@ -3313,21 +3256,23 @@ export default function ProtocoloForm({
           </div>
 
           <div className="flex flex-col sm:flex-row justify-end gap-2.5 pt-2">
-            <button
+            <AppButton
               type="button"
+              variant="secondary"
+              size="md"
               onClick={() => handleSyncConfirm('skip')}
-              className="px-4 py-2.5 border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-bold rounded-xl transition-all cursor-pointer text-center"
             >
               Solo guardar en este protocolo
-            </button>
+            </AppButton>
 
-            <button
+            <AppButton
               type="button"
+              variant="primary"
+              size="md"
               onClick={() => handleSyncConfirm('save_profile')}
-              className="px-4 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white text-xs font-bold rounded-xl shadow-md shadow-[#468DFF]/10 transition-all cursor-pointer text-center"
             >
               Guardar todos en el perfil ({syncQueue.length})
-            </button>
+            </AppButton>
           </div>
         </div>
       </div>

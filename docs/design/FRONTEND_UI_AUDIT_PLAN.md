@@ -301,7 +301,7 @@ gantt
 ### Fase 2: Normalización de Modales (Eliminar, Salir sin guardar, Ayuda) y Alertas
 **Objetivo:** Erradicar modales `<div>` inline y centralizar todas las ventanas emergentes en componentes Radix unificados.
 
-- [ ] **Tarea 2.1:** Crear el componente reutilizable `src/components/ui/AppSendModal.js` que unifique el envío de reportes PDF por Email y WhatsApp con tabs integrados, eliminando 8 bloques de código duplicados.
+- [x] **Tarea 2.1:** Crear el componente reutilizable `src/components/ui/AppSendModal.js` que unifique el envío de reportes PDF por Email y WhatsApp con tabs integrados, eliminando 8 bloques de código duplicados.
 - [ ] **Tarea 2.2:** Crear el componente reutilizable `src/components/ui/AppPhotoGalleryModal.js` para visualización ampliada de evidencias fotográficas en visitas, siniestros y extintores.
 - [ ] **Tarea 2.3:** Estandarizar textos de `AppUnsavedChangesDialog` a los valores oficiales: `"Salir sin guardar"` (botón secundario) y `"Quedarse y editar"` (botón primario corporativo).
 - [ ] **Tarea 2.4:** Reemplazar el modal inline de `Sidebar.js` (`modalAlert`) por una invocación limpia a `AppConfirmDialog`.

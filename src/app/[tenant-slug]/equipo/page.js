@@ -11,6 +11,7 @@ import { formatDate, formatAsDateInput, convertToDbDate, getEffectivePlan, PLAN_
 import AppPageHeader from '@/components/ui/AppPageHeader';
 import AppButton from '@/components/ui/AppButton';
 import AppInput from '@/components/ui/AppInput';
+import AppDatePicker from '@/components/ui/AppDatePicker';
 import AppSelect from '@/components/ui/AppSelect';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
@@ -1617,43 +1618,12 @@ export default function EquipoPage({ params }) {
                       />
                     </div>
 
-                    <div>
-                      <label className="text-xs font-bold text-slate-600 block mb-1">
-                        Fecha de Nacimiento
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          placeholder="DD/MM/YYYY"
-                          maxLength={10}
-                          value={birthDate}
-                          onChange={(e) => setBirthDate(formatAsDateInput(e.target.value))}
-                          disabled={!canEdit}
-                          className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono text-slate-700 disabled:opacity-50 disabled:bg-slate-100 disabled:pointer-events-none"
-                        />
-                        {canEdit && (
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center" onClick={(e) => e.stopPropagation()}>
-                            <Calendar className="h-4 w-4" />
-                            <input
-                              type="date"
-                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (val) {
-                                  const parts = val.split('-');
-                                  if (parts.length === 3) {
-                                    setBirthDate(`${parts[2]}/${parts[1]}/${parts[0]}`);
-                                  }
-                                }
-                              }}
-                            />
-                          </div>
-                        )}
-                        {!canEdit && (
-                          <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                        )}
-                      </div>
-                    </div>
+                    <AppDatePicker
+                      label="Fecha de Nacimiento"
+                      value={birthDate}
+                      onChange={(e) => setBirthDate(e.target.value)}
+                      disabled={!canEdit}
+                    />
                   </div>
 
                   <div className="grid md:grid-cols-3 gap-6">
@@ -1983,41 +1953,13 @@ export default function EquipoPage({ params }) {
                           </div>
 
                           <div>
-                            <label className="text-xs font-bold text-slate-600 block mb-1">
-                              Fecha de Vencimiento
-                            </label>
-                            <div className="relative">
-                              <input
-                                type="text"
-                                placeholder="DD/MM/YYYY"
-                                maxLength={10}
-                                value={mat.vencimiento}
-                                onChange={(e) => handleMatriculaChange(idx, 'vencimiento', formatAsDateInput(e.target.value))}
-                                disabled={!canEdit}
-                                className="w-full border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all font-mono text-slate-700 disabled:opacity-50 disabled:bg-slate-100 disabled:pointer-events-none"
-                              />
-                              {canEdit && (
-                                <div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-[#468DFF] flex items-center" onClick={(e) => e.stopPropagation()}>
-                                  <Calendar className="h-4 w-4" />
-                                  <input
-                                    type="date"
-                                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                                    onChange={(e) => {
-                                      const val = e.target.value;
-                                      if (val) {
-                                        const parts = val.split('-');
-                                        if (parts.length === 3) {
-                                          handleMatriculaChange(idx, 'vencimiento', `${parts[2]}/${parts[1]}/${parts[0]}`);
-                                        }
-                                      }
-                                    }}
-                                  />
-                                </div>
-                              )}
-                              {!canEdit && (
-                                <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                              )}
-                            </div>
+                            <AppDatePicker
+                              id={`mat_venc_${idx}`}
+                              label="Fecha de Vencimiento"
+                              value={mat.vencimiento}
+                              onChange={(e) => handleMatriculaChange(idx, 'vencimiento', e.target.value)}
+                              disabled={!canEdit}
+                            />
                           </div>
                         </div>
 
