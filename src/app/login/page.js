@@ -7,6 +7,7 @@ import { Mail, Hash, Lock, ShieldAlert, ArrowRight, Loader2, X, CheckCircle, Eye
 import AppCard from '@/components/ui/AppCard';
 import AppInput from '@/components/ui/AppInput';
 import AppButton from '@/components/ui/AppButton';
+import AppLabel from '@/components/ui/AppLabel';
 import PublicFooter from '@/components/PublicFooter';
 export default function LoginPage() {
   const [activeTab, setActiveTab] = useState('profesional'); // 'profesional' or 'cliente'
@@ -350,9 +351,7 @@ export default function LoginPage() {
           <form onSubmit={handleLogin} className="space-y-6">
             {activeTab === 'profesional' ? (
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                  Correo Electrónico
-                </label>
+                <AppLabel>Correo electrónico</AppLabel>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                     <Mail className="h-5 w-5" />
@@ -370,9 +369,7 @@ export default function LoginPage() {
               </div>
             ) : (
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                  Número de CUIT
-                </label>
+                <AppLabel>Número de CUIT</AppLabel>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                     <Hash className="h-5 w-5" />
@@ -392,9 +389,7 @@ export default function LoginPage() {
 
             <div>
               <div className="flex justify-between items-center mb-2">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  Contraseña
-                </label>
+                <AppLabel className="mb-0">Contraseña</AppLabel>
                 <button
                   type="button"
                   onClick={() => {
@@ -404,7 +399,7 @@ export default function LoginPage() {
                     setForgotCuit('');
                     setShowForgotModal(true);
                   }}
-                  className="text-xs text-[#468DFF] hover:text-[#0511F2] font-semibold transition-colors"
+                  className="text-xs text-[#468DFF] hover:text-[#0511F2] font-semibold transition-colors cursor-pointer"
                 >
                   ¿La olvidaste?
                 </button>
@@ -432,27 +427,23 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <button
+            <AppButton
               type="submit"
-              disabled={loading || cooldownSeconds > 0}
-              className="w-full py-3 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/10 hover:shadow-blue-500/25 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
+              variant="primary"
+              size="lg"
+              loading={loading}
+              disabled={cooldownSeconds > 0}
+              className="w-full"
             >
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Iniciando sesión...
-                </>
-              ) : cooldownSeconds > 0 ? (
-                <>
-                  Bloqueado ({cooldownSeconds}s)
-                </>
+              {cooldownSeconds > 0 ? (
+                <>Bloqueado ({cooldownSeconds}s)</>
               ) : (
                 <>
                   Ingresar
                   <ArrowRight className="h-4 w-4" />
                 </>
               )}
-            </button>
+            </AppButton>
           </form>
 
           {/* Registro link inside the card container with stable layout height to prevent jumping */}

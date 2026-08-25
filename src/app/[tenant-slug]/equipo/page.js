@@ -950,9 +950,9 @@ export default function EquipoPage({ params }) {
 
   const handleDelete = async (memberId, name, memberProfileId) => {
     showAlert(
-      'Eliminar Miembro de Equipo',
-      `¿Estás seguro de que deseas eliminar permanentemente a "${name}"? Si posee acceso a la plataforma, su cuenta de usuario también será desactivada.`,
-      'warning',
+      '¿Eliminar integrante?',
+      `¿Está seguro de que desea eliminar permanentemente a "${name}"? Si posee acceso a la plataforma, su cuenta de usuario también será desactivada.`,
+      'destructive',
       async () => {
         setLoading(true);
         if (isDevMode) {
@@ -1365,10 +1365,9 @@ export default function EquipoPage({ params }) {
 
                     {canCargar && (
                       <AppButton
-                        variant="primary"
+                        variant="filter-primary"
                         size="sm"
                         onClick={handleAddNew}
-                        className="shrink-0"
                       >
                         <PlusCircle className="h-3.5 w-3.5" />
                         <span>Nuevo integrante</span>
@@ -2148,41 +2147,17 @@ export default function EquipoPage({ params }) {
       {/* Toast notifications removidos - consumidos globalmente */}
 
       {/* MODAL DIALOG ALERT */}
-      {modalAlert.show && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
-            <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500">
-              <AlertTriangle className="h-6 w-6" />
-            </div>
-            <div className="space-y-1">
-              <h4 className="font-outfit text-base font-bold text-slate-800">{modalAlert.title}</h4>
-              <p className="text-xs text-slate-500 leading-relaxed">{modalAlert.message}</p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={closeAlert}
-                className="flex-1 py-2.5 bg-white border border-[#468DFF] text-[#468DFF] rounded-xl text-xs font-bold hover:bg-[#468DFF] hover:text-white hover:border-[#468DFF] transition-all active:scale-[0.98] cursor-pointer"
-              >
-                Cancelar
-              </button>
-              {modalAlert.onConfirm && (
-                <button
-                  type="button"
-                  onClick={modalAlert.onConfirm}
-                  className={`flex-1 py-2.5 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer ${
-                    modalAlert.type === 'danger' || modalAlert.type === 'destructive'
-                      ? 'bg-red-500 hover:bg-red-600'
-                      : 'bg-[#468DFF] hover:bg-[#0511F2]'
-                  }`}
-                >
-                  {modalAlert.confirmText || 'Confirmar'}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* DIÁLOGO ESTÁNDAR DE CONFIRMACIÓN / ELIMINACIÓN */}
+      <AppConfirmDialog
+        open={modalAlert.show}
+        onOpenChange={(open) => setModalAlert(prev => ({ ...prev, show: open }))}
+        title={modalAlert.title}
+        description={modalAlert.message}
+        type={modalAlert.type || (modalAlert.title?.toLowerCase().includes('eliminar') ? 'destructive' : 'warning')}
+        onConfirm={modalAlert.onConfirm}
+        confirmText={modalAlert.confirmText || 'Confirmar'}
+        cancelText="Cancelar"
+      />
 
       {/* DIÁLOGO ESTÁNDAR SALIR SIN GUARDAR */}
       <AppUnsavedChangesDialog

@@ -18,27 +18,27 @@ import AppTooltip from '@/components/ui/AppTooltip';
 import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
 import AppLoadingSpinner from '@/components/ui/AppLoadingSpinner';
 import { generateCapacitacionOnlinePdf } from './utils/pdfGenerator';
-import { 
-  GraduationCap, 
-  PlusCircle, 
-  Search, 
-  Building, 
-  Users, 
-  Tv, 
-  FileText, 
-  Share2, 
-  Download, 
+import {
+  GraduationCap,
+  PlusCircle,
+  Search,
+  Building,
+  Users,
+  Tv,
+  FileText,
+  Share2,
+  Download,
   Printer,
-  Trash2, 
-  Edit, 
-  X, 
-  Loader2, 
-  ShieldCheck, 
-  Sliders, 
-  ChevronDown, 
-  ChevronUp, 
-  ArrowLeft, 
-  AlertTriangle, 
+  Trash2,
+  Edit,
+  X,
+  Loader2,
+  ShieldCheck,
+  Sliders,
+  ChevronDown,
+  ChevronUp,
+  ArrowLeft,
+  AlertTriangle,
   MapPin,
   User,
   HelpCircle,
@@ -383,7 +383,7 @@ export default function CapacitacionesOnlinePage({ params }) {
         .select('*, tenants(*)')
         .eq('id', user.id)
         .single();
-      
+
       setProfile(prof);
       setTenant(prof?.tenants);
 
@@ -487,7 +487,7 @@ export default function CapacitacionesOnlinePage({ params }) {
     setTitulo(item.titulo || '');
     setDescripcion(item.descripcion || '');
     setMetodologia(item.metodologia || (item.video_url ? 'Asincrónica con video' : 'Asincrónica con PowerPoint/PDF'));
-    
+
     if (item.duracion) {
       const hsMatch = item.duracion.match(/(\d+)\s*hs?/i);
       const minMatch = item.duracion.match(/(\d+)\s*min/i);
@@ -509,7 +509,7 @@ export default function CapacitacionesOnlinePage({ params }) {
 
     setAsignacionTipo(item.asignacion_tipo || 'puesto');
     setTargetPuesto(item.target_puesto || '');
-    
+
     const initialPuestos = item.target_puesto
       ? item.target_puesto.split(',').map(s => s.trim()).filter(Boolean)
       : [];
@@ -732,7 +732,7 @@ export default function CapacitacionesOnlinePage({ params }) {
     const selectedEmails = (shareModal.availableEmails || [])
       .filter(e => e.checked)
       .map(e => e.valor);
-    
+
     const manualVal = (shareModal.manualEmail || '').trim();
     const manualEmails = manualVal
       ? manualVal.split(',').map(e => e.trim()).filter(Boolean)
@@ -783,7 +783,7 @@ export default function CapacitacionesOnlinePage({ params }) {
     const selectedPhones = (shareModal.availablePhones || [])
       .filter(p => p.checked)
       .map(p => p.valor);
-    
+
     const manualVal = (shareModal.manualPhone || '').trim();
 
     let targetPhone = '';
@@ -794,7 +794,7 @@ export default function CapacitacionesOnlinePage({ params }) {
     }
 
     const cleanPhone = targetPhone.replace(/[^0-9]/g, '');
-    const waUrl = cleanPhone 
+    const waUrl = cleanPhone
       ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(shareModal.message)}`
       : `https://wa.me/?text=${encodeURIComponent(shareModal.message)}`;
 
@@ -808,8 +808,8 @@ export default function CapacitacionesOnlinePage({ params }) {
     let publicUrl = '';
 
     if (typeof item === 'string') {
-      publicUrl = item.startsWith('http://') || item.startsWith('https://') 
-        ? item 
+      publicUrl = item.startsWith('http://') || item.startsWith('https://')
+        ? item
         : `${window.location.origin}/capacitar/${item}`;
     } else if (item) {
       const token = item.access_token || item.id;
@@ -952,7 +952,7 @@ export default function CapacitacionesOnlinePage({ params }) {
   const filteredCapacitaciones = capacitaciones.filter(item => {
     const matchesEmpresa = !filterEmpresaId || item.empresa_id === filterEmpresaId;
     const matchesEstablecimiento = !filterEstablecimientoId || item.establecimiento_id === filterEstablecimientoId;
-    const matchesSearch = !filterText || 
+    const matchesSearch = !filterText ||
       item.titulo?.toLowerCase().includes(filterText.toLowerCase()) ||
       item.target_puesto?.toLowerCase().includes(filterText.toLowerCase());
     return matchesEmpresa && matchesEstablecimiento && matchesSearch;
@@ -1022,13 +1022,13 @@ export default function CapacitacionesOnlinePage({ params }) {
           <AppLoadingSpinner message="Cargando capacitaciones online..." />
         ) : (
           <div className="w-full flex-grow flex flex-col min-h-0 p-0 md:py-8 md:max-w-[95%] md:mx-auto md:px-0">
-            
+
             {isFormOpen ? (
               /* FORMULARIO DE ALTA Y EDICIÓN (MATCHING CONTROL-ELECTRICO / PROGRAMA) */
               <div className="bg-white md:rounded-2xl md:border md:border-slate-200 md:shadow-sm overflow-hidden flex flex-col h-full md:h-[calc(100vh-128px)] animate-fade-in w-full">
                 <div className="h-16 px-4 md:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
-                    <button 
+                    <button
                       type="button"
                       onClick={handleExitForm}
                       className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 cursor-pointer"
@@ -1046,7 +1046,7 @@ export default function CapacitacionesOnlinePage({ params }) {
 
                 <form onSubmit={handleSave} className="overflow-y-auto flex-1 scrollbar-thin p-3.5 sm:p-6 space-y-4 sm:space-y-6">
                   <fieldset disabled={isReadOnlyView} className="space-y-4 sm:space-y-6">
-                    
+
                     {/* Sección 1: Cliente y Puesto */}
                     <div className="space-y-4">
                       <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
@@ -1149,8 +1149,8 @@ export default function CapacitacionesOnlinePage({ params }) {
                                 <div className="flex flex-wrap gap-1.5 items-center flex-1 min-w-0">
                                   {selectedPuestos.length === 0 ? (
                                     <span className="text-slate-400 text-sm font-normal">
-                                      {!empresaId 
-                                        ? 'Primero selecciona un cliente...' 
+                                      {!empresaId
+                                        ? 'Primero selecciona un cliente...'
                                         : 'Selecciona uno o varios puestos de trabajo...'}
                                     </span>
                                   ) : (
@@ -1231,9 +1231,8 @@ export default function CapacitacionesOnlinePage({ params }) {
                                         return (
                                           <label
                                             key={idx}
-                                            className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-colors ${
-                                              isChecked ? 'bg-[#468DFF]/10 text-[#468DFF] font-bold' : 'hover:bg-slate-50 text-slate-700'
-                                            }`}
+                                            className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-colors ${isChecked ? 'bg-[#468DFF]/10 text-[#468DFF] font-bold' : 'hover:bg-slate-50 text-slate-700'
+                                              }`}
                                           >
                                             <input
                                               type="checkbox"
@@ -1298,7 +1297,7 @@ export default function CapacitacionesOnlinePage({ params }) {
                               required
                               tabIndex={-1}
                               value={selectedPuestos.length > 0 ? 'valid' : ''}
-                              onChange={() => {}}
+                              onChange={() => { }}
                               className="opacity-0 h-0 w-0 absolute pointer-events-none"
                             />
                           </div>
@@ -1333,8 +1332,8 @@ export default function CapacitacionesOnlinePage({ params }) {
                                 <div className="flex flex-wrap gap-1.5 items-center flex-1 min-w-0">
                                   {selectedEmpleados.length === 0 ? (
                                     <span className="text-slate-400 text-sm font-normal">
-                                      {!empresaId 
-                                        ? 'Primero selecciona un cliente...' 
+                                      {!empresaId
+                                        ? 'Primero selecciona un cliente...'
                                         : 'Selecciona uno o varios empleados de la nómina...'}
                                     </span>
                                   ) : (
@@ -1423,15 +1422,14 @@ export default function CapacitacionesOnlinePage({ params }) {
                                       </p>
                                     ) : (
                                       availableEmpleados.map((empItem, idx) => {
-                                        const isChecked = selectedEmpleados.some(item => 
+                                        const isChecked = selectedEmpleados.some(item =>
                                           (typeof item === 'string' ? item : item.nombre_apellido) === empItem.nombre_apellido
                                         );
                                         return (
                                           <label
                                             key={empItem.id || idx}
-                                            className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-colors ${
-                                              isChecked ? 'bg-[#468DFF]/10 text-[#468DFF] font-bold' : 'hover:bg-slate-50 text-slate-700'
-                                            }`}
+                                            className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-colors ${isChecked ? 'bg-[#468DFF]/10 text-[#468DFF] font-bold' : 'hover:bg-slate-50 text-slate-700'
+                                              }`}
                                           >
                                             <input
                                               type="checkbox"
@@ -1445,7 +1443,7 @@ export default function CapacitacionesOnlinePage({ params }) {
                                                     puesto: empItem.puesto || ''
                                                   }]);
                                                 } else {
-                                                  setSelectedEmpleados(selectedEmpleados.filter(item => 
+                                                  setSelectedEmpleados(selectedEmpleados.filter(item =>
                                                     (typeof item === 'string' ? item : item.nombre_apellido) !== empItem.nombre_apellido
                                                   ));
                                                 }
@@ -1535,7 +1533,7 @@ export default function CapacitacionesOnlinePage({ params }) {
                               required
                               tabIndex={-1}
                               value={selectedEmpleados.length > 0 ? 'valid' : ''}
-                              onChange={() => {}}
+                              onChange={() => { }}
                               className="opacity-0 h-0 w-0 absolute pointer-events-none"
                             />
                           </div>
@@ -1662,9 +1660,8 @@ export default function CapacitacionesOnlinePage({ params }) {
                                     return (
                                       <label
                                         key={tItem.id || idx}
-                                        className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-colors ${
-                                          isChecked ? 'bg-[#468DFF]/10 text-[#468DFF] font-bold' : 'hover:bg-slate-50 text-slate-700'
-                                        }`}
+                                        className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-colors ${isChecked ? 'bg-[#468DFF]/10 text-[#468DFF] font-bold' : 'hover:bg-slate-50 text-slate-700'
+                                          }`}
                                       >
                                         <input
                                           type="checkbox"
@@ -1745,7 +1742,7 @@ export default function CapacitacionesOnlinePage({ params }) {
                           required
                           tabIndex={-1}
                           value={selectedTemas.length > 0 ? 'valid' : ''}
-                          onChange={() => {}}
+                          onChange={() => { }}
                           className="opacity-0 h-0 w-0 absolute pointer-events-none"
                         />
                       </div>
@@ -1824,11 +1821,10 @@ export default function CapacitacionesOnlinePage({ params }) {
                                 setDuracionUnidad(duracionUnidad === 'min' ? 'hs' : 'min');
                                 setFormIsDirty(true);
                               }}
-                              className={`w-14 shrink-0 flex items-center justify-center h-full text-xs font-black uppercase transition-all cursor-pointer select-none ${
-                                duracionUnidad === 'min'
-                                  ? 'bg-blue-50 text-[#468DFF] hover:bg-blue-100'
-                                  : 'bg-amber-50 text-amber-600 hover:bg-amber-100'
-                              }`}
+                              className={`w-14 shrink-0 flex items-center justify-center h-full text-xs font-black uppercase transition-all cursor-pointer select-none ${duracionUnidad === 'min'
+                                ? 'bg-blue-50 text-[#468DFF] hover:bg-blue-100'
+                                : 'bg-amber-50 text-amber-600 hover:bg-amber-100'
+                                }`}
                             >
                               {duracionUnidad === 'min' ? 'MIN' : 'HS'}
                             </button>
@@ -1927,7 +1923,7 @@ export default function CapacitacionesOnlinePage({ params }) {
             ) : (
               /* VISTA TABLA PRINCIPAL Y CONTROL (ESTRUCTURA IDÉNTICA A CONTROL ELÉCTRICO) */
               <div className="space-y-0 md:space-y-6 flex-grow flex flex-col min-h-0">
-                
+
                 {/* PANEL DE FILTROS Y BÚSQUEDA (MATCHING CONTROL-ELECTRICO 1:1) */}
                 <div className="bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl px-3.5 py-2.5 sm:px-5 sm:py-3 md:px-6 md:py-3.5 shadow-sm space-y-2.5 shrink-0">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
@@ -2032,7 +2028,7 @@ export default function CapacitacionesOnlinePage({ params }) {
                 </div>
 
                 {/* CONTENEDOR DE TABLA (SySO Compact Layout) */}
-                <div 
+                <div
                   className={`bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl shadow-sm overflow-hidden flex flex-col flex-grow min-h-0 md:flex-initial transition-all duration-300 ease-in-out ${showFilters ? 'md:h-[calc(100vh-310px)]' : 'md:h-[calc(100vh-240px)]'}`}
                 >
                   <div className="overflow-auto flex-grow scrollbar-thin">
@@ -2163,75 +2159,75 @@ export default function CapacitacionesOnlinePage({ params }) {
                                   <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
                                     <AppTooltip content="Compartir capacitación">
                                       <AppButton
-                                         variant="document-table"
-                                         size="icon"
-                                         onClick={(e) => handleOpenShareModal(item, e)}
-                                       >
-                                         <Share2 className="h-4.5 w-4.5" />
-                                       </AppButton>
+                                        variant="document-table"
+                                        size="icon"
+                                        onClick={(e) => handleOpenShareModal(item, e)}
+                                      >
+                                        <Share2 className="h-4.5 w-4.5" />
+                                      </AppButton>
                                     </AppTooltip>
 
-                                     {/* Ver Firmas */}
-                                     <AppTooltip content="Ver asistentes firmantes">
-                                       <AppButton
-                                         variant="document-table"
-                                         size="icon"
-                                         onClick={(e) => handleOpenRegistrosModal(item, e)}
-                                       >
-                                         <Users className="h-4.5 w-4.5" />
-                                       </AppButton>
-                                     </AppTooltip>
+                                    {/* Ver Firmas */}
+                                    <AppTooltip content="Ver asistentes firmantes">
+                                      <AppButton
+                                        variant="document-table"
+                                        size="icon"
+                                        onClick={(e) => handleOpenRegistrosModal(item, e)}
+                                      >
+                                        <Users className="h-4.5 w-4.5" />
+                                      </AppButton>
+                                    </AppTooltip>
 
-                                     {/* Imprimir */}
-                                     <AppTooltip content="Visualizar / Imprimir PDF">
-                                       <AppButton
-                                         variant="document-table"
-                                         size="icon"
-                                         onClick={(e) => handlePrintPdf(item, e)}
-                                       >
-                                         <Printer className="h-4.5 w-4.5" />
-                                       </AppButton>
-                                     </AppTooltip>
+                                    {/* Imprimir */}
+                                    <AppTooltip content="Visualizar / Imprimir PDF">
+                                      <AppButton
+                                        variant="document-table"
+                                        size="icon"
+                                        onClick={(e) => handlePrintPdf(item, e)}
+                                      >
+                                        <Printer className="h-4.5 w-4.5" />
+                                      </AppButton>
+                                    </AppTooltip>
 
-                                     {/* Descargar Registro PDF */}
-                                     <AppTooltip content="Descargar PDF">
-                                       <AppButton
-                                         variant="document-table"
-                                         size="icon"
-                                         onClick={(e) => handleDownloadPdf(item, e)}
-                                       >
-                                         <Download className="h-4.5 w-4.5" />
-                                       </AppButton>
-                                     </AppTooltip>
+                                    {/* Descargar Registro PDF */}
+                                    <AppTooltip content="Descargar PDF">
+                                      <AppButton
+                                        variant="document-table"
+                                        size="icon"
+                                        onClick={(e) => handleDownloadPdf(item, e)}
+                                      >
+                                        <Download className="h-4.5 w-4.5" />
+                                      </AppButton>
+                                    </AppTooltip>
 
-                                     {/* Editar */}
-                                     {canEditar && (
-                                       <AppTooltip content="Editar capacitación">
-                                         <AppButton
-                                           variant="edit-table"
-                                           size="icon"
-                                           onClick={() => handleEditClick(item)}
-                                         >
-                                           <Edit className="h-4.5 w-4.5" />
-                                         </AppButton>
-                                       </AppTooltip>
-                                     )}
+                                    {/* Editar */}
+                                    {canEditar && (
+                                      <AppTooltip content="Editar capacitación">
+                                        <AppButton
+                                          variant="edit-table"
+                                          size="icon"
+                                          onClick={() => handleEditClick(item)}
+                                        >
+                                          <Edit className="h-4.5 w-4.5" />
+                                        </AppButton>
+                                      </AppTooltip>
+                                    )}
 
-                                     {/* Eliminar */}
-                                     {canEliminar && (
-                                       <AppTooltip content="Eliminar capacitación">
-                                         <AppButton
-                                           variant="delete-table"
-                                           size="icon"
-                                           onClick={(e) => {
-                                             e.stopPropagation();
-                                             setDeleteConfirm({ show: true, id: item.id, title: item.titulo });
-                                           }}
-                                         >
-                                           <Trash2 className="h-4.5 w-4.5" />
-                                         </AppButton>
-                                       </AppTooltip>
-                                     )}
+                                    {/* Eliminar */}
+                                    {canEliminar && (
+                                      <AppTooltip content="Eliminar capacitación">
+                                        <AppButton
+                                          variant="delete-table"
+                                          size="icon"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setDeleteConfirm({ show: true, id: item.id, title: item.titulo });
+                                          }}
+                                        >
+                                          <Trash2 className="h-4.5 w-4.5" />
+                                        </AppButton>
+                                      </AppTooltip>
+                                    )}
                                   </div>
                                 </td>
                               </tr>
@@ -2363,7 +2359,7 @@ export default function CapacitacionesOnlinePage({ params }) {
       {shareModal.show && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-200 animate-scaleUp space-y-4">
-            
+
             {/* Header del Modal */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2.5">
@@ -2391,11 +2387,10 @@ export default function CapacitacionesOnlinePage({ params }) {
               <button
                 type="button"
                 onClick={() => setShareModal({ ...shareModal, activeTab: 'email' })}
-                className={`flex items-center gap-1.5 py-2 px-1 border-b-2 transition-all cursor-pointer ${
-                  shareModal.activeTab === 'email'
-                    ? 'border-[#468DFF] text-[#468DFF]'
-                    : 'border-transparent text-slate-400 hover:text-slate-600'
-                }`}
+                className={`flex items-center gap-1.5 py-2 px-1 border-b-2 transition-all cursor-pointer ${shareModal.activeTab === 'email'
+                  ? 'border-[#468DFF] text-[#468DFF]'
+                  : 'border-transparent text-slate-400 hover:text-slate-600'
+                  }`}
               >
                 <Mail className="h-3.5 w-3.5" />
                 Correo Electrónico
@@ -2404,11 +2399,10 @@ export default function CapacitacionesOnlinePage({ params }) {
               <button
                 type="button"
                 onClick={() => setShareModal({ ...shareModal, activeTab: 'whatsapp' })}
-                className={`flex items-center gap-1.5 py-2 px-1 border-b-2 transition-all cursor-pointer ${
-                  shareModal.activeTab === 'whatsapp'
-                    ? 'border-emerald-600 text-emerald-600'
-                    : 'border-transparent text-slate-400 hover:text-slate-600'
-                }`}
+                className={`flex items-center gap-1.5 py-2 px-1 border-b-2 transition-all cursor-pointer ${shareModal.activeTab === 'whatsapp'
+                  ? 'border-emerald-600 text-emerald-600'
+                  : 'border-transparent text-slate-400 hover:text-slate-600'
+                  }`}
               >
                 <MessageCircle className="h-3.5 w-3.5" />
                 WhatsApp
@@ -2417,11 +2411,10 @@ export default function CapacitacionesOnlinePage({ params }) {
               <button
                 type="button"
                 onClick={() => setShareModal({ ...shareModal, activeTab: 'link' })}
-                className={`flex items-center gap-1.5 py-2 px-1 border-b-2 transition-all cursor-pointer ${
-                  shareModal.activeTab === 'link'
-                    ? 'border-slate-800 text-slate-800'
-                    : 'border-transparent text-slate-400 hover:text-slate-600'
-                }`}
+                className={`flex items-center gap-1.5 py-2 px-1 border-b-2 transition-all cursor-pointer ${shareModal.activeTab === 'link'
+                  ? 'border-slate-800 text-slate-800'
+                  : 'border-transparent text-slate-400 hover:text-slate-600'
+                  }`}
               >
                 <Link className="h-3.5 w-3.5" />
                 Enlace Directo

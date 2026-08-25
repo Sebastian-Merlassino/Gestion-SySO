@@ -11,6 +11,7 @@ import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
 import { useToast } from '@/components/providers/ToastProvider';
 import AppPageHeader from '@/components/ui/AppPageHeader';
 import AppButton from '@/components/ui/AppButton';
+import AppLabel from '@/components/ui/AppLabel';
 import AppInput from '@/components/ui/AppInput';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
@@ -883,8 +884,8 @@ export default function NominaPage({ params }) {
     }
     setModalAlert({
       show: true,
-      title: '¿Eliminar de la Nómina?',
-      message: 'Esta acción eliminará de forma permanente el registro del empleado seleccionado de la nómina y no se podrá deshacer.',
+      title: '¿Eliminar trabajador?',
+      message: '¿Está seguro de que desea eliminar este trabajador de la nómina? Esta acción no se puede deshacer y borrará permanentemente sus registros asociados.',
       confirmText: 'Eliminar',
       onConfirm: async () => {
         if (isDevMode) {
@@ -1520,11 +1521,12 @@ export default function NominaPage({ params }) {
                         className="font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px] hover:text-slate-600 transition-colors cursor-pointer"
                       >
                         <Sliders className="h-3 w-3" />
-                        Filtros de Búsqueda
+                        Filtros de búsqueda
                         {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                       </button>
                       {(filterEmpresa || filterEstablecimiento || filterAnio) && (
                         <button
+                          type="button"
                           onClick={() => {
                             setFilterEmpresa('');
                             setFilterEstablecimiento('');
@@ -1539,10 +1541,9 @@ export default function NominaPage({ params }) {
 
                     {canCreate && (
                       <AppButton
-                        variant="primary"
+                        variant="filter-primary"
                         size="sm"
                         onClick={handleOpenCreateForm}
-                        className="shrink-0"
                       >
                         <PlusCircle className="h-3.5 w-3.5" />
                         <span>Nuevo trabajador</span>
@@ -1554,7 +1555,7 @@ export default function NominaPage({ params }) {
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-1 animate-fade-in">
                        {profile?.role !== 'cliente' && (
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Cliente</label>
+                          <AppLabel size="sm">Filtrar por cliente</AppLabel>
                           <select
                             value={filterEmpresa}
                             onChange={(e) => {
@@ -1572,7 +1573,7 @@ export default function NominaPage({ params }) {
                        )}
 
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Establecimiento</label>
+                        <AppLabel size="sm">Filtrar por establecimiento</AppLabel>
                         <select
                           disabled={!filterEmpresa}
                           value={filterEstablecimiento}
@@ -1589,7 +1590,7 @@ export default function NominaPage({ params }) {
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Año</label>
+                        <AppLabel size="sm">Filtrar por año</AppLabel>
                         <select
                           value={filterAnio}
                           onChange={(e) => setFilterAnio(e.target.value)}
@@ -1734,38 +1735,17 @@ export default function NominaPage({ params }) {
         )}
       </main>
 
-      {/* MODAL DE CONFIRMACIÓN */}
-      {modalAlert.show && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
-            <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500">
-              <AlertTriangle className="h-6 w-6" />
-            </div>
-            <div className="space-y-1">
-              <h4 className="font-outfit text-base font-bold text-slate-800">{modalAlert.title}</h4>
-              <p className="text-xs text-slate-500 leading-relaxed">{modalAlert.message}</p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={closeAlert}
-                className="flex-1 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer"
-              >
-                Cancelar
-              </button>
-              {modalAlert.onConfirm && (
-                <button
-                  type="button"
-                  onClick={modalAlert.onConfirm}
-                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer"
-                >
-                  {modalAlert.confirmText || 'Confirmar'}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* DIÁLOGO ESTÁNDAR DE CONFIRMACIÓN / ELIMINACIÓN */}
+      <AppConfirmDialog
+        open={modalAlert.show}
+        onOpenChange={(open) => setModalAlert(prev => ({ ...prev, show: open }))}
+        title={modalAlert.title}
+        description={modalAlert.message}
+        type={modalAlert.title?.toLowerCase().includes('eliminar') ? 'destructive' : 'warning'}
+        onConfirm={modalAlert.onConfirm}
+        confirmText={modalAlert.confirmText || 'Eliminar'}
+        cancelText="Cancelar"
+      />
 
       {/* DIÁLOGO ESTÁNDAR SALIR SIN GUARDAR */}
       <AppUnsavedChangesDialog

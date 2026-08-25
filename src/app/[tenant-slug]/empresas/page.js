@@ -1137,9 +1137,9 @@ export default function EmpresasClientes({ params }) {
 
   const handleDelete = async (empresaId, name) => {
     showAlert(
-      'Eliminar Empresa Cliente',
-      `¿Estás seguro de que deseas eliminar permanentemente a "${name}" y todos sus establecimientos asociados? Esta acción no se puede deshacer.`,
-      'warning',
+      '¿Eliminar empresa cliente?',
+      `¿Está seguro de que desea eliminar permanentemente a "${name}" y todos sus establecimientos asociados? Esta acción no se puede deshacer.`,
+      'destructive',
       async () => {
         setLoading(true);
         if (isDevMode) {
@@ -1895,7 +1895,7 @@ export default function EmpresasClientes({ params }) {
                         className="font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px] hover:text-slate-600 transition-colors cursor-pointer"
                       >
                         <Sliders className="h-3 w-3" />
-                        Filtros de Búsqueda
+                        Filtros de búsqueda
                         {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                       </button>
                       {(filterEmpresa || searchQuery) && (
@@ -1915,10 +1915,9 @@ export default function EmpresasClientes({ params }) {
                     {/* Botón de Agregar */}
                     {canCargar && (
                       <AppButton
-                        variant="primary"
+                        variant="filter-primary"
                         size="sm"
                         onClick={handleAddNew}
-                        className="shrink-0"
                       >
                         <PlusCircle className="h-3.5 w-3.5" />
                         <span>Nueva empresa</span>
@@ -1926,23 +1925,23 @@ export default function EmpresasClientes({ params }) {
                     )}
                   </div>
  
-                      {showFilters && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-1 animate-fade-in">
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Cliente</label>
-                            <select
-                              value={filterEmpresa}
-                              onChange={(e) => setFilterEmpresa(e.target.value)}
-                              className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer"
-                            >
-                              <option value="">Todos los clientes</option>
-                              {empresas.map(e => (
-                                <option key={e.id} value={e.id}>{e.razon_social}</option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-                      )}
+                  {showFilters && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-1 animate-fade-in">
+                      <div className="space-y-1">
+                        <AppLabel size="sm">Cliente</AppLabel>
+                        <select
+                          value={filterEmpresa}
+                          onChange={(e) => setFilterEmpresa(e.target.value)}
+                          className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer"
+                        >
+                          <option value="">Todos los clientes</option>
+                          {empresas.map(e => (
+                            <option key={e.id} value={e.id}>{e.razon_social}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
                     </div>
                   </div>
  
@@ -3654,42 +3653,17 @@ export default function EmpresasClientes({ params }) {
         )}
       </main>
 
-      {/* Ventanas Emergentes Modales Centradas (Backdrop-blur-sm) */}
-      {modalAlert.show && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
-            <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500">
-              <AlertTriangle className="h-6 w-6" />
-            </div>
-            <div className="space-y-1">
-              <h4 className="font-outfit text-base font-bold text-slate-800">{modalAlert.title}</h4>
-              <p className="text-xs text-slate-500 leading-relaxed">{modalAlert.message}</p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={closeAlert}
-                className="flex-1 py-2.5 bg-white border border-[#468DFF] text-[#468DFF] rounded-xl text-xs font-bold hover:bg-[#468DFF] hover:text-white hover:border-[#468DFF] transition-all active:scale-[0.98] cursor-pointer"
-              >
-                {modalAlert.onConfirm ? 'Cancelar' : 'Entendido'}
-              </button>
-              {modalAlert.onConfirm && (
-                <button
-                  type="button"
-                  onClick={modalAlert.onConfirm}
-                  className={`flex-1 py-2.5 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg ${
-                    modalAlert.type === 'danger' || modalAlert.type === 'destructive'
-                      ? 'bg-red-550 hover:bg-red-650 shadow-red-500/10'
-                      : 'bg-[#468DFF] hover:bg-[#0511F2] shadow-blue-500/10'
-                  }`}
-                >
-                  {modalAlert.confirmText || 'Confirmar'}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* DIÁLOGO ESTÁNDAR DE CONFIRMACIÓN / ELIMINACIÓN */}
+      <AppConfirmDialog
+        open={modalAlert.show}
+        onOpenChange={(open) => setModalAlert(prev => ({ ...prev, show: open }))}
+        title={modalAlert.title}
+        description={modalAlert.message}
+        type={modalAlert.type || (modalAlert.title?.toLowerCase().includes('eliminar') ? 'destructive' : 'warning')}
+        onConfirm={modalAlert.onConfirm}
+        confirmText={modalAlert.confirmText || 'Confirmar'}
+        cancelText="Cancelar"
+      />
 
       {/* DIÁLOGO ESTÁNDAR SALIR SIN GUARDAR */}
       <AppUnsavedChangesDialog

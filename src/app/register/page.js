@@ -466,23 +466,16 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                <button
+                <AppButton
                   type="submit"
-                  disabled={loading}
-                  className="w-full py-3 rounded-xl bg-[#468DFF] hover:bg-[#0511F2] text-white font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/10 hover:shadow-blue-500/25 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none mt-3 cursor-pointer"
+                  variant="primary"
+                  size="lg"
+                  loading={loading}
+                  className="w-full mt-3"
                 >
-                  {loading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Registrando cuenta...
-                    </>
-                  ) : (
-                    <>
-                      Crear Cuenta
-                      <ArrowRight className="h-4 w-4" />
-                    </>
-                  )}
-                </button>
+                  Crear cuenta
+                  <ArrowRight className="h-4 w-4" />
+                </AppButton>
               </form>
 
               {/* Registro link inside the card container with stable layout height to prevent jumping */}

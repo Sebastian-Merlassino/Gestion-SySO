@@ -1023,8 +1023,8 @@ export default function ExtintoresPage({ params }) {
   const handleDeleteClick = (id) => {
     setModalAlert({
       show: true,
-      title: '¿Eliminar Extintor?',
-      message: 'Esta acción eliminará de forma permanente el registro del extintor seleccionado y no se podrá deshacer.',
+      title: '¿Eliminar extintor?',
+      message: '¿Está seguro de que desea eliminar este extintor? Esta acción no se puede deshacer y borrará permanentemente sus datos y registros de inspección.',
       confirmText: 'Eliminar',
       onConfirm: async () => {
         try {
@@ -1747,7 +1747,7 @@ export default function ExtintoresPage({ params }) {
                         {/* Selector Cliente */}
                         {profile?.role !== 'cliente' && (
                           <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Cliente</label>
+                            <AppLabel size="sm">Filtrar por cliente</AppLabel>
                             <select
                               value={filterEmpresa}
                               onChange={(e) => {
@@ -1766,7 +1766,7 @@ export default function ExtintoresPage({ params }) {
 
                         {/* Selector Establecimiento */}
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Establecimiento</label>
+                          <AppLabel size="sm">Filtrar por establecimiento</AppLabel>
                           <select
                             disabled={!filterEmpresa}
                             value={filterEstablecimiento}
@@ -1787,7 +1787,7 @@ export default function ExtintoresPage({ params }) {
 
                         {/* Selector Estado */}
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Estado</label>
+                          <AppLabel size="sm">Filtrar por estado</AppLabel>
                           <select
                             value={filterEstado}
                             onChange={(e) => setFilterEstado(e.target.value)}
@@ -1801,7 +1801,7 @@ export default function ExtintoresPage({ params }) {
 
                         {/* Selector Tipo */}
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Tipo</label>
+                          <AppLabel size="sm">Filtrar por tipo</AppLabel>
                           <select
                             value={filterTipo}
                             onChange={(e) => setFilterTipo(e.target.value)}
@@ -2024,38 +2024,17 @@ export default function ExtintoresPage({ params }) {
         )}
       </main>
 
-      {/* Alertas y Confirmaciones */}
-      {modalAlert.show && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
-            <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500">
-              <AlertTriangle className="h-6 w-6" />
-            </div>
-            <div className="space-y-1">
-              <h4 className="font-outfit text-base font-extrabold text-slate-800">{modalAlert.title}</h4>
-              <p className="text-xs text-slate-500 leading-relaxed">{modalAlert.message}</p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={closeAlert}
-                className="flex-1 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer"
-              >
-                Cancelar
-              </button>
-              {modalAlert.onConfirm && (
-                <button
-                  type="button"
-                  onClick={modalAlert.onConfirm}
-                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer"
-                >
-                  {modalAlert.confirmText || 'Confirmar'}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* DIÁLOGO ESTÁNDAR DE CONFIRMACIÓN / ELIMINACIÓN */}
+      <AppConfirmDialog
+        open={modalAlert.show}
+        onOpenChange={(open) => setModalAlert(prev => ({ ...prev, show: open }))}
+        title={modalAlert.title}
+        description={modalAlert.message}
+        type={modalAlert.title?.toLowerCase().includes('eliminar') ? 'destructive' : 'warning'}
+        onConfirm={modalAlert.onConfirm}
+        confirmText={modalAlert.confirmText || 'Eliminar'}
+        cancelText="Cancelar"
+      />
 
       {/* DIÁLOGO ESTÁNDAR SALIR SIN GUARDAR */}
       <AppUnsavedChangesDialog

@@ -10,6 +10,7 @@ import { getPdfPrimaryColor } from '@/lib/pdf/pdfTheme';
 import { useToast } from '@/components/providers/ToastProvider';
 import AppPageHeader from '@/components/ui/AppPageHeader';
 import AppButton from '@/components/ui/AppButton';
+import AppLabel from '@/components/ui/AppLabel';
 import AppInput from '@/components/ui/AppInput';
 import AppSelect from '@/components/ui/AppSelect';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
@@ -605,8 +606,9 @@ export default function ChecklistPersonalizadosPage({ params }) {
   const handleDeleteTemplate = async (id, name) => {
     setModalAlert({
       show: true,
-      title: 'Eliminar Plantilla',
+      title: '¿Eliminar plantilla?',
       message: `¿Está seguro de que desea eliminar la plantilla "${name}"? Esto no eliminará las inspecciones realizadas previamente.`,
+      confirmText: 'Eliminar',
       onConfirm: async () => {
         closeAlert();
         if (isDevMode) {
@@ -1106,8 +1108,9 @@ export default function ChecklistPersonalizadosPage({ params }) {
   const handleDeleteInspeccion = (id) => {
     setModalAlert({
       show: true,
-      title: 'Eliminar Inspección',
-      message: '¿Está seguro de que desea eliminar permanentemente este registro de inspección?',
+      title: '¿Eliminar inspección?',
+      message: '¿Está seguro de que desea eliminar este registro de inspección? Esta acción no se puede deshacer y borrará permanentemente sus respuestas y fotos asociadas.',
+      confirmText: 'Eliminar',
       onConfirm: async () => {
         closeAlert();
         if (isDevMode) {
@@ -1903,11 +1906,12 @@ export default function ChecklistPersonalizadosPage({ params }) {
                           className="font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px] hover:text-slate-655 transition-colors cursor-pointer bg-transparent border-none"
                         >
                           <Sliders className="h-3 w-3" />
-                          Filtros de Búsqueda
+                          Filtros de búsqueda
                           {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                         </button>
                         {(filterText || filterEmpresa || filterTemplate) && (
                           <button
+                            type="button"
                             onClick={() => {
                               setFilterText('');
                               setFilterEmpresa('');
@@ -1922,10 +1926,9 @@ export default function ChecklistPersonalizadosPage({ params }) {
 
                       {canCargar && (
                         <AppButton
-                          variant="primary"
+                          variant="filter-primary"
                           size="sm"
                           onClick={handleOpenNewInspeccion}
-                          className="shrink-0"
                         >
                           <PlusCircle className="h-3.5 w-3.5" />
                           <span>Nueva inspección</span>
@@ -1937,10 +1940,9 @@ export default function ChecklistPersonalizadosPage({ params }) {
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider select-none">Configuración de Fichas de Checklist</span>
                       {canCargar && (
                         <AppButton
-                          variant="primary"
+                          variant="filter-primary"
                           size="sm"
                           onClick={handleOpenNewTemplate}
-                          className="shrink-0"
                         >
                           <PlusCircle className="h-3.5 w-3.5" />
                           <span>Nueva plantilla</span>
@@ -1955,7 +1957,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 pt-1 border-t border-slate-50 animate-scaleUp">
                     {profile && profile.role !== 'cliente' && (
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase">Cliente / Empresa</label>
+                        <AppLabel size="sm">Cliente / Empresa</AppLabel>
                         <select
                           value={filterEmpresa}
                           onChange={(e) => setFilterEmpresa(e.target.value)}
@@ -1969,7 +1971,7 @@ export default function ChecklistPersonalizadosPage({ params }) {
                       </div>
                     )}
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase">Plantilla de Checklist</label>
+                      <AppLabel size="sm">Plantilla de Checklist</AppLabel>
                       <select
                         value={filterTemplate}
                         onChange={(e) => setFilterTemplate(e.target.value)}
@@ -3127,37 +3129,17 @@ export default function ChecklistPersonalizadosPage({ params }) {
           TOAST ALERT & CONFIRMATION DIALOG removidos - consumido globalmente
           ========================================== */}
 
-      {modalAlert.show && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xl max-w-sm w-full animate-scaleUp space-y-4 text-center">
-            <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500 animate-pulse">
-              <AlertTriangle className="h-6 w-6" />
-            </div>
-            <div className="space-y-1">
-              <h4 className="font-outfit text-base font-extrabold text-slate-800">{modalAlert.title}</h4>
-              <p className="text-xs text-slate-500 leading-relaxed">{modalAlert.message}</p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={closeAlert}
-                className="flex-1 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all cursor-pointer bg-transparent"
-              >
-                Cancelar
-              </button>
-              {modalAlert.onConfirm && (
-                <button
-                  type="button"
-                  onClick={modalAlert.onConfirm}
-                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer border-none"
-                >
-                  {modalAlert.confirmText || 'Confirmar'}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* DIÁLOGO ESTÁNDAR DE CONFIRMACIÓN / ELIMINACIÓN */}
+      <AppConfirmDialog
+        open={modalAlert.show}
+        onOpenChange={(open) => setModalAlert(prev => ({ ...prev, show: open }))}
+        title={modalAlert.title}
+        description={modalAlert.message}
+        type={modalAlert.title?.toLowerCase().includes('eliminar') ? 'destructive' : 'warning'}
+        onConfirm={modalAlert.onConfirm}
+        confirmText={modalAlert.confirmText || 'Eliminar'}
+        cancelText="Cancelar"
+      />
 
       {/* DIÁLOGO ESTÁNDAR SALIR SIN GUARDAR */}
       <AppUnsavedChangesDialog

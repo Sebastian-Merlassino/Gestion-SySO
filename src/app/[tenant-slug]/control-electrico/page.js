@@ -1098,8 +1098,8 @@ export default function ControlElectricoPage({ params }) {
     }
     setModalAlert({
       show: true,
-      title: '¿Eliminar Control Eléctrico?',
-      message: 'Esta acción eliminará permanentemente la planilla seleccionada y todos sus archivos asociados. No se puede deshacer.',
+      title: '¿Eliminar control eléctrico?',
+      message: '¿Está seguro de que desea eliminar este control eléctrico? Esta acción no se puede deshacer y borrará permanentemente sus datos y archivos adjuntos.',
       confirmText: 'Eliminar',
       onConfirm: async () => {
         try {
@@ -2366,12 +2366,13 @@ export default function ControlElectricoPage({ params }) {
                           className="font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px] hover:text-slate-600 transition-colors cursor-pointer"
                         >
                           <Sliders className="h-3 w-3" />
-                          Filtros de Búsqueda
+                          Filtros de búsqueda
                           {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                         </button>
 
                         {(filterText || filterEmpresa || filterEstablecimiento) && (
                           <button
+                            type="button"
                             onClick={() => {
                               setFilterText('');
                               setFilterEmpresa('');
@@ -2385,14 +2386,14 @@ export default function ControlElectricoPage({ params }) {
                       </div>
 
                       {canCargar && (
-                        <button
-                          type="button"
+                        <AppButton
+                          variant="filter-primary"
+                          size="sm"
                           onClick={handleAddNew}
-                          className="px-3 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0 border border-[#468DFF] hover:border-[#0511F2]"
                         >
                           <PlusCircle className="h-3.5 w-3.5" />
-                          Nuevo Control
-                        </button>
+                          <span>Nuevo control</span>
+                        </AppButton>
                       )}
                     </div>
 
@@ -2401,7 +2402,7 @@ export default function ControlElectricoPage({ params }) {
                         {/* Empresa Filter */}
                         {profile && profile.role !== 'cliente' && (
                           <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase">Cliente / Empresa</label>
+                            <AppLabel size="sm">Cliente / Empresa</AppLabel>
                             <select
                               value={filterEmpresa}
                               onChange={(e) => {
@@ -2420,7 +2421,7 @@ export default function ControlElectricoPage({ params }) {
 
                         {/* Establecimiento Filter */}
                         <div className="space-y-1 col-span-1 md:col-span-2">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase">Establecimiento</label>
+                          <AppLabel size="sm">Establecimiento</AppLabel>
                           <select
                             value={filterEstablecimiento}
                             onChange={(e) => setFilterEstablecimiento(e.target.value)}
@@ -2746,38 +2747,17 @@ export default function ControlElectricoPage({ params }) {
 
       {/* TOAST FEEDBACK removidos - consumidos globalmente */}
 
-      {/* MODAL DIALOG PREGUNTA/ALERTA */}
-      {modalAlert.show && (
-        <div className="fixed inset-0 z-55 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
-            <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500 animate-pulse">
-              <AlertTriangle className="h-6 w-6" />
-            </div>
-            <div className="space-y-1">
-              <h4 className="font-outfit text-base font-extrabold text-slate-800">{modalAlert.title}</h4>
-              <p className="text-xs text-slate-500 leading-relaxed">{modalAlert.message}</p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={closeAlert}
-                className="flex-1 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all cursor-pointer"
-              >
-                Cancelar
-              </button>
-              {modalAlert.onConfirm && (
-                <button
-                  type="button"
-                  onClick={modalAlert.onConfirm}
-                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
-                >
-                  {modalAlert.confirmText || 'Confirmar'}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* DIÁLOGO ESTÁNDAR DE CONFIRMACIÓN / ELIMINACIÓN */}
+      <AppConfirmDialog
+        open={modalAlert.show}
+        onOpenChange={(open) => setModalAlert(prev => ({ ...prev, show: open }))}
+        title={modalAlert.title}
+        description={modalAlert.message}
+        type={modalAlert.title?.toLowerCase().includes('eliminar') ? 'destructive' : 'warning'}
+        onConfirm={modalAlert.onConfirm}
+        confirmText={modalAlert.confirmText || 'Eliminar'}
+        cancelText="Cancelar"
+      />
 
       {/* DIÁLOGO ESTÁNDAR SALIR SIN GUARDAR */}
       <AppUnsavedChangesDialog

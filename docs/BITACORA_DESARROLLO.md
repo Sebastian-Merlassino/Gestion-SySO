@@ -1,3 +1,166 @@
+## [2026-08-25] Estandarización Universal de Diálogos y Alertas de Eliminación (AppConfirmDialog)
+
+### Resumen de Cambios
+- **Auditoría y Unificación del Estándar de Eliminación:**
+  - Se eliminaron todos los modales HTML inline artesanales (que presentaban iconos ámbar desalineados, botones crudos y ausencia de botón de cierre accesible "X").
+  - Se implementó `<AppConfirmDialog>` basado en `@radix-ui/react-dialog` como el estándar único e inmutable para todas las confirmaciones destructivas y de alerta en la plataforma.
+- **Módulos Estandarizados a `<AppConfirmDialog type="destructive">`:**
+  - `capacitacion/page.js` (Eliminación de registros de capacitación).
+  - `nomina/page.js` (Eliminación de trabajadores de nómina).
+  - `matriz-riesgos/page.js` (Eliminación de evaluaciones de riesgo).
+  - `legajo/page.js` (Eliminación de documentos de legajo técnico).
+  - `extintores/page.js` (Eliminación de extintores).
+  - `equipo/page.js` (Eliminación de integrantes de equipo).
+  - `empresas/page.js` (Eliminación de empresas cliente y establecimientos).
+  - `correctivas/page.js` (Eliminación de medidas correctivas / hallazgos).
+  - `control-electrico/page.js` (Eliminación de controles eléctricos).
+  - `avisos/page.js` (Eliminación de avisos de riesgo).
+  - `programa/page.js` (Eliminación de actividades del programa anual).
+  - `checklist-personalizados/page.js` (Eliminación de plantillas e inspecciones).
+  - `accidentes/page.js` (Alertas y confirmaciones del módulo de accidentes).
+  - `Sidebar.js` (Diálogos de advertencia y actualización de plan).
+- **Estándar Visual y Casing Aplicado:**
+  - Icono unificado: `<AlertTriangle>` en contenedor circular rojo `bg-red-50 text-red-600 border-red-100`.
+  - Títulos uniformes en formato interrogativo y Sentence case: `¿Eliminar capacitación?`, `¿Eliminar trabajador?`, `¿Eliminar evaluación de riesgo?`, `¿Eliminar extintor?`, `¿Eliminar integrante?`, `¿Eliminar empresa cliente?`, `¿Eliminar medida correctiva?`, etc.
+  - Mensajes descriptivos claros y consistentes que advierten la irreversibilidad de la acción y la pérdida de datos asociados.
+  - Botones unificados: `Cancelar` (variante outline) y `Eliminar` (variante destructive) con botón de cierre accesible "X" en la esquina superior derecha.
+
+### Decisiones Clave
+- Utilizar exclusivamente `<AppConfirmDialog>` para garantizar accesibilidad (Radix UI), backdrop blur, foco por teclado y consistencia visual cross-platform en web y mobile.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `shadcn`
+- `next-best-practices`
+
+### Archivos Modificados
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/nomina/page.js`
+- `[MODIFY] src/app/[tenant-slug]/matriz-riesgos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/legajo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+- `[MODIFY] src/components/Sidebar.js`
+
+---
+
+## [2026-08-25] Implementación Fase 1: Estandarización UI, Botones, Labels, Casing y Empty States
+
+### Resumen de Cambios
+- **Ampliación de Primitivas UI del Design System:**
+  - `AppButton.js`: Incorporadas variantes de acción rápida (`filter-primary`, `filter-secondary`), tamaños compactos y táctiles (`xs`, `sm`, `md`, `lg`, `icon`, `icon-sm`) con touch targets mínimos de 44px en mobile (`h-9 w-9 sm:h-8 sm:w-8`).
+  - `AppLabel.js`: Agregado soporte para propiedad `size="sm"` (`text-[10px]`) y `size="md"` (`text-xs`), integrando el asterisco corporativo de obligatoriedad en color azul institucional `#468DFF`.
+- **Estandarización de Vistas y Módulos de Tenant:**
+  - Migración sistemática de botones crudos inline (`<button className="...">`) a `<AppButton>` estandarizado en:
+    - `visitas/page.js`
+    - `correctivas/page.js`
+    - `extintores/page.js`
+    - `control-electrico/page.js`
+    - `avisos/page.js`
+    - `accidentes/page.js`
+    - `empresas/page.js`
+    - `programa/page.js`
+    - `nomina/page.js`
+    - `equipo/page.js`
+    - `checklist-personalizados/page.js`
+    - `protocolos/ruido/page.js`
+    - `protocolos/iluminacion/page.js`
+    - `protocolos/puesta-a-tierra/page.js`
+    - `protocolos/ergonomia/page.js`
+    - `login/page.js`
+    - `register/page.js`
+- **Consistencia Visual y Casing:**
+  - Normalización de todos los textos de acción a **Sentence case** obligatorio ("Nuevo control", "Nueva actividad", "Nuevo siniestro", "Descargar PDF", "Imprimir", "Limpiar filtros", "Crear cuenta", "Ingresar").
+  - Estandarización de encabezados de tabla (`<th>`) y etiquetas de filtros a **UPPERCASE con `tracking-wider`**.
+  - Unificación de estados vacíos mediante el componente primitivo `<AppEmptyState>`.
+
+### Decisiones Clave
+- Preservar al 100% la lógica de negocio, callbacks de eventos (`onClick`, `onSubmit`), estados reactivos e interactividad al migrar a componentes del Design System.
+- Asegurar compatibilidad en Next.js SSR / Static prerendering en todas las rutas.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `shadcn`
+- `next-best-practices`
+- `ui-ux-pro-max`
+
+### Archivos Modificados
+- `[MODIFY] src/components/ui/AppButton.js`
+- `[MODIFY] src/components/ui/AppLabel.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+- `[MODIFY] src/app/[tenant-slug]/empresas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/nomina/page.js`
+- `[MODIFY] src/app/[tenant-slug]/equipo/page.js`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/page.js`
+- `[MODIFY] src/app/login/page.js`
+- `[MODIFY] src/app/register/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Compilación de producción completa con Next.js (`npm run build`), verificando con éxito las 25 rutas estáticas y dinámicas con cero errores de sintaxis, tipos o referencias.
+
+---
+
+## [2026-08-25] Auditoría Estática de Consistencia UI y Plan de Estandarización Frontend
+
+### Resumen de Cambios
+- **Análisis Estático Exhaustivo del Frontend:**
+  - Se realizó una auditoría estática integral de todas las secciones, vistas, componentes y formularios de la plataforma (`src/app/[tenant-slug]/*`, `src/app/admin/*`, `src/app/login/*`, `src/app/onboarding/*`, `src/app/capacitar/*`, `src/components/ui/*`).
+  - Se detectaron y catalogaron más de 600 instancias de botones crudos con clases inline que no utilizan el componente estandarizado `<AppButton>`.
+  - Se identificó la ausencia de un componente centralizado de selección de fecha (`AppDatePicker`), provocando la proliferación de 4 patrones y máscaras dispares de fecha en el SaaS.
+  - Se documentaron duplicaciones estructurales de modales inline (Envío por Email / WhatsApp, Galerías fotográficas, diálogos secundarios) en 8 módulos distintos.
+  - Se auditó la jerarquía tipográfica y las discrepancias de capitalización (Sentence case vs. Title Case vs. ALL CAPS) en botones, etiquetas de formulario, encabezados de tabla y badges de estado.
+  - Se evaluó el comportamiento responsive y mobile-first, diagnosticando áreas táctiles reducidas (< 44px) en botones de acción y rigidez en directivas CSS con `!important`.
+- **Generación del Plan Estratégico de Frontend:**
+  - Se creó el documento maestro [docs/design/FRONTEND_UI_AUDIT_PLAN.md](file:///c:/Users/sebas/.gemini/antigravity-ide/scratch/Gestion-SySO/docs/design/FRONTEND_UI_AUDIT_PLAN.md) con el inventario completo de inconsistencias, matriz de tokens, especificación del Design System y la hoja de ruta de implementación estructurada en 4 fases progresivas.
+
+### Decisiones Clave
+- Mantener estricta regla de solo lectura en esta etapa (cero modificaciones a código funcional, lógica de estado o consultas a base de datos).
+- Definir **Sentence case** como estándar universal obligatorio para toda la botonera y acciones del sistema.
+- Proyectar la creación de los componentes reutilizables `AppDatePicker`, `AppSendModal` y `AppPhotoGalleryModal` para la reducción de más de 1.500 líneas de código duplicado.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `ui-ux-pro-max`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[NEW] docs/design/FRONTEND_UI_AUDIT_PLAN.md`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Análisis estático de consistencia de clases de Tailwind CSS contra tokens de `globals.css` y `tailwind.config.js`.
+- Verificación cruzada de todas las rutas de `src/app/` y componentes en `src/components/ui/`.
+- Validación de formato y sintaxis Markdown del documento de auditoría generado.
+
+### Riesgos Detectados / Remanentes
+- Ninguno en esta etapa, al ser un trabajo de análisis, diagnóstico y documentación.
+
+### Próximo Paso Recomendado
+- Iniciar la ejecución de la **Fase 1** del plan: unificación progresiva de botones crudos hacia `<AppButton>`, estandarización de `<AppLabel>` y normalización de textos a Sentence case en los módulos principales.
+
+---
+
 ## [2026-08-24] Corrección de Inicialización de `tenantObj` y Generación de PDF en Protocolo de Ergonomía
 
 ### Resumen de Cambios

@@ -25,6 +25,10 @@ export default function AppButton({
     amber: 'bg-amber-500 text-white border border-amber-500 hover:bg-amber-600 hover:border-amber-600 shadow-md shadow-amber-500/10',
     success: 'bg-emerald-600 text-white border border-emerald-600 hover:bg-emerald-700 hover:border-emerald-700 shadow-md shadow-emerald-500/10',
     
+    // Variantes para Paneles de Filtros
+    'filter-primary': 'bg-[#468DFF] text-white border border-[#468DFF] rounded-xl text-xs font-bold shadow-md shadow-[#468DFF]/10 hover:bg-[#0511F2] hover:border-[#0511F2] shrink-0',
+    'filter-secondary': 'bg-white text-[#468DFF] border border-[#468DFF] rounded-xl text-xs font-bold hover:bg-[#468DFF] hover:text-white shrink-0',
+
     // Acciones de Tabla Unificadas (Iconos de Tabla)
     'document-table': 'p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-colors border border-blue-200/50 shadow-xs',
     'edit-table': 'p-1.5 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 hover:text-amber-800 transition-colors border border-amber-200/50 shadow-xs',
@@ -34,10 +38,12 @@ export default function AppButton({
   };
 
   const sizes = {
+    xs: 'h-7 px-2.5 text-[11px] gap-1',
     sm: 'h-8 px-3 text-xs gap-1.5',
-    md: 'h-10 px-5 text-sm gap-2',
-    lg: 'h-11 px-8 text-base gap-2.5',
-    icon: 'h-8 w-8 p-1.5 text-xs flex items-center justify-center shrink-0',
+    md: 'h-10 px-4 sm:px-5 text-xs sm:text-sm gap-2',
+    lg: 'h-11 sm:h-12 px-6 sm:px-8 text-sm sm:text-base gap-2.5',
+    icon: 'h-9 w-9 sm:h-8 sm:w-8 p-1.5 text-xs flex items-center justify-center shrink-0',
+    'icon-sm': 'h-8 w-8 sm:h-7 sm:w-7 p-1 text-xs flex items-center justify-center shrink-0',
   };
 
   const selectedVariant = variants[variant] || variants.primary;

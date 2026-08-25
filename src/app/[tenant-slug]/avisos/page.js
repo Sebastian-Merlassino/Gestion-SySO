@@ -975,8 +975,8 @@ export default function AvisosRiesgoPage({ params }) {
 
   const handleDelete = (id) => {
     showAlert(
-      '¿Eliminar Aviso de Riesgo?',
-      'Esta acción eliminará de forma permanente el aviso de riesgo seleccionado y no se podrá deshacer.',
+      '¿Eliminar aviso de riesgo?',
+      '¿Está seguro de que desea eliminar este aviso de riesgo? Esta acción no se puede deshacer y borrará permanentemente sus datos y firmas asociadas.',
       async () => {
         try {
           if (isDevMode) {
@@ -2517,11 +2517,12 @@ export default function AvisosRiesgoPage({ params }) {
                           className="font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px] hover:text-slate-600 transition-colors cursor-pointer"
                         >
                           <Sliders className="h-3 w-3" />
-                          Filtros de Búsqueda
+                          Filtros de búsqueda
                           {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                         </button>
                         {(searchQuery || filterEmpresa || filterEstablecimiento || filterFecha || filterAnio || filterMes) && (
                           <button
+                            type="button"
                             onClick={() => {
                               setSearchQuery('');
                               setFilterEmpresa('');
@@ -2532,17 +2533,16 @@ export default function AvisosRiesgoPage({ params }) {
                             }}
                             className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[10px] font-semibold cursor-pointer transition-all border border-slate-200"
                           >
-                            Limpiar Filtros
+                            Limpiar filtros
                           </button>
                         )}
                       </div>
 
                       {canCargar && (
                         <AppButton
-                          variant="primary"
+                          variant="filter-primary"
                           size="sm"
                           onClick={handleAddNew}
-                          className="shrink-0"
                         >
                           <PlusCircle className="h-3.5 w-3.5" />
                           <span>Nuevo aviso</span>
@@ -2554,7 +2554,7 @@ export default function AvisosRiesgoPage({ params }) {
                         {/* Selector Cliente */}
                         {profile?.role !== 'cliente' && (
                           <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Razón Social</label>
+                            <AppLabel size="sm">Filtrar por razón social</AppLabel>
                             <select
                               value={filterEmpresa}
                               onChange={(e) => {
@@ -2573,14 +2573,16 @@ export default function AvisosRiesgoPage({ params }) {
                         
                         {/* Selector Establecimiento */}
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Establecimiento</label>
+                          <AppLabel size="sm">Filtrar por establecimiento</AppLabel>
                           <select
                             disabled={!filterEmpresa}
                             value={filterEstablecimiento}
                             onChange={(e) => setFilterEstablecimiento(e.target.value)}
                             className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 focus:outline-none focus:border-[#468DFF] text-xs w-full cursor-pointer disabled:bg-slate-50 disabled:text-slate-400"
                           >
-                            <option value="">Todos los Establecimientos</option>
+                            <option value="">
+                              {!filterEmpresa ? 'Selecciona una razón social primero' : 'Todos los Establecimientos'}
+                            </option>
                             {allEstablecimientos
                               .filter(est => est.empresa_id === filterEmpresa)
                               .map(est => (
@@ -2592,7 +2594,7 @@ export default function AvisosRiesgoPage({ params }) {
 
                         {/* Selector Fecha */}
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Fecha</label>
+                          <AppLabel size="sm">Filtrar por fecha</AppLabel>
                           <input
                             type="date"
                             value={filterFecha}
@@ -2603,7 +2605,7 @@ export default function AvisosRiesgoPage({ params }) {
 
                         {/* Selector Año */}
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Año</label>
+                          <AppLabel size="sm">Filtrar por año</AppLabel>
                           <select 
                             value={filterAnio}
                             onChange={(e) => setFilterAnio(e.target.value)}
@@ -2618,7 +2620,7 @@ export default function AvisosRiesgoPage({ params }) {
 
                         {/* Selector Mes */}
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Mes</label>
+                          <AppLabel size="sm">Filtrar por mes</AppLabel>
                           <select 
                             value={filterMes}
                             onChange={(e) => setFilterMes(e.target.value)}
@@ -2638,22 +2640,12 @@ export default function AvisosRiesgoPage({ params }) {
                 {/* Tabla de Avisos */}
                 <div className={`bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl shadow-sm overflow-hidden flex flex-col flex-grow min-h-0 md:flex-initial transition-all duration-300 ease-in-out ${showFilters ? 'md:h-[calc(100vh-310px)]' : 'md:h-[calc(100vh-240px)]'}`}>
                   {sortedAvisos.length === 0 ? (
-                    <div className="flex-grow flex flex-col items-center justify-center p-8 text-center gap-3 h-full">
-                      <AlertCircle className="h-10 w-10 text-slate-300" />
-                      <div className="space-y-1">
-                        <p className="text-sm font-bold text-slate-800">No hay avisos de riesgo registrados</p>
-                        <p className="text-xs text-slate-400">Registra un nuevo aviso de riesgo para comenzar.</p>
-                      </div>
-                      {canCargar && (
-                        <button
-                          onClick={handleAddNew}
-                          className="px-4 py-2 mt-2 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0"
-                        >
-                          <PlusCircle className="h-3.5 w-3.5" />
-                          Registrar aviso
-                        </button>
-                      )}
-                    </div>
+                    <AppEmptyState
+                      title="No hay avisos de riesgo registrados"
+                      description="Registra un nuevo aviso de riesgo para comenzar o modifica los filtros."
+                      actionLabel={canCargar ? "Registrar aviso" : null}
+                      onAction={canCargar ? handleAddNew : null}
+                    />
                   ) : (
                     <div className="overflow-auto flex-grow">
                       <table className="w-full text-left border-collapse min-w-[850px]">
@@ -2968,38 +2960,17 @@ export default function AvisosRiesgoPage({ params }) {
           </div>
         )}
 
-        {/* Modal de Alerta Global */}
-        {modalAlert.show && (
-          <div className="fixed inset-0 z-55 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
-              <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500">
-                <AlertTriangle className="h-6 w-6" />
-              </div>
-              <div className="space-y-1">
-                <h4 className="font-outfit text-base font-extrabold text-slate-800">{modalAlert.title}</h4>
-                <p className="text-xs text-slate-500 leading-relaxed">{modalAlert.message}</p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={closeAlert}
-                  className="flex-1 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                {modalAlert.onConfirm && (
-                  <button
-                    type="button"
-                    onClick={modalAlert.onConfirm}
-                    className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
-                  >
-                    {modalAlert.confirmText || 'Confirmar'}
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+        {/* DIÁLOGO ESTÁNDAR DE CONFIRMACIÓN / ELIMINACIÓN */}
+        <AppConfirmDialog
+          open={modalAlert.show}
+          onOpenChange={(open) => setModalAlert(prev => ({ ...prev, show: open }))}
+          title={modalAlert.title}
+          description={modalAlert.message}
+          type={modalAlert.title?.toLowerCase().includes('eliminar') ? 'destructive' : 'warning'}
+          onConfirm={modalAlert.onConfirm}
+          confirmText={modalAlert.confirmText || 'Eliminar'}
+          cancelText="Cancelar"
+        />
 
         {/* DIÁLOGO ESTÁNDAR SALIR SIN GUARDAR */}
         <AppUnsavedChangesDialog

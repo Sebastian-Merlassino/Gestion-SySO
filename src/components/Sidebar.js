@@ -32,6 +32,7 @@ import { useToast } from '@/components/providers/ToastProvider';
 import { identifyUser, resetAnalytics } from '@/lib/analytics';
 import { setSentryUserContext } from '@/lib/sentryUser';
 import { checkIsSuperAdmin } from '@/lib/adminAuth';
+import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 
 let isHydratedGlobal = false;
 let cachedTenantGlobal = null;
@@ -558,37 +559,16 @@ export default function Sidebar({
       )}
 
       {/* MODAL DIALOG ALERT EN SIDEBAR */}
-      {modalAlert.show && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
-            <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500">
-              <ShieldAlert className="h-6 w-6" />
-            </div>
-            <div className="space-y-1">
-              <h4 className="font-outfit text-base font-bold text-slate-800">{modalAlert.title}</h4>
-              <p className="text-xs text-slate-500 leading-relaxed">{modalAlert.message}</p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setModalAlert({ show: false, title: '', message: '', onConfirm: null })}
-                className="flex-1 py-2.5 bg-white border border-[#468DFF] text-[#468DFF] rounded-xl text-xs font-bold hover:bg-[#468DFF] hover:text-white hover:border-[#468DFF] transition-all active:scale-[0.98] cursor-pointer"
-              >
-                Cancelar
-              </button>
-              {modalAlert.onConfirm && (
-                <button
-                  type="button"
-                  onClick={modalAlert.onConfirm}
-                  className="flex-1 py-2.5 bg-[#468DFF] hover:bg-[#0511F2] text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer shadow-lg shadow-blue-500/10"
-                >
-                  Actualizar Plan
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <AppConfirmDialog
+        open={modalAlert.show}
+        onOpenChange={(open) => setModalAlert(prev => ({ ...prev, show: open }))}
+        title={modalAlert.title}
+        description={modalAlert.message}
+        type="warning"
+        onConfirm={modalAlert.onConfirm}
+        confirmText="Actualizar Plan"
+        cancelText="Cancelar"
+      />
     </>
   );
 }

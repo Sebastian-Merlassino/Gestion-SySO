@@ -14,6 +14,7 @@ import AITextHelper from '@/components/ui/AITextHelper';
 import { useToast } from '@/components/providers/ToastProvider';
 import AppPageHeader from '@/components/ui/AppPageHeader';
 import AppButton from '@/components/ui/AppButton';
+import AppLabel from '@/components/ui/AppLabel';
 import AppInput from '@/components/ui/AppInput';
 import AppSelect from '@/components/ui/AppSelect';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
@@ -1335,8 +1336,8 @@ export default function ProgramaGestion({ params }) {
   const handleDelete = (id) => {
     setConfirmModal({
       show: true,
-      title: 'Eliminar Actividad',
-      message: '¿Estás seguro de que deseas eliminar esta actividad del programa anual? Esta acción no se puede deshacer.',
+      title: '¿Eliminar actividad?',
+      message: '¿Está seguro de que desea eliminar esta actividad del programa anual? Esta acción no se puede deshacer.',
       confirmText: 'Eliminar',
       onConfirm: async () => {
         try {
@@ -2093,24 +2094,28 @@ export default function ProgramaGestion({ params }) {
                       </div>
 
                       <div className={`items-center gap-1.5 w-full md:w-auto shrink-0 justify-end ${showExportMobile ? 'flex' : 'hidden md:flex'}`}>
-                        <button
+                        <AppButton
                           type="button"
+                          variant="secondary"
+                          size="sm"
                           onClick={() => handleExportPdfReport(false)}
-                          className="py-1.5 px-3 rounded-xl border border-[#468DFF] text-xs font-bold bg-white text-[#468DFF] hover:bg-[#468DFF] hover:text-white transition-all flex items-center gap-1.5 cursor-pointer shrink-0 flex-1 md:flex-initial justify-center"
+                          className="shrink-0 flex-1 md:flex-initial"
                           title="Descargar listado en formato PDF"
                         >
                           <FileText className="h-3.5 w-3.5" />
                           Descargar PDF
-                        </button>
-                        <button
+                        </AppButton>
+                        <AppButton
                           type="button"
+                          variant="secondary"
+                          size="sm"
                           onClick={() => handleExportPdfReport(true)}
-                          className="py-1.5 px-3 rounded-xl border border-[#468DFF] text-xs font-bold bg-white text-[#468DFF] hover:bg-[#468DFF] hover:text-white transition-all flex items-center gap-1.5 cursor-pointer shrink-0 flex-1 md:flex-initial justify-center"
+                          className="shrink-0 flex-1 md:flex-initial"
                           title="Imprimir listado completo"
                         >
                           <Printer className="h-3.5 w-3.5" />
                           Imprimir
-                        </button>
+                        </AppButton>
                       </div>
                     </div>
                   </div>
@@ -2125,11 +2130,12 @@ export default function ProgramaGestion({ params }) {
                           className="font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px] hover:text-slate-600 transition-colors cursor-pointer"
                         >
                           <Sliders className="h-3 w-3" />
-                          Filtros de Búsqueda
+                          Filtros de búsqueda
                           {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                         </button>
                         {(filterEmpresa || filterEstablecimiento || filterMonth || filterYear || filterEstado || searchQuery) && (
                           <button
+                            type="button"
                             onClick={() => {
                               setFilterEmpresa('');
                               setFilterEstablecimiento('');
@@ -2147,10 +2153,9 @@ export default function ProgramaGestion({ params }) {
 
                       {canCargar && (
                         <AppButton
-                          variant="primary"
+                          variant="filter-primary"
                           size="sm"
                           onClick={() => handleAddNew()}
-                          className="shrink-0"
                         >
                           <PlusCircle className="h-3.5 w-3.5" />
                           <span>Nueva actividad</span>
@@ -2162,7 +2167,7 @@ export default function ProgramaGestion({ params }) {
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 pt-1 animate-fade-in">
                         {profile?.role !== 'cliente' && (
                           <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Cliente</label>
+                            <AppLabel size="sm">Cliente</AppLabel>
                             <select
                               value={filterEmpresa}
                               onChange={(e) => { setFilterEmpresa(e.target.value); setFilterEstablecimiento(''); }}
@@ -2177,7 +2182,7 @@ export default function ProgramaGestion({ params }) {
                         )}
 
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Establecimiento</label>
+                          <AppLabel size="sm">Establecimiento</AppLabel>
                           <select
                             value={filterEstablecimiento}
                             onChange={(e) => setFilterEstablecimiento(e.target.value)}
@@ -2192,7 +2197,7 @@ export default function ProgramaGestion({ params }) {
                         </div>
 
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Mes</label>
+                          <AppLabel size="sm">Mes</AppLabel>
                           <select
                             value={filterMonth}
                             onChange={(e) => setFilterMonth(e.target.value)}
@@ -2215,7 +2220,7 @@ export default function ProgramaGestion({ params }) {
                         </div>
 
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Año</label>
+                          <AppLabel size="sm">Año</AppLabel>
                           <select
                             value={filterYear}
                             onChange={(e) => setFilterYear(e.target.value)}
@@ -2228,12 +2233,11 @@ export default function ProgramaGestion({ params }) {
                             <option value="2027">2027</option>
                             <option value="2028">2028</option>
                             <option value="2029">2029</option>
-                            <option value="2030">2030</option>
                           </select>
                         </div>
 
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Estado</label>
+                          <AppLabel size="sm">Estado</AppLabel>
                           <select
                             value={filterEstado}
                             onChange={(e) => setFilterEstado(e.target.value)}
@@ -2495,38 +2499,17 @@ export default function ProgramaGestion({ params }) {
           </div>
         )}
 
-        {/* MODAL DE CONFIRMACIÓN */}
-        {confirmModal.show && (
-          <div className="fixed inset-0 z-55 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xl max-w-sm w-full animate-scale-up space-y-4 text-center">
-              <div className="mx-auto p-3 rounded-full w-12 h-12 flex items-center justify-center bg-amber-50 text-amber-500">
-                <AlertTriangle className="h-6 w-6" />
-              </div>
-              <div className="space-y-1">
-                <h4 className="font-outfit text-base font-extrabold text-slate-800">{confirmModal.title}</h4>
-                <p className="text-xs text-slate-500 leading-relaxed">{confirmModal.message}</p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setConfirmModal({ show: false, title: '', message: '', onConfirm: null })}
-                  className="flex-1 py-2.5 border border-slate-350 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all active:scale-[0.98] cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                {confirmModal.onConfirm && (
-                  <button
-                    type="button"
-                    onClick={confirmModal.onConfirm}
-                    className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] cursor-pointer"
-                  >
-                    {confirmModal.confirmText || 'Confirmar'}
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+        {/* DIÁLOGO ESTÁNDAR DE CONFIRMACIÓN / ELIMINACIÓN */}
+        <AppConfirmDialog
+          open={confirmModal.show}
+          onOpenChange={(open) => setConfirmModal(prev => ({ ...prev, show: open }))}
+          title={confirmModal.title}
+          description={confirmModal.message}
+          type={confirmModal.title?.toLowerCase().includes('eliminar') ? 'destructive' : 'warning'}
+          onConfirm={confirmModal.onConfirm}
+          confirmText={confirmModal.confirmText || 'Eliminar'}
+          cancelText="Cancelar"
+        />
 
         {/* DIÁLOGO ESTÁNDAR SALIR SIN GUARDAR */}
         <AppUnsavedChangesDialog

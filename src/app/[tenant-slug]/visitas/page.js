@@ -11,6 +11,7 @@ import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import AITextHelper from '@/components/ui/AITextHelper';
 import { useToast } from '@/components/providers/ToastProvider';
 import AppButton from '@/components/ui/AppButton';
+import AppLabel from '@/components/ui/AppLabel';
 import AppConfirmDialog from '@/components/ui/AppConfirmDialog';
 import AppUnsavedChangesDialog from '@/components/ui/AppUnsavedChangesDialog';
 import AppPageHeader from '@/components/ui/AppPageHeader';
@@ -2026,15 +2027,17 @@ export default function VisitasPage({ params }) {
                         />
                       </div>
 
-                      <button
+                      <AppButton
                         type="button"
+                        variant="success"
+                        size="sm"
                         onClick={handleExportExcel}
                         title="Descargar tabla completa de datos de visitas en Excel"
-                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm shrink-0"
+                        className="shadow-xs shrink-0"
                       >
                         <FileSpreadsheet className="h-4 w-4" />
                         <span>Exportar Excel</span>
-                      </button>
+                      </AppButton>
                     </div>
                   </div>
 
@@ -2048,12 +2051,13 @@ export default function VisitasPage({ params }) {
                           className="font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px] hover:text-slate-600 transition-colors cursor-pointer"
                         >
                           <Sliders className="h-3 w-3" />
-                          Filtros de Búsqueda
+                          Filtros de búsqueda
                           {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                         </button>
 
                         {(filterText || filterEmpresa || filterEstablecimiento || filterFecha || filterAnio || filterMes) && (
                           <button 
+                            type="button"
                             onClick={() => {
                               setFilterText('');
                               setFilterEmpresa('');
@@ -2070,13 +2074,14 @@ export default function VisitasPage({ params }) {
                       </div>
 
                       {canCargar && (
-                        <button 
+                        <AppButton 
+                          variant="filter-primary"
+                          size="sm"
                           onClick={handleAddNew}
-                          className="px-3 py-1.5 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-lg shadow-[#468DFF]/10 shrink-0"
                         >
                           <PlusCircle className="h-3.5 w-3.5" />
-                          Nueva Constancia
-                        </button>
+                          Nueva constancia
+                        </AppButton>
                       )}
                     </div>
 
@@ -2085,7 +2090,7 @@ export default function VisitasPage({ params }) {
                         {/* Selector Cliente */}
                         {profile?.role !== 'cliente' && (
                           <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Cliente</label>
+                            <AppLabel size="sm">Filtrar por cliente</AppLabel>
                             <select 
                               value={filterEmpresa}
                               onChange={(e) => {
@@ -2104,7 +2109,7 @@ export default function VisitasPage({ params }) {
 
                         {/* Selector Establecimiento */}
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Establecimiento</label>
+                          <AppLabel size="sm">Filtrar por establecimiento</AppLabel>
                           <select 
                             value={filterEstablecimiento}
                             onChange={(e) => setFilterEstablecimiento(e.target.value)}
@@ -2123,7 +2128,7 @@ export default function VisitasPage({ params }) {
 
                         {/* Selector Fecha */}
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Fecha</label>
+                          <AppLabel size="sm">Filtrar por fecha</AppLabel>
                           <input 
                             type="date"
                             value={filterFecha}
@@ -2134,7 +2139,7 @@ export default function VisitasPage({ params }) {
 
                         {/* Selector Año */}
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Año</label>
+                          <AppLabel size="sm">Filtrar por año</AppLabel>
                           <select 
                             value={filterAnio}
                             onChange={(e) => setFilterAnio(e.target.value)}
@@ -2149,7 +2154,7 @@ export default function VisitasPage({ params }) {
 
                         {/* Selector Mes */}
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Mes</label>
+                          <AppLabel size="sm">Filtrar por mes</AppLabel>
                           <select 
                             value={filterMes}
                             onChange={(e) => setFilterMes(e.target.value)}
@@ -2169,22 +2174,12 @@ export default function VisitasPage({ params }) {
                 {/* Tabla de Resultados */}
                 <div className={`bg-white border-y border-x-0 md:border md:border-slate-200 md:rounded-2xl shadow-sm overflow-hidden flex flex-col flex-grow min-h-0 md:flex-initial transition-all duration-300 ease-in-out ${showFilters ? 'md:h-[calc(100vh-310px)]' : 'md:h-[calc(100vh-240px)]'}`}>
                   {sortedVisitas.length === 0 ? (
-                    <div className="flex-grow flex flex-col items-center justify-center p-8 text-center gap-3 h-full">
-                      <AlertCircle className="h-10 w-10 text-slate-300" />
-                      <div className="space-y-1">
-                        <p className="text-sm font-bold text-slate-800">No hay constancias de visita registradas</p>
-                        <p className="text-xs text-slate-400">Registra una nueva constancia de visita para comenzar.</p>
-                      </div>
-                      {canCargar && (
-                        <button
-                          onClick={handleAddNew}
-                          className="px-4 py-2 mt-2 bg-[#468DFF] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#0511F2] transition-all cursor-pointer shadow-md shadow-[#468DFF]/10 shrink-0"
-                        >
-                          <PlusCircle className="h-3.5 w-3.5" />
-                          Registrar constancia
-                        </button>
-                      )}
-                    </div>
+                    <AppEmptyState
+                      title="No hay constancias de visita registradas"
+                      description="Registra una nueva constancia de visita para comenzar o modifica los filtros."
+                      actionLabel={canCargar ? "Registrar constancia" : null}
+                      onAction={canCargar ? handleAddNew : null}
+                    />
                   ) : (
                     <div className="overflow-auto flex-grow">
                       <table className="w-full text-left border-collapse min-w-[850px]">
@@ -2214,7 +2209,7 @@ export default function VisitasPage({ params }) {
                                 <AppSortIcon field="profesional_nombre" sortField={sortField} sortOrder={sortOrder} />
                               </div>
                             </th>
-                            <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-200 select-none">Responsable Presente</th>
+                            <th className="px-6 py-4 sticky top-0 z-10 bg-slate-50 border-b border-slate-200 select-none">Responsable presente</th>
                             <th className="px-6 py-4 text-right sticky top-0 z-10 bg-slate-50 border-b border-slate-200">Acciones</th>
                           </tr>
                         </thead>

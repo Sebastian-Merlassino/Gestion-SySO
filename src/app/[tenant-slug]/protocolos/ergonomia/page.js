@@ -10,6 +10,7 @@ import { formatDate } from '@/lib/utils';
 import { useToast } from '@/components/providers/ToastProvider';
 import AppPageHeader from '@/components/ui/AppPageHeader';
 import AppButton from '@/components/ui/AppButton';
+import AppLabel from '@/components/ui/AppLabel';
 import AppInput from '@/components/ui/AppInput';
 import AppSelect from '@/components/ui/AppSelect';
 import AppCard from '@/components/ui/AppCard';
@@ -793,7 +794,7 @@ export default function ProtocolosErgonomiaPage({ params }) {
                       className="font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-wider text-[10px] hover:text-slate-600 transition-colors cursor-pointer"
                     >
                       <Sliders className="h-3 w-3" />
-                      Filtros de Búsqueda
+                      Filtros de búsqueda
                       {showFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                     </button>
 
@@ -815,14 +816,13 @@ export default function ProtocolosErgonomiaPage({ params }) {
 
                   {canCargar && (
                     <AppButton
-                      variant="primary"
+                      variant="filter-primary"
                       size="sm"
                       onClick={() => {
                         setEditingId(null);
                         setFormMode('create');
                         router.replace(`/${tenantSlug}/protocolos/ergonomia?action=nuevo`);
                       }}
-                      className="shrink-0"
                     >
                       <PlusCircle className="h-3.5 w-3.5" />
                       <span>Nuevo protocolo</span>
@@ -835,7 +835,7 @@ export default function ProtocolosErgonomiaPage({ params }) {
               {showFilters && (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-slate-100 animate-fade-in">
                   <div className="space-y-1 col-span-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Filtrar por Cliente</label>
+                    <AppLabel size="sm">Filtrar por cliente</AppLabel>
                     <select
                       value={filterEmpresa}
                       onChange={(e) => {
@@ -852,7 +852,7 @@ export default function ProtocolosErgonomiaPage({ params }) {
                   </div>
 
                   <div className="space-y-1 col-span-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Establecimiento</label>
+                    <AppLabel size="sm">Establecimiento</AppLabel>
                     <select
                       disabled={!filterEmpresa}
                       value={filterEstablecimiento}
@@ -867,7 +867,7 @@ export default function ProtocolosErgonomiaPage({ params }) {
                   </div>
 
                   <div className="space-y-1 col-span-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Año</label>
+                    <AppLabel size="sm">Año</AppLabel>
                     <select
                       value={filterAnio}
                       onChange={(e) => setFilterAnio(e.target.value)}
