@@ -1,8 +1,9 @@
-// src/app/api/send-email/route.js
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import nodemailer from 'nodemailer';
+import path from 'path';
+import fs from 'fs';
 import { z } from 'zod';
 
 const sendEmailSchema = z.object({
@@ -320,6 +321,24 @@ export async function POST(request) {
       }
     }
 
+    // Cargar logo oficial de Gestión SySO para el footer (CID embebido para que siempre muestre la tipografía exacta en Gmail/Outlook)
+    let footerBrandLogoCid = null;
+    try {
+      const brandLogoPath = path.join(process.cwd(), 'public', 'brand', 'logo-black.png');
+      if (fs.existsSync(brandLogoPath)) {
+        const brandLogoBuffer = fs.readFileSync(brandLogoPath);
+        footerBrandLogoCid = 'syso_footer_brand_logo';
+        attachments.push({
+          filename: 'gestion-syso-logo.png',
+          content: brandLogoBuffer,
+          contentType: 'image/png',
+          cid: footerBrandLogoCid,
+        });
+      }
+    } catch (bErr) {
+      console.error('[API Send-Email] Error al cargar logo-black.png para el footer:', bErr);
+    }
+
     const formattedCustomMessage = customMessage
       ? escapeHtml(customMessage).replace(/\n/g, '<br />')
       : null;
@@ -433,10 +452,15 @@ export async function POST(request) {
                 <!-- Footer Oficial con Identidad Inalterable de la Marca Gestión SySO -->
                 <tr>
                   <td style="background-color: #f8fafc; border-top: 1px solid #D9D9D9; padding: 24px 32px; text-align: center;">
-                    <p style="margin: 0 0 6px 0; font-size: 15px; font-weight: 800; letter-spacing: 0.03em; line-height: 1.2;">
-                      <span style="font-family: 'Virgo 01', 'Virgo01', 'Virgo', 'Segoe UI', sans-serif; color: #468DFF; font-weight: 800; letter-spacing: 0.04em;">GESTIÓN</span>
-                      <span style="font-family: 'Audiowide', 'Segoe UI', cursive, sans-serif; color: #000000; font-weight: 700; margin-left: 3px; letter-spacing: 0.02em;">SySO</span>
-                    </p>
+                    ${footerBrandLogoCid
+                      ? `<img src="cid:${footerBrandLogoCid}" alt="Gestión SySO" width="135" style="max-height: 32px; width: auto; max-width: 145px; object-fit: contain; display: block; margin: 0 auto 8px auto; outline: none; border: none;" />`
+                      : `
+                        <p style="margin: 0 0 6px 0; font-size: 15px; font-weight: 800; letter-spacing: 0.03em; line-height: 1.2;">
+                          <span style="font-family: 'Virgo 01', 'Virgo01', 'Virgo', 'Segoe UI', sans-serif; color: #468DFF; font-weight: 800; letter-spacing: 0.04em;">GESTIÓN</span>
+                          <span style="font-family: 'Audiowide', 'Segoe UI', cursive, sans-serif; color: #000000; font-weight: 700; margin-left: 3px; letter-spacing: 0.02em;">SySO</span>
+                        </p>
+                      `
+                    }
                     <p style="margin: 0 0 4px 0; font-size: 12px; font-weight: 600; color: #475569;">
                       Plataforma SaaS de Higiene y Seguridad Ocupacional
                     </p>

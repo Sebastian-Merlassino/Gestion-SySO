@@ -1,14 +1,13 @@
-## [2026-08-26] Preservación de la Identidad Visual y Tipografías de la Marca Gestión SySO en Pie de Correos
+## [2026-08-26] Integración del Logotipo Oficial Embebido (CID) en Pie de Correos
 
 ### Resumen de Cambios
-- **Preservación Inalterable del Logotipo en Footers de Correo (`/api/send-email` y `/api/auth/reset-password-request`):**
-  - El texto de marca del pie de página se desacopló del color dinámico del tenant para mantener intacta la identidad corporativa de la plataforma SaaS:
-    - **`GESTIÓN`**: Renderizado en el azul corporativo institucional `#468DFF`, con fuente `Virgo 01` / `Segoe UI` y peso `font-weight: 800`.
-    - **`SySO`**: Renderizado en color negro `#000000` con la tipografía oficial `Audiowide` (importada mediante Google Fonts en el `<head>` del email).
-  - Eliminado el reemplazo cromático sobre la palabra *SySO* en el pie para que nunca mute cuando un cliente o consultora configure un color primario personalizado diferente (ej. rojo, verde o naranja).
+- **Embebido del Logotipo Institucional en Footers de Correo (`/api/send-email` y `/api/auth/reset-password-request`):**
+  - Los clientes de correo (como Gmail y Outlook) eliminan fuentes web externas (`@import` / `<link>` de Google Fonts como `Audiowide`) y fuentes locales (`Virgo 01`).
+  - Para asegurar una representación 100% fiel de la tipografía y diseño gráfico original de **Gestión SySO**, se implementó la carga y adjunto del activo oficial `public/brand/logo-black.png` como imagen inline CID embebida (`cid:syso_footer_brand_logo`).
+  - Esto garantiza que en cualquier cliente de correo (web, móvil o escritorio), el logo se visualice con su casco, la palabra **GESTIÓN** en `Virgo 01` / `#468DFF` y **SySO** en `Audiowide` / `#000000` con nitidez perfecta y sin depender del soporte de web fonts del lector.
 
 ### Decisiones Clave
-- Cumplimiento estricto del manual de marca de Gestión SySO (`gestion-syso-brand-guidelines`), donde la autoría de la plataforma en los pies de página permanece fija con los colores y tipografías institucionales oficiales.
+- Utilizar imágenes vectorizadas/rasterizadas oficiales mediante `Content-ID` (CID) para superar las restricciones de renderizado tipográfico de los clientes de correo tradicionales.
 
 ### Skills Utilizadas
 - `gestion-syso-brand-guidelines`

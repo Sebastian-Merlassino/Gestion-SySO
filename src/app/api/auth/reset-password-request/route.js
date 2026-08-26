@@ -285,16 +285,14 @@ export async function POST(request) {
                     </td>
                   </tr>
 
-                  <!-- Footer Oficial con Colores Corporativos -->
+                  <!-- Footer Oficial con Identidad Inalterable de la Marca Gestión SySO -->
                   <tr>
                     <td style="background-color: #f8fafc; border-top: 1px solid #D9D9D9; padding: 24px 32px; text-align: center;">
-                      <p style="margin: 0 0 6px 0; font-size: 13px; font-weight: 700; color: #0f172a;">
-                        Gestión <span style="color: #468DFF;">SySO</span>
+                      <img src="${logoSrc}" alt="Gestión SySO" width="135" style="max-height: 32px; width: auto; max-width: 145px; object-fit: contain; display: block; margin: 0 auto 8px auto; outline: none; border: none;" />
+                      <p style="margin: 0 0 4px 0; font-size: 12px; font-weight: 600; color: #475569;">
+                        Plataforma SaaS de Higiene y Seguridad Ocupacional
                       </p>
-                      <p style="margin: 0 0 6px 0; font-size: 12px; font-weight: 600; color: #475569;">
-                        Plataforma SaaS de Higiene y Seguridad Ocupacional.
-                      </p>
-                      <p style="margin: 0; font-size: 12px; font-weight: 600; color: #475569;">
+                      <p style="margin: 0; font-size: 11px; font-weight: 500; color: #94a3b8;">
                         © ${new Date().getFullYear()} Gestión SySO. Todos los derechos reservados.
                       </p>
                     </td>
