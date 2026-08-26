@@ -30,18 +30,19 @@ async function resolveStorageImageBase64(pathOrUrl) {
     }
 
     if (relativePath && !relativePath.startsWith('http') && !relativePath.startsWith('data:')) {
-      try {
-        const { data: sData, error: sErr } = await supabase.storage
-          .from(bucketName)
-          .createSignedUrl(relativePath, 3600);
-        if (!sErr && sData?.signedUrl) {
-          targetUrl = sData.signedUrl;
-        } else {
-          const { data: pData } = supabase.storage.from(bucketName).getPublicUrl(relativePath);
-          if (pData?.publicUrl) targetUrl = pData.publicUrl;
+      const candidateBuckets = Array.from(new Set([bucketName, 'documents', 'signatures', 'avatars', 'logos']));
+      for (const b of candidateBuckets) {
+        try {
+          const { data: sData, error: sErr } = await supabase.storage
+            .from(b)
+            .createSignedUrl(relativePath, 3600);
+          if (!sErr && sData?.signedUrl) {
+            targetUrl = sData.signedUrl;
+            break;
+          }
+        } catch (e) {
+          // Continuar con siguiente bucket
         }
-      } catch (e) {
-        console.warn('[pdfMatriculasAnexo] Storage signedUrl fallback:', e);
       }
     }
 

@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import { printPdfDocument } from '@/lib/pdf/pdfPrintHelper';
 import { getPdfPrimaryColor } from '@/lib/pdf/pdfTheme';
+import { getBase64ImageFromUrl } from '@/lib/pdf/pdfImages';
 import ImageUploadZone from '@/components/ui/ImageUploadZone';
 import { useToast } from '@/components/providers/ToastProvider';
 import AppPageHeader from '@/components/ui/AppPageHeader';
@@ -517,41 +518,6 @@ export default function ExtintoresPage({ params }) {
       }
     ]);
     setLoading(false);
-  };
-
-  const getBase64ImageFromUrl = async (imageUrl) => {
-    if (!imageUrl) return '';
-    if (typeof imageUrl === 'string' && imageUrl.startsWith('data:')) return imageUrl;
-    if (typeof imageUrl === 'string' && imageUrl.includes('gettablefileurl')) {
-      try {
-        const urlObj = new URL(imageUrl);
-        const fileName = urlObj.searchParams.get('fileName');
-        if (!fileName || fileName.trim() === '') {
-          return '';
-        }
-      } catch (e) {
-        if (imageUrl.endsWith('fileName=') || imageUrl.includes('fileName=&')) {
-          return '';
-        }
-      }
-    }
-    try {
-      const res = await fetch(imageUrl);
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-      const blob = await res.blob();
-      if (!blob.type.startsWith('image/')) {
-        throw new Error(`Invalid content type: ${blob.type}`);
-      }
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.addEventListener('load', () => resolve(reader.result), false);
-        reader.addEventListener('error', () => reject(new Error('FileReader error')), false);
-        reader.readAsDataURL(blob);
-      });
-    } catch (e) {
-      console.error('Error fetching image to base64:', e);
-      return '';
-    }
   };
 
   const resizeImage = (base64Str, maxWidth = 400, maxHeight = 400) => {

@@ -26,6 +26,7 @@ import AppTooltip from '@/components/ui/AppTooltip';
 import AppLoadingSpinner from '@/components/ui/AppLoadingSpinner';
 import { formatPdfFileName } from '@/lib/pdf/pdfFileName';
 import { getPdfPrimaryColor } from '@/lib/pdf/pdfTheme';
+import { getBase64ImageFromUrl } from '@/lib/pdf/pdfImages';
 import { 
   PlusCircle, 
   AlertCircle,
@@ -1008,37 +1009,6 @@ export default function AvisosRiesgoPage({ params }) {
   // ----------------------------------------------------
   // Helpers de Imagen
   // ----------------------------------------------------
-  const getBase64ImageFromUrl = async (imageUrl) => {
-    if (!imageUrl) return '';
-    if (typeof imageUrl === 'string' && imageUrl.startsWith('data:')) return imageUrl;
-    if (typeof imageUrl === 'string' && imageUrl.includes('gettablefileurl')) {
-      try {
-        const urlObj = new URL(imageUrl);
-        const fileName = urlObj.searchParams.get('fileName');
-        if (!fileName || fileName.trim() === '') {
-          return '';
-        }
-      } catch (e) {
-        if (imageUrl.endsWith('fileName=') || imageUrl.includes('fileName=&')) {
-          return '';
-        }
-      }
-    }
-    try {
-      const res = await fetch(imageUrl);
-      const blob = await res.blob();
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = () => reject(new Error('Error al decodificar imagen'));
-        reader.readAsDataURL(blob);
-      });
-    } catch (e) {
-      console.error('Error descargando imagen base64:', e);
-      return '';
-    }
-  };
-
   const resizeImage = (base64Str, maxWidth = 300, maxHeight = 300, forcePng = false) => {
     return new Promise((resolve) => {
       if (!base64Str) {
@@ -1254,13 +1224,20 @@ export default function AvisosRiesgoPage({ params }) {
             if (isExternal) {
               signatureBase64 = await getBase64ImageFromUrl(av.firma_digital);
             } else {
-              const bucketName = av.firma_tipo === 'perfil' ? 'signatures' : 'documents';
-              const { data: sData, error: sErr } = await supabase.storage
-                .from(bucketName)
-                .createSignedUrl(relativePath, 3600);
-              if (!sErr && sData?.signedUrl) {
-                signatureBase64 = await getBase64ImageFromUrl(sData.signedUrl);
+              const detectedBucket = bucketIndex !== -1 ? pathParts[bucketIndex] : null;
+              const preferredBucket = detectedBucket || (av.firma_tipo === 'perfil' ? 'signatures' : 'documents');
+              const candidateBuckets = Array.from(new Set([preferredBucket, 'signatures', 'documents']));
+              let signedUrl = null;
+              for (const b of candidateBuckets) {
+                const { data: sData, error: sErr } = await supabase.storage
+                  .from(b)
+                  .createSignedUrl(relativePath, 3600);
+                if (!sErr && sData?.signedUrl) {
+                  signedUrl = sData.signedUrl;
+                  break;
+                }
               }
+              signatureBase64 = await getBase64ImageFromUrl(signedUrl || av.firma_digital);
             }
           }
           if (signatureBase64) {

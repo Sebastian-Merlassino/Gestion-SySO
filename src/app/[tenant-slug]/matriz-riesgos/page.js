@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import { printPdfDocument } from '@/lib/pdf/pdfPrintHelper';
 import { getPdfPrimaryColor } from '@/lib/pdf/pdfTheme';
+import { getBase64ImageFromUrl } from '@/lib/pdf/pdfImages';
 import * as XLSX from 'xlsx';
 import DocumentUploadZone from '@/components/ui/DocumentUploadZone';
 import AITextHelper from '@/components/ui/AITextHelper';
@@ -658,28 +659,6 @@ export default function MatrizRiesgosPage({ params }) {
       }
     ]);
     setLoading(false);
-  };
-
-  const getBase64ImageFromUrl = async (imageUrl) => {
-    if (!imageUrl) return '';
-    if (imageUrl.startsWith('data:')) return imageUrl;
-    try {
-      const res = await fetch(imageUrl);
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-      const blob = await res.blob();
-      if (!blob.type.startsWith('image/')) {
-        throw new Error(`Invalid content type: ${blob.type}`);
-      }
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.addEventListener('load', () => resolve(reader.result), false);
-        reader.addEventListener('error', () => reject(new Error('FileReader error')), false);
-        reader.readAsDataURL(blob);
-      });
-    } catch (e) {
-      console.error('Error fetching image to base64:', e);
-      return '';
-    }
   };
 
   const resizeImage = (base64Str, maxWidth = 400, maxHeight = 400) => {

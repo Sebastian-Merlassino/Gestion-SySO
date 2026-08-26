@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { formatDate, formatAsDateInput, convertToDbDate, getEffectivePlan } from '@/lib/utils';
 import { printPdfDocument } from '@/lib/pdf/pdfPrintHelper';
 import { getPdfPrimaryColor, getPdfHoverColor } from '@/lib/pdf/pdfTheme';
+import { getBase64ImageFromUrl } from '@/lib/pdf/pdfImages';
 import AITextHelper from '@/components/ui/AITextHelper';
 import { useToast } from '@/components/providers/ToastProvider';
 import AppPageHeader from '@/components/ui/AppPageHeader';
@@ -735,28 +736,7 @@ export default function TenantDashboard({ params }) {
 
   const userTareas = tareas.filter(isTaskVisibleForUser);
 
-  // Helper para convertir imagen URL a base64
-  const getBase64ImageFromUrl = async (imageUrl) => {
-    if (!imageUrl) return '';
-    if (imageUrl.startsWith('data:')) return imageUrl;
-    try {
-      const res = await fetch(imageUrl);
-      const blob = await res.blob();
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.addEventListener("load", () => {
-          resolve(reader.result);
-        }, false);
-        reader.addEventListener("error", () => {
-          reject(new Error("Error reading image"));
-        }, false);
-        reader.readAsDataURL(blob);
-      });
-    } catch (e) {
-      console.error('Error fetching image for base64:', e);
-      return '';
-    }
-  };
+  // Helper para redimensionar y comprimir una imagen en base64
 
   // Helper para redimensionar y comprimir una imagen en base64
   const resizeImage = (base64Str, maxWidth = 300, maxHeight = 300) => {

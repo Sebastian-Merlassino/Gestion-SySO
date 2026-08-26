@@ -1,3 +1,64 @@
+## [2026-08-26] Auditoría y Unificación Universal de Carga de Recursos e Imágenes en Generadores de PDF
+
+### Resumen de Cambios
+- **Resolución Automática de URLs Firmadas en `src/lib/pdf/pdfImages.js`:**
+  - Robustecido el helper universal `getBase64ImageFromUrl` para interceptar de forma transparente rutas o URLs públicas de Supabase Storage correspondientes a buckets privados (`signatures`, `documents`, `protocolos-ergonomia`).
+  - Generación automática de URLs firmadas temporales (`createSignedUrl(path, 3600)`) previa a la petición HTTP, previniendo errores `400 Bad Request` ante peticiones públicas no autenticadas en Supabase.
+  - Soporte de reintento inteligente y búsqueda iterativa entre buckets candidatos (`signatures`, `documents`, `avatars`, `logos`) ante rutas relativas.
+- **Unificación y Eliminación de Helpers Locales Redundantes:**
+  - Auditados y migrados todos los módulos generadores de PDF e interfaces de envío/impresión para importar de manera centralizada `getBase64ImageFromUrl` desde `@/lib/pdf/pdfImages`:
+    - `visitas/utils/pdfGenerator.js` y `visitas/page.js` (Constancias de Visita)
+    - `avisos/page.js` (Avisos de Riesgo)
+    - `control-electrico/page.js` (Control de Instalaciones Eléctricas)
+    - `checklist-personalizados/page.js` (Checklists Personalizados)
+    - `capacitaciones-online/utils/pdfGenerator.js` (Certificados / Registros de Capacitaciones Online)
+    - `capacitacion/page.js` (Programa Anual de Capacitación)
+    - `accidentes/page.js` (Investigación de Accidentes)
+    - `correctivas/page.js` (Seguimiento de Acciones Correctivas)
+    - `extintores/page.js` (Control de Extintores)
+    - `matriz-riesgos/page.js` (Matriz IPER)
+    - `programa/page.js` (Programa de Gestión)
+    - `dashboard/page.js` (Reporte de Métricas)
+    - `protocolos/iluminacion/utils/pdfGenerator.js` (Protocolo SRT 84/12)
+    - `protocolos/ruido/utils/pdfGenerator.js` (Protocolo SRT 85/12)
+    - `protocolos/puesta-a-tierra/utils/pdfGenerator.js` (Protocolo SRT 900/15)
+    - `protocolos/ergonomia/utils/pdfGenerator.js` (Protocolo Res. 886/15)
+    - `lib/pdf/pdfMatriculasAnexo.js` (Anexo de Matrículas Profesionales)
+
+### Decisiones Clave
+- Centralizar en una única capa (`pdfImages.js`) la responsabilidad de interactuar con Supabase Storage y manejar la conversión a Base64, evitando que errores locales de fetch bloqueen la descarga, previsualización, envío o impresión de reportes en cualquier sección.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-multitenant-security`
+- `supabase`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/lib/pdf/pdfImages.js`
+- `[MODIFY] src/lib/pdf/pdfMatriculasAnexo.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/utils/pdfGenerator.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/accidentes/page.js`
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/extintores/page.js`
+- `[MODIFY] src/app/[tenant-slug]/programa/page.js`
+- `[MODIFY] src/app/[tenant-slug]/matriz-riesgos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/dashboard/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/utils/pdfGenerator.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/utils/pdfGenerator.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/utils/pdfGenerator.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/utils/pdfGenerator.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Ejecutada validación sintáctica completa con `node --check` en los 19 archivos involucrados (código de salida 0).
+
+---
+
 ## [2026-08-26] Incorporación de Columna Área / Sector en Tabla de Acciones Correctivas
 
 ### Resumen de Cambios

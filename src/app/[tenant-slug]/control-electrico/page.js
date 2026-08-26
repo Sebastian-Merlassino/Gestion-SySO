@@ -1133,29 +1133,6 @@ export default function ControlElectricoPage({ params }) {
     });
   };
 
-  // Helper para convertir imagen URL a base64
-  const getBase64ImageFromUrl = async (imageUrl) => {
-    if (!imageUrl) return '';
-    if (imageUrl.startsWith('data:')) return imageUrl;
-    try {
-      const res = await fetch(imageUrl);
-      const blob = await res.blob();
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.addEventListener("load", () => {
-          resolve(reader.result);
-        }, false);
-        reader.addEventListener("error", () => {
-          reject(new Error("Error reading image blob"));
-        }, false);
-        reader.readAsDataURL(blob);
-      });
-    } catch (e) {
-      console.error('Error fetching image to base64:', e);
-      return '';
-    }
-  };
-
   // Redimensionar imagen para PDF
   const resizeImageForPdf = (base64Str, maxWidth = 350, maxHeight = 350) => {
     return new Promise((resolve) => {

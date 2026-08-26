@@ -182,15 +182,19 @@ export const generateNoiseProtocolPdf = async (
         }
 
         if (relativePath && !relativePath.startsWith('http')) {
-          try {
-            const { data: sData, error: sErr } = await supabase.storage
-              .from(bucketName)
-              .createSignedUrl(relativePath, 3600);
-            if (!sErr && sData?.signedUrl) {
-              sigUrl = sData.signedUrl;
+          const candidateBuckets = Array.from(new Set([bucketName, 'signatures', 'documents', 'avatars']));
+          for (const b of candidateBuckets) {
+            try {
+              const { data: sData, error: sErr } = await supabase.storage
+                .from(b)
+                .createSignedUrl(relativePath, 3600);
+              if (!sErr && sData?.signedUrl) {
+                sigUrl = sData.signedUrl;
+                break;
+              }
+            } catch (sErr) {
+              // Continuar con siguiente bucket candidato
             }
-          } catch (sErr) {
-            console.error('Error generando URL firmada para la firma:', sErr);
           }
         }
       }

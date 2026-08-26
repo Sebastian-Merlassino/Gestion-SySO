@@ -291,12 +291,14 @@ export default function ChecklistPersonalizadosPage({ params }) {
     try {
       let relativePath = path;
       let isExternal = false;
+      let detectedBucket = null;
       if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
         try {
           const urlObj = new URL(relativePath);
           const pathParts = urlObj.pathname.split('/');
           const bucketIndex = pathParts.findIndex(part => part === 'signatures' || part === 'documents');
           if (bucketIndex !== -1 && bucketIndex < pathParts.length - 1) {
+            detectedBucket = pathParts[bucketIndex];
             relativePath = pathParts.slice(bucketIndex + 1).join('/');
           } else {
             isExternal = true;
@@ -307,11 +309,15 @@ export default function ChecklistPersonalizadosPage({ params }) {
       }
       if (isExternal) return relativePath;
 
-      const bucketName = type === 'perfil' ? 'signatures' : 'documents';
-      const { data: sData, error: sErr } = await supabase.storage
-        .from(bucketName)
-        .createSignedUrl(relativePath, 3600);
-      if (!sErr && sData?.signedUrl) return sData.signedUrl;
+      const preferredBucket = detectedBucket || (type === 'perfil' ? 'signatures' : 'documents');
+      const candidateBuckets = Array.from(new Set([preferredBucket, 'signatures', 'documents']));
+      for (const b of candidateBuckets) {
+        const { data: sData, error: sErr } = await supabase.storage
+          .from(b)
+          .createSignedUrl(relativePath, 3600);
+        if (!sErr && sData?.signedUrl) return sData.signedUrl;
+      }
+      return relativePath;
     } catch (e) {
       console.error('Error resolviendo firma:', e);
     }
@@ -1145,23 +1151,6 @@ export default function ChecklistPersonalizadosPage({ params }) {
   // ==========================================
   // LOGICA: EXPORTACIÓN A PDF (JSPDF)
   // ==========================================
-  const getBase64ImageFromUrl = async (url) => {
-    if (!url) return '';
-    if (url.startsWith('data:')) return url;
-    try {
-      const res = await fetch(url);
-      const blob = await res.blob();
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-    } catch (err) {
-      console.error('Error convirtiendo URL a Base64:', err);
-      return '';
-    }
-  };
 
   const resizeImageForPdf = (base64Str, maxW, maxH, type = 'image/png') => {
     return new Promise((resolve) => {

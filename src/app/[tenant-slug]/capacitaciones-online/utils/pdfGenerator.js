@@ -61,15 +61,18 @@ export async function generateCapacitacionOnlinePdf({
     }
 
     if (supabase && relativePath && !relativePath.startsWith('http') && !relativePath.startsWith('data:')) {
-      try {
-        const { data: sData, error: sErr } = await supabase.storage
-          .from(bucketName)
-          .createSignedUrl(relativePath, 3600);
-        if (!sErr && sData?.signedUrl) {
-          return sData.signedUrl;
+      const candidateBuckets = Array.from(new Set([bucketName, 'signatures', 'documents', 'avatars', 'logos']));
+      for (const b of candidateBuckets) {
+        try {
+          const { data: sData, error: sErr } = await supabase.storage
+            .from(b)
+            .createSignedUrl(relativePath, 3600);
+          if (!sErr && sData?.signedUrl) {
+            return sData.signedUrl;
+          }
+        } catch (sErr) {
+          // Continuar con siguiente bucket candidato
         }
-      } catch (sErr) {
-        console.error(`Error generando URL firmada para ${bucketName}/${relativePath}:`, sErr);
       }
 
       try {

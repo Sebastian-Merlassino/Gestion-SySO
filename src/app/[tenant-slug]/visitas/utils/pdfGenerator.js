@@ -1,19 +1,9 @@
 // src/app/[tenant-slug]/visitas/utils/pdfGenerator.js
 import { formatPdfFileName } from '@/lib/pdf/pdfFileName';
 import { getPdfPrimaryColor } from '@/lib/pdf/pdfTheme';
+import { getBase64ImageFromUrl } from '@/lib/pdf/pdfImages';
 
 const MEDICIONES_OPTS = ['Ruido (Res. 85/12)', 'Iluminación (Res. 84/12)', 'Evaluación ergonómica', 'Puesta a tierra (Res. 900/15)'];
-
-const getBase64ImageFromUrl = async (imageUrl) => {
-  const res = await fetch(imageUrl);
-  const blob = await res.blob();
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-};
 
 const getImgDimensions = (base64) => {
   return new Promise((resolve) => {

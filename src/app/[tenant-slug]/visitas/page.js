@@ -31,6 +31,7 @@ import AppTooltip from '@/components/ui/AppTooltip';
 import AppLoadingSpinner from '@/components/ui/AppLoadingSpinner';
 import { generateVisitaPdf } from './utils/pdfGenerator';
 import { formatPdfFileName } from '@/lib/pdf/pdfFileName';
+import { getBase64ImageFromUrl } from '@/lib/pdf/pdfImages';
 import * as XLSX from 'xlsx';
 import { 
   PlusCircle, 
@@ -1482,29 +1483,6 @@ export default function VisitasPage({ params }) {
       setSelectedTemas(prev => [...prev, txt]);
     }
     setTemaCustomText('');
-  };
-
-  // Helper para convertir imagen URL a base64
-  const getBase64ImageFromUrl = async (imageUrl) => {
-    if (!imageUrl) return '';
-    if (imageUrl.startsWith('data:')) return imageUrl;
-    try {
-      const res = await fetch(imageUrl);
-      const blob = await res.blob();
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.addEventListener("load", () => {
-          resolve(reader.result);
-        }, false);
-        reader.addEventListener("error", () => {
-          reject(new Error("Error reading image"));
-        }, false);
-        reader.readAsDataURL(blob);
-      });
-    } catch (e) {
-      console.error('Error fetching image for base64:', e);
-      return '';
-    }
   };
 
   // Helper para redimensionar y comprimir una imagen en base64

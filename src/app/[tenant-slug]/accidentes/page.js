@@ -26,6 +26,7 @@ import AppTooltip from '@/components/ui/AppTooltip';
 import AppLoadingSpinner from '@/components/ui/AppLoadingSpinner';
 import { formatPdfFileName } from '@/lib/pdf/pdfFileName';
 import { getPdfPrimaryColor } from '@/lib/pdf/pdfTheme';
+import { getBase64ImageFromUrl } from '@/lib/pdf/pdfImages';
 import { formatDate, formatAsDateInput, convertToDbDate } from '@/lib/utils';
 import {
   ShieldAlert,
@@ -906,28 +907,6 @@ export default function AccidentesPage({ params }) {
   };
 
   // ── Helpers para carga de Imágenes e IA ────────────────────────────────────
-  const getBase64ImageFromUrl = async (imageUrl) => {
-    if (!imageUrl) return '';
-    if (imageUrl.startsWith('data:')) return imageUrl;
-    try {
-      const res = await fetch(imageUrl);
-      const blob = await res.blob();
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.addEventListener("load", () => {
-          resolve(reader.result);
-        }, false);
-        reader.addEventListener("error", () => {
-          reject(new Error("Error reading image"));
-        }, false);
-        reader.readAsDataURL(blob);
-      });
-    } catch (e) {
-      console.error('Error fetching image for base64:', e);
-      return '';
-    }
-  };
-
   const resizeImage = (base64Str, maxWidth = 300, maxHeight = 300) => {
     return new Promise((resolve) => {
       if (!base64Str) {
