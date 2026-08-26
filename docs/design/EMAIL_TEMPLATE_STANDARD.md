@@ -132,6 +132,70 @@ Para evitar que los clientes de correo (Gmail, Outlook, Apple Mail, Yahoo) bloqu
 
 ---
 
-## 4. Regla de Cumplimiento para Agentes
+## 4. Estándar de Cabeceras: Remitente No-Reply y Enrutamiento RFC Reply-To (Obligatorio)
 
-Ningún módulo ni endpoint backend debe despachar correos en texto plano crudo o con HTML improvisado. Toda integración de envío de emails en `src/app/api/` debe implementar o consumir `SySO-Email-Template-Standard-v1.0`.
+Para garantizar la privacidad, evitar la fuga de respuestas a casillas centrales del sistema y dirigir las consultas de clientes finales directamente a los profesionales que emitieron el informe:
+
+1. **Remitente `From` (Estandarizado):**
+   - Siempre debe configurarse bajo el alias de envío `no-reply@gestionsyso.com` (o `process.env.SMTP_FROM`).
+   - El *Display Name* visible debe ser el nombre del Tenant o el nombre de la plataforma:
+     `from: `"${tenantName || 'Gestión SySO'}" <no-reply@gestionsyso.com>``
+2. **Cabecera `Reply-To` (Enrutamiento Automático):**
+   - **Para Informes Técnicos y Reportes:** Debe inyectar el correo del usuario/profesional del workspace emisor (`user.email`) y su nombre:
+     `replyTo: `"${professionalName || tenantName}" <${user.email}>``
+     *Resultado:* Cuando el cliente hace clic en "Responder" en Gmail, Outlook o su smartphone, la respuesta se dirige automáticamente al profesional del tenant.
+   - **Para Notificaciones de Seguridad y Auth (Restablecimiento, Confirmación):**
+     `replyTo: `"Soporte Gestión SySO" <soporte@gestionsyso.com>``
+
+---
+
+## 5. Cajas Informativas de Contacto y Seguridad
+
+### A. Caja de Contacto y Respuesta Directa (Para Informes y Reportes Técnicos)
+```html
+<tr>
+  <td style="padding: 0 32px 24px 32px;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f8fafc; border-left: 4px solid #468DFF; border-top: 1px solid #D9D9D9; border-right: 1px solid #D9D9D9; border-bottom: 1px solid #D9D9D9; border-radius: 10px;">
+      <tr>
+        <td style="padding: 16px 20px;">
+          <p style="margin: 0 0 6px 0; font-size: 11px; font-weight: 700; color: #1e293b; text-transform: uppercase; letter-spacing: 0.05em;">
+            ✉️ Información de Contacto y Consultas
+          </p>
+          <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #475569;">
+            Este es un envío automático generado desde la plataforma <strong>Gestión SySO</strong> en nombre de <strong>{{TENANT_NAME}}</strong>{{INSPECTOR_NAME}}.
+          </p>
+          <p style="margin: 8px 0 0 0; font-size: 13px; line-height: 1.5; color: #475569;">
+            Por favor, para responder o realizar consultas sobre este informe, diríjase a: 
+            <a href="mailto:{{REPLY_TO_EMAIL}}" style="color: #468DFF; font-weight: 600; text-decoration: underline;">{{REPLY_TO_EMAIL}}</a> 
+            <span style="font-size: 12px; color: #64748b;">(también puede presionar directamente <strong>"Responder"</strong> en su cliente de correo).</span>
+          </p>
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+```
+
+### B. Aviso de Casilla No-Reply (Para Notificaciones de Seguridad y Auth)
+```html
+<tr>
+  <td style="padding: 0 32px 28px 32px;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+      <tr>
+        <td style="padding: 12px 16px; text-align: center;">
+          <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #64748b;">
+            ℹ️ Este es un correo automático generado por el sistema (No-Reply). Por favor no respondas a este mensaje. Ante cualquier consulta técnica, podés escribir a <a href="mailto:soporte@gestionsyso.com" style="color: #468DFF; font-weight: 600; text-decoration: underline;">soporte@gestionsyso.com</a>.
+          </p>
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+```
+
+---
+
+## 6. Regla de Cumplimiento para Agentes
+
+Ningún módulo ni endpoint backend debe despachar correos en texto plano crudo o con HTML improvisado. Toda integración de envío de emails en `src/app/api/` debe implementar o consumir `SySO-Email-Template-Standard-v1.0` con sus correspondientes cabeceras `From` y `Reply-To`.
+

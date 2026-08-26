@@ -143,11 +143,12 @@ export async function POST(request) {
     const port = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT) : 587;
     const user_smtp = process.env.SMTP_USER;
     const pass = process.env.SMTP_PASS;
-    const from = process.env.SMTP_FROM || user_smtp || 'no-reply@gestionsyso.com';
+    const from = process.env.SMTP_FROM || 'no-reply@gestionsyso.com';
+    const replyTo = process.env.SUPPORT_EMAIL || 'soporte@gestionsyso.com';
     const senderName = process.env.SMTP_SENDER_NAME || 'Gestión SySO';
 
     if (host && user_smtp && pass) {
-      console.log(`[Reset Password API] Despachando correo de restablecimiento a ${targetEmail} via ${host}:${port}`);
+      console.log(`[Reset Password API] Despachando correo de restablecimiento a ${targetEmail} via ${host}:${port} — Reply-To: ${replyTo}`);
 
       const transporter = nodemailer.createTransport({
         host,
@@ -253,12 +254,27 @@ export async function POST(request) {
 
                   <!-- Caja de Aviso de Seguridad -->
                   <tr>
-                    <td style="padding: 0 32px 28px 32px;">
+                    <td style="padding: 0 32px 20px 32px;">
                       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px;">
                         <tr>
                           <td style="padding: 16px 20px;">
                             <p style="margin: 0; font-size: 12px; line-height: 1.6; color: #9a3412;">
                               <strong>Aviso de Seguridad:</strong> Este enlace expirará automáticamente en 1 hora y solo puede utilizarse una vez. Si no solicitaste este cambio, podés ignorar este correo sin ningún riesgo.
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+
+                  <!-- Aviso de Casilla No Monitoreada (No-Reply) -->
+                  <tr>
+                    <td style="padding: 0 32px 28px 32px;">
+                      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+                        <tr>
+                          <td style="padding: 12px 16px; text-align: center;">
+                            <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #64748b;">
+                              ℹ️ Este es un correo automático de seguridad generado por el sistema (No-Reply). Por favor no respondas a este mensaje. Ante cualquier consulta, podés escribirnos a <a href="mailto:${replyTo}" style="color: #468DFF; font-weight: 600; text-decoration: underline;">${replyTo}</a>.
                             </p>
                           </td>
                         </tr>
@@ -291,6 +307,7 @@ export async function POST(request) {
 
       await transporter.sendMail({
         from: `"${senderName}" <${from}>`,
+        replyTo: `"Soporte Gestión SySO" <${replyTo}>`,
         to: targetEmail,
         subject: 'Restablecé tu contraseña — Gestión SySO',
         html: mailHtml,

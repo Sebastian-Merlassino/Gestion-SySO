@@ -20,7 +20,9 @@ const sendEmailSchema = z.object({
   tenantLogoBase64: z.string().max(2 * 1024 * 1024, 'El logo excede el tamaño máximo permitido de 2 MB.').nullable().optional(),
   tenantName: z.string().max(200).optional(),
   documentType: z.string().max(100).optional(), // can be 'aviso_riesgo', 'capacitacion_online', etc.
-  checklistName: z.string().max(200).optional()
+  checklistName: z.string().max(200).optional(),
+  replyToEmail: z.string().email('Dirección de correo de respuesta inválida.').optional().nullable(),
+  replyToName: z.string().max(200).optional().nullable()
 });
 
 export async function POST(request) {
@@ -49,7 +51,7 @@ export async function POST(request) {
     // Obtener perfil para verificar rol (sólo admin o miembro del tenant pueden enviar mails)
     const { data: profile, error: profError } = await serverClient
       .from('profiles')
-      .select('role, tenant_id')
+      .select('role, tenant_id, full_name')
       .eq('id', user.id)
       .single();
 
@@ -76,7 +78,22 @@ export async function POST(request) {
         details: parseResult.error.format() 
       }, { status: 400 });
     }
-    const { emails, filePath, customSubject, customMessage, companyName, establishmentName, date, inspectorName, tenantLogoBase64, tenantName, documentType, checklistName } = parseResult.data;
+    const { 
+      emails, 
+      filePath, 
+      customSubject, 
+      customMessage, 
+      companyName, 
+      establishmentName, 
+      date, 
+      inspectorName, 
+      tenantLogoBase64, 
+      tenantName, 
+      documentType, 
+      checklistName,
+      replyToEmail,
+      replyToName
+    } = parseResult.data;
 
     // Sanitización HTML para evitar inyección en el correo (HIGH-02)
     const escapeHtml = (str) => {
@@ -95,6 +112,12 @@ export async function POST(request) {
     const inspectorNameEscaped = escapeHtml(inspectorName);
     const tenantNameEscaped = escapeHtml(tenantName);
     const checklistNameEscaped = escapeHtml(checklistName);
+
+    // Determinar remitente de respuesta dinámico (Reply-To)
+    const effectiveReplyToEmail = replyToEmail || user.email;
+    const effectiveReplyToName = replyToName || inspectorName || profile?.full_name || user.user_metadata?.full_name || tenantName || 'Gestión SySO';
+    const effectiveReplyToEmailEscaped = escapeHtml(effectiveReplyToEmail);
+    const effectiveReplyToNameEscaped = escapeHtml(effectiveReplyToName);
 
     // Convert comma-separated string to array if necessary
     const emailList = Array.isArray(emails)
@@ -190,7 +213,7 @@ export async function POST(request) {
     const port = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT) : 587;
     const user_smtp = process.env.SMTP_USER;
     const pass = process.env.SMTP_PASS;
-    const from = process.env.SMTP_FROM || user_smtp || 'no-reply@gestionsyso.com';
+    const from = process.env.SMTP_FROM || 'no-reply@gestionsyso.com';
 
     const isAvisoRiesgo = documentType === 'aviso_riesgo';
     const isControlElectrico = documentType === 'control_electrico';
@@ -221,7 +244,7 @@ export async function POST(request) {
       ? (filePath ? `Registro de Capacitación Virtual - ${companyName || 'Cliente'}` : `Capacitación virtual de higiene y seguridad en el trabajo`)
       : `Constancia de Visita de Higiene y Seguridad - ${companyName || 'Cliente'}`;
 
-    console.log(`[API Send-Email] Tenant: ${profile.tenant_id} | Sender: ${user.email} | To: ${emailList.join(', ')} | Subject: ${mailSubject}`);
+    console.log(`[API Send-Email] Tenant: ${profile.tenant_id} | Sender: ${user.email} | Reply-To: ${effectiveReplyToEmail} | To: ${emailList.join(', ')} | Subject: ${mailSubject}`);
 
     // Helper para convertir URL de imagen a Base64 en servidor
     const fetchImageAsBase64 = async (url) => {
@@ -349,6 +372,29 @@ export async function POST(request) {
                   </td>
                 </tr>
 
+                <!-- Caja Informativa de Contacto y Respuesta Directa -->
+                <tr>
+                  <td style="padding: 0 32px 24px 32px;">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f8fafc; border-left: 4px solid #468DFF; border-top: 1px solid #D9D9D9; border-right: 1px solid #D9D9D9; border-bottom: 1px solid #D9D9D9; border-radius: 10px;">
+                      <tr>
+                        <td style="padding: 16px 20px;">
+                          <p style="margin: 0 0 6px 0; font-size: 11px; font-weight: 700; color: #1e293b; text-transform: uppercase; letter-spacing: 0.05em;">
+                            ✉️ Información de Contacto y Consultas
+                          </p>
+                          <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #475569;">
+                            Este es un envío automático generado desde la plataforma <strong>Gestión SySO</strong> en nombre de <strong>${tenantNameEscaped || 'Gestión SySO'}</strong>${inspectorNameEscaped ? ` (${inspectorNameEscaped})` : ''}.
+                          </p>
+                          <p style="margin: 8px 0 0 0; font-size: 13px; line-height: 1.5; color: #475569;">
+                            Por favor, para responder o realizar consultas sobre este informe, diríjase a: 
+                            <a href="mailto:${effectiveReplyToEmailEscaped}" style="color: #468DFF; font-weight: 600; text-decoration: underline;">${effectiveReplyToEmailEscaped}</a> 
+                            <span style="font-size: 12px; color: #64748b;">(también puede presionar directamente <strong>"Responder"</strong> en su cliente de correo).</span>
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
                 <!-- Caja Informativa de Adjunto -->
                 ${filePath ? `
                   <tr>
@@ -393,7 +439,7 @@ export async function POST(request) {
     `;
 
     if (host && user_smtp && pass) {
-      console.log(`[Email Route] Enviando correo real a ${emailList.join(', ')} via ${host}:${port} — usuario: ${user.email}`);
+      console.log(`[Email Route] Enviando correo real a ${emailList.join(', ')} via ${host}:${port} — Reply-To: ${effectiveReplyToEmail} — usuario: ${user.email}`);
 
       const transporter = nodemailer.createTransport({
         host,
@@ -407,6 +453,7 @@ export async function POST(request) {
 
       await transporter.sendMail({
         from: `"${tenantName || process.env.SMTP_SENDER_NAME || 'Gestión SySO'}" <${from}>`,
+        replyTo: `"${effectiveReplyToName}" <${effectiveReplyToEmail}>`,
         to: emailList.join(', '),
         subject: mailSubject,
         html: mailHtml,
@@ -422,6 +469,7 @@ export async function POST(request) {
       console.log('================= SIMULACIÓN DE ENVÍO DE CORREO =================');
       console.log(`Para: ${emailList.join(', ')}`);
       console.log(`De: "${tenantName || process.env.SMTP_SENDER_NAME || 'Gestión SySO'}" <${from}>`);
+      console.log(`Responder a (Reply-To): "${effectiveReplyToName}" <${effectiveReplyToEmail}>`);
       console.log(`Asunto: ${mailSubject}`);
       console.log(`Adjuntos: ${attachments.map(a => `${a.filename} (${a.content.length} bytes)`).join(', ')}`);
       console.log('================================================================');

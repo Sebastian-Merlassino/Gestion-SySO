@@ -14695,3 +14695,45 @@ Se unificó estéticamente la pantalla de Perfil de Usuario (`/[tenant-slug]/pro
 - Verificación del comportamiento del selector cascada Provincia -> Partido -> Localidad.
 - Compilación del proyecto (`npm run build`) exitosa.
 
+---
+
+## [2026-08-26] Estandarización de Correos No-Reply, Enrutamiento de Respuestas (Reply-To) y Tarjeta de Contacto Directo
+
+### Resumen de Cambios
+- **Solución al Problema de Respuestas de Clientes (Reply-To RFC Header)**:
+  - Se implementó la inyección automática de la cabecera estándar `replyTo: `"${effectiveReplyToName}" <${effectiveReplyToEmail}>`` en el despachador de correos `src/app/api/send-email/route.js`.
+  - Cuando un cliente (destinatario final) recibe una Constancia de Visita, Aviso de Riesgo, Protocolo SRT, Checklist o Certificado de Capacitación y presiona el botón **"Responder"** en su cliente de correo (Gmail, Outlook, smartphone), el campo *"Para:"* se autocompleta con la casilla de correo del profesional/usuario que emitió el informe, evitando que la respuesta viaje erróneamente a la casilla central del administrador del SaaS.
+- **Estandarización del Remitente `From` a No-Reply**:
+  - Se fijó el remitente unificado en `"${tenantName || 'Gestión SySO'}" <no-reply@gestionsyso.com>` (o la variable `process.env.SMTP_FROM`), alineado a los alias oficiales creados en Google Workspace.
+- **Tarjeta Visual de Contacto y Aclaración de Respuesta (Rich Aesthetics)**:
+  - Se incorporó en todas las plantillas HTML de reportes técnicos una tarjeta destacada (`border-left: 4px solid #468DFF`, fondo `#F8FAFC`) que informa que el envío es automático en nombre del Tenant/Profesional e indica la dirección de correo a la que se deben dirigir las consultas o respuestas.
+- **Seguridad en Correos de Autenticación y Supabase Auth**:
+  - Se actualizó `src/app/api/auth/reset-password-request/route.js` para despachar con `from: no-reply@gestionsyso.com`, `replyTo: soporte@gestionsyso.com` y nota de seguridad de casilla no monitoreada.
+  - Se creó la guía y catálogo de plantillas oficiales para Supabase Auth (`docs/auth/SUPABASE_EMAIL_TEMPLATES.md`) para los eventos de verificación de cuenta (`Confirm signup`), invitación de miembros a equipo (`Invite user`) y restablecimiento de contraseña.
+- **Actualización de Documentación y Entornos**:
+  - Se actualizó `docs/design/EMAIL_TEMPLATE_STANDARD.md` con las reglas obligatorias de `Reply-To`, `From` No-Reply y componentes HTML de contacto.
+  - Se actualizó `.env.example` con las variables de configuración SMTP para Google Workspace (`SMTP_FROM=no-reply@gestionsyso.com`, `SUPPORT_EMAIL=soporte@gestionsyso.com`, `CONTACT_EMAIL=contacto@gestionsyso.com`).
+
+### Decisiones Clave
+- **RFC Reply-To como Mecanismo Primario**: Delegar el enrutamiento al estándar SMTP `Reply-To` garantiza que el 100% de los clientes de correo redirijan las respuestas al profesional sin depender de que el usuario tipee manualmente la dirección.
+- **Fallback Inteligente de Remitente**: Si el frontend no suministra un `replyToEmail` explícito, la API toma dinámicamente el `user.email` de la sesión activa autenticada y su nombre de perfil.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `gestion-syso-multitenant-security`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/api/send-email/route.js`
+- `[MODIFY] src/app/api/auth/reset-password-request/route.js`
+- `[MODIFY] .env.example`
+- `[MODIFY] docs/design/EMAIL_TEMPLATE_STANDARD.md`
+- `[NEW] docs/auth/SUPABASE_EMAIL_TEMPLATES.md`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Verificación sintáctica en Node.js (`node --check`) de las rutas API modificadas.
+- Validación de generación de plantillas HTML y formateo con escape seguro contra XSS (`escapeHtml`).
+
+
