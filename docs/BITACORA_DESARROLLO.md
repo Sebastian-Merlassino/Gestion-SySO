@@ -1,3 +1,29 @@
+## [2026-08-26] Preservación de la Identidad Visual y Tipografías de la Marca Gestión SySO en Pie de Correos
+
+### Resumen de Cambios
+- **Preservación Inalterable del Logotipo en Footers de Correo (`/api/send-email` y `/api/auth/reset-password-request`):**
+  - El texto de marca del pie de página se desacopló del color dinámico del tenant para mantener intacta la identidad corporativa de la plataforma SaaS:
+    - **`GESTIÓN`**: Renderizado en el azul corporativo institucional `#468DFF`, con fuente `Virgo 01` / `Segoe UI` y peso `font-weight: 800`.
+    - **`SySO`**: Renderizado en color negro `#000000` con la tipografía oficial `Audiowide` (importada mediante Google Fonts en el `<head>` del email).
+  - Eliminado el reemplazo cromático sobre la palabra *SySO* en el pie para que nunca mute cuando un cliente o consultora configure un color primario personalizado diferente (ej. rojo, verde o naranja).
+
+### Decisiones Clave
+- Cumplimiento estricto del manual de marca de Gestión SySO (`gestion-syso-brand-guidelines`), donde la autoría de la plataforma en los pies de página permanece fija con los colores y tipografías institucionales oficiales.
+
+### Skills Utilizadas
+- `gestion-syso-brand-guidelines`
+- `gestion-syso-bitacora`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/api/send-email/route.js`
+- `[MODIFY] src/app/api/auth/reset-password-request/route.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Verificación sintáctica con `node --check` (código 0).
+
+---
+
 ## [2026-08-26] Dinamización Automática del Nombre y Color Corporativo del Tenant en Correos Electrónicos
 
 ### Resumen de Cambios

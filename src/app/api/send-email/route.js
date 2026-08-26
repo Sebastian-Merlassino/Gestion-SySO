@@ -331,6 +331,9 @@ export async function POST(request) {
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>${escapeHtml(mailSubject)} — Gestión SySO</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Audiowide&display=swap" rel="stylesheet" />
       </head>
       <body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: 'Segoe UI', Inter, Helvetica, Arial, sans-serif; color: #0f172a;">
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f8fafc; padding: 40px 16px;">
@@ -427,16 +430,17 @@ export async function POST(request) {
                   </tr>
                 ` : ''}
 
-                <!-- Footer Oficial con Colores Corporativos -->
+                <!-- Footer Oficial con Identidad Inalterable de la Marca Gestión SySO -->
                 <tr>
                   <td style="background-color: #f8fafc; border-top: 1px solid #D9D9D9; padding: 24px 32px; text-align: center;">
-                    <p style="margin: 0 0 6px 0; font-size: 13px; font-weight: 700; color: #0f172a;">
-                      Gestión <span style="color: ${effectiveTenantColor};">SySO</span>
+                    <p style="margin: 0 0 6px 0; font-size: 15px; font-weight: 800; letter-spacing: 0.03em; line-height: 1.2;">
+                      <span style="font-family: 'Virgo 01', 'Virgo01', 'Virgo', 'Segoe UI', sans-serif; color: #468DFF; font-weight: 800; letter-spacing: 0.04em;">GESTIÓN</span>
+                      <span style="font-family: 'Audiowide', 'Segoe UI', cursive, sans-serif; color: #000000; font-weight: 700; margin-left: 3px; letter-spacing: 0.02em;">SySO</span>
                     </p>
-                    <p style="margin: 0 0 6px 0; font-size: 12px; font-weight: 600; color: #475569;">
-                      Plataforma SaaS de Higiene y Seguridad Ocupacional.
+                    <p style="margin: 0 0 4px 0; font-size: 12px; font-weight: 600; color: #475569;">
+                      Plataforma SaaS de Higiene y Seguridad Ocupacional
                     </p>
-                    <p style="margin: 0; font-size: 12px; font-weight: 600; color: #475569;">
+                    <p style="margin: 0; font-size: 11px; font-weight: 500; color: #94a3b8;">
                       © ${new Date().getFullYear()} Gestión SySO. Todos los derechos reservados.
                     </p>
                   </td>

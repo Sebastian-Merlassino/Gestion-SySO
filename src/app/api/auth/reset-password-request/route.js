@@ -167,6 +167,9 @@ export async function POST(request) {
           <meta charset="UTF-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
           <title>Restablecer Contraseña — Gestión SySO</title>
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+          <link href="https://fonts.googleapis.com/css2?family=Audiowide&display=swap" rel="stylesheet" />
         </head>
         <body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: 'Segoe UI', Inter, Helvetica, Arial, sans-serif; color: #0f172a;">
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f8fafc; padding: 40px 16px;">
@@ -201,14 +204,14 @@ export async function POST(request) {
 
                   <!-- Cuerpo del Mensaje -->
                   <tr>
-                    <td style="padding: 24px 32px;">
-                      <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.7; color: #334155;">
+                    <td style="padding: 24px 32px 16px 32px;">
+                      <p style="margin: 0 0 12px 0; font-size: 15px; line-height: 1.7; color: #334155;">
                         Hola,
                       </p>
-                      <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.7; color: #334155;">
+                      <p style="margin: 0 0 12px 0; font-size: 15px; line-height: 1.7; color: #334155;">
                         Recibimos una solicitud para restablecer la clave de acceso de tu cuenta en la plataforma de <strong style="color: #0f172a;">Gestión SySO</strong>.
                       </p>
-                      <p style="margin: 0 0 28px 0; font-size: 15px; line-height: 1.7; color: #334155;">
+                      <p style="margin: 0; font-size: 15px; line-height: 1.7; color: #334155;">
                         Para definir una nueva contraseña de forma rápida y segura, hacé clic en el botón principal a continuación:
                       </p>
                     </td>
@@ -216,7 +219,7 @@ export async function POST(request) {
 
                   <!-- Botón Primario de Acción (Estándar de Marca #468DFF) -->
                   <tr>
-                    <td style="padding: 0 32px 32px 32px; text-align: center;">
+                    <td style="padding: 16px 32px 32px 32px; text-align: center;">
                       <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto;">
                         <tr>
                           <td style="background-color: #468DFF; border-radius: 12px; box-shadow: 0 4px 14px rgba(70, 141, 255, 0.35);">
