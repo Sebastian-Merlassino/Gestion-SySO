@@ -513,7 +513,7 @@ export const generateVisitaPdf = async (
             try {
               const urlObj = new URL(relativePath);
               const pathParts = urlObj.pathname.split('/');
-              const bucketIndex = pathParts.findIndex((part) => part === 'documents');
+              const bucketIndex = pathParts.findIndex((part) => part === 'documents' || part === 'signatures');
               if (bucketIndex !== -1 && bucketIndex < pathParts.length - 1) {
                 relativePath = pathParts.slice(bucketIndex + 1).join('/');
               } else {
@@ -528,11 +528,21 @@ export const generateVisitaPdf = async (
           if (isExternal) {
             imgRespBase64 = await getBase64ImageFromUrl(v.firma_responsable_empresa);
           } else {
-            const { data: sData, error: sErr } = await supabase.storage
-              .from('documents')
-              .createSignedUrl(relativePath, 3600);
-            if (!sErr && sData?.signedUrl) {
-              imgRespBase64 = await getBase64ImageFromUrl(sData.signedUrl);
+            // Intentar en bucket documents y signatures
+            let signedUrl = null;
+            for (const b of ['documents', 'signatures']) {
+              const { data: sData, error: sErr } = await supabase.storage
+                .from(b)
+                .createSignedUrl(relativePath, 3600);
+              if (!sErr && sData?.signedUrl) {
+                signedUrl = sData.signedUrl;
+                break;
+              }
+            }
+            if (signedUrl) {
+              imgRespBase64 = await getBase64ImageFromUrl(signedUrl);
+            } else {
+              imgRespBase64 = await getBase64ImageFromUrl(v.firma_responsable_empresa);
             }
           }
         }
@@ -553,6 +563,7 @@ export const generateVisitaPdf = async (
         } else if (supabase) {
           let relativePath = v.firma_profesional;
           let isExternal = false;
+          let detectedBucket = null;
 
           if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
             try {
@@ -560,6 +571,7 @@ export const generateVisitaPdf = async (
               const pathParts = urlObj.pathname.split('/');
               const bucketIndex = pathParts.findIndex((part) => part === 'signatures' || part === 'documents');
               if (bucketIndex !== -1 && bucketIndex < pathParts.length - 1) {
+                detectedBucket = pathParts[bucketIndex];
                 relativePath = pathParts.slice(bucketIndex + 1).join('/');
               } else {
                 isExternal = true;
@@ -573,12 +585,24 @@ export const generateVisitaPdf = async (
           if (isExternal) {
             imgProfBase64 = await getBase64ImageFromUrl(v.firma_profesional);
           } else {
-            const bucketName = v.firma_tipo === 'perfil' ? 'signatures' : 'documents';
-            const { data: sData, error: sErr } = await supabase.storage
-              .from(bucketName)
-              .createSignedUrl(relativePath, 3600);
-            if (!sErr && sData?.signedUrl) {
-              imgProfBase64 = await getBase64ImageFromUrl(sData.signedUrl);
+            const preferredBucket = detectedBucket || (v.firma_tipo === 'perfil' ? 'signatures' : 'documents');
+            const candidateBuckets = Array.from(new Set([preferredBucket, 'signatures', 'documents']));
+            let signedUrl = null;
+
+            for (const b of candidateBuckets) {
+              const { data: sData, error: sErr } = await supabase.storage
+                .from(b)
+                .createSignedUrl(relativePath, 3600);
+              if (!sErr && sData?.signedUrl) {
+                signedUrl = sData.signedUrl;
+                break;
+              }
+            }
+
+            if (signedUrl) {
+              imgProfBase64 = await getBase64ImageFromUrl(signedUrl);
+            } else {
+              imgProfBase64 = await getBase64ImageFromUrl(v.firma_profesional);
             }
           }
         }
