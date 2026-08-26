@@ -1889,7 +1889,8 @@ export default function AvisosRiesgoPage({ params }) {
         date: formatDate(mailTargetAviso.fecha),
         inspectorName: mailTargetAviso.profesional_nombre,
         tenantLogoBase64: tenantLogoBase64 || null,
-        tenantName: tenant?.name || 'Gestión SySO',
+        tenantName: tenant?.name || tenant?.razon_social || 'Gestión SySO',
+        tenantPrimaryColor: tenant?.primary_color || '#468DFF',
         documentType: 'aviso_riesgo'
       };
 

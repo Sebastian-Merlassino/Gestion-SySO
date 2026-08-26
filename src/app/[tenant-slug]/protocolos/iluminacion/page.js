@@ -643,7 +643,8 @@ export default function ProtocolosIluminacionPage({ params }) {
           date: formatDate(mailTarget.fecha_medicion),
           inspectorName: profile?.full_name || 'Técnico SySO',
           tenantLogoBase64: logoBase64 || null,
-          tenantName: tenant?.name || 'Gestión SySO',
+          tenantName: tenant?.name || tenant?.razon_social || 'Gestión SySO',
+          tenantPrimaryColor: tenant?.primary_color || '#468DFF',
           documentType: 'protocolo_iluminacion'
         })
       });

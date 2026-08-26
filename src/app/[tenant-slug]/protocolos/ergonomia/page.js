@@ -618,6 +618,7 @@ export default function ProtocolosErgonomiaPage({ params }) {
           inspectorName: mailTarget.profesional_nombre || profile?.full_name || 'Profesional SySO',
           tenantLogoBase64: tenant?.logo_1_url || null,
           tenantName: tenant?.name || tenant?.razon_social || 'Gestión SySO',
+          tenantPrimaryColor: tenant?.primary_color || '#468DFF',
           documentType: 'protocolo_ergonomia'
         })
       });

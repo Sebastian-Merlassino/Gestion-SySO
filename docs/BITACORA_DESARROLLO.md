@@ -1,3 +1,48 @@
+## [2026-08-26] Dinamización Automática del Nombre y Color Corporativo del Tenant en Correos Electrónicos
+
+### Resumen de Cambios
+- **Actualización en Servidor de la API de Envío (`/api/send-email/route.js`):**
+  - La API de despacho ahora consulta directamente la tabla `tenants` en Supabase con el `tenant_id` del usuario autenticado para obtener el `name`, `primary_color` y `logo_1_url` actualizados en tiempo real.
+  - El nombre de la consultora (`tenant.name`) ahora se inyecta de forma consistente y dinámica en:
+    - Encabezado alternativo (en caso de no haber logo).
+    - Tarjeta informativa de contacto: *"Este es un envío automático generado desde la plataforma Gestión SySO en nombre de **[Nombre Consultora] ([Nombre Profesional])**"*.
+    - Remitente y firmas de correo.
+  - El color corporativo (`tenant.primary_color`, con fallback a `#468DFF`) ahora se aplica de forma dinámica en toda la plantilla HTML:
+    - Barra superior de acento.
+    - Subtítulos de empresa/documento.
+    - Línea divisoria de acento.
+    - Borde lateral de la tarjeta de contacto.
+    - Enlaces de correo electrónico (`mailto:`).
+    - Acento de marca en el pie de página.
+- **Frontend / Modales de Despacho de Correo:**
+  - Actualizados todos los llamadores de `/api/send-email` (`visitas`, `protocolos`, `control-electrico`, `avisos`, `checklist-personalizados`, `capacitaciones-online`) para enviar `tenantName: tenant?.name` y `tenantPrimaryColor: tenant?.primary_color`.
+
+### Decisiones Clave
+- Garantizar en el backend la recuperación del tenant actualizado para asegurar que, aun si el frontend tiene datos cacheados o incompletos, el correo siempre refleje los cambios de nombre y color hechos por la consultora en su configuración.
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+- `next-best-practices`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/api/send-email/route.js`
+- `[MODIFY] src/app/[tenant-slug]/visitas/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ruido/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/puesta-a-tierra/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/iluminacion/page.js`
+- `[MODIFY] src/app/[tenant-slug]/protocolos/ergonomia/page.js`
+- `[MODIFY] src/app/[tenant-slug]/control-electrico/page.js`
+- `[MODIFY] src/app/[tenant-slug]/avisos/page.js`
+- `[MODIFY] src/app/[tenant-slug]/checklist-personalizados/page.js`
+- `[MODIFY] src/app/[tenant-slug]/capacitaciones-online/page.js`
+- `[MODIFY] docs/BITACORA_DESARROLLO.md`
+
+### Validaciones Ejecutadas
+- Verificación sintáctica con `node --check` de los 10 archivos modificados (código 0).
+
+---
+
 ## [2026-08-26] Auditoría y Unificación Universal de Carga de Recursos e Imágenes en Generadores de PDF
 
 ### Resumen de Cambios

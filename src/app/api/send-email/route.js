@@ -19,6 +19,7 @@ const sendEmailSchema = z.object({
   inspectorName: z.string().max(200).optional(),
   tenantLogoBase64: z.string().max(2 * 1024 * 1024, 'El logo excede el tamaño máximo permitido de 2 MB.').nullable().optional(),
   tenantName: z.string().max(200).optional(),
+  tenantPrimaryColor: z.string().max(30).optional().nullable(),
   documentType: z.string().max(100).optional(), // can be 'aviso_riesgo', 'capacitacion_online', etc.
   checklistName: z.string().max(200).optional(),
   replyToEmail: z.string().email('Dirección de correo de respuesta inválida.').optional().nullable(),
@@ -89,11 +90,26 @@ export async function POST(request) {
       inspectorName, 
       tenantLogoBase64, 
       tenantName, 
+      tenantPrimaryColor,
       documentType, 
       checklistName,
       replyToEmail,
       replyToName
     } = parseResult.data;
+
+    // Recuperar datos actualizados del Tenant desde la Base de Datos para asegurar nombre y color corporativo
+    let tenantRow = null;
+    if (profile?.tenant_id) {
+      const { data: tData } = await serverClient
+        .from('tenants')
+        .select('name, logo_1_url, primary_color')
+        .eq('id', profile.tenant_id)
+        .single();
+      tenantRow = tData;
+    }
+
+    const effectiveTenantName = tenantRow?.name || tenantName || 'Gestión SySO';
+    const effectiveTenantColor = tenantRow?.primary_color || tenantPrimaryColor || '#468DFF';
 
     // Sanitización HTML para evitar inyección en el correo (HIGH-02)
     const escapeHtml = (str) => {
@@ -110,12 +126,12 @@ export async function POST(request) {
     const establishmentNameEscaped = escapeHtml(establishmentName);
     const dateEscaped = escapeHtml(date);
     const inspectorNameEscaped = escapeHtml(inspectorName);
-    const tenantNameEscaped = escapeHtml(tenantName);
+    const tenantNameEscaped = escapeHtml(effectiveTenantName);
     const checklistNameEscaped = escapeHtml(checklistName);
 
     // Determinar remitente de respuesta dinámico (Reply-To)
     const effectiveReplyToEmail = replyToEmail || user.email;
-    const effectiveReplyToName = replyToName || inspectorName || profile?.full_name || user.user_metadata?.full_name || tenantName || 'Gestión SySO';
+    const effectiveReplyToName = replyToName || inspectorName || profile?.full_name || user.user_metadata?.full_name || effectiveTenantName;
     const effectiveReplyToEmailEscaped = escapeHtml(effectiveReplyToEmail);
     const effectiveReplyToNameEscaped = escapeHtml(effectiveReplyToName);
 
@@ -244,7 +260,7 @@ export async function POST(request) {
       ? (filePath ? `Registro de Capacitación Virtual - ${companyName || 'Cliente'}` : `Capacitación virtual de higiene y seguridad en el trabajo`)
       : `Constancia de Visita de Higiene y Seguridad - ${companyName || 'Cliente'}`;
 
-    console.log(`[API Send-Email] Tenant: ${profile.tenant_id} | Sender: ${user.email} | Reply-To: ${effectiveReplyToEmail} | To: ${emailList.join(', ')} | Subject: ${mailSubject}`);
+    console.log(`[API Send-Email] Tenant: ${profile.tenant_id} (${effectiveTenantName}) | Sender: ${user.email} | Reply-To: ${effectiveReplyToEmail} | To: ${emailList.join(', ')} | Subject: ${mailSubject}`);
 
     // Helper para convertir URL de imagen a Base64 en servidor
     const fetchImageAsBase64 = async (url) => {
@@ -270,14 +286,10 @@ export async function POST(request) {
       logoBase64 = await fetchImageAsBase64(tenantLogoBase64);
     }
 
-    if (!logoBase64 && profile?.tenant_id) {
-      const { data: tenantRow } = await serverClient
-        .from('tenants')
-        .select('logo_1_url')
-        .eq('id', profile.tenant_id)
-        .single();
-      
-      if (tenantRow?.logo_1_url) {
+    if (!logoBase64 && tenantRow?.logo_1_url) {
+      if (tenantRow.logo_1_url.startsWith('data:image/')) {
+        logoBase64 = tenantRow.logo_1_url;
+      } else {
         logoBase64 = await fetchImageAsBase64(tenantRow.logo_1_url);
       }
     }
@@ -326,9 +338,9 @@ export async function POST(request) {
             <td align="center">
               <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); border: 1px solid #D9D9D9;">
                 
-                <!-- Barra Superior con Color de Marca (#468DFF) -->
+                <!-- Barra Superior con Color de Marca (${effectiveTenantColor}) -->
                 <tr>
-                  <td style="background-color: #468DFF; height: 6px; font-size: 0; line-height: 0;">&nbsp;</td>
+                  <td style="background-color: ${effectiveTenantColor}; height: 6px; font-size: 0; line-height: 0;">&nbsp;</td>
                 </tr>
 
                 <!-- Header con Logo del Tenant o Nombre de Organización -->
@@ -336,7 +348,7 @@ export async function POST(request) {
                   <td style="padding: 32px 32px 24px 32px; text-align: center; background-color: #ffffff; border-bottom: 1px solid #D9D9D9;">
                     ${logoCid
                       ? `<img src="cid:${logoCid}" alt="${tenantNameEscaped || 'Logo'}" style="max-height: 72px; max-width: 240px; object-fit: contain; display: block; margin: 0 auto;" />`
-                      : `<h2 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.025em;">${tenantNameEscaped || 'Gestión SySO'}</h2>`
+                      : `<h2 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.025em;">${tenantNameEscaped}</h2>`
                     }
                   </td>
                 </tr>
@@ -347,10 +359,10 @@ export async function POST(request) {
                     <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em;">
                       ${isCapacitacionOnline ? (filePath ? 'Registro de Capacitación Virtual' : 'Capacitación Virtual de Higiene y Seguridad') : isAvisoRiesgo ? 'Aviso de Riesgo' : isControlElectrico ? 'Inspección Visual de Instalaciones Eléctricas' : isChecklistPersonalizado ? (checklistNameEscaped || 'Checklist Personalizado') : isProtocoloIluminacion ? 'Protocolo de Medición de Iluminación' : isProtocoloRuido ? 'Protocolo de Medición de Ruido' : isProtocoloErgonomia ? 'Protocolo de Ergonomía' : isProtocoloPuestaATierra ? 'Protocolo de Medición de Puesta a Tierra' : 'Constancia de Visita Técnica'}
                     </h1>
-                    <p style="margin: 6px 0 0 0; font-size: 13px; font-weight: 600; color: #468DFF; text-transform: uppercase; letter-spacing: 0.06em;">
+                    <p style="margin: 6px 0 0 0; font-size: 13px; font-weight: 600; color: ${effectiveTenantColor}; text-transform: uppercase; letter-spacing: 0.06em;">
                       ${companyNameEscaped ? companyNameEscaped : 'Notificación Oficial de Servicio'}
                     </p>
-                    <div style="width: 40px; height: 3px; background-color: #468DFF; border-radius: 2px; margin: 16px auto 0 auto;"></div>
+                    <div style="width: 40px; height: 3px; background-color: ${effectiveTenantColor}; border-radius: 2px; margin: 16px auto 0 auto;"></div>
                   </td>
                 </tr>
 
@@ -375,18 +387,18 @@ export async function POST(request) {
                 <!-- Caja Informativa de Contacto y Respuesta Directa -->
                 <tr>
                   <td style="padding: 0 32px 24px 32px;">
-                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f8fafc; border-left: 4px solid #468DFF; border-top: 1px solid #D9D9D9; border-right: 1px solid #D9D9D9; border-bottom: 1px solid #D9D9D9; border-radius: 10px;">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f8fafc; border-left: 4px solid ${effectiveTenantColor}; border-top: 1px solid #D9D9D9; border-right: 1px solid #D9D9D9; border-bottom: 1px solid #D9D9D9; border-radius: 10px;">
                       <tr>
                         <td style="padding: 16px 20px;">
                           <p style="margin: 0 0 6px 0; font-size: 11px; font-weight: 700; color: #1e293b; text-transform: uppercase; letter-spacing: 0.05em;">
                             ✉️ Información de Contacto y Consultas
                           </p>
                           <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #475569;">
-                            Este es un envío automático generado desde la plataforma <strong>Gestión SySO</strong> en nombre de <strong>${tenantNameEscaped || 'Gestión SySO'}</strong>${inspectorNameEscaped ? ` (${inspectorNameEscaped})` : ''}.
+                            Este es un envío automático generado desde la plataforma <strong>Gestión SySO</strong> en nombre de <strong>${tenantNameEscaped}</strong>${inspectorNameEscaped ? ` (${inspectorNameEscaped})` : ''}.
                           </p>
                           <p style="margin: 8px 0 0 0; font-size: 13px; line-height: 1.5; color: #475569;">
                             Por favor, para responder o realizar consultas sobre este informe, diríjase a: 
-                            <a href="mailto:${effectiveReplyToEmailEscaped}" style="color: #468DFF; font-weight: 600; text-decoration: underline;">${effectiveReplyToEmailEscaped}</a> 
+                            <a href="mailto:${effectiveReplyToEmailEscaped}" style="color: ${effectiveTenantColor}; font-weight: 600; text-decoration: underline;">${effectiveReplyToEmailEscaped}</a> 
                             <span style="font-size: 12px; color: #64748b;">(también puede presionar directamente <strong>"Responder"</strong> en su cliente de correo).</span>
                           </p>
                         </td>
@@ -419,7 +431,7 @@ export async function POST(request) {
                 <tr>
                   <td style="background-color: #f8fafc; border-top: 1px solid #D9D9D9; padding: 24px 32px; text-align: center;">
                     <p style="margin: 0 0 6px 0; font-size: 13px; font-weight: 700; color: #0f172a;">
-                      Gestión <span style="color: #468DFF;">SySO</span>
+                      Gestión <span style="color: ${effectiveTenantColor};">SySO</span>
                     </p>
                     <p style="margin: 0 0 6px 0; font-size: 12px; font-weight: 600; color: #475569;">
                       Plataforma SaaS de Higiene y Seguridad Ocupacional.

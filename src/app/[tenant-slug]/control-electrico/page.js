@@ -1868,7 +1868,8 @@ export default function ControlElectricoPage({ params }) {
         date: formatDate(mailTargetControl.fecha),
         inspectorName: mailTargetControl.profesional_nombre,
         tenantLogoBase64: tenantLogoBase64 || null,
-        tenantName: tenant?.name || 'Gestión SySO',
+        tenantName: tenant?.name || tenant?.razon_social || 'Gestión SySO',
+        tenantPrimaryColor: tenant?.primary_color || '#468DFF',
         documentType: 'control_electrico'
       };
 

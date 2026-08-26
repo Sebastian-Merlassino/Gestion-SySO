@@ -1721,7 +1721,8 @@ export default function ChecklistPersonalizadosPage({ params }) {
         date: formatDate(mailTargetInspeccion.fecha),
         inspectorName: mailTargetInspeccion.responsable_higiene_seguridad_nombre || 'Profesional SySO',
         tenantLogoBase64: tenantLogoBase64 || null,
-        tenantName: tenant?.name || 'Gestión SySO',
+        tenantName: tenant?.name || tenant?.razon_social || 'Gestión SySO',
+        tenantPrimaryColor: tenant?.primary_color || '#468DFF',
         documentType: 'checklist_personalizado',
         checklistName: tmpl?.nombre || 'Checklist'
       };

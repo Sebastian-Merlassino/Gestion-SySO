@@ -1734,7 +1734,8 @@ export default function VisitasPage({ params }) {
           date: formatDate(mailTargetVisita.fecha),
           inspectorName: mailTargetVisita.profesional_nombre,
           tenantLogoBase64: tenantLogoBase64 || null,
-          tenantName: tenant ? (tenant.razon_social || tenant.nombre || 'Gestión SySO') : 'Gestión SySO'
+          tenantName: tenant?.name || tenant?.razon_social || 'Gestión SySO',
+          tenantPrimaryColor: tenant?.primary_color || '#468DFF'
         })
       });
 

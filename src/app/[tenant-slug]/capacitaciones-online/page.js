@@ -771,6 +771,7 @@ export default function CapacitacionesOnlinePage({ params }) {
           customMessage: shareModal.message,
           tenantLogoBase64: tenant?.logo_1_url || null,
           tenantName: tenant?.name || tenant?.razon_social || 'Gestión SySO',
+          tenantPrimaryColor: tenant?.primary_color || '#468DFF',
           documentType: 'capacitacion_online'
         })
       });
@@ -1040,6 +1041,7 @@ export default function CapacitacionesOnlinePage({ params }) {
           date: formatDate(sendPdfTarget.created_at),
           tenantLogoBase64: tenant?.logo_1_url || null,
           tenantName: tenant?.name || tenant?.razon_social || 'Gestión SySO',
+          tenantPrimaryColor: tenant?.primary_color || '#468DFF',
           documentType: 'capacitacion_online'
         })
       });
