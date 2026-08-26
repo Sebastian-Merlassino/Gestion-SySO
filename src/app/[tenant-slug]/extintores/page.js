@@ -23,6 +23,7 @@ import AppSortIcon from '@/components/ui/AppSortIcon';
 import AppSkeleton from '@/components/ui/AppSkeleton';
 import AppTooltip from '@/components/ui/AppTooltip';
 import AppLoadingSpinner from '@/components/ui/AppLoadingSpinner';
+import AppPhotoGalleryModal from '@/components/ui/AppPhotoGalleryModal';
 import { 
   PlusCircle, 
   Search, 
@@ -187,6 +188,7 @@ export default function ExtintoresPage({ params }) {
   
   // Archivo e Imagenes (Múltiple)
   const [fotosFiles, setFotosFiles] = useState([]); // array de { file: File | null, preview: string, path: string }
+  const [selectedLocationPhotoIdx, setSelectedLocationPhotoIdx] = useState(0);
 
   const [fechaControl, setFechaControl] = useState('');
   const [observaciones, setObservaciones] = useState('');
@@ -216,6 +218,21 @@ export default function ExtintoresPage({ params }) {
   const [unsavedDialogOpen, setUnsavedDialogOpen] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState(null);
   const [saveLoading, setSaveLoading] = useState(false);
+
+  // Modal de galería fotográfica para visualizar ubicación / evidencia
+  const [viewingPhotoModal, setViewingPhotoModal] = useState(false);
+  const [photoModalList, setPhotoModalList] = useState([]);
+  const [photoModalTitle, setPhotoModalTitle] = useState('Evidencia Fotográfica');
+  const [photoModalSubtitle, setPhotoModalSubtitle] = useState('');
+
+  const handleOpenPhotoGallery = (photos, title, subtitle) => {
+    const validPhotos = (photos || []).filter(p => Boolean(typeof p === 'string' ? p : p?.preview || p?.url));
+    if (validPhotos.length === 0) return;
+    setPhotoModalList(validPhotos.map(p => (typeof p === 'string' ? p : p?.preview || p?.url)));
+    setPhotoModalTitle(title || 'Foto de Ubicación del Extintor');
+    setPhotoModalSubtitle(subtitle || '');
+    setViewingPhotoModal(true);
+  };
 
   // Cargar datos
   useEffect(() => {
@@ -1007,12 +1024,31 @@ export default function ExtintoresPage({ params }) {
     setSenalizacion(ext.senalizacion || 'N/A');
 
     // Cargar fotos guardadas
-    const loadedFotos = (ext.fotos_paths || []).map((ppath, idx) => ({
-      file: null,
-      preview: ext.fotos_urls?.[idx] || '',
-      path: ppath
-    })).filter(f => f.preview !== '');
+    let loadedFotos = [];
+    if (ext.fotos_paths && ext.fotos_paths.length > 0) {
+      loadedFotos = ext.fotos_paths.map((ppath, idx) => ({
+        file: null,
+        preview: ext.fotos_urls?.[idx] || ext.imagen_preview_url || '',
+        path: ppath
+      })).filter(f => Boolean(f.preview));
+    } else if (ext.fotos_urls && ext.fotos_urls.length > 0) {
+      loadedFotos = ext.fotos_urls.map((url) => ({
+        file: null,
+        preview: url,
+        path: ''
+      })).filter(f => Boolean(f.preview));
+    } else if (ext.imagen_preview_url || ext.imagen_url) {
+      const previewUrl = ext.imagen_preview_url || (typeof ext.imagen_url === 'string' && ext.imagen_url.startsWith('http') ? ext.imagen_url : '');
+      if (previewUrl) {
+        loadedFotos = [{
+          file: null,
+          preview: previewUrl,
+          path: ext.imagen_url || ''
+        }];
+      }
+    }
     setFotosFiles(loadedFotos);
+    setSelectedLocationPhotoIdx(0);
     
     setFechaControl(formatDate(ext.fecha_control) || '');
     setObservaciones(ext.observaciones || '');
@@ -1114,6 +1150,7 @@ export default function ExtintoresPage({ params }) {
     setCilindro('N/A');
     setSenalizacion('N/A');
     setFotosFiles([]);
+    setSelectedLocationPhotoIdx(0);
     setFechaControl('');
     setObservaciones('');
   };
@@ -1246,95 +1283,197 @@ export default function ExtintoresPage({ params }) {
                 </div>
 
                 <form onSubmit={handleSaveExtintor} className="p-3.5 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto flex-1 scrollbar-thin">
-                  <fieldset disabled={!canEdit} className="space-y-4 sm:space-y-6">
                   
                   {/* Seccion 1: Identificación y Ubicación */}
                   <div className="space-y-4">
-                    <h3 className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
-                      <Building className="h-4 w-4 text-[#468DFF]" />
-                      1. Ubicación e Identificación
-                    </h3>
-                    
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600">Cliente / Razón Social *</label>
-                        <select
-                          required
-                          value={empresaId}
-                          onChange={(e) => { setEmpresaId(e.target.value); setEstablecimientoId(''); }}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
-                        >
-                          <option value="">Selecciona un cliente</option>
-                          {empresas.map(emp => (
-                            <option key={emp.id} value={emp.id}>{emp.razon_social}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600">Establecimiento *</label>
-                        <select
-                          required
-                          disabled={!empresaId}
-                          value={establecimientoId}
-                          onChange={(e) => setEstablecimientoId(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer disabled:bg-slate-100 disabled:text-slate-400"
-                        >
-                          <option value="">{!empresaId ? 'Selecciona un cliente primero' : 'Selecciona un establecimiento'}</option>
-                          {filteredEstablecimientos.map(est => (
-                            <option key={est.id} value={est.id}>{est.denominacion}</option>
-                          ))}
-                        </select>
-                      </div>
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                      <h3 className="font-outfit text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                        <Building className="h-4 w-4 text-[#468DFF]" />
+                        1. Ubicación e Identificación
+                      </h3>
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600">Área / Sector</label>
-                        <input
-                          type="text"
-                          placeholder="Ej: Cocina, Oficinas 1er Piso..."
-                          value={areaSector}
-                          onChange={(e) => setAreaSector(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
-                        />
+                    {/* Tarjeta de Fotografía de Ubicación (Grande y accesible tanto en lectura como en edición) */}
+                    {fotosFiles.filter(f => Boolean(f?.preview)).length > 0 && (() => {
+                      const activeFotos = fotosFiles.filter(f => Boolean(f?.preview));
+                      const currentPhoto = activeFotos[selectedLocationPhotoIdx] || activeFotos[0];
+                      const currentPreview = currentPhoto?.preview || '';
+
+                      return (
+                        <div className="rounded-2xl border border-blue-100 bg-gradient-to-b from-blue-50/40 to-slate-50/60 p-3 sm:p-4 space-y-3 shadow-xs">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5 uppercase tracking-wider">
+                              <ImageIcon className="h-4 w-4 text-[#468DFF]" />
+                              Foto de ubicación del extintor
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenPhotoGallery(
+                                activeFotos,
+                                `Extintor ${nExtintor ? `N° ${nExtintor}` : ''} ${nPuesto ? `(Puesto ${nPuesto})` : ''}`,
+                                `${areaSector ? `Sector: ${areaSector}` : ''} ${puestoOperacionRef ? `• ${puestoOperacionRef}` : ''}`
+                              )}
+                              className="text-xs font-bold text-[#468DFF] hover:text-[#0511F2] flex items-center gap-1.5 cursor-pointer bg-white hover:bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-200 shadow-xs transition-all active:scale-[0.98]"
+                              title="Ver fotografía en pantalla completa"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                              <span>Pantalla completa</span>
+                            </button>
+                          </div>
+
+                          {/* Imagen principal destacada y grande */}
+                          <div
+                            onClick={() => handleOpenPhotoGallery(
+                              activeFotos,
+                              `Extintor ${nExtintor ? `N° ${nExtintor}` : ''} ${nPuesto ? `(Puesto ${nPuesto})` : ''}`,
+                              `${areaSector ? `Sector: ${areaSector}` : ''} ${puestoOperacionRef ? `• ${puestoOperacionRef}` : ''}`
+                            )}
+                            className="relative w-full h-52 sm:h-64 md:h-72 rounded-xl overflow-hidden border border-slate-200 bg-slate-900/5 group cursor-pointer shadow-xs flex items-center justify-center"
+                            title="Hacé clic para ver la fotografía en pantalla completa"
+                          >
+                            <img
+                              src={currentPreview}
+                              alt="Ubicación del extintor"
+                              className="w-full h-full object-contain sm:object-cover group-hover:scale-[1.02] transition-transform duration-300"
+                            />
+                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <span className="px-3.5 py-1.5 rounded-xl bg-slate-900/80 backdrop-blur-xs text-white text-xs font-bold flex items-center gap-1.5 shadow-lg">
+                                <Eye className="h-4 w-4" />
+                                Tocar para ampliar
+                              </span>
+                            </div>
+
+                            {/* Etiqueta de contexto sobre la foto */}
+                            {(nPuesto || nExtintor || areaSector) && (
+                              <div className="absolute bottom-2.5 left-2.5 max-w-[90%] truncate px-2.5 py-1 rounded-lg bg-slate-900/80 backdrop-blur-xs text-white text-[11px] font-medium flex items-center gap-1.5 shadow-md">
+                                {nPuesto && <span className="font-bold text-amber-300">Puesto {nPuesto}</span>}
+                                {nPuesto && nExtintor && <span>•</span>}
+                                {nExtintor && <span>N° {nExtintor}</span>}
+                                {areaSector && <span className="hidden sm:inline text-slate-300">• {areaSector}</span>}
+                              </div>
+                            )}
+
+                            {/* Contador de fotos si hay más de una */}
+                            {activeFotos.length > 1 && (
+                              <div className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg bg-slate-900/80 backdrop-blur-xs text-white text-[11px] font-bold shadow-md">
+                                {selectedLocationPhotoIdx + 1} / {activeFotos.length}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Miniaturas de selección si hay más de 1 foto */}
+                          {activeFotos.length > 1 && (
+                            <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 scrollbar-thin">
+                              {activeFotos.map((foto, idx) => {
+                                const isSelected = selectedLocationPhotoIdx === idx;
+                                return (
+                                  <button
+                                    key={idx}
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedLocationPhotoIdx(idx);
+                                    }}
+                                    className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${
+                                      isSelected
+                                        ? 'border-[#468DFF] ring-2 ring-[#468DFF]/25 shadow-xs scale-105'
+                                        : 'border-slate-200 opacity-70 hover:opacity-100 hover:border-slate-300'
+                                    }`}
+                                    title={`Foto ${idx + 1}`}
+                                  >
+                                    <img src={foto.preview} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" />
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+
+                    {/* Inputs de Sección 1 */}
+                    <fieldset disabled={!canEdit} className="space-y-4">
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-xs font-bold text-slate-600">Cliente / Razón Social *</label>
+                          <select
+                            required
+                            value={empresaId}
+                            onChange={(e) => { setEmpresaId(e.target.value); setEstablecimientoId(''); }}
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
+                          >
+                            <option value="">Selecciona un cliente</option>
+                            {empresas.map(emp => (
+                              <option key={emp.id} value={emp.id}>{emp.razon_social}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-xs font-bold text-slate-600">Establecimiento *</label>
+                          <select
+                            required
+                            disabled={!empresaId}
+                            value={establecimientoId}
+                            onChange={(e) => setEstablecimientoId(e.target.value)}
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer disabled:bg-slate-100 disabled:text-slate-400"
+                          >
+                            <option value="">{!empresaId ? 'Selecciona un cliente primero' : 'Selecciona un establecimiento'}</option>
+                            {filteredEstablecimientos.map(est => (
+                              <option key={est.id} value={est.id}>{est.denominacion}</option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
 
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600">Puesto / Operación / Referencia</label>
-                        <input
-                          type="text"
-                          placeholder="Ej: Cerca de salida de emergencia..."
-                          value={puestoOperacionRef}
-                          onChange={(e) => setPuestoOperacionRef(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
-                        />
-                      </div>
-                    </div>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-xs font-bold text-slate-600">Área / Sector</label>
+                          <input
+                            type="text"
+                            placeholder="Ej: Cocina, Oficinas 1er Piso..."
+                            value={areaSector}
+                            onChange={(e) => setAreaSector(e.target.value)}
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
+                          />
+                        </div>
 
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600">N° de Puesto</label>
-                        <input
-                          type="text"
-                          placeholder="Ej: P01"
-                          value={nPuesto}
-                          onChange={(e) => setNPuesto(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
-                        />
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-xs font-bold text-slate-600">Puesto / Operación / Referencia</label>
+                          <input
+                            type="text"
+                            placeholder="Ej: Cerca de salida de emergencia..."
+                            value={puestoOperacionRef}
+                            onChange={(e) => setPuestoOperacionRef(e.target.value)}
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
+                          />
+                        </div>
                       </div>
 
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600">N° de Extintor</label>
-                        <input
-                          type="text"
-                          placeholder="Ej: 004812"
-                          value={nExtintor}
-                          onChange={(e) => setNExtintor(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
-                        />
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-xs font-bold text-slate-600">N° de Puesto</label>
+                          <input
+                            type="text"
+                            placeholder="Ej: P01"
+                            value={nPuesto}
+                            onChange={(e) => setNPuesto(e.target.value)}
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
+                          />
+                        </div>
+
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-xs font-bold text-slate-600">N° de Extintor</label>
+                          <input
+                            type="text"
+                            placeholder="Ej: 004812"
+                            value={nExtintor}
+                            onChange={(e) => setNExtintor(e.target.value)}
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
+                          />
+                        </div>
                       </div>
-                    </div>
+                    </fieldset>
                   </div>
 
                   {/* Seccion 2: Características Técnicas y Fechas */}
@@ -1344,66 +1483,68 @@ export default function ExtintoresPage({ params }) {
                       2. Especificaciones Técnicas y Vencimientos
                     </h3>
                     
-                    <div className="grid md:grid-cols-3 gap-4">
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-slate-600">Tipo de Extintor</label>
-                        <select
-                          value={tipo}
-                          onChange={(e) => setTipo(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
-                        >
-                          <option value="">Selecciona tipo</option>
-                          {TIPO_EXTINTORES.map(t => (
-                            <option key={t} value={t}>{t}</option>
-                          ))}
-                        </select>
-                      </div>
+                    <fieldset disabled={!canEdit} className="space-y-4">
+                      <div className="grid md:grid-cols-3 gap-4">
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-xs font-bold text-slate-600">Tipo de Extintor</label>
+                          <select
+                            value={tipo}
+                            onChange={(e) => setTipo(e.target.value)}
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
+                          >
+                            <option value="">Selecciona tipo</option>
+                            {TIPO_EXTINTORES.map(t => (
+                              <option key={t} value={t}>{t}</option>
+                            ))}
+                          </select>
+                        </div>
 
-                      {tipo === 'Otro' && (
-                        <div className="flex flex-col gap-1.5 md:col-span-2">
-                          <label className="text-xs font-bold text-slate-600">Especificar otro tipo <span className="text-red-500">*</span></label>
+                        {tipo === 'Otro' && (
+                          <div className="flex flex-col gap-1.5 md:col-span-2">
+                            <label className="text-xs font-bold text-slate-600">Especificar otro tipo <span className="text-red-500">*</span></label>
+                            <input
+                              required
+                              type="text"
+                              placeholder="Ej: Halotrón, Arena..."
+                              value={tipoOtro}
+                              onChange={(e) => setTipoOtro(e.target.value)}
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
+                            />
+                          </div>
+                        )}
+
+                        <div className={`flex flex-col gap-1.5 ${tipo === 'Otro' ? 'md:col-span-3' : 'md:col-span-2'}`}>
+                          <label className="text-xs font-bold text-slate-600">Capacidad [Kg] / [l]</label>
                           <input
-                            required
-                            type="text"
-                            placeholder="Ej: Halotrón, Arena..."
-                            value={tipoOtro}
-                            onChange={(e) => setTipoOtro(e.target.value)}
+                            type="number"
+                            placeholder="Ej: 5, 10, 6..."
+                            value={capacidad}
+                            onChange={(e) => setCapacidad(e.target.value)}
                             className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
                           />
                         </div>
-                      )}
-
-                      <div className={`flex flex-col gap-1.5 ${tipo === 'Otro' ? 'md:col-span-3' : 'md:col-span-2'}`}>
-                        <label className="text-xs font-bold text-slate-600">Capacidad [Kg] / [l]</label>
-                        <input
-                          type="number"
-                          placeholder="Ej: 5, 10, 6..."
-                          value={capacidad}
-                          onChange={(e) => setCapacidad(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid md:grid-cols-3 gap-4">
-                      <div>
-                        <AppDatePicker
-                          id="vencRecarga"
-                          label="Vencimiento de Recarga"
-                          value={vencRecarga}
-                          onChange={(e) => setVencRecarga(e.target.value)}
-                        />
                       </div>
 
-                      <div>
-                        <AppDatePicker
-                          id="vencPh"
-                          label="Vencimiento P.H. (Prueba Hidráulica)"
-                          value={vencPh}
-                          onChange={(e) => setVencPh(e.target.value)}
-                        />
+                      <div className="grid md:grid-cols-3 gap-4">
+                        <div>
+                          <AppDatePicker
+                            id="vencRecarga"
+                            label="Vencimiento de Recarga"
+                            value={vencRecarga}
+                            onChange={(e) => setVencRecarga(e.target.value)}
+                          />
+                        </div>
+
+                        <div>
+                          <AppDatePicker
+                            id="vencPh"
+                            label="Vencimiento P.H. (Prueba Hidráulica)"
+                            value={vencPh}
+                            onChange={(e) => setVencPh(e.target.value)}
+                          />
+                        </div>
                       </div>
-                    </div>
+                    </fieldset>
                   </div>
 
                   {/* Seccion 3: Inspección y Estado Visual */}
@@ -1413,7 +1554,7 @@ export default function ExtintoresPage({ params }) {
                       3. Inspección y Estado Visual
                     </h3>
 
-                    <div className="space-y-3">
+                    <fieldset disabled={!canEdit} className="space-y-3">
                       {[
                         { id: 1, label: 'Presión', value: presion, setter: setPresion, options: PRESION_OPTIONS },
                         { id: 2, label: 'Precinto', value: precinto, setter: setPrecinto, options: CHECK_OPTIONS },
@@ -1455,7 +1596,7 @@ export default function ExtintoresPage({ params }) {
                           </div>
                         </div>
                       ))}
-                    </div>
+                    </fieldset>
 
                     {/* Foto / Evidencia de Control */}
                     <div>
@@ -1494,30 +1635,30 @@ export default function ExtintoresPage({ params }) {
                       4. Control y Trazabilidad
                     </h3>
                     
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div>
-                        <AppDatePicker
-                          id="fechaControl"
-                          label="Fecha de Control"
-                          value={fechaControl}
-                          onChange={(e) => setFechaControl(e.target.value)}
+                    <fieldset disabled={!canEdit} className="space-y-4">
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <AppDatePicker
+                            id="fechaControl"
+                            label="Fecha de Control"
+                            value={fechaControl}
+                            onChange={(e) => setFechaControl(e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-bold text-slate-600">Observaciones Generales</label>
+                        <textarea
+                          rows="3"
+                          placeholder="Comentarios o aclaraciones sobre el estado del extintor..."
+                          value={observaciones}
+                          onChange={(e) => setObservaciones(e.target.value)}
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all resize-none"
                         />
                       </div>
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-xs font-bold text-slate-600">Observaciones Generales</label>
-                      <textarea
-                        rows="3"
-                        placeholder="Comentarios o aclaraciones sobre el estado del extintor..."
-                        value={observaciones}
-                        onChange={(e) => setObservaciones(e.target.value)}
-                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all resize-none"
-                      />
-                    </div>
+                    </fieldset>
                   </div>
-
-                      </fieldset>
 
                       {/* Botones del Formulario */}
                       <div className="flex justify-between items-center pt-6 border-t border-slate-100">
@@ -1887,17 +2028,24 @@ export default function ExtintoresPage({ params }) {
                                   {(canEditar || canEliminar || profile?.role === 'cliente') && (
                                     <td className="py-4 px-6 text-right" onClick={(e) => e.stopPropagation()}>
                                       <div className="flex items-center justify-end gap-2">
-                                        {ext.imagen_preview_url && (
-                                          <AppTooltip content="Ver fotografía">
-                                            <a 
-                                              href={ext.imagen_preview_url}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-colors inline-flex items-center justify-center shadow-sm"
-                                              onClick={(e) => e.stopPropagation()}
+                                        {(ext.fotos_urls?.length > 0 || ext.imagen_preview_url) && (
+                                          <AppTooltip content="Ver fotografía(s)">
+                                            <button
+                                              type="button"
+                                              className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-colors inline-flex items-center justify-center shadow-sm cursor-pointer"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                const fotosList = ext.fotos_urls?.length > 0 ? ext.fotos_urls : [ext.imagen_preview_url];
+                                                const emp = empresas.find(item => item.id === ext.empresa_id);
+                                                handleOpenPhotoGallery(
+                                                  fotosList,
+                                                  `Extintor ${ext.n_extintor ? `N° ${ext.n_extintor}` : ''} ${ext.n_puesto ? `(Puesto ${ext.n_puesto})` : ''}`,
+                                                  `${emp?.razon_social || ''} • ${ext.area_sector || ''} ${ext.puesto_operacion_ref ? `(${ext.puesto_operacion_ref})` : ''}`
+                                                );
+                                              }}
                                             >
                                               <ImageIcon className="h-4.5 w-4.5" />
-                                            </a>
+                                            </button>
                                           </AppTooltip>
                                         )}
                                         {canEditar ? (
@@ -1982,6 +2130,15 @@ export default function ExtintoresPage({ params }) {
         onNavigate={(newExt) => handleEditClick(newExt)}
         hasUnsavedChanges={!isReadOnlyView}
         isFormOpen={isFormOpen}
+      />
+
+      {/* MODAL UNIVERSAL DE VISUALIZACIÓN DE FOTOS DE EXTINTOR */}
+      <AppPhotoGalleryModal
+        open={viewingPhotoModal}
+        onOpenChange={setViewingPhotoModal}
+        title={photoModalTitle}
+        subtitle={photoModalSubtitle}
+        photos={photoModalList}
       />
 
     </div>

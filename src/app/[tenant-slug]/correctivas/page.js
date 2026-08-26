@@ -27,6 +27,7 @@ import AppSortIcon from '@/components/ui/AppSortIcon';
 import AppSkeleton from '@/components/ui/AppSkeleton';
 import AppTooltip from '@/components/ui/AppTooltip';
 import AppLoadingSpinner from '@/components/ui/AppLoadingSpinner';
+import AppPhotoGalleryModal from '@/components/ui/AppPhotoGalleryModal';
 import { 
   PlusCircle, 
   AlertCircle,
@@ -253,6 +254,22 @@ export default function AccionesCorrectivasPage({ params }) {
   
   // Archivo e Imagenes (Múltiple)
   const [fotosFiles, setFotosFiles] = useState([]); // array de { file: File | null, preview: string, path: string }
+  const [selectedLocationPhotoIdx, setSelectedLocationPhotoIdx] = useState(0);
+
+  // Modal de galería fotográfica para visualizar evidencia / ubicación
+  const [viewingPhotoModal, setViewingPhotoModal] = useState(false);
+  const [photoModalList, setPhotoModalList] = useState([]);
+  const [photoModalTitle, setPhotoModalTitle] = useState('Evidencia Fotográfica');
+  const [photoModalSubtitle, setPhotoModalSubtitle] = useState('');
+
+  const handleOpenPhotoGallery = (photos, title, subtitle) => {
+    const validPhotos = (photos || []).filter(p => Boolean(typeof p === 'string' ? p : p?.preview || p?.url));
+    if (validPhotos.length === 0) return;
+    setPhotoModalList(validPhotos.map(p => (typeof p === 'string' ? p : p?.preview || p?.url)));
+    setPhotoModalTitle(title || 'Evidencia Fotográfica del Hallazgo');
+    setPhotoModalSubtitle(subtitle || '');
+    setViewingPhotoModal(true);
+  };
 
   const [recomendacion, setRecomendacion] = useState('');
   const [accionPreventiva, setAccionPreventiva] = useState('');
@@ -1384,12 +1401,31 @@ export default function AccionesCorrectivasPage({ params }) {
     setNivelRiesgo(acc.nivel_riesgo);
 
     // Inicializar fotos múltiples
-    const initialFotos = (acc.fotos_paths || []).map((path, idx) => ({
-      file: null,
-      preview: acc.fotos_urls[idx] || '',
-      path: path
-    }));
-    setFotosFiles(initialFotos);
+    let loadedFotos = [];
+    if (acc.fotos_paths && acc.fotos_paths.length > 0) {
+      loadedFotos = acc.fotos_paths.map((path, idx) => ({
+        file: null,
+        preview: acc.fotos_urls?.[idx] || acc.imagen_preview_url || '',
+        path: path
+      })).filter(f => Boolean(f.preview));
+    } else if (acc.fotos_urls && acc.fotos_urls.length > 0) {
+      loadedFotos = acc.fotos_urls.map((url) => ({
+        file: null,
+        preview: url,
+        path: ''
+      })).filter(f => Boolean(f.preview));
+    } else if (acc.imagen_preview_url || acc.imagen_url) {
+      const previewUrl = acc.imagen_preview_url || (typeof acc.imagen_url === 'string' && acc.imagen_url.startsWith('http') ? acc.imagen_url : '');
+      if (previewUrl) {
+        loadedFotos = [{
+          file: null,
+          preview: previewUrl,
+          path: acc.imagen_url || ''
+        }];
+      }
+    }
+    setFotosFiles(loadedFotos);
+    setSelectedLocationPhotoIdx(0);
 
     setRecomendacion(acc.recomendacion || '');
     setAccionPreventiva(acc.accion_preventiva || '');
@@ -1520,6 +1556,7 @@ export default function AccionesCorrectivasPage({ params }) {
       }
     });
     setFotosFiles([]);
+    setSelectedLocationPhotoIdx(0);
     setRecomendacion('');
     setAccionPreventiva('');
     setCausaRaiz('');
@@ -1586,6 +1623,9 @@ export default function AccionesCorrectivasPage({ params }) {
     } else if (sortField === 'fuente') {
       valA = (a.fuente || '').toLowerCase();
       valB = (b.fuente || '').toLowerCase();
+    } else if (sortField === 'area_sector') {
+      valA = (a.area_sector || '').toLowerCase();
+      valB = (b.area_sector || '').toLowerCase();
     } else if (sortField === 'hallazgo') {
       valA = (a.descripcion_hallazgo || '').toLowerCase();
       valB = (b.descripcion_hallazgo || '').toLowerCase();
@@ -1666,250 +1706,355 @@ export default function AccionesCorrectivasPage({ params }) {
                 </div>
 
                 <form onSubmit={handleSaveHallazgo} className="p-3.5 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto flex-1 scrollbar-thin">
-                  <fieldset disabled={!canEdit} className="space-y-4 sm:space-y-6">
                   
                   {/* Seccion 1: Identificación y Ubicación */}
                   <div className="space-y-4">
-                    <span className="font-outfit text-sm font-bold text-slate-800 border-b border-slate-100 pb-1.5 uppercase tracking-wider flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-[#468DFF]" />
-                      Identificación y Ubicación
-                    </span>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-600 block mb-1">
-                          Cliente / Razón Social <span className="text-[#468DFF]">*</span>
-                        </label>
-                        <select
-                          required
-                          value={empresaId}
-                          onChange={(e) => {
-                            setEmpresaId(e.target.value);
-                            setEstablecimientoId('');
-                            setAreaSector('');
-                            setPuestoOperacion('');
-                            setAreaSectorIsManual(false);
-                            setPuestoOperacionIsManual(false);
-                          }}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
-                        >
-                          <option value="" disabled>Selecciona un cliente</option>
-                          {empresas.map((emp) => (
-                            <option key={emp.id} value={emp.id}>{emp.razon_social}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-600 block mb-1">
-                          Establecimiento <span className="text-[#468DFF]">*</span>
-                        </label>
-                        <select
-                          required
-                          disabled={!empresaId}
-                          value={establecimientoId}
-                          onChange={(e) => {
-                            setEstablecimientoId(e.target.value);
-                            setAreaSector('');
-                            setPuestoOperacion('');
-                            setAreaSectorIsManual(false);
-                            setPuestoOperacionIsManual(false);
-                          }}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer disabled:opacity-50"
-                        >
-                          <option value="" disabled>
-                            {!empresaId ? 'Primero selecciona un cliente' : 'Selecciona un establecimiento'}
-                          </option>
-                          {filteredEstablecimientos.map((est) => (
-                            <option key={est.id} value={est.id}>{est.denominacion}</option>
-                          ))}
-                        </select>
-                      </div>
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                      <span className="font-outfit text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-[#468DFF]" />
+                        Identificación y Ubicación
+                      </span>
                     </div>
 
-                    <div className="grid md:grid-cols-4 gap-4">
-                      <div className="space-y-1 md:col-span-2">
-                        <label className="text-xs font-bold text-slate-600 block mb-1">
-                          Fuente del Hallazgo <span className="text-[#468DFF]">*</span>
-                        </label>
-                        <select
-                          required
-                          value={fuente}
-                          onChange={(e) => setFuente(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
-                        >
-                          <option value="" disabled>Selecciona la fuente</option>
-                          {FUENTE_OPTIONS.map((opt) => (
-                            <option key={opt} value={opt}>{opt}</option>
-                          ))}
-                          <option value="Otra">Otra (Especificar...)</option>
-                        </select>
-                        {fuente === 'Otra' && (
-                          <input
-                            type="text"
-                            required
-                            placeholder="Especificar otra fuente..."
-                            value={fuenteOtra}
-                            onChange={(e) => setFuenteOtra(e.target.value)}
-                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 mt-2 transition-all"
-                          />
-                        )}
-                      </div>
+                    {/* Tarjeta de Fotografía de Evidencia / Ubicación del Hallazgo (Grande y accesible en lectura y edición) */}
+                    {fotosFiles.filter(f => Boolean(f?.preview)).length > 0 && (() => {
+                      const activeFotos = fotosFiles.filter(f => Boolean(f?.preview));
+                      const currentPhoto = activeFotos[selectedLocationPhotoIdx] || activeFotos[0];
+                      const currentPreview = currentPhoto?.preview || '';
 
-                      <div className="space-y-1">
-                        <AppDatePicker
-                          id="fechaRegistro"
-                          label="Fecha del Registro"
-                          required
-                          value={fecha}
-                          onChange={(e) => setFecha(e.target.value)}
-                        />
-                      </div>
+                      return (
+                        <div className="rounded-2xl border border-blue-100 bg-gradient-to-b from-blue-50/40 to-slate-50/60 p-3 sm:p-4 space-y-3 shadow-xs">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5 uppercase tracking-wider">
+                              <ImageIcon className="h-4 w-4 text-[#468DFF]" />
+                              Foto de evidencia / hallazgo
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenPhotoGallery(
+                                activeFotos,
+                                `Hallazgo: ${tipoHallazgo || 'Acción Correctiva'}`,
+                                `${areaSector ? `Sector: ${areaSector}` : ''} ${puestoOperacion ? `• ${puestoOperacion}` : ''} ${fecha ? `• ${formatDate(fecha)}` : ''}`
+                              )}
+                              className="text-xs font-bold text-[#468DFF] hover:text-[#0511F2] flex items-center gap-1.5 cursor-pointer bg-white hover:bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-200 shadow-xs transition-all active:scale-[0.98]"
+                              title="Ver fotografía en pantalla completa"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                              <span>Pantalla completa</span>
+                            </button>
+                          </div>
 
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                          <label className="text-xs font-bold text-slate-600">
-                            Nivel de Riesgo <span className="text-[#468DFF]">*</span>
-                          </label>
-                          <span
-                            role="button"
-                            onClick={() => setShowRiskMatrix(true)}
-                            className="text-slate-400 hover:text-[#468DFF] transition-colors cursor-pointer flex items-center"
-                            title="Ver Método BS 8800"
+                          {/* Imagen principal destacada y grande */}
+                          <div
+                            onClick={() => handleOpenPhotoGallery(
+                              activeFotos,
+                              `Hallazgo: ${tipoHallazgo || 'Acción Correctiva'}`,
+                              `${areaSector ? `Sector: ${areaSector}` : ''} ${puestoOperacion ? `• ${puestoOperacion}` : ''} ${fecha ? `• ${formatDate(fecha)}` : ''}`
+                            )}
+                            className="relative w-full h-52 sm:h-64 md:h-72 rounded-xl overflow-hidden border border-slate-200 bg-slate-900/5 group cursor-pointer shadow-xs flex items-center justify-center"
+                            title="Hacé clic para ver la fotografía en pantalla completa"
                           >
-                            <HelpCircle className="h-3.5 w-3.5" />
-                          </span>
+                            <img
+                              src={currentPreview}
+                              alt="Evidencia del hallazgo"
+                              className="w-full h-full object-contain sm:object-cover group-hover:scale-[1.02] transition-transform duration-300"
+                            />
+                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <span className="px-3.5 py-1.5 rounded-xl bg-slate-900/80 backdrop-blur-xs text-white text-xs font-bold flex items-center gap-1.5 shadow-lg">
+                                <Eye className="h-4 w-4" />
+                                Tocar para ampliar
+                              </span>
+                            </div>
+
+                            {/* Etiqueta de contexto sobre la foto */}
+                            {(nivelRiesgo || areaSector || puestoOperacion) && (
+                              <div className="absolute bottom-2.5 left-2.5 max-w-[90%] truncate px-2.5 py-1 rounded-lg bg-slate-900/80 backdrop-blur-xs text-white text-[11px] font-medium flex items-center gap-1.5 shadow-md">
+                                {nivelRiesgo && nivelRiesgo !== 'N/A' && (
+                                  <span className="font-bold text-amber-300">{nivelRiesgo}</span>
+                                )}
+                                {areaSector && <span>{nivelRiesgo && nivelRiesgo !== 'N/A' ? '•' : ''} {areaSector}</span>}
+                                {puestoOperacion && <span className="hidden sm:inline text-slate-300">• {puestoOperacion}</span>}
+                              </div>
+                            )}
+
+                            {/* Contador de fotos si hay más de una */}
+                            {activeFotos.length > 1 && (
+                              <div className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg bg-slate-900/80 backdrop-blur-xs text-white text-[11px] font-bold shadow-md">
+                                {selectedLocationPhotoIdx + 1} / {activeFotos.length}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Miniaturas de selección si hay más de 1 foto */}
+                          {activeFotos.length > 1 && (
+                            <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 scrollbar-thin">
+                              {activeFotos.map((foto, idx) => {
+                                const isSelected = selectedLocationPhotoIdx === idx;
+                                return (
+                                  <button
+                                    key={idx}
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedLocationPhotoIdx(idx);
+                                    }}
+                                    className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${
+                                      isSelected
+                                        ? 'border-[#468DFF] ring-2 ring-[#468DFF]/25 shadow-xs scale-105'
+                                        : 'border-slate-200 opacity-70 hover:opacity-100 hover:border-slate-300'
+                                    }`}
+                                    title={`Foto ${idx + 1}`}
+                                  >
+                                    <img src={foto.preview} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" />
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
-                        <select
-                          required
-                          value={nivelRiesgo}
-                          onChange={(e) => setNivelRiesgo(e.target.value)}
-                          className={`w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] transition-all cursor-pointer font-bold ${
-                            nivelRiesgo === 'Riesgo trivial' ? 'bg-[#00B050] text-white' :
-                            nivelRiesgo === 'Riesgo tolerable' ? 'bg-[#00FF00] text-slate-900' :
-                            nivelRiesgo === 'Riesgo moderado' ? 'bg-[#FFFF00] text-slate-900' :
-                            nivelRiesgo === 'Riesgo sustancial' ? 'bg-[#FF9900] text-white' :
-                            nivelRiesgo === 'Riesgo intolerable' ? 'bg-[#FF0000] text-white' :
-                            'bg-slate-50/50 text-slate-900'
-                          }`}
-                        >
-                          {NIVEL_RIESGO_OPTIONS.map((opt) => (
-                            <option key={opt} value={opt} className="bg-white text-slate-900 font-normal">{opt}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
+                      );
+                    })()}
 
-                    <div className="grid md:grid-cols-2 gap-4">
-                      {/* ÁREA / SECTOR */}
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-600 block mb-1">Área / Sector</label>
-                        {!establecimientoId ? (
+                    {/* Inputs de Sección 1 */}
+                    <fieldset disabled={!canEdit} className="space-y-4">
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-xs font-bold text-slate-600 block mb-1">
+                            Cliente / Razón Social <span className="text-[#468DFF]">*</span>
+                          </label>
                           <select
-                            disabled
-                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm bg-slate-100 text-slate-400 cursor-not-allowed"
+                            required
+                            value={empresaId}
+                            onChange={(e) => {
+                              setEmpresaId(e.target.value);
+                              setEstablecimientoId('');
+                              setAreaSector('');
+                              setPuestoOperacion('');
+                              setAreaSectorIsManual(false);
+                              setPuestoOperacionIsManual(false);
+                            }}
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
                           >
-                            <option>Primero selecciona un establecimiento</option>
+                            <option value="" disabled>Selecciona un cliente</option>
+                            {empresas.map((emp) => (
+                              <option key={emp.id} value={emp.id}>{emp.razon_social}</option>
+                            ))}
                           </select>
-                        ) : availableSectores.length > 0 ? (
-                          <div className="space-y-2">
-                            <select
-                              value={areaSectorIsManual ? 'MANUAL' : (availableSectores.some(s => (s.denominacion || '').toLowerCase() === (areaSector || '').toLowerCase()) ? (availableSectores.find(s => (s.denominacion || '').toLowerCase() === (areaSector || '').toLowerCase())?.denominacion || areaSector) : (areaSector ? 'MANUAL' : ''))}
-                              onChange={(e) => {
-                                if (e.target.value === 'MANUAL') {
-                                  setAreaSectorIsManual(true);
-                                  setAreaSector('');
-                                  setPuestoOperacion('');
-                                  setPuestoOperacionIsManual(false);
-                                } else {
-                                  setAreaSectorIsManual(false);
-                                  setAreaSector(e.target.value);
-                                  setPuestoOperacion('');
-                                  setPuestoOperacionIsManual(false);
-                                }
-                              }}
-                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer font-medium"
-                            >
-                              <option value="">Selecciona sector...</option>
-                              {availableSectores.map((sec) => (
-                                <option key={sec.id} value={sec.denominacion}>{sec.denominacion}</option>
-                              ))}
-                              <option value="MANUAL">+ Ingresar sector manual...</option>
-                            </select>
+                        </div>
 
-                            {(areaSectorIsManual || (areaSector && !availableSectores.some(s => (s.denominacion || '').toLowerCase() === (areaSector || '').toLowerCase()))) && (
-                              <input
-                                type="text"
-                                placeholder="Escribir sector manual..."
-                                value={areaSector}
-                                onChange={(e) => setAreaSector(e.target.value)}
-                                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
-                              />
-                            )}
-                          </div>
-                        ) : (
-                          <input
-                            type="text"
-                            placeholder="Ej: Depósito de Materiales"
-                            value={areaSector}
-                            onChange={(e) => setAreaSector(e.target.value)}
-                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
-                          />
-                        )}
-                      </div>
-
-                      {/* PUESTO / OPERACIÓN */}
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-600 block mb-1">Puesto / Operación</label>
-                        {!establecimientoId ? (
+                        <div className="space-y-1">
+                          <label className="text-xs font-bold text-slate-600 block mb-1">
+                            Establecimiento <span className="text-[#468DFF]">*</span>
+                          </label>
                           <select
-                            disabled
-                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm bg-slate-100 text-slate-400 cursor-not-allowed"
+                            required
+                            disabled={!empresaId}
+                            value={establecimientoId}
+                            onChange={(e) => {
+                              setEstablecimientoId(e.target.value);
+                              setAreaSector('');
+                              setPuestoOperacion('');
+                              setAreaSectorIsManual(false);
+                              setPuestoOperacionIsManual(false);
+                            }}
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer disabled:opacity-50"
                           >
-                            <option>Primero selecciona un establecimiento</option>
+                            <option value="" disabled>
+                              {!empresaId ? 'Primero selecciona un cliente' : 'Selecciona un establecimiento'}
+                            </option>
+                            {filteredEstablecimientos.map((est) => (
+                              <option key={est.id} value={est.id}>{est.denominacion}</option>
+                            ))}
                           </select>
-                        ) : availablePuestos.length > 0 ? (
-                          <div className="space-y-2">
-                            <select
-                              value={puestoOperacionIsManual ? 'MANUAL' : (availablePuestos.some(p => (p.denominacion || '').toLowerCase() === (puestoOperacion || '').toLowerCase()) ? (availablePuestos.find(p => (p.denominacion || '').toLowerCase() === (puestoOperacion || '').toLowerCase())?.denominacion || puestoOperacion) : (puestoOperacion ? 'MANUAL' : ''))}
-                              onChange={(e) => {
-                                if (e.target.value === 'MANUAL') {
-                                  setPuestoOperacionIsManual(true);
-                                  setPuestoOperacion('');
-                                } else {
-                                  setPuestoOperacionIsManual(false);
-                                  setPuestoOperacion(e.target.value);
-                                }
-                              }}
-                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer font-medium"
-                            >
-                              <option value="">Selecciona puesto...</option>
-                              {availablePuestos.map((pst) => (
-                                <option key={pst.id} value={pst.denominacion}>{pst.denominacion}</option>
-                              ))}
-                              <option value="MANUAL">+ Ingresar puesto manual...</option>
-                            </select>
-
-                            {(puestoOperacionIsManual || (puestoOperacion && !availablePuestos.some(p => (p.denominacion || '').toLowerCase() === (puestoOperacion || '').toLowerCase()))) && (
-                              <input
-                                type="text"
-                                placeholder="Escribir puesto manual..."
-                                value={puestoOperacion}
-                                onChange={(e) => setPuestoOperacion(e.target.value)}
-                                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
-                              />
-                            )}
-                          </div>
-                        ) : (
-                          <input
-                            type="text"
-                            placeholder="Ej: Operador de autoelevador"
-                            value={puestoOperacion}
-                            onChange={(e) => setPuestoOperacion(e.target.value)}
-                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
-                          />
-                        )}
+                        </div>
                       </div>
-                    </div>
+
+                      <div className="grid md:grid-cols-4 gap-4">
+                        <div className="space-y-1 md:col-span-2">
+                          <label className="text-xs font-bold text-slate-600 block mb-1">
+                            Fuente del Hallazgo <span className="text-[#468DFF]">*</span>
+                          </label>
+                          <select
+                            required
+                            value={fuente}
+                            onChange={(e) => setFuente(e.target.value)}
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
+                          >
+                            <option value="" disabled>Selecciona la fuente</option>
+                            {FUENTE_OPTIONS.map((opt) => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                            <option value="Otra">Otra (Especificar...)</option>
+                          </select>
+                          {fuente === 'Otra' && (
+                            <input
+                              type="text"
+                              required
+                              placeholder="Especificar otra fuente..."
+                              value={fuenteOtra}
+                              onChange={(e) => setFuenteOtra(e.target.value)}
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 mt-2 transition-all"
+                            />
+                          )}
+                        </div>
+
+                        <div className="space-y-1">
+                          <AppDatePicker
+                            id="fechaRegistro"
+                            label="Fecha del Registro"
+                            required
+                            value={fecha}
+                            onChange={(e) => setFecha(e.target.value)}
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                            <label className="text-xs font-bold text-slate-600">
+                              Nivel de Riesgo <span className="text-[#468DFF]">*</span>
+                            </label>
+                            <span
+                              role="button"
+                              onClick={() => setShowRiskMatrix(true)}
+                              className="text-slate-400 hover:text-[#468DFF] transition-colors cursor-pointer flex items-center"
+                              title="Ver Método BS 8800"
+                            >
+                              <HelpCircle className="h-3.5 w-3.5" />
+                            </span>
+                          </div>
+                          <select
+                            required
+                            value={nivelRiesgo}
+                            onChange={(e) => setNivelRiesgo(e.target.value)}
+                            className={`w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] transition-all cursor-pointer font-bold ${
+                              nivelRiesgo === 'Riesgo trivial' ? 'bg-[#00B050] text-white' :
+                              nivelRiesgo === 'Riesgo tolerable' ? 'bg-[#00FF00] text-slate-900' :
+                              nivelRiesgo === 'Riesgo moderado' ? 'bg-[#FFFF00] text-slate-900' :
+                              nivelRiesgo === 'Riesgo sustancial' ? 'bg-[#FF9900] text-white' :
+                              nivelRiesgo === 'Riesgo intolerable' ? 'bg-[#FF0000] text-white' :
+                              'bg-slate-50/50 text-slate-900'
+                            }`}
+                          >
+                            {NIVEL_RIESGO_OPTIONS.map((opt) => (
+                              <option key={opt} value={opt} className="bg-white text-slate-900 font-normal">{opt}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Selector Cascada: Área / Sector y Puesto */}
+                      <div className="grid md:grid-cols-2 gap-4">
+                        {/* ÁREA / SECTOR */}
+                        <div className="space-y-1">
+                          <label className="text-xs font-bold text-slate-600 block mb-1">Área / Sector</label>
+                          {!establecimientoId ? (
+                            <select
+                              disabled
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm bg-slate-100 text-slate-400 cursor-not-allowed"
+                            >
+                              <option>Primero selecciona un establecimiento</option>
+                            </select>
+                          ) : availableSectores.length > 0 ? (
+                            <div className="space-y-2">
+                              <select
+                                value={areaSectorIsManual ? 'MANUAL' : (availableSectores.some(s => (s.denominacion || '').toLowerCase() === (areaSector || '').toLowerCase()) ? (availableSectores.find(s => (s.denominacion || '').toLowerCase() === (areaSector || '').toLowerCase())?.denominacion || areaSector) : (areaSector ? 'MANUAL' : ''))}
+                                onChange={(e) => {
+                                  if (e.target.value === 'MANUAL') {
+                                    setAreaSectorIsManual(true);
+                                    setAreaSector('');
+                                    setPuestoOperacion('');
+                                    setPuestoOperacionIsManual(false);
+                                  } else {
+                                    setAreaSectorIsManual(false);
+                                    setAreaSector(e.target.value);
+                                    setPuestoOperacion('');
+                                    setPuestoOperacionIsManual(false);
+                                  }
+                                }}
+                                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer font-medium"
+                              >
+                                <option value="">Selecciona sector...</option>
+                                {availableSectores.map((sec) => (
+                                  <option key={sec.id} value={sec.denominacion}>{sec.denominacion}</option>
+                                ))}
+                                <option value="MANUAL">+ Ingresar sector manual...</option>
+                              </select>
+
+                              {(areaSectorIsManual || (areaSector && !availableSectores.some(s => (s.denominacion || '').toLowerCase() === (areaSector || '').toLowerCase()))) && (
+                                <input
+                                  type="text"
+                                  placeholder="Escribir sector manual..."
+                                  value={areaSector}
+                                  onChange={(e) => setAreaSector(e.target.value)}
+                                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
+                                />
+                              )}
+                            </div>
+                          ) : (
+                            <input
+                              type="text"
+                              placeholder="Ej: Depósito de Materiales"
+                              value={areaSector}
+                              onChange={(e) => setAreaSector(e.target.value)}
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
+                            />
+                          )}
+                        </div>
+
+                        {/* PUESTO / OPERACIÓN */}
+                        <div className="space-y-1">
+                          <label className="text-xs font-bold text-slate-600 block mb-1">Puesto / Operación</label>
+                          {!establecimientoId ? (
+                            <select
+                              disabled
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm bg-slate-100 text-slate-400 cursor-not-allowed"
+                            >
+                              <option>Primero selecciona un establecimiento</option>
+                            </select>
+                          ) : availablePuestos.length > 0 ? (
+                            <div className="space-y-2">
+                              <select
+                                value={puestoOperacionIsManual ? 'MANUAL' : (availablePuestos.some(p => (p.denominacion || '').toLowerCase() === (puestoOperacion || '').toLowerCase()) ? (availablePuestos.find(p => (p.denominacion || '').toLowerCase() === (puestoOperacion || '').toLowerCase())?.denominacion || puestoOperacion) : (puestoOperacion ? 'MANUAL' : ''))}
+                                onChange={(e) => {
+                                  if (e.target.value === 'MANUAL') {
+                                    setPuestoOperacionIsManual(true);
+                                    setPuestoOperacion('');
+                                  } else {
+                                    setPuestoOperacionIsManual(false);
+                                    setPuestoOperacion(e.target.value);
+                                  }
+                                }}
+                                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer font-medium"
+                              >
+                                <option value="">Selecciona puesto...</option>
+                                {availablePuestos.map((pst) => (
+                                  <option key={pst.id} value={pst.denominacion}>{pst.denominacion}</option>
+                                ))}
+                                <option value="MANUAL">+ Ingresar puesto manual...</option>
+                              </select>
+
+                              {(puestoOperacionIsManual || (puestoOperacion && !availablePuestos.some(p => (p.denominacion || '').toLowerCase() === (puestoOperacion || '').toLowerCase()))) && (
+                                <input
+                                  type="text"
+                                  placeholder="Escribir puesto manual..."
+                                  value={puestoOperacion}
+                                  onChange={(e) => setPuestoOperacion(e.target.value)}
+                                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
+                                />
+                              )}
+                            </div>
+                          ) : (
+                            <input
+                              type="text"
+                              placeholder="Ej: Operador de autoelevador"
+                              value={puestoOperacion}
+                              onChange={(e) => setPuestoOperacion(e.target.value)}
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all"
+                            />
+                          )}
+                        </div>
+                      </div>
+                    </fieldset>
                   </div>
 
                   {/* Seccion 2: Descripción y Análisis */}
@@ -1919,74 +2064,76 @@ export default function AccionesCorrectivasPage({ params }) {
                       Descripción y Análisis
                     </span>
                     
-                    <div className="grid md:grid-cols-3 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-600 block mb-1">
-                          Tipo de Hallazgo <span className="text-[#468DFF]">*</span>
-                        </label>
-                        <select
-                          required
-                          value={tipoHallazgo}
-                          onChange={(e) => setTipoHallazgo(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
-                        >
-                          <option value="" disabled>Selecciona el tipo</option>
-                          {TIPO_HALLAZGO_OPTIONS.map((opt) => (
-                            <option key={opt} value={opt}>{opt}</option>
-                          ))}
-                          <option value="Otro">Otro (Especificar...)</option>
-                        </select>
-                        {tipoHallazgo === 'Otro' && (
-                          <input
-                            type="text"
+                    <fieldset disabled={!canEdit} className="space-y-4">
+                      <div className="grid md:grid-cols-3 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-xs font-bold text-slate-600 block mb-1">
+                            Tipo de Hallazgo <span className="text-[#468DFF]">*</span>
+                          </label>
+                          <select
                             required
-                            placeholder="Especificar otro tipo..."
-                            value={tipoHallazgoOtro}
-                            onChange={(e) => setTipoHallazgoOtro(e.target.value)}
-                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 mt-2 transition-all"
+                            value={tipoHallazgo}
+                            onChange={(e) => setTipoHallazgo(e.target.value)}
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
+                          >
+                            <option value="" disabled>Selecciona el tipo</option>
+                            {TIPO_HALLAZGO_OPTIONS.map((opt) => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                            <option value="Otro">Otro (Especificar...)</option>
+                          </select>
+                          {tipoHallazgo === 'Otro' && (
+                            <input
+                              type="text"
+                              required
+                              placeholder="Especificar otro tipo..."
+                              value={tipoHallazgoOtro}
+                              onChange={(e) => setTipoHallazgoOtro(e.target.value)}
+                              className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 mt-2 transition-all"
+                            />
+                          )}
+                        </div>
+
+                        <div className="space-y-1 md:col-span-2">
+                          <div className="flex items-center justify-between gap-2 min-h-[28px] mb-1">
+                            <label className="text-xs font-bold text-slate-600 block mb-0">Descripción Detallada del Hallazgo</label>
+                            <AITextHelper
+                              value={descripcionHallazgo}
+                              onChange={setDescripcionHallazgo}
+                              context="Descripción detallada de la condición insegura o desviación detectada"
+                              disabled={isReadOnlyView}
+                            />
+                          </div>
+                          <textarea
+                            rows="3"
+                            placeholder="Describe detalladamente lo observado..."
+                            value={descripcionHallazgo}
+                            onChange={(e) => setDescripcionHallazgo(e.target.value)}
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all resize-y scrollbar-thin"
                           />
-                        )}
+                        </div>
                       </div>
 
-                      <div className="space-y-1 md:col-span-2">
+                      {/* Recomendaciones / sugerencias */}
+                      <div className="space-y-1">
                         <div className="flex items-center justify-between gap-2 min-h-[28px] mb-1">
-                          <label className="text-xs font-bold text-slate-600 block mb-0">Descripción Detallada del Hallazgo</label>
+                          <label className="text-xs font-bold text-slate-600 block mb-0">Recomendaciones / sugerencias</label>
                           <AITextHelper
-                            value={descripcionHallazgo}
-                            onChange={setDescripcionHallazgo}
-                            context="Descripción detallada de la condición insegura o desviación detectada"
+                            value={recomendacion}
+                            onChange={setRecomendacion}
+                            context="Recomendaciones y sugerencias técnicas preventivas para mitigar el hallazgo"
                             disabled={isReadOnlyView}
                           />
                         </div>
                         <textarea
-                          rows="3"
-                          placeholder="Describe detalladamente lo observado..."
-                          value={descripcionHallazgo}
-                          onChange={(e) => setDescripcionHallazgo(e.target.value)}
+                          rows="2"
+                          placeholder="Recomendaciones o sugerencias..."
+                          value={recomendacion}
+                          onChange={(e) => setRecomendacion(e.target.value)}
                           className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all resize-y scrollbar-thin"
                         />
                       </div>
-                    </div>
-
-                    {/* Recomendaciones / sugerencias */}
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between gap-2 min-h-[28px] mb-1">
-                        <label className="text-xs font-bold text-slate-600 block mb-0">Recomendaciones / sugerencias</label>
-                        <AITextHelper
-                          value={recomendacion}
-                          onChange={setRecomendacion}
-                          context="Recomendaciones y sugerencias técnicas preventivas para mitigar el hallazgo"
-                          disabled={isReadOnlyView}
-                        />
-                      </div>
-                      <textarea
-                        rows="2"
-                        placeholder="Recomendaciones o sugerencias..."
-                        value={recomendacion}
-                        onChange={(e) => setRecomendacion(e.target.value)}
-                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all resize-y scrollbar-thin"
-                      />
-                    </div>
+                    </fieldset>
 
                     {/* Imagen de Respaldo */}
                     <div>
@@ -2025,121 +2172,121 @@ export default function AccionesCorrectivasPage({ params }) {
                       Acciones, Plazos y Responsabilidades
                     </span>
                     
-                    {/* Acción Preventiva (Una sola fila) */}
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between gap-2 min-h-[28px] mb-1">
-                        <label className="text-xs font-bold text-slate-600 block mb-0">Acción Preventiva</label>
-                        <AITextHelper
+                    <fieldset disabled={!canEdit} className="space-y-4">
+                      {/* Acción Preventiva */}
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between gap-2 min-h-[28px] mb-1">
+                          <label className="text-xs font-bold text-slate-600 block mb-0">Acción Preventiva</label>
+                          <AITextHelper
+                            value={accionPreventiva}
+                            onChange={setAccionPreventiva}
+                            context="Acción preventiva planificada para evitar la ocurrencia de desvíos similares"
+                            disabled={isReadOnlyView}
+                          />
+                        </div>
+                        <textarea
+                          rows="2"
+                          placeholder="Se aplica antes de que ocurra el evento no deseado"
                           value={accionPreventiva}
-                          onChange={setAccionPreventiva}
-                          context="Acción preventiva planificada para evitar la ocurrencia de desvíos similares"
-                          disabled={isReadOnlyView}
+                          onChange={(e) => setAccionPreventiva(e.target.value)}
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all resize-y scrollbar-thin"
                         />
                       </div>
-                      <textarea
-                        rows="2"
-                        placeholder="Se aplica antes de que ocurra el evento no deseado"
-                        value={accionPreventiva}
-                        onChange={(e) => setAccionPreventiva(e.target.value)}
-                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all resize-y scrollbar-thin"
-                      />
-                    </div>
 
-                    {/* Causa Raíz (Una sola fila) */}
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between gap-2 min-h-[28px] mb-1">
-                        <label className="text-xs font-bold text-slate-600 block mb-0">Causa Raíz</label>
-                        <AITextHelper
+                      {/* Causa Raíz */}
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between gap-2 min-h-[28px] mb-1">
+                          <label className="text-xs font-bold text-slate-600 block mb-0">Causa Raíz</label>
+                          <AITextHelper
+                            value={causaRaiz}
+                            onChange={setCausaRaiz}
+                            context="Análisis de causa raíz de la desviación o hallazgo detectado"
+                            disabled={isReadOnlyView}
+                          />
+                        </div>
+                        <textarea
+                          rows="2"
+                          placeholder="es la causa que, si se elimina o controla, evita la repetición del evento"
                           value={causaRaiz}
-                          onChange={setCausaRaiz}
-                          context="Análisis de causa raíz de la desviación o hallazgo detectado"
-                          disabled={isReadOnlyView}
+                          onChange={(e) => setCausaRaiz(e.target.value)}
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all resize-y scrollbar-thin"
                         />
                       </div>
-                      <textarea
-                        rows="2"
-                        placeholder="es la causa que, si se elimina o controla, evita la repetición del evento"
-                        value={causaRaiz}
-                        onChange={(e) => setCausaRaiz(e.target.value)}
-                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all resize-y scrollbar-thin"
-                      />
-                    </div>
 
-                    {/* Acción Correctiva (Una sola fila) */}
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between gap-2 min-h-[28px] mb-1">
-                        <label className="text-xs font-bold text-slate-600 block mb-0">Acción Correctiva</label>
-                        <AITextHelper
+                      {/* Acción Correctiva */}
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between gap-2 min-h-[28px] mb-1">
+                          <label className="text-xs font-bold text-slate-600 block mb-0">Acción Correctiva</label>
+                          <AITextHelper
+                            value={accionCorrectiva}
+                            onChange={setAccionCorrectiva}
+                            context="Acción correctiva formulada para eliminar la causa raíz detectada"
+                            disabled={isReadOnlyView}
+                          />
+                        </div>
+                        <textarea
+                          rows="2"
+                          placeholder="Acción tomada para eliminar la causa raíz."
                           value={accionCorrectiva}
-                          onChange={setAccionCorrectiva}
-                          context="Acción correctiva para eliminar la causa raíz y subsanar el hallazgo"
-                          disabled={isReadOnlyView}
-                        />
-                      </div>
-                      <textarea
-                        rows="2"
-                        placeholder="Acción tomada para eliminar la causa raíz."
-                        value={accionCorrectiva}
-                        onChange={(e) => setAccionCorrectiva(e.target.value)}
-                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all resize-y scrollbar-thin"
-                      />
-                    </div>
-
-                    <div className="grid md:grid-cols-3 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-600 block mb-1">Responsable de Implementar</label>
-                        <select
-                          value={responsable}
-                          onChange={(e) => setResponsable(e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
-                        >
-                          <option value="">Selecciona un responsable</option>
-                          {miembrosList.map((m) => (
-                            <option key={m.id} value={m.full_name}>{m.full_name}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="space-y-1">
-                        <AppDatePicker
-                          id="fechaPlanificada"
-                          label="Fecha Planificada (Plazo)"
-                          value={fechaPlanificada}
-                          onChange={(e) => setFechaPlanificada(e.target.value)}
+                          onChange={(e) => setAccionCorrectiva(e.target.value)}
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all resize-y scrollbar-thin"
                         />
                       </div>
 
-                      <div className="space-y-1">
-                        <AppDatePicker
-                          id="fechaImplementacion"
-                          label="Fecha de Realización / Implementación"
-                          value={fechaImplementacion}
-                          onChange={(e) => setFechaImplementacion(e.target.value)}
-                        />
-                      </div>
-                    </div>
+                      <div className="grid md:grid-cols-3 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-xs font-bold text-slate-600 block mb-1">Responsable de Implementar</label>
+                          <select
+                            value={responsable}
+                            onChange={(e) => setResponsable(e.target.value)}
+                            className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all cursor-pointer"
+                          >
+                            <option value="">Selecciona un responsable</option>
+                            {miembrosList.map((m) => (
+                              <option key={m.id} value={m.full_name}>{m.full_name}</option>
+                            ))}
+                          </select>
+                        </div>
 
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between gap-2 min-h-[28px] mb-1">
-                        <label className="text-xs font-bold text-slate-600 block mb-0">Observaciones Generales</label>
-                        <AITextHelper
+                        <div className="space-y-1">
+                          <AppDatePicker
+                            id="fechaPlanificada"
+                            label="Fecha Planificada (Plazo)"
+                            value={fechaPlanificada}
+                            onChange={(e) => setFechaPlanificada(e.target.value)}
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <AppDatePicker
+                            id="fechaImplementacion"
+                            label="Fecha de Realización / Implementación"
+                            value={fechaImplementacion}
+                            onChange={(e) => setFechaImplementacion(e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between gap-2 min-h-[28px] mb-1">
+                          <label className="text-xs font-bold text-slate-600 block mb-0">Observaciones Generales</label>
+                          <AITextHelper
+                            value={observaciones}
+                            onChange={setObservaciones}
+                            context="Observaciones y comentarios generales de la acción correctiva"
+                            disabled={isReadOnlyView}
+                          />
+                        </div>
+                        <textarea
+                          rows="3"
+                          placeholder="Comentarios adicionales..."
                           value={observaciones}
-                          onChange={setObservaciones}
-                          context="Observaciones y comentarios generales de la acción correctiva"
-                          disabled={isReadOnlyView}
+                          onChange={(e) => setObservaciones(e.target.value)}
+                          className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all resize-y scrollbar-thin"
                         />
                       </div>
-                      <textarea
-                        rows="3"
-                        placeholder="Comentarios adicionales..."
-                        value={observaciones}
-                        onChange={(e) => setObservaciones(e.target.value)}
-                        className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[#468DFF] bg-slate-50/50 transition-all resize-y scrollbar-thin"
-                      />
-                    </div>
+                    </fieldset>
                   </div>
-
-                      </fieldset>
 
                       {/* Botones del Formulario */}
                       <div className="flex justify-between items-center pt-6 border-t border-slate-100">
@@ -2391,7 +2538,7 @@ export default function AccionesCorrectivasPage({ params }) {
                     />
                   ) : (
                     <div className="overflow-auto flex-grow">
-                      <table className="w-full text-left border-collapse min-w-[850px]">
+                      <table className="w-full text-left border-collapse min-w-[950px]">
                         <thead>
                           <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider">
                             <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('cliente')}>
@@ -2404,6 +2551,12 @@ export default function AccionesCorrectivasPage({ params }) {
                               <div className="flex items-center gap-1.5">
                                 Fuente / Fecha
                                 <AppSortIcon field="fuente" sortField={sortField} sortOrder={sortOrder} />
+                              </div>
+                            </th>
+                            <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('area_sector')}>
+                              <div className="flex items-center gap-1.5">
+                                Área / Sector
+                                <AppSortIcon field="area_sector" sortField={sortField} sortOrder={sortOrder} />
                               </div>
                             </th>
                             <th className="px-6 py-4 cursor-pointer hover:text-slate-700 select-none transition-colors sticky top-0 z-10 bg-slate-50 border-b border-slate-200" onClick={() => handleSort('hallazgo')}>
@@ -2477,6 +2630,16 @@ export default function AccionesCorrectivasPage({ params }) {
                                   <span className="text-[10px] text-slate-400 block mt-0.5 font-mono font-normal">{formatDate(acc.fecha)}</span>
                                 </td>
                                 <td className="px-6 py-4 font-medium text-slate-600">
+                                  <span className="block max-w-[150px] truncate font-semibold text-slate-800" title={acc.area_sector}>
+                                    {acc.area_sector || '-'}
+                                  </span>
+                                  {acc.puesto_operacion && (
+                                    <span className="text-[10px] text-slate-400 block mt-0.5 font-normal max-w-[150px] truncate" title={acc.puesto_operacion}>
+                                      {acc.puesto_operacion}
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="px-6 py-4 font-medium text-slate-600">
                                   <span className="block max-w-[200px] truncate font-semibold text-slate-800" title={acc.descripcion_hallazgo}>
                                     {acc.descripcion_hallazgo || 'Sin descripción'}
                                   </span>
@@ -2504,17 +2667,24 @@ export default function AccionesCorrectivasPage({ params }) {
                                   {(canEditar || canEliminar || profile?.role === 'cliente') && (
                                     <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                                       <div className="flex items-center justify-end gap-2">
-                                        {acc.imagen_url && (
-                                          <AppTooltip content="Ver fotografía">
-                                            <a 
-                                              href={acc.imagen_url}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-colors inline-flex items-center justify-center shadow-sm"
-                                              onClick={(e) => e.stopPropagation()}
+                                        {(acc.fotos_urls?.length > 0 || acc.imagen_preview_url || acc.imagen_url) && (
+                                          <AppTooltip content="Ver fotografía(s)">
+                                            <button
+                                              type="button"
+                                              className="p-1.5 rounded-lg bg-blue-50 text-[#468DFF] hover:bg-blue-100 hover:text-[#0511F2] transition-colors inline-flex items-center justify-center shadow-sm cursor-pointer"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                const fotosList = acc.fotos_urls?.length > 0 ? acc.fotos_urls : [acc.imagen_preview_url || acc.imagen_url];
+                                                const emp = empresas.find(item => item.id === acc.empresa_id);
+                                                handleOpenPhotoGallery(
+                                                  fotosList,
+                                                  `Hallazgo: ${acc.tipo_hallazgo || 'Acción Correctiva'}`,
+                                                  `${emp?.razon_social || ''} • ${acc.area_sector || ''} ${acc.puesto_operacion ? `(${acc.puesto_operacion})` : ''} • ${formatDate(acc.fecha)}`
+                                                );
+                                              }}
                                             >
                                               <ImageIcon className="h-4.5 w-4.5" />
-                                            </a>
+                                            </button>
                                           </AppTooltip>
                                         )}
                                         {canEditar ? (
@@ -2735,6 +2905,15 @@ export default function AccionesCorrectivasPage({ params }) {
         onNavigate={(newAcc) => handleEditClick(newAcc)}
         hasUnsavedChanges={!isReadOnlyView}
         isFormOpen={isFormOpen}
+      />
+
+      {/* MODAL UNIVERSAL DE VISUALIZACIÓN DE FOTOS DE ACCIÓN CORRECTIVA */}
+      <AppPhotoGalleryModal
+        open={viewingPhotoModal}
+        onOpenChange={setViewingPhotoModal}
+        title={photoModalTitle}
+        subtitle={photoModalSubtitle}
+        photos={photoModalList}
       />
 
     </div>

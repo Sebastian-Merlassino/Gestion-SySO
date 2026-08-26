@@ -1,3 +1,28 @@
+## [2026-08-26] Incorporación de Columna Área / Sector en Tabla de Acciones Correctivas
+
+### Resumen de Cambios
+- **Tabla de Acciones Correctivas:**
+  - Añadida la columna `Área / Sector` en la tabla de datos de `[tenant-slug]/correctivas`.
+  - Muestra el valor de `area_sector` como título principal y `puesto_operacion` como subtítulo/detalle secundario para enriquecer el contexto del hallazgo.
+  - Implementado el ordenamiento dinámico ascendente/descendente al hacer clic en el encabezado `Área / Sector` con el componente `<AppSortIcon />`.
+  - Ajustado el ancho mínimo de la tabla a `min-w-[950px]` para garantizar un scroll horizontal suave y óptima legibilidad.
+
+### Decisiones Clave
+- Consistencia con el diseño de las demás columnas donde el dato primario (`area_sector`) se combina limpiamente con su dato derivado (`puesto_operacion`).
+
+### Skills Utilizadas
+- `gestion-syso-bitacora`
+- `gestion-syso-brand-guidelines`
+
+### Archivos Modificados / Creados
+- `[MODIFY] src/app/[tenant-slug]/correctivas/page.js`
+
+### Validaciones Ejecutadas
+- Verificación de consistencia en el estado de ordenamiento y renderizado condicional del campo.
+
+### Próximo Paso Recomendado
+- Validar visualmente en el navegador.
+
 ## [2026-08-25] Integración de Envío por Correo Electrónico y WhatsApp en Capacitaciones Online
 
 ### Resumen de Cambios
